@@ -1080,7 +1080,7 @@ class Kernel:
             if result:
                 yield result.group(1), self._registered[r]
 
-    def add_service(self, domain: str, service: Service, registered_path: str = None):
+    def add_service(self, domain: str, service: Service, registered_path: str = None, activate: bool = False):
         """
         Adds a reference to a service. This is initialized at kernel.boot.
         @param domain: service domain
@@ -1089,12 +1089,16 @@ class Kernel:
         @return:
         """
         services = self.services(domain)
-        if services is None:
+        if not services:
             services = []
+            activate = True
+
         services.append(service)
         service.registered_path = registered_path
         self.register("service/{domain}/available".format(domain=domain), services)
         self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ADDED)
+        if activate:
+            self.activate(domain, service)
 
     def activate_service_path(self, domain: str, path: str):
         """
@@ -1452,6 +1456,7 @@ class Kernel:
     def preboot(self):
         self.command_boot()
         self.choices_boot()
+        self.batch_boot()
 
     def boot(self) -> None:
         """
@@ -1459,10 +1464,6 @@ class Kernel:
 
         :return:
         """
-        self.batch_boot()
-        for domain, services in self.services_available():
-            # for each domain activate the first service.
-            self.activate_service_index(domain, 0)
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
@@ -3189,7 +3190,8 @@ class Kernel:
                 channel(_("----------"))
                 channel(_("Batch Commamnds:"))
                 for i, name in enumerate(batch):
-                    channel("%d: %s" % (i + 1, name))
+                    if name:
+                        channel("%d: %s" % (i + 1, name))
                 channel(_("----------"))
             return "batch", batch
 
