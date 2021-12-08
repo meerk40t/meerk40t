@@ -314,10 +314,10 @@ class LhystudiosControllerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def module_open(self):
+    def module_open(self, *args, **kwargs):
         self.pane_show()
 
-    def module_close(self):
+    def module_close(self, *args, **kwargs):
         self.pane_hide()
 
     def pane_show(self):
