@@ -3169,12 +3169,13 @@ class Kernel:
             batch = list(root.setting(str, "batch", "").split(";"))
             if not remainder:
                 channel(_("----------"))
-                channel(_("Batch Commamnds:"))
+                channel(_("Batch Commands:"))
                 for i, name in enumerate(batch):
                     find = name.find(" ")
-                    text = name[find:]
+                    origin = name[:find]
+                    text = name[find+1:]
                     if text:
-                        channel("%d: %s" % (i + 1, text))
+                        channel("%d - %s: %s" % (i + 1, origin, text))
                 channel(_("----------"))
             return "batch", batch
 
@@ -3516,7 +3517,7 @@ class Kernel:
         for b in root.batch.split(";"):
             if b:
                 find = b.find(" ")
-                text = b[find:]
+                text = b[find + 1:]
                 root("{batch}\n".format(batch=text))
 
 # ==========
