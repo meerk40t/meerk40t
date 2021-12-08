@@ -124,24 +124,6 @@ class Module:
         self.name = name
         self.registered_path = registered_path
         self.state = STATE_INITIALIZE
-        self._lifecycle = 0
-
-    @property
-    def lifecycle(self):
-        if self._lifecycle >= 1000:
-            return "shutdown"
-        if self._lifecycle == 200:
-            return "closed"
-        if self._lifecycle == 100:
-            return "opening"
-        if self._lifecycle == 101:
-            return "initializing"
-        if self._lifecycle == 102:
-            return "initialed"
-        if self._lifecycle == 103:
-            return "opened"
-        if self._lifecycle == 0:
-            return "init"
 
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
@@ -708,7 +690,6 @@ class Service(Context):
         kernel.contexts[path] = self
         self.registered_path = registered_path
         self._registered = {}
-        self._lifecycle = 0
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -811,7 +792,7 @@ class Kernel:
 
         # Boot State
         self._booted = False
-        self._lifecycle = 0
+        self._shutdown = False
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._kernel_plugins = []
@@ -1513,8 +1494,7 @@ class Kernel:
             import sys
 
             async def aio_readline(loop):
-                while self.lifecycle != "shutdown":
-                    # TODO: CORRECT while loop.
+                while not self._shutdown:
                     print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
@@ -1545,6 +1525,7 @@ class Kernel:
         :return:
         """
         channel = self.channel("shutdown")
+        self._shutdown = True
         self.state = STATE_END  # Terminates the Scheduler.
 
         _ = self.translation
