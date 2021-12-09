@@ -12,7 +12,7 @@ class TestKernel(unittest.TestCase):
         """
         kernel = bootstrap.bootstrap()
         try:
-            for cmd, command, sname in kernel.find("command/.*"):
+            for cmd, path, command in kernel.find("command/.*"):
                 if "server" in command:
                     continue
                 if "ruida" in command:
@@ -20,7 +20,7 @@ class TestKernel(unittest.TestCase):
                 if command in ("quit", "shutdown", "loop"):
                     continue
                 if not cmd.regex:
-                    print("Testing command: %s" % command)
-                    kernel.console(command.split("/")[-1] + "\n")
+                    print("Testing command: %s" % path)
+                    kernel.console(command + "\n")
         finally:
             kernel.shutdown()
