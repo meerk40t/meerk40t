@@ -5591,7 +5591,7 @@ class Elemental(Service):
 
             for _in in ins:
                 p = "tree/%s/%s" % (_in, registered_name)
-                if self.lookup(p) is not None:
+                if p in self._registered:
                     raise NameError(
                         "A function of this name was already registered: %s" % p
                     )
