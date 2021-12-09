@@ -184,9 +184,6 @@ class CameraPanel(wx.Panel, Job):
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
 
-    def module_close(self, *args, **kwargs):
-        self.pane_hide()
-
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
 
