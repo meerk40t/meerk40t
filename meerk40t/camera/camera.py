@@ -224,6 +224,7 @@ class Camera(Service):
         self.fisheye_k = None
         self.fisheye_d = None
         self.perspective = None
+        self._perspective = None
         self.camera_job = None
 
         self.current_frame = None
@@ -266,7 +267,7 @@ class Camera(Service):
         if self.fisheye is not None and len(self.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.fisheye)
         if self.perspective is not None and len(self.perspective) != 0:
-            self.perspective = eval(self.perspective)
+            self._perspective = eval(self.perspective)
         self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
@@ -421,13 +422,13 @@ class Camera(Service):
             dest_width = self.width
             dest_height = self.height
             width, height = frame.shape[:2][::-1]
-            if self.perspective is None:
+            if self._perspective is None:
                 rect = np.array(
                     [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]],
                     dtype="float32",
                 )
             else:
-                rect = np.array(self.perspective, dtype="float32")
+                rect = np.array(self._perspective, dtype="float32")
             dst = np.array(
                 [
                     [0, 0],
@@ -538,7 +539,7 @@ class Camera(Service):
         :param event:
         :return:
         """
-        self.perspective = None
+        self._perspective = None
         self.perspective = ""
 
     def backtrack_fisheye(self):
