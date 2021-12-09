@@ -441,7 +441,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
         kernel.register("window/GroupProperty", GroupProperty)
-        kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/Rotary", RotarySettings)
