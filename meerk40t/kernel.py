@@ -1791,16 +1791,6 @@ class Kernel:
 
         for domain, services in self.services_available():
             for service in services:
-                # try:
-                #     service.shutdown(self)
-                #     if channel:
-                #         channel(
-                #             _("Shutdown {path} for service {path}").format(
-                #                 path=service.path, domain=domain
-                #             )
-                #         )
-                # except AttributeError:
-                #     pass
                 self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
 
     def shutdown(self):
@@ -1845,18 +1835,6 @@ class Kernel:
         self.console = console  # redefine console signal
 
         self.process_queue()  # Process last events.
-
-        self.process_queue()  # Process last events.
-
-        # # Close services.
-        # for domain, previous_active in self.services_active():
-        #     if channel:
-        #         channel(_("Detatching service: {domain}").format(domain=domain))
-        #     for context_name in self.contexts:
-        #         # For every registered context, set the given domain to None.
-        #         context = self.contexts[context_name]
-        #         setattr(context, domain, None)
-
 
         # Context Flush and Shutdown
         for context_name in list(self.contexts):
