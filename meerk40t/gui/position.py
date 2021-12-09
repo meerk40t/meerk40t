@@ -88,9 +88,6 @@ class PositionPanel(wx.Panel):
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
 
-    def module_close(self, *args, **kwargs):
-        self.pane_hide()
-
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties
         self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
