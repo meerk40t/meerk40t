@@ -1565,8 +1565,8 @@ class Kernel:
 
         # Update objects: service_shutdown
         for s in objects:
-            s._service_lifecycle = LIFECYCLE_SHUTDOWN
             if slp(s) < LIFECYCLE_SHUTDOWN <= end:
+                s._service_lifecycle = LIFECYCLE_SHUTDOWN
                 if channel:
                     channel("service-shutdown: {object}".format(object=str(s)))
                 if hasattr(s, "shutdown"):
