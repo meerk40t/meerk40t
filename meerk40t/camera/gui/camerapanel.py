@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import Job
+from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 from meerk40t.gui.icons import (
     icons8_camera_50,
@@ -175,15 +175,14 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
-        self.context.listen("refresh_scene", self.on_refresh_scene)
 
     def pane_hide(self, *args):
         self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
-        self.context.unlisten("refresh_scene", self.on_refresh_scene)
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
 
+    @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
 
