@@ -683,7 +683,7 @@ class Service(Context):
 
     def __init__(self, kernel: "Kernel", path: str, registered_path: str = None):
         super().__init__(kernel, path)
-        kernel.contexts[path] = self
+        kernel.register_as_context(self)
         self.registered_path = registered_path
         self._registered = {}
 
@@ -2193,6 +2193,12 @@ class Kernel:
     def root(self) -> "Context":
         return self.get_context("/")
 
+    def register_as_context(self, context):
+        # If context get after boot, apply all services.
+        for domain, service in self.services_active():
+            setattr(context, domain, service)
+        self.contexts[context.path] = context
+
     def get_context(self, path: str) -> Context:
         """
         Create a context derived from this kernel, at the given path.
@@ -2207,11 +2213,7 @@ class Kernel:
         except KeyError:
             pass
         derive = Context(self, path=path)
-        if self._booted:
-            # If context get after boot, apply all services.
-            for domain, service in self.services_active():
-                setattr(derive, domain, service)
-        self.contexts[path] = derive
+        self.register_as_context(derive)
         return derive
 
     def derivable(self, path: str) -> Generator[str, None, None]:
