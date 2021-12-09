@@ -5309,6 +5309,8 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
+        for e in self.flat():
+            e.unregister()
 
     def save_persistent_operations(self, name):
         settings = self.derive("operations/" + name)
