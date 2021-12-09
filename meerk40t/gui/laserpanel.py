@@ -208,12 +208,7 @@ class LaserPanel(wx.Panel):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
 
-    def pane_show(self):
-        self.context.listen("plan", self.plan_update)
-
-    def pane_hide(self):
-        self.context.unlisten("plan", self.plan_update)
-
+    @signal_listener("plan")
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if plan_name == "z":
