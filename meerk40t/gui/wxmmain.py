@@ -13,7 +13,7 @@ from .icons import (
     icons8_home_filled_50,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50,
+    icons8_save_50, icons8_flip_vertical_50, icons8_flip_horizontal_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -193,6 +193,24 @@ class MeerK40t(MWindow):
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
+            },
+        )
+        kernel.register(
+            "button/modify/Flip",
+            {
+                "label": _("Flip Vertical"),
+                "icon": icons8_flip_vertical_50,
+                "tip": _("Flip the selected element vertically"),
+                "action": lambda v: kernel.elements("scale -1 1\n"),
+            },
+        )
+        kernel.register(
+            "button/modify/Mirror",
+            {
+                "label": _("Mirror Horizontal"),
+                "icon": icons8_flip_horizontal_50,
+                "tip": _("Mirror the selected element horizontally"),
+                "action": lambda v: kernel.elements("scale 1 -1\n"),
             },
         )
 

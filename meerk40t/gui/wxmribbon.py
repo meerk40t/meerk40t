@@ -116,6 +116,10 @@ class RibbonPanel(wx.Panel):
     def set_config_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.config_button_bar)
 
+    @lookup_listener("button/modify")
+    def set_modify_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.modify_button_bar)
+
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
@@ -175,6 +179,16 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
+
+        self.modify_panel = RB.RibbonPanel(
+            home,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Modification"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.modify_panel)
+        self.modify_button_bar = button_bar
 
         self._ribbon.Realize()
 
