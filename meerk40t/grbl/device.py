@@ -45,6 +45,7 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("load/GCodeLoader", GCodeLoader)
+        kernel.register("emulator/grbl", GRBLEmulator)
 
         @kernel.console_option(
             "grbl", type=int, help=_("run grbl-emulator on given port.")
