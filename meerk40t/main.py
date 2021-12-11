@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import platform
 import sys
 
 from .core.exceptions import Mk40tImportAbort
@@ -216,7 +217,7 @@ def run():
 
     kernel.add_plugin(updater.plugin)
 
-    if sys.platform == "win32":
+    if platform.system() == "Windows":
         # Windows only plugin.
         try:
             from .extra import winsleep

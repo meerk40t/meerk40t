@@ -2774,9 +2774,9 @@ class ConsoleFunction(Job):
 
 def get_safe_path(name, create=False):
     from pathlib import Path
-    from sys import platform
+    import platform
 
-    if platform == "darwin":
+    if platform.system() == "Darwin":
         directory = (
             Path.home()
             .joinpath("Library")
