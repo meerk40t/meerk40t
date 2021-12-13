@@ -587,7 +587,7 @@ class wxMeerK40t(wx.App, Module):
             if command == "open":
                 if context.lookup(window_uri) is not None:
                     kernel.run_later(window_open, None)
-                    channel(_("Window Opened."))
+                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -595,10 +595,10 @@ class wxMeerK40t(wx.App, Module):
                 if window_class is not None:
                     if window_uri in path.opened:
                         kernel.run_later(window_close, None)
-                        channel(_("Window Closed."))
+                        channel(_("Window closed: {window}").format(window=window))
                     else:
                         kernel.run_later(window_open, None)
-                        channel(_("Window Opened."))
+                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError

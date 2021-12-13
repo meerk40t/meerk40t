@@ -2848,7 +2848,7 @@ class Kernel:
         if text.startswith("."):
             text = text[1:]
         else:
-            channel(text)
+            channel(text, indent=False)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -3812,9 +3812,11 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
+    def __call__(self, message: Union[str, bytes, bytearray], *args, indent=True, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
+        if indent and not isinstance(message, (bytes, bytearray)):
+            message = "    " + message.replace("\n", "\n    ")
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
