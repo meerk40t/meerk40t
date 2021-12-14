@@ -953,7 +953,7 @@ class LhystudiosDriver(Driver):
             self.move_relative(dx, dy)
             self.ensure_program_mode()
 
-    def _nse_jog_event(self, dx=0, dy=0):
+    def _nse_jog_event(self, dx=0, dy=0, speed=None):
         """
         NSE Jog events are performed from program or raster mode and skip out to rapid mode to perform
         a single jog command. This jog effect varies based on the horizontal vertical major setting and
@@ -982,6 +982,19 @@ class LhystudiosDriver(Driver):
             self.goto_y(dy)
         if dx != 0:
             self.goto_x(dx)
+        if speed is not None:
+            speed_code = LaserSpeed(
+                self.context.board,
+                self.settings.speed,
+                self.settings.raster_step,
+                d_ratio=self.settings.implicit_d_ratio,
+                acceleration=self.settings.implicit_accel,
+                fix_limit=True,
+                fix_lows=True,
+                fix_speeds=self.context.fix_speeds,
+                raster_horizontal=True,
+            ).speedcode
+            self.data_output(bytes(speed_code, "utf8"))
         self.data_output(b"SE")
         self.declare_directions()
         self.state = original_state
