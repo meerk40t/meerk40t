@@ -899,6 +899,15 @@ class Kernel:
 
         :param lifecycle:
         :return:
+
+        Meerk40t bootstrap sequence:
+        * console / gui
+        * preregister
+        * register
+        * configure
+        * boot
+        * ready
+        * finished
         """
         if self.lifecycle == "shutdown":
             return  # No backsies.
