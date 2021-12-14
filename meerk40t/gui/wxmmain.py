@@ -107,6 +107,7 @@ ID_BEGINNERS = wx.NewId()
 ID_HOMEPAGE = wx.NewId()
 ID_RELEASES = wx.NewId()
 ID_FACEBOOK = wx.NewId()
+ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
@@ -1125,6 +1126,7 @@ class MeerK40t(MWindow):
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
         self.help_menu.Append(ID_FACEBOOK, _("&Facebook"), "")
+        self.help_menu.Append(ID_DISCORD, _("&Discord"), "")
         self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
         self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
@@ -1364,6 +1366,11 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda e: self.context("webhelp facebook\n"),
             id=ID_FACEBOOK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp discord\n"),
+            id=ID_DISCORD,
         )
         self.Bind(
             wx.EVT_MENU,
