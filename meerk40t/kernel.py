@@ -451,6 +451,7 @@ class Context:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -464,7 +465,11 @@ class Context:
         The result function will be called with any returned result func.
         """
         return self._kernel.threaded(
-            func, thread_name=thread_name, result=result, daemon=daemon
+            func,
+            *args,
+            thread_name=thread_name,
+            result=result,
+            daemon=daemon,
         )
 
     # ==========
@@ -910,7 +915,7 @@ class Kernel:
         """
 
         self.command_boot()
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1503,6 +1508,7 @@ class Kernel:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -1518,7 +1524,7 @@ class Kernel:
 
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
-        :param result: Final runs after the thread is deleted.
+        :param result: Runs in the thread after func terminates but before the thread itself terminates.
         :param daemon: set this thread as daemon
         :return: The thread object created.
         """
@@ -1543,7 +1549,7 @@ class Kernel:
             channel(_("Thread: %s, Set" % thread_name))
             try:
                 channel(_("Thread: %s, Start" % thread_name))
-                func_result = func()
+                func_result = func(*args)
                 channel(_("Thread: %s, End " % thread_name))
             except Exception:
                 channel(_("Thread: %s, Exception-End" % thread_name))
