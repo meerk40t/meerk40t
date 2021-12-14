@@ -1,4 +1,5 @@
 import os
+import platform
 import time
 
 from ..core.cutcode import LaserSettings
