@@ -727,7 +727,7 @@ class Kernel:
         # All registered locations within the kernel.
         self.registered = {}
 
-        # The translation object to be overridden by any valid transition functions
+        # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
@@ -1123,11 +1123,11 @@ class Kernel:
 
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
+        Register an element at a given subpath.
+        If this Kernel is not root, then it is registered relative to this location.
 
-        :param path:
-        :param obj:
+        :param path: a "/" separated hierarchical index to the object
+        :param obj: object to be registered
         :return:
         """
         self.registered[path] = obj
