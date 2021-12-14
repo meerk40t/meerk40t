@@ -302,6 +302,8 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
+    console = kernel_root.channel("console")
+
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
@@ -338,22 +340,28 @@ def run():
             except IndexError:
                 break
 
+    def __print_delegate(*args, **kwargs):
+        if print not in console.watchers:
+            print(*args, **kwargs)
+
     if args.execute:
         # Any execute code segments gets executed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
         for v in args.execute:
             if v is None:
                 continue
             kernel_root(v.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     if args.batch:
         # If a batch file is specified it gets processed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
+        unprint_console = True
         with args.batch as batch:
             for line in batch:
                 kernel_root(line.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        if unprint_console:
+            console.unwatch(__print_delegate)
 
     kernel.bootstrap("ready")
 
@@ -381,7 +389,7 @@ def run():
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.console:
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
 
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
@@ -395,6 +403,6 @@ def run():
         loop = asyncio.get_event_loop()
         loop.run_until_complete(aio_readline(loop))
         loop.close()
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.
