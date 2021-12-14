@@ -1223,11 +1223,7 @@ class LhystudiosDriver(Driver):
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
+        self.data_output(bytes(speed_code, "utf8"))
         if dx != 0:
             self.goto_x(dx)
         if dy != 0:
@@ -1272,11 +1268,7 @@ class LhystudiosDriver(Driver):
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
+        self.data_output(bytes(speed_code, "utf8"))
         self.data_output(b"N")
         self.set_requested_directions()
         self.declare_directions()
@@ -1300,11 +1292,7 @@ class LhystudiosDriver(Driver):
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
+        self.data_output(bytes(speed_code, "utf8"))
         self.data_output(b"N")
         self.set_requested_directions()
         self.declare_directions()
