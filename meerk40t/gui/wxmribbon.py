@@ -343,9 +343,9 @@ class RibbonPanel(wx.Panel):
             id=ID_CONFIGURATION,
         )
 
-        from sys import platform
+        import platform
 
-        if platform != "darwin":
+        if platform.system() != "Darwin":
             button_bar.AddButton(
                 ID_PREFERENCES,
                 _("Preferences"),

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import platform
 import sys
 import traceback
 
@@ -539,7 +540,7 @@ class wxMeerK40t(wx.App, Module):
             del self.locale
         self.locale = wx.Locale(language_index)
         # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or "linux" in sys.platform:
+        if self.locale.IsOk() or platform.system() == "Linux":
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None
@@ -650,9 +651,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
+    error_log = "MeerK40t crash log. Version: %s on %s:%s - %s\n" % (
         APPLICATION_VERSION,
-        sys.platform,
+        platform.system(),
+        platform.machine(),
         wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))

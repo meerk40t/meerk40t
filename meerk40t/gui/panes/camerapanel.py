@@ -201,9 +201,9 @@ class CameraPanel(wx.Panel, Job):
         )
 
     def initialize(self, *args):
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform == "darwin" and not hasattr(self.setting, "_first"):
+        if _sys() == "Darwin" and not hasattr(self.setting, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
             self.setting._first = False
         else:
@@ -676,9 +676,9 @@ class CameraInterface(MWindow):
         # ==========
         # MENU BAR
         # ==========
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform != "darwin":
+        if _sys() != "Darwin":
             self.CameraInterface_menubar = wx.MenuBar()
             self.create_menu(self.CameraInterface_menubar.Append)
             self.SetMenuBar(self.CameraInterface_menubar)

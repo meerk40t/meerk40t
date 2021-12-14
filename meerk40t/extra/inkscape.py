@@ -1,6 +1,6 @@
 import os.path
 from subprocess import PIPE, run
-from sys import platform
+import platform
 
 
 def plugin(kernel, lifecycle):
@@ -148,19 +148,20 @@ def plugin(kernel, lifecycle):
             output_type="inkscape",
         )
         def inkscape_locate(channel, _, data, **kwargs):
-            if "darwin" in platform:
+            system = platform.system()
+            if system == "Darwin":
                 inkscape = [
                     "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
                     "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
                 ]
-            elif "win" in platform:
+            elif system == "Windows":
                 inkscape = [
                     "C:/Program Files (x86)/Inkscape/inkscape.exe",
                     "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
                     "C:/Program Files/Inkscape/inkscape.exe",
                     "C:/Program Files/Inkscape/bin/inkscape.exe",
                 ]
-            elif "linux" in platform:
+            elif system == "Linux":
                 inkscape = [
                     "/usr/local/bin/inkscape",
                     "/usr/bin/inkscape",
