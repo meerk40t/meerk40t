@@ -410,9 +410,9 @@ class MoshiControllerGui(MWindow):
         # ==========
         # MENU BAR
         # ==========
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform != "darwin":
+        if _sys() != "Darwin":
             self.MoshiController_menubar = wx.MenuBar()
             self.create_menu(self.MoshiController_menubar.Append)
             self.SetMenuBar(self.MoshiController_menubar)

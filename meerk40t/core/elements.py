@@ -5137,11 +5137,12 @@ class Elemental(Modifier):
             normalized = os.path.realpath(filepath)
 
             from os import system as open_in_shell
-            from sys import platform
+            import platform
 
-            if platform == "darwin":
+            system = platform.system()
+            if system == "Darwin":
                 open_in_shell("open '{file}'".format(file=normalized))
-            elif "win" in platform:
+            elif system == "Windows":
                 open_in_shell('"{file}"'.format(file=normalized))
             else:
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
