@@ -21,6 +21,7 @@ STATE_SUSPEND = 6  # Controller is suspended.
 STATE_WAIT = 7  # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
 
+
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
     ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
@@ -45,6 +46,14 @@ class Modifier:
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}", channel={channel})'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+        )
 
     def boot(self, *args, **kwargs):
         """
@@ -90,6 +99,13 @@ class Module:
         self.name = name
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}")'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+        )
+
     def initialize(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
         kernelspace."""
@@ -128,7 +144,7 @@ class Context:
         self.opened = {}
         self.attached = {}
 
-    def __str__(self):
+    def __repr__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
