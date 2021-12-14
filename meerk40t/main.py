@@ -340,6 +340,8 @@ def run():
             except IndexError:
                 break
 
+    kernel.bootstrap("ready")
+
     def __print_delegate(*args, **kwargs):
         if print not in console.watchers:
             print(*args, **kwargs)
@@ -363,7 +365,7 @@ def run():
         if unprint_console:
             console.unwatch(__print_delegate)
 
-    kernel.bootstrap("ready")
+    kernel.bootstrap("finished")
 
     if args.auto:
         # Auto start does the planning and spooling of the data.
