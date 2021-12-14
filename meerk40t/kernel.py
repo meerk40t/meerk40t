@@ -1802,8 +1802,8 @@ class Kernel:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
-                            "%s %s: %s was sent %s"
-                            % (path, signal, str(listener), str(message))
+                            "Signal: %s %s: %s:%s%s"
+                            % (path, signal, listener.__module__, listener.__name__, str(message))
                         )
             if path is None:
                 self.last_message[signal] = message
