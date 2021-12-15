@@ -1257,7 +1257,6 @@ class LhystudiosDriver(Driver):
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.settings.raster_step,
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
@@ -1285,7 +1284,6 @@ class LhystudiosDriver(Driver):
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.settings.raster_step,
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
@@ -1305,7 +1303,27 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_PROGRAM
         self.context.signal("driver;mode", self.state)
 
-    def h_switch(self):
+    def h_switch(self, step=None):
+        if step is None:
+            step = self.settings.raster_step
+        self.data_output(b"N")
+        if self.is_prop(STATE_Y_FORWARD_TOP):
+            self.current_y -= step
+            self.data_output(self.CODE_TOP)
+        else:
+            self.current_y += step
+            self.data_output(self.CODE_BOTTOM)
+
+        self.data_output(lhymicro_distance(step))
+        self.data_output(b"SE")
+        if self.is_prop(STATE_X_FORWARD_LEFT):
+            self.unset_prop(STATE_X_FORWARD_LEFT)
+        else:
+            self.set_prop(STATE_X_FORWARD_LEFT)
+
+        self.laser = False
+
+    def h_switch_g(self):
         if self.is_prop(STATE_X_FORWARD_LEFT):
             self.data_output(self.CODE_RIGHT)
             self.unset_prop(STATE_X_FORWARD_LEFT)
@@ -1318,7 +1336,22 @@ class LhystudiosDriver(Driver):
             self.current_y += self.settings.raster_step
         self.laser = False
 
-    def v_switch(self):
+    def v_switch(self, step=None):
+        if step is None:
+            step = self.settings.raster_step
+        self.data_output(b"N")
+        if self.is_prop(STATE_X_FORWARD_LEFT):
+            self.current_x -= step
+            self.data_output(self.CODE_LEFT)
+        else:
+            self.current_x += step
+            self.data_output(self.CODE_RIGHT)
+        self.data_output(lhymicro_distance(step))
+        self.data_output(b"SE")
+        self.toggle_prop(STATE_Y_FORWARD_TOP)
+        self.laser = False
+
+    def v_switch_g(self):
         if self.is_prop(STATE_Y_FORWARD_TOP):
             self.data_output(self.CODE_BOTTOM)
             self.unset_prop(STATE_Y_FORWARD_TOP)
