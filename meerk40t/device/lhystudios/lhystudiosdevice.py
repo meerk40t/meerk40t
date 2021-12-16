@@ -1205,17 +1205,31 @@ class LhystudiosDriver(Driver):
         dy = int(round(dy))
         self.data_output(b"@NSE")
         self.state = DRIVER_STATE_RAPID
-        speed_code = LaserSpeed(
-            self.context.board,
-            self.settings.speed,
-            self.settings.raster_step,
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            fix_speeds=self.context.fix_speeds,
-            raster_horizontal=True,
-        ).speedcode
+        if self.settings.raster_step:
+            speed_code = LaserSpeed(
+                self.context.board,
+                self.settings.speed,
+                self.settings.raster_step,
+                d_ratio=self.settings.implicit_d_ratio,
+                acceleration=self.settings.implicit_accel,
+                fix_limit=True,
+                fix_lows=True,
+                fix_speeds=self.context.fix_speeds,
+                raster_horizontal=True,
+            ).speedcode
+        else:
+            speed_code = LaserSpeed(
+                self.context.board,
+                self.settings.speed,
+                self.settings.raster_step,
+                d_ratio=self.settings.implicit_d_ratio,
+                acceleration=self.settings.implicit_accel,
+                fix_limit=True,
+                fix_lows=True,
+                suffix_c=True,
+                fix_speeds=self.context.fix_speeds,
+                raster_horizontal=True,
+            ).speedcode
         try:
             speed_code = bytes(speed_code)
         except TypeError:
@@ -1288,6 +1302,7 @@ class LhystudiosDriver(Driver):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
+            suffix_c=True,
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
