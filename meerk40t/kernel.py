@@ -2773,23 +2773,30 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name, create=False):
-    from pathlib import Path
+def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
     import platform
 
-    if platform.system() == "Darwin":
-        directory = (
-            Path.home()
-            .joinpath("Library")
-            .joinpath("Application Support")
-            .joinpath(name)
-        )
-    elif "win" in platform:
-        from os.path import expandvars
+    if not system:
+        system = platform.system()
 
-        directory = Path(expandvars("%LOCALAPPDATA%")).joinpath(name)
+    if system == "Darwin":
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            "Library",
+            "Application Support",
+            name,
+        )
+    elif system == "Windows":
+        directory = os.path.join(
+            os.path.expandvars("%LOCALAPPDATA%"),
+            name
+        )
     else:
-        directory = Path.home().joinpath(".config").joinpath(name)
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            ".config",
+            name
+        )
     if directory is not None and create:
-        directory.mkdir(parents=True, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
     return directory
