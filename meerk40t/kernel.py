@@ -21,6 +21,7 @@ STATE_SUSPEND = 6  # Controller is suspended.
 STATE_WAIT = 7  # Controller is waiting for something. This could be aborted.
 STATE_TERMINATE = 10
 
+
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
     ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
@@ -45,6 +46,14 @@ class Modifier:
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}", channel={channel})'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+        )
 
     def boot(self, *args, **kwargs):
         """
@@ -90,6 +99,13 @@ class Module:
         self.name = name
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}")'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+        )
+
     def initialize(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
         kernelspace."""
@@ -128,7 +144,7 @@ class Context:
         self.opened = {}
         self.attached = {}
 
-    def __str__(self):
+    def __repr__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
@@ -435,6 +451,7 @@ class Context:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -448,7 +465,11 @@ class Context:
         The result function will be called with any returned result func.
         """
         return self._kernel.threaded(
-            func, thread_name=thread_name, result=result, daemon=daemon
+            func,
+            *args,
+            thread_name=thread_name,
+            result=result,
+            daemon=daemon,
         )
 
     # ==========
@@ -706,7 +727,7 @@ class Kernel:
         # All registered locations within the kernel.
         self.registered = {}
 
-        # The translation object to be overridden by any valid transition functions
+        # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
@@ -878,6 +899,15 @@ class Kernel:
 
         :param lifecycle:
         :return:
+
+        Meerk40t bootstrap sequence:
+        * console / gui
+        * preregister
+        * register
+        * configure
+        * boot
+        * ready
+        * finished
         """
         if self.lifecycle == "shutdown":
             return  # No backsies.
@@ -894,7 +924,7 @@ class Kernel:
         """
 
         self.command_boot()
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -1093,11 +1123,11 @@ class Kernel:
 
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
+        Register an element at a given subpath.
+        If this Kernel is not root, then it is registered relative to this location.
 
-        :param path:
-        :param obj:
+        :param path: a "/" separated hierarchical index to the object
+        :param obj: object to be registered
         :return:
         """
         self.registered[path] = obj
@@ -1487,6 +1517,7 @@ class Kernel:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -1502,7 +1533,7 @@ class Kernel:
 
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
-        :param result: Final runs after the thread is deleted.
+        :param result: Runs in the thread after func terminates but before the thread itself terminates.
         :param daemon: set this thread as daemon
         :return: The thread object created.
         """
@@ -1527,7 +1558,7 @@ class Kernel:
             channel(_("Thread: %s, Set" % thread_name))
             try:
                 channel(_("Thread: %s, Start" % thread_name))
-                func_result = func()
+                func_result = func(*args)
                 channel(_("Thread: %s, End " % thread_name))
             except Exception:
                 channel(_("Thread: %s, Exception-End" % thread_name))
@@ -1771,8 +1802,8 @@ class Kernel:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
-                            "%s %s: %s was sent %s"
-                            % (path, signal, str(listener), str(message))
+                            "Signal: %s %s: %s:%s%s"
+                            % (path, signal, listener.__module__, listener.__name__, str(message))
                         )
             if path is None:
                 self.last_message[signal] = message

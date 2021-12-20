@@ -358,6 +358,8 @@ def run():
         if unprint_console:
             console.unwatch(__print_delegate)
 
+    kernel.bootstrap("finished")
+
     if args.auto:
         # Auto start does the planning and spooling of the data.
         elements = kernel_root.elements
