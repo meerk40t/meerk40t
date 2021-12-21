@@ -1457,7 +1457,7 @@ class MeerK40t(MWindow):
             str(self.context.kernel.name),
             self.context.kernel.version,
         )
-        title += "      %s" % self.context.device.name
+        title += "      %s" % self.context.device.label
         self.SetTitle(title)
 
     def __set_properties(self):
