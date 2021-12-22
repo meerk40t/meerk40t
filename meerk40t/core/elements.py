@@ -4638,7 +4638,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_raster(node, speed=150, **kwgs):
             node.settings.speed = float(speed)
             self.context.signal("element_property_reload", node)
@@ -4647,9 +4647,20 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_vector(node, speed=35, **kwgs):
             node.settings.speed = float(speed)
+            self.context.signal("element_property_reload", node)
+
+        def radio_match(node, power=0, **kwgs):
+            return node.settings.power == float(power)
+
+        @self.tree_submenu(_("Power"))
+        @self.tree_radio(radio_match)
+        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
+        def set_power(node, power=1000, **kwgs):
+            node.settings.power = float(power)
             self.context.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwgs):
