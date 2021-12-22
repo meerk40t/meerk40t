@@ -5219,13 +5219,15 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 25, 1, -1)
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
-            _("Scale %s%%") % "{scale_percent}", node_type="elem", help="Scale Element"
+            _("Scale %s%%") % "{scale_percent}",
+            node_type=("elem", "file", "group"),
+            help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwgs):
             scale = 6.0 / float(scale)
@@ -5238,7 +5240,7 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
         @self.tree_values(
@@ -5285,7 +5287,11 @@ class Elemental(Modifier):
                 -150,
             ),
         )
-        @self.tree_operation(_(u"Rotate %s°") % ("{angle}"), node_type="elem", help="")
+        @self.tree_operation(
+            _(u"Rotate %s°") % ("{angle}"),
+            node_type=("elem", "file", "group"),
+            help=""
+        )
         def rotate_elem_amount(node, angle, **kwgs):
             turns = float(angle) / 360.0
             child_objects = Group()
@@ -5297,9 +5303,13 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
+        @self.tree_operation(
+            _("Reify User Changes"),
+            node_type=("elem", "file", "group"),
+            help=""
+        )
         def reify_elem_changes(node, **kwgs):
             self.context("reify\n")
 
@@ -5329,6 +5339,7 @@ class Elemental(Modifier):
             return False
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_separator_before()
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
