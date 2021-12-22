@@ -48,6 +48,7 @@ ID_MENU_RECENT = wx.NewId()
 ID_MENU_ZOOM_OUT = wx.NewId()
 ID_MENU_ZOOM_IN = wx.NewId()
 ID_MENU_ZOOM_SIZE = wx.NewId()
+ID_MENU_ZOOM_BED = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
 ID_MENU_HIDE_FILLS = wx.NewId()
@@ -894,7 +895,8 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To &Size"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed"), "")
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -1150,7 +1152,8 @@ class MeerK40t(MWindow):
 
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=ID_MENU_ZOOM_BED)
 
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID
@@ -1873,18 +1876,32 @@ class MeerK40t(MWindow):
         """
         self.context("scene zoom %f\n" % 1.5)
 
-    def on_click_zoom_size(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_zoom_selected(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
-        Zoom size button press.
+        Zoom scene to selected items.
         """
         elements = self.context.elements
         bbox = elements.selected_area()
         if bbox is None:
-            self.context("scene focus -10% -10% 110% 110%\n")
+            self.on_click_zoom_bed(event=event)
         else:
+            x_delta = (bbox[2]-bbox[0]) * 0.04
+            y_delta = (bbox[3]-bbox[1]) * 0.04
             self.context(
-                "scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3])
+                "scene focus %f %f %f %f\n" %
+                (
+                    bbox[0] - x_delta,
+                    bbox[1] - y_delta,
+                    bbox[2] + x_delta,
+                    bbox[3] + y_delta,
+                )
             )
+
+    def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Zoom scene to bed size.
+        """
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def toggle_draw_mode(self, bits):
         """
