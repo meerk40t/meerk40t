@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import os.path
 import platform
 import sys
 
@@ -25,7 +26,14 @@ APPLICATION_NAME = "MeerK40t"
 APPLICATION_VERSION = "0.7.5-beta1"
 
 if not getattr(sys, "frozen", False):
-    APPLICATION_VERSION += " src"
+    # If .git directory does not exist we are running from a package like pypi
+    # Otherwise we are running from source
+    if os.path.isdir(sys.path[0] + "/.git"):
+        APPLICATION_VERSION += " git"
+    elif os.path.isdir(sys.path[0] + "/.github"):
+        APPLICATION_VERSION += " src"
+    else:
+        APPLICATION_VERSION += " pkg"
 
 
 def pair(value):
