@@ -286,6 +286,11 @@ def run():
                 plugin = entry_point.load()
             except pkg_resources.DistributionNotFound:
                 pass
+            except pkg_resources.VersionConflict as e:
+                print(
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                )
+                print(e)
             else:
                 kernel.add_plugin(plugin)
 
