@@ -865,7 +865,7 @@ class LhystudiosDriver(Driver):
             if step == 0:
                 self.ensure_program_mode()
             else:
-                self.ensure_raster_mode()
+                self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
                         if self.context.nse_raster:
@@ -1253,7 +1253,7 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self, *values):
+    def ensure_raster_mode(self, raster_horizontal=True, *values):
         """
         Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
@@ -1274,7 +1274,7 @@ class LhystudiosDriver(Driver):
             fix_limit=True,
             fix_lows=True,
             fix_speeds=self.context.fix_speeds,
-            raster_horizontal=True,
+            raster_horizontal=raster_horizontal,
         ).speedcode
         try:
             speed_code = bytes(speed_code)
@@ -1408,15 +1408,15 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (set_step if self.is_prop(STATE_Y_FORWARD_TOP) else -set_step)
-        delta = delta + step_amount
+        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.ensure_finished_mode()
             self.move_relative(0, delta)
             self.set_prop(STATE_X_STEPPER_ENABLE)
             self.unset_prop(STATE_Y_STEPPER_ENABLE)
-            self.ensure_raster_mode()
+            self.ensure_raster_mode(raster_horizontal=True)
 
         # We reverse direction and step.
         if self.is_prop(STATE_X_FORWARD_LEFT):
@@ -1444,15 +1444,15 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (set_step if self.is_prop(STATE_X_FORWARD_LEFT) else -set_step)
-        delta = delta + step_amount
+        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.ensure_finished_mode()
             self.move_relative(delta, 0)
             self.set_prop(STATE_Y_STEPPER_ENABLE)
             self.unset_prop(STATE_X_STEPPER_ENABLE)
-            self.ensure_raster_mode()
+            self.ensure_raster_mode(raster_horizontal=False)
 
         # We reverse direction and step.
         if self.is_prop(STATE_Y_FORWARD_TOP):
