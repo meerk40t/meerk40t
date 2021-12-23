@@ -726,6 +726,8 @@ class LhystudiosDriver(Driver):
         context.setting(bool, "autolock", True)
 
         context.setting(str, "board", "M2")
+        context.setting(bool, "twitchless", False)
+        context.setting(bool, "nse_raster", False)
         context.setting(bool, "fix_speeds", False)
 
         self.CODE_RIGHT = b"B"
@@ -854,38 +856,44 @@ class LhystudiosDriver(Driver):
                 self.ensure_raster_mode()
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
-                        if self.is_prop(STATE_Y_FORWARD_TOP):
-                            if abs(dy) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy + step)
-                                self.set_prop(STATE_X_STEPPER_ENABLE)
-                                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
+                        if self.context.nse_raster:
+                            self.h_switch(step)
                         else:
-                            if abs(dy) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy - step)
-                                self.set_prop(STATE_X_STEPPER_ENABLE)
-                                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
-                        self.h_switch()
+                            if self.is_prop(STATE_Y_FORWARD_TOP):
+                                if abs(dy) > step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(0, dy + step)
+                                    self.set_prop(STATE_X_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.ensure_raster_mode()
+                            else:
+                                if abs(dy) > step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(0, dy - step)
+                                    self.set_prop(STATE_X_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.ensure_raster_mode()
+                            self.h_switch_g()
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
-                        if self.is_prop(STATE_X_FORWARD_LEFT):
-                            if abs(dx) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx + step, 0)
-                                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
+                        if self.context.nse_raster:
+                            self.v_switch()
                         else:
-                            if abs(dx) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx - step, 0)
-                                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
-                        self.v_switch()
+                            if self.is_prop(STATE_X_FORWARD_LEFT):
+                                if abs(dx) > step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(dx + step, 0)
+                                    self.set_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_X_STEPPER_ENABLE)
+                                    self.ensure_raster_mode()
+                            else:
+                                if abs(dx) > step:
+                                    self.ensure_finished_mode()
+                                    self.move_relative(dx - step, 0)
+                                    self.set_prop(STATE_Y_STEPPER_ENABLE)
+                                    self.unset_prop(STATE_X_STEPPER_ENABLE)
+                                    self.ensure_raster_mode()
+                            self.v_switch_g()
             self.goto_octent_abs(x, y, on & 1)
             if self.hold():
                 return True
@@ -1226,7 +1234,7 @@ class LhystudiosDriver(Driver):
                 acceleration=self.settings.implicit_accel,
                 fix_limit=True,
                 fix_lows=True,
-                suffix_c=True,
+                suffix_c=self.context.twitchless,
                 fix_speeds=self.context.fix_speeds,
                 raster_horizontal=True,
             ).speedcode
@@ -1302,7 +1310,7 @@ class LhystudiosDriver(Driver):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=True,
+            suffix_c=self.context.twitchless,
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
