@@ -1342,8 +1342,8 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (set_step if self.is_prop(STATE_Y_FORWARD_TOP) else -set_step)
-        delta = delta + step_amount
+        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        delta = delta - step_amount
 
         self.data_output(b"N")
         if delta != 0:
@@ -1352,9 +1352,10 @@ class LhystudiosDriver(Driver):
             else:
                 self.data_output(self.CODE_BOTTOM)
             self.data_output(lhymicro_distance(abs(delta)))
+            self.current_y += delta
         self.data_output(b"SE")
+        self.current_y += step_amount
         self.toggle_prop(STATE_X_FORWARD_LEFT)
-        self.current_y += delta
         self.laser = False
         self.step_index += 1
 
@@ -1375,8 +1376,8 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (set_step if self.is_prop(STATE_X_FORWARD_LEFT) else -set_step)
-        delta = delta + step_amount
+        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        delta = delta - step_amount
 
         self.data_output(b"N")
         if delta != 0:
@@ -1385,9 +1386,10 @@ class LhystudiosDriver(Driver):
             else:
                 self.data_output(self.CODE_RIGHT)
             self.data_output(lhymicro_distance(abs(delta)))
+            self.current_x += delta
         self.data_output(b"SE")
+        self.current_x += step_amount
         self.toggle_prop(STATE_Y_FORWARD_TOP)
-        self.current_x += delta
         self.laser = False
         self.step_index += 1
 
