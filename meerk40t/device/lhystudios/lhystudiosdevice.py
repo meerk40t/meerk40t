@@ -725,6 +725,7 @@ class LhystudiosDriver(Driver):
         context.setting(str, "board", "M2")
         context.setting(bool, "twitchless", False)
         context.setting(bool, "nse_raster", False)
+        context.setting(bool, "nse_stepraster", False)
         context.setting(bool, "fix_speeds", False)
 
         self.CODE_RIGHT = b"B"
@@ -1188,7 +1189,7 @@ class LhystudiosDriver(Driver):
         self.step_index = 0
         self.step = self.settings.raster_step
         self.step_value_set = 0
-        if self.context.nse_raster:
+        if self.context.nse_raster and not self.context.nse_stepraster:
             return 0
         self.step_value_set = self.step
         return self.step_value_set
