@@ -566,6 +566,8 @@ distance_lookup = [
 
 
 def lhymicro_distance(v):
+    if v < 0:
+        raise ValueError("Cannot permit negative values.")
     dist = b""
     if v >= 255:
         zs = int(v / 255)
@@ -1349,7 +1351,7 @@ class LhystudiosDriver(Driver):
                 self.data_output(self.CODE_TOP)
             else:
                 self.data_output(self.CODE_BOTTOM)
-            self.data_output(lhymicro_distance(delta))
+            self.data_output(lhymicro_distance(abs(delta)))
         self.data_output(b"SE")
         self.toggle_prop(STATE_X_FORWARD_LEFT)
         self.current_y += delta
@@ -1382,7 +1384,7 @@ class LhystudiosDriver(Driver):
                 self.data_output(self.CODE_LEFT)
             else:
                 self.data_output(self.CODE_RIGHT)
-            self.data_output(lhymicro_distance(delta))
+            self.data_output(lhymicro_distance(abs(delta)))
         self.data_output(b"SE")
         self.toggle_prop(STATE_Y_FORWARD_TOP)
         self.current_x += delta
