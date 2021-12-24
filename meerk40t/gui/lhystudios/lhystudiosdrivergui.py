@@ -28,6 +28,12 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
+        self.checkbox_twitchless = wx.CheckBox(
+            self, wx.ID_ANY, _("Twitchless Vector")
+        )
+        self.checkbox_alternative_raster = wx.CheckBox(
+            self, wx.ID_ANY, _("Alt Raster Style")
+        )
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
@@ -65,6 +71,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.checkbox_strict)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchless, self.checkbox_twitchless)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
@@ -132,6 +140,10 @@ class LhystudiosConfigurationPanel(wx.Panel):
                 "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
             )
         )
+        self.checkbox_alternative_raster.SetToolTip(
+            _("Forces the device to use an alternative method of rastering using NSE transfers rather than the default G0xx raster mode and directional changes.")
+        )
+        self.checkbox_twitchless.SetToolTip(_("Forces the device to utilize twitchless mode for vector engraving"))
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_y.SetMinSize((80, 23))
@@ -208,13 +220,22 @@ class LhystudiosConfigurationPanel(wx.Panel):
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
+
         sizer_board = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Board Setup:")), wx.HORIZONTAL
         )
-        sizer_board.Add(self.combobox_board, 1, 0, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_board.Add(label_1, 1, 0, 0)
-        sizer_board.Add(self.checkbox_fix_speeds, 0, 0, 0)
+        sizer_board_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_board_2 = wx.BoxSizer(wx.VERTICAL)
+
+        sizer_board_1.Add(self.combobox_board, 1, 0, 0)
+        sizer_board_1.Add(self.checkbox_fix_speeds, 0, 0, 0)
+
+        sizer_board_2.Add(self.checkbox_alternative_raster, 0, 0, 0)
+        sizer_board_2.Add(self.checkbox_twitchless, 0, 0, 0)
+
+        sizer_board.Add(sizer_board_1, 1, 0, 0)
+        sizer_board.Add(sizer_board_2, 1, 0, 0)
+
         sizer_main.Add(sizer_board, 1, wx.EXPAND, 0)
         sizer_17.Add(self.checkbox_flip_x, 0, 0, 0)
         sizer_17.Add(self.checkbox_home_right, 0, 0, 0)
@@ -277,6 +298,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         context.setting(bool, "home_right", False)
         context.setting(bool, "home_bottom", False)
         context.setting(bool, "strict", False)
+        context.setting(bool, "nse_raster", False)
+        context.setting(bool, "twitchless", False)
 
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
@@ -296,6 +319,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_home_right.SetValue(context.home_right)
         self.checkbox_home_bottom.SetValue(context.home_bottom)
         self.checkbox_strict.SetValue(context.strict)
+        self.checkbox_twitchless.SetValue(context.twitchless)
+        self.checkbox_alternative_raster.SetValue(context.nse_raster)
 
         self.spin_home_x.SetValue(context.home_adjust_x)
         self.spin_home_y.SetValue(context.home_adjust_y)
@@ -328,6 +353,12 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
     def on_check_strict(self, event=None):
         self.context.strict = self.checkbox_strict.GetValue()
+
+    def on_check_twitchless(self, event=None):
+        self.context.twitchless = self.checkbox_twitchless.GetValue()
+
+    def on_check_alt_raster(self, event=None):
+        self.context.nse_raster = self.checkbox_alternative_raster.GetValue()
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()

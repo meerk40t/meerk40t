@@ -1,3 +1,4 @@
+import math
 import threading
 import time
 
@@ -104,12 +105,8 @@ def plugin(kernel, lifecycle=None):
         )
         def move_speed(channel, _, speed, dx, dy, data=None, **kwgs):
             spooler, driver, output = data
-            dx = Length(dx).value(
-                ppi=1000.0
-            )
-            dy = Length(dy).value(
-                ppi=1000.0
-            )
+            dx = Length(dx).value(ppi=1000.0)
+            dy = Length(dy).value(ppi=1000.0)
 
             def move_at_speed():
                 yield COMMAND_SET_SPEED, speed
@@ -569,6 +566,8 @@ distance_lookup = [
 
 
 def lhymicro_distance(v):
+    if v < 0:
+        raise ValueError("Cannot permit negative values.")
     dist = b""
     if v >= 255:
         zs = int(v / 255)
@@ -726,6 +725,9 @@ class LhystudiosDriver(Driver):
         context.setting(bool, "autolock", True)
 
         context.setting(str, "board", "M2")
+        context.setting(bool, "twitchless", False)
+        context.setting(bool, "nse_raster", False)
+        context.setting(bool, "nse_stepraster", False)
         context.setting(bool, "fix_speeds", False)
 
         self.CODE_RIGHT = b"B"
@@ -755,6 +757,18 @@ class LhystudiosDriver(Driver):
         self.max_y = self.current_y
         self.min_x = self.current_x
         self.min_y = self.current_y
+
+        # Step amount expected of the current operation
+        self.step = 0
+
+        # Step amount is the current correctly set step amount in the controller.
+        self.step_value_set = 0
+
+        # Step index of the current step taken for unidirectional
+        self.step_index = 0
+
+        # Step total the count for fractional step amounts
+        self.step_total = 0.0
 
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
@@ -851,41 +865,19 @@ class LhystudiosDriver(Driver):
             if step == 0:
                 self.ensure_program_mode()
             else:
-                self.ensure_raster_mode()
+                self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
-                        if self.is_prop(STATE_Y_FORWARD_TOP):
-                            if abs(dy) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy + step)
-                                self.set_prop(STATE_X_STEPPER_ENABLE)
-                                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
+                        if self.context.nse_raster:
+                            self.h_switch(dy)
                         else:
-                            if abs(dy) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(0, dy - step)
-                                self.set_prop(STATE_X_STEPPER_ENABLE)
-                                self.unset_prop(STATE_Y_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
-                        self.h_switch()
+                            self.h_switch_g(dy)
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
-                        if self.is_prop(STATE_X_FORWARD_LEFT):
-                            if abs(dx) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx + step, 0)
-                                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
+                        if self.context.nse_raster:
+                            self.v_switch(dx)
                         else:
-                            if abs(dx) > step:
-                                self.ensure_finished_mode()
-                                self.move_relative(dx - step, 0)
-                                self.set_prop(STATE_Y_STEPPER_ENABLE)
-                                self.unset_prop(STATE_X_STEPPER_ENABLE)
-                                self.ensure_raster_mode()
-                        self.v_switch()
+                            self.v_switch_g(dx)
             self.goto_octent_abs(x, y, on & 1)
             if self.hold():
                 return True
@@ -1190,6 +1182,20 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
+    def instance_step(self):
+        """
+        Sets and returns the step values, setting step to the raster_step
+
+        @return:
+        """
+        self.step_index = 0
+        self.step = self.settings.raster_step
+        self.step_value_set = 0
+        if self.context.nse_raster and not self.context.nse_stepraster:
+            return 0
+        self.step_value_set = self.step
+        return self.step_value_set
+
     def mode_shift_on_the_fly(self, dx=0, dy=0):
         """
         Mode shift on the fly changes the current modes while in programmed or raster mode
@@ -1208,18 +1214,16 @@ class LhystudiosDriver(Driver):
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.settings.raster_step,
+            self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
+            suffix_c=True if self.context.twitchless and not self.step else None,
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
+        speed_code = bytes(speed_code, "utf8")
         self.data_output(speed_code)
         if dx != 0:
             self.goto_x(dx)
@@ -1229,10 +1233,10 @@ class LhystudiosDriver(Driver):
         self.set_requested_directions()
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
-        if self.settings.raster_step == 0:
-            self.state = DRIVER_STATE_PROGRAM
-        else:
+        if self.step:
             self.state = DRIVER_STATE_RASTER
+        else:
+            self.state = DRIVER_STATE_PROGRAM
 
     def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
@@ -1249,7 +1253,14 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self, *values):
+    def ensure_raster_mode(self, raster_horizontal=True, *values):
+        """
+        Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
+        vertical rastering, usually at a high speed. Accel twitches are required for this mode.
+
+        @param values:
+        @return:
+        """
         if self.state == DRIVER_STATE_RASTER:
             return
         self.ensure_finished_mode()
@@ -1257,13 +1268,13 @@ class LhystudiosDriver(Driver):
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.settings.raster_step,
+            self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=self.context.fix_speeds,
-            raster_horizontal=True,
+            raster_horizontal=raster_horizontal,
         ).speedcode
         try:
             speed_code = bytes(speed_code)
@@ -1278,6 +1289,12 @@ class LhystudiosDriver(Driver):
         self.context.signal("driver;mode", self.state)
 
     def ensure_program_mode(self, *values):
+        """
+        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
+
+        @param values:
+        @return:
+        """
         if self.state == DRIVER_STATE_PROGRAM:
             return
         self.ensure_finished_mode()
@@ -1285,11 +1302,12 @@ class LhystudiosDriver(Driver):
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.settings.raster_step,
+            self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
+            suffix_c=True if self.context.twitchless else None,
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
@@ -1305,31 +1323,147 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_PROGRAM
         self.context.signal("driver;mode", self.state)
 
-    def h_switch(self):
+    def h_switch(self, dy: float):
+        """
+        NSE h_switches replace the mere reversal of direction with N<v><distance>SE
+
+        If a G-value is set we should subtract that from the step for our movement.
+
+        @param dy: The amount along the directional axis we should move.
+
+        @return:
+        """
+        set_step = self.step_value_set
+        if isinstance(set_step, tuple):
+            set_step = set_step[self.step_index % len(set_step)]
+
+        # correct for fractional stepping
+        self.step_total += dy
+        delta = math.trunc(self.step_total)
+        self.step_total -= delta
+
+        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        delta = delta - step_amount
+
+        self.data_output(b"N")
+        if delta != 0:
+            if self.is_prop(STATE_Y_FORWARD_TOP):
+                self.data_output(self.CODE_TOP)
+            else:
+                self.data_output(self.CODE_BOTTOM)
+            self.data_output(lhymicro_distance(abs(delta)))
+            self.current_y += delta
+        self.data_output(b"SE")
+        self.current_y += step_amount
+        self.toggle_prop(STATE_X_FORWARD_LEFT)
+        self.laser = False
+        self.step_index += 1
+
+    def v_switch(self, dx: float):
+        """
+        NSE v_switches replace the mere reversal of direction with N<h><distance>SE
+
+        @param dx: The amount along the directional axis we should move.
+
+        @return:
+        """
+        set_step = self.step_value_set
+        if isinstance(set_step, tuple):
+            set_step = set_step[self.step_index % len(set_step)]
+
+        # correct for fractional stepping
+        self.step_total += dx
+        delta = math.trunc(self.step_total)
+        self.step_total -= delta
+
+        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        delta = delta - step_amount
+
+        self.data_output(b"N")
+        if delta != 0:
+            if self.is_prop(STATE_X_FORWARD_LEFT):
+                self.data_output(self.CODE_LEFT)
+            else:
+                self.data_output(self.CODE_RIGHT)
+            self.data_output(lhymicro_distance(abs(delta)))
+            self.current_x += delta
+        self.data_output(b"SE")
+        self.current_x += step_amount
+        self.toggle_prop(STATE_Y_FORWARD_TOP)
+        self.laser = False
+        self.step_index += 1
+
+    def h_switch_g(self, dy: float):
+        """
+        Horizontal switch with a Gvalue set. The board will automatically step according to the step_value_set.
+
+        @return:
+        """
+        set_step = self.step_value_set
+        if isinstance(set_step, tuple):
+            set_step = set_step[self.step_index % len(set_step)]
+
+        # correct for fractional stepping
+        self.step_total += dy
+        delta = math.trunc(self.step_total)
+        self.step_total -= delta
+
+        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        delta = delta - step_amount
+        if delta != 0:
+            # Movement exceeds the standard raster step amount. Rapid relocate.
+            self.ensure_finished_mode()
+            self.move_relative(0, delta)
+            self.set_prop(STATE_X_STEPPER_ENABLE)
+            self.unset_prop(STATE_Y_STEPPER_ENABLE)
+            self.ensure_raster_mode(raster_horizontal=True)
+
+        # We reverse direction and step.
         if self.is_prop(STATE_X_FORWARD_LEFT):
             self.data_output(self.CODE_RIGHT)
             self.unset_prop(STATE_X_FORWARD_LEFT)
         else:
             self.data_output(self.CODE_LEFT)
             self.set_prop(STATE_X_FORWARD_LEFT)
-        if self.is_prop(STATE_Y_FORWARD_TOP):
-            self.current_y -= self.settings.raster_step
-        else:
-            self.current_y += self.settings.raster_step
+        self.current_y += step_amount
         self.laser = False
+        self.step_index += 1
 
-    def v_switch(self):
+    def v_switch_g(self, dx: float):
+        """
+        Vertical switch with a Gvalue set. The board will automatically step according to the step_value_set.
+
+        @return:
+        """
+        set_step = self.step_value_set
+        if isinstance(set_step, tuple):
+            set_step = set_step[self.step_index % len(set_step)]
+
+        # correct for fractional stepping
+        self.step_total += dx
+        delta = math.trunc(self.step_total)
+        self.step_total -= delta
+
+        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        delta = delta - step_amount
+        if delta != 0:
+            # Movement exceeds the standard raster step amount. Rapid relocate.
+            self.ensure_finished_mode()
+            self.move_relative(delta, 0)
+            self.set_prop(STATE_Y_STEPPER_ENABLE)
+            self.unset_prop(STATE_X_STEPPER_ENABLE)
+            self.ensure_raster_mode(raster_horizontal=False)
+
+        # We reverse direction and step.
         if self.is_prop(STATE_Y_FORWARD_TOP):
             self.data_output(self.CODE_BOTTOM)
             self.unset_prop(STATE_Y_FORWARD_TOP)
         else:
             self.data_output(self.CODE_TOP)
             self.set_prop(STATE_Y_FORWARD_TOP)
-        if self.is_prop(STATE_X_FORWARD_LEFT):
-            self.current_x -= self.settings.raster_step
-        else:
-            self.current_x += self.settings.raster_step
+        self.current_x += step_amount
         self.laser = False
+        self.step_index += 1
 
     def calc_home_position(self):
         x = 0

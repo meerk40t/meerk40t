@@ -98,9 +98,22 @@ class LaserSettings:
         for q in dir(obj):
             if q.startswith("_") or q.startswith("implicit"):
                 continue
+            obj_type = type(obj)
+            if hasattr(obj_type, q) and isinstance(getattr(obj_type, q), property):
+                # Do not set property values
+                continue
+
             value = getattr(obj, q)
             if isinstance(value, (int, float, bool, str)):
                 setattr(self, q, value)
+
+    @property
+    def horizontal_raster(self):
+        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
+
+    @property
+    def vertical_raster(self):
+        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
 
     @property
     def implicit_accel(self):

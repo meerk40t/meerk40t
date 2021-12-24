@@ -14,7 +14,7 @@ class LaserSpeed:
     All values relate to a value in the counter to count off the number of oscillations within the
     (typically 22.1184) Mhz crystal. The max value here is 65535, with the addition of a diagonal delay.
 
-    For the M2 board, the original Chinese Software gave a slope of 12120. However experiments with the actual
+    For the M2 board, the original Chinese Software gave a slope of 12120. However, experiments with the actual
     physical speed put this value at 11142, which properly reflects that all speeds tend to be at 91.98% of the
     requested speed.
 
