@@ -795,7 +795,7 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_autolock.SetValue(self.context.autolock)
         self.check_plot_shift.SetValue(self.context.plot_shift)
         self.check_strict.SetValue(self.context.strict)
-        self.check_alternative_raster.SetValue(self.context.alt_raster)
+        self.check_alternative_raster.SetValue(self.context.nse_raster)
         self.check_twitchless.SetValue(self.context.twitchless)
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
         self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
@@ -836,7 +836,7 @@ class ConfigurationSetupPanel(wx.Panel):
             pass
 
     def on_check_alt_raster(self, event):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.alt_raster = self.check_alternative_raster.GetValue()
+        self.context.nse_raster = self.check_alternative_raster.GetValue()
 
     def on_check_twitchless(self, event):  # wxGlade: ConfigurationSetupPanel.<event_handler>
         self.context.twitchless = self.check_twitchless.GetValue()
