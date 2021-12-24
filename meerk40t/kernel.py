@@ -2462,7 +2462,7 @@ class Kernel:
     # SCHEDULER
     # ==========
 
-    def run(self) -> None:
+    def run(self, *args) -> None:
         """
         Scheduler main loop.
 
