@@ -207,6 +207,11 @@ class LihuiyuDevice(Service):
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
+        self.setting(bool, "rapid_override", False)
+        self.setting(bool, "rapid_override_speed_x", 50.0)
+        self.setting(bool, "rapid_override_speed_y", 50.0)
+        self.setting(bool, "plot_shift", False)
+
         self.setting(bool, "strict", False)
         self.setting(bool, "swap_xy", False)
         self.setting(bool, "flip_x", False)
@@ -496,18 +501,18 @@ class LihuiyuDevice(Service):
             if rapid_x is not None:
                 if rapid_y is None:
                     rapid_y = rapid_x
-                self.driver.rapid_override = True
-                self.driver.rapid_override_speed_x = rapid_x
-                self.driver.rapid_override_speed_y = rapid_y
+                self.rapid_override = True
+                self.rapid_override_speed_x = rapid_x
+                self.rapid_override_speed_y = rapid_y
                 channel(
                     _("Rapid Limit: %f, %f")
                     % (
-                        self.driver.rapid_override_speed_x,
-                        self.driver.rapid_override_speed_y,
+                        self.rapid_override_speed_x,
+                        self.rapid_override_speed_y,
                     )
                 )
             else:
-                self.driver.rapid_override = False
+                self.rapid_override = False
                 channel(_("Rapid Limit Off"))
 
         @self.console_argument("filename", type=str)
@@ -751,7 +756,6 @@ class LhystudiosDriver:
         self.current_x = 0
         self.current_y = 0
 
-        context.setting(bool, "plot_shift", False)
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = context.plot_shift
         self.plot = None
@@ -760,16 +764,9 @@ class LhystudiosDriver:
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        self.root_context.setting(bool, "opt_rapid_between", True)
-        self.root_context.setting(int, "opt_jog_mode", 0)
-        self.root_context.setting(int, "opt_jog_minimum", 127)
+
         context._quit = False
 
-        self.rapid = self.root_context.opt_rapid_between
-        self.jog = self.root_context.opt_jog_mode
-        self.rapid_override = False
-        self.rapid_override_speed_x = 50.0
-        self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
         self.last_fetch = None
@@ -1097,19 +1094,22 @@ class LhystudiosDriver:
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == DRIVER_STATE_RAPID:
-            if self.rapid_override and (dx != 0 or dy != 0):
+            if self.context.rapid_override and (dx != 0 or dy != 0):
                 # Rapid movement override. Should make programmed jogs.
                 self.set_acceleration(None)
                 self.set_step(0)
                 if dx != 0:
                     self.ensure_rapid_mode()
-                    self.set_speed(self.rapid_override_speed_x)
+                    self.set_speed(self.context.rapid_override_speed_x)
                     self.ensure_program_mode()
                     self.goto_octent(dx, 0, cut)
                 if dy != 0:
-                    if self.rapid_override_speed_x != self.rapid_override_speed_y:
+                    if (
+                        self.context.rapid_override_speed_x
+                        != self.context.rapid_override_speed_y
+                    ):
                         self.ensure_rapid_mode()
-                        self.set_speed(self.rapid_override_speed_y)
+                        self.set_speed(self.context.rapid_override_speed_y)
                         self.ensure_program_mode()
                     self.goto_octent(0, dy, cut)
                 self.ensure_rapid_mode()
@@ -1735,8 +1735,6 @@ class LhystudiosDriver:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
-            self.rapid = self.root_context.opt_rapid_between
-            self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
