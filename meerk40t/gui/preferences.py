@@ -352,9 +352,8 @@ class Preferences(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        from sys import platform
-
-        if platform != "darwin":
+        import platform
+        if platform.system() != "Darwin":
             kernel.register(
                 "button/config/Preferences",
                 {
