@@ -234,6 +234,7 @@ class LihuiyuDevice(Service):
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(str, "serial", None)
+        self.setting(bool, "serial_enable", False)
 
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")

@@ -4,6 +4,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -25,51 +26,53 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_usb_settings.Add(sizer_usb_restrict, 0, 0, 0)
 
-        sizer_33 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_usb_restrict.Add(sizer_33, 1, wx.EXPAND, 0)
+        sizer_criteria = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_usb_restrict.Add(sizer_criteria, 1, wx.EXPAND, 0)
 
-        sizer_12 = wx.StaticBoxSizer(
+        sizer_chip_version = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "CH341 Version"), wx.HORIZONTAL
         )
-        sizer_33.Add(sizer_12, 0, wx.EXPAND, 0)
+        sizer_criteria.Add(sizer_chip_version, 0, wx.EXPAND, 0)
 
         self.text_device_version = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.text_device_version.SetMinSize((55, 23))
-        sizer_12.Add(self.text_device_version, 0, 0, 0)
+        sizer_chip_version.Add(self.text_device_version, 0, 0, 0)
 
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
         self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
-            "-1 match anything. 0-255 match exactly that value."
+            "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
         )
-        sizer_12.Add(self.spin_device_version, 0, 0, 0)
+        sizer_chip_version.Add(self.spin_device_version, 0, 0, 0)
 
-        sizer_6 = wx.StaticBoxSizer(
+        sizer_device_index = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Device Index:"), wx.HORIZONTAL
         )
-        sizer_33.Add(sizer_6, 0, wx.EXPAND, 0)
+        sizer_criteria.Add(sizer_device_index, 0, wx.EXPAND, 0)
 
         self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_device_index.SetMinSize((55, 23))
-        sizer_6.Add(self.text_device_index, 0, 0, 0)
+        sizer_device_index.Add(self.text_device_index, 0, 0, 0)
 
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
-            "-1 match anything. 0-5 match exactly that value."
+            "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
         )
-        sizer_6.Add(self.spin_device_index, 0, 0, 0)
+        sizer_device_index.Add(self.spin_device_index, 0, 0, 0)
 
         sizer_serial = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Serial Number"), wx.HORIZONTAL
         )
         sizer_usb_restrict.Add(sizer_serial, 0, wx.EXPAND, 0)
 
-        self.checkbox_2 = wx.CheckBox(self, wx.ID_ANY, "Serial Number")
-        self.checkbox_2.SetToolTip("Require a serial number match for this board")
-        sizer_serial.Add(self.checkbox_2, 0, 0, 0)
+        self.check_serial_number = wx.CheckBox(self, wx.ID_ANY, "Serial Number")
+        self.check_serial_number.SetToolTip(
+            "Require a serial number match for this board"
+        )
+        sizer_serial.Add(self.check_serial_number, 0, 0, 0)
 
         self.text_serial_number = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_serial_number.SetMinSize((150, 23))
@@ -118,6 +121,10 @@ class ConfigurationUsb(wx.Panel):
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
         self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_index, self.spin_device_index)
         self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_serial_number, self.check_serial_number
+        )
+        self.Bind(wx.EVT_TEXT, self.on_text_serial_number, self.text_serial_number)
+        self.Bind(
             wx.EVT_CHECKBOX,
             self.on_check_limit_packet_buffer,
             self.checkbox_limit_buffer,
@@ -134,6 +141,9 @@ class ConfigurationUsb(wx.Panel):
             self.spin_packet_buffer_max,
         )
         # end wxGlade
+        self.spin_device_index.SetValue(self.context.usb_index)
+        self.spin_device_version.SetValue(self.context.usb_version)
+
 
     def on_check_limit_packet_buffer(
         self, event=None
@@ -144,23 +154,42 @@ class ConfigurationUsb(wx.Panel):
         self.context.buffer_max = self.spin_packet_buffer_max.GetValue()
 
     def pane_show(self):
-        self.context.listen("pipe;buffer", self.on_buffer_update)
+        # self.context.listen("pipe;buffer", self.on_buffer_update)
+        pass
 
     def pane_hide(self):
-        self.context.unlisten("pipe;buffer", self.on_buffer_update)
+        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
+        pass
 
+    @signal_listener("pipe;buffer")
     def on_buffer_update(self, origin, value, *args):
         self.text_buffer_length.SetValue(str(value))
 
-    def spin_on_device_version(
+    @signal_listener("pipe;index")
+    def on_update_pipe_index(self, origin, value):
+        if origin != self.context.path:
+            return
+        self.text_device_index.SetValue(str(value))
+
+    @signal_listener("pipe;chipv")
+    def on_update_pipe_chipv(self, origin, value):
+        if origin != self.context.path:
+            return
+        self.text_device_version.SetValue(str(value))
+
+    def spin_on_device_index(self, event=None):
+        self.context.usb_index = int(self.spin_device_index.GetValue())
+
+    def spin_on_device_version(self, event=None):
+        self.context.usb_version = int(self.spin_device_version.GetValue())
+
+    def on_check_serial_number(
         self, event
     ):  # wxGlade: ConfigurationUsb.<event_handler>
-        print("Event handler 'spin_on_device_version' not implemented!")
-        event.Skip()
+        self.context.serial_enable = self.check_serial_number.GetValue()
 
-    def spin_on_device_index(self, event):  # wxGlade: ConfigurationUsb.<event_handler>
-        print("Event handler 'spin_on_device_index' not implemented!")
-        event.Skip()
+    def on_text_serial_number(self, event):  # wxGlade: ConfigurationUsb.<event_handler>
+        self.context.serial = self.text_serial_number.GetValue()
 
 
 class ConfigurationTcp(wx.Panel):
@@ -179,29 +208,31 @@ class ConfigurationTcp(wx.Panel):
         )
         sizer_13.Add(sizer_21, 0, 0, 0)
 
-        self.text_device = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_device.SetMinSize((150, 23))
-        self.text_device.SetToolTip("IP/Host if the server computer")
-        sizer_21.Add(self.text_device, 0, 0, 0)
+        self.text_address = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_address.SetMinSize((150, 23))
+        self.text_address.SetToolTip("IP/Host if the server computer")
+        sizer_21.Add(self.text_address, 0, 0, 0)
 
         sizer_port = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Port"), wx.VERTICAL
         )
         sizer_13.Add(sizer_port, 0, 0, 0)
 
-        self.text_location = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_location.SetToolTip("Port for tcp connection on the server computer")
-        sizer_port.Add(self.text_location, 0, wx.EXPAND, 0)
+        self.text_port = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_port.SetToolTip("Port for tcp connection on the server computer")
+        sizer_port.Add(self.text_port, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_13)
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_address, self.text_device)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_address, self.text_device)
-        self.Bind(wx.EVT_TEXT, self.on_text_port, self.text_location)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_port, self.text_location)
+        self.Bind(wx.EVT_TEXT, self.on_text_address, self.text_address)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_address, self.text_address)
+        self.Bind(wx.EVT_TEXT, self.on_text_port, self.text_port)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_port, self.text_port)
         # end wxGlade
+        self.text_port.SetValue(str(self.context.port))
+        self.text_address.SetValue(self.context.address)
 
     def pane_show(self):
         pass
@@ -210,12 +241,10 @@ class ConfigurationTcp(wx.Panel):
         pass
 
     def on_text_address(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
-        print("Event handler 'on_text_address' not implemented!")
-        event.Skip()
+        self.context.address = self.text_address.GetValue()
 
     def on_text_port(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
-        print("Event handler 'on_text_port' not implemented!")
-        event.Skip()
+        self.context.port = self.text_port.GetValue()
 
 
 class ConfigurationLaserPanel(wx.Panel):
@@ -380,29 +409,39 @@ class ConfigurationLaserPanel(wx.Panel):
             y = int(self.context.device.bedheight)
         return x, y
 
-    def spin_on_bedwidth(
-        self, event
-    ):  # wxGlade: ConfigurationLaserPanel.<event_handler>
-        print("Event handler 'spin_on_bedwidth' not implemented!")
-        event.Skip()
+    def spin_on_bedwidth(self, event=None):
+        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
+        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
+        self.context.signal(
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
+        )
 
-    def spin_on_bedheight(
-        self, event
-    ):  # wxGlade: ConfigurationLaserPanel.<event_handler>
-        print("Event handler 'spin_on_bedheight' not implemented!")
-        event.Skip()
+    def spin_on_bedheight(self, event=None):
+        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
+        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
+        self.context.signal(
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
+        )
 
-    def on_text_x_scale(
-        self, event
-    ):  # wxGlade: ConfigurationLaserPanel.<event_handler>
-        print("Event handler 'on_text_x_scale' not implemented!")
-        event.Skip()
+    def on_text_x_scale(self, event=None):
+        try:
+            self.context.device.scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.scale_y = float(self.text_scale_y.GetValue())
+            self.context.signal(
+                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
+            )
+        except ValueError:
+            pass
 
-    def on_text_y_scale(
-        self, event
-    ):  # wxGlade: ConfigurationLaserPanel.<event_handler>
-        print("Event handler 'on_text_y_scale' not implemented!")
-        event.Skip()
+    def on_text_y_scale(self, event=None):
+        try:
+            self.context.device.scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.scale_y = float(self.text_scale_y.GetValue())
+            self.context.signal(
+                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
+            )
+        except ValueError:
+            pass
 
 
 class ConfigurationInterfacePanel(wx.Panel):
@@ -492,18 +531,18 @@ class ConfigurationInterfacePanel(wx.Panel):
         sizer_interface_radio = wx.BoxSizer(wx.HORIZONTAL)
         sizer_interface.Add(sizer_interface_radio, 0, wx.EXPAND, 0)
 
-        self.radio_btn_1 = wx.RadioButton(self, wx.ID_ANY, "USB", style=wx.RB_GROUP)
-        self.radio_btn_1.SetValue(1)
-        sizer_interface_radio.Add(self.radio_btn_1, 1, 0, 0)
+        self.radio_usb = wx.RadioButton(self, wx.ID_ANY, "USB", style=wx.RB_GROUP)
+        self.radio_usb.SetValue(1)
+        sizer_interface_radio.Add(self.radio_usb, 1, 0, 0)
 
-        self.radio_btn_3 = wx.RadioButton(self, wx.ID_ANY, "Networked")
-        sizer_interface_radio.Add(self.radio_btn_3, 4, 0, 0)
+        self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, "Networked")
+        sizer_interface_radio.Add(self.radio_tcp, 4, 0, 0)
 
-        self.radio_btn_2 = wx.RadioButton(self, wx.ID_ANY, "Mock")
-        self.radio_btn_2.SetToolTip(
+        self.radio_mock = wx.RadioButton(self, wx.ID_ANY, "Mock")
+        self.radio_mock.SetToolTip(
             "DEBUG. Without a K40 connected continue to process things as if there was one."
         )
-        sizer_interface_radio.Add(self.radio_btn_2, 1, 0, 0)
+        sizer_interface_radio.Add(self.radio_mock, 1, 0, 0)
 
         self.panel_usb_settings = ConfigurationUsb(
             self, wx.ID_ANY, context=self.context
@@ -529,16 +568,22 @@ class ConfigurationInterfacePanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_btn_1)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_btn_3)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_btn_2)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_usb)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
+        self.text_device_label.SetValue(self.context.label)
         self.checkbox_swap_xy.SetValue(self.context.swap_xy)
         self.checkbox_flip_x.SetValue(self.context.flip_x)
         self.checkbox_flip_y.SetValue(self.context.flip_y)
         self.checkbox_home_right.SetValue(self.context.home_right)
         self.checkbox_home_bottom.SetValue(self.context.home_bottom)
         self.combobox_board.SetValue(self.context.board)
+        self.radio_usb.SetValue(True)
+        if self.context.networked:
+            self.radio_tcp.SetValue(True)
+        if self.context.mock:
+            self.radio_mock.SetValue(True)
 
     def pane_show(self):
         self.ConfigurationLaserPanel.pane_show()
@@ -574,14 +619,23 @@ class ConfigurationInterfacePanel(wx.Panel):
     def on_device_label(
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
-        print("Event handler 'on_device_label' not implemented!")
-        event.Skip()
+        self.context.label = self.text_device_label.GetValue()
 
     def on_radio_interface(
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
-        print("Event handler 'on_radio_interface' not implemented!")
-        event.Skip()
+        if self.radio_usb.GetValue():
+            self.context.networked = False
+            self.context.mock = False
+            self.context(".network_update\n")
+        if self.radio_tcp.GetValue():
+            self.context.networked = False
+            self.context.mock = False
+            self.context(".network_update\n")
+        if self.radio_mock.GetValue():
+            self.context.networked = False
+            self.context.mock = True
+            self.context(".network_update\n")
 
 
 class ConfigurationSetupPanel(wx.Panel):
@@ -849,29 +903,11 @@ class ConfigurationSetupPanel(wx.Panel):
 class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(374, 734, *args, **kwds)
+        self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lhystudios-Configuration"))
-
-        self.context.setting(bool, "fix_speeds", False)
-        self.context.setting(bool, "swap_xy", False)
-        self.context.setting(bool, "flip_x", False)
-        self.context.setting(bool, "flip_y", False)
-        self.context.setting(bool, "home_right", False)
-        self.context.setting(bool, "home_bottom", False)
-        self.context.setting(bool, "strict", False)
-
-        self.context.setting(int, "home_adjust_x", 0)
-        self.context.setting(int, "home_adjust_y", 0)
-        self.context.setting(bool, "autolock", True)
-        self.context.setting(str, "board", "M2")
-        self.context.setting(bool, "buffer_limit", True)
-        self.context.setting(int, "buffer_max", 1500)
-        self.context.setting(bool, "random_ppi", False)
-        self.context.setting(bool, "plot_shift", False)
-        self.context.setting(bool, "raster_accel_table", False)
-        self.context.setting(bool, "vector_accel_table", False)
 
         # self.notebook_main = wx.Notebook(self, wx.ID_ANY)
         self.notebook_main = wx.aui.AuiNotebook(
