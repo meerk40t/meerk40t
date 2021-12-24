@@ -52,8 +52,6 @@ class CameraPanel(wx.Panel, Job):
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        if index is None:
-            index = 0
         self.gui = gui
         self.context = context
         self.index = index
@@ -669,8 +667,15 @@ class CamImageWidget(Widget):
 
 
 class CameraInterface(MWindow):
-    def __init__(self, *args, index=0, **kwds):
-        super().__init__(640, 480, *args, **kwds)
+    def __init__(self, context, path, parent, index=0, **kwds):
+        if isinstance(index,str):
+            try:
+                index=int(index)
+            except ValueError:
+                pass
+        if index is None:
+            index = 0
+        super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
 
         # ==========
@@ -737,7 +742,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window open CameraInterface %d\n" % index)
+            kernel.console("window open -p camera{index} CameraInterface {index}\n".format(index=index))
 
 
 class CameraURIPanel(wx.Panel):

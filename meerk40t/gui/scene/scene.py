@@ -406,8 +406,12 @@ class Scene(Module, Job):
         self.context.unlisten("driver;position", self.on_update_position)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
-        for e in self.context.elements.flat():
-            e.unregister()
+        try:
+            # TODO: This belongs in elements.
+            for e in self.context.elements.flat():
+                e.unregister()
+        except AttributeError:
+            pass
 
     def _init_widget(self, widget, context):
         try:
