@@ -179,7 +179,7 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
-
+        # TODO: if platform.system() != "Darwin" missing from config button definitions.
         self.modify_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,

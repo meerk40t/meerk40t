@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import platform
 import sys
 import traceback
 
@@ -717,7 +718,7 @@ class wxMeerK40t(wx.App, Module):
             del self.locale
         self.locale = wx.Locale(language_index)
         # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or "linux" in sys.platform:
+        if self.locale.IsOk() or platform.system() == "Linux":
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None
@@ -828,12 +829,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
+    error_log = "MeerK40t crash log. Version: %s on %s:%s - %s\n" % (
         APPLICATION_VERSION,
-        sys.platform,
+        platform.system(),
+        platform.machine(),
         wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print("\n")
     print(error_log)
     try:
         import datetime
@@ -852,8 +855,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         except PermissionError:
             from meerk40t.kernel import get_safe_path
 
-            path = get_safe_path(APPLICATION_NAME)
-            with open(path.joinpath(filename), "w") as file:
+            filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
+            with open(filename, "w") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
@@ -861,19 +864,55 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    message = _(
-        """
-    Good news MeerK40t User! MeerK40t encountered an crash!
+    git = False
+    if " " in APPLICATION_VERSION:
+        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        git = exec_type == "git"
 
-    You now have the ability to help meerk40t's development by sending us the log.
+    if git:
+        message = _("Meerk40t has encountered a crash.")
+        ext_msg = _(
+"""It appears that you are running Meerk40t from source managed by Git, and it is therefore
+likely that you are a developer.
 
-    Send the following data to the MeerK40t team?
-    ------
-    """
+To avoid reporting crashes during development, automated submission of this crash has
+been disabled. If this is a crash which is unrelated to any development work that you are
+undertaking, please create a new Github issue indicating the branch you are runing from
+and using the traceback below which can be found in "{filename}".
+
+"""
+        ).format(filename=filename)
+        caption = _("Crash Detected!")
+        style = wx.OK | wx.ICON_WARNING
+    else:
+        message = _(
+"""
+The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+
+The good news is that you can help us fix this bug by anonymously sending us the crash details.
+"""
+        )
+        ext_msg = _(
+"""
+Only the crash details below are sent. No data from your MeerK40t project is sent. No
+personal information is sent either.
+
+Send the following data to the MeerK40t team?
+
+------
+
+"""
+        )
+        caption = _("Crash Detected! Send Log?")
+        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+    ext_msg += error_log
+    dlg = wx.GenericMessageDialog(
+        None,
+        message,
+        caption=caption,
+        style=style,
     )
-    message += error_log
-    answer = wx.MessageBox(
-        message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
-    )
+    dlg.SetExtendedMessage(ext_msg)
+    answer = dlg.ShowModal()
     if answer == wx.YES:
         send_data_to_developers(filename, error_log)

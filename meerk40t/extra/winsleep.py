@@ -1,4 +1,4 @@
-import sys
+import platform
 
 """
 Winsleep is a internal standalone Windows-only plugin that works for sys.platform 'win32'.
@@ -40,7 +40,7 @@ def on_usb_running(origin, value):
 
 
 def plugin(kernel, lifecycle):
-    if sys.platform != "win32":
+    if platform.system() != "Windows":
         # Plugin only matters for MSW platform
         return
     if lifecycle == "boot":

@@ -1,5 +1,7 @@
 import argparse
 import sys
+import os.path
+import platform
 
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
@@ -23,7 +25,14 @@ APPLICATION_NAME = "MeerK40t"
 APPLICATION_VERSION = "0.8.0-beta1"
 
 if not getattr(sys, "frozen", False):
-    APPLICATION_VERSION += " src"
+    # If .git directory does not exist we are running from a package like pypi
+    # Otherwise we are running from source
+    if os.path.isdir(sys.path[0] + "/.git"):
+        APPLICATION_VERSION += " git"
+    elif os.path.isdir(sys.path[0] + "/.github"):
+        APPLICATION_VERSION += " src"
+    else:
+        APPLICATION_VERSION += " pkg"
 
 
 def pair(value):
@@ -203,7 +212,7 @@ def run():
 
     kernel.add_plugin(updater.plugin)
 
-    if sys.platform == "win32":
+    if platform.system() == "Windows":
         # Windows only plugin.
         try:
             from .extra import winsleep
@@ -279,6 +288,11 @@ def run():
                     continue  # Registered plugin suffered import error.
             except pkg_resources.DistributionNotFound:
                 pass
+            except pkg_resources.VersionConflict as e:
+                print(
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                )
+                print(e)
             else:
                 kernel.add_plugin(plugin)
     # TODO: Integrate __print_delegate into execute, batch, and console.

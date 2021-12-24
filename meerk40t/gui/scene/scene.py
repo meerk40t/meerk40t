@@ -760,8 +760,7 @@ class Scene(Module, Job):
         @param cursor:
         @return:
         """
-        from sys import platform
-
+        import platform
         if cursor == "sizing":
             new_cursor = wx.CURSOR_SIZING
         elif cursor in ("size_nw", "size_se"):
@@ -779,7 +778,7 @@ class Scene(Module, Job):
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")
-        if platform == "linux":
+        if platform.system() == "Linux":
             if cursor == "sizing":
                 new_cursor = wx.CURSOR_SIZENWSE
             elif cursor in ("size_nw", "size_se"):

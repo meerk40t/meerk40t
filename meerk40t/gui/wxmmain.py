@@ -48,6 +48,7 @@ ID_MENU_RECENT = wx.NewId()
 ID_MENU_ZOOM_OUT = wx.NewId()
 ID_MENU_ZOOM_IN = wx.NewId()
 ID_MENU_ZOOM_SIZE = wx.NewId()
+ID_MENU_ZOOM_BED = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
 ID_MENU_HIDE_FILLS = wx.NewId()
@@ -107,6 +108,7 @@ ID_BEGINNERS = wx.NewId()
 ID_HOMEPAGE = wx.NewId()
 ID_RELEASES = wx.NewId()
 ID_FACEBOOK = wx.NewId()
+ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
@@ -963,9 +965,9 @@ class MeerK40t(MWindow):
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
-        from sys import platform
+        import platform
 
-        if platform == "darwin":
+        if platform.system() == "Darwin":
             self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
         self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
@@ -977,7 +979,8 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom To &Size"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed"), "")
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -1045,9 +1048,9 @@ class MeerK40t(MWindow):
         # ==========
         # OSX-ONLY WINDOW MENU
         # ==========
-        from sys import platform
+        import platform
 
-        if platform == "darwin":
+        if platform.system() == "Darwin":
             wt_menu = wx.Menu()
             self.main_menubar.Append(wt_menu, _("Window"))
 
@@ -1082,8 +1085,10 @@ class MeerK40t(MWindow):
                 dlg.ShowModal()
                 dlg.Destroy()
 
-        if platform == "darwin":
-            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
+        if platform.system() == "Darwin":
+            self.help_menu.Append(
+                wx.ID_HELP, _("&MeerK40t Help"), ""
+            )
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
             self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
@@ -1100,6 +1105,7 @@ class MeerK40t(MWindow):
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
         self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
         self.help_menu.Append(ID_FACEBOOK, _("&Facebook"), "")
+        self.help_menu.Append(ID_DISCORD, _("&Discord"), "")
         self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
         self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
@@ -1123,7 +1129,8 @@ class MeerK40t(MWindow):
 
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_size, id=ID_MENU_ZOOM_SIZE)
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=ID_MENU_ZOOM_BED)
 
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID
@@ -1249,6 +1256,11 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda e: self.context("webhelp facebook\n"),
             id=ID_FACEBOOK,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp discord\n"),
+            id=ID_DISCORD,
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1731,17 +1743,31 @@ class MeerK40t(MWindow):
         """
         self.context("scene zoom %f\n" % 1.5)
 
-    def on_click_zoom_size(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+    def on_click_zoom_selected(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
-        Zoom size button press.
+        Zoom scene to selected items.
         """
         bbox = self.context.elements.selected_area()
         if bbox is None:
-            self.context("scene focus -10% -10% 110% 110%\n")
+            self.on_click_zoom_bed(event=event)
         else:
+            x_delta = (bbox[2]-bbox[0]) * 0.04
+            y_delta = (bbox[3]-bbox[1]) * 0.04
             self.context(
-                "scene focus %f %f %f %f\n" % (bbox[0], bbox[1], bbox[2], bbox[3])
+                "scene focus %f %f %f %f\n" %
+                (
+                    bbox[0] - x_delta,
+                    bbox[1] - y_delta,
+                    bbox[2] + x_delta,
+                    bbox[3] + y_delta,
+                )
             )
+
+    def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        """
+        Zoom scene to bed size.
+        """
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def toggle_draw_mode(self, bits):
         """

@@ -130,8 +130,7 @@ class AboutPanel(wx.Panel):
 
 class About(MWindow):
     def __init__(self, *args, **kwds):
-        from sys import platform as _platform
-
+        from platform import system as _sys
         super().__init__(
             480,
             360,
@@ -140,7 +139,7 @@ class About(MWindow):
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
-            | (wx.RESIZE_BORDER if _platform != "darwin" else 0),
+            | (wx.RESIZE_BORDER if _sys() != "Darwin" else 0),
             **kwds
         )
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)

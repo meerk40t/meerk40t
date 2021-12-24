@@ -33,6 +33,7 @@ LIFECYCLE_KERNEL_PRESTART = 300
 LIFECYCLE_KERNEL_START = 301
 LIFECYCLE_KERNEL_POSTSTART = 302
 LIFECYCLE_KERNEL_READY = 303
+LIFECYCLE_KERNEL_FINISHED = 304
 LIFECYCLE_KERNEL_PREMAIN = 400
 LIFECYCLE_KERNEL_MAINLOOP = 401
 LIFECYCLE_KERNEL_PRESHUTDOWN = 900
@@ -68,6 +69,8 @@ def kernel_lifecycle_name(lifecycle):
         return "poststart"
     if lifecycle == LIFECYCLE_KERNEL_READY:
         return "ready"
+    if lifecycel == LIFECYCLE_KERNEL_FINISHED:
+        return "finished"
     if lifecycle == LIFECYCLE_KERNEL_PREMAIN:
         return "premain"
     if lifecycle == LIFECYCLE_KERNEL_MAINLOOP:
@@ -128,6 +131,13 @@ class Module:
         self.registered_path = registered_path
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}")'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+        )
+
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
         same context."""
@@ -169,7 +179,7 @@ class Context:
         self.console_argument = console_argument
         self.console_option = console_option
 
-    def __str__(self):
+    def __repr__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
@@ -489,6 +499,7 @@ class Context:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -502,7 +513,11 @@ class Context:
         The result function will be called with any returned result func.
         """
         return self._kernel.threaded(
-            func, thread_name=thread_name, result=result, daemon=daemon
+            func,
+            *args,
+            thread_name=thread_name,
+            result=result,
+            daemon=daemon,
         )
 
     # ==========
@@ -831,7 +846,7 @@ class Kernel:
         self._dirty_paths = []
         self._lookup_lock = Lock()
 
-        # The translation object to be overridden by any valid transition functions
+        # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
@@ -2137,9 +2152,10 @@ class Kernel:
     def register(self, path: str, obj: Any) -> None:
         """
         Register an element at a given subpath.
+        If this Kernel is not root, then it is registered relative to this location.
 
-        :param path:
-        :param obj:
+        :param path: a "/" separated hierarchical index to the object
+        :param obj: object to be registered
         :return:
         """
         self._registered[path] = obj
@@ -2360,6 +2376,7 @@ class Kernel:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -2375,7 +2392,7 @@ class Kernel:
 
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
-        :param result: Final runs after the thread is deleted.
+        :param result: Runs in the thread after func terminates but before the thread itself terminates.
         :param daemon: set this thread as daemon
         :return: The thread object created.
         """
@@ -2400,7 +2417,7 @@ class Kernel:
             channel(_("Thread: %s, Set" % thread_name))
             try:
                 channel(_("Thread: %s, Start" % thread_name))
-                func_result = func()
+                func_result = func(*args)
                 channel(_("Thread: %s, End " % thread_name))
             except Exception:
                 channel(_("Thread: %s, Exception-End" % thread_name))
@@ -2663,8 +2680,8 @@ class Kernel:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
-                            "%s %s: %s was sent %s"
-                            % (path, signal, str(listener), str(message))
+                            "Signal: %s %s: %s:%s%s"
+                            % (path, signal, listener.__module__, listener.__name__, str(message))
                         )
             if path is not None:
                 signal = path + signal
@@ -3946,25 +3963,32 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name, create=False):
-    from pathlib import Path
-    from sys import platform
+def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
+    import platform
 
-    if platform == "darwin":
-        directory = (
-            Path.home()
-            .joinpath("Library")
-            .joinpath("Application Support")
-            .joinpath(name)
+    if not system:
+        system = platform.system()
+
+    if system == "Darwin":
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            "Library",
+            "Application Support",
+            name,
         )
-    elif "win" in platform:
-        from os.path import expandvars
-
-        directory = Path(expandvars("%LOCALAPPDATA%")).joinpath(name)
+    elif system == "Windows":
+        directory = os.path.join(
+            os.path.expandvars("%LOCALAPPDATA%"),
+            name
+        )
     else:
-        directory = Path.home().joinpath(".config").joinpath(name)
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            ".config",
+            name
+        )
     if directory is not None and create:
-        directory.mkdir(parents=True, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
     return directory
 
 
