@@ -166,7 +166,7 @@ class CameraPanel(wx.Panel, Job):
             CamInterfaceWidget(self.widget_scene, self)
         )
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         from platform import system as _sys
 
         if _sys() == "Darwin" and not hasattr(self.camera, "_first"):
