@@ -46,6 +46,9 @@ class Modifier:
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+        self.kernel = self.context._kernel
+        self.root = self.kernel.root
+        self._ = self.kernel.translation
 
     def __repr__(self):
         return '{class_name}({context}, name="{name}", channel={channel})'.format(
