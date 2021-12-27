@@ -8,6 +8,7 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+FIX_SPEEDS_RATIO = 0.9195
 
 class ConfigurationUsb(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -732,7 +733,7 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_fix_speeds.SetToolTip("Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed")
         sizer_32.Add(self.check_fix_speeds, 1, 0, 0)
 
-        self.text_fix_rated_speed = wx.TextCtrl(self, wx.ID_ANY, "0.9195", style=wx.TE_READONLY)
+        self.text_fix_rated_speed = wx.TextCtrl(self, wx.ID_ANY, str(FIX_SPEEDS_RATIO), style=wx.TE_READONLY)
         sizer_32.Add(self.text_fix_rated_speed, 1, 0, 0)
 
         sizer_29 = wx.BoxSizer(wx.HORIZONTAL)
@@ -819,6 +820,7 @@ class ConfigurationSetupPanel(wx.Panel):
 
     def on_check_fix_speeds(self, event=None):
         self.context.fix_speeds = self.check_fix_speeds.GetValue()
+        self.text_fix_rated_speed.SetValue("1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO))
 
     def on_check_strict(self, event=None):
         self.context.strict = self.check_strict.GetValue()
