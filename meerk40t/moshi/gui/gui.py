@@ -63,6 +63,9 @@ def plugin(service, lifecycle):
         )
         service.add_service_delegate(MoshiGui(service))
 
+    if lifecycle == "assigned":
+        service("window toggle Configuration\n")
+
 
 class MoshiGui:
     def __init__(self, context):
