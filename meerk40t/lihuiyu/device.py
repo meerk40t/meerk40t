@@ -144,67 +144,6 @@ class LihuiyuDevice(Service):
         ]
         self.register_choices("bed_dim", choices)
 
-        # name_choice = [
-        #     {
-        #         "attr": "device_name",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What do you call this device?"),
-        #         "tip": _(
-        #             "Device name can be anything and will be used to identify this device in places where devices can be selected."
-        #         )
-        #     }
-        # ]
-        # self.register_choices("config", name_choice)
-
-        # connection_choice = [
-        #     {
-        #         "attr": "connection",
-        #         "object": context,
-        #         "type": list,
-        #         "choices": list(context.kernel.lookup("driver", "connections")),
-        #         "label": _("How is the laser connected to this computer"),
-        #         "tip": _(
-        #             "Select the connection method used by this laser."
-        #         )
-        #     }
-        # ]
-        # network_choice = [
-        #     {
-        #         "attr": "network_address",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What is the address to the laser on the network?"),
-        #         "tip": _(
-        #             "IP address or address url of the machine with the laser."
-        #         )
-        #     }
-        # ]
-        # port_choice = [
-        #     {
-        #         "attr": "port",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What port is the laser located on?"),
-        #         "tip": _(
-        #             "TCP/IP port number 1:65535"
-        #         )
-        #     },
-        # ]
-        # home_choice = [
-        #     {
-        #         "attr": "home_position",
-        #         "object": context,
-        #         "default": 0,
-        #         "type": tuple,
-        #         "dimension": 2,
-        #         "choices": (_("Top/Left"), _("Top/Right"), _("Bottom/Left"), _("Bottom/Right")),
-        #         "label": _("Home Position for the laser"),
-        #         "tip": _(
-        #             "When the laser is homed what corner should it home to."
-        #         ),
-        #     },
-        # ]
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
