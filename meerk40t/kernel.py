@@ -1838,7 +1838,7 @@ class Kernel:
                 )
 
         for domain, services in self.services_available():
-            for service in services:
+            for service in list(services):
                 self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
 
     def shutdown(self):
