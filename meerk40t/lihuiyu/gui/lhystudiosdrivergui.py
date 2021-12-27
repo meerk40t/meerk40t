@@ -806,9 +806,9 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_fix_speeds.SetValue(self.context.fix_speeds)
         self.check_scale_speed.SetValue(self.context.scale_speed_enabled)
         self.text_speed_scale_amount.SetValue(str(self.context.scale_speed))
-        self.check_max_speed_vector.SetValue(str(self.context.max_speed_vector_enabled))
+        self.check_max_speed_vector.SetValue(self.context.max_speed_vector_enabled)
         self.text_max_speed_vector.SetValue(str(self.context.max_speed_vector))
-        self.check_max_speed_raster.SetValue(str(self.context.max_speed_raster_enabled))
+        self.check_max_speed_raster.SetValue(self.context.max_speed_raster_enabled)
         self.text_max_speed_raster.SetValue(str(self.context.max_speed_raster))
 
     def pane_show(self):

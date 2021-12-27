@@ -250,6 +250,13 @@ class LihuiyuDevice(Service):
         self.setting(bool, "nse_raster", False)
         self.setting(bool, "nse_stepraster", False)
 
+        self.setting(bool, "scale_speed_enabled", False)
+        self.setting(float, "scale_speed", 1.000)
+        self.setting(bool, "max_speed_vector_enabled", False)
+        self.setting(float, "max_speed_vector", 100.0)
+        self.setting(bool, "max_speed_raster_enabled", False)
+        self.setting(float, "max_speed_raster", 750.0)
+
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
