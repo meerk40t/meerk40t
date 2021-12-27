@@ -258,6 +258,9 @@ def run():
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
             from .ruida.gui import gui as ruidagui
+
+            from balor.gui import gui as balorgui
+
         except Mk40tImportAbort as e:
             args.no_gui = True
             print(
@@ -273,6 +276,8 @@ def run():
             kernel.add_plugin(moshigui.plugin)
             kernel.add_plugin(grblgui.plugin)
             kernel.add_plugin(ruidagui.plugin)
+
+            kernel.add_plugin(balorgui.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True
