@@ -10,6 +10,7 @@ _ = wx.GetTranslation
 
 FIX_SPEEDS_RATIO = 0.9195
 
+
 class ConfigurationUsb(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
 
@@ -148,6 +149,11 @@ class ConfigurationUsb(wx.Panel):
         self.check_serial_number.SetValue(self.context.serial_enable)
         self.checkbox_limit_buffer.SetValue(self.context.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.context.buffer_max)
+
+
+        # Disables of features not yet supported.
+        self.check_serial_number.Enable(False)
+        self.text_serial_number.Enable(False)
 
     def pane_show(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
@@ -386,6 +392,11 @@ class ConfigurationLaserPanel(wx.Panel):
         self.spin_bedheight.SetValue(self.context.bedheight)
         self.text_scale_x.SetValue("%.3f" % self.context.scale_x)
         self.text_scale_y.SetValue("%.3f" % self.context.scale_y)
+
+        # Disables of features not yet supported.
+        self.text_scale_x.Enable(False)
+        self.text_scale_y.Enable(False)
+
 
     def pane_show(self):
         pass
@@ -811,6 +822,14 @@ class ConfigurationSetupPanel(wx.Panel):
         self.text_max_speed_vector.SetValue(str(self.context.max_speed_vector))
         self.check_max_speed_raster.SetValue(self.context.max_speed_raster_enabled)
         self.text_max_speed_raster.SetValue(str(self.context.max_speed_raster))
+
+        # Disables of features not yet supported.
+        self.text_max_speed_raster.Enable(False)
+        self.text_max_speed_vector.Enable(False)
+        self.text_speed_scale_amount.Enable(False)
+        self.check_max_speed_raster.Enable(False)
+        self.check_max_speed_vector.Enable(False)
+        self.check_scale_speed.Enable(False)
 
     def pane_show(self):
         pass
