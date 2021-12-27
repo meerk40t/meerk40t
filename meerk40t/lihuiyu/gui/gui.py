@@ -22,6 +22,9 @@ def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/lhystudios"
 
+    if lifecycle == "assigned":
+        service("window toggle Configuration\n")
+
     if lifecycle == "added":
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
