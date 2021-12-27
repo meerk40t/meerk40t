@@ -245,7 +245,7 @@ def run():
     else:
         kernel.add_plugin(dxf_io.plugin)
 
-    from mkplugin import main
+    from balor import main
     kernel.add_plugin(main.plugin)
 
     if not args.gui_suppress:
