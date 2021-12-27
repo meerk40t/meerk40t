@@ -40,6 +40,7 @@ LIFECYCLE_KERNEL_PRESHUTDOWN = 900
 
 LIFECYCLE_SERVICE_ADDED = 50
 LIFECYCLE_SERVICE_ATTACHED = 100
+LIFECYCLE_SERVICE_ASSIGNED = 101
 LIFECYCLE_SERVICE_DETACHED = 200
 
 LIFECYCLE_MODULE_OPENED = 100
@@ -86,6 +87,8 @@ def service_lifecycle_name(lifecycle):
         return "shutdown"
     if lifecycle >= LIFECYCLE_SERVICE_DETACHED:
         return "detached"
+    if lifecycle >= LIFECYCLE_SERVICE_ASSIGNED:
+        return "assigned"
     if lifecycle >= LIFECYCLE_SERVICE_ATTACHED:
         return "attached"
     if lifecycle >= LIFECYCLE_SERVICE_ADDED:
@@ -124,7 +127,7 @@ class Module:
         name: str = None,
         registered_path: str = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         self.context = context
         self.name = name
@@ -1120,7 +1123,7 @@ class Kernel:
         if activate:
             self.activate(domain, service)
 
-    def activate_service_path(self, domain: str, path: str):
+    def activate_service_path(self, domain: str, path: str, assigned: bool = False):
         """
         Activate service at domain and path.
 
@@ -1139,9 +1142,9 @@ class Kernel:
                 break
         if index == -1:
             raise ValueError
-        self.activate_service_index(domain, index)
+        self.activate_service_index(domain, index, assigned)
 
-    def activate_service_index(self, domain: str, index: int):
+    def activate_service_index(self, domain: str, index: int, assigned: bool = False):
         """
         Activate the service at the given domain and index.
 
@@ -1161,9 +1164,9 @@ class Kernel:
             if service is active:
                 # Do not set to self
                 return
-        self.activate(domain, service)
+        self.activate(domain, service, assigned)
 
-    def activate(self, domain, service):
+    def activate(self, domain, service, assigned: bool = False):
         """
         Activate the service specified on the domain specified.
 
@@ -1191,6 +1194,9 @@ class Kernel:
 
         # Signal activation
         self.signal("activate;{domain}".format(domain=domain), "/", service)
+
+        if assigned:
+            self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ASSIGNED)
 
     def deactivate(self, domain):
         """
@@ -1521,10 +1527,13 @@ class Kernel:
                 pass
 
         # Update objects: service_detach
+        attached_positions = (
+            LIFECYCLE_SERVICE_ATTACHED,
+            LIFECYCLE_SERVICE_ASSIGNED,
+        )
         for s in objects:
             if (
-                slp(s) == LIFECYCLE_SERVICE_ATTACHED
-                and end != LIFECYCLE_SERVICE_ATTACHED
+                slp(s) in attached_positions and end not in attached_positions
             ):  # starting attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_DETACHED
                 if channel:
@@ -1535,7 +1544,7 @@ class Kernel:
                 self._lookup_detach(s)
 
         # Update plugin: service_detach
-        if start == LIFECYCLE_SERVICE_ATTACHED and end != LIFECYCLE_SERVICE_ATTACHED:
+        if start in attached_positions and end not in attached_positions:
             if channel:
                 channel(
                     "(plugin) service-service_detach: {object}".format(
@@ -1552,8 +1561,7 @@ class Kernel:
         # Update objects: service_attach
         for s in objects:
             if (
-                slp(s) != LIFECYCLE_SERVICE_ATTACHED
-                and end == LIFECYCLE_SERVICE_ATTACHED
+                slp(s) not in attached_positions and end in attached_positions
             ):  # ending attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
                 if channel:
@@ -1564,7 +1572,7 @@ class Kernel:
                 self._lookup_attach(s)
 
         # Update plugin: service_attach
-        if start != LIFECYCLE_SERVICE_ATTACHED and end == LIFECYCLE_SERVICE_ATTACHED:
+        if start not in attached_positions and end in attached_positions:
             if channel:
                 channel(
                     "(plugin) service-service_attach: {object}".format(
@@ -1575,6 +1583,31 @@ class Kernel:
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "service_attach")
+            except (KeyError, AttributeError):
+                pass
+
+        # Update objects: assigned
+        for s in objects:
+            if (
+                slp(s) == LIFECYCLE_SERVICE_ATTACHED
+                and end == LIFECYCLE_SERVICE_ASSIGNED
+            ):
+                s._service_lifecycle = LIFECYCLE_SERVICE_ASSIGNED
+                if channel:
+                    channel("service-assigned: {object}".format(object=str(s)))
+                if hasattr(s, "assigned"):
+                    s.assigned(*args, **kwargs)
+
+        # Update plugin: assigned
+        if start == LIFECYCLE_SERVICE_ATTACHED and end == LIFECYCLE_SERVICE_ASSIGNED:
+            start = LIFECYCLE_SERVICE_ASSIGNED
+            if channel:
+                channel(
+                    "(plugin) service-assigned: {object}".format(object=str(service))
+                )
+            try:
+                for plugin in self._service_plugins[service.registered_path]:
+                    plugin(service, "assigned")
             except (KeyError, AttributeError):
                 pass
 
@@ -2681,7 +2714,13 @@ class Kernel:
                     if signal_channel:
                         signal_channel(
                             "Signal: %s %s: %s:%s%s"
-                            % (path, signal, listener.__module__, listener.__name__, str(message))
+                            % (
+                                path,
+                                signal,
+                                listener.__module__,
+                                listener.__name__,
+                                str(message),
+                            )
                         )
             if path is not None:
                 signal = path + signal
@@ -3157,7 +3196,7 @@ class Kernel:
             off=False,
             gui=False,
             remainder=None,
-            **kwargs
+            **kwargs,
         ):
             if times == "off":
                 off = True
@@ -3388,10 +3427,19 @@ class Kernel:
 
         @console_argument("name", help="Name of service to start")
         @console_option("path", "p", help="optional forced path initialize location")
+        @console_option(
+            "init",
+            "i",
+            type=bool,
+            action="store_true",
+            help="call extended initialize for this service",
+        )
         @self.console_command(
             "start", input_type="service", help=_("Initialize a provider")
         )
-        def service_init(channel, _, data=None, name=None, path=None, **kwargs):
+        def service_init(
+            channel, _, data=None, name=None, path=None, init=None, **kwargs
+        ):
             domain, available, active = data
             if name is None:
                 raise SyntaxError
@@ -3410,6 +3458,8 @@ class Kernel:
 
             service = provider(self, service_path)
             self.add_service(domain, service, provider_path)
+            if init is True:
+                self.activate(domain, service, assigned=True)
 
         # ==========
         # BATCH COMMANDS
@@ -3829,7 +3879,9 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: Union[str, bytes, bytearray], *args, indent=True, **kwargs):
+    def __call__(
+        self, message: Union[str, bytes, bytearray], *args, indent=True, **kwargs
+    ):
         if self.line_end is not None:
             message = message + self.line_end
         if indent and not isinstance(message, (bytes, bytearray)):
@@ -3963,7 +4015,9 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
+def get_safe_path(
+    name: str, create: Optional[bool] = False, system: Optional[str] = None
+) -> str:
     import platform
 
     if not system:
@@ -3977,16 +4031,9 @@ def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]
             name,
         )
     elif system == "Windows":
-        directory = os.path.join(
-            os.path.expandvars("%LOCALAPPDATA%"),
-            name
-        )
+        directory = os.path.join(os.path.expandvars("%LOCALAPPDATA%"), name)
     else:
-        directory = os.path.join(
-            os.path.expanduser("~"),
-            ".config",
-            name
-        )
+        directory = os.path.join(os.path.expanduser("~"), ".config", name)
     if directory is not None and create:
         os.makedirs(directory, exist_ok=True)
     return directory
