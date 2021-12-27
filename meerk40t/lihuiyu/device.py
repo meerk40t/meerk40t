@@ -209,8 +209,8 @@ class LihuiyuDevice(Service):
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
         self.setting(bool, "rapid_override", False)
-        self.setting(bool, "rapid_override_speed_x", 50.0)
-        self.setting(bool, "rapid_override_speed_y", 50.0)
+        self.setting(float, "rapid_override_speed_x", 50.0)
+        self.setting(float, "rapid_override_speed_y", 50.0)
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
