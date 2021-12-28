@@ -714,6 +714,12 @@ class MeerK40t(MWindow):
 
         submenus = {}
         for pane, _path, suffix_path in self.context.find("pane/.*"):
+            try:
+                suppress = pane.suppress
+                if suppress:
+                    continue
+            except AttributeError:
+                pass
             submenu = None
             try:
                 submenu_name = pane.submenu

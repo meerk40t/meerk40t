@@ -33,6 +33,7 @@ def register_panel(window, context):
     pane = aui.AuiPaneInfo().CenterPane().Name("scene")
     pane.dock_proportion = 600
     pane.control = control
+    pane.suppress = True
 
     # def on_note_page_change(event=None):
     #     if control.GetPageText(control.GetSelection()) == "scene1":
