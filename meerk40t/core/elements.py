@@ -2224,23 +2224,47 @@ class Elemental(Modifier):
                     op.notify_update()
             return "ops", data
 
-        @context.console_argument(
-            "speed", type=float, help=_("operation speed in mm/s")
+
+        @context.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
         )
+        @context.console_argument("speed", type=str, help=_("operation speed in mm/s"))
         @context.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
-        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
+        def op_speed(command, channel, _, speed=None, difference=None, data=None, **kwrgs):
             if speed is None:
                 for op in data:
                     old_speed = op.settings.speed
                     channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
                 return
+            if speed.endswith("%"):
+                speed = speed[:-1]
+                percent = True
+            else:
+                percent = False
+
+            try:
+                new_speed = float(speed)
+            except ValueError:
+                channel(_("Not a valid speed or percent."))
+                return
+
             for op in data:
                 old_speed = op.settings.speed
-                op.settings.speed = speed
+                if percent and difference:
+                    s = old_speed + old_speed * (new_speed / 100.0)
+                elif difference:
+                    s = old_speed + new_speed
+                elif percent:
+                    s = old_speed * (new_speed / 100.0)
+                op.settings.speed = s
                 channel(
-                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed)
+                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
                 )
                 op.notify_update()
             return "ops", data

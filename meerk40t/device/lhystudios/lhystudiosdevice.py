@@ -137,12 +137,11 @@ def plugin(kernel, lifecycle=None):
             _,
             data=None,
             speed=None,
-            increment=False,
-            decrement=False,
+            difference=False,
             **kwargs
         ):
             spooler, driver, output = data
-            if speed is None or (increment and decrement):
+            if speed is None:
                 channel(_("Speed set at: %f mm/s") % driver.speed)
                 return
             if speed.endswith("%"):
@@ -155,9 +154,9 @@ def plugin(kernel, lifecycle=None):
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
-            if percent and increment:
+            if percent and difference:
                 s = driver.speed + driver.speed * (s / 100.0)
-            elif increment:
+            elif difference:
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
