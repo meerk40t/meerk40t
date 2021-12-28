@@ -88,16 +88,6 @@ def plugin(kernel, lifecycle=None):
                 ),
             },
             {
-                "attr": "dxf_center",
-                "object": elements,
-                "default": True,
-                "type": bool,
-                "label": _("DXF Centering"),
-                "tip": _(
-                    "Fit (scale down if necessary) and center a DXF file within the bed"
-                ),
-            },
-            {
                 "attr": "operation_default_empty",
                 "object": elements,
                 "default": True,

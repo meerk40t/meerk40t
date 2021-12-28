@@ -45,6 +45,20 @@ MILS_PER_MM = 39.3701
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("load/DxfLoader", DxfLoader)
+        _ = kernel.translation
+        choices = [
+            {
+                "attr": "dxf_center",
+                "object": kernel.elements,
+                "default": True,
+                "type": bool,
+                "label": _("DXF Centering"),
+                "tip": _(
+                    "Fit (scale down if necessary) and center a DXF file within the bed"
+                ),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
 
 
 class DxfLoader:
