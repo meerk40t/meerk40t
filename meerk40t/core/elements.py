@@ -6519,7 +6519,7 @@ class Elemental(Service):
                     or element.stroke.rgb == 0xffffff
                 ):
                     debug(
-                        "classify: not classifying -  white element at back: {e}".format(
+                        "classify: not classifying - white element at back: {e}".format(
                             e=self.element_label_id(element, short=False),
                         )
                     )
