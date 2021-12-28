@@ -715,7 +715,7 @@ class MeerK40t(MWindow):
         submenus = {}
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
-                suppress = pane.suppress
+                suppress = pane.hide_menu
                 if suppress:
                     continue
             except AttributeError:
