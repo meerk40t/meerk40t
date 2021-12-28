@@ -23,6 +23,26 @@ def plugin(kernel, lifecycle=None):
     kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
     kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
+
+    choices = [
+        {
+            "attr": "image_dpi",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Image DPI Scaling"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _(
+                        "Set: Use the DPI setting saved in the image to scale the image to the correct size."
+                    ),
+                )
+            ),
+        },
+    ]
+    kernel.register_choices("preferences", choices)
+
     context = kernel.root
 
     @context.console_command(
