@@ -63,16 +63,6 @@ def plugin(kernel, lifecycle=None):
         elements = kernel.elements
         choices = [
             {
-                "attr": "uniform_svg",
-                "object": elements,
-                "default": False,
-                "type": bool,
-                "label": _("SVG Uniform Save"),
-                "tip": _(
-                    "Do not treat overwriting SVG differently if they are MeerK40t files"
-                ),
-            },
-            {
                 "attr": "operation_default_empty",
                 "object": elements,
                 "default": True,

@@ -47,6 +47,20 @@ from .elements import LaserOperation
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
+        choices = [
+            {
+                "attr": "uniform_svg",
+                "object": kernel.elements,
+                "default": False,
+                "type": bool,
+                "label": _("SVG Uniform Save"),
+                "tip": _(
+                    "Do not treat overwriting SVG differently if they are MeerK40t files"
+                ),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
         kernel.register("save/SVGWriter", SVGWriter)
 
