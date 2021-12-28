@@ -70,7 +70,7 @@ def kernel_lifecycle_name(lifecycle):
         return "poststart"
     if lifecycle == LIFECYCLE_KERNEL_READY:
         return "ready"
-    if lifecycel == LIFECYCLE_KERNEL_FINISHED:
+    if lifecycle == LIFECYCLE_KERNEL_FINISHED:
         return "finished"
     if lifecycle == LIFECYCLE_KERNEL_PREMAIN:
         return "premain"
