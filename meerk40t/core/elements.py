@@ -6060,32 +6060,62 @@ class Elemental(Service):
     def classify(self, elements, operations=None, add_op_function=None):
         """
         Classify does the placement of elements within operations.
+        In the future, we expect to be able to save and reload the mapping of
+        elements to operations, but at present classification is the only means
+        of assigning elements to operations.
+
+        This classification routine ensures that every element is assigned
+        to at least one operation - the user does NOT have to check whether
+        some elements have not been assigned (which was an issue with 0.6.x).
+
+        Because of how overlaying raster elements can have white areas masking
+        underlying non-white areas, the classification of raster elements is complex,
+        and indeed deciding whether elements should be classified as vector or raster
+        has edge case complexities.
 
         SVGImage is classified as Image.
         Dots are a special type of Path
         All other SVGElement types are Shapes / Text
 
-        Paths consisting of a move followed by a single stright line segment are never Raster (since no width) -
-            testing for more complex stright line elements is too difficult
-        Shapes/Text with Fill are raster by default
-        Shapes/Text with Black strokes are raster by default regardless of fill
-        All other Shapes/Text with no fill are vector by default
+        Paths consisting of a move followed by a single stright line segment
+        are never Raster (since no width) - testing for more complex stright line
+        path-segments and that multiple-such-segments are also straight-line is complex,
+
+        Shapes/Text with grey (R=G=B) strokes are raster by default regardless of fill
+
+        Shapes/Text with non-transparent Fill are raster by default - except for one
+        edge case: Elements with white fill, non-grey stroke and no raster elements behind
+        them are considered vector elements.
+
+        Shapes/Text with no fill and non-grey strokes are vector by default - except
+        for one edge case: Elements with strokes that have other raster elements
+        overlaying the stroke should in some cases be considered raster elements,
+        but there are serveral use cases and counter examples are likely easy to create.
+        The algorithm below tries to be conservative in deciding whether to switch a default
+        vector to a raster due to believing it is part of raster combined with elements on top.
+        In essence, if there are raster elements on top (later in the list of elements) that
+        have the given vector element's stroke colour as either a stroke or fill colour, then the
+        probability is that this vector element should be considered a raster instead.
 
         RASTER ELEMENTS
         Because rastering of overlapping elements depends on the sequence of the elements
         (think of the difference between a white fill above or below a black fill)
-        it is essential that raster elements are added to operations in the same order that they exist
-        in the file/elements branch.
+        it is essential that raster elements are added to operations in the same order
+        that they exist in the file/elements branch.
 
-        Raster elements are handled differently depending on whether existing Raster operations are simple or complex:
-            1. Simple - all existing raster ops have the same color (default being a different colour to any other); or
-            2. Complex - there are existing raster ops of two different colors (default being a different colour to any other)
+        Raster elements are handled differently depending on whether existing
+        Raster operations are simple or complex:
+            1.  Simple - all existing raster ops have the same color
+                (default being a different colour to any other); or
+            2.  Complex - there are existing raster ops of two different colors
+                (default being a different colour to any other)
 
-        Simple - Raster elements are matched immediately to all Raster operations in the correct sequence.
-        Complex - Raster elements are saved for processing in a more complex second pass (see below)
+        Simple - Raster elements are matched immediately to all Raster operations.
+        Complex - Raster elements are processed in a more complex second pass (see below)
 
         VECTOR ELEMENTS
-        Vector Shapes/Text are attempted to match to Cut/Engrave/Raster operations of exact same color (regardless of default raster or vector)
+        Vector Shapes/Text are attempted to match to Cut/Engrave/Raster operations of
+        exact same color (regardless of default raster or vector)
 
         If not matched to exact colour, vector elements are classified based on colour:
             1. Redish strokes are considered cuts
@@ -6101,30 +6131,38 @@ class Elemental(Service):
             A. all existing raster ops (if there are any); or
             B. to a new Default Raster operation we create in a similar way as vector elements
 
-        Because raster elements are all added to the same operations in pass 1 and without being grouped,
-        retaining the sequence of elements happens by default, and no special handling is needed.
-
-        (Note: Not true for later classification of single elements due to e.g. colour change. See below.)
+        Because raster elements are all added to the same operations in pass 1 and without being
+        grouped, the sequence of elements is retained by default, and no special handling is needed.
 
         COMPLEX RASTER CLASSIFICATION
         There are existing raster ops of at least 2 different colours.
 
         In this case we are going to try to match raster elements to raster operations by colour.
-        But this is complicated becausewe need to keep overlapping raster elements together.
+        But this is complicated as we need to keep overlapping raster elements together in the
+        sae operations because raster images are generated within each operation.
 
         So in this case we classify vector and special elements in a first pass,
         and then analyse and classify raster operations in a special second pass.
 
         Because we have to analyse all raster elements together, when you load a new file
-        classify has to be called once with all elements in the file rather than on an element-by-element basis.
+        Classify has to be called once with all elements in the file
+        rather than on an element-by-element basis.
 
         In the second pass, we do the following:
 
         1.  Group rasters by whether they have overlapping bounding boxes.
-            After this, if rasters are in separate groups then they are in entirely separate areas of the burn which do not overlap.
+            After this, if rasters are in separate groups then they are in entirely separate
+            areas of the burn which do not overlap. Consequently they can be allocated
+            to different operations without causing incorrect results.
 
-            Note: It is difficult to ensure that elements are retained in the sequence when doing iterative grouping.
-            To avoid the complexities, before adding to the raster operations, we sort back into the original element sequence.
+            Note 1: It is difficult to ensure that elements are retained in sequence when doing
+            grouping. Before adding to the raster operations, we sort back into the
+            original element sequence.
+
+            Note 2: The current algorithm uses bounding-boxes. One edge case is to have two
+            separate raster patterns of different colours that do NOT overlap but whose
+            bounding-boxes DO overlap. In these cases they will both be allocated to the same
+            raster Operations whereas they potentially could be allocated to different Operations.
 
         2.  For each group of raster objects, determine whether there are existing Raster operations
             of the same colour as at least one element in the group.
@@ -6132,24 +6170,31 @@ class Elemental(Service):
             all the raster elements of the group will be added to that operation.
 
         3.  If there are any raster elements that are not classified in this way, then:
-            A)  If there are Default Raster Operation(s), then the remaining raster elements are allocated to those.
-            B)  Otherwise, if there are any non-default raster operations that are empty and those raster operations are all of the same colour,
-                then the remaining raster operations will be allocated to those Raster operations.
-            C)  Otherwise, a new Default Raster operation will be created and remaining Raster elements will be added to that.
+            A)  If there are Default Raster Operation(s), then the remaining raster elements are
+                allocated to those.
+            B)  Otherwise, if there are any non-default raster operations that are empty and those
+                raster operations are all of the same colour, then the remaining raster operations
+                will be allocated to those Raster operations.
+            C)  Otherwise, a new Default Raster operation will be created and remaining
+                Raster elements will be added to that.
 
-        The current code does NOT do the following:
+        LIMITATIONS: The current code does NOT do the following:
 
-        a.  Handle rasters in second or later files which overlap elements from earlier files which have already been classified into operations.
-            It is assumed that if they happen to overlap that is coincidence. After all the files could have been added in a different order and
-            then would have a different result.
-        b.  Handle the reclassifications of single elements which have e.g. had their colour changed any differently.
-            (The multitude of potential use cases are many and varied, and difficult or impossible comprehensively to predict.)
+        a.  Handle rasters in second or later files which overlap elements from earlier files which
+            have already been classified into operations. It is assumed that if they happen to
+            overlap that is coincidence. After all the files could have been added in a different
+            order and then would have a different result.
+        b.  Handle the reclassifications of single elements which have e.g. had their colour
+            changed. (The multitude of potential use cases are many and varied, and difficult or
+            impossible comprehensively to predict.)
 
         It may be that we will need to:
 
-        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence to keep elements in the correct sequence in an operation.
-        2.  Handle cases where the user resequences elements by ensuring that a drag and drop of elements in the Elements branch of the tree
-            are reflected in the sequence in Operations and vice versa. This could, however, get messy.
+        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence
+            to keep elements in the correct sequence in an operation.
+        2.  Handle cases where the user resequences elements by ensuring that a drag and drop
+            of elements in the Elements branch of the tree is reflected in the sequence in Operations
+            and vice versa. This could, however, get messy.
 
 
         :param elements: list of elements to classify.
@@ -6157,12 +6202,16 @@ class Elemental(Service):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
+        debug = self.kernel.channel("classify", timestamp=True)
+
         if self.legacy_classification:
+            debug("classify: legacy")
             self.classify_legacy(elements, operations, add_op_function)
             return
 
         if elements is None:
             return
+
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
@@ -6208,25 +6257,35 @@ class Elemental(Service):
         if rasters_one_pass is not False:
             rasters_one_pass = True
 
-        raster_elements = []
+        debug(
+            "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
+                passes="one pass" if rasters_one_pass else "two passes",
+                v=len(vector_ops),
+                r=len(raster_ops),
+                s=len(special_ops),
+            )
+        )
+
+        elements_to_classify = []
         for element in elements:
             if element is None:
+                debug("classify: not classifying -  element is None")
                 continue
             if hasattr(element, "operation"):
                 add_op_function(element)
+                debug(
+                    "classify: added element as op: {op}".format(
+                        op=str(op),
+                    )
+                )
                 continue
 
-            element_color = self.element_classify_color(element)
-            if isinstance(element, (Shape, SVGText)) and (
-                element_color is None or element_color.rgb is None
-            ):
-                continue
             is_dot = isDot(element)
             is_straight_line = isStraightLine(element)
+            # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
 
             # Check for default vector operations
             element_vector = False
-            # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
             if isinstance(element, (Shape, SVGText)) and not is_dot:
                 # Vector if not filled
                 if (
@@ -6237,40 +6296,179 @@ class Elemental(Service):
                 ):
                     element_vector = True
 
-                # Not vector if black stroke or stroke same color as fill
+                # Not vector if grey stroke
                 if (
                     element_vector
-                    and not is_straight_line
                     and element.stroke is not None
                     and element.stroke.rgb is not None
-                    and (
-                        # Grey
-                        (
-                            element.stroke.red == element.stroke.green
-                            and element.stroke.red == element.stroke.blue
-                        )
-                        # Same color as fill
-                        or (
-                            element.fill is not None
-                            and element.fill.rgb is not None
-                            and element.fill.alpha is not None
-                            and element.fill.alpha > 0
-                            and element.fill.rgb != element.stroke.rgb
-                        )
-                    )
+                    and element.stroke.red == element.stroke.green
+                    and element.stroke.red == element.stroke.blue
                 ):
                     element_vector = False
+
+            elements_to_classify.append((
+                element,
+                element_vector,
+                is_dot,
+                is_straight_line,
+            ))
+
+        debug(
+            "classify: elements: {e} elements to classify".format(
+                e=len(elements_to_classify),
+            )
+        )
+
+        # Handle edge cases
+        # Convert raster elements with white fill and no raster elements behind to vector
+        # Because the white fill is not hiding anything.
+        for i, (
+            element,
+            element_vector,
+            is_dot,
+            is_straight_line,
+        ) in enumerate(elements_to_classify):
+            if (
+                # Raster?
+                not element_vector
+                and isinstance(element, (Shape, SVGText))
+                and not is_dot
+                # White non-transparent fill?
+                and element.fill is not None
+                and element.fill.rgb is not None
+                and element.fill.rgb == 0xffffff
+                and element.fill.alpha is not None
+                and element.fill.alpha != 0
+                # But not grey stroke?
+                and (
+                    element.stroke is None
+                    or element.stroke.rgb is None
+                    or element.stroke.red != element.stroke.green
+                    or element.stroke.red != element.stroke.blue
+                )
+            ):
+                bbox = element.bbox()
+                # Now check for raster elements behind
+                for e2 in elements_to_classify[:i]:
+                    # Ignore vectors
+                    if e2[1]:
+                        continue
+                    # If underneath then stick with raster?
+                    if self.bbox_overlap(bbox, e2[0].bbox()):
+                        break
+                else:
+                    # No rasters underneath - convert to vector
+                    debug(
+                        "classify: edge-case: treating raster as vector: {label}".format(
+                            label=self.element_label_id(element),
+                        )
+                    )
+
+                    element_vector = True
+                    elements_to_classify[i] = (
+                        element,
+                        element_vector,
+                        is_dot,
+                        is_straight_line,
+                    )
+
+        # Convert vector elements with element in front crossing the stroke to raster
+        for i, (
+            element,
+            element_vector,
+            is_dot,
+            is_straight_line,
+        ) in reversed_enumerate(elements_to_classify):
+            if (
+                element_vector
+                and element.stroke is not None
+                and element.stroke.rgb is not None
+                and element.stroke.rgb != 0xffffff
+            ):
+                bbox = element.bbox()
+                color = element.stroke.rgb
+                # Now check for raster elements in front whose path crosses over this path
+                for e in elements_to_classify[i+1:]:
+                    # Raster?
+                    if e[1]:
+                        continue
+                    # Stroke or fill same colour?
+                    if (
+                        (
+                            e[0].stroke is None
+                            or e[0].stroke.rgb is None
+                            or e[0].stroke.rgb != color
+                        ) and (
+                            e[0].fill is None
+                            or e[0].fill.alpha is None
+                            or e[0].fill.alpha == 0
+                            or e[0].fill.rgb is None
+                            or e[0].fill.rgb != color
+                        )
+                    ):
+                        continue
+                    # We have an element with a matching color
+                    if self.bbox_overlap(bbox, e[0].bbox()):
+                        # Rasters on top - convert to raster
+                        debug(
+                            "classify: edge-case: treating vector as raster: {label}".format(
+                                label=self.element_label_id(element),
+                            )
+                        )
+
+                        element_vector = False
+                        elements_to_classify[i] = (
+                            element,
+                            element_vector,
+                            is_dot,
+                            is_straight_line,
+                        )
+                        break
+
+        raster_elements = []
+        for (
+            element,
+            element_vector,
+            is_dot,
+            is_straight_line,
+        ) in elements_to_classify:
+
+            element_color = self.element_classify_color(element)
+            if isinstance(element, (Shape, SVGText)) and (
+                element_color is None or element_color.rgb is None
+            ):
+                debug(
+                    "classify: not classifying -  no stroke or fill color: {e}".format(
+                        e=self.element_label_id(element, short=False),
+                    )
+                )
+                continue
 
             element_added = False
             if is_dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (is_dot and op.operation == "Dots") or (
-                        isinstance(element, SVGImage) and op.operation == "Image"
+                    if (
+                        (is_dot and op.operation == "Dots")
+                        or
+                        (isinstance(element, SVGImage) and op.operation == "Image")
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
                         break  # May only classify in one Dots or Image operation and indeed in one operation
             elif element_vector:
+                # Vector op (i.e. no fill) with exact colour match to Raster Op will be rastered
+                for op in raster_ops:
+                    if (
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
+                        and op not in default_raster_ops
+                    ):
+                        if not rasters_one_pass:
+                                op.add(element, type="opnode", pos=element_pos)
+                        elif not element_added:
+                            raster_elements.append((element, element.bbox()))
+                        element_added = True
+
                 for op in vector_ops:
                     if (
                         op.color is not None
@@ -6280,39 +6478,43 @@ class Elemental(Service):
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
-                # Vector op (i.e. no fill) with exact colour match can be added out of sequence
-                for op in raster_ops:
-                    if (
-                        op.color is not None
-                        and op.color.rgb == element_color.rgb
-                        and op not in default_raster_ops
-                    ):
-                        op.add(element, type="opnode", pos=element_pos)
-                        element_added = True
+                if (
+                    element.stroke is None
+                    or element.stroke.rgb is None
+                    or element.stroke.rgb == 0xffffff
+                ):
+                    debug(
+                        "classify: not classifying - white element at back: {e}".format(
+                            e=self.element_label_id(element, short=False),
+                        )
+                    )
+                    continue
+
             elif rasters_one_pass:
                 for op in raster_ops:
-                    # New Raster ops are always default so excluded
                     if (
                         op.color is not None
                         and op.color.rgb == element_color.rgb
-                        and op not in default_raster_ops
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
+            else:
+                raster_elements.append((element, element.bbox()))
+                continue
 
             if element_added:
                 continue
 
             if element_vector:
                 is_cut = Color.distance_sq("red", element_color) <= 18825
-                if is_cut and default_cut_ops:
+                if is_cut:
                     for op in default_cut_ops:
                         op.add(element, type="opnode", pos=element_pos)
-                    element_added = True
-                elif not is_cut and default_engrave_ops:
+                        element_added = True
+                else:
                     for op in default_engrave_ops:
                         op.add(element, type="opnode", pos=element_pos)
-                    element_added = True
+                        element_added = True
             elif (
                 rasters_one_pass
                 and isinstance(element, (Shape, SVGText))
@@ -6353,14 +6555,16 @@ class Elemental(Service):
                     )
                     default_raster_ops.append(op)
                     raster_ops.append(op)
-                else:
-                    raster_elements.append(element)
-            if op:
+            if op is not None:
                 new_ops.append(op)
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise opnode is not created.
                 op.add(element, type="opnode", pos=element_pos)
-                continue
+                debug(
+                    "classify: added op: {op}".format(
+                        op=str(op),
+                    )
+                )
 
         # End loop "for element in elements"
 
@@ -6371,13 +6575,19 @@ class Elemental(Service):
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
+        debug(
+            "classify: raster pass two: {n} elements".format(
+                n=len(raster_elements),
+            )
+        )
 
         # Debugging print statements have been left in as comments as this code can
         # be complex to debug and even print statements can be difficult to craft
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = [[(e, e.bbox())] for e in raster_elements]
+        raster_groups = [[e] for e in raster_elements]
+        raster_elements = [e[0] for e in raster_elements]
         # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
 
         # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
@@ -6397,6 +6607,12 @@ class Elemental(Service):
 
                     # print("g1+g2", list(map(lambda e: e[0].id,g1)))
                     # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+
+        debug(
+            "classify: condensed to {n} raster groups".format(
+                n=len(raster_groups),
+            )
+        )
 
         # Remove bbox and add element colour from groups
         # Change list to groups which are a list of tuples, each tuple being element and its classification color
@@ -6420,19 +6636,29 @@ class Elemental(Service):
             ):
                 # Make a list of elements to add (same tupes)
                 elements_to_add = []
+                groups_count = 0
                 for group in raster_groups:
                     for e in group:
-                        if e[1].hex == op.color.hex:
+                        if e[1].rgb == op.color.rgb:
                             # An element in this group matches op color
                             # So add elements to list
                             elements_to_add.extend(group)
                             if group not in groups_added:
                                 groups_added.append(group)
+                            groups_count += 1
                             break  # to next group
                 if elements_to_add:
+                    debug(
+                        "classify: adding {e} elements in {g} groups to {label}".format(
+                            e=len(elements_to_add),
+                            g=groups_count,
+                            label=str(op),
+                        )
+                    )
                     # Create simple list of elements sorted by original element order
                     elements_to_add = sorted(
-                        (e[0] for e in elements_to_add), key=raster_elements.index
+                        [e[0] for e in elements_to_add],
+                        key=raster_elements.index
                     )
                     for element in elements_to_add:
                         op.add(element, type="opnode", pos=element_pos)
@@ -6449,7 +6675,15 @@ class Elemental(Service):
         for g in raster_groups:
             elements_to_add.extend(g)
         elements_to_add = sorted(
-            (e[0] for e in elements_to_add), key=raster_elements.index
+            [e[0] for e in elements_to_add],
+            key=raster_elements.index
+        )
+
+        debug(
+            "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
+                e=len(elements_to_add),
+                g=len(raster_groups),
+            )
         )
 
         # Remaining elements are added to one of the following groups of operations:
@@ -6475,25 +6709,54 @@ class Elemental(Service):
             op = LaserOperation(operation="Raster", color="Transparent", default=True)
             default_raster_ops.append(op)
             add_op_function(op)
+            debug(
+                "classify: default raster op added: {op}".format(
+                    op=str(op),
+                )
+            )
+        else:
+            for op in default_raster_ops:
+                debug(
+                    "classify: default raster op selected: {op}".format(
+                        l=len(op.children),
+                    )
+                )
+
         for element in elements_to_add:
             for op in default_raster_ops:
                 op.add(element, type="opnode", pos=element_pos)
 
+    @staticmethod
+    def element_label_id(element, short=True):
+        if element.node is None:
+            if short:
+                return element.id
+            return "{id}: {path}".format(id=element.id, path=str(element))
+        elif ":" in element.node.label and short:
+            return element.node.label.split(":", 1)[0]
+        else:
+            return element.node.label
+
+    @staticmethod
+    def bbox_overlap(b1, b2):
+        if (
+            b1[0] <= b2[2]
+            and b1[2] >= b2[0]
+            and b1[1] <= b2[3]
+            and b1[3] >= b2[1]
+        ):
+            return True
+        return False
+
     def group_elements_overlap(self, g1, g2):
         for e1 in g1:
-            e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
             for e2 in g2:
-                e2xmin, e2ymin, e2xmax, e2ymax = e2[1]
-                if (
-                    e1xmin <= e2xmax
-                    and e1xmax >= e2xmin
-                    and e1ymin <= e2ymax
-                    and e1ymax >= e2ymin
-                ):
+                if self.bbox_overlap(e1[1], e2[1]):
                     return True
         return False
 
-    def element_classify_color(self, element: SVGElement):
+    @staticmethod
+    def element_classify_color(element: SVGElement):
         element_color = element.stroke
         if element_color is None or element_color.rgb is None:
             element_color = element.fill
