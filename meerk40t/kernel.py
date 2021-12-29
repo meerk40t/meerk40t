@@ -2693,7 +2693,7 @@ class Channel:
         for w in self.watchers:
             # Avoid double timestamp and indent
             if isinstance(w, Channel):
-                w(original_msg)
+                w(original_msg, indent=indent)
             else:
                 w(message)
         if self.buffer is not None:
