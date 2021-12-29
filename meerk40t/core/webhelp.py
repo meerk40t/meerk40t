@@ -3,10 +3,10 @@ MEERK40T_HELP = "https://github.com/meerk40t/meerk40t/wiki"
 MEERK40T_BEGINNERS = "https://github.com/meerk40t/meerk40t/wiki/Beginners:-0.-Index"
 MEERK40T_WEBSITE = "https://github.com/meerk40t/meerk40t"
 MEERK40T_RELEASES = "https://github.com/meerk40t/meerk40t/releases"
-FACEBOOK_MEERK40t = "https://www.facebook.com/groups/716000085655097"
+FACEBOOK_MEERK40T = "https://www.facebook.com/groups/716000085655097"
+DISCORD_MEERK40T = "https://discord.gg/qvASRhFZGB"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
 IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
-
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -49,6 +49,7 @@ def plugin(kernel, lifecycle):
         kernel.register("webhelp/main", MEERK40T_WEBSITE)
         kernel.register("webhelp/issues", MEERK40T_ISSUES)
         kernel.register("webhelp/releases", MEERK40T_RELEASES)
-        kernel.register("webhelp/facebook", FACEBOOK_MEERK40t)
+        kernel.register("webhelp/facebook", FACEBOOK_MEERK40T)
+        kernel.register("webhelp/discord", DISCORD_MEERK40T)
         kernel.register("webhelp/makers", MAKERS_FORUM_MEERK40T)
         kernel.register("webhelp/irc", IRC_CLIENT)

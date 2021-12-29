@@ -2224,23 +2224,49 @@ class Elemental(Modifier):
                     op.notify_update()
             return "ops", data
 
-        @context.console_argument(
-            "speed", type=float, help=_("operation speed in mm/s")
+
+        @context.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
         )
+        @context.console_argument("speed", type=str, help=_("operation speed in mm/s"))
         @context.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
-        def op_speed(command, channel, _, speed=None, data=None, **kwrgs):
+        def op_speed(command, channel, _, speed=None, difference=None, data=None, **kwrgs):
             if speed is None:
                 for op in data:
                     old_speed = op.settings.speed
                     channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
                 return
+            if speed.endswith("%"):
+                speed = speed[:-1]
+                percent = True
+            else:
+                percent = False
+
+            try:
+                new_speed = float(speed)
+            except ValueError:
+                channel(_("Not a valid speed or percent."))
+                return
+
             for op in data:
                 old_speed = op.settings.speed
-                op.settings.speed = speed
+                if percent and difference:
+                    s = old_speed + old_speed * (new_speed / 100.0)
+                elif difference:
+                    s = old_speed + new_speed
+                elif percent:
+                    s = old_speed * (new_speed / 100.0)
+                else:
+                    s = new_speed
+                op.settings.speed = s
                 channel(
-                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, speed)
+                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
                 )
                 op.notify_update()
             return "ops", data
@@ -4638,7 +4664,7 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_raster(node, speed=150, **kwgs):
             node.settings.speed = float(speed)
             self.context.signal("element_property_reload", node)
@@ -4647,9 +4673,20 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("Speed %smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_vector(node, speed=35, **kwgs):
             node.settings.speed = float(speed)
+            self.context.signal("element_property_reload", node)
+
+        def radio_match(node, power=0, **kwgs):
+            return node.settings.power == float(power)
+
+        @self.tree_submenu(_("Power"))
+        @self.tree_radio(radio_match)
+        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
+        def set_power(node, power=1000, **kwgs):
+            node.settings.power = float(power)
             self.context.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwgs):
@@ -5136,14 +5173,17 @@ class Elemental(Modifier):
             filepath = node.filepath
             normalized = os.path.realpath(filepath)
 
-            from os import system as open_in_shell
-            from sys import platform
+            import platform
 
-            if platform == "darwin":
+            system = platform.system()
+            if system == "Darwin":
+                from os import system as open_in_shell
                 open_in_shell("open '{file}'".format(file=normalized))
-            elif "win" in platform:
+            elif system == "Windows":
+                from os import startfile as open_in_shell
                 open_in_shell('"{file}"'.format(file=normalized))
             else:
+                from os import system as open_in_shell
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
@@ -5218,13 +5258,15 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 25, 1, -1)
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
-            _("Scale %s%%") % "{scale_percent}", node_type="elem", help="Scale Element"
+            _("Scale %s%%") % "{scale_percent}",
+            node_type=("elem", "file", "group"),
+            help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwgs):
             scale = 6.0 / float(scale)
@@ -5237,7 +5279,7 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Rotate"))
         @self.tree_values(
@@ -5284,7 +5326,11 @@ class Elemental(Modifier):
                 -150,
             ),
         )
-        @self.tree_operation(_(u"Rotate %s°") % ("{angle}"), node_type="elem", help="")
+        @self.tree_operation(
+            _(u"Rotate %s°") % ("{angle}"),
+            node_type=("elem", "file", "group"),
+            help=""
+        )
         def rotate_elem_amount(node, angle, **kwgs):
             turns = float(angle) / 360.0
             child_objects = Group()
@@ -5296,9 +5342,13 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Reify User Changes"), node_type="elem", help="")
+        @self.tree_operation(
+            _("Reify User Changes"),
+            node_type=("elem", "file", "group"),
+            help=""
+        )
         def reify_elem_changes(node, **kwgs):
             self.context("reify\n")
 
@@ -5328,6 +5378,7 @@ class Elemental(Modifier):
             return False
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
+        @self.tree_separator_before()
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)

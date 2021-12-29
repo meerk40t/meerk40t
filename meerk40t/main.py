@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import os.path
+import platform
 import sys
 
 from .core.exceptions import Mk40tImportAbort
@@ -224,7 +225,7 @@ def run():
 
     kernel.add_plugin(updater.plugin)
 
-    if sys.platform == "win32":
+    if platform.system() == "Windows":
         # Windows only plugin.
         try:
             from .extra import winsleep
@@ -285,6 +286,11 @@ def run():
                 plugin = entry_point.load()
             except pkg_resources.DistributionNotFound:
                 pass
+            except pkg_resources.VersionConflict as e:
+                print(
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                )
+                print(e)
             else:
                 kernel.add_plugin(plugin)
 
@@ -301,6 +307,8 @@ def run():
     kernel.bootstrap("register")
     kernel.bootstrap("configure")
     kernel.boot()
+
+    console = kernel_root.channel("console")
 
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
@@ -338,24 +346,32 @@ def run():
             except IndexError:
                 break
 
+    kernel.bootstrap("ready")
+
+    def __print_delegate(*args, **kwargs):
+        if print not in console.watchers:
+            print(*args, **kwargs)
+
     if args.execute:
         # Any execute code segments gets executed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
         for v in args.execute:
             if v is None:
                 continue
             kernel_root(v.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     if args.batch:
         # If a batch file is specified it gets processed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
+        unprint_console = True
         with args.batch as batch:
             for line in batch:
                 kernel_root(line.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        if unprint_console:
+            console.unwatch(__print_delegate)
 
-    kernel.bootstrap("ready")
+    kernel.bootstrap("finished")
 
     if args.auto:
         # Auto start does the planning and spooling of the data.
@@ -381,7 +397,7 @@ def run():
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.console:
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
 
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
@@ -395,6 +411,6 @@ def run():
         loop = asyncio.get_event_loop()
         loop.run_until_complete(aio_readline(loop))
         loop.close()
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.

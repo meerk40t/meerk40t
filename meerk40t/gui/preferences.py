@@ -479,7 +479,6 @@ class PreferencesPanel(wx.Panel):
 
 class Preferences(MWindow):
     def __init__(self, *args, **kwds):
-        from sys import platform as _platform
         super().__init__(
             565,
             387,
@@ -488,7 +487,7 @@ class Preferences(MWindow):
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
-            | (wx.RESIZE_BORDER if _platform != "darwin" else 0),
+            | (wx.RESIZE_BORDER if platform.system() != "Darwin" else 0),
             **kwds
         )
 

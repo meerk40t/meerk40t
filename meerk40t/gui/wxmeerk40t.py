@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import platform
 import sys
 import traceback
 
@@ -410,7 +411,7 @@ class wxMeerK40t(wx.App, Module):
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window Opened."))
+                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -419,10 +420,10 @@ class wxMeerK40t(wx.App, Module):
                     try:
                         w = path.opened[window_uri]
                         kernel.run_later(window_close, None)
-                        channel(_("Window Closed."))
+                        channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window Opened."))
+                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -539,7 +540,7 @@ class wxMeerK40t(wx.App, Module):
             del self.locale
         self.locale = wx.Locale(language_index)
         # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or "linux" in sys.platform:
+        if self.locale.IsOk() or platform.system() == "Linux":
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None
@@ -650,9 +651,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
+    error_log = "MeerK40t crash log. Version: %s on %s:%s - %s\n" % (
         APPLICATION_VERSION,
-        sys.platform,
+        platform.system(),
+        platform.machine(),
         wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
@@ -726,7 +728,7 @@ Send the following data to the MeerK40t team?
         caption = _("Crash Detected! Send Log?")
         style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
     ext_msg += error_log
-    dlg = wx.GenericMessageDialog(
+    dlg = wx.MessageDialog(
         None,
         message,
         caption=caption,

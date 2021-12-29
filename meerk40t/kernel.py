@@ -907,6 +907,7 @@ class Kernel:
         * configure
         * boot
         * ready
+        * finished
         """
 
         if self.lifecycle == "shutdown":
@@ -1918,7 +1919,7 @@ class Kernel:
         if text.startswith("."):
             text = text[1:]
         else:
-            channel(text)
+            channel(text, indent=False)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2677,9 +2678,11 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
+    def __call__(self, message: Union[str, bytes, bytearray], *args, indent=True, **kwargs):
         if self.line_end is not None:
             message = message + self.line_end
+        if indent and not isinstance(message, (bytes, bytearray)):
+            message = "    " + message.replace("\n", "\n    ")
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
@@ -2828,23 +2831,30 @@ class ConsoleFunction(Job):
         # os.makedirs(directory, exist_ok=True)
     # return directory
 
-def get_safe_path(name, create=False):
-    from pathlib import Path
-    from sys import platform
+def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
+    import platform
 
-    if platform == "darwin":
-        directory = (
-            Path.home()
-            .joinpath("Library")
-            .joinpath("Application Support")
-            .joinpath(name)
+    if not system:
+        system = platform.system()
+
+    if system == "Darwin":
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            "Library",
+            "Application Support",
+            name,
         )
-    elif "win" in platform:
-        from os.path import expandvars
-
-        directory = Path(expandvars("%LOCALAPPDATA%")).joinpath(name)
+    elif system == "Windows":
+        directory = os.path.join(
+            os.path.expandvars("%LOCALAPPDATA%"),
+            name
+        )
     else:
-        directory = Path.home().joinpath(".config").joinpath(name)
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            ".config",
+            name
+        )
     if directory is not None and create:
-        directory.mkdir(parents=True, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
     return directory
