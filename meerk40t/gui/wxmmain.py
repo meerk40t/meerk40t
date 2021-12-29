@@ -111,7 +111,6 @@ ID_FACEBOOK = wx.NewId()
 ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
-
 ID_CHECK_UPDATES = wx.NewId()
 
 

@@ -909,7 +909,6 @@ class Kernel:
         * ready
         * finished
         """
-
         if self.lifecycle == "shutdown":
             return  # No backsies.
         self.lifecycle = lifecycle
@@ -2804,32 +2803,6 @@ class ConsoleFunction(Job):
     def __str__(self):
         return self.data.replace("\n", "")
 
-# ToDo - Do we really need to use pathlib here rather than os.path (which is used elsewhere)
-# The following code should be equivalent (aside from returning a str rather than a pathlib object
-# def get_safe_path(name: str, create: Optional[bool]=False) -> str:
-    # from sys import platform
-
-    # if platform == "darwin":
-        # directory = os.path.join(
-            # os.path.expanduser("~"),
-            # "Library",
-            # "Application Support",
-            # name,
-        # )
-    # elif "win" in platform:
-        # directory = os.path.join(
-            # os.path.expandvars("%LOCALAPPDATA%"),
-            # name
-        # )
-    # else:
-        # directory = os.path.join(
-            # os.path.expanduser("~"),
-            # ".config",
-            # name
-        # )
-    # if directory is not None and create:
-        # os.makedirs(directory, exist_ok=True)
-    # return directory
 
 def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
     import platform
