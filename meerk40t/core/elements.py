@@ -2262,6 +2262,8 @@ class Elemental(Modifier):
                     s = old_speed + new_speed
                 elif percent:
                     s = old_speed * (new_speed / 100.0)
+                else:
+                    s = new_speed
                 op.settings.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
