@@ -675,8 +675,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         except PermissionError:
             from meerk40t.kernel import get_safe_path
 
-            path = get_safe_path(APPLICATION_NAME)
-            with open(path.joinpath(filename), "w") as file:
+            filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
+            with open(filename, "w") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
@@ -692,18 +692,17 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     if git:
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
-"""
-It appears that you are running Meerk40t from source managed by Git,
-and it is therefore likely that you are a developer.
+"""It appears that you are running Meerk40t from source managed by Git, and it is therefore
+likely that you are a developer.
 
-To avoid reporting crashes during development, automated submission of this
-crash has been disabled. If this is a crash in unrelated to any development work
-that you are undertaking, please create a new Github issue indicating the branch
-you are runing from and using the traceback below which can be found in
-"{filename}".
+To avoid reporting crashes during development, automated submission of this crash has
+been disabled. If this is a crash which is unrelated to any development work that you are
+undertaking, please create a new Github issue indicating the branch you are runing from
+and using the traceback below which can be found in "{filename}".
 
 """
         ).format(filename=filename)
+        caption = _("Crash Detected!")
         style = wx.OK | wx.ICON_WARNING
     else:
         message = _(
@@ -715,8 +714,8 @@ The good news is that you can help us fix this bug by anonymously sending us the
         )
         ext_msg = _(
 """
-Only the crash details below are sent. No data from your MeerK40t project is sent.
-No personal information is sent either.
+Only the crash details below are sent. No data from your MeerK40t project is sent. No
+personal information is sent either.
 
 Send the following data to the MeerK40t team?
 
@@ -724,12 +723,13 @@ Send the following data to the MeerK40t team?
 
 """
         )
+        caption = _("Crash Detected! Send Log?")
         style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
     ext_msg += error_log
     dlg = wx.GenericMessageDialog(
         None,
         message,
-        caption=_("Crash Detected! Send Log?"),
+        caption=caption,
         style=style,
     )
     dlg.SetExtendedMessage(ext_msg)

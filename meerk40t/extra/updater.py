@@ -4,32 +4,74 @@ from typing import Callable, Dict, List, Tuple
 import datetime
 from functools import partial
 import json
+from ..kernel import Modifier, Context, Channel, Kernel
 import os
-from platform import uname
+import platform
+from random import choice
 import sys
+from textwrap import wrap
 from urllib.request import Request, urlopen, urlretrieve
-from urllib.error import URLError
+from urllib.error import
 try:
     import wx
     GUI_ENABLED = True
 except ImportError:
     GUI_ENABLED = False
 
-from ..kernel import Modifier, Context, Channel, Kernel
+UPDATER_CONTEXT = "updater"
+UPDATER_PATH = "modifier/Updater"
+ENUM_DOWNLOAD_NO = 1
+ENUM_DOWNLOAD_BROWSER = 2
+ENUM_DOWNLOAD_MK = 3
+
 
 def plugin(kernel: Kernel, lifecycle: Optional[str]=None) -> None:
     if lifecycle == "console":
         GUI_ENABLED = False
     elif lifecycle == "register":
-        kernel.register("modifier/Updater", Updater)
+        kernel.register(UPDATER_PATH, Updater)
     elif lifecycle == "boot":
-        updater_context = kernel.get_context("updater")
-        updater_context.activate("modifier/Updater")
+        context = kernel.get_context(UPDATER_CONTEXT)
+        context.activate(UPDATER_PATH)
+    elif lifecycle == "finished":
+        context = kernel.get_context(UPDATER_CONTEXT)
+        instance = context.attached[UPDATER_PATH]
+        instance.startup()
+
+def UpdateMessageDialog(msg: str, caption: str='', style: int=wx.OK | wx.CENTRE) -> wx.Dialog:
+    """
+    Improves the wx message dialog box by separating out the first paragraph
+    as main message (shown in bold) and the rest as an extended message
+    """
+    if "\n\n" in msg:
+        msg, ext_msg = msg.split("\n\n", 1)
+        ext_msg = ext_msg.strip("\n")
+    else:
+        ext_msg = ""
+    dlg = wx.UpdateMessageDialog(
+        None,
+        msg,
+        caption=caption,
+        style=style
+    )
+    if ext_msg:
+        dlg.SetExtendedMessage(ext_msg)
+    return dlg
+
 
 class UpdaterWebError(Exception):
+    """
+    Plugin specific exception used to flag some sort of WebError
+    """
     pass
 
+
 class GHRelease:
+    """
+    Used to hold details of a release
+    * Currently executing release
+    * Full or beta update releases plus Github API Response plus calculated values
+    """
     def __init__(self, _: Callable[[str], str], tag: str="", response: Union[Dict, List[Dict]]=None) -> None:
         self._ = _
         self.tag = tag.strip()
@@ -39,7 +81,8 @@ class GHRelease:
             self.tag = response["tag_name"]
         self.version = self.comparable_version(self.tag)
         self.response = response
-        # print("tag",tag,"response",response["tag_name"] if response else "None","tag",self.tag,"version",self.version)
+        self.asset = None
+        self.update_path = None11
 
     @staticmethod
     def comparable_version(tag: str) -> List[int]:
@@ -80,6 +123,7 @@ class GHRelease:
         _ = self._
         return _("beta release") if self.beta else _("full release")
 
+
 class Updater(Modifier, dict):
     """
     This class provides three types of update functionality, all of which use a common set of routines:
@@ -119,25 +163,26 @@ class Updater(Modifier, dict):
         Modifier.__init__(self, context, name, channel)
         self.kernel = self.context._kernel
         self.root = self.kernel.root
-
         self._ = _ = self.kernel.translation
-        self.define_settings()
-        self.define_constants()
 
         self.release_current = GHRelease(_, self.kernel.version)
-        self.debug = self.root.channel("updater")
+
+        self.debug = self.kernel.channel(UPDATER_CONTEXT, timestamp=True)
+        self.executable_path = sys.path[0]
         if getattr(sys, "frozen", False):
             self.executable_type = "exe"
-            self.executable_path = os.path.dirname(sys.executable)
+            self.executable_path = sys.executable
         elif os.path.isdir(sys.path[0] + "/.git"):
             self.executable_type = "git"
-            self.executable_path = sys.path[0]
         elif os.path.isdir(sys.path[0] + "/.github"):
             self.executable_type = "src"
-            self.executable_path = sys.path[0]
         else:
             self.executable_type = "pkg"
-            self.executable_path = sys.path[0]
+        self.system_type = "{os}:{arch}".format(os=platform.system(), arch=platform.machine())
+        self.is_windows = platform.system() == "Windows"
+
+        self.define_settings()
+        self.define_constants()
 
         if self.root.updater_test:
             self.set_test_mode()
@@ -158,7 +203,27 @@ class Updater(Modifier, dict):
         context.setting(str, "updater_check_last_reminder", "")
 
     def define_constants(self) -> None:
-        _ = self._
+        # Override the translation function to format paragraphs to a fixed length
+        # so that the wx.UpdateMessageDialog doesn't size the dialog as wide as it might like.
+
+        # Note: This might also be a useful general translation function for meerk40t
+        # e.g. to format the about box and tooltips, particularly where translation strings include
+        # fixed line splits that complicate the translation, however generalising this is beyond
+        # the scope of the PR that introduces this function, particularly since we may also need to
+        # introduce a means of specifying the reflow width for each type of translation
+        # (in a way which does not prevent gettext collection of translation strings for the catalog).
+        def _(text: str) -> str:
+            MSGBOX_TEXT_WIDTH = 80
+            # Split the translated text into separate lines, reflow each line as several lines of maximum width
+            # and then combine back into a single string
+            lines = self._(text).split("\n")
+            for i, line in enumerate(lines):
+                lines[i] = "\n".join(wrap(
+                    line,
+                    width=MSGBOX_TEXT_WIDTH,
+                    subsequent_indent="   " if line.startswith("* ") else "",
+                ))
+            return "\n".join(lines)
 
         self["DELAY_BETWEEN_AUTOCHECKS"] = datetime.timedelta(days=2)
         self["DELAY_BETWEEN_REMINDERS"] = datetime.timedelta(days=7)
@@ -171,9 +236,9 @@ class Updater(Modifier, dict):
         # We assume that there will have been less than 20 releases to legacy branches since
         # last full and beta releases to main branch
         self["GITHUB_RELEASES"] = "https://api.github.com/repos/meerk40t/meerk40t/releases?perpage=20"
-        self["GITHUB_TIMESTAMP_FORMAT"] = "%Y-%m-%dT%H:%M:%SZ"
         self["HEADER_ACCEPT"] = "application/vnd.github.v3+json"
-        self["HEADER_USERAGENT"] = "Meerk40t/{version}"
+        self["HEADER_USERAGENT"] = "Meerk40t/{version}".format(version=self.release_current.tag)
+        self["GITHUB_TIMESTAMP_FORMAT"] = "%Y-%m-%dT%H:%M:%SZ"
 
         self["WEB_ERROR_MESSAGE"] = (
             _("Check for updates: Github request for release details failed!")
@@ -185,14 +250,94 @@ class Updater(Modifier, dict):
             "A new {release_type} of {name} v{tag} is available from:"
             + "\n{url}"
         )
-        self["DOWNLOAD_MESSAGE"] = _("Do you want to download this new release?")
-        self["SOURCE_MESSAGE"] = (
-            _(
-                "Because you are running from downloaded source you will need to update your source files, "
-                + "by downloading and unpacking "
-                + "a new version of the source code to the source directory:"
+        self["GUI_CAPTION"] = _("Check for Update")
+        self["GUI_HELP"] = _("FAQs")
+        self["DEFER"] = _("Defer for {days} days")
+        self["NO"] = _("&No")
+        self["OK"] = _("&OK")
+        self["UPDATE"] = _("&Update")
+        self["DOWNLOAD_EXECUTABLE"] = _("&Download executable")
+        self["DOWNLOAD_BROWSER"] = _("Download with &browser")
+        download_message = _("Do you want to download this new release?")
+        download_exe_yourself = _(
+            "* Download the executable file using a browser, to a directory and executable name of your own choice."
+        )
+        self["EXE_DOWNLOAD_MESSAGE"] = (
+            self["UPDATE_MESSAGE"]
+            + "\n\n"
+            + _(
+                "You are running from an executable under windows and windows will not allow "
+                + "us to replace the executable file whilst you are running {name}. "
+                + "To update you can either:"
             )
-            + "\n    {path}\n\n" + self["DOWNLOAD_MESSAGE"]
+            + "\n"
+            + _(
+                "* Download the new executable to the same directory with a unique filename containing the version number. "
+                + "You will need to run this different executable next time to get the new version; or"
+            )
+            + "\n"
+            + download_exe_yourself
+            + "\n\n"
+            + download_message
+        )
+        self["EXE_BROWSER_MESSAGE"] = (
+            self["UPDATE_MESSAGE"]
+            + "\n\n"
+            + _(
+                "You are running from an executable but the directory the executable is located in is not writeable by {name}. "
+                + "This means that you will need to:"
+            )
+            + "\n"
+            + download_exe_yourself
+            + "\n\n"
+            + download_message
+        )
+        self["EXE_UPDATE_MESSAGE"] = (
+            self["UPDATE_MESSAGE"]
+            + "\n\n"
+            + _(
+                'You are running from an executable file "{file}". To update you can either:'
+            )
+            + "\n"
+            + _(
+                '* Have {name} download and replace the executable file; or'
+            )
+            + "\n"
+            + download_exe_yourself
+            + "\n\n"
+            + download_message
+        )
+        src_update = (
+            _(
+                "* Download the compressed source file using a browser, and unpack it yourself to:"
+            )
+            + "\n {path}\n\n".format(path=os.path.dirname(self.executable_path))
+            + download_message
+        )
+        self["SRC_UPDATE_MESSAGE"] = (
+            self["UPDATE_MESSAGE"]
+            + "\n\n"
+            + _(
+                "You are running from downloaded source. To update you can either:"
+            )
+            + "\n"
+            + _(
+                "* Have {name} download and replace the source files; or"
+            )
+            + "\n"
+            + src_update
+        )
+        self["SRC_BROWSER_MESSAGE"] = (
+            self["UPDATE_MESSAGE"]
+            + "\n\n"
+            + _(
+                "You are running from downloaded source. To update you can either:"
+            )
+            + _(
+                "You are running from downloaded source but unfortunaely one or more directories or files "
+                + "for this source copy are not writeable by {name}. This means that you will need to:"
+            )
+            + src_update
         )
         self["GIT_MESSAGE"] = (
             _(
@@ -213,57 +358,109 @@ class Updater(Modifier, dict):
             + "\n"
             + "PIP3 install -u {name}"
         )
+        self["UPDATER_HELP_URL"] = "https://github.com/meerk40t/meerk40t/wiki/Updater-FAQs"
+        self["PROGRESS_TITLE"] = _("Downloading newer version...")
+        self["PROGRESS_MESSAGE"] = _("Downloading {file}...")
+        self["DOWNLOADED"] = _("Download complete: {file}")
 
-        self["DOWNLOAD_DEFER"] = (_("Download"), _("Defer for {days} days"))
 
         # List of possible file specs for each platform
         # For uniqueness, first specification (with {tag}) will be download filename
-        # key: platform.uname().system + ":" + platform.uname().machine
+        # key: platform.system() + ":" + platform.machine()
+        # The following has been derived from https://en.wikipedia.org/wiki/Uname
+        windows32_spec = ["MeerK40t {tag}.exe", "MeerK40t.exe"]
+        linux32_spec   = ["MeerK40t-Linux-{tag}", "Meerk40t-Linux"]
+        rpi_spec       = ["MeerK40t_Pi_{tag}.tar", "Meerk40t_Pi.tar"]
+        darwin_unsigned_spec = [
+            "MeerK40t_unsigned_{tag}.dmg",
+            "MeerK40t_{tag}.dmg",
+            "Meerk40t_unsigned.dmg",
+            "Meerk40t.dmg",
+        ]
+        darwin_m1_spec = ["MeerK40t_M1_{tag}.dmg", "MeerK40t_M1.dmg"]
         self["ASSET_MAP"] = {
-            "Windows:AMD64" : ["MeerK40t {tag}.exe", "MeerK40t.exe"],
-            "Linux:x86_64"  : ["MeerK40t-Linux-{tag}", "Meerk40t-Linux"],
+            "Windows:i386"  : windows32_spec,
+            "Windows:AMD64" : windows32_spec,
+            "Linux:i686"    : linux32_spec,
+            "Linux:x86_64"  : linux32_spec,
+            "Linux:armv6l"  : rpi_spec,
+            "Linux:armv7l"  : rpi_spec,
+            "Linux:aarch64" : rpi_spec,
+            "Darwin:i386"   : darwin_unsigned_spec, # MacOS 10.6
+            "Darwin:i586"   : darwin_unsigned_spec, # Unknown versions
+            "Darwin:i686"   : darwin_unsigned_spec, # Unknown versions
+            "Darwin:x86_64" : darwin_unsigned_spec, # MacOS 10.7-10.15
+            "Darwin:arm64"  : darwin_m1_spec, # MacOS 11 on M1
         }
 
-        self["GUI_CAPTION"] = _("Check for Update")
-        self["DOWNLOADED"] = _("Download complete: {file}")
-        self["PROGRESS_TITLE"] = _("Downloading newer version...")
-        self["PROGRESS_MESSAGE"] = _("Downloading {file}...")
 
         self["FILESPEC_TAG_OPTIONS"] = [
             "-{tag}",  # First will be appended to file name if all else fails
             "_{tag}",
             " {tag}",
-            "{tag}"    # Shortest must come last
+            "{tag}",   # Shortest must come last
         ]
+
+        # if self.root.updater_test:
+            # print("updater messages:")
+            # for id, msg in self.items():
+                # print("{id}: {msg}".format(id=id, msg=msg))
 
     def set_test_mode(self) -> None:
         context = self.context
         _ = self._
+
         # Set current release to 0 so that all releases are new
         self.release_current = GHRelease(_)
+
         # In case you are testing when running from source, pretend to be running from exe
         self.executable_type = "exe"
+
         # Delete all previous update data
         context.updater_check_timestamp = ""
         context.updater_check_tag_full = ""
         context.updater_check_tag_beta = ""
         context.updater_check_tag_current = ""
         context.updater_check_last_reminder = ""
-        # Don't limit to releases x days old
+
+        # Run and report more frequently (minutes rather than days)
         self["DELAY_BETWEEN_AUTOCHECKS"] = datetime.timedelta(minutes=1)
         self["DELAY_BETWEEN_REMINDERS"] = datetime.timedelta(minutes=5)
+
         # Don't limit to releases x days old
         self["DAYS_AUTO_AFTER_RELEASE_FULL"] = datetime.timedelta(days=0)
         self["DAYS_AUTO_AFTER_RELEASE_BETA"] = datetime.timedelta(days=0)
+
+        # Set random O/S & hardware
+        self.system_type = choice(list(self["ASSET_MAP"].keys()))
+        self.executable_type = choice(["exe", "git", "pkg", "src"])
+        self.is_windows = self.system_type.startswith("Windows:")
+        if self.executable_type == "exe":
+            self.executable_path = os.path.join(
+                os.path.dirname(self.executable_path),
+                self["ASSET_MAP"][self.system_type][-1],
+            )
+        # Send debug channel to print / console
+        self.debug.watch(print)
+        if "console" in self.kernel.channels:
+            self.debug.watch(self.kernel.channels["console"])
+        self.debug(
+            "updater_test: running in test mode as:\n\tsystype: {systype}\n\trun from: {ex_type}\n\tpath: {path}".format(
+                systype=self.system_type,
+                ex_type=self.executable_type,
+                path=self.executable_path,
+            )
+        )
         # All options should now be testable using Preferences
         # GUI check will actually run autocheck GUI.
 
     def attach(self, *args, **kwargs) -> None:
+        # Console check_for_updates
+        # Runs entirely in a worker thread becuase console output works
+
         kernel = self.kernel
         _ = self._
 
-        # Console check_for_updates
-        # Runs entirely in a worker thread becuase console output works
         @kernel.console_command(
             "check_for_updates",
             help=_("Check whether a newer version is available"),
@@ -272,15 +469,19 @@ class Updater(Modifier, dict):
             """
             This command checks for updates and outputs the results to the console.
             """
-            kernel.threaded(partial(self.updater_console, channel), "updater_check")
+            kernel.threaded(
+                self.updater_console, channel,
+                thread_name="Updater"
+            )
 
         # GUI Help/Check for updates
         # Lookup/analysis and download functions run in a worker thread
         # GUI dialogs to report release status and download success run on main thread
         if GUI_ENABLED:
             kernel.register("updater/gui", self.updater_gui)
-            self.context.listen("updater;to_main", self.updater_to_main)
+            self.context.listen("updater;download_progress", self.gui_download_progress)
 
+    def startup(self):
         # Startup
         if self.root.updater_check_automated:
             self.updater_startup()
@@ -356,11 +557,8 @@ class Updater(Modifier, dict):
             autocheck = True
 
         self.kernel.threaded(
-            partial(
-                self.updater_gui_check,
-                autocheck,
-            ),
-            "updater_check"
+            self.updater_gui_check, autocheck,
+            thread_name="Updater"
         )
 
     def updater_gui_check(self, autocheck: Optional[bool]=False) -> None:
@@ -378,10 +576,11 @@ class Updater(Modifier, dict):
             self.debug("updater_gui: github web error")
             # If autocheck we do not report web errors to the user
             if not autocheck:
-                self.context.signal("updater;to_main", self.gui_weberror, e)
+                # self.context.signal("updater;to_main", self.gui_weberror, e)
+                self.kernel.run_later(self.gui_weberror, e)
             return
 
-        # If autocheck, then we may surpress repeat results if user has deferred an update.
+        # If autocheck, then we may suppress repeat results if user has deferred an update.
         if autocheck:
             # If results have not changed; and
             # Elapsed time since results last advised is insufficient
@@ -395,17 +594,51 @@ class Updater(Modifier, dict):
                 return
 
         self.store_last_check(release_full, release_beta)
-        self.context.signal(
-            "updater;to_main",
+
+        # Unlike console, only now interested in single new version
+        if release_beta.tag:
+            new_release = release_beta
+        else:
+            new_release = release_full
+
+        # Find correct download, check whether MK download/update is possible etc.
+        self.analyse_update(new_release)
+
+        self.kernel.run_later(
             self.updater_gui_results,
-            release_full,
-            release_beta,
-            autocheck
+            new_release,
+            autocheck,
         )
 
+    def analyse_update(self, release: GHRelease) -> bool:
+        """
+        Determine all the data needed for a later download etc.
+        1. Asset to download, filename for new download file
+        2. Whether download by MK should be enabled, and if so whether replace or download
+        3. Download by MK disabled if insufficient diskspace required, etc.
+        """
+        # This method decides whether MK download of the new release is possible:
+        #   1.  We cannot risk overwriting the existing files directly in case overwrite is interrupted by
+        #       e.g. a crash or power failure, and so need to download (and unpack) a separate copy and then rename.
+        #   2.  To update We therefore need to have access rights sufficient to create a new executable / source directory
+        #       alongside the existing one, and to rename existing to old and new to existing.
+        #   3.  There needs to be sufficient disk space to allow this to happen.
+        # If all the above are true, then Meerk40t can manage the download and update.
+
+        # If user has disabled updater
+        if self.root.updater_download_browser:
+            return False
+
+        # If we are a Pypi or Git run from source:
+        if self.executable_type in ["pkg", "git"]:
+            return False
+
+        # If exe, then we need sufficient space for the download of the new executable
+        if self.executable_type == "exe":
+            s
+
     def updater_gui_results(self,
-        release_full: GHRelease,
-        release_beta: GHRelease,
+        release: GHRelease,
         autocheck: Optional[bool]=False
     ) -> None:
         # Runs on main thread
@@ -413,61 +646,46 @@ class Updater(Modifier, dict):
             "updater_gui: results called on main - autocheck={autocheck}".format(autocheck=autocheck)
         )
         release_current = self.release_current
-        if (
-            (
-              release_current.version == release_full.version
-              and release_beta.tag == ""
-            )
-            or (
-              release_current.version == release_beta.version
-              and release_beta.tag
-            )
-        ):
+        if release_current.version == release.version:
             self.debug("updater_gui: up to date")
             if autocheck:
-                self.debug("updater_gui: autocheck - user advise skipped")
+                self.debug("updater_gui: autocheck: up to date - user advise skipped")
             else:
                 self.gui_up_to_date(release_current)
             return
 
-        if(
-            release_current.version > release_full.version
-            and release_current.version > release_beta.version
-        ):
+        if release_current.version > release.version:
             self.debug("updater_gui: running pre-release version")
             if autocheck:
-                self.debug("updater_gui: autocheck - user advise skipped")
+                self.debug("updater_gui: autocheck: running pre-release - user advise skipped")
             else:
                 self.gui_prerelease(release_current)
             return
 
         # Advise user of new release
         self.store_last_reminder()
-        if release_current.version < release_beta.version:
-            self.debug("updater_gui: advise newer beta")
-            download = self.gui_new_release(release_beta, autocheck)
-            if download:
-                self.debug("updater_gui: download beta")
-                self.updater_download(release_beta)
-            else:
-                self.debug("updater_gui: defer beta")
-        elif release_current.version < release_full.version:
-            self.debug("updater_gui: advise newer full")
-            download = self.gui_new_release(release_full, autocheck)
-            if download:
-                self.debug("updater_gui: download full")
-                self.updater_download(release_full)
-            else:
-                self.debug("updater_gui: defer full")
+        self.debug("updater_gui: advise newer version")
+        download = self.gui_new_release(release, autocheck)
+        if download is ENUM_DOWNLOAD_NO:
+            self.debug("updater_gui: button no/defer")
+        elif download is ENUM_DOWNLOAD_MK:
+            self.debug("updater_gui: button download")
+            if self.executable_type == "exe":
+                self.updater_download_exe(release)
+                return
+            if self.executable_type == "src":
+                self.updater_download_src(release)
+                return
+        elif download is ENUM_DOWNLOAD_BROWSER:
+            self.debug("updater_gui: button browser")
+        else:
+            self.debug("updater_gui: button unknown")
 
-    def updater_download(self, release: GHRelease) -> None:
-        # Runs in main thread
-        if self.executable_type == "exe":
-            self.updater_download_exe(release)
-            return
-        if self.executable_type == "src":
-            self.updater_download_src(release)
-            return
+    def updater_download_browser(self, release: GHRelease) -> None:
+        url = release.download_url
+        self.debug('updater_download_exe: opening {url} in browser'.format(url=url))
+        import webbrowser
+        webbrowser.open(url)
 
     def updater_download_exe(self, release: GHRelease) -> None:
         """
@@ -478,9 +696,8 @@ class Updater(Modifier, dict):
         # Runs in main thread
         self.debug("updater_gui: download exe on main")
 
-        systype = uname()
-        system_type = ":".join((systype.system, systype.machine))
-        if system_type in self["ASSET_MAP"]:
+        # If Windows then we
+        if self.system_type in self["ASSET_MAP"]:
             file_specs = self["ASSET_MAP"][system_type]
         else:
             # Attempt to derive file_specs from current filename
@@ -516,19 +733,15 @@ class Updater(Modifier, dict):
 
         download_name = file_specs[0].format(tag=release_tag)
         download_path = self.executable_path
-        download_full = os.path.join(download_path, download_name)
+        download_full = os.path.join(os.path.dirname(download_path), download_name)
         if len(links) == 1:
             # Only one possible asset
             spec, asset = links[0]
             if not self.root.updater_download_browser and os.access(download_path, os.W_OK):
                 # Download directly
                 self.kernel.threaded(
-                    partial(
-                        self.updater_gui_download,
-                        asset,
-                        download_full,
-                    ),
-                    "updater_check"
+                    self.updater_gui_download, asset, download_full,
+                    thread_name="Updater"
                 )
                 return
             # Download executable in browser
@@ -549,7 +762,7 @@ class Updater(Modifier, dict):
         """
         # Runs in main thread
         self.debug("updater_gui: download src on main")
-        if uname().system == "Windows":
+        if self.is_windows:
             self.debug("updater_gui: windows - download zip")
             url = release.response["zipball_url"]
         else:
@@ -582,8 +795,7 @@ class Updater(Modifier, dict):
             )
         except URLError as e:
             self.debug("updater_gui: download web error")
-            self.context.signal(
-                "updater;to_main",
+            self.kernel.run_later(
                 self.gui_weberror,
                 UpdaterWebError("Direct download failed: " + str(e))
             )
@@ -592,8 +804,7 @@ class Updater(Modifier, dict):
         # Check that downloaded filename as expected
         if filename != file_path:
             self.debug("updater_gui: download file not correct path")
-            self.context.signal(
-                "updater;to_main",
+            self.kernel.run_later(
                 self.gui_weberror,
                 UpdaterWebError("Direct download failed: incorrect filename")
             )
@@ -602,14 +813,13 @@ class Updater(Modifier, dict):
         size = asset["size"]
         if os.path.getsize(file_path) != size:
             self.debug("updater_gui: download file not correct size")
-            self.context.signal(
-                "updater;to_main",
+            self.kernel.run_later(
                 self.gui_weberror,
                 UpdaterWebError("Direct download failed: file size incorrect")
             )
             return
 
-        self.context.signal("updater;to_main", self.gui_download_successful, file_path)
+        self.kernel.run_later(self.gui_download_successful, file_path)
 
     def gui_download_reporthook(self,
         progress: Dict,
@@ -626,8 +836,7 @@ class Updater(Modifier, dict):
         ):
             progress["percent"] = percent
             self.context.signal(
-                "updater;to_main",
-                self.gui_download_progress,
+                "updater;download_progress",
                 progress,
             )
         else:
@@ -638,21 +847,22 @@ class Updater(Modifier, dict):
 
         # If disabled, do nothing
         if not self.root.updater_check_automated:
+            self.debug("updater_autocheck: disabled")
             return
 
         self.debug("updater_autocheck: called at startup")
         # If we are running in console mode, we will always run the console command
         if not GUI_ENABLED:
             self.debug("updater_autocheck: running as console")
-            kernel.threaded(partial(self.updater_console, self.kernel.channel("console"), True), "updater_check")
+            self.kernel.threaded(
+                self.updater_console, self.kernel.channel("console"), True,
+                thread_name="Updater"
+            )
             return
 
         # Check whether sufficient elapsed time has happened since we last ran the check
         if self.is_autocheck_due():
             self.updater_gui(autocheck=True)
-
-    def updater_to_main(self, path: str, function: Callable, *args) -> None:
-        function(*args)
 
 
     # ==========
@@ -689,8 +899,7 @@ class Updater(Modifier, dict):
         )
 
     def gui_weberror(self, e: Exception) -> None:
-        dlg = wx.GenericMessageDialog(
-            None,
+        dlg = UpdateMessageDialog(
             self["WEB_ERROR_MESSAGE"].format(exception=e),
             caption=self["GUI_CAPTION"],
             style=wx.OK | wx.ICON_WARNING | wx.CENTRE,
@@ -699,8 +908,7 @@ class Updater(Modifier, dict):
         dlg.Destroy()
 
     def gui_up_to_date(self, release: GHRelease) -> None:
-        dlg = wx.GenericMessageDialog(
-            None,
+        dlg = UpdateMessageDialog(
             self["CURRENT_MESSAGE"].format(
                 release_type=release.release_type,
                 name=self.kernel.name,
@@ -712,8 +920,7 @@ class Updater(Modifier, dict):
         dlg.Destroy()
 
     def gui_prerelease(self, release: GHRelease) -> None:
-        dlg = wx.GenericMessageDialog(
-            None,
+        dlg = UpdateMessageDialog(
             self["PRERELEASE_MESSAGE"].format(
                 release_type=release.release_type,
                 name=self.kernel.name,
@@ -724,57 +931,80 @@ class Updater(Modifier, dict):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def gui_new_release(self, release: GHRelease, autocheck: Optional[bool]=False) -> None:
+    def gui_new_release(self, release: GHRelease, autocheck: Optional[bool]=False) -> Optional[int]:
         # Runs on main
 
-        # Assume executable_type == "exe"
-        action = self["DOWNLOAD_MESSAGE"]
-        style = wx.YES_NO | wx.ICON_QUESTION | wx.CENTRE
-        if self.executable_type == "src":
-            action = self["SOURCE_MESSAGE"]
-        elif self.executable_type == "git":
-            style = wx.OK | wx.ICON_INFORMATION | wx.CENTRE
-            action = self["GIT_MESSAGE"]
-        elif self.executable_type == "pkg":
-            style = wx.OK | wx.ICON_INFORMATION | wx.CENTRE
-            action = self["PACKAGE_MESSAGE"]
-        action = self["UPDATE_MESSAGE"] + "\n\n" + action
+        # Button mappings
+        # Ok/Cancel - do not download now - shown as "Ok" or "No" or "Defer..." depending on execution_type
+        # Yes - Internal download - shown as "Update" or "Download"
+        # No - Browser download - shown as "Download with browser" or "Open Release page"
 
-        path = os.path.dirname(sys.argv[0])
-        # msg, ext_msg = self.gui_split_message(
-            # action.format(
-                # release_type=release.release_type,
-                # tag=release.tag,
-                # path=path,
-                # url=release.response["html_url"],
-                # name=self.kernel.name,
-            # )
-        # )
-        msg = action.format(
-            release_type=release.release_type,
-            tag=release.tag,
-            path=path,
-            url=release.response["html_url"],
-            name=self.kernel.name,
-        )
+        executable_type = self.executable_type
+        if autocheck:
+            okmsg = cancelmsg = self["DEFER"].format(days=self["DELAY_BETWEEN_REMINDERS"].days)
+        else:
+            cancelmsg = self["NO"]
+            okmsg = self["OK"]
 
-        dlg = wx.GenericMessageDialog(
-            None,
-            msg,
-            caption=self["GUI_CAPTION"],
-            style=style,
+        if executable_type in ["exe", "src"]:
+            yesmsg = self["UPDATE"]
+            if executable_type == "exe":
+                if self.is_windows:
+                    msg = self["EXE_DOWNLOAD_MESSAGE"]
+                    yesmsg = self["DOWNLOAD_EXECUTABLE"]
+                else:
+                    msg = self["EXE_UPDATE_MESSAGE"]
+            else:
+                msg = self["SRC_UPDATE_MESSAGE"]
+            msg = msg.format(
+                release_type=release.release_type,
+                tag=release.tag,
+                path=self.executable_path,
+                url=release.response["html_url"],
+                name=self.kernel.name,
+            )
+            dlg = UpdateMessageDialog(
+                msg,
+                caption=self["GUI_CAPTION"],
+                style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.CENTRE | wx.HELP,
+            )
+            dlg.SetYesNoCancelLabels(yesmsg, self["DOWNLOAD_BROWSER"], cancelmsg)
+
+        elif executable_type in ["git", "pkg"]:
+            msg = self["GIT_MESSAGE"] if executable_type == "git" else self["PKG_MESSAGE"]
+            msg = msg.format(
+                release_type=release.release_type,
+                tag=release.tag,
+                path=self.executable_path,
+                url=release.response["html_url"],
+                name=self.kernel.name,
+            )
+            dlg = UpdateMessageDialog(
+                msg,
+                caption=self["GUI_CAPTION"],
+                style=wx.OK | wx.ICON_INFORMATION | wx.CENTRE | wx.HELP,
+            )
+            dlg.SetCancelLabel(okmsg)
+
+        dlg.SetHelpLabel(self["GUI_HELP"])
+        while True:
+            download = dlg.ShowModal()
+            if download == wx.ID_HELP:
+                import webbrowser
+                webbrowser.open(self["UPDATER_HELP_URL"])
+            else:
+                break
+        download = (
+            ENUM_DOWNLOAD_NO if download in [wx.ID_OK, wx.ID_CANCEL]
+            else ENUM_DOWNLOAD_MK if download in [wx.ID_YES]
+            else ENUM_DOWNLOAD_BROWSER if download in [wx.ID_NO]
+            else None
         )
-        # if ext_msg:
-            # dlg.SetExtendedMessage(ext_msg)
-        if autocheck and self.executable_type in ["exe", "src"]:
-            yes, no = self["DOWNLOAD_DEFER"]
-            dlg.SetYesNoLabels(yes, no.format(days=self.defer_time(release).days))
-        download = dlg.ShowModal() == wx.ID_YES
-        dlg.Destroy()
+       dlg.Destroy()
 
         return download
 
-    def gui_download_progress(self, progress: Dict[str, Any]) -> None:
+    def gui_download_progress(self, path: str, progress: Dict[str, Any]) -> None:
         blks = progress["blks"]
         blk_size = progress["blk_size"]
         file_size = progress["file_size"]
@@ -807,8 +1037,7 @@ class Updater(Modifier, dict):
             progress["dlg"].Update(percent)
 
     def gui_download_successful(self, file_path: str) -> None:
-        dlg = wx.GenericMessageDialog(
-            None,
+        dlg = UpdateMessageDialog(
             self["DOWNLOADED"].format(
                 file=file_path,
             ),
@@ -835,14 +1064,15 @@ class Updater(Modifier, dict):
         # Runs on worker
         req = Request(self["GITHUB_RELEASES"])
         req.add_header("Accept", self["HEADER_ACCEPT"])
-        req.add_header("User-Agent", self["HEADER_USERAGENT"].format(version=self.kernel.version))
+        req.add_header("User-Agent", self["HEADER_USERAGENT"])
 
         try:
             req = urlopen(req)
         except URLError as e:
             self.debug("updater_check: UrlError: " + str(e))
             if not autocheck:
-                self.context.signal("updater;to_main", self.gui_weberror, e)
+                # self.context.signal("updater;to_main", self.gui_weberror, e)
+                self.kernel.run_later(self.gui_weberror, e)
             return None, None
 
         responses = json.loads(req.read())
@@ -850,8 +1080,12 @@ class Updater(Modifier, dict):
         if len(responses) == 0:
             self.debug("updater_check: Github JSON response empty")
             if not autocheck:
-                self.context.signal(
-                    "updater;to_main",
+                # self.context.signal(
+                    # "updater;to_main",
+                    # self.gui_weberror,
+                    # UpdaterWebError("Empty GitHub JSON response")
+                # )
+                self.kernel.run_later(
                     self.gui_weberror,
                     UpdaterWebError("Empty GitHub JSON response")
                 )
@@ -887,8 +1121,7 @@ class Updater(Modifier, dict):
             ):
                 self.debug("updater_process: Github JSON response missing key data")
                 if not autocheck:
-                    self.context.signal(
-                        "updater;to_main",
+                    self.kernel.run_later(
                         self.gui_weberror,
                         UpdaterWebError("Invalid GitHub JSON response - missing attribute(s)")
                     )
@@ -911,10 +1144,9 @@ class Updater(Modifier, dict):
                 except ValueError as e:
                     self.debug("updater_process: Github 'published_at' time format invalid")
                     if not autocheck:
-                        self.context.signal(
-                            "updater;to_main",
+                        self.kernel.run_later(
                             self.gui_weberror,
-                            UpdaterWebError("Github 'published_at' time format invalid")
+                            UpdaterWebError("Github 'published_at' time format invalid"),
                         )
                     return None, None
 
@@ -1002,22 +1234,36 @@ class Updater(Modifier, dict):
         if context.updater_check_tag_current != self.release_current.tag:
             self.debug("updater_autocheck: executing version has changed")
             return True
+        timestamp = context.updater_check_timestamp
+        delay = self["DELAY_BETWEEN_AUTOCHECKS"]
         due = self.is_timeout(
-            context.updater_check_timestamp,
-            self["DELAY_BETWEEN_AUTOCHECKS"],
+            timestamp,
+            delay,
         )
-        self.debug("updater_autocheck: autocheck due: {due}".format(due=due))
+        self.debug(
+            "updater_autocheck: autocheck due: {due} - Previous check: {timestamp}, delay: {delay}".format(
+                due=due,
+                timestamp=timestamp,
+                delay=delay,
+            )
+        )
         return due
 
     def is_same_as_last_check(self, release_full: GHRelease, release_beta: GHRelease) -> bool:
         context = self.context
-        if context.updater_check_tag_current != self.release_current.tag:
+        updater_check_tag_current = context.updater_check_tag_current
+        updater_check_tag_full = context.updater_check_tag_full
+        updater_check_tag_beta = context.updater_check_tag_beta
+        self.debug("updater: updater_check_tag_current={value}".format(value=updater_check_tag_current))
+        self.debug("updater: updater_check_tag_full={value}".format(value=updater_check_tag_full))
+        self.debug("updater: updater_check_tag_beta={value}".format(value=updater_check_tag_beta))
+        if updater_check_tag_current != self.release_current.tag:
             self.debug("updater_autocheck: results different - running different version")
             return False
-        if context.updater_check_tag_full != release_full.tag:
+        if updater_check_tag_full != release_full.tag:
             self.debug("updater_autocheck: results different - full release different")
             return False
-        if context.updater_check_tag_beta != release_beta.tag:
+        if updater_check_tag_beta != release_beta.tag:
             self.debug("updater_autocheck: results different - beta release different")
             return False
         self.debug("updater_autocheck: results same as last check")
@@ -1044,23 +1290,30 @@ class Updater(Modifier, dict):
         now = self.now()
 
         context.updater_check_tag_full = release_full.tag
-        self.debug("set context.updater_check_tag_full = " + release_full.tag)
+        self.debug("updater: set context.updater_check_tag_full = " + release_full.tag)
         context.updater_check_tag_beta = release_beta.tag
-        self.debug("set context.updater_check_tag_beta = " + release_beta.tag)
+        self.debug("updater: set context.updater_check_tag_beta = " + release_beta.tag)
         context.updater_check_tag_current = self.release_current.tag
-        self.debug("set context.updater_check_tag_current = " + self.release_current.tag)
+        self.debug("updater: set context.updater_check_tag_current = " + self.release_current.tag)
         context.updater_check_timestamp = now
-        self.debug("set context.updater_check_timestamp = " + now)
+        self.debug("updater: set context.updater_check_timestamp = " + now)
 
     def store_last_reminder(self) -> None:
         context = self.context
         now = self.now()
 
         context.updater_check_last_reminder = now
-        self.debug("set context.updater_check_last_reminder = " + now)
+        self.debug("updater: set context.updater_check_last_reminder = " + now)
 
 
 """
 show publication date of versions
 unittests
+<<<<<<< Updated upstream
+=======
+fix executable download file unwriteable (because it is in use)
+check writeability for update and only shown browser download if not available
+handle Update vs Browser as return code
+do src unpack
+>>>>>>> Stashed changes
 """
