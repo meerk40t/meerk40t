@@ -5,6 +5,7 @@ import os
 import re
 import threading
 import time
+from collections import deque
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
@@ -2668,7 +2669,7 @@ class Channel:
         if buffer_size == 0:
             self.buffer = None
         else:
-            self.buffer = list()
+            self.buffer = deque()
 
     def __repr__(self):
         return "Channel(%s, buffer_size=%s, line_end=%s)" % (
@@ -2677,7 +2678,11 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: Union[str, bytes, bytearray], *args, indent=True, **kwargs):
+    def __call__(
+        self, message: Union[str, bytes, bytearray], *args,
+        indent: Optional[bool]=True, **kwargs
+    ):
+        original_msg = message
         if self.line_end is not None:
             message = message + self.line_end
         if indent and not isinstance(message, (bytes, bytearray)):
@@ -2686,11 +2691,15 @@ class Channel:
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
         for w in self.watchers:
-            w(message)
+            # Avoid double timestamp and indent
+            if isinstance(w, Channel):
+                w(original_msg, indent=indent)
+            else:
+                w(message)
         if self.buffer is not None:
             self.buffer.append(message)
-            if len(self.buffer) + 10 > self.buffer_size:
-                self.buffer = self.buffer[-self.buffer_size :]
+            while len(self.buffer) > self.buffer_size:
+                self.buffer.popleft()
 
     def __len__(self):
         return self.buffer_size
