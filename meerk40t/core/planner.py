@@ -116,16 +116,6 @@ def plugin(kernel, lifecycle=None):
 
         choices = [
             {
-                "attr": "opt_rapid_between",
-                "object": context,
-                "default": True,
-                "type": bool,
-                "label": _("Rapid Moves Between Objects"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
-            {
                 "attr": "opt_reduce_travel",
                 "object": context,
                 "default": False,
@@ -226,26 +216,26 @@ def plugin(kernel, lifecycle=None):
                     "How close (mils) do endpoints need to be to count as closed?"
                 ),
             },
-            {
-                "attr": "opt_rapid_between",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "label": _("Rapid Moves Between Objects"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
-            {
-                "attr": "opt_jog_minimum",
-                "object": context,
-                "default": 256,
-                "type": int,
-                "label": _("Minimum Jog Distance"),
-                "tip": _(
-                    "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
-                ),
-            },
+            # {
+            #     "attr": "opt_jog_minimum",
+            #     "object": context,
+            #     "default": 256,
+            #     "type": int,
+            #     "label": _("Minimum Jog Distance"),
+            #     "tip": _(
+            #         "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
+            #     ),
+            # },
+            # {
+            #     "attr": "opt_rapid_between",
+            #     "object": context,
+            #     "default": True,
+            #     "type": bool,
+            #     "label": _("Rapid Moves Between Objects"),
+            #     "tip": _(
+            #         "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
+            #     ),
+            # },
         ]
         kernel.register_choices("optimize", choices)
     elif lifecycle == "poststart":
