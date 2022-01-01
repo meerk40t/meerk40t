@@ -100,41 +100,17 @@ class LayerSettingPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
 
-        self.text_dot_length.Enable(self.check_dot_length_custom.GetValue())
-        self.text_passes.Enable(self.check_passes.GetValue())
         select = self.combo_type.GetSelection()
-        self.raster_panel.Show(False)
         if select == 0:
             self.operation.operation = "Engrave"
-            self.check_dratio_custom.Enable(True)
-            self.text_dratio.Enable(self.check_dratio_custom.GetValue())
-            self.Layout()
         elif select == 1:
             self.operation.operation = "Cut"
-            self.check_dratio_custom.Enable(True)
-            self.text_dratio.Enable(self.check_dratio_custom.GetValue())
-            self.Layout()
         elif select == 2:
             self.operation.operation = "Raster"
-            self.raster_panel.Show(True)
-            self.text_raster_step.Enable(True)
-            self.text_raster_step.SetValue(str(self.operation.settings.raster_step))
-            self.check_dratio_custom.Enable(False)
-            self.text_dratio.Enable(False)
-            self.Layout()
         elif select == 3:
             self.operation.operation = "Image"
-            self.raster_panel.Show(True)
-            self.text_raster_step.Enable(False)
-            self.text_raster_step.SetValue(_("Pass Through"))
-            self.check_dratio_custom.Enable(False)
-            self.text_dratio.Enable(False)
-            self.Layout()
         elif select == 4:
             self.operation.operation = "Dots"
-            self.check_dratio_custom.Enable(True)
-            self.text_dratio.Enable(self.check_dratio_custom.GetValue())
-            self.Layout()
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
@@ -742,6 +718,16 @@ class ParameterPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    @signal_listener("element_property_reload")
+    def on_element_property_reload(self, origin=None, *args):
+        if self.operation.operation not in ("Raster", "Image"):
+            if self.raster_panel.Shown:
+                self.raster_panel.Hide()
+        else:
+            if not self.raster_panel.Shown:
+                self.raster_panel.Show()
+
+
     def set_widgets(self):
         self.layer_panel.set_widgets()
         self.speedppi_panel.set_widgets()
@@ -929,6 +915,7 @@ class OperationProperty(MWindow):
         self.notebook_main.AddPage(self.advanced_panel, "Advanced")
 
         self.add_module_delegate(self.param_panel.raster_panel.panel_start)
+        self.add_module_delegate(self.param_panel)
         # begin wxGlade: OperationProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
