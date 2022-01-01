@@ -27,12 +27,12 @@ class PreferencesUnitsPanel(wx.Panel):
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
-            "Units",
-            choices=["mm", "cm", "inch", "steps"],
+            _("Units"),
+            choices=[_("mm"), _("cm"), _("inch"), _("steps")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
-        self.radio_units.SetToolTip("Set default units for guides")
+        self.radio_units.SetToolTip(_("Set default units for guides"))
         self.radio_units.SetSelection(0)
         sizer_1.Add(self.radio_units, 0, wx.EXPAND, 0)
 
@@ -115,7 +115,7 @@ class PreferencesLanguagePanel(wx.Panel):
         self.context = context
 
         sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Language"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL
         )
         from .wxmeerk40t import supported_languages
 
@@ -126,7 +126,7 @@ class PreferencesLanguagePanel(wx.Panel):
         self.combo_language = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
-        self.combo_language.SetToolTip("Select the desired language to use.")
+        self.combo_language.SetToolTip(_("Select the desired language to use."))
         sizer_2.Add(self.combo_language, 0, 0, 0)
 
         self.SetSizer(sizer_2)
@@ -156,7 +156,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.context = context
 
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "SVG Pixel Per Inch"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL
         )
 
         self.combo_svg_ppi = wx.ComboBox(
@@ -171,7 +171,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
             style=wx.CB_READONLY,
         )
         self.combo_svg_ppi.SetToolTip(
-            "Select the Pixels Per Inch to use when loading an SVG file"
+            _("Select the Pixels Per Inch to use when loading an SVG file")
         )
         sizer_3.Add(self.combo_svg_ppi, 0, 0, 0)
 
@@ -180,7 +180,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
-            "Custom Pixels Per Inch to use when loading an SVG file"
+            _("Custom Pixels Per Inch to use when loading an SVG file")
         )
         sizer_3.Add(self.text_svg_ppi, 1, 0, 0)
 
