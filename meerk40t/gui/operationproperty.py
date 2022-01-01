@@ -7,11 +7,444 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
-_simple_width = 350
-_advanced_width = 612
+
+class LayerSettingPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None,  **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        layer_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Layer:"), wx.HORIZONTAL)
+
+        self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
+        self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
+        self.button_layer_color.SetToolTip("Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation.")
+        layer_sizer.Add(self.button_layer_color, 0, 0, 0)
+
+        self.combo_type = wx.ComboBox(self, wx.ID_ANY, choices=["Engrave", "Cut", "Raster", "Image"], style=wx.CB_DROPDOWN)
+        self.combo_type.SetToolTip("Operation Type\n\nCut & Engrave are vector operations, Raster and Image are raster operations.\n\nCut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most.")
+        self.combo_type.SetSelection(0)
+        layer_sizer.Add(self.combo_type, 1, 0, 0)
+
+        self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, "Enable")
+        self.checkbox_output.SetToolTip("Enable this operation for inclusion in Execute Job.")
+        self.checkbox_output.SetValue(1)
+        layer_sizer.Add(self.checkbox_output, 1, 0, 0)
+
+        self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, "Default")
+        self.checkbox_default.SetToolTip("When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created.\n\nRaster operations created automatically.\n")
+        self.checkbox_default.SetValue(1)
+        layer_sizer.Add(self.checkbox_default, 1, 0, 0)
+
+        self.SetSizer(layer_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_default, self.checkbox_default)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_button_layer(self, event):  # wxGlade: LayerSettingPanel.<event_handler>
+        print("Event handler 'on_button_layer' not implemented!")
+        event.Skip()
+
+    def on_combo_operation(self, event):  # wxGlade: LayerSettingPanel.<event_handler>
+        print("Event handler 'on_combo_operation' not implemented!")
+        event.Skip()
+
+    def on_check_output(self, event):  # wxGlade: LayerSettingPanel.<event_handler>
+        print("Event handler 'on_check_output' not implemented!")
+        event.Skip()
+
+    def on_check_default(self, event):  # wxGlade: LayerSettingPanel.<event_handler>
+        print("Event handler 'on_check_default' not implemented!")
+        event.Skip()
+
+# end of class LayerSettingPanel
+
+class SpeedPpiPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: SpeedPpiPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        speed_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Speed (mm/s)"), wx.HORIZONTAL)
+        speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
+
+        self.text_speed = wx.TextCtrl(self, wx.ID_ANY, "20.0")
+        self.text_speed.SetToolTip("Speed at which the head moves in mm/s.\n\nFor Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction.\n\nFor Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards.")
+        speed_sizer.Add(self.text_speed, 1, 0, 0)
+
+        power_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Power (ppi)"), wx.HORIZONTAL)
+        speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
+
+        self.text_power = wx.TextCtrl(self, wx.ID_ANY, "1000.0")
+        self.text_power.SetToolTip("Pulses Per Inch - This is software created laser power control.\n\n1000 is always on, 500 is half power (fire every other step).\n\nValues of 100 or have pulses > 1/10\" and are generally used only for dotted or perforated lines.\n")
+        power_sizer.Add(self.text_power, 1, 0, 0)
+
+        self.SetSizer(speed_power_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
+        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_text_speed(self, event):  # wxGlade: SpeedPpiPanel.<event_handler>
+        print("Event handler 'on_text_speed' not implemented!")
+        event.Skip()
+
+    def on_text_power(self, event):  # wxGlade: SpeedPpiPanel.<event_handler>
+        print("Event handler 'on_text_power' not implemented!")
+        event.Skip()
+
+# end of class SpeedPpiPanel
+
+class PassesPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None,  **kwds):
+        # begin wxGlade: PassesPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        sizer_passes = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Passes:"), wx.HORIZONTAL)
+
+        self.check_passes = wx.CheckBox(self, wx.ID_ANY, "Passes")
+        self.check_passes.SetToolTip("Enable Operation Passes")
+        sizer_passes.Add(self.check_passes, 1, 0, 0)
+
+        self.text_passes = wx.TextCtrl(self, wx.ID_ANY, "1")
+        self.text_passes.SetToolTip("How many times to repeat this operation?\n\nSetting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements.\n\nThe number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings.\n\nDuplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one.\n")
+        sizer_passes.Add(self.text_passes, 1, 0, 0)
+
+        self.SetSizer(sizer_passes)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
+        self.Bind(wx.EVT_TEXT, self.on_text_passes, self.text_passes)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_check_passes(self, event):  # wxGlade: PassesPanel.<event_handler>
+        print("Event handler 'on_check_passes' not implemented!")
+        event.Skip()
+
+    def on_text_passes(self, event):  # wxGlade: PassesPanel.<event_handler>
+        print("Event handler 'on_text_passes' not implemented!")
+        event.Skip()
+
+# end of class PassesPanel
+
+class PanelStartPreference(wx.Panel):
+    def __init__(self, *args, context=None, node=None,  **kwds):
+        # begin wxGlade: PanelStartPreference.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Start Preference:"), wx.VERTICAL)
+
+        self.slider_top = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
+        sizer_2.Add(self.slider_top, 0, wx.EXPAND, 0)
+
+        sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_2.Add(sizer_7, 0, wx.EXPAND, 0)
+
+        self.slider_left = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
+        sizer_7.Add(self.slider_left, 0, wx.EXPAND, 0)
+
+        self.display_panel = wx.Panel(self, wx.ID_ANY)
+        sizer_7.Add(self.display_panel, 1, wx.EXPAND, 0)
+
+        self.slider_right = wx.Slider(self, wx.ID_ANY, 1, 0, 2, style=wx.SL_VERTICAL)
+        sizer_7.Add(self.slider_right, 0, 0, 0)
+
+        self.slider_bottom = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
+        sizer_2.Add(self.slider_bottom, 0, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_2)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_slider_top(self, event):  # wxGlade: PanelStartPreference.<event_handler>
+        print("Event handler 'on_slider_top' not implemented!")
+        event.Skip()
+
+    def on_slider_left(self, event):  # wxGlade: PanelStartPreference.<event_handler>
+        print("Event handler 'on_slider_left' not implemented!")
+        event.Skip()
+
+    def on_slider_right(self, event):  # wxGlade: PanelStartPreference.<event_handler>
+        print("Event handler 'on_slider_right' not implemented!")
+        event.Skip()
+
+    def on_slider_bottom(self, event):  # wxGlade: PanelStartPreference.<event_handler>
+        print("Event handler 'on_slider_bottom' not implemented!")
+        event.Skip()
+
+# end of class PanelStartPreference
+
+class RasterSettingsPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None,  **kwds):
+        # begin wxGlade: RasterSettingsPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Raster:"), wx.VERTICAL)
+
+        sizer_3 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Raster Step:"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
+
+        self.text_raster_step = wx.TextCtrl(self, wx.ID_ANY, "1")
+        self.text_raster_step.SetToolTip("In a raster engrave, the step size is the distance between raster lines in 1/1000\" and also the number of raster dots that get combined together.\n\nBecause the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines.\n\nThe step size before you get gaps will depend on your focus and the size of your laser dot.\n\nStep size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.\n\nStep size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering.\n\n\n\n")
+        sizer_3.Add(self.text_raster_step, 0, 0, 0)
+
+        sizer_6 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Overscan:"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)
+
+        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "20")
+        self.text_overscan.SetToolTip("Overscan amount")
+        sizer_6.Add(self.text_overscan, 1, 0, 0)
+
+        self.combo_overscan_units = wx.ComboBox(self, wx.ID_ANY, choices=["steps", "mm", "cm", "inch", "mil", "%"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_overscan_units.SetSelection(0)
+        sizer_6.Add(self.combo_overscan_units, 0, 0, 0)
+
+        sizer_4 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Direction:"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
+
+        self.combo_raster_direction = wx.ComboBox(self, wx.ID_ANY, choices=["Top To Bottom", "Bottom To Top", "Right To Left", "Left To Right", "Crosshatch"], style=wx.CB_DROPDOWN)
+        self.combo_raster_direction.SetToolTip("Direction to perform a raster\n\nNormally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T).\n\nThis is because rastering in the X-direction involve moving only the laser head which is relatively low mass.\n\nRastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself.\n\nThis total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower.")
+        self.combo_raster_direction.SetSelection(0)
+        sizer_4.Add(self.combo_raster_direction, 1, 0, 0)
+
+        self.radio_directional_raster = wx.RadioBox(self, wx.ID_ANY, "Directional Raster:", choices=["Bidirectional", "Unidirectional"], majorDimension=1, style=wx.RA_SPECIFY_ROWS)
+        self.radio_directional_raster.SetToolTip("Raster on forward and backswing or only forward swing?\n\nRastering only on forward swings will double the time required to complete the raster.\n\nIt seems doubtful that there will be significant quality benefits from rastering in one direction.\n")
+        self.radio_directional_raster.SetSelection(0)
+        raster_sizer.Add(self.radio_directional_raster, 0, wx.EXPAND, 0)
+
+        self.panel_start = PanelStartPreference(self, wx.ID_ANY)
+        raster_sizer.Add(self.panel_start, 0, wx.EXPAND, 0)
+
+        self.SetSizer(raster_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction)
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_text_raster_step(self, event):  # wxGlade: RasterSettingsPanel.<event_handler>
+        print("Event handler 'on_text_raster_step' not implemented!")
+        event.Skip()
+
+    def on_text_overscan(self, event):  # wxGlade: RasterSettingsPanel.<event_handler>
+        print("Event handler 'on_text_overscan' not implemented!")
+        event.Skip()
+
+    def on_combo_raster_direction(self, event):  # wxGlade: RasterSettingsPanel.<event_handler>
+        print("Event handler 'on_combo_raster_direction' not implemented!")
+        event.Skip()
+
+    def on_radio_directional(self, event):  # wxGlade: RasterSettingsPanel.<event_handler>
+        print("Event handler 'on_radio_directional' not implemented!")
+        event.Skip()
+
+# end of class RasterSettingsPanel
+
+class ParameterPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: ParameterPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        param_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.layer_panel = LayerSettingPanel(self, wx.ID_ANY, context=context, node=node)
+        param_sizer.Add(self.layer_panel, 0, wx.EXPAND, 0)
+
+        self.speedppi_panel = SpeedPpiPanel(self, wx.ID_ANY, context=context, node=node)
+        param_sizer.Add(self.speedppi_panel, 0, wx.EXPAND, 0)
+
+        self.passes_panel = PassesPanel(self, wx.ID_ANY, context=context, node=node)
+        param_sizer.Add(self.passes_panel, 0, wx.EXPAND, 0)
+
+        self.raster_panel = RasterSettingsPanel(self, wx.ID_ANY, context=context, node=node)
+        param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
+
+        self.SetSizer(param_sizer)
+
+        self.Layout()
+        # end wxGlade
+
+    def pane_hide(self):
+        self.layer_panel.pane_hide()
+        self.speedppi_panel.pane_hide()
+        self.passes_panel.pane_hide()
+        self.raster_panel.pane_hide()
+
+    def pane_show(self):
+        self.layer_panel.pane_show()
+        self.speedppi_panel.pane_show()
+        self.passes_panel.pane_show()
+        self.raster_panel.pane_show()
 
 
-class OperationPropertyPanel(wx.Panel):
+# end of class ParameterPanel
+
+class LhyAdvancedPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LhyAdvancedPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        extras_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        advanced_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Speed Code Features:"), wx.VERTICAL)
+        extras_sizer.Add(advanced_sizer, 0, wx.EXPAND, 0)
+
+        sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
+        advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
+
+        self.check_dratio_custom = wx.CheckBox(self, wx.ID_ANY, "Custom D-Ratio")
+        self.check_dratio_custom.SetToolTip("Enables the ability to modify the diagonal ratio.")
+        sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
+
+        self.text_dratio = wx.TextCtrl(self, wx.ID_ANY, "0.261")
+        self.text_dratio.SetToolTip("Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)")
+        sizer_11.Add(self.text_dratio, 1, 0, 0)
+
+        sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
+        advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
+
+        self.checkbox_custom_accel = wx.CheckBox(self, wx.ID_ANY, "Acceleration")
+        self.checkbox_custom_accel.SetToolTip("Enables acceleration override")
+        sizer_12.Add(self.checkbox_custom_accel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.slider_accel = wx.Slider(self, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS)
+        self.slider_accel.SetToolTip("The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed.\n\nThis setting allows you to override the automatic selection and specify your own.")
+        sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
+
+        advanced_ppi_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Plot Planner"), wx.HORIZONTAL)
+        extras_sizer.Add(advanced_ppi_sizer, 0, wx.EXPAND, 0)
+
+        sizer_19 = wx.BoxSizer(wx.VERTICAL)
+        advanced_ppi_sizer.Add(sizer_19, 1, wx.EXPAND, 0)
+
+        sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_19.Add(sizer_20, 1, wx.EXPAND, 0)
+
+        self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
+        self.check_dot_length_custom.SetToolTip("Enable Dot Length")
+        sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
+
+        self.text_dot_length = wx.TextCtrl(self, wx.ID_ANY, "1")
+        self.text_dot_length.SetToolTip("For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes.\n\nWhen this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:\n\nIf you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" dashes and 1/2\" gaps.\n\nIf you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and 3/4\" gaps.\n")
+        sizer_20.Add(self.text_dot_length, 1, 0, 0)
+
+        self.combo_dot_length_units = wx.ComboBox(self, wx.ID_ANY, choices=["steps", "mm", "cm", "inch", "mil", "%"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_dot_length_units.SetSelection(0)
+        sizer_20.Add(self.combo_dot_length_units, 0, 0, 0)
+
+        self.check_group_pulse = wx.CheckBox(self, wx.ID_ANY, "Group Pulses")
+        self.check_group_pulse.SetToolTip("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds.\n\nThis setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config.\n\nIt works by swapping adjacent on or off bits to group on and off together and reduce the number of switches.\n\nAs an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", the difference should not be visible even under magnification.\n")
+        sizer_19.Add(self.check_group_pulse, 0, 0, 0)
+
+        self.SetSizer(extras_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_accel, self.slider_accel)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom)
+        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_group_pulses, self.check_group_pulse)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def on_check_dratio(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_check_dratio' not implemented!")
+        event.Skip()
+
+    def on_text_dratio(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_text_dratio' not implemented!")
+        event.Skip()
+
+    def on_check_acceleration(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_check_acceleration' not implemented!")
+        event.Skip()
+
+    def on_slider_accel(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_slider_accel' not implemented!")
+        event.Skip()
+
+    def on_check_dot_length(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_check_dot_length' not implemented!")
+        event.Skip()
+
+    def on_text_dot_length(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_text_dot_length' not implemented!")
+        event.Skip()
+
+    def on_check_group_pulses(self, event):  # wxGlade: LhyAdvancedPanel.<event_handler>
+        print("Event handler 'on_check_group_pulses' not implemented!")
+        event.Skip()
+
+
+class OperationPropertyPanelOld(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -1036,12 +1469,18 @@ class OperationPropertyPanel(wx.Panel):
 
 class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
-        super().__init__(_simple_width, 500, *args, **kwds)
+        super().__init__(350, 582, *args, **kwds)
 
-        self.panel = OperationPropertyPanel(
-            self, wx.ID_ANY, context=self.context, node=node
-        )
-        self.add_module_delegate(self.panel)
+        self.notebook_main = wx.Notebook(self, wx.ID_ANY)
+
+        self.param_panel = ParameterPanel(self.notebook_main, wx.ID_ANY, context=self.context, node=node)
+        self.notebook_main.AddPage(self.param_panel, "Properties")
+
+        self.advanced_panel = LhyAdvancedPanel(self.notebook_main, wx.ID_ANY, context=self.context, node=node)
+        self.notebook_main.AddPage(self.advanced_panel, "Advanced")
+
+        self.add_module_delegate(self.param_panel)
+        self.add_module_delegate(self.advanced_panel)
         # begin wxGlade: OperationProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
@@ -1049,17 +1488,23 @@ class OperationProperty(MWindow):
         self.SetTitle(_("Operation Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.operation = node
-        self.panel.set_widgets()
-        self.panel.on_size()
+        self.param_panel.operation = node
+        self.param_panel.set_widgets()
+        self.param_panel.on_size()
+
+        self.advanced_panel.operation = node
+        self.advanced_panel.set_widgets()
+        self.advanced_panel.on_size()
         self.Refresh()
         self.Update()
 
     def window_open(self):
-        self.panel.pane_show()
+        self.param_panel.pane_show()
+        self.advanced_panel.pane_show()
 
     def window_close(self):
-        self.panel.pane_hide()
+        self.param_panel.pane_hide()
+        self.advanced_panel.pane_hide()
 
     def window_preserve(self):
         return False
