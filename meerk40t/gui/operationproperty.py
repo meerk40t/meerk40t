@@ -451,6 +451,7 @@ class PanelStartPreference(wx.Panel):
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
+        self._toggle_sliders()
         self.raster_lines = None
         self.travel_lines = None
         self.refresh_display()
@@ -832,11 +833,6 @@ class RasterSettingsPanel(wx.Panel):
             self.combo_raster_direction.GetSelection()
         )
         self.context.raster_direction = self.operation.settings.raster_direction
-        self._toggle_sliders()
-
-        self.raster_lines = None
-        self.travel_lines = None
-        self.refresh_display()
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_radio_directional(
@@ -845,9 +841,6 @@ class RasterSettingsPanel(wx.Panel):
         self.operation.settings.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
-        self.raster_lines = None
-        self.travel_lines = None
-        self.refresh_display()
         self.context.elements.signal("element_property_reload", self.operation)
 
 
