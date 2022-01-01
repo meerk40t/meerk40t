@@ -70,7 +70,7 @@ def plugin(service, lifecycle):
             "button/control/Pause",
             {
                 "label": _("Pause"),
-                "icon": icons8_emergency_stop_button_50,
+                "icon": icons8_pause_50,
                 "tip": _("Pause the laser"),
                 "action": lambda v: service("pause\n"),
             },
@@ -80,7 +80,7 @@ def plugin(service, lifecycle):
             "button/control/Stop",
             {
                 "label": _("Stop"),
-                "icon": icons8_pause_50,
+                "icon": icons8_emergency_stop_button_50,
                 "tip": _("Emergency stop the laser"),
                 "action": lambda v: service("estop\n"),
             },
