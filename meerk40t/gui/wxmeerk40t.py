@@ -906,7 +906,7 @@ Send the following data to the MeerK40t team?
         caption = _("Crash Detected! Send Log?")
         style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
     ext_msg += error_log
-    dlg = wx.GenericMessageDialog(
+    dlg = wx.MessageDialog(
         None,
         message,
         caption=caption,

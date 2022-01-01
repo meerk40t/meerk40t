@@ -315,14 +315,21 @@ class LihuiyuDevice(Service):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command("speed", help=_("Set current speed of driver."))
-        def speed(command, channel, _, speed=None, difference=False, **kwargs):
-            original_speed = self.settings.speed
+        @self.console_command(
+            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
+        )
+        def speed(
+            command,
+            channel,
+            _,
+            data=None,
+            speed=None,
+            difference=False,
+            **kwargs
+        ):
+            spooler, driver, output = data
             if speed is None:
-                if original_speed is None:
-                    channel(_("Speed is not set."))
-                else:
-                    channel(_("Speed set at: %f mm/s") % original_speed)
+                channel(_("Speed set at: %f mm/s") % driver.speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -335,11 +342,11 @@ class LihuiyuDevice(Service):
                 channel(_("Not a valid speed or percent."))
                 return
             if percent and difference:
-                s = original_speed + original_speed * (s / 100.0)
+                s = driver.speed + driver.speed * (s / 100.0)
             elif difference:
-                s += original_speed
+                s += driver.speed
             elif percent:
-                s = original_speed * (s / 100.0)
+                s = driver.speed * (s / 100.0)
             self.driver.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.settings.speed)
 
