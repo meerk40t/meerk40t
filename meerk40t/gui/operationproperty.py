@@ -8,6 +8,109 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
+COLOR_TOOLTIP = _(
+    """Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation."""
+)
+
+OPERATION_TYPE_TOOLTIP = _(
+    """Operation Type
+
+Cut & Engrave are vector operations, Raster and Image are raster operations.
+
+Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."""
+)
+
+OPERATION_DEFAULT_TOOLTIP = _(
+    """When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created.
+
+Raster operations created automatically."""
+)
+
+OPERATION_SPEED_TOOLTIP = _(
+    """Speed at which the head moves in mm/s.
+For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction.
+
+For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
+    """
+)
+
+OPERATION_POWER_TOOLTIP = _(
+    """Pulses Per Inch - This is software created laser power control.
+1000 is always on, 500 is half power (fire every other step).
+Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines."""
+)
+
+OPERATION_PASSES_TOOLTIP = _(
+    """"How many times to repeat this operation?
+    
+Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements.
+
+The number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings.
+
+Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."""
+)
+
+OPERATION_RASTERSTEP_TOOLTIP = _(
+    """
+In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.
+
+Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines.
+
+The step size before you get gaps will depend on your focus and the size of your laser dot.
+
+Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.
+
+Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering."""
+)
+
+OPERATION_RASTERDIRECTION_TOOLTIP = _(
+    """Direction to perform a raster
+
+Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T).
+
+This is because rastering in the X-direction involve moving only the laser head which is relatively low mass.
+
+Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself.\n\nThis total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower."""
+)
+
+OPERATION_RASTERSWING_TOOLTIP = _(
+    """"Raster on forward and backswing or only forward swing?
+    
+Rastering only on forward swings will double the time required to complete the raster.
+    
+It seems doubtful that there will be significant quality benefits from rastering in one direction."""
+)
+
+OPERATION_ACCEL_TOOLTIP = _(
+    """The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed.
+This setting allows you to override the automatic selection and specify your own."""
+)
+
+OPERATION_DRATIO_TOOLTIP = _(
+    """Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"""
+)
+
+OPERATION_SHIFT_TOOLTIP = _(
+    """Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds.
+
+This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config.
+
+It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches.
+
+As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification."""
+)
+
+OPERATION_DOTLENGTH_TOOLTIP = _(
+    """For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes.
+    
+When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:
+
+If you set Dot Length to 500 = 1/2", a PPI of 500 would result in 1/2" dashes and 1/2" gaps.
+
+If you set Dot Length to 250 = 1/4", a PPI of 250 would result in 1/4" dashes and 3/4" gaps.
+"""
+)
+
 
 class LayerSettingPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -23,9 +126,7 @@ class LayerSettingPanel(wx.Panel):
 
         self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_layer_color.SetToolTip(
-            "Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation."
-        )
+        self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, 0, 0)
 
         self.combo_type = wx.ComboBox(
@@ -34,9 +135,7 @@ class LayerSettingPanel(wx.Panel):
             choices=["Engrave", "Cut", "Raster", "Image"],
             style=wx.CB_DROPDOWN,
         )
-        self.combo_type.SetToolTip(
-            "Operation Type\n\nCut & Engrave are vector operations, Raster and Image are raster operations.\n\nCut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."
-        )
+        self.combo_type.SetToolTip(OPERATION_TYPE_TOOLTIP)
         self.combo_type.SetSelection(0)
         layer_sizer.Add(self.combo_type, 1, 0, 0)
 
@@ -48,9 +147,7 @@ class LayerSettingPanel(wx.Panel):
         layer_sizer.Add(self.checkbox_output, 1, 0, 0)
 
         self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, "Default")
-        self.checkbox_default.SetToolTip(
-            "When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created.\n\nRaster operations created automatically.\n"
-        )
+        self.checkbox_default.SetToolTip(OPERATION_DEFAULT_TOOLTIP)
         self.checkbox_default.SetValue(1)
         layer_sizer.Add(self.checkbox_default, 1, 0, 0)
 
@@ -82,7 +179,7 @@ class LayerSettingPanel(wx.Panel):
             elif op == "Image":
                 self.combo_type.SetSelection(3)
             elif op == "Dots":
-                for m in self.main_panel.Children:
+                for m in self.GetParent().Children:
                     if isinstance(m, wx.Window):
                         m.Hide()
                 return
@@ -155,9 +252,7 @@ class SpeedPpiPanel(wx.Panel):
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
         self.text_speed = wx.TextCtrl(self, wx.ID_ANY, "20.0")
-        self.text_speed.SetToolTip(
-            "Speed at which the head moves in mm/s.\n\nFor Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction.\n\nFor Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
-        )
+        self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, 0, 0)
 
         power_sizer = wx.StaticBoxSizer(
@@ -166,9 +261,7 @@ class SpeedPpiPanel(wx.Panel):
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
 
         self.text_power = wx.TextCtrl(self, wx.ID_ANY, "1000.0")
-        self.text_power.SetToolTip(
-            'Pulses Per Inch - This is software created laser power control.\n\n1000 is always on, 500 is half power (fire every other step).\n\nValues of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.\n'
-        )
+        self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, 0, 0)
 
         self.SetSizer(speed_power_sizer)
@@ -237,9 +330,7 @@ class PassesPanel(wx.Panel):
         sizer_passes.Add(self.check_passes, 1, 0, 0)
 
         self.text_passes = wx.TextCtrl(self, wx.ID_ANY, "1")
-        self.text_passes.SetToolTip(
-            "How many times to repeat this operation?\n\nSetting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements.\n\nThe number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings.\n\nDuplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one.\n"
-        )
+        self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 1, 0, 0)
 
         self.SetSizer(sizer_passes)
@@ -616,9 +707,7 @@ class RasterSettingsPanel(wx.Panel):
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
 
         self.text_raster_step = wx.TextCtrl(self, wx.ID_ANY, "1")
-        self.text_raster_step.SetToolTip(
-            'In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.\n\nBecause the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines.\n\nThe step size before you get gaps will depend on your focus and the size of your laser dot.\n\nStep size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.\n\nStep size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering.\n\n\n\n'
-        )
+        self.text_raster_step.SetToolTip(OPERATION_RASTERSTEP_TOOLTIP)
         sizer_3.Add(self.text_raster_step, 0, 0, 0)
 
         sizer_6 = wx.StaticBoxSizer(
@@ -656,9 +745,7 @@ class RasterSettingsPanel(wx.Panel):
             ],
             style=wx.CB_DROPDOWN,
         )
-        self.combo_raster_direction.SetToolTip(
-            "Direction to perform a raster\n\nNormally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T).\n\nThis is because rastering in the X-direction involve moving only the laser head which is relatively low mass.\n\nRastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself.\n\nThis total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower."
-        )
+        self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, 0, 0)
 
@@ -670,9 +757,7 @@ class RasterSettingsPanel(wx.Panel):
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
-        self.radio_directional_raster.SetToolTip(
-            "Raster on forward and backswing or only forward swing?\n\nRastering only on forward swings will double the time required to complete the raster.\n\nIt seems doubtful that there will be significant quality benefits from rastering in one direction.\n"
-        )
+        self.radio_directional_raster.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
         self.radio_directional_raster.SetSelection(0)
         raster_sizer.Add(self.radio_directional_raster, 0, wx.EXPAND, 0)
 
@@ -856,9 +941,7 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
 
         self.text_dratio = wx.TextCtrl(self, wx.ID_ANY, "0.261")
-        self.text_dratio.SetToolTip(
-            "Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"
-        )
+        self.text_dratio.SetToolTip(OPERATION_DRATIO_TOOLTIP)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
 
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
@@ -871,9 +954,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.slider_accel = wx.Slider(
             self, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS
         )
-        self.slider_accel.SetToolTip(
-            "The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed.\n\nThis setting allows you to override the automatic selection and specify your own."
-        )
+        self.slider_accel.SetToolTip(OPERATION_ACCEL_TOOLTIP)
         sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
 
         advanced_ppi_sizer = wx.StaticBoxSizer(
@@ -890,11 +971,8 @@ class LhyAdvancedPanel(wx.Panel):
         self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
         self.check_dot_length_custom.SetToolTip("Enable Dot Length")
         sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
-
         self.text_dot_length = wx.TextCtrl(self, wx.ID_ANY, "1")
-        self.text_dot_length.SetToolTip(
-            'For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes.\n\nWhen this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:\n\nIf you set Dot Length to 500 = 1/2", a PPI of 500 would result in 1/2" dashes and 1/2" gaps.\n\nIf you set Dot Length to 250 = 1/4", a PPI of 250 would result in 1/4" dashes and 3/4" gaps.\n'
-        )
+        self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, 0, 0)
 
         self.combo_dot_length_units = wx.ComboBox(
@@ -907,9 +985,7 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_20.Add(self.combo_dot_length_units, 0, 0, 0)
 
         self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, "Group Pulses")
-        self.check_shift_enabled.SetToolTip(
-            'Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds.\n\nThis setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config.\n\nIt works by swapping adjacent on or off bits to group on and off together and reduce the number of switches.\n\nAs an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.\n'
-        )
+        self.check_shift_enabled.SetToolTip(OPERATION_SHIFT_TOOLTIP)
         sizer_19.Add(self.check_shift_enabled, 0, 0, 0)
 
         self.SetSizer(extras_sizer)
