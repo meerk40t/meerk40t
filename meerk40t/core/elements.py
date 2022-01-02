@@ -5606,7 +5606,10 @@ class Elemental(Modifier):
 
     def boot(self, *a, **kwargs):
         self.context.setting(bool, "operation_default_empty", True)
-        self.load_persistent_operations("previous")
+        try:
+            self.load_persistent_operations("previous")
+        except ValueError:
+            print("elements: Previous operation settings invalid: ValueError")
         ops = list(self.ops())
         if not len(ops) and self.context.operation_default_empty:
             self.load_default()
