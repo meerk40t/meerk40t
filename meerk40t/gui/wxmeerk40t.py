@@ -686,7 +686,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    git = executable_path = branch = head = False
+    git = branch = head = False
     if " " in APPLICATION_VERSION:
         ver, exec_type = APPLICATION_VERSION.split(" ", 1)
         git = exec_type == "git"
