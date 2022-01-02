@@ -686,16 +686,35 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    git = False
+    git = executable_path = branch = head = False
     if " " in APPLICATION_VERSION:
         ver, exec_type = APPLICATION_VERSION.split(" ", 1)
         git = exec_type == "git"
 
     if git:
+        head_file = os.path.join(sys.path[0], ".git", "HEAD")
+        if (os.path.isfile(head_file)):
+            ref_prefix = "ref: refs/heads/"
+            ref = False
+            try:
+                with open(head_file, "r") as f:
+                    ref = f.readline()
+            except Exception:
+                pass
+            if ref.startswith(ref_prefix):
+                branch = ref[len(ref_prefix):].strip("\n")
+
+    if (git and
+        (
+            branch is False
+            or branch != "main"
+        )
+    ):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
-"""It appears that you are running Meerk40t from source managed by Git, and it is therefore
-likely that you are a developer.
+"""It appears that you are running Meerk40t from source managed by Git,
+from a branch '{branch}' which is not 'main',
+and that you are therefore running a development version of Meerk40t.
 
 To avoid reporting crashes during development, automated submission of this crash has
 been disabled. If this is a crash which is unrelated to any development work that you are
@@ -703,7 +722,10 @@ undertaking, please create a new Github issue indicating the branch you are runi
 and using the traceback below which can be found in "{filename}".
 
 """
-        ).format(filename=filename)
+        ).format(
+            filename=filename,
+            branch=branch,
+        )
         caption = _("Crash Detected!")
         style = wx.OK | wx.ICON_WARNING
     else:
