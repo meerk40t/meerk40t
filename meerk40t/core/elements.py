@@ -2108,13 +2108,27 @@ class Elemental(Modifier):
             for op_obj in data:
                 i = index_ops.index(op_obj)
                 selected = op_obj.emphasized
-                select_piece = " *" if selected else "  "
+                select_piece = "*" if selected else " "
                 color = (
                     Color(op_obj.color).hex
-                    if hasattr(op_obj, "color") and op_obj.color is not None
+                    if (
+                        isinstance(op_obj, LaserOperation)
+                        and hasattr(op_obj, "color")
+                        and op_obj.color is not None
+                    )
                     else "None"
+                    if (
+                        isinstance(op_obj, LaserOperation)
+                        and hasattr(op_obj, "color")
+                        and op_obj.color is not None
+                    )
+                    else ""
+
                 )
-                name = "%d: %s %s - %s" % (i, str(op_obj), select_piece, color)
+                desc = str(op_obj)
+                if color:
+                    desc += " " * (35 - len(desc)) + color
+                name = "%s %d: %s" % (select_piece, i, desc)
                 channel(name)
                 if isinstance(op_obj, list):
                     for q, oe in enumerate(op_obj):
