@@ -686,16 +686,16 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    git = branch = head = False
+    git = branch = False
     if " " in APPLICATION_VERSION:
         ver, exec_type = APPLICATION_VERSION.split(" ", 1)
         git = exec_type == "git"
 
     if git:
         head_file = os.path.join(sys.path[0], ".git", "HEAD")
-        if (os.path.isfile(head_file)):
+        if os.path.isfile(head_file):
             ref_prefix = "ref: refs/heads/"
-            ref = False
+            ref = ""
             try:
                 with open(head_file, "r") as f:
                     ref = f.readline()
@@ -704,12 +704,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix):].strip("\n")
 
-    if (git and
-        (
-            branch is False
-            or branch != "main"
-        )
-    ):
+    if (git and branch and branch != "main"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
 """It appears that you are running Meerk40t from source managed by Git,
