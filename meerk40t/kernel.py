@@ -291,6 +291,21 @@ class Context:
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
+    def get_persistent_value(self, t: type, key: str) -> Any:
+        """
+        Gets a specific value of the persistent attributes.
+
+        The attribute type of the value depends on the provided object value default values.
+
+        :param t: type of value
+        :param key: relative key for the value
+        :return: the value associated with the key otherwise None
+        """
+        return self._kernel.read_persistent(
+            t,
+            self.abs_path(key),
+        )
+
     def load_persistent_object(self, obj: Any) -> None:
         """
         Loads values of the persistent attributes, at this context and assigns them to the provided object.
@@ -310,9 +325,12 @@ class Context:
 
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
-            load_value = self._kernel.read_persistent(
-                type(obj_value), self.abs_path(attr)
+
+            load_value = self.get_persistent_value(
+                type(obj_value),
+                attr,
             )
+
             try:
                 setattr(obj, attr, load_value)
                 setattr(self, attr, load_value)

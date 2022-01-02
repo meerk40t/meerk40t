@@ -1365,7 +1365,7 @@ class CommandOperation(Node):
         return "CommandOperation('%s', '%s')" % (self.label, str(self.command))
 
     def __str__(self):
-        return "%s: %s" % (self.label, str(self.args))
+        return self.label
 
     def __copy__(self):
         return CommandOperation(self.label, self.command, *self.args)
@@ -5619,22 +5619,43 @@ class Elemental(Modifier):
         settings = context.derive("operations/" + name)
         settings.clear_persistent()
 
-        for i, op in enumerate(self.ops()):
+        for i, op in enumerate(self._tree.get(type="branch ops").children):
             op_set = settings.derive("%06i" % i)
-            if not hasattr(op, "settings"):
-                continue  # Might be a function.
-            sets = op.settings
-            for q in (op, sets):
-                for key in dir(q):
+            if isinstance(op, LaserOperation):
+                sets = op.settings
+                for q in (op, sets):
+                    for key in dir(q):
+                        if key.startswith("_"):
+                            continue
+                        if (key in [
+                            "emphasized",
+                            "highlighted",
+                            "selected",
+                            "targeted",
+                        ]):
+                            continue
+                        if key.startswith("implicit"):
+                            continue
+                        value = getattr(q, key)
+                        if value is None:
+                            continue
+                        if isinstance(value, Color):
+                            value = value.argb
+                        op_set.write_persistent(key, value)
+            elif isinstance(op, CommandOperation):
+                for key in dir(op):
+                    value = getattr(op, key)
                     if key.startswith("_"):
                         continue
-                    if key.startswith("implicit"):
+                    if (key in [
+                        "emphasized",
+                        "highlighted",
+                        "selected",
+                        "targeted",
+                    ]):
                         continue
-                    value = getattr(q, key)
                     if value is None:
                         continue
-                    if isinstance(value, Color):
-                        value = value.argb
                     op_set.write_persistent(key, value)
         settings.close_subpaths()
 
@@ -5645,10 +5666,20 @@ class Elemental(Modifier):
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
             op_setting_context = settings.derive(v)
-            op = LaserOperation()
-            op_set = op.settings
-            op_setting_context.load_persistent_object(op)
-            op_setting_context.load_persistent_object(op_set)
+            op_type = op_setting_context.get_persistent_value(str, "type")
+            if op_type in ["op", ""]:
+                op = LaserOperation()
+                op_set = op.settings
+                op_setting_context.load_persistent_object(op)
+                op_setting_context.load_persistent_object(op_set)
+                op.type = "op"
+            elif op_type == "cmdop":
+                name = op_setting_context.get_persistent_value(str, "label")
+                command = op_setting_context.get_persistent_value(int, "command")
+                op = CommandOperation(name, command)
+                op_setting_context.load_persistent_object(op)
+            else:
+                continue
             try:
                 ops[i] = op
             except (ValueError, IndexError):
@@ -5735,7 +5766,7 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(types=("op",), depth=1, **kwargs):
+        for item in operations.flat(types=("op", "cmdop"), depth=1, **kwargs):
             yield item
 
     def elems(self, **kwargs):
@@ -5818,7 +5849,7 @@ class Elemental(Modifier):
         items = []
         for op in adding_ops:
             op.set_label(str(op))
-            operation_branch.add(op, type="op")
+            operation_branch.add(op, type=op.type)
             items.append(op)
         return items
 
