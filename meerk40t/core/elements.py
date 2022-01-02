@@ -1354,8 +1354,8 @@ class CommandOperation(Node):
     """
 
     def __init__(self, name, command, *args, **kwargs):
-        super().__init__(command, type="cmdop")
-        self.label = name
+        super().__init__(type="cmdop")
+        self.label = self.name = name
         self.command = command
         self.args = args
         self.output = True
@@ -1365,7 +1365,11 @@ class CommandOperation(Node):
         return "CommandOperation('%s', '%s')" % (self.label, str(self.command))
 
     def __str__(self):
-        return self.label
+        parts = list()
+        if not self.output:
+            parts.append("(Disabled)")
+        parts.append(self.name)
+        return " ".join(parts)
 
     def __copy__(self):
         return CommandOperation(self.label, self.command, *self.args)
@@ -2107,28 +2111,8 @@ class Elemental(Modifier):
             index_ops = list(self.ops())
             for op_obj in data:
                 i = index_ops.index(op_obj)
-                selected = op_obj.emphasized
-                select_piece = "*" if selected else " "
-                color = (
-                    Color(op_obj.color).hex
-                    if (
-                        isinstance(op_obj, LaserOperation)
-                        and hasattr(op_obj, "color")
-                        and op_obj.color is not None
-                    )
-                    else "None"
-                    if (
-                        isinstance(op_obj, LaserOperation)
-                        and hasattr(op_obj, "color")
-                        and op_obj.color is not None
-                    )
-                    else ""
-
-                )
-                desc = str(op_obj)
-                if color:
-                    desc += " " * (35 - len(desc)) + color
-                name = "%s %d: %s" % (select_piece, i, desc)
+                select_piece = "*" if op_obj.emphasized else " "
+                name = "%s %d: %s" % (select_piece, i, str(op_obj))
                 channel(name)
                 if isinstance(op_obj, list):
                     for q, oe in enumerate(op_obj):
@@ -5633,7 +5617,7 @@ class Elemental(Modifier):
         settings = context.derive("operations/" + name)
         settings.clear_persistent()
 
-        for i, op in enumerate(self._tree.get(type="branch ops").children):
+        for i, op in enumerate(self.ops()):
             op_set = settings.derive("%06i" % i)
             if isinstance(op, LaserOperation):
                 sets = op.settings
