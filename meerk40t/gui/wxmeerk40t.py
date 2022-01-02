@@ -725,21 +725,16 @@ and using the traceback below which can be found in "{filename}".
         style = wx.OK | wx.ICON_WARNING
     else:
         message = _(
-"""
-The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+"""The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
-The good news is that you can help us fix this bug by anonymously sending us the crash details.
-"""
+The good news is that you can help us fix this bug by anonymously sending us the crash details."""
         )
         ext_msg = _(
-"""
-Only the crash details below are sent. No data from your MeerK40t project is sent. No
+"""Only the crash details below are sent. No data from your MeerK40t project is sent. No
 personal information is sent either.
 
 Send the following data to the MeerK40t team?
-
 ------
-
 """
         )
         caption = _("Crash Detected! Send Log?")
