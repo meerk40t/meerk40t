@@ -4969,50 +4969,50 @@ class Elemental(Modifier):
             self.context("operation save %s\n" % opname)
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type="branch ops", help="")
-        def add_operation_image(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Image"))
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Image"), node_type="branch ops", help="")
+        def append_operation_image(node, pos=None, **kwargs):
+            self.context.elements.add_op(LaserOperation(operation="Image"), pos=pos)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type="branch ops", help="")
-        def add_operation_raster(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Raster"))
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Raster"), node_type="branch ops", help="")
+        def append_operation_raster(node, pos=None, **kwargs):
+            self.context.elements.add_op(LaserOperation(operation="Raster"), pos=pos)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type="branch ops", help="")
-        def add_operation_engrave(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Engrave"))
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Engrave"), node_type="branch ops", help="")
+        def append_operation_engrave(node, pos=None, **kwargs):
+            self.context.elements.add_op(LaserOperation(operation="Engrave"), pos=pos)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type="branch ops", help="")
-        def add_operation_cut(node, **kwgs):
-            self.context.elements.add_op(LaserOperation(operation="Cut"))
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Cut"), node_type="branch ops", help="")
+        def append_operation_cut(node, pos=None, **kwargs):
+            self.context.elements.add_op(LaserOperation(operation="Cut"), pos=pos)
 
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Home"), node_type="branch ops", help="")
-        def add_operation_home(node, **kwgs):
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
+        def append_operation_home(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
-                CommandOperation("Home", COMMAND_HOME), type="cmdop"
+                CommandOperation("Home", COMMAND_HOME), type="cmdop", pos=pos
             )
 
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Beep"), node_type="branch ops", help="")
-        def add_operation_beep(node, **kwgs):
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
+        def append_operation_origin(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
-                CommandOperation("Beep", COMMAND_BEEP), type="cmdop"
+                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop", pos=pos
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
-                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop"
+                CommandOperation("Beep", COMMAND_BEEP), type="cmdop", pos=pos
             )
 
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Interrupt"), node_type="branch ops", help="")
-        def add_operation_interrupt(node, **kwgs):
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
+        def append_operation_interrupt(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
                 CommandOperation(
                     "Interrupt",
@@ -5020,11 +5020,19 @@ class Elemental(Modifier):
                     self.context.registered["function/interrupt"],
                 ),
                 type="cmdop",
+                pos=pos,
             )
 
-        @self.tree_submenu(_("Special operations"))
-        @self.tree_operation(_("Add Shutdown"), node_type="branch ops", help="")
-        def add_operation_shutdown(node, **kwgs):
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
+        def append_operation_home_beep_interrupt(node, **kwargs):
+            append_operation_home(node, **kwargs)
+            append_operation_beep(node, **kwargs)
+            append_operation_interrupt(node, **kwargs)
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
+        def append_operation_shutdown(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
                 CommandOperation(
                     "Shutdown",
@@ -5032,6 +5040,7 @@ class Elemental(Modifier):
                     self.context.console_function("quit\n"),
                 ),
                 type="cmdop",
+                pos=pos,
             )
 
         @self.tree_operation(
@@ -5155,6 +5164,66 @@ class Elemental(Modifier):
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
             elements.add_elem(image_element)
+
+        def add_after_index(self):
+            try:
+                operations = self._tree.get(type="branch ops").children
+                return operations.index(list(self.ops(emphasized=True))[-1]) + 1
+            except ValueError:
+                return None
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Image"), node_type="op", help="")
+        def add_operation_image(node, **kwargs):
+            append_operation_image(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Raster"), node_type="op", help="")
+        def add_operation_raster(node, **kwargs):
+            append_operation_raster(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Engrave"), node_type="op", help="")
+        def add_operation_engrave(node, **kwargs):
+            append_operation_engrave(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add operation"))
+        @self.tree_operation(_("Add Cut"), node_type="op", help="")
+        def add_operation_cut(node, **kwargs):
+            append_operation_cut(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Home"), node_type="op", help="")
+        def add_operation_home(node, **kwargs):
+            append_operation_home(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Return to Origin"), node_type="op", help="")
+        def add_operation_origin(node, **kwargs):
+            append_operation_origin(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Beep"), node_type="op", help="")
+        def add_operation_beep(node, **kwargs):
+            append_operation_beep(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
+        def add_operation_interrupt(node, **kwargs):
+            append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
+        def add_operation_home_beep_interrupt(node, **kwargs):
+            pos = add_after_index(self)
+            append_operation_home(node, pos=pos, **kwargs)
+            if pos:
+                pos +=1
+            append_operation_beep(node, pos=pos, **kwargs)
+            if pos:
+                pos +=1
+            append_operation_interrupt(node, pos=pos, **kwargs)
 
         @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
         def reload_file(node, **kwargs):
