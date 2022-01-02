@@ -4625,7 +4625,7 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(_("Enable/Disable ops"), node_type="op", help="")
+        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop"), help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
