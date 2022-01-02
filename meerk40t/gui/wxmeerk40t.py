@@ -713,8 +713,10 @@ and that you are therefore running a development version of Meerk40t.
 
 To avoid reporting crashes during development, automated submission of this crash has
 been disabled. If this is a crash which is unrelated to any development work that you are
-undertaking, please create a new Github issue indicating the branch you are runing from
-and using the traceback below which can be found in "{filename}".
+undertaking, please recreate this crash under main or if you are certain that this is not
+caused by any code changes you have made, then you can manually create a new Github
+issue indicating the branch you are runing from and using the traceback below which can
+be found in "{filename}".
 
 """
         ).format(
