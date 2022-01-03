@@ -83,7 +83,7 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
         root.set(
             "xmlns:meerK40t",
-            "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
+            "https://www.github.com/meerk40t/meerk40t/svg-namespace.md",
         )
         # Native unit is mils, these must convert to mm and to px
         # mils_per_px = 1000.0 / 96.0
