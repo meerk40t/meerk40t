@@ -11,6 +11,7 @@ from configparser import ConfigParser, NoSectionError
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
+KERNEL_VERSION = "0.0.1"
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -3750,31 +3751,6 @@ class Kernel:
             self._current_directory = new_dir
             channel(os.path.abspath(new_dir))
 
-        @self.console_argument("filename")
-        @self.console_command(
-            "load",
-            help=_("loads file from working directory"),
-            input_type=None,
-            output_type="file",
-        )
-        def load(channel, _, filename=None, **kwargs):
-            import os
-
-            if filename is None:
-                channel(_("No file specified."))
-                return
-            new_file = os.path.join(self._current_directory, filename)
-            if not os.path.exists(new_file):
-                channel(_("No such file."))
-                return
-            elements = self.root.elements
-            try:
-                elements.load(new_file)
-            except AttributeError:
-                raise SyntaxError(_("Loading files was not defined"))
-            channel(_("loading..."))
-            return "file", new_file
-
         # ==========
         # DEPRECATED KERNEL COMMANDS
         # ==========
@@ -3830,6 +3806,7 @@ class CommandMatchRejected(BaseException):
     """
     Exception to be raised by a registered console command if the match to the command was erroneous
     """
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -3838,6 +3815,7 @@ class MalformedCommandRegistration(BaseException):
     """
     Exception raised by the Kernel if the registration of the console command is malformed.
     """
+
     def __init__(self, *args):
         super().__init__(*args)
 
@@ -3847,6 +3825,7 @@ class Channel:
     Register and configure the Kernel channel that is used to send and view data within the kernel. Channels can send
     both string data and binary data. They provide debug information and data such as from a server module.
     """
+
     def __init__(
         self,
         name: str,
@@ -3996,8 +3975,9 @@ class Job:
 
 class ConsoleFunction(Job):
     """
-    Special type of Job that runs the Console command provided when the job is executed. 
+    Special type of Job that runs the Console command provided when the job is executed.
     """
+
     def __init__(
         self,
         context: Context,
@@ -4056,11 +4036,11 @@ def get_safe_path(
 def console_option(name: str, short: str = None, **kwargs) -> Callable:
     """
     Adds an option for a console_command.
-    
-    @param name: option name 
+
+    @param name: option name
     @param short: short flag of option name.
-    @param kwargs: 
-    @return: 
+    @param kwargs:
+    @return:
     """
     try:
         if short.startswith("-"):
@@ -4086,10 +4066,11 @@ def console_argument(name: str, **kwargs) -> Callable:
     Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
     command is called from console.
 
-    @param name: 
-    @param kwargs: 
-    @return: 
+    @param name:
+    @param kwargs:
+    @return:
     """
+
     def decor(func):
         kwargs["name"] = name
         if "type" not in kwargs:

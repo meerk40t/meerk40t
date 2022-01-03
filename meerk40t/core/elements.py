@@ -1669,6 +1669,32 @@ class Elemental(Service):
 
         _ = kernel.translation
 
+
+        @self.console_argument("filename")
+        @self.console_command(
+            "load",
+            help=_("loads file from working directory"),
+            input_type=None,
+            output_type="file",
+        )
+        def load(channel, _, filename=None, **kwargs):
+            import os
+
+            if filename is None:
+                channel(_("No file specified."))
+                return
+            new_file = os.path.join(self.kernel._current_directory, filename)
+            if not os.path.exists(new_file):
+                channel(_("No such file."))
+                return
+            try:
+                self.load(new_file)
+            except AttributeError:
+                raise SyntaxError(_("Loading files was not defined"))
+            channel(_("loading..."))
+            return "file", new_file
+
+
         # ==========
         # OPERATION BASE
         # ==========
