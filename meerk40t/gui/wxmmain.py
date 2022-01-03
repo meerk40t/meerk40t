@@ -415,18 +415,6 @@ class MeerK40t(MWindow):
                 context("egv_export %s\n" % pathname)
                 return
 
-        context.register("control/Transform", lambda: context("dialog_transform\n"))
-        context.register("control/Flip", lambda: context("dialog_flip\n"))
-        context.register("control/Path", lambda: context("dialog_path\n"))
-        context.register("control/Fill", lambda: context("dialog_fill\n"))
-        context.register("control/Stroke", lambda: context("dialog_stroke\n"))
-        context.register("control/FPS", lambda: context("dialog_fps\n"))
-        context.register(
-            "control/Speedcode-Gear-Force", lambda: context("dialog_gear\n")
-        )
-        context.register("control/egv export", lambda: context("dialog_import_egv\n"))
-        context.register("control/egv import", lambda: context("dialog_export_egv\n"))
-
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
 
