@@ -115,12 +115,11 @@ class Module:
     a context. When close() is called on the context, it will close and delete references to the opened module and call
     module_close().
 
-    If an opened module is tries to open() a second time in a context with the same name, and it was never closed.
-    The device restore() function is called for the device, with the same args and kwargs that would have been called
-    on __init__().
+    If an opened module tries to open() a second time in a context with the same name, and was not closed, the
+    restore() function is called for the module, with the same args and kwargs that would have been called on
+    __init__().
 
-    Multiple instances of a module can be opened but this requires a different initialization name. Modules are not
-    expected to modify their contexts.
+    Multiple instances of a module can be opened but this requires a different initialization name.
     """
 
     def __init__(
@@ -164,15 +163,15 @@ class Module:
 
 class Context:
     """
-    Contexts serve as path-relevant snapshots of the kernel. These are are the primary interaction between the modules
-    and the kernel. They permit getting other contexts of the kernel as well. This should serve as the primary interface
+    Contexts serve as path-relevant snapshots of the kernel. These are the primary interaction between the modules
+    and the kernel. They permit getting other contexts of the kernel. This should serve as the primary interface
     code between the kernel and the modules.
 
     Contexts store the persistent settings and settings from at their path locations.
 
-    Contexts have attribute settings located at .<setting> and so long as this setting does not begin with _ or
-    'implicit' it will be reloaded when .setting() is called for the given attribute. This should be called by any
-    module that intends access to an attribute even if it was already called.
+    Contexts have attribute settings located at .<setting> and so long as this setting does not begin with _ it will be
+    reloaded when .setting() is called for the given attribute. This should be called by code that intends access
+    an attribute even if it was already called.
     """
 
     def __init__(self, kernel: "Kernel", path: str):
@@ -655,15 +654,18 @@ class Service(Context):
     """
     A service is a context that with additional capabilities. These get registered by a domain in the kernel as a
     particular aspect. For example, .device or .gui could be a service and this service would be found at that attribute
-    at for any context. A service does not exist pathwise at a particular domain. The path is the saving/loading
-    location for persistent settings. This also allows several services to be registered for the same domain. These are
-    swapped with the activate_service commands in the kernel.
+    at for any context. As a type of context, services have a path for saving settings. The path is the saving/loading
+    location for persistent settings. As a service, these contexts may exist at .<domain> relative to any context.
+    This also allows several services to be registered for the same domain. These are swapped with the activate_service
+    commands in the kernel.
 
     Each service has its own registered lookup of data. This extends the lookup of the kernel but only for those
-    services which are currently active. This extends to various types of things that are registered in the kernel such
-    as choices and console commands. The currently active service can modify these simply by being activated.
+    services which are currently active. This extends to various data types that are registered in the kernel such
+    as choices and console commands. The currently active service can modify these simply by being activated. A command
+    registered in a deactivate service cannot be executed from the console, only the activated service's command is
+    executed in that case.
 
-    Unlike contexts which can be derived or gotten at a particular path. Services can be directly instanced.
+    Unlike contexts which should be derived or gotten at a particular path. Services can be directly instanced.
     """
 
     def __init__(self, kernel: "Kernel", path: str, registered_path: str = None):
@@ -3825,16 +3827,26 @@ class Kernel:
 
 
 class CommandMatchRejected(BaseException):
+    """
+    Exception to be raised by a registered console command if the match to the command was erroneous
+    """
     def __init__(self, *args):
         super().__init__(*args)
 
 
 class MalformedCommandRegistration(BaseException):
+    """
+    Exception raised by the Kernel if the registration of the console command is malformed.
+    """
     def __init__(self, *args):
         super().__init__(*args)
 
 
 class Channel:
+    """
+    Register and configure the Kernel channel that is used to send and view data within the kernel. Channels can send
+    both string data and binary data. They provide debug information and data such as from a server module.
+    """
     def __init__(
         self,
         name: str,
@@ -3926,7 +3938,7 @@ class Job:
 
     Jobs that can be scheduled in the scheduler-kernel to run at a particular time and a given number of times.
     This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
-    and times. This is usually extended directly by a module requiring that functionality.
+    and times.
     """
 
     def __init__(
@@ -3983,6 +3995,9 @@ class Job:
 
 
 class ConsoleFunction(Job):
+    """
+    Special type of Job that runs the Console command provided when the job is executed. 
+    """
     def __init__(
         self,
         context: Context,
@@ -4009,6 +4024,14 @@ class ConsoleFunction(Job):
 def get_safe_path(
     name: str, create: Optional[bool] = False, system: Optional[str] = None
 ) -> str:
+    """
+    Get a path which should have valid user permissions in an OS dependent method.
+
+    @param name: directory name within the safe OS dependent userdirectory
+    @param create: Should this directory be created if needed.
+    @param system: Override the system value determination
+    @return:
+    """
     import platform
 
     if not system:
@@ -4031,6 +4054,14 @@ def get_safe_path(
 
 
 def console_option(name: str, short: str = None, **kwargs) -> Callable:
+    """
+    Adds an option for a console_command.
+    
+    @param name: option name 
+    @param short: short flag of option name.
+    @param kwargs: 
+    @return: 
+    """
     try:
         if short.startswith("-"):
             short = short[1:]
@@ -4051,6 +4082,14 @@ def console_option(name: str, short: str = None, **kwargs) -> Callable:
 
 
 def console_argument(name: str, **kwargs) -> Callable:
+    """
+    Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
+    command is called from console.
+
+    @param name: 
+    @param kwargs: 
+    @return: 
+    """
     def decor(func):
         kwargs["name"] = name
         if "type" not in kwargs:
@@ -4072,7 +4111,7 @@ def console_command(
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
-    within the console are registered with this decorator. It various attributes that define how the decorator
+    within the console are registered with this decorator. It varies attributes that define how the decorator
     should be treated. Commands work with named contexts in a pipelined architecture. So "element" commands output
     must be followed by "element" command inputs. The input_type and output_type do not have to match and can be
     a tuple of different types. None refers to the base context.
@@ -4235,6 +4274,7 @@ def console_command_remove(
 def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
     """
     Parser for console command events.
+
     @param text:
     @return:
     """
@@ -4267,8 +4307,10 @@ def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
 
 def lookup_listener(param):
     """
-    Flags a method as a lookup_listener. This method will be updated on the changes to find values dynamically.
-    @param param:
+    Flags a method as a @lookup_listener. This method will be updated on the changes to the lookup. The lookup changes
+    when values are registered in the lookup or during service activation.
+
+    @param param: function being attached to
     @return:
     """
 
@@ -4284,8 +4326,9 @@ def lookup_listener(param):
 
 def signal_listener(param):
     """
-    Flags a method as a signal_listener. This will listened when the module is opened.
-    @param param:
+    Flags a method as a @signal_listener. This will listened when the module is opened.
+
+    @param param: function being attached to
     @return:
     """
 
