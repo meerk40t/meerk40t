@@ -487,7 +487,7 @@ class CamInterfaceWidget(Widget):
             )
 
             camera_context = self.cam.context.get_context("camera")
-            keylist = camera_context.kernel.load_persistent_string_dict(
+            keylist = camera_context.kernel.read_persistent_string_dict(
                 camera_context.path, suffix=True
             )
             if keylist is not None:
@@ -785,7 +785,7 @@ class CameraURIPanel(wx.Panel):
 
     def pane_show(self):
         camera_context = self.context.get_context("camera")
-        keylist = camera_context.kernel.load_persistent_string_dict(
+        keylist = camera_context.kernel.read_persistent_string_dict(
             camera_context.path, suffix=True
         )
         if keylist is not None:

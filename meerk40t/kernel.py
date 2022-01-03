@@ -2189,7 +2189,28 @@ class Kernel:
         self.register_as_context(derive)
         return derive
 
+    def derivable(self, section: str) -> Generator[str, None, None]:
+        """
+        Finds all derivable paths within the config from the set path location.
+        :param section:
+        :return:
+        """
+        for section_name in self._config_dict:
+            if section_name.startswith(section):
+                yield section_name
+
+    # ==========
+    # PERSISTENT SETTINGS
+    # ==========
+
     def read_configuration(self):
+        """
+        Read configuration reads the self._config_file to get the parsed config file data.
+
+        Circa 0.8.0 this uses ConfigParser() in python rather than FileConfig in wxPython
+
+        @return:
+        """
         try:
             parser = ConfigParser()
             parser.read(self._config_file)
@@ -2205,6 +2226,12 @@ class Kernel:
             return
 
     def write_configuration(self):
+        """
+        Write configuration writes the config file to disk. This is typically done during the shutdown process.
+
+        This uses the python ConfigParser to save data from the _config_dict.
+        @return:
+        """
         try:
             parser = ConfigParser()
             for section_key in self._config_dict:
@@ -2220,16 +2247,6 @@ class Kernel:
                 parser.write(fp)
         except PermissionError:
             return
-
-    def derivable(self, section: str) -> Generator[str, None, None]:
-        """
-        Finds all derivable paths within the config from the set path location.
-        :param section:
-        :return:
-        """
-        for section_name in self._config_dict:
-            if section_name.startswith(section):
-                yield section_name
 
     def read_persistent(
         self, t: type, section: str, key: str, default: Union[str, int, float, bool] = None
@@ -2253,6 +2270,14 @@ class Kernel:
             return default
 
     def read_persistent_attributes(self, section: str, obj: Any):
+        """
+        Reads persistent settings for any value found set on the object so long as the object type is int, float, str
+        or bool.
+
+        @param section:
+        @param obj:
+        @return:
+        """
         for attr in dir(obj):
             if attr.startswith("_"):
                 continue
@@ -2267,6 +2292,28 @@ class Kernel:
                 setattr(obj, attr, load_value)
             except AttributeError:
                 pass
+
+    def read_persistent_string_dict(
+        self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
+    ) -> Dict:
+        """
+        Updates the given dictionary with the key values at the given section.
+
+        This reads string values and provides no typing information to convert the setting values.
+
+        @param section: section to load into string dict
+        @param dictionary: optional dictionary to update values
+        @param suffix: provide only the keys or section/key combination.
+        @return:
+        """
+        if dictionary is None:
+            dictionary = dict()
+        for k in list(self.keylist(section)):
+            item = self._config_dict[section][k]
+            if not suffix:
+                k = "{section}/{key}".format(section=section, key=k)
+            dictionary[k] = item
+        return dictionary
 
     def write_persistent(self, section:str, key: str, value: Union[str, int, float, bool]):
         """
@@ -2318,7 +2365,7 @@ class Kernel:
         except KeyError:
             pass
 
-    def delete_persistent(self, section: str, key:str):
+    def delete_persistent(self, section: str, key: str):
         """
         Deletes a key within a section of the persistent settings.
 
@@ -2330,25 +2377,6 @@ class Kernel:
             self._config_dict[section][key]
         except KeyError:
             pass
-
-    def load_persistent_string_dict(
-        self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
-    ) -> Dict:
-        """
-        Updates the given dictionary with the key values at the given section
-        @param section: section to load into string dict
-        @param dictionary: optional dictionary to update values
-        @param suffix: provide only the keys or section/key combination.
-        @return:
-        """
-        if dictionary is None:
-            dictionary = dict()
-        for k in list(self.keylist(section)):
-            item = self._config_dict[section][k]
-            if not suffix:
-                k = "{section}/{key}".format(section=section, key=k)
-            dictionary[k] = item
-        return dictionary
 
     def keylist(self, section: str) -> Generator[str, None, None]:
         """
