@@ -7,7 +7,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
-from configparser import ConfigParser, DuplicateSectionError
+from configparser import ConfigParser, NoSectionError
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
@@ -2238,10 +2238,10 @@ class Kernel:
                 for key in section:
                     value = section[key]
                     try:
-                        parser.add_section(str(section_key))
-                    except DuplicateSectionError:
-                        pass
-                    parser.set(str(section_key), str(key), str(value))
+                        parser.set(section_key, str(key), str(value))
+                    except NoSectionError:
+                        parser.add_section(section_key)
+                        parser.set(section_key, str(key), str(value))
             with open(self._config_file, "w") as fp:
                 parser.write(fp)
         except PermissionError:
