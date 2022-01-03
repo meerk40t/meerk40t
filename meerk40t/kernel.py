@@ -11,7 +11,6 @@ from configparser import ConfigParser, DuplicateSectionError
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
-from .svgelements import Color
 
 STATE_UNKNOWN = -1
 STATE_INITIALIZE = 0
@@ -337,7 +336,7 @@ class Context:
         self._kernel.clear_persistent(self._path)
 
     def write_persistent(
-        self, key: str, value: Union[int, float, str, bool, Color]
+        self, key: str, value: Union[int, float, str, bool]
     ) -> None:
         """
         Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
