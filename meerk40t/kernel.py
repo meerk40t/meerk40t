@@ -2636,19 +2636,19 @@ class Kernel:
 
         # Process any adding listeners.
         if add is not None:
-            for signal, path, funct, lso in add:
+            for signal, funct, lso in add:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     listeners.append((funct, lso))
                 else:
                     self.listeners[signal] = [(funct, lso)]
-                if path + signal in self._last_message:
-                    last_message = self._last_message[path + signal]
-                    funct(path, *last_message)
+                if signal in self._last_message:
+                    origin, message = self._last_message[signal]
+                    funct(origin, *message)
 
         # Process any removing listeners.
         if remove is not None:
-            for signal, path, remove_funct, remove_lso in remove:
+            for signal, remove_funct, remove_lso in remove:
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     removed = False
@@ -2666,28 +2666,26 @@ class Kernel:
         # Process signals.
         signal_channel = self.channel("signals")
         for signal, payload in queue.items():
-            path, message = payload
+            origin, message = payload
             if signal in self.listeners:
                 listeners = self.listeners[signal]
                 for listener, listen_lso in listeners:
-                    listener(path, *message)
+                    listener(origin, *message)
                     if signal_channel:
                         signal_channel(
                             "Signal: %s %s: %s:%s%s"
                             % (
-                                path,
+                                origin,
                                 signal,
                                 listener.__module__,
                                 listener.__name__,
                                 str(message),
                             )
                         )
-            if path is not None:
-                signal = path + signal
-            self._last_message[signal] = message
+            self._last_message[signal] = payload
         self._is_queue_processing = False
 
-    def last_signal(self, signal: str, path: str) -> Optional[Tuple]:
+    def last_signal(self, signal: str) -> Optional[Tuple]:
         """
         Queries the last signal for a particular signal/path
 
@@ -2695,14 +2693,13 @@ class Kernel:
         :return: Last signal sent through the kernel for that signal and path
         """
         try:
-            return self._last_message[path + signal]
+            return self._last_message[signal]
         except KeyError:
-            return None
+            return None, None
 
     def listen(
         self,
         signal: str,
-        path: str,
         funct: Callable,
         lifecycle_object: Any = None,
     ) -> None:
@@ -2716,13 +2713,12 @@ class Kernel:
         @return:
         """
         self._signal_lock.acquire(True)
-        self._adding_listeners.append((signal, path, funct, lifecycle_object))
+        self._adding_listeners.append((signal, funct, lifecycle_object))
         self._signal_lock.release()
 
     def unlisten(
         self,
         signal: str,
-        path: str,
         funct: Callable,
         lifecycle_object: Any = None,
     ) -> None:
@@ -2730,13 +2726,12 @@ class Kernel:
         Removes callable listener for a given signal. This will be detached next time the signals code runs.
 
         @param signal:
-        @param path:
         @param funct:
         @param lifecycle_object:
         @return:
         """
         self._signal_lock.acquire(True)
-        self._removing_listeners.append((signal, path, funct, lifecycle_object))
+        self._removing_listeners.append((signal, funct, lifecycle_object))
         self._signal_lock.release()
 
     def _signal_attach(
@@ -2756,7 +2751,7 @@ class Kernel:
             func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
-                    self.listen(sl, self._path, func, cookie)
+                    self.listen(sl, func, cookie)
 
     def _signal_detach(
         self,
@@ -2774,7 +2769,7 @@ class Kernel:
             listens = self.listeners[signal]
             for listener, lso in listens:
                 if lso is cookie:
-                    self._removing_listeners.append((signal, None, listener, cookie))
+                    self._removing_listeners.append((signal, listener, cookie))
 
         self._signal_lock.release()
 
@@ -3839,8 +3834,11 @@ class Channel:
         )
 
     def __call__(
-        self, message: Union[str, bytes, bytearray], *args,
-        indent: Optional[bool]=True, **kwargs
+        self,
+        message: Union[str, bytes, bytearray],
+        *args,
+        indent: Optional[bool] = True,
+        **kwargs,
     ):
         original_msg = message
         if self.line_end is not None:
