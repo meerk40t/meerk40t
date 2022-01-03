@@ -2306,13 +2306,15 @@ class Kernel:
 
     def clear_persistent(self, section: str):
         """
-        Clears a section of the persistent settings.
+        Clears a section of the persistent settings, all subsections are also cleared.
 
         @param section:
         @return:
         """
         try:
-            del self._config_dict[section]
+            for section_name in list(self._config_dict):
+                if section_name.startswith(section):
+                    del self._config_dict[section_name]
         except KeyError:
             pass
 
