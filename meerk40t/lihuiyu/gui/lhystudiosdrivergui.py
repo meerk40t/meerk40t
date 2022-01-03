@@ -145,7 +145,8 @@ class ConfigurationUsb(wx.Panel):
         # end wxGlade
         self.spin_device_index.SetValue(self.context.usb_index)
         self.spin_device_version.SetValue(self.context.usb_version)
-        self.text_serial_number.SetValue(self.context.serial)
+        if self.context.serial is not None:
+            self.text_serial_number.SetValue(self.context.serial)
         self.check_serial_number.SetValue(self.context.serial_enable)
         self.checkbox_limit_buffer.SetValue(self.context.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.context.buffer_max)
