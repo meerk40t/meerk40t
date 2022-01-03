@@ -345,23 +345,6 @@ class Context:
         self._kernel.write_persistent(self._path, key, value)
 
     # ==========
-    # CONTROL: Deprecated.
-    # ==========
-
-    def execute(self, control: str) -> None:
-        """
-        Execute the given control code relative to the path of this context.
-
-        @param control: Function to execute relative to the current position.
-        @return:
-        """
-        try:
-            funct = self._kernel.lookup(self.abs_path("control/%s" % control))
-        except KeyError:
-            return
-        funct()
-
-    # ==========
     # DELEGATES
     # ==========
 
@@ -3750,25 +3733,6 @@ class Kernel:
                 return
             self.current_directory = new_dir
             channel(os.path.abspath(new_dir))
-
-        # ==========
-        # DEPRECATED KERNEL COMMANDS
-        # ==========
-
-        @self.console_command("control", help=_("control [<executive>]"))
-        def control(channel, _, remainder=None, **kwargs):
-            if remainder is None:
-                for control_name in self.root.match("[0-9]+/control", suffix=True):
-                    channel(control_name)
-                return
-
-            control_name = remainder
-            controls = list(self.match("control/.*", suffix=True))
-            if control_name in controls:
-                self.root.execute(control_name)
-                channel(_("Executed '%s'") % control_name)
-            else:
-                channel(_("Control '%s' not found.") % control_name)
 
     def batch_add(self, command, origin="default", index=None):
         root = self.root
