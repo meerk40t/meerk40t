@@ -1683,7 +1683,7 @@ class Elemental(Service):
             if filename is None:
                 channel(_("No file specified."))
                 return
-            new_file = os.path.join(self.kernel._current_directory, filename)
+            new_file = os.path.join(self.kernel.current_directory, filename)
             if not os.path.exists(new_file):
                 channel(_("No such file."))
                 return

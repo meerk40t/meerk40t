@@ -857,7 +857,7 @@ class Kernel:
         self._console_channel.timestamp = True
         self.console_channel_file = None
 
-        self._current_directory = "."
+        self.current_directory = "."
 
         # Arguments Objects
         self.args = None
@@ -3719,7 +3719,7 @@ class Kernel:
         def ls(channel, **kwargs):
             import os
 
-            for f in os.listdir(self._current_directory):
+            for f in os.listdir(self.current_directory):
                 channel(str(f))
 
         @self.console_argument("directory")
@@ -3728,27 +3728,27 @@ class Kernel:
             import os
 
             if directory == "~":
-                self._current_directory = "."
+                self.current_directory = "."
                 channel(_("Working directory"))
                 return
             if directory == "@":
                 import sys
 
                 if hasattr(sys, "_MEIPASS"):
-                    self._current_directory = sys._MEIPASS
+                    self.current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
                     return
                 else:
                     channel(_("No internal directory."))
                     return
             if directory is None:
-                channel(os.path.abspath(self._current_directory))
+                channel(os.path.abspath(self.current_directory))
                 return
-            new_dir = os.path.join(self._current_directory, directory)
+            new_dir = os.path.join(self.current_directory, directory)
             if not os.path.exists(new_dir):
                 channel(_("No such directory."))
                 return
-            self._current_directory = new_dir
+            self.current_directory = new_dir
             channel(os.path.abspath(new_dir))
 
         # ==========
