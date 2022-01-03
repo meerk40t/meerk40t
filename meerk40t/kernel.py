@@ -3690,10 +3690,7 @@ class Kernel:
 
             if path_context is not None:
                 path_context.flush()
-                try:
-                    self._config.Flush()
-                except AttributeError:
-                    pass
+                self.write_configuration()
                 channel(_("Persistent settings force saved."))
             else:
                 channel(_("No relevant context found."))
