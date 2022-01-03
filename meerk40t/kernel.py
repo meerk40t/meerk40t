@@ -410,8 +410,7 @@ class Context:
         """
         Delegate of Kernel match.
 
-        @param matchtext:  regex matchtext to locate.
-        @param suffix: provide the suffix of the match only.
+        @param args:  arguments to be delegated
         :yield: matched entries.
         """
         yield from self._kernel.find(*args)
@@ -614,6 +613,7 @@ class Context:
 
         @param signal: Signal code to listen for
         @param process: listener to be attached
+        @param lifecycle_object: Object to use as a cookie to bind the listener.
         @return:
         """
         self._kernel.listen(signal, process, lifecycle_object)
@@ -1040,6 +1040,7 @@ class Kernel:
         @param domain: service domain
         @param service: service to add
         @param registered_path: original provider path of service being added to notify plugins
+        @param activate: Should this service be activated upon addition
         @return:
         """
         services = self.services(domain)
@@ -1058,8 +1059,9 @@ class Kernel:
         """
         Activate service at domain and path.
 
-        @param domain:
-        @param path:
+        @param domain: Domain to add service at
+        @param path: Path to this service locally
+        @param assigned: Should this service be assigned when activated
         @return:
         """
         services = self.services(domain)
@@ -1083,6 +1085,7 @@ class Kernel:
 
         @param domain: service domain name
         @param index: index of the service to activate.
+        @param assigned: Should this service be assigned when activated
         @return:
         """
         services = self.services(domain)
@@ -1103,6 +1106,7 @@ class Kernel:
 
         @param domain: Domain at which to activate service
         @param service: service to activate
+        @param assigned: Should this service be assigned when activated
         @return:
         """
         # Deactivate anything on this domain.
@@ -1784,7 +1788,6 @@ class Kernel:
 
         Any residual attached listeners are made warnings.
 
-        @param channel:
         @return:
         """
         channel = self.channel("shutdown")
@@ -2384,7 +2387,6 @@ class Kernel:
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
         @param section: Path to check for keys.
-        @param suffix:  Should only the suffix be yielded.
         @return:
         """
         try:
@@ -2737,7 +2739,6 @@ class Kernel:
         Attaches callable to a particular signal. This will be attached next time the signals are processed.
 
         @param signal:
-        @param path:
         @param funct:
         @param lifecycle_object:
         @return:
