@@ -491,7 +491,7 @@ class CamInterfaceWidget(Widget):
                 camera_context.path, suffix=True
             )
             if keylist is not None:
-                keys = [q for q in keylist]
+                keys = list(keylist)
                 keys.sort()
                 uri_list = [keylist[k] for k in keys]
                 for uri in uri_list:
