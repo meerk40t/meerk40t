@@ -19,8 +19,8 @@ STATE_ACTIVE = 2
 STATE_BUSY = 3
 STATE_PAUSE = 4
 STATE_END = 5
-STATE_SUSPEND = 6  # Controller is suspended.
-STATE_WAIT = 7  # Controller is waiting for something. This could be aborted.
+STATE_SUSPEND = 6
+STATE_WAIT = 7
 STATE_TERMINATE = 10
 
 LIFECYCLE_SHUTDOWN = 1000
