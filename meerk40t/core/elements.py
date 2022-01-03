@@ -5330,19 +5330,11 @@ class Elemental(Service):
             op_set = settings.derive("%06i" % i)
             if not hasattr(op, "settings"):
                 continue  # Might be a function.
-            sets = op.settings
-            for q in (op, sets):
-                for key in dir(q):
-                    if key.startswith("_"):
-                        continue
-                    if key.startswith("implicit"):
-                        continue
-                    value = getattr(q, key)
-                    if value is None:
-                        continue
-                    if isinstance(value, Color):
-                        value = value.argb
-                    op_set.write_persistent(key, value)
+            op.argb_color = op.color.argb
+            op_set.kernel.write_persistent_attributes(op_set.path, op)
+            op_set.kernel.write_persistent_attributes(op_set.path, op.settings)
+            # if isinstance(value, Color):
+            #     value = value.argb
         settings.close_subpaths()
 
     def load_persistent_operations(self, name):
@@ -5351,11 +5343,15 @@ class Elemental(Service):
         subitems = list(settings.derivable())
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
-            op_setting_context = settings.derive(v)
+            op_setting_context = settings.get_context(v)
             op = LaserOperation()
             op_set = op.settings
-            op_setting_context.load_persistent_object(op)
-            op_setting_context.load_persistent_object(op_set)
+            op.argb_color = 0
+            op_setting_context.read_persistent_object(op)
+            op_setting_context.read_persistent_object(op_set)
+            if op.argb_color is not None:
+                op.color = Color(argb=op.argb_color)
+
             try:
                 ops[i] = op
             except (ValueError, IndexError):

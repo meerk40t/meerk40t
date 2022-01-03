@@ -6,6 +6,8 @@ import re
 import threading
 import time
 from collections import deque
+from pathlib import Path
+from configparser import ConfigParser, DuplicateSectionError
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
@@ -248,8 +250,7 @@ class Context:
 
         :return:
         """
-        for e in self._kernel.derivable(self._path):
-            yield e
+        yield from self._kernel.derivable(self._path)
 
     def subpaths(self) -> Generator["Context", None, None]:
         """
@@ -297,7 +298,7 @@ class Context:
         # Key is not located in the attr. Load the value.
         if not key.startswith("_"):
             load_value = self._kernel.read_persistent(
-                setting_type, self.abs_path(key), default
+                setting_type, self._path, key, default
             )
         else:
             load_value = default
@@ -308,21 +309,17 @@ class Context:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
-        from .svgelements import Color
+        self._kernel.write_persistent_attributes(self._path, self)
 
-        props = [k for k, v in vars(self.__class__).items() if isinstance(v, property)]
-        for attr in dir(self):
-            if attr.startswith("_"):
-                continue
-            if attr in props:
-                continue
-            value = getattr(self, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float, Color)):
-                self._kernel.write_persistent(self.abs_path(attr), value)
+    def write_persistent_object(self, obj: Any) -> None:
+        """
+        Writes values of the object's attributes at this context
+        @param obj:
+        @return:
+        """
+        self._kernel.write_persistent_attributes(self._path, obj)
 
-    def load_persistent_object(self, obj: Any) -> None:
+    def read_persistent_object(self, obj: Any) -> None:
         """
         Loads values of the persistent attributes, at this context and assigns them to the provided object.
 
@@ -331,24 +328,7 @@ class Context:
         :param obj:
         :return:
         """
-
-        from .svgelements import Color
-
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            obj_value = getattr(obj, attr)
-
-            if not isinstance(obj_value, (int, float, str, bool, Color)):
-                continue
-            load_value = self._kernel.read_persistent(
-                type(obj_value), self.abs_path(attr)
-            )
-            try:
-                setattr(obj, attr, load_value)
-                setattr(self, attr, load_value)
-            except AttributeError:
-                pass
+        self._kernel.read_persistent_attributes(self._path, obj)
 
     def clear_persistent(self) -> None:
         """
@@ -365,18 +345,7 @@ class Context:
 
         If the persistence object is not yet established this function cannot succeed.
         """
-        self._kernel.write_persistent(self.abs_path(key), value)
-
-    def set_attrib_keys(self) -> None:
-        """
-        Iterate all the entries keys for the registered persistent settings, adds a None attribute for any key that
-        exists.
-
-        :return:
-        """
-        for k in self._kernel.keylist(self._path):
-            if not hasattr(self, k):
-                setattr(self, k, None)
+        self._kernel.write_persistent(self._path, key, value)
 
     # ==========
     # CONTROL: Deprecated.
@@ -628,14 +597,14 @@ class Context:
         """
         self._kernel.signal(code, self._path, *message)
 
-    def last_signal(self, code: str) -> Tuple:
+    def last_signal(self, signal: str) -> Tuple:
         """
-        Returns the last signal at the given code.
+        Returns the last signal payload at the given code.
 
-        :param code: Code to delegate at this given context location.
+        :param signal: Code to delegate at this given context location.
         :return: message value of the last signal sent for that code.
         """
-        return self._kernel.last_signal(code, self._path)
+        return self._kernel.last_signal(signal)
 
     def listen(
         self,
@@ -650,7 +619,7 @@ class Context:
         :param process: listener to be attached
         :return:
         """
-        self._kernel.listen(signal, self._path, process, lifecycle_object)
+        self._kernel.listen(signal, process, lifecycle_object)
 
     def unlisten(self, signal: str, process: Callable):
         """
@@ -662,7 +631,7 @@ class Context:
         :param process: listener that is to be detached.
         :return:
         """
-        self._kernel.unlisten(signal, self._path, process)
+        self._kernel.unlisten(signal, process)
 
     # ==========
     # CHANNEL DELEGATES
@@ -800,7 +769,7 @@ class Kernel:
     """
 
     def __init__(
-        self, name: str, version: str, profile: str, path: str = "/", config=None
+        self, name: str, version: str, profile: str
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -808,14 +777,17 @@ class Kernel:
         Name: The application name.
         Version: The version number of the application.
         Profile: The name to save our data under (this is often the same as app name).
-        Path: The path prefix to silently add to all data. This allows the same profile to be used without the same data
-        Config: This is the persistence object used to save. While official agnostic, it's actually strikingly identical
-                    to a wx.Config object.
         """
         self.name = name
         self.profile = profile
         self.version = version
-        self._path = path
+
+        # Persistent Settings
+        self._config_file = Path(get_safe_path(self.name, create=True)).joinpath(
+            "{profile}.cfg".format(name=name, profile=profile, version=version)
+        )
+        self._config_dict = {}
+        self.read_configuration()
 
         # Boot State
         self._booted = False
@@ -889,12 +861,6 @@ class Kernel:
 
         self._current_directory = "."
 
-        # Persistent Settings
-        if config is not None:
-            self.set_config(config)
-        else:
-            self._config = None
-
         # Arguments Objects
         self.args = None
 
@@ -903,37 +869,6 @@ class Kernel:
 
     def __str__(self):
         return "Kernel()"
-
-    def __setitem__(self, key: str, value: Union[str, int, bool, float, Color]):
-        """
-        Kernel value settings. If Config is registered this will be persistent.
-
-        :param key: Key to set.
-        :param value: Value to set
-        :return: None
-        """
-        if isinstance(key, str):
-            self.write_persistent(key, value)
-
-    def __getitem__(
-        self, item: Union[Tuple, str]
-    ) -> Union[str, int, bool, float, Color]:
-        """
-        Kernel value get. If Config is set registered this will be persistent.
-
-        As a shorthand any float, int, string, or bool set with this will also be found at kernel.item
-
-        :param item:
-        :return:
-        """
-        if isinstance(item, tuple):
-            if len(item) == 2:
-                t, key = item
-                return self.read_persistent(t, key)
-            else:
-                t, key, default = item
-                return self.read_persistent(t, key, default)
-        return self.read_item_persistent(item)
 
     def open_safe(self, *args):
         try:
@@ -1896,8 +1831,9 @@ class Kernel:
             del self.contexts[context_name]
             if channel:
                 channel(_("Context Shutdown Finished: '%s'") % str(context))
+        self.write_configuration()
         try:
-            del self._config
+            del self._config_dict
             if channel:
                 channel(_("Destroying persistence object"))
         except AttributeError:
@@ -2227,18 +2163,6 @@ class Kernel:
     # PATH & CONTEXTS
     # ==========
 
-    def abs_path(self, subpath: str) -> str:
-        """
-        The absolute path function determines the absolute path of the given subpath within the current path.
-
-        :param subpath: relative path to the path at this context
-        :return:
-        """
-        subpath = str(subpath)
-        if subpath.startswith("/"):
-            subpath = subpath[1:]
-        return "/%s/%s" % (self._path, subpath)
-
     @property
     def root(self) -> "Context":
         return self.get_context("/")
@@ -2266,142 +2190,177 @@ class Kernel:
         self.register_as_context(derive)
         return derive
 
-    def derivable(self, path: str) -> Generator[str, None, None]:
+    def read_configuration(self):
+        try:
+            parser = ConfigParser()
+            parser.read(self._config_file)
+            for section in parser.sections():
+                for option in parser.options(section):
+                    try:
+                        config_section = self._config_dict[section]
+                    except KeyError:
+                        config_section = dict()
+                        self._config_dict[section] = config_section
+                    config_section[option] = parser.get(section, option)
+        except PermissionError:
+            return
+
+    def write_configuration(self):
+        try:
+            parser = ConfigParser()
+            for section_key in self._config_dict:
+                section = self._config_dict[section_key]
+                for key in section:
+                    value = section[key]
+                    try:
+                        parser.add_section(str(section_key))
+                    except DuplicateSectionError:
+                        pass
+                    parser.set(str(section_key), str(key), str(value))
+            with open(self._config_file, "w") as fp:
+                parser.write(fp)
+        except PermissionError:
+            return
+
+    def derivable(self, section: str) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
-        :param path:
+        :param section:
         :return:
         """
-        if self._config is None:
-            return
-        path = self.abs_path(path)
-        self._config.SetPath(path)
-        more, value, index = self._config.GetFirstGroup()
-        while more:
-            yield value
-            more, value, index = self._config.GetNextGroup(index)
-        self._config.SetPath("/")
-
-    def read_item_persistent(self, key: str) -> Optional[str]:
-        """Directly read from persistent storage the value of an item."""
-        if self._config is None:
-            return None
-        return self._config.Read(self.abs_path(key))
+        for section_name in self._config_dict:
+            if section_name.startswith(section):
+                yield section_name
 
     def read_persistent(
-        self, t: type, key: str, default: Union[str, int, float, bool, Color] = None
+        self, t: type, section: str, key: str, default: Union[str, int, float, bool] = None
     ) -> Any:
         """
         Directly read from persistent storage the value of an item.
 
         :param t: datatype.
+        :param section: section in which to store the key
         :param key: key used to reference item.
         :param default: default value if item does not exist.
         :return: value
         """
-        if self._config is None:
-            return default
-        key = self.abs_path(key)
-        if default is not None:
-            if t == str:
-                return self._config.Read(key, default)
-            elif t == int:
-                return self._config.ReadInt(key, default)
-            elif t == float:
-                return self._config.ReadFloat(key, default)
-            elif t == bool:
-                return self._config.ReadBool(key, default)
-            elif t == Color:
-                return Color(argb=self._config.ReadInt(key, default))
-        else:
-            if t == str:
-                return self._config.Read(key)
-            elif t == int:
-                return self._config.ReadInt(key)
-            elif t == float:
-                return self._config.ReadFloat(key)
-            elif t == bool:
-                return self._config.ReadBool(key)
-            elif t == Color:
-                return Color(argb=self._config.ReadInt(key))
-        return default
+        try:
+            value = self._config_dict[section][key]
+            if t == bool:
+                return value == "True"
 
-    def write_persistent(self, key: str, value: Union[str, int, float, bool, Color]):
+            return t(value)
+        except KeyError:
+            return default
+
+    def read_persistent_attributes(self, section: str, obj: Any):
+        for attr in dir(obj):
+            if attr.startswith("_"):
+                continue
+            obj_value = getattr(obj, attr)
+
+            if not isinstance(obj_value, (int, float, str, bool)):
+                continue
+            load_value = self.read_persistent(
+                type(obj_value), section, attr
+            )
+            try:
+                setattr(obj, attr, load_value)
+            except AttributeError:
+                pass
+
+    def write_persistent(self, section:str, key: str, value: Union[str, int, float, bool]):
         """
         Directly write the value to persistent storage.
 
         :param key: The item key being read.
         :param value: the value of the item.
         """
-        if self._config is None:
-            return
-        key = self.abs_path(key)
-        if isinstance(value, str):
-            self._config.Write(key, value)
-        elif isinstance(value, int):
-            self._config.WriteInt(key, value)
-        elif isinstance(value, float):
-            self._config.WriteFloat(key, value)
-        elif isinstance(value, bool):
-            self._config.WriteBool(key, value)
-        elif isinstance(value, Color):
-            self._config.WriteInt(key, value.argb)
+        try:
+            config_section = self._config_dict[section]
+        except KeyError:
+            config_section = dict()
+            self._config_dict[section] = config_section
 
-    def clear_persistent(self, path: str):
-        if self._config is None:
-            return
-        path = self.abs_path(path)
-        self._config.DeleteGroup(path)
+        if isinstance(value, (str, int, float, bool)):
+            config_section[key] = value
 
-    def delete_persistent(self, key: str):
-        if self._config is None:
-            return
-        key = self.abs_path(key)
-        self._config.DeleteEntry(key)
+    def write_persistent_attributes(self, section, obj):
+        """
+        Write all valid attribute values of this object to the section provided.
+
+        @param section: section to write to
+        @param obj: object whose attributes should be written
+        @return:
+        """
+        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
+        for attr in dir(obj):
+            if attr.startswith("_"):
+                continue
+            if attr in props:
+                continue
+            value = getattr(obj, attr)
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float)):
+                self.write_persistent(section, attr, value)
+
+    def clear_persistent(self, section: str):
+        """
+        Clears a section of the persistent settings.
+
+        @param section:
+        @return:
+        """
+        try:
+            del self._config_dict[section]
+        except KeyError:
+            pass
+
+    def delete_persistent(self, section: str, key:str):
+        """
+        Deletes a key within a section of the persistent settings.
+
+        @param section: section to delete key from
+        @param key: key to delete
+        @return:
+        """
+        try:
+            self._config_dict[section][key]
+        except KeyError:
+            pass
 
     def load_persistent_string_dict(
-        self, path: str, dictionary: Optional[Dict] = None, suffix: bool = False
+        self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
     ) -> Dict:
+        """
+        Updates the given dictionary with the key values at the given section
+        @param section: section to load into string dict
+        @param dictionary: optional dictionary to update values
+        @param suffix: provide only the keys or section/key combination.
+        @return:
+        """
         if dictionary is None:
             dictionary = dict()
-        for k in list(self.keylist(path)):
-            item = self.read_item_persistent(k)
-            if suffix:
-                k = k.split("/")[-1]
+        for k in list(self.keylist(section)):
+            item = self._config_dict[section][k]
+            if not suffix:
+                k = "{section}/{key}".format(section=section, key=k)
             dictionary[k] = item
         return dictionary
 
-    def keylist(self, path: str, suffix: bool = False) -> Generator[str, None, None]:
+    def keylist(self, section: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
 
-        @param path: Path to check for keys.
+        @param section: Path to check for keys.
         @param suffix:  Should only the suffix be yielded.
         @return:
         """
-        if self._config is None:
+        try:
+            yield from self._config_dict[section]
+        except KeyError:
             return
-        path = self.abs_path(path)
-        self._config.SetPath(path)
-        more, value, index = self._config.GetFirstEntry()
-        while more:
-            if suffix:
-                yield value
-            else:
-                yield "%s/%s" % (path, value)
-            more, value, index = self._config.GetNextEntry(index)
-        self._config.SetPath("/")
-
-    def set_config(self, config: Any) -> None:
-        """
-        Set the config object.
-
-        :param config: Persistent storage object.
-        :return:
-        """
-        if config is None:
-            return
-        self._config = config
 
     # ==========
     # THREADS PROCESSING
@@ -2733,7 +2692,6 @@ class Kernel:
         Queries the last signal for a particular signal/path
 
         :param signal: signal to query.
-        :param path: path for the given signal to query.
         :return: Last signal sent through the kernel for that signal and path
         """
         try:

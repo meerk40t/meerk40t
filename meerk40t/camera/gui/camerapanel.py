@@ -805,8 +805,7 @@ class CameraURIPanel(wx.Panel):
             if not c.startswith("uri"):
                 continue
             setattr(camera_context, c, None)
-        for c in list(camera_context.kernel.keylist(camera_context.path)):
-            camera_context.kernel.delete_persistent(c)
+        camera_context.clear_persistent()
 
         for i, uri in enumerate(self.uri_list):
             key = "uri%d" % i
