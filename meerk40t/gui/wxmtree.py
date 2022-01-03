@@ -420,8 +420,12 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.CollapseAllChildren(item)
-        if self.wxtree.GetItemParent(item) == self.wxtree.GetRootItem():
-            self.wxtree.Expand(item)
+        if (
+            item is self.wxtree.GetRootItem()
+            or self.wxtree.GetItemParent(item) is self.wxtree.GetRootItem()
+        ):
+            self.wxtree.Expand(self.element_root.get(type="branch ops").item)
+            self.wxtree.Expand(self.element_root.get(type="branch elems").item)
 
     def reorder(self, node):
         """
@@ -535,7 +539,6 @@ class ShadowTree:
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
-        # We check these two exist but will open any additional siblings just in case
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
