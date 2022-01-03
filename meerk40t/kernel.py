@@ -199,8 +199,8 @@ class Context:
         The absolute path function determines the absolute path of the given subpath within the current path of the
         context.
 
-        :param subpath: relative path to the path at this context
-        :return:
+        @param subpath: relative path to the path at this context
+        @return:
         """
         subpath = str(subpath)
         if subpath.startswith("/"):
@@ -213,8 +213,8 @@ class Context:
         """
         Derive a subpath context.
 
-        :param path:
-        :return:
+        @param path:
+        @return:
         """
         return self._kernel.get_context(self.abs_path(path))
 
@@ -238,8 +238,8 @@ class Context:
         """
         Get a context at a given path location.
 
-        :param path: path location to get a context.
-        :return:
+        @param path: path location to get a context.
+        @return:
         """
         return self._kernel.get_context(path)
 
@@ -247,7 +247,7 @@ class Context:
         """
         Generate all sub derived paths.
 
-        :return:
+        @return:
         """
         yield from self._kernel.derivable(self._path)
 
@@ -286,10 +286,10 @@ class Context:
         If the setting exists in the persistent storage that value is used.
         If there is no settings value, the default will be used.
 
-        :param setting_type: int, float, str, or bool value
-        :param key: name of the setting
-        :param default: default value for the setting to have.
-        :return: load_value
+        @param setting_type: int, float, str, or bool value
+        @param key: name of the setting
+        @param default: default value for the setting to have.
+        @return: load_value
         """
         if hasattr(self, key) and getattr(self, key) is not None:
             return getattr(self, key)
@@ -324,8 +324,8 @@ class Context:
 
         The attribute type of the value depends on the provided object value default values.
 
-        :param obj:
-        :return:
+        @param obj:
+        @return:
         """
         self._kernel.read_persistent_attributes(self._path, obj)
 
@@ -335,9 +335,7 @@ class Context:
         """
         self._kernel.clear_persistent(self._path)
 
-    def write_persistent(
-        self, key: str, value: Union[int, float, str, bool]
-    ) -> None:
+    def write_persistent(self, key: str, value: Union[int, float, str, bool]) -> None:
         """
         Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
         shutdown but there are a variety of reasons to force this call early.
@@ -354,8 +352,8 @@ class Context:
         """
         Execute the given control code relative to the path of this context.
 
-        :param control: Function to execute relative to the current position.
-        :return:
+        @param control: Function to execute relative to the current position.
+        @return:
         """
         try:
             funct = self._kernel.lookup(self.abs_path("control/%s" % control))
@@ -403,8 +401,8 @@ class Context:
         """
         Return whether or not this is a registered feature within the kernel.
 
-        :param feature: feature to check if exists in kernel.
-        :return:
+        @param feature: feature to check if exists in kernel.
+        @return:
         """
         return self.lookup(feature) is not None
 
@@ -412,8 +410,8 @@ class Context:
         """
         Delegate of Kernel match.
 
-        :param matchtext:  regex matchtext to locate.
-        :param suffix: provide the suffix of the match only.
+        @param matchtext:  regex matchtext to locate.
+        @param suffix: provide the suffix of the match only.
         :yield: matched entries.
         """
         yield from self._kernel.find(*args)
@@ -422,8 +420,8 @@ class Context:
         """
         Delegate of Kernel match.
 
-        :param matchtext:  regex matchtext to locate.
-        :param suffix: provide the suffix of the match only.
+        @param matchtext:  regex matchtext to locate.
+        @param suffix: provide the suffix of the match only.
         :yield: matched entries.
         """
         yield from self._kernel.match(matchtext, suffix)
@@ -502,8 +500,8 @@ class Context:
 
         Note: 'name' is not necessarily the type of instance. It could be the named value of the instance.
 
-        :param path: The opened path to find the given instance.
-        :return: The instance, if found, otherwise None.
+        @param path: The opened path to find the given instance.
+        @return: The instance, if found, otherwise None.
         """
         try:
             return self.opened[path]
@@ -517,10 +515,10 @@ class Context:
         This is fairly standard but should not be used if the goal would be to open the same module several times.
         Unless those modules are being opened at different contexts.
 
-        :param registered_path: registered path of the given module.
-        :param args: args to open the module with.
-        :param kwargs: kwargs to open the module with.
-        :return:
+        @param registered_path: registered path of the given module.
+        @param args: args to open the module with.
+        @param kwargs: kwargs to open the module with.
+        @return:
         """
         return self.open_as(registered_path, registered_path, *args, **kwargs)
 
@@ -535,11 +533,11 @@ class Context:
         If the module already exists, the restore function is called on that object (if restore() exists), with the same
         args and kwargs that were intended for the init() routine.
 
-        :param registered_path: path of object being opened.
-        :param instance_path: instance_path of object.
-        :param args: Args to pass to newly opened module.
-        :param kwargs: Kwargs to pass to newly opened module.
-        :return: Opened module.
+        @param registered_path: path of object being opened.
+        @param instance_path: instance_path of object.
+        @param args: Args to pass to newly opened module.
+        @param kwargs: Kwargs to pass to newly opened module.
+        @return: Opened module.
         """
         try:
             find = self.opened[instance_path]
@@ -572,8 +570,8 @@ class Context:
         This calls the close() function on the object (which may not exist). Then calls module_close() on the module,
         which should exist.
 
-        :param instance_path: Instance path to close.
-        :return:
+        @param instance_path: Instance path to close.
+        @return:
         """
         try:
             instance = self.opened[instance_path]
@@ -590,9 +588,9 @@ class Context:
         """
         Send Signal to all registered listeners.
 
-        :param code: Code to delegate at this given context location.
-        :param message: Message to send.
-        :return:
+        @param code: Code to delegate at this given context location.
+        @param message: Message to send.
+        @return:
         """
         self._kernel.signal(code, self._path, *message)
 
@@ -600,8 +598,8 @@ class Context:
         """
         Returns the last signal payload at the given code.
 
-        :param signal: Code to delegate at this given context location.
-        :return: message value of the last signal sent for that code.
+        @param signal: Code to delegate at this given context location.
+        @return: message value of the last signal sent for that code.
         """
         return self._kernel.last_signal(signal)
 
@@ -614,9 +612,9 @@ class Context:
         """
         Listen at a particular signal with a given process.
 
-        :param signal: Signal code to listen for
-        :param process: listener to be attached
-        :return:
+        @param signal: Signal code to listen for
+        @param process: listener to be attached
+        @return:
         """
         self._kernel.listen(signal, process, lifecycle_object)
 
@@ -626,9 +624,9 @@ class Context:
 
         This should be called on the ending of the lifecycle of whatever process listened to the given signal.
 
-        :param signal: Signal to unlisten for.
-        :param process: listener that is to be detached.
-        :return:
+        @param signal: Signal to unlisten for.
+        @param process: listener that is to be detached.
+        @return:
         """
         self._kernel.unlisten(signal, process)
 
@@ -640,8 +638,8 @@ class Context:
         """
         Return a channel from the kernel location
 
-        :param channel: Channel to be opened.
-        :return: Channel object that is opened.
+        @param channel: Channel to be opened.
+        @return: Channel object that is opened.
         """
         return self._kernel.channel(channel, *args, **kwargs)
 
@@ -700,9 +698,9 @@ class Service(Context):
         """
         Registers an element within this service.
 
-        :param path:
-        :param obj:
-        :return:
+        @param path:
+        @param obj:
+        @return:
         """
         self._registered[path] = obj
         try:
@@ -767,9 +765,7 @@ class Kernel:
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(
-        self, name: str, version: str, profile: str
-    ):
+    def __init__(self, name: str, version: str, profile: str):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -888,7 +884,7 @@ class Kernel:
         Debug function hooks all functions within the device with a debug call that saves the data to the disk and
         prints that information.
 
-        :return:
+        @return:
         """
         import datetime
         import functools
@@ -954,8 +950,8 @@ class Kernel:
         in this case serves as a path. If provided this should be the path of a service provider to bind that plugin
         to the provided service. Unlike other plugins the provided plugin will be bound to the service returned.
 
-        :param plugin:
-        :return:
+        @param plugin:
+        @return:
         """
         service_path = plugin(self, "service")
         module_path = plugin(self, "module")
@@ -1680,7 +1676,7 @@ class Kernel:
         """
         Kernel boot sequence. This should be called after all the registered devices are established.
 
-        :return:
+        @return:
         """
         self.scheduler_thread = self.threaded(self.run, "Scheduler")
         self.signal_job = self.add_job(
@@ -1788,8 +1784,8 @@ class Kernel:
 
         Any residual attached listeners are made warnings.
 
-        :param channel:
-        :return:
+        @param channel:
+        @return:
         """
         channel = self.channel("shutdown")
         self._shutdown = True
@@ -1915,8 +1911,8 @@ class Kernel:
         """
         Find registered path and objects that regex match the given matchtext
 
-        :param args: parts of matchtext
-        :return:
+        @param args: parts of matchtext
+        @return:
         """
         matchtext = "/".join(args)
         match = re.compile(matchtext)
@@ -1932,9 +1928,9 @@ class Kernel:
         """
         Lists all registered paths that regex match the given matchtext
 
-        :param matchtext: match text to match.
-        :param suffix: provide the suffix of the match only.
-        :return:
+        @param matchtext: match text to match.
+        @param suffix: provide the suffix of the match only.
+        @return:
         """
         match = re.compile(matchtext)
         for domain, service in self.services_active():
@@ -1973,8 +1969,8 @@ class Kernel:
         """
         Lookup registered values from the registered dictionary checking the active devices first.
 
-        :param args: parts of matchtext
-        :return:
+        @param args: parts of matchtext
+        @return:
         """
         for obj, name, sname in self.find(*args):
             yield obj
@@ -2123,9 +2119,9 @@ class Kernel:
         Register an element at a given subpath.
         If this Kernel is not root, then it is registered relative to this location.
 
-        :param path: a "/" separated hierarchical index to the object
-        :param obj: object to be registered
-        :return:
+        @param path: a "/" separated hierarchical index to the object
+        @param obj: object to be registered
+        @return:
         """
         self._registered[path] = obj
         try:
@@ -2178,8 +2174,8 @@ class Kernel:
 
         If this has been created previously, then return the previous object.
 
-        :param path: path of context being gotten
-        :return: Context object.
+        @param path: path of context being gotten
+        @return: Context object.
         """
         try:
             return self.contexts[path]
@@ -2192,8 +2188,8 @@ class Kernel:
     def derivable(self, section: str) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
-        :param section:
-        :return:
+        @param section:
+        @return:
         """
         for section_name in self._config_dict:
             if section_name.startswith(section):
@@ -2249,16 +2245,20 @@ class Kernel:
             return
 
     def read_persistent(
-        self, t: type, section: str, key: str, default: Union[str, int, float, bool] = None
+        self,
+        t: type,
+        section: str,
+        key: str,
+        default: Union[str, int, float, bool] = None,
     ) -> Any:
         """
         Directly read from persistent storage the value of an item.
 
-        :param t: datatype.
-        :param section: section in which to store the key
-        :param key: key used to reference item.
-        :param default: default value if item does not exist.
-        :return: value
+        @param t: datatype.
+        @param section: section in which to store the key
+        @param key: key used to reference item.
+        @param default: default value if item does not exist.
+        @return: value
         """
         try:
             value = self._config_dict[section][key]
@@ -2285,9 +2285,7 @@ class Kernel:
 
             if not isinstance(obj_value, (int, float, str, bool)):
                 continue
-            load_value = self.read_persistent(
-                type(obj_value), section, attr
-            )
+            load_value = self.read_persistent(type(obj_value), section, attr)
             try:
                 setattr(obj, attr, load_value)
             except AttributeError:
@@ -2315,12 +2313,15 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
-    def write_persistent(self, section:str, key: str, value: Union[str, int, float, bool]):
+    def write_persistent(
+        self, section: str, key: str, value: Union[str, int, float, bool]
+    ):
         """
         Directly write the value to persistent storage.
 
-        :param key: The item key being read.
-        :param value: the value of the item.
+        @param section: section to write key value
+        @param key: The item key being written
+        @param value: the value of the item.
         """
         try:
             config_section = self._config_dict[section]
@@ -2412,11 +2413,11 @@ class Kernel:
         the function call the result will be passed this value. If there is not one or it is None, None will be passed.
         result must take 1 argument. This permits final calls to the thread.
 
-        :param func: The function to be executed.
-        :param thread_name: The name under which the thread should be registered.
-        :param result: Runs in the thread after func terminates but before the thread itself terminates.
-        :param daemon: set this thread as daemon
-        :return: The thread object created.
+        @param func: The function to be executed.
+        @param thread_name: The name under which the thread should be registered.
+        @param result: Runs in the thread after func terminates but before the thread itself terminates.
+        @param daemon: set this thread as daemon
+        @return: The thread object created.
         """
         self.thread_lock.acquire(True)  # Prevent dup-threading.
         channel = self.channel("threads")
@@ -2490,7 +2491,7 @@ class Kernel:
 
         Check the Scheduler thread state, and whether it should abort or pause.
         Check each job, and if that job is scheduled to run. Executes that job.
-        :return:
+        @return:
         """
         self.state = STATE_ACTIVE
         while self.state != STATE_END:
@@ -2563,14 +2564,14 @@ class Kernel:
         """
         Adds a job to the scheduler.
 
-        :param run: function to run
-        :param name: Specific job name to add
-        :param args: arguments to give to that function.
-        :param interval: in seconds, how often should the job be run.
-        :param times: limit on number of executions.
-        :param run_main: Should this run in the main thread (as registered by kernel.run_later)
-        :param conditional: Should execute only if the given additional conditional is true. (checked outside run_main)
-        :return: Reference to the job added.
+        @param run: function to run
+        @param name: Specific job name to add
+        @param args: arguments to give to that function.
+        @param interval: in seconds, how often should the job be run.
+        @param times: limit on number of executions.
+        @param run_main: Should this run in the main thread (as registered by kernel.run_later)
+        @param conditional: Should execute only if the given additional conditional is true. (checked outside run_main)
+        @return: Reference to the job added.
         """
         job = Job(
             job_name=name,
@@ -2622,9 +2623,9 @@ class Kernel:
         """
         Signals add the latest message to the message queue.
 
-        :param code: Signal code
-        :param path: Path of signal
-        :param message: Message to send.
+        @param code: Signal code
+        @param path: Path of signal
+        @param message: Message to send.
         """
         self._signal_lock.acquire(True)
         self._message_queue[code] = path, message
@@ -2636,8 +2637,8 @@ class Kernel:
 
         Process the signals queued up. Inserting any attaching listeners, removing any removing listeners. And
         providing the newly attached listeners the last message known from that signal.
-        :param args: None
-        :return:
+        @param args: None
+        @return:
         """
         if (
             len(self._message_queue) == 0
@@ -2718,8 +2719,8 @@ class Kernel:
         """
         Queries the last signal for a particular signal/path
 
-        :param signal: signal to query.
-        :return: Last signal sent through the kernel for that signal and path
+        @param signal: signal to query.
+        @return: Last signal sent through the kernel for that signal and path
         """
         try:
             return self._last_message[signal]
@@ -2825,8 +2826,8 @@ class Kernel:
         terminal, where each letter of data can be sent to the console and
         execution will occur at the carriage return.
 
-        :param data:
-        :return:
+        @param data:
+        @return:
         """
         if isinstance(data, bytes):
             try:
@@ -2844,7 +2845,7 @@ class Kernel:
         """
         Processes the console_job ticks. This executes any outstanding queued commands and any looped commands.
 
-        :return:
+        @return:
         """
         for command in self.commands:
             self._console_parse(command, channel=self._console_channel)
