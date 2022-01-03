@@ -5333,8 +5333,6 @@ class Elemental(Service):
             op.argb_color = op.color.argb
             op_set.kernel.write_persistent_attributes(op_set.path, op)
             op_set.kernel.write_persistent_attributes(op_set.path, op.settings)
-            # if isinstance(value, Color):
-            #     value = value.argb
         settings.close_subpaths()
 
     def load_persistent_operations(self, name):
