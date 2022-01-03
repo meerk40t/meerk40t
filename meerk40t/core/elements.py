@@ -944,11 +944,11 @@ class LaserOperation(Node):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self._operation = None
+        self.operation = "Unknown"
         try:
-            self._operation = kwargs["operation"]
+            self.operation = kwargs["operation"]
         except KeyError:
-            self._operation = "Unknown"
+            pass
         self.color = None
         self.output = True
         self.show = True
@@ -979,7 +979,7 @@ class LaserOperation(Node):
             if isinstance(obj, SVGElement):
                 self.add(obj, type="opnode")
             elif isinstance(obj, LaserOperation):
-                self._operation = obj.operation
+                self.operation = obj.operation
                 self.color = Color(obj.color)
                 self.output = obj.output
                 self.show = obj.show
@@ -1035,7 +1035,7 @@ class LaserOperation(Node):
         return "LaserOperation('%s', %s)" % (self.type, str(self._operation))
 
     def __str__(self):
-        op = self._operation
+        op = self.operation
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
@@ -1045,14 +1045,15 @@ class LaserOperation(Node):
             parts.append("%dX" % self.settings.passes)
         if op is None:
             op = "Unknown"
-        if self._operation == "Raster":
+        if self.operation == "Raster":
             op += str(self.settings.raster_step)
         parts.append(op)
         if op == "Dots":
             parts.append("%gms dwell" % self.settings.speed)
             return " ".join(parts)
-        parts.append("%gmm/s" % self.settings.speed)
-        if self._operation in ("Raster", "Image"):
+        if self.settings.speed is not None:
+            parts.append("%gmm/s" % self.settings.speed)
+        if self.operation in ("Raster", "Image"):
             if self.settings.raster_swing:
                 raster_dir = "-"
             else:
@@ -1070,8 +1071,9 @@ class LaserOperation(Node):
             else:
                 raster_dir += "%d" % self.settings.raster_direction
             parts.append(raster_dir)
-        parts.append("%gppi" % self.settings.power)
-        if self._operation in ("Raster", "Image"):
+        if self.settings.power is not None:
+            parts.append("%gppi" % self.settings.power)
+        if self.operation in ("Raster", "Image"):
             if isinstance(self.settings.overscan, str):
                 parts.append("±%s" % self.settings.overscan)
             else:
@@ -1101,18 +1103,8 @@ class LaserOperation(Node):
         for element in obj.children:
             self.add(copy(element.object), type="elem")
 
-    @property
-    def operation(self):
-        return self._operation
-
-    @operation.setter
-    def operation(self, v):
-        if self._operation != v:
-            self._operation = v
-            self.notify_update()
-
     def time_estimate(self):
-        if self._operation in ("Cut", "Engrave"):
+        if self.operation in ("Cut", "Engrave"):
             estimate = 0
             for e in self.children:
                 e = e.object
@@ -1132,7 +1124,7 @@ class LaserOperation(Node):
                 str(int(minutes)).zfill(2),
                 str(int(seconds)).zfill(2),
             )
-        elif self._operation in ("Raster", "Image"):
+        elif self.operation in ("Raster", "Image"):
             estimate = 0
             for e in self.children:
                 e = e.object
@@ -1181,7 +1173,7 @@ class LaserOperation(Node):
         """
         settings = self.settings
 
-        if self._operation in ("Cut", "Engrave"):
+        if self.operation in ("Cut", "Engrave"):
             for element in self.children:
                 object_path = element.object
                 if isinstance(object_path, SVGImage):
@@ -1212,7 +1204,7 @@ class LaserOperation(Node):
                     )
                     group = CutGroup(None, closed=closed, settings=settings)
                     group.path = Path(subpath)
-                    group.original_op = self._operation
+                    group.original_op = self.operation
                     for seg in subpath:
                         if isinstance(seg, Move):
                             pass  # Move operations are ignored.
@@ -1264,7 +1256,7 @@ class LaserOperation(Node):
                             cut_obj.next = group[0]
                         cut_obj.previous = group[i - 1]
                     yield group
-        elif self._operation == "Raster":
+        elif self.operation == "Raster":
             step = settings.raster_step
             assert step > 0
             direction = settings.raster_direction
@@ -1298,7 +1290,7 @@ class LaserOperation(Node):
                     passes=passes,
                 )
                 cut.path = path
-                cut.original_op = self._operation
+                cut.original_op = self.operation
                 yield cut
                 if direction == 4:
                     cut = RasterCut(
@@ -1310,9 +1302,9 @@ class LaserOperation(Node):
                         passes=passes,
                     )
                     cut.path = path
-                    cut.original_op = self._operation
+                    cut.original_op = self.operation
                     yield cut
-        elif self._operation == "Image":
+        elif self.operation == "Image":
             for svg_image in self.children:
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
@@ -1359,7 +1351,7 @@ class LaserOperation(Node):
                     passes=passes,
                 )
                 cut.path = path
-                cut.original_op = self._operation
+                cut.original_op = self.operation
                 yield cut
 
                 if settings.raster_direction == 4:
@@ -1372,7 +1364,7 @@ class LaserOperation(Node):
                         passes=passes,
                     )
                     cut.path = path
-                    cut.original_op = self._operation
+                    cut.original_op = self.operation
                     yield cut
 
 
