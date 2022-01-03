@@ -85,7 +85,7 @@ so that these can be saved and reloaded.
     * Attribute: args="str,..."
     * Attribute: output="bool"
 
-### Note: `meerk40t:note`
+### Note: `<meerk40t:note>`
 This is identical to the earlier `<note>` tag:
 
 * Tag: meerk40t:note
