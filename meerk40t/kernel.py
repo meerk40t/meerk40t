@@ -2008,7 +2008,7 @@ class Kernel:
         if cookie is None:
             cookie = scan_object
         for attr in dir(scan_object):
-            # Handle is excluded as an acceptable name due to a knock-on effect bug triggered calling gettattr()
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
             if attr == "Handle":
                 continue
             func = getattr(scan_object, attr)
@@ -2768,7 +2768,7 @@ class Kernel:
         if cookie is None:
             cookie = scan_object
         for attr in dir(scan_object):
-            # Handle is excluded as an acceptable name due to a knock-on effect bug triggered calling gettattr()
+            # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
             if attr == "Handle":
                 continue
             func = getattr(scan_object, attr)
