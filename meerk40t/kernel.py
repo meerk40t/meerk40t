@@ -1681,6 +1681,10 @@ class Kernel:
     # LIFECYCLE PROCESSES
     # ==========
 
+    def __print_delegate(self, *args, **kwargs):
+        if print not in self._console_channel.watchers:
+            print(*args, **kwargs)
+
     def __call__(self):
         self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
@@ -1723,24 +1727,24 @@ class Kernel:
     def poststart(self):
         if hasattr(self.args, "execute") and self.args.execute:
             # Any execute code segments gets executed here.
-            self.channel("console").watch(print)
+            self.channel("console").watch(self.__print_delegate)
             for v in self.args.execute:
                 if v is None:
                     continue
                 self.console(v.strip() + "\n")
-            self.channel("console").unwatch(print)
+            self.channel("console").unwatch(self.__print_delegate)
 
         if hasattr(self.args, "batch") and self.args.batch:
             # If a batch file is specified it gets processed here.
-            self.channel("console").watch(print)
+            self.channel("console").watch(self.__print_delegate)
             with self.args.batch as batch:
                 for line in batch:
                     self.console(line.strip() + "\n")
-            self.channel("console").unwatch(print)
+            self.channel("console").unwatch(self.__print_delegate)
 
     def premain(self):
         if hasattr(self.args, "console") and self.args.console:
-            self.channel("console").watch(print)
+            self.channel("console").watch(self.__print_delegate)
             import sys
 
             async def aio_readline(loop):
@@ -1757,7 +1761,7 @@ class Kernel:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(aio_readline(loop))
             loop.close()
-            self.channel("console").unwatch(print)
+            self.channel("console").unwatch(self.__print_delegate)
 
     def preshutdown(self):
         channel = self.channel("shutdown")

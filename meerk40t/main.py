@@ -295,12 +295,4 @@ def run():
                 print(e)
             else:
                 kernel.add_plugin(plugin)
-    # TODO: Integrate __print_delegate into execute, batch, and console.
-    kernel_root = kernel.root
-    console = kernel_root.channel("console")
-
-    def __print_delegate(*args, **kwargs):
-        if print not in console.watchers:
-            print(*args, **kwargs)
-
     kernel()
