@@ -44,21 +44,6 @@ class LhystudiosControllerPanel(wx.Panel):
         self.text_connection_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.checkbox_mock_usb = wx.CheckBox(
-            self, wx.ID_ANY, _("Mock USB Connection Mode")
-        )
-        self.text_device_index = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
-        self.text_device_address = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.spin_device_address = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
-        self.text_device_bus = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.spin_device_bus = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
-        self.text_device_version = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY
-        )
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=255)
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
         )
@@ -86,23 +71,6 @@ class LhystudiosControllerPanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_mock_usb, self.checkbox_mock_usb)
-        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_index, self.spin_device_index)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_index, self.spin_device_index)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.spin_on_device_address, self.spin_device_address
-        )
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.spin_on_device_address, self.spin_device_address
-        )
-        self.Bind(wx.EVT_SPINCTRL, self.spin_on_device_bus, self.spin_device_bus)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_device_bus, self.spin_device_bus)
-        self.Bind(
-            wx.EVT_SPINCTRL, self.spin_on_device_version, self.spin_device_version
-        )
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.spin_on_device_version, self.spin_device_version
-        )
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_start_controller,
@@ -111,8 +79,6 @@ class LhystudiosControllerPanel(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
-        # end wxGlade
-        # self.Bind(wx.EVT_RIGHT_DOWN, self.on_controller_menu, self)
         self.last_control_state = None
         self.retries = 0
         self.set_widgets()
@@ -128,43 +94,7 @@ class LhystudiosControllerPanel(wx.Panel):
             _("Force connection/disconnection from the device.")
         )
         self.text_connection_status.SetToolTip(_("Connection status"))
-        self.checkbox_mock_usb.SetToolTip(
-            _(
-                "DEBUG. Without a K40 connected continue to process things as if there was one."
-            )
-        )
-        self.text_device_index.SetMinSize((55, 23))
-        self.spin_device_index.SetMinSize((40, 23))
-        self.spin_device_index.SetToolTip(
-            _(
-                "Optional: Distinguish between different lasers using the match criteria below.\n"
-                "-1 match anything. 0+ match exactly that value."
-            )
-        )
-        self.text_device_address.SetMinSize((55, 23))
-        self.spin_device_address.SetMinSize((40, 23))
-        self.spin_device_address.SetToolTip(
-            _(
-                "Optional: Distinguish between different lasers using the match criteria below.\n"
-                "-1 match anything. 0+ match exactly that value."
-            )
-        )
-        self.text_device_bus.SetMinSize((55, 23))
-        self.spin_device_bus.SetMinSize((40, 23))
-        self.spin_device_bus.SetToolTip(
-            _(
-                "Optional: Distinguish between different lasers using the match criteria below.\n"
-                "-1 match anything. 0+ match exactly that value."
-            )
-        )
-        self.text_device_version.SetMinSize((55, 23))
-        self.spin_device_version.SetMinSize((40, 23))
-        self.spin_device_version.SetToolTip(
-            _(
-                "Optional: Distinguish between different lasers using the match criteria below.\n"
-                "-1 match anything. 0+ match exactly that value."
-            )
-        )
+
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetFont(
@@ -252,21 +182,6 @@ class LhystudiosControllerPanel(wx.Panel):
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
         sizer_1.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
-        sizer_usb_settings.Add(self.checkbox_mock_usb, 0, 0, 0)
-        sizer_3.Add(self.text_device_index, 0, 0, 0)
-        sizer_3.Add(self.spin_device_index, 0, 0, 0)
-        sizer_23.Add(sizer_3, 0, wx.EXPAND, 0)
-        sizer_10.Add(self.text_device_address, 0, 0, 0)
-        sizer_10.Add(self.spin_device_address, 0, 0, 0)
-        sizer_23.Add(sizer_10, 0, wx.EXPAND, 0)
-        sizer_11.Add(self.text_device_bus, 0, 0, 0)
-        sizer_11.Add(self.spin_device_bus, 0, 0, 0)
-        sizer_23.Add(sizer_11, 0, wx.EXPAND, 0)
-        sizer_12.Add(self.text_device_version, 0, 0, 0)
-        sizer_12.Add(self.spin_device_version, 0, 0, 0)
-        sizer_23.Add(sizer_12, 0, wx.EXPAND, 0)
-        sizer_usb_settings.Add(sizer_23, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_usb_settings, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
         sizer_1.Add(sizer_controller, 0, wx.EXPAND, 0)
@@ -356,12 +271,6 @@ class LhystudiosControllerPanel(wx.Panel):
 
     def set_widgets(self):
         self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
-        self.checkbox_mock_usb.SetValue(self.context.mock)
-        self.spin_device_index.SetValue(self.context.usb_index)
-        self.spin_device_bus.SetValue(self.context.usb_bus)
-        self.spin_device_address.SetValue(self.context.usb_address)
-        self.spin_device_version.SetValue(self.context.usb_version)
-
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
@@ -369,30 +278,6 @@ class LhystudiosControllerPanel(wx.Panel):
             self.context.execute(control_name)
 
         return menu_element
-
-    @signal_listener("pipe;index")
-    def on_update_pipe_index(self, origin, value):
-        if origin != self.context.path:
-            return
-        self.text_device_index.SetValue(str(value))
-
-    @signal_listener("pipe;chipv")
-    def on_update_pipe_chipv(self, origin, value):
-        if origin != self.context.path:
-            return
-        self.text_device_version.SetValue(str(value))
-
-    @signal_listener("pipe;bus")
-    def on_update_pipe_bus(self, origin, value):
-        if origin != self.context.path:
-            return
-        self.text_device_bus.SetValue(str(value))
-
-    @signal_listener("pipe;address")
-    def on_update_pipe_address(self, origin, value):
-        if origin != self.context.path:
-            return
-        self.text_device_address.SetValue(str(value))
 
     @signal_listener("pipe;status")
     def update_status(self, origin, status_data, code_string):
