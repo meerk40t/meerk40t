@@ -1367,7 +1367,7 @@ class MeerK40t(MWindow):
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
 
-        self.context("timer -g 1 0 quit\n")
+        self.context("quit\n")
 
     @signal_listener("altered")
     @signal_listener("modified")
