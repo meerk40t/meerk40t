@@ -14,7 +14,6 @@ from meerk40t.gui.icons import (
     icons8_play_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -481,21 +480,6 @@ class LhystudiosControllerPanel(wx.Panel):
     @signal_listener("pipe;failing")
     def on_usb_failing(self, origin, count):
         self.retries = count
-
-    def spin_on_device_index(self, event=None):
-        self.context.usb_index = int(self.spin_device_index.GetValue())
-
-    def spin_on_device_address(self, event=None):
-        self.context.usb_address = int(self.spin_device_address.GetValue())
-
-    def spin_on_device_bus(self, event=None):
-        self.context.usb_bus = int(self.spin_device_bus.GetValue())
-
-    def spin_on_device_version(self, event=None):
-        self.context.usb_version = int(self.spin_device_version.GetValue())
-
-    def on_check_mock_usb(self, event=None):
-        self.context.mock = self.checkbox_mock_usb.GetValue()
 
     def on_button_start_controller(
         self, event=None
