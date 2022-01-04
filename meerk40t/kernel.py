@@ -318,20 +318,20 @@ class Context:
         """
         self._kernel.write_persistent_attributes(self._path, obj)
 
-    def get_persistent_value(self, t: type, key: str) -> Any:
+    def read_persistent(self, t: type, key: str) -> Any:
         """
         Gets a specific value of the persistent attributes.
 
         The attribute type of the value depends on the provided object value default values.
 
-        :param t: type of value
-        :param key: relative key for the value
-        :return: the value associated with the key otherwise None
+        @param t: type of value
+        @param key: relative key for the value
+        @return: the value associated with the key otherwise None
         """
-        # TODO: Verify newer operation persistent types.
         return self._kernel.read_persistent(
             t,
-            self.abs_path(key),
+            self._path,
+            key
         )
 
     def read_persistent_object(self, obj: Any) -> None:

@@ -5445,7 +5445,7 @@ class Elemental(Service):
         ops = [None] * len(subitems)
         for i, v in enumerate(subitems):
             op_setting_context = settings.get_context(v)
-            op_type = op_setting_context.get_persistent_value(str, "type")
+            op_type = op_setting_context.read_persistent(str, "type")
             if op_type in ["op", ""]:
                 op = LaserOperation()
                 op_set = op.settings
@@ -5455,10 +5455,10 @@ class Elemental(Service):
                 if op.argb_color is not None:
                     op.color = Color(argb=op.argb_color)
             elif op_type == "cmdop":
-                name = op_setting_context.get_persistent_value(str, "label")
-                command = op_setting_context.get_persistent_value(int, "command")
+                name = op_setting_context.read_persistent(str, "label")
+                command = op_setting_context.read_persistent(int, "command")
                 op = CommandOperation(name, command)
-                op_setting_context.load_persistent_object(op)
+                op_setting_context.read_persistent_object(op)
             else:
                 continue
 
