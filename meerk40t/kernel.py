@@ -1777,7 +1777,6 @@ class Kernel:
         @return:
         """
         channel = self.channel("shutdown")
-        self._shutdown = True
         self.state = STATE_END  # Terminates the Scheduler.
 
         _ = self.translation
@@ -3689,8 +3688,10 @@ class Kernel:
             ("quit", "shutdown"), help=_("shuts down all processes and exits")
         )
         def shutdown(**kwargs):
-            if self.state not in (STATE_END, STATE_TERMINATE):
-                self.set_kernel_lifecycle(self, LIFECYCLE_SHUTDOWN)
+            if self._shutdown:
+                return
+            self._shutdown = True
+            self.set_kernel_lifecycle(self, LIFECYCLE_SHUTDOWN)
 
         # ==========
         # FILE MANAGER
