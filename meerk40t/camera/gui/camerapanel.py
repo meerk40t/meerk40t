@@ -487,11 +487,11 @@ class CamInterfaceWidget(Widget):
             )
 
             camera_context = self.cam.context.get_context("camera")
-            keylist = camera_context.kernel.load_persistent_string_dict(
+            keylist = camera_context.kernel.read_persistent_string_dict(
                 camera_context.path, suffix=True
             )
             if keylist is not None:
-                keys = [q for q in keylist]
+                keys = list(keylist)
                 keys.sort()
                 uri_list = [keylist[k] for k in keys]
                 for uri in uri_list:
@@ -785,7 +785,7 @@ class CameraURIPanel(wx.Panel):
 
     def pane_show(self):
         camera_context = self.context.get_context("camera")
-        keylist = camera_context.kernel.load_persistent_string_dict(
+        keylist = camera_context.kernel.read_persistent_string_dict(
             camera_context.path, suffix=True
         )
         if keylist is not None:
@@ -805,8 +805,7 @@ class CameraURIPanel(wx.Panel):
             if not c.startswith("uri"):
                 continue
             setattr(camera_context, c, None)
-        for c in list(camera_context.kernel.keylist(camera_context.path)):
-            camera_context.kernel.delete_persistent(c)
+        camera_context.clear_persistent()
 
         for i, uri in enumerate(self.uri_list):
             key = "uri%d" % i

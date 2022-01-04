@@ -304,7 +304,7 @@ class MoshiControllerPanel(wx.Panel):
     def on_connection_state_change(self, origin, state):
         if state == "STATE_CONNECTION_FAILED" or state == "STATE_DRIVER_NO_BACKEND":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
-            usb_status = self.context.last_signal("pipe;usb_status")
+            origin, usb_status = self.context.last_signal("pipe;usb_status")
             if usb_status is not None:
                 self.button_device_connect.SetLabel(str(usb_status[0]))
             self.button_device_connect.SetBitmap(
@@ -341,7 +341,7 @@ class MoshiControllerPanel(wx.Panel):
             self.button_device_connect.Disable()
 
     def on_button_start_usb(self, event=None):  # wxGlade: Controller.<event_handler>
-        state = self.context.last_signal("pipe;state")
+        origin, state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
         if state in (

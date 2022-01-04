@@ -144,73 +144,12 @@ class LihuiyuDevice(Service):
         ]
         self.register_choices("bed_dim", choices)
 
-        # name_choice = [
-        #     {
-        #         "attr": "device_name",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What do you call this device?"),
-        #         "tip": _(
-        #             "Device name can be anything and will be used to identify this device in places where devices can be selected."
-        #         )
-        #     }
-        # ]
-        # self.register_choices("config", name_choice)
-
-        # connection_choice = [
-        #     {
-        #         "attr": "connection",
-        #         "object": context,
-        #         "type": list,
-        #         "choices": list(context.kernel.lookup("driver", "connections")),
-        #         "label": _("How is the laser connected to this computer"),
-        #         "tip": _(
-        #             "Select the connection method used by this laser."
-        #         )
-        #     }
-        # ]
-        # network_choice = [
-        #     {
-        #         "attr": "network_address",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What is the address to the laser on the network?"),
-        #         "tip": _(
-        #             "IP address or address url of the machine with the laser."
-        #         )
-        #     }
-        # ]
-        # port_choice = [
-        #     {
-        #         "attr": "port",
-        #         "object": context,
-        #         "type": str,
-        #         "label": _("What port is the laser located on?"),
-        #         "tip": _(
-        #             "TCP/IP port number 1:65535"
-        #         )
-        #     },
-        # ]
-        # home_choice = [
-        #     {
-        #         "attr": "home_position",
-        #         "object": context,
-        #         "default": 0,
-        #         "type": tuple,
-        #         "dimension": 2,
-        #         "choices": (_("Top/Left"), _("Top/Right"), _("Bottom/Left"), _("Bottom/Right")),
-        #         "label": _("Home Position for the laser"),
-        #         "tip": _(
-        #             "When the laser is homed what corner should it home to."
-        #         ),
-        #     },
-        # ]
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
         self.setting(bool, "rapid_override", False)
-        self.setting(bool, "rapid_override_speed_x", 50.0)
-        self.setting(bool, "rapid_override_speed_y", 50.0)
+        self.setting(float, "rapid_override_speed_x", 50.0)
+        self.setting(float, "rapid_override_speed_y", 50.0)
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
@@ -249,6 +188,13 @@ class LihuiyuDevice(Service):
         self.setting(bool, "twitchless", False)
         self.setting(bool, "nse_raster", False)
         self.setting(bool, "nse_stepraster", False)
+
+        self.setting(bool, "scale_speed_enabled", False)
+        self.setting(float, "scale_speed", 1.000)
+        self.setting(bool, "max_speed_vector_enabled", False)
+        self.setting(float, "max_speed_vector", 100.0)
+        self.setting(bool, "max_speed_raster_enabled", False)
+        self.setting(float, "max_speed_raster", 750.0)
 
         self.current_x = 0.0
         self.current_y = 0.0
@@ -369,14 +315,21 @@ class LihuiyuDevice(Service):
             help=_("Change speed by this amount."),
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
-        @self.console_command("speed", help=_("Set current speed of driver."))
-        def speed(command, channel, _, speed=None, difference=False, **kwargs):
-            original_speed = self.settings.speed
+        @self.console_command(
+            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
+        )
+        def speed(
+            command,
+            channel,
+            _,
+            data=None,
+            speed=None,
+            difference=False,
+            **kwargs
+        ):
+            spooler, driver, output = data
             if speed is None:
-                if original_speed is None:
-                    channel(_("Speed is not set."))
-                else:
-                    channel(_("Speed set at: %f mm/s") % original_speed)
+                channel(_("Speed set at: %f mm/s") % driver.speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -389,11 +342,11 @@ class LihuiyuDevice(Service):
                 channel(_("Not a valid speed or percent."))
                 return
             if percent and difference:
-                s = original_speed + original_speed * (s / 100.0)
+                s = driver.speed + driver.speed * (s / 100.0)
             elif difference:
-                s += original_speed
+                s += driver.speed
             elif percent:
-                s = original_speed * (s / 100.0)
+                s = driver.speed * (s / 100.0)
             self.driver.set_speed(s)
             channel(_("Speed set at: %f mm/s") % self.settings.speed)
 

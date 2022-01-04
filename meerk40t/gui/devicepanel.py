@@ -120,7 +120,7 @@ class DevicePanel(wx.Panel):
             if dlg.ShowModal() == wx.ID_OK:
                 device_type = names[dlg.GetSelection()]
                 self.context(
-                    "service device start {device_type}\n".format(
+                    "service device start -i {device_type}\n".format(
                         device_type=device_type
                     )
                 )
@@ -156,6 +156,7 @@ class DeviceManager(MWindow):
                 "label": _("Devices"),
                 "icon": icons8_manager_50,
                 "tip": _("Opens Devices Window"),
+                "priority": -100,
                 "action": lambda v: kernel.console("window toggle DeviceManager\n"),
             },
         )

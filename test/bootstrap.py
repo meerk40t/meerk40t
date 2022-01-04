@@ -2,7 +2,7 @@ from meerk40t.kernel import Kernel
 
 
 def bootstrap():
-    kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t", "")
+    kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t")
 
     from meerk40t import kernelserver
 

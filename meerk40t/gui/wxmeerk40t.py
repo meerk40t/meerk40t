@@ -481,18 +481,18 @@ class wxMeerK40t(wx.App, Module):
             from meerk40t.gui.auitoolbars import register_toolbars
 
             kernel.register("wxpane/Toolbars", register_toolbars)
-
-            from meerk40t.gui.toolbarmodify import register_modify_tools
-
-            kernel.register("wxpane/Tool-Modify", register_modify_tools)
-
-            from meerk40t.gui.toolbaralign import register_align_tools
-
-            kernel.register("wxpane/Tool-Align", register_align_tools)
-
-            from meerk40t.gui.toolbarshapes import register_shapes_tools
-
-            kernel.register("wxpane/Tool-Shape", register_shapes_tools)
+            #
+            # from meerk40t.gui.toolbarmodify import register_modify_tools
+            #
+            # kernel.register("wxpane/Tool-Modify", register_modify_tools)
+            #
+            # from meerk40t.gui.toolbaralign import register_align_tools
+            #
+            # kernel.register("wxpane/Tool-Align", register_align_tools)
+            #
+            # from meerk40t.gui.toolbarshapes import register_shapes_tools
+            #
+            # kernel.register("wxpane/Tool-Shape", register_shapes_tools)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
@@ -680,7 +680,7 @@ class wxMeerK40t(wx.App, Module):
         wx.Locale.AddCatalogLookupPathPrefix(localedir)
 
         kernel.translation = wx.GetTranslation
-        kernel.set_config(wx.FileConfig(kernel.profile))
+
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)
@@ -906,7 +906,7 @@ Send the following data to the MeerK40t team?
         caption = _("Crash Detected! Send Log?")
         style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
     ext_msg += error_log
-    dlg = wx.GenericMessageDialog(
+    dlg = wx.MessageDialog(
         None,
         message,
         caption=caption,

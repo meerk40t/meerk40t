@@ -433,7 +433,7 @@ class LhystudiosControllerPanel(wx.Panel):
             return
         if state == "STATE_CONNECTION_FAILED":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
-            usb_status = self.context.last_signal("pipe;usb_status")
+            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Connect Failed"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
@@ -441,7 +441,7 @@ class LhystudiosControllerPanel(wx.Panel):
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_RETRYING":
             self.button_device_connect.SetBackgroundColour("#df0000")
-            usb_status = self.context.last_signal("pipe;usb_status")
+            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Retrying..."))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
@@ -449,7 +449,7 @@ class LhystudiosControllerPanel(wx.Panel):
             self.button_device_connect.Enable()
         elif state == "STATE_FAILED_SUSPENDED":
             self.button_device_connect.SetBackgroundColour("#0000df")
-            usb_status = self.context.last_signal("pipe;usb_status")
+            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("Suspended Retrying"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
@@ -457,7 +457,7 @@ class LhystudiosControllerPanel(wx.Panel):
             self.button_device_connect.Enable()
         elif state == "STATE_DRIVER_NO_BACKEND":
             self.button_device_connect.SetBackgroundColour("#dfdf00")
-            usb_status = self.context.last_signal("pipe;usb_status")
+            origin, usb_status = self.context.last_signal("pipe;usb_status")
             self.button_device_connect.SetLabel(_("No Backend"))
             self.button_device_connect.SetBitmap(
                 icons8_disconnected_50.GetBitmap(use_theme=False)
@@ -493,7 +493,7 @@ class LhystudiosControllerPanel(wx.Panel):
             self.button_device_connect.Disable()
 
     def on_button_start_usb(self, event=None):  # wxGlade: Controller.<event_handler>
-        state = self.context.last_signal("pipe;state")
+        origin, state = self.context.last_signal("pipe;state")
         if state is not None and isinstance(state, tuple):
             state = state[0]
 

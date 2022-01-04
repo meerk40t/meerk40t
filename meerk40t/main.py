@@ -126,10 +126,10 @@ def run():
         return
 
     if args.profile is not None:
-        path = "profile%d" % args.profile
+        path = "{appname}{profile}".format(appname=APPLICATION_NAME, profile=args.profile)
     else:
-        path = ""
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path)
+        path = APPLICATION_NAME
+    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, path)
     kernel.args = args
 
     """
@@ -303,12 +303,4 @@ def run():
                 print(e)
             else:
                 kernel.add_plugin(plugin)
-    # TODO: Integrate __print_delegate into execute, batch, and console.
-    kernel_root = kernel.root
-    console = kernel_root.channel("console")
-
-    def __print_delegate(*args, **kwargs):
-        if print not in console.watchers:
-            print(*args, **kwargs)
-
     kernel()

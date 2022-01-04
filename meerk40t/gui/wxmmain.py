@@ -13,7 +13,7 @@ from .icons import (
     icons8_home_filled_50,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50, icons8_flip_vertical_50, icons8_flip_horizontal_50,
+    icons8_save_50, icons8_mirror_horizontal, icons8_flip_vertical,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -201,18 +201,18 @@ class MeerK40t(MWindow):
             "button/modify/Flip",
             {
                 "label": _("Flip Vertical"),
-                "icon": icons8_flip_vertical_50,
+                "icon": icons8_flip_vertical,
                 "tip": _("Flip the selected element vertically"),
-                "action": lambda v: kernel.elements("scale -1 1\n"),
+                "action": lambda v: kernel.elements("scale 1 -1\n"),
             },
         )
         kernel.register(
             "button/modify/Mirror",
             {
                 "label": _("Mirror Horizontal"),
-                "icon": icons8_flip_horizontal_50,
+                "icon": icons8_mirror_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
-                "action": lambda v: kernel.elements("scale 1 -1\n"),
+                "action": lambda v: kernel.elements("scale -1 1\n"),
             },
         )
 
@@ -414,18 +414,6 @@ class MeerK40t(MWindow):
             with wx.BusyInfo(_("Saving File...")):
                 context("egv_export %s\n" % pathname)
                 return
-
-        context.register("control/Transform", lambda: context("dialog_transform\n"))
-        context.register("control/Flip", lambda: context("dialog_flip\n"))
-        context.register("control/Path", lambda: context("dialog_path\n"))
-        context.register("control/Fill", lambda: context("dialog_fill\n"))
-        context.register("control/Stroke", lambda: context("dialog_stroke\n"))
-        context.register("control/FPS", lambda: context("dialog_fps\n"))
-        context.register(
-            "control/Speedcode-Gear-Force", lambda: context("dialog_gear\n")
-        )
-        context.register("control/egv export", lambda: context("dialog_import_egv\n"))
-        context.register("control/egv import", lambda: context("dialog_export_egv\n"))
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", True)
@@ -714,6 +702,12 @@ class MeerK40t(MWindow):
 
         submenus = {}
         for pane, _path, suffix_path in self.context.find("pane/.*"):
+            try:
+                suppress = pane.hide_menu
+                if suppress:
+                    continue
+            except AttributeError:
+                pass
             submenu = None
             try:
                 submenu_name = pane.submenu
@@ -1373,7 +1367,7 @@ class MeerK40t(MWindow):
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
 
-        self.context("timer -g 1 0 quit\n")
+        self.context("quit\n")
 
     @signal_listener("altered")
     @signal_listener("modified")
