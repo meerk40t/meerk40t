@@ -2008,6 +2008,8 @@ class Kernel:
         if cookie is None:
             cookie = scan_object
         for attr in dir(scan_object):
+            if attr == "Handle":
+                continue
             func = getattr(scan_object, attr)
             if hasattr(func, "lookup_decor"):
                 for lul in func.lookup_decor:
@@ -2765,6 +2767,8 @@ class Kernel:
         if cookie is None:
             cookie = scan_object
         for attr in dir(scan_object):
+            if attr == "Handle":
+                continue
             func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:
