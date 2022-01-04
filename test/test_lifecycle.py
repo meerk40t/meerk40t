@@ -4,6 +4,7 @@ from meerk40t.kernel import Kernel
 
 state = 0
 
+
 class TestLifeCycle(unittest.TestCase):
 
     def test_kernel_lifecycle(self):
