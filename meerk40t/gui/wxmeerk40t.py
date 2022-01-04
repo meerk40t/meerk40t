@@ -602,14 +602,15 @@ def send_data_to_developers(filename, data):
     s.send(bytes(request, "utf-8"))
     response = s.recv(4096)
     response = response.decode("utf-8")
-    print(response)
     s.close()
+
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
         http_code = response.split("\n")[0]
 
     if http_code.startswith("HTTP/1.1 200 OK"):
+        print(http_code)
         http_code = response.split("\n")[0]
         dlg = wx.MessageDialog(
             None,
@@ -620,6 +621,7 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
     else:
+        print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -750,5 +752,5 @@ Send the following data to the MeerK40t team?
     )
     dlg.SetExtendedMessage(ext_msg)
     answer = dlg.ShowModal()
-    if answer == wx.YES:
+    if answer in (wx.YES, wx.ID_YES):
         send_data_to_developers(filename, error_log)
