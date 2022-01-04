@@ -3279,7 +3279,9 @@ class Kernel:
         @self.console_command("version", _("System Information"))
         def version(channel, _, **kwargs):
             channel(_("MK Kernel {version}.").format(version=KERNEL_VERSION))
-            channel(_("App: {name} {version}.").format(name=self.name, version=self.version))
+            channel(
+                _("App: {name} {version}.").format(name=self.name, version=self.version)
+            )
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
