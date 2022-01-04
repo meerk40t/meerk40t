@@ -1350,6 +1350,32 @@ class Kernel:
                 plugin(kernel, "poststart")
 
         for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_READY <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_READY
+                if channel:
+                    channel("kernel-ready: {object}".format(object=str(k)))
+                if hasattr(k, "ready"):
+                    k.ready()
+        if start < LIFECYCLE_KERNEL_READY <= end:
+            if channel:
+                channel("(plugin) kernel-ready")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "ready")
+
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_FINISHED <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_FINISHED
+                if channel:
+                    channel("kernel-finished: {object}".format(object=str(k)))
+                if hasattr(k, "finished"):
+                    k.finished()
+        if start < LIFECYCLE_KERNEL_FINISHED <= end:
+            if channel:
+                channel("(plugin) kernel-finished")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "finished")
+
+        for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_PREMAIN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREMAIN
                 if channel:
