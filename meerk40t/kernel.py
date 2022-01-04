@@ -2228,6 +2228,7 @@ class Kernel:
         @param section:
         @return:
         """
+        section = section.lstrip("/")
         for section_name in self._config_dict:
             if section_name.startswith(section):
                 yield section_name

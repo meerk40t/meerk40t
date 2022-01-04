@@ -80,13 +80,12 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
     if lifecycle == "preboot":
         suffix = "lhystudios"
-        for d in kernel.root.derivable():
-            if d.startswith(suffix):
-                kernel.root(
-                    "service device start -p {path} {suffix}\n".format(
-                        path=d, suffix=suffix
-                    )
+        for d in kernel.derivable(suffix):
+            kernel.root(
+                "service device start -p {path} {suffix}\n".format(
+                    path=d, suffix=suffix
                 )
+            )
     if lifecycle == "boot":
         if not hasattr(kernel, "device"):
             # Nothing has yet established a device. Boot this device.
