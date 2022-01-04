@@ -3673,26 +3673,13 @@ class Kernel:
                     channel(_("Attempt failed. Produced an attribute error."))
             return
 
-        @self.console_option(
-            "path",
-            "p",
-            type=str,
-            default="/",
-            help=_("Path that should be flushed to disk."),
-        )
         @self.console_command("flush", help=_("flush current settings to disk"))
-        def flush(channel, _, path=None, **kwargs):
-            if path is not None:
-                path_context = self.get_context(path)
-            else:
-                path_context = self.root
-
-            if path_context is not None:
-                path_context.flush()
-                self.write_configuration()
-                channel(_("Persistent settings force saved."))
-            else:
-                channel(_("No relevant context found."))
+        def flush(channel, _, **kwargs):
+            for context_name in list(self.contexts):
+                context = self.contexts[context_name]
+                context.flush()
+            self.write_configuration()
+            channel(_("Persistent settings force saved."))
 
         # ==========
         # LIFECYCLE
