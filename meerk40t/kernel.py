@@ -2304,6 +2304,8 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
+    load_persistent_string_dict = read_persistent_string_dict
+
     def write_persistent(
         self, section: str, key: str, value: Union[str, int, float, bool]
     ):
