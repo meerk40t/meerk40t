@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ...core.cutcode import CutCode, LaserSettings, LineCut
+from ...core.cutcode import CutCode, LaserSettings, LineCut, PlotCut
 from ...kernel import Module
 from ...svgelements import Color, Point
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
@@ -173,6 +173,7 @@ class RuidaEmulator(Module):
         self.filestream = None
 
         self.cutcode = CutCode()
+        self.plotcut = PlotCut()
 
         # self.layer_settings = []
         self.settings = LaserSettings()
@@ -558,13 +559,7 @@ class RuidaEmulator(Module):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UM_PER_MIL, start_y / UM_PER_MIL),
-                    Point(self.x / UM_PER_MIL, self.y / UM_PER_MIL),
-                    settings=self.cutset,
-                )
-            )
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Absolute (%f mil, %f mil)" % (
                 self.x / UM_PER_MIL,
                 self.y / UM_PER_MIL,
@@ -574,35 +569,17 @@ class RuidaEmulator(Module):
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UM_PER_MIL, start_y / UM_PER_MIL),
-                    Point(self.x / UM_PER_MIL, self.y / UM_PER_MIL),
-                    settings=self.cutset,
-                )
-            )
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Relative (%f mil, %f mil)" % (dx / UM_PER_MIL, dy / UM_PER_MIL)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UM_PER_MIL, start_y / UM_PER_MIL),
-                    Point(self.x / UM_PER_MIL, self.y / UM_PER_MIL),
-                    settings=self.cutset,
-                )
-            )
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Horizontal Relative (%f mil)" % (dx / UM_PER_MIL)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UM_PER_MIL, start_y / UM_PER_MIL),
-                    Point(self.x / UM_PER_MIL, self.y / UM_PER_MIL),
-                    settings=self.cutset,
-                )
-            )
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
@@ -839,6 +816,7 @@ class RuidaEmulator(Module):
                 if self.design and self.elements is not None:
                     self.elements.op_branch.add(self.cutcode, type="cutcode")
             self.cutcode = CutCode()
+            self.plotcut = PlotCut()
             self.saving = False
             self.filename = None
             if self.filestream is not None:
@@ -1133,6 +1111,11 @@ class RuidaEmulator(Module):
                 # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
             if array[1] == 0x00:
+                if len(self.plotcut):
+                    self.plotcut.settings = self.cutset
+                    self.plotcut.check_if_rasterable()
+                    self.cutcode.append(self.plotcut)
+                    self.plotcut = PlotCut()
                 desc = "Block End"
             elif array[1] == 0x01:
                 self.filename = ""

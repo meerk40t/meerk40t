@@ -52,6 +52,7 @@ class LaserSettings:
         self.acceleration_custom = False
         self.acceleration = 1
 
+        self.raster_alt = False
         self.raster_step = 0
         self.raster_direction = 1  # Bottom To Top - Default.
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
@@ -744,29 +745,116 @@ class PlotCut(CutObject):
     def __init__(self, settings=None):
         CutObject.__init__(self, settings=settings)
         self.plot = []
+        self.max_dx = None
+        self.max_dy = None
         self.min_x = None
         self.min_y = None
         self.max_x = None
         self.max_y = None
-        self.raster = True
+        self.vertical_raster = False
+        self.horizontal_raster = False
+        self.travels_top = False
+        self.travels_bottom = False
+        self.travels_right = False
+        self.travels_left = False
 
     def __len__(self):
         return len(self.plot)
+
+    def check_if_rasterable(self):
+        """
+        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+
+        @return: whether the plot can travel
+        """
+        if not self.travels_left and not self.travels_right and not self.travels_bottom and not self.travels_top:
+            return False
+        if 0 < self.max_dx <= 15:
+            self.vertical_raster = True
+        elif 0 < self.max_dy <= 15:
+            self.horizontal_raster = True
+        else:
+            return False
+        self.settings.raster_step = min(self.max_dx, self.max_dy)
+        self.settings.raster_alt = True
+        return True
 
     def plot_extend(self, plot):
         for x, y, laser in plot:
             self.plot_append(x, y, laser)
 
     def plot_append(self, x, y, laser):
+        if self.plot:
+            last_x, last_y, last_laser = self.plot[-1]
+            dx = x - last_x
+            dy = y - last_y
+            if self.max_dx is None or abs(dx) > self.max_dx:
+                self.max_dx = abs(dx)
+            if self.max_dy is None or abs(dy) > self.max_dy:
+                self.max_dy = abs(dy)
+            if dy > 0:
+                self.travels_bottom = True
+            if dy < 0:
+                self.travels_top = True
+            if dx > 0:
+                self.travels_right = True
+            if dx < 0:
+                self.travels_left = True
+
         self.plot.append((x, y, laser))
         if self.min_x is None or x < self.min_x:
             self.min_x = x
         if self.min_y is None or y < self.min_y:
             self.min_y = y
         if self.max_x is None or x > self.max_x:
-            self.min_x = x
+            self.max_x = x
         if self.max_y is None or y > self.max_y:
-            self.min_y = y
+            self.max_y = y
+
+    def major_axis(self):
+        if self.horizontal_raster:
+            return 0
+        if self.vertical_raster:
+            return 1
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if abs(start.x - end.x) > abs(start.y - end.y):
+            return 0  # X-Axis
+        else:
+            return 1  # Y-Axis
+
+    def x_dir(self):
+        if self.travels_left and not self.travels_right:
+            return -1  # right
+        if self.travels_right and not self.travels_left:
+            return 1  # left
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.x < end.x:
+            return 1
+        else:
+            return -1
+
+    def y_dir(self):
+        if self.travels_top and not self.travels_bottom:
+            return -1  # top
+        if self.travels_bottom and not self.travels_top:
+            return 1  # bottom
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.y < end.y:
+            return 1
+        else:
+            return -1
 
     def upper(self):
         return self.min_x
@@ -807,13 +895,44 @@ class PlotCut(CutObject):
             return None
 
     def generator(self):
-        last_x = None
-        last_y = None
+        last_x = 0
+        last_y = 0
+        last_xx = None
+        last_yy = None
+        ix = 0
+        iy = 0
         for x, y, on in self.plot:
-            if last_x is not None:
-                for zx, zy in ZinglPlotter.plot_line(last_x, last_y, x, y):
-                    yield zx, zy, on
-            last_x = 0
-            last_y = 0
+            dx = x - last_x
+            dy = y - last_y
+            idx = int(round(x - ix))
+            idy = int(round(y - iy))
+            ix += idx
+            iy += idy
+            if last_xx is not None:
+                if self.horizontal_raster:
+                    # Horizontal raster, step horizontal then vertical
+                    if idx:
+                        for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                            yield zx, zy, on
+                    if idy:
+                        for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                            yield zx, zy, on
+                elif self.vertical_raster:
+                    # Vertical raster, step vertical then horizontal
+                    if idy:
+                        for zx, zy in ZinglPlotter.plot_line(last_x, last_y, last_x, iy):
+                            yield zx, zy, on
+                    if idx:
+                        for zx, zy in ZinglPlotter.plot_line(last_x, iy, ix, iy):
+                            yield zx, zy, on
+                else:
+                    # Non-raster go directly to result.
+                    for zx, zy in ZinglPlotter.plot_line(last_x, last_y, ix, iy):
+                        yield zx, zy, on
+
+            last_x = x
+            last_y = y
+            last_xx = ix
+            last_yy = iy
 
         return self.plot

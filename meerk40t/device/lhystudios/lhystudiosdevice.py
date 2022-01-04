@@ -867,13 +867,13 @@ class LhystudiosDriver(Driver):
                 self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
-                        if self.context.nse_raster:
+                        if self.context.nse_raster or self.settings.raster_alt:
                             self.h_switch(dy)
                         else:
                             self.h_switch_g(dy)
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
-                        if self.context.nse_raster:
+                        if self.context.nse_raster or self.settings.raster_alt:
                             self.v_switch(dx)
                         else:
                             self.v_switch_g(dx)
@@ -1190,6 +1190,8 @@ class LhystudiosDriver(Driver):
         self.step_index = 0
         self.step = self.settings.raster_step
         self.step_value_set = 0
+        if self.settings.raster_alt:
+            return 0
         if self.context.nse_raster and not self.context.nse_stepraster:
             return 0
         self.step_value_set = self.step
