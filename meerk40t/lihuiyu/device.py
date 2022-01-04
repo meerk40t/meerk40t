@@ -2728,7 +2728,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%d" % self.service.port,
+                thread_name="sender-{port}".format(port=self.service.port),
                 result=self._stop,
             )
 

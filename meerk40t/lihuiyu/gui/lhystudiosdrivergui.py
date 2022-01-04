@@ -254,7 +254,10 @@ class ConfigurationTcp(wx.Panel):
         self.context.address = self.text_address.GetValue()
 
     def on_text_port(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
-        self.context.port = self.text_port.GetValue()
+        try:
+            self.context.port = int(self.text_port.GetValue())
+        except ValueError:
+            pass
 
 
 class ConfigurationLaserPanel(wx.Panel):
