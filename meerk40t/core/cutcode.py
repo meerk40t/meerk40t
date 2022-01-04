@@ -731,3 +731,89 @@ class RawCut(CutObject):
 
     def generator(self):
         return self.plot
+
+
+class PlotCut(CutObject):
+    """
+    Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
+    to each other and can be any distance apart. This is a compact way of writing a large series of line positions.
+
+    There is a raster-create value.
+    """
+
+    def __init__(self, settings=None):
+        CutObject.__init__(self, settings=settings)
+        self.plot = []
+        self.min_x = None
+        self.min_y = None
+        self.max_x = None
+        self.max_y = None
+        self.raster = True
+
+    def __len__(self):
+        return len(self.plot)
+
+    def plot_extend(self, plot):
+        for x, y, laser in plot:
+            self.plot_append(x, y, laser)
+
+    def plot_append(self, x, y, laser):
+        self.plot.append((x, y, laser))
+        if self.min_x is None or x < self.min_x:
+            self.min_x = x
+        if self.min_y is None or y < self.min_y:
+            self.min_y = y
+        if self.max_x is None or x > self.max_x:
+            self.min_x = x
+        if self.max_y is None or y > self.max_y:
+            self.min_y = y
+
+    def upper(self):
+        return self.min_x
+
+    def lower(self):
+        return self.max_x
+
+    def left(self):
+        return self.min_y
+
+    def right(self):
+        return self.max_y
+
+    def length(self):
+        length = 0
+        last_x = None
+        last_y = None
+        for x, y, on in self.plot:
+            if last_x is not None:
+                length += Point.distance((x,y), (last_x, last_y))
+            last_x = 0
+            last_y = 0
+        return length
+
+    def reverse(self):
+        self.plot = list(reversed(self.plot))
+
+    def start(self):
+        try:
+            return Point(self.plot[0][:2])
+        except IndexError:
+            return None
+
+    def end(self):
+        try:
+            return Point(self.plot[-1][:2])
+        except IndexError:
+            return None
+
+    def generator(self):
+        last_x = None
+        last_y = None
+        for x, y, on in self.plot:
+            if last_x is not None:
+                for zx, zy in ZinglPlotter.plot_line(last_x, last_y, x, y):
+                    yield zx, zy, on
+            last_x = 0
+            last_y = 0
+
+        return self.plot
