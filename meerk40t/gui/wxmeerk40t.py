@@ -780,14 +780,15 @@ def send_data_to_developers(filename, data):
     s.send(bytes(request, "utf-8"))
     response = s.recv(4096)
     response = response.decode("utf-8")
-    print(response)
     s.close()
+
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
         http_code = response.split("\n")[0]
 
     if http_code.startswith("HTTP/1.1 200 OK"):
+        print(http_code)
         http_code = response.split("\n")[0]
         dlg = wx.MessageDialog(
             None,
@@ -798,6 +799,7 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
     else:
+        print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -864,43 +866,57 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    git = False
+    git = branch = False
     if " " in APPLICATION_VERSION:
         ver, exec_type = APPLICATION_VERSION.split(" ", 1)
         git = exec_type == "git"
 
     if git:
+        head_file = os.path.join(sys.path[0], ".git", "HEAD")
+        if os.path.isfile(head_file):
+            ref_prefix = "ref: refs/heads/"
+            ref = ""
+            try:
+                with open(head_file, "r") as f:
+                    ref = f.readline()
+            except Exception:
+                pass
+            if ref.startswith(ref_prefix):
+                branch = ref[len(ref_prefix):].strip("\n")
+
+    if (git and branch and branch != "main"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
-"""It appears that you are running Meerk40t from source managed by Git, and it is therefore
-likely that you are a developer.
+"""It appears that you are running Meerk40t from source managed by Git,
+from a branch '{branch}' which is not 'main',
+and that you are therefore running a development version of Meerk40t.
 
 To avoid reporting crashes during development, automated submission of this crash has
 been disabled. If this is a crash which is unrelated to any development work that you are
-undertaking, please create a new Github issue indicating the branch you are runing from
-and using the traceback below which can be found in "{filename}".
+undertaking, please recreate this crash under main or if you are certain that this is not
+caused by any code changes you have made, then you can manually create a new Github
+issue indicating the branch you are runing from and using the traceback below which can
+be found in "{filename}".
 
 """
-        ).format(filename=filename)
+        ).format(
+            filename=filename,
+            branch=branch,
+        )
         caption = _("Crash Detected!")
         style = wx.OK | wx.ICON_WARNING
     else:
         message = _(
-"""
-The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+"""The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
-The good news is that you can help us fix this bug by anonymously sending us the crash details.
-"""
+The good news is that you can help us fix this bug by anonymously sending us the crash details."""
         )
         ext_msg = _(
-"""
-Only the crash details below are sent. No data from your MeerK40t project is sent. No
+"""Only the crash details below are sent. No data from your MeerK40t project is sent. No
 personal information is sent either.
 
 Send the following data to the MeerK40t team?
-
 ------
-
 """
         )
         caption = _("Crash Detected! Send Log?")
@@ -914,5 +930,5 @@ Send the following data to the MeerK40t team?
     )
     dlg.SetExtendedMessage(ext_msg)
     answer = dlg.ShowModal()
-    if answer == wx.YES:
+    if answer in (wx.YES, wx.ID_YES):
         send_data_to_developers(filename, error_log)
