@@ -647,7 +647,7 @@ class ConfigurationInterfacePanel(wx.Panel):
             self.context.mock = False
             self.context(".network_update\n")
         if self.radio_tcp.GetValue():
-            self.context.networked = False
+            self.context.networked = True
             self.context.mock = False
             self.context(".network_update\n")
         if self.radio_mock.GetValue():
