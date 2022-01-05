@@ -600,11 +600,16 @@ class ConfigurationInterfacePanel(wx.Panel):
         self.checkbox_home_right.SetValue(self.context.home_right)
         self.checkbox_home_bottom.SetValue(self.context.home_bottom)
         self.combobox_board.SetValue(self.context.board)
-        self.radio_usb.SetValue(True)
-        if self.context.networked:
-            self.radio_tcp.SetValue(True)
         if self.context.mock:
+            self.panel_tcp_config.Hide()
+            self.panel_usb_settings.Hide()
             self.radio_mock.SetValue(True)
+        elif self.context.networked:
+            self.panel_usb_settings.Hide()
+            self.radio_tcp.SetValue(True)
+        else:
+            self.radio_usb.SetValue(True)
+            self.panel_tcp_config.Hide()
 
     def pane_show(self):
         self.ConfigurationLaserPanel.pane_show()
@@ -646,17 +651,24 @@ class ConfigurationInterfacePanel(wx.Panel):
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
         if self.radio_usb.GetValue():
+            self.panel_tcp_config.Hide()
+            self.panel_usb_settings.Show()
             self.context.networked = False
             self.context.mock = False
             self.context(".network_update\n")
         if self.radio_tcp.GetValue():
+            self.panel_tcp_config.Show()
+            self.panel_usb_settings.Hide()
             self.context.networked = True
             self.context.mock = False
             self.context(".network_update\n")
         if self.radio_mock.GetValue():
+            self.panel_tcp_config.Hide()
+            self.panel_usb_settings.Hide()
             self.context.networked = False
             self.context.mock = True
             self.context(".network_update\n")
+        self.Layout()
 
 
 class ConfigurationSetupPanel(wx.Panel):
