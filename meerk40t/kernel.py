@@ -811,10 +811,10 @@ class Settings:
                 for key in section:
                     value = section[key]
                     try:
-                        parser.set(section_key, str(key), str(value))
+                        parser.set(section_key, key, value)
                     except NoSectionError:
                         parser.add_section(section_key)
-                        parser.set(section_key, str(key), str(value))
+                        parser.set(section_key, key, value)
             with open(self._config_file, "w") as fp:
                 parser.write(fp)
         except PermissionError:
@@ -911,7 +911,7 @@ class Settings:
             self._config_dict[section] = config_section
 
         if isinstance(value, (str, int, float, bool)):
-            config_section[key] = value
+            config_section[str(key)] = str(value)
 
     def write_persistent_attributes(self, section, obj):
         """
@@ -987,7 +987,6 @@ class Settings:
     def section_set(self) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
-        @param section:
         @return:
         """
         yield from set([s.split(" ")[0] for s in self._config_dict])
