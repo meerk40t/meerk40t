@@ -80,7 +80,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
     if lifecycle == "preboot":
         suffix = "lhystudios"
-        for d in kernel.derivable(suffix):
+        for d in kernel.settings.derivable(suffix):
             kernel.root(
                 "service device start -p {path} {suffix}\n".format(
                     path=d, suffix=suffix

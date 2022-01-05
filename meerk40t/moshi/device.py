@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/moshi", MoshiDevice)
     if lifecycle == "preboot":
         suffix = "moshi"
-        for d in kernel.derivable(suffix):
+        for d in kernel.settings.derivable(suffix):
             kernel.root(
                 "service device start -p {path} {suffix}\n".format(
                     path=d, suffix=suffix
