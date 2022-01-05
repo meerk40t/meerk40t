@@ -854,14 +854,17 @@ class Settings:
         @param obj:
         @return:
         """
+        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
         for attr in dir(obj):
             if attr.startswith("_"):
                 continue
-            obj_value = getattr(obj, attr)
-
-            if not isinstance(obj_value, (int, float, str, bool)):
+            if attr in props:
                 continue
-            load_value = self.read_persistent(type(obj_value), section, attr)
+            obj_value = getattr(obj, attr)
+            t = type(obj_value) if obj_value is not None else str
+            load_value = self.read_persistent(t, section, attr)
+            if load_value is None:
+                continue
             try:
                 setattr(obj, attr, load_value)
             except AttributeError:
