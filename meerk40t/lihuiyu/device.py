@@ -2712,9 +2712,12 @@ class TCPOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("tcp;status", "connection error")
-        except socket.gaierror:
+        except socket.gaierror as e:
             self.disconnect()
-            self.service.signal("tcp;status", "address did not resolve")
+            self.service.signal("tcp;status", "address resolve error")
+        except socket.herror as e:
+            self.disconnect()
+            self.service.signal("tcp;status", "herror: %s" % str(e))
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
