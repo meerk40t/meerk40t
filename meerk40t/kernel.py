@@ -9,7 +9,7 @@ from collections import deque
 from pathlib import Path
 from configparser import ConfigParser, NoSectionError
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union, Set
 
 KERNEL_VERSION = "0.0.1"
 
@@ -980,6 +980,15 @@ class Settings:
 
             if section_name.startswith(section):
                 yield section_name
+
+    def section_set(self) -> Set[str]:
+        """
+        Finds all derivable paths within the config from the set path location.
+        @param section:
+        @return:
+        """
+        q = set([s.split(" ")[0] for s in self._config_dict])
+        return q
 
 
 # ==========

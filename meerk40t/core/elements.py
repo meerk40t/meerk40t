@@ -16,7 +16,7 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..image.actualize import actualize
-from ..kernel import Service
+from ..kernel import Service, Settings
 from ..svgelements import (
     SVG_STRUCT_ATTRIB,
     Angle,
@@ -1660,10 +1660,11 @@ class Elemental(Service):
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
+        self.op_data = Settings(self.kernel.name, "operations.cfg")
 
         self._init_commands(kernel)
         self._init_tree(kernel)
-        self.load_persistent_operations("previous")
+        self.load_persistent_operations("default")
 
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
@@ -1766,8 +1767,6 @@ class Elemental(Service):
         )
         def save_operations(command, channel, _, data=None, name=None, **kwargs):
             if name is None:
-                raise SyntaxError
-            if "/" in name:
                 raise SyntaxError
             self.save_persistent_operations(name)
             return "ops", list(self.ops())
@@ -4763,13 +4762,13 @@ class Elemental(Service):
         def union_materials_saved():
             union = [
                 d
-                for d in self.derive("operations").derivable()
-                if d not in materials and d != "previous"
+                for d in self.op_data.section_set()
+                if d not in materials and d != "default"
             ]
             union.extend(materials)
             return union
 
-        operations_values = list(self.derive("operations").derivable())
+        operations_values = list(self.op_data.section_set())
 
         @self.tree_submenu(_("Use"))
         @self.tree_values("opname", values=operations_values)
@@ -5427,53 +5426,46 @@ class Elemental(Service):
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
-        self.save_persistent_operations("previous")
+        self.save_persistent_operations("default")
+        self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
 
     def save_persistent_operations(self, name):
-        settings = self.derive("operations/" + name)
-        settings.clear_persistent()
-
+        settings = self.op_data
         for i, op in enumerate(self.ops()):
-            op_set = settings.derive("%06i" % i)
+            section = "%s %06i" % (name, i)
             if isinstance(op, LaserOperation):
-                op.argb_color = op.color.argb
-                op_set.write_persistent_attributes(op)
-                op_set.write_persistent_attributes(op.settings)
+                op.hex_color = op.color.hexa
+                settings.write_persistent_attributes(section, op)
+                settings.write_persistent_attributes(section, op.settings)
             elif isinstance(op, CommandOperation):
-                op_set.write_persistent_attributes(op)
-        settings.close_subpaths()
+                settings.write_persistent_attributes(section, op)
+        settings.write_configuration()
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.derive("operations/" + name)
-        subitems = list(settings.derivable())
-        ops = [None] * len(subitems)
-        for i, v in enumerate(subitems):
-            op_setting_context = settings.get_context(v)
-            op_type = op_setting_context.read_persistent(str, "type")
+        settings = self.op_data
+        subitems = list(settings.derivable(name))
+        ops = list()
+        for section in subitems:
+            op_type = settings.read_persistent(str, section, "type")
             if op_type in ["op", ""]:
                 op = LaserOperation()
-                op_set = op.settings
-                op.argb_color = 0
-                op_setting_context.read_persistent_attributes(op)
-                op_setting_context.read_persistent_attributes(op_set)
-                if op.argb_color is not None:
-                    op.color = Color(argb=op.argb_color)
+                op.hex_color = ""
+                settings.read_persistent_attributes(section, op)
+                settings.read_persistent_attributes(section, op.settings)
+                if op.hex_color is not None:
+                    op.color = Color(op.hex_color)
             elif op_type == "cmdop":
-                name = op_setting_context.read_persistent(str, "label")
-                command = op_setting_context.read_persistent(int, "command")
+                name = settings.read_persistent(str, section, "label")
+                command = settings.read_persistent(int, section, "command")
                 op = CommandOperation(name, command)
-                op_setting_context.read_persistent_attributes(op)
+                settings.read_persistent_attributes(section, op)
             else:
                 continue
-
-            try:
-                ops[i] = op
-            except (ValueError, IndexError):
-                ops.append(op)
-        self.add_ops([o for o in ops if o is not None])
+            ops.append(op)
+        self.add_ops(ops)
         self.classify(list(self.elems()))
 
     def emphasized(self, *args):
