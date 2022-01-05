@@ -815,7 +815,7 @@ class Settings:
                     except NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
-            with open(self._config_file, "w") as fp:
+            with open(self._config_file, "w", encoding="utf-8") as fp:
                 parser.write(fp)
         except PermissionError:
             return
