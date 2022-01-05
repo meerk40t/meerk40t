@@ -167,7 +167,8 @@ class LayerSettingPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation is not None:
             op = self.operation.operation
             if op == "Engrave":
@@ -281,7 +282,8 @@ class SpeedPpiPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation.settings.speed is not None:
             self.text_speed.SetValue(str(self.operation.settings.speed))
         if self.operation.settings.power is not None:
@@ -348,7 +350,8 @@ class PassesPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation.settings.passes_custom is not None:
             self.check_passes.SetValue(self.operation.settings.passes_custom)
         if self.operation.settings.passes is not None:
@@ -457,7 +460,8 @@ class PanelStartPreference(wx.Panel):
         self.travel_lines = None
         self.refresh_display()
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation.settings.raster_preference_top is not None:
             self.slider_top.SetValue(self.operation.settings.raster_preference_top + 1)
         if self.operation.settings.raster_preference_left is not None:
@@ -794,7 +798,8 @@ class RasterSettingsPanel(wx.Panel):
     def pane_show(self):
         self.panel_start.pane_show()
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation.settings.raster_step is not None:
             self.text_raster_step.SetValue(str(self.operation.settings.raster_step))
         if self.operation.settings.overscan is not None:
@@ -888,11 +893,12 @@ class ParameterPanel(wx.Panel):
             if not self.raster_panel.Shown:
                 self.raster_panel.Show()
 
-    def set_widgets(self):
-        self.layer_panel.set_widgets()
-        self.speedppi_panel.set_widgets()
-        self.passes_panel.set_widgets()
-        self.raster_panel.set_widgets()
+    def set_widgets(self, node):
+        self.operation = node
+        self.layer_panel.set_widgets(node)
+        self.speedppi_panel.set_widgets(node)
+        self.passes_panel.set_widgets(node)
+        self.raster_panel.set_widgets(node)
 
     def pane_hide(self):
         self.layer_panel.pane_hide()
@@ -1009,7 +1015,8 @@ class LhyAdvancedPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        self.operation = node
         if self.operation.settings.dratio is not None:
             self.text_dratio.SetValue(str(self.operation.settings.dratio))
         if self.operation.settings.dratio_custom is not None:
@@ -1084,7 +1091,6 @@ class LhyAdvancedPanel(wx.Panel):
 class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(350, 582, *args, **kwds)
-
         self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
@@ -1110,18 +1116,16 @@ class OperationProperty(MWindow):
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Operation Properties"))
-        self.param_panel.set_widgets()
-        self.advanced_panel.set_widgets()
+        self.param_panel.set_widgets(node)
+        self.advanced_panel.set_widgets(node)
 
         self.Layout()
 
     def restore(self, *args, node=None, **kwds):
-        self.param_panel.operation = node
-        self.param_panel.set_widgets()
+        self.param_panel.set_widgets(node)
         self.param_panel.on_size()
 
-        self.advanced_panel.operation = node
-        self.advanced_panel.set_widgets()
+        self.advanced_panel.set_widgets(node)
         self.advanced_panel.on_size()
         self.Refresh()
         self.Update()
