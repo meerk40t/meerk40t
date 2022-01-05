@@ -4763,14 +4763,16 @@ class Elemental(Service):
         def union_materials_saved():
             union = [
                 d
-                for d in self.get_context("operations").derivable()
+                for d in self.derive("operations").derivable()
                 if d not in materials and d != "previous"
             ]
             union.extend(materials)
             return union
 
+        operations_values = list(self.derive("operations").derivable())
+
         @self.tree_submenu(_("Use"))
-        @self.tree_values("opname", values=self.get_context("operations").derivable)
+        @self.tree_values("opname", values=operations_values)
         @self.tree_operation(
             _("Load: %s") % "{opname}", node_type="branch ops", help=""
         )
@@ -5428,11 +5430,6 @@ class Elemental(Service):
         self.save_persistent_operations("previous")
         for e in self.flat():
             e.unregister()
-        # TODO: BOOT SECTION
-        # try:
-        #     self.load_persistent_operations("previous")
-        # except ValueError:
-        #     print("elements: Previous operation settings invalid: ValueError")
 
     def save_persistent_operations(self, name):
         settings = self.derive("operations/" + name)
@@ -5442,10 +5439,10 @@ class Elemental(Service):
             op_set = settings.derive("%06i" % i)
             if isinstance(op, LaserOperation):
                 op.argb_color = op.color.argb
-                op_set.kernel.write_persistent_attributes(op_set.path, op)
-                op_set.kernel.write_persistent_attributes(op_set.path, op.settings)
+                op_set.write_persistent_attributes(op)
+                op_set.write_persistent_attributes(op.settings)
             elif isinstance(op, CommandOperation):
-                op_set.kernel.write_persistent_attributes(op_set.path, op)
+                op_set.write_persistent_attributes(op)
         settings.close_subpaths()
 
     def load_persistent_operations(self, name):
@@ -5460,15 +5457,15 @@ class Elemental(Service):
                 op = LaserOperation()
                 op_set = op.settings
                 op.argb_color = 0
-                op_setting_context.read_persistent_object(op)
-                op_setting_context.read_persistent_object(op_set)
+                op_setting_context.read_persistent_attributes(op)
+                op_setting_context.read_persistent_attributes(op_set)
                 if op.argb_color is not None:
                     op.color = Color(argb=op.argb_color)
             elif op_type == "cmdop":
                 name = op_setting_context.read_persistent(str, "label")
                 command = op_setting_context.read_persistent(int, "command")
                 op = CommandOperation(name, command)
-                op_setting_context.read_persistent_object(op)
+                op_setting_context.read_persistent_attributes(op)
             else:
                 continue
 

@@ -196,7 +196,7 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for obj, window, sname in kernel.find("window/.*"):
-                if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
+                if kernel.settings.read_persistent(bool, "%s/open_on_start" % window, False):
                     kernel.console("window open %s\n" % sname)
             meerk40tgui.MainLoop()
 
