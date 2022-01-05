@@ -4406,7 +4406,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
         def operation_property(node, **kwargs):
-            self.context.open("window/OperationProperty", self.gui, node=node)
+            self.open("window/OperationProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
@@ -4508,7 +4508,7 @@ class Elemental(Service):
         @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
         def set_power(node, power=1000, **kwargs):
             node.settings.power = float(power)
-            self.context.signal("element_property_reload", node)
+            self.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwargs):
             return node.settings.raster_step == i
