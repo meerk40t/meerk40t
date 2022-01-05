@@ -1085,8 +1085,14 @@ class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(350, 582, *args, **kwds)
 
-        self.notebook_main = wx.Notebook(self, wx.ID_ANY)
-
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
         self.param_panel = ParameterPanel(
             self.notebook_main, wx.ID_ANY, context=self.context, node=node
         )
