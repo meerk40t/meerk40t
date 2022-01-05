@@ -190,6 +190,7 @@ class LayerSettingPanel(wx.Panel):
             self.checkbox_output.SetValue(self.operation.output)
         if self.operation.default is not None:
             self.checkbox_default.SetValue(self.operation.default)
+        self.Layout()
 
     def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         data = wx.ColourData()
@@ -1105,6 +1106,8 @@ class OperationProperty(MWindow):
         self.SetTitle(_("Operation Properties"))
         self.param_panel.set_widgets()
         self.advanced_panel.set_widgets()
+
+        self.Layout()
 
     def restore(self, *args, node=None, **kwds):
         self.param_panel.operation = node
