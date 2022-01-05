@@ -808,7 +808,9 @@ class ShadowTree:
         """
         item = event.GetItem()
         node = self.wxtree.GetItemData(item)
-        self.activated_node(node)
+        activate = self.context.lookup("function/open_property_window_for_node")
+        if activate is not None:
+            activate(node)
 
     def activate_selected_node(self, *args):
         """
@@ -820,35 +822,6 @@ class ShadowTree:
         first_element = self.context.first_element(emphasized=True)
         if hasattr(first_element, "node"):
             self.activated_node(first_element.node)
-
-    def activated_node(self, node):
-        """
-        Activate the node in question.
-
-        @param node:
-        @return:
-        """
-        root = self.context.root
-        if isinstance(node, LaserOperation):
-            root.open("window/OperationProperty", self.gui, node=node)
-            return
-        if node is None:
-            return
-        obj = node.object
-        if obj is None:
-            return
-        elif isinstance(obj, Path):
-            root.open("window/PathProperty", self.gui, node=node)
-        elif isinstance(obj, SVGText):
-            root.open("window/TextProperty", self.gui, node=node)
-        elif isinstance(obj, SVGImage):
-            root.open("window/ImageProperty", self.gui, node=node)
-        elif isinstance(obj, Group):
-            root.open("window/GroupProperty", self.gui, node=node)
-        elif isinstance(obj, SVGElement):
-            root.open("window/PathProperty", self.gui, node=node)
-        elif isinstance(obj, CutCode):
-            root.open("window/Simulation", self.gui, node=node)
 
     def on_item_selection_changed(self, event):
         """

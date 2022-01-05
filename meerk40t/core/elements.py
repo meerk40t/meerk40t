@@ -4406,31 +4406,41 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
         def operation_property(node, **kwargs):
-            self.open("window/OperationProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
         @self.tree_operation(_("Element properties"), node_type="elem", help="")
         def path_property(node, **kwargs):
-            self.open("window/PathProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Group))
         @self.tree_operation(_("Group properties"), node_type="group", help="")
         def group_property(node, **kwargs):
-            self.open("window/GroupProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
         @self.tree_operation(_("Text properties"), node_type="elem", help="")
         def text_property(node, **kwargs):
-            self.open("window/TextProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_operation(_("Image properties"), node_type="elem", help="")
         def image_property(node, **kwargs):
-            self.open("window/ImageProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_operation(
             _("Ungroup elements"), node_type=("group", "file"), help=""
