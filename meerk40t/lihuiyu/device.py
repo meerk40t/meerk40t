@@ -80,13 +80,12 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/lhystudios", LhystudiosEmulator)
     if lifecycle == "preboot":
         suffix = "lhystudios"
-        for d in kernel.root.derivable():
-            if d.startswith(suffix):
-                kernel.root(
-                    "service device start -p {path} {suffix}\n".format(
-                        path=d, suffix=suffix
-                    )
+        for d in kernel.settings.derivable(suffix):
+            kernel.root(
+                "service device start -p {path} {suffix}\n".format(
+                    path=d, suffix=suffix
                 )
+            )
     if lifecycle == "boot":
         if not hasattr(kernel, "device"):
             # Nothing has yet established a device. Boot this device.
@@ -2707,8 +2706,18 @@ class TCPOutput:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._stream.connect((self.service.address, self.service.port))
             self.service.signal("tcp;status", "connected")
-        except (ConnectionError, TimeoutError):
+        except TimeoutError:
             self.disconnect()
+            self.service.signal("tcp;status", "timeout connect")
+        except ConnectionError:
+            self.disconnect()
+            self.service.signal("tcp;status", "connection error")
+        except socket.gaierror as e:
+            self.disconnect()
+            self.service.signal("tcp;status", "address resolve error")
+        except socket.herror as e:
+            self.disconnect()
+            self.service.signal("tcp;status", "herror: %s" % str(e))
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
@@ -2728,7 +2737,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%d" % self.service.port,
+                thread_name="sender-{port}".format(port=self.service.port),
                 result=self._stop,
             )
 

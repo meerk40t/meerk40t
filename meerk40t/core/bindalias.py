@@ -63,7 +63,7 @@ class Bind(Service):
                         pass
             return
 
-        self.kernel.read_persistent_string_dict(self.path, self.keymap, suffix=True)
+        self.read_persistent_string_dict(self.keymap, suffix=True)
         if not len(self.keymap):
             self.default_keymap()
 
@@ -205,7 +205,7 @@ class Alias(Service):
                 raise CommandMatchRejected(_("This is not an alias."))
 
         self.aliases.clear()
-        self.kernel.read_persistent_string_dict(self.path, self.aliases, suffix=True)
+        self.read_persistent_string_dict(self.aliases, suffix=True)
         if not len(self.aliases):
             self.default_alias()
 

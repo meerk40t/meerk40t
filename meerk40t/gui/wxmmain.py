@@ -4,8 +4,10 @@ import sys
 import wx
 from wx import aui
 
+from ..core.cutcode import CutCode
+from ..core.elements import LaserOperation
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
-from ..svgelements import Color, Length, Matrix, Path, SVGImage
+from ..svgelements import Color, Length, Matrix, Path, SVGImage, SVGText, Group, SVGElement
 from .icons import (
     icon_meerk40t,
     icons8_emergency_stop_button_50,
@@ -134,6 +136,8 @@ class MeerK40t(MWindow):
         if self.context.disable_tool_tips:
             wx.ToolTip.Enable(False)
 
+        self.context.register("function/open_property_window_for_node", self.open_property_window_for_node)
+
         self.root_context = context.root
         self.DragAcceptFiles(True)
 
@@ -174,6 +178,36 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
+    def open_property_window_for_node(self, node):
+        """
+        Activate the node in question.
+
+        @param node:
+        @return:
+        """
+        gui = self
+        root = self.context.root
+        if isinstance(node, LaserOperation):
+            root.open("window/OperationProperty", gui, node=node)
+            return
+        if node is None:
+            return
+        obj = node.object
+        if obj is None:
+            return
+        elif isinstance(obj, Path):
+            root.open("window/PathProperty", gui, node=node)
+        elif isinstance(obj, SVGText):
+            root.open("window/TextProperty", gui, node=node)
+        elif isinstance(obj, SVGImage):
+            root.open("window/ImageProperty", gui, node=node)
+        elif isinstance(obj, Group):
+            root.open("window/GroupProperty", gui, node=node)
+        elif isinstance(obj, SVGElement):
+            root.open("window/PathProperty", gui, node=node)
+        elif isinstance(obj, CutCode):
+            root.open("window/Simulation", gui, node=node)
 
     @staticmethod
     def sub_register(kernel):
