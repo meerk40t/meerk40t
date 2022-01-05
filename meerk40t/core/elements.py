@@ -4768,10 +4768,8 @@ class Elemental(Service):
             union.extend(materials)
             return union
 
-        operations_values = list(self.op_data.section_set())
-
         @self.tree_submenu(_("Use"))
-        @self.tree_values("opname", values=operations_values)
+        @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation(
             _("Load: %s") % "{opname}", node_type="branch ops", help=""
         )

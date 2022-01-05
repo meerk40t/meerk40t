@@ -984,14 +984,13 @@ class Settings:
             if section_name.startswith(section):
                 yield section_name
 
-    def section_set(self) -> Set[str]:
+    def section_set(self) -> Generator[str, None, None]:
         """
         Finds all derivable paths within the config from the set path location.
         @param section:
         @return:
         """
-        q = set([s.split(" ")[0] for s in self._config_dict])
-        return q
+        yield from set([s.split(" ")[0] for s in self._config_dict])
 
 
 # ==========
