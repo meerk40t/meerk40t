@@ -632,11 +632,13 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            if kernel._config is not None:
-                for context in list(kernel.contexts):
-                    if context.startswith("window"):
-                        del kernel.contexts[context]
-                kernel._config.DeleteGroup("window")
+            for section in list(kernel.derivable('')):
+                if section.startswith("window"):
+                    kernel.clear_persistent(section)
+                    try:
+                        del kernel.contexts[section]
+                    except KeyError:
+                        pass  # No open context for that window, nothing will save out.
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
