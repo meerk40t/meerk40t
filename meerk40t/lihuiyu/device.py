@@ -2706,8 +2706,15 @@ class TCPOutput:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._stream.connect((self.service.address, self.service.port))
             self.service.signal("tcp;status", "connected")
-        except (ConnectionError, TimeoutError):
+        except TimeoutError:
             self.disconnect()
+            self.service.signal("tcp;status", "timeout connect")
+        except ConnectionError:
+            self.disconnect()
+            self.service.signal("tcp;status", "connection error")
+        except socket.gaierror:
+            self.disconnect()
+            self.service.signal("tcp;status", "address did not resolve")
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
