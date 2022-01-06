@@ -1281,9 +1281,11 @@ class MeerK40t(MWindow):
             id=ID_MENU_JOB,
         )
         if self.context.has_feature("modifier/Camera"):
+            self.context.setting(int, "camera_default", 1)
+            v = self.context.camera_default
             self.Bind(
                 wx.EVT_MENU,
-                lambda v: self.context("window toggle CameraInterface\n"),
+                lambda e: self.context("window -p camera{index} toggle CameraInterface {index}\n".format(index=v)),
                 id=ID_MENU_CAMERA,
             )
         self.Bind(
