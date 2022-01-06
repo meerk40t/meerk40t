@@ -1664,7 +1664,7 @@ class Elemental(Service):
 
         self._init_commands(kernel)
         self._init_tree(kernel)
-        self.load_persistent_operations("default")
+        self.load_persistent_operations("previous")
 
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
@@ -4807,7 +4807,7 @@ class Elemental(Service):
             union = [
                 d
                 for d in self.op_data.section_set()
-                if d not in materials and d != "default"
+                if d not in materials and d != "previous"
             ]
             union.extend(materials)
             return union
@@ -5500,7 +5500,7 @@ class Elemental(Service):
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
-        self.save_persistent_operations("default")
+        self.save_persistent_operations("previous")
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
