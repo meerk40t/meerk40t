@@ -211,6 +211,7 @@ class CameraPanel(wx.Panel, Job):
         self.context.listen("refresh_scene", self.on_refresh_scene)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
         self.context.listen("camera;fps", self.on_fps_change)
+        self.context.listen("camera;stopped", self.on_camera_stop)
 
     def finalize(self, *args):
         self.context("camera%d stop\n" % self.index)
@@ -220,6 +221,12 @@ class CameraPanel(wx.Panel, Job):
             self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
         self.context.listen("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;stopped", self.on_camera_stop)
+        self.context.signal("camera;stopped", self.index)
+
+    def on_camera_stop(self, origin, index):
+        if index == self.index:
+            self.context("camera%d start\n" % self.index)
 
     def on_fps_change(self, origin, *args):
         # Set the camera fps.
