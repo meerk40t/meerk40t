@@ -997,7 +997,7 @@ class Settings:
 # ==========
 
 
-class Kernel:
+class Kernel(Settings):
     """
     The Kernel serves as the central hub of communication between different objects within the system, stores the
     main lookup of registered objects, as well as providing a scheduler, signals, channels, and a command console to be
@@ -1020,7 +1020,8 @@ class Kernel:
         self.version = version
 
         # Persistent Settings
-        self.settings = Settings(self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        Settings.__init__(self, self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        self.settings = self
 
         # Boot State
         self._booted = False
