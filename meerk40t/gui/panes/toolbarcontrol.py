@@ -61,7 +61,7 @@ def register_control_tools(context, gui):
                 context.camera_default = 5
 
             v = context.camera_default
-            context("window toggle -p camera{v} -m {v} CameraInterface {v}\n".format(v=v))
+            context("window -p camera{v} toggle CameraInterface {v}\n".format(v=v))
 
         def on_camera_dropdown(event=None):
             if event.IsDropDownClicked():
