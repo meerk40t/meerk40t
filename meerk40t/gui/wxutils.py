@@ -85,6 +85,43 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
     return menu
 
 
+def create_choices_for_node(node, elements) -> List[dict]:
+    choices = []
+
+    for func in elements.tree_operations_for_node(node):
+        choice = {}
+        choices.append(choice)
+        choice["action"] = func
+        choice["type"] = "action"
+        choice['submenu'] = func.submenu
+        choice['kwargs'] = dict()
+        choice['args'] = tuple()
+        choice["separate_before"] = func.separate_before
+        choice["separate_after"] = func.separate_after
+        choice["label"] = func.name
+        choice["real_name"] = func.real_name
+        choice["tip"] = func.help
+        choice["radio"] = func.radio
+        choice["reference"] = func.reference
+        choice["user_prompt"] = func.user_prompt
+        choice["calcs"] = func.calcs
+        choice["values"] = func.values
+    return choices
+
+
+def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
+    """
+    Test code towards unifying choices and tree nodes into choices that parse to menus.
+
+    @param gui:
+    @param node:
+    @param elements:
+    @return:
+    """
+    choices = create_choices_for_node(node, elements)
+    return create_menu_for_choices(gui, choices)
+
+
 def create_menu_for_node(gui, node, elements) -> wx.Menu:
     """
     Create menu for a particular node. Does not invoke the menu.
