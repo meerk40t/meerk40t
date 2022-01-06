@@ -119,9 +119,12 @@ def plugin(kernel, lifecycle):
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
                 print(window_name, window_index)
                 if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window_name, False
+                    bool, "window/%s/open_on_start" % window, False
                 ):
-                    kernel.console("window open {window}\n".format(window=window_name))
+                    if window_index is not None:
+                        kernel.console("window open -m {index} {window} {index}\n".format(index=window_index, window=window_name))
+                    else:
+                        kernel.console("window open {window}\n".format(window=window_name))
             meerk40tgui.MainLoop()
 
 
