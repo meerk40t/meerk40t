@@ -149,14 +149,14 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
         if submenu_name in submenus:
             submenu = submenus[submenu_name]
         else:
-            if func.separate_before:
-                menu.AppendSeparator()
             if submenu_name is not None:
                 submenu = wx.Menu()
                 menu.AppendSubMenu(submenu, submenu_name)
                 submenus[submenu_name] = submenu
 
         menu_context = submenu if submenu is not None else menu
+        if func.separate_before:
+            menu_context.AppendSeparator()
         if func.reference is not None:
             menu_context.AppendSubMenu(
                 create_menu_for_node(gui, func.reference(node), elements),
