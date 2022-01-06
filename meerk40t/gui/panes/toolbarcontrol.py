@@ -12,11 +12,11 @@ from ..icons import (
 ID_NAV = wx.NewId()
 ID_CONTROLLER = wx.NewId()
 ID_CAMERA = wx.NewId()
+ID_CAMERA0 = wx.NewId()
 ID_CAMERA1 = wx.NewId()
 ID_CAMERA2 = wx.NewId()
 ID_CAMERA3 = wx.NewId()
 ID_CAMERA4 = wx.NewId()
-ID_CAMERA5 = wx.NewId()
 ID_SPOOLER = wx.NewId()
 
 _ = wx.GetTranslation
@@ -48,8 +48,10 @@ def register_control_tools(context, gui):
 
         def on_camera_click(event=None):
             eid = event.GetId()
-            context.setting(int, "camera_default", 1)
-            if eid == ID_CAMERA1:
+            context.setting(int, "camera_default", 0)
+            if eid == ID_CAMERA0:
+                context.camera_default = 0
+            elif eid == ID_CAMERA1:
                 context.camera_default = 1
             elif eid == ID_CAMERA2:
                 context.camera_default = 2
@@ -57,25 +59,23 @@ def register_control_tools(context, gui):
                 context.camera_default = 3
             elif eid == ID_CAMERA4:
                 context.camera_default = 4
-            elif eid == ID_CAMERA5:
-                context.camera_default = 5
 
             v = context.camera_default
-            context("window toggle CameraInterface %d\n" % v)
+            context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
 
         def on_camera_dropdown(event=None):
             if event.IsDropDownClicked():
                 menu = wx.Menu()
+                menu.Append(ID_CAMERA0, _("Camera %d") % 0)
                 menu.Append(ID_CAMERA1, _("Camera %d") % 1)
                 menu.Append(ID_CAMERA2, _("Camera %d") % 2)
                 menu.Append(ID_CAMERA3, _("Camera %d") % 3)
                 menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-                menu.Append(ID_CAMERA5, _("Camera %d") % 5)
+                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA0)
                 menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA1)
                 menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA2)
                 menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA3)
                 menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA4)
-                menu.Bind(wx.EVT_MENU, on_camera_click, id=ID_CAMERA5)
                 gui.PopupMenu(menu)
             else:
                 on_camera_click(event)

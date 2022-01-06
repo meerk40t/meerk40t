@@ -113,9 +113,17 @@ def plugin(kernel, lifecycle):
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
-            for window in kernel.match("window/.*", suffix=False):
-                if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
-                    kernel.console("window open %s\n" % window.split('/')[-1])
+            for window in kernel.derivable("window"):
+                wsplit = window.split(":")
+                window_name = wsplit[0]
+                window_index = wsplit[-1] if len(wsplit) > 1 else None
+                if kernel.read_persistent(
+                    bool, "window/%s/open_on_start" % window, False
+                ):
+                    if window_index is not None:
+                        kernel.console("window open -m {index} {window} {index}\n".format(index=window_index, window=window_name))
+                    else:
+                        kernel.console("window open {window}\n".format(window=window_name))
             meerk40tgui.MainLoop()
 
 
@@ -326,6 +334,12 @@ class wxMeerK40t(wx.App, Module):
             return "window", data
 
         @kernel.console_option(
+            "multi",
+            "m",
+            type=int,
+            help=_("Multi window flag for launching multiple copies of this window."),
+        )
+        @kernel.console_option(
             "driver",
             "d",
             type=bool,
@@ -360,6 +374,7 @@ class wxMeerK40t(wx.App, Module):
             driver=False,
             output=False,
             source=None,
+            multi=None,
             args=(),
             **kwargs
         ):
@@ -402,11 +417,17 @@ class wxMeerK40t(wx.App, Module):
                 if window_uri not in context.registered:
                     window_uri = "window/%s/%s" % ("default", window)
 
+            window_name = (
+                "{window}:{multi}".format(window=window_uri, multi=multi)
+                if multi is not None
+                else window_uri
+            )
+
             def window_open(*a, **k):
-                path.open(window_uri, parent, *args)
+                path.open_as(window_uri, window_name, parent, *args)
 
             def window_close(*a, **k):
-                path.close(window_uri, *args)
+                path.close(window_name, *args)
 
             if command == "open":
                 if window_uri in context.registered:
@@ -418,7 +439,7 @@ class wxMeerK40t(wx.App, Module):
             else:
                 if window_uri in context.registered:
                     try:
-                        w = path.opened[window_uri]
+                        w = path.opened[window_name]
                         kernel.run_later(window_close, None)
                         channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
@@ -522,7 +543,9 @@ class wxMeerK40t(wx.App, Module):
                     kernel._config = None
                     kernel.shutdown()
             else:
-                channel('Argument "sure" is required. Requires typing: "nuke_settings yes"')
+                channel(
+                    'Argument "sure" is required. Requires typing: "nuke_settings yes"'
+                )
 
     def update_language(self, lang):
         """
@@ -704,12 +727,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             except Exception:
                 pass
             if ref.startswith(ref_prefix):
-                branch = ref[len(ref_prefix):].strip("\n")
+                branch = ref[len(ref_prefix) :].strip("\n")
 
-    if (git and branch and branch != "main"):
+    if git and branch and branch != "main":
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
-"""It appears that you are running Meerk40t from source managed by Git,
+            """It appears that you are running Meerk40t from source managed by Git,
 from a branch '{branch}' which is not 'main',
 and that you are therefore running a development version of Meerk40t.
 
@@ -729,12 +752,12 @@ be found in "{filename}".
         style = wx.OK | wx.ICON_WARNING
     else:
         message = _(
-"""The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
         )
         ext_msg = _(
-"""Only the crash details below are sent. No data from your MeerK40t project is sent. No
+            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
 personal information is sent either.
 
 Send the following data to the MeerK40t team?
