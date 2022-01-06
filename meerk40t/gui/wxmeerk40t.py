@@ -168,6 +168,17 @@ def plugin(kernel, lifecycle):
         kernel.register_choices("preferences", choices)
 
     elif lifecycle == "mainloop":
+        # Replace the default kernel data prompt for a wx Popup.
+
+        def prompt_popup(data_type, prompt):
+            with wx.TextEntryDialog(None, prompt, _("Information Required:"), "") as dlg:
+                if dlg.ShowModal() == wx.ID_OK:
+                    value = dlg.GetValue()
+            try:
+                return data_type(value)
+            except ValueError:
+                return None
+        kernel.prompt = prompt_popup
 
         def interrupt_popup():
             dlg = wx.MessageDialog(

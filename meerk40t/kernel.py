@@ -997,7 +997,6 @@ class Settings:
 # ==========
 
 
-
 class Kernel:
     """
     The Kernel serves as the central hub of communication between different objects within the system, stores the
@@ -1061,6 +1060,7 @@ class Kernel:
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.run_later = lambda execute, op: execute(op)
+
         self.state = STATE_INITIALIZE
 
         # Scheduler
@@ -3837,6 +3837,29 @@ class Kernel:
                 find = b.find(" ")
                 text = b[find + 1 :]
                 root("{batch}\n".format(batch=text))
+
+    # ==========
+    # KERNEL REPLACEABLE
+    # ==========
+
+    def _text_prompt(self, data_type, prompt):
+        """
+        Kernel Prompt should be replaced with higher level versions of this depending on the user interface.
+
+        Default this is purely text based input() prompt.
+
+        @param data_type: type of data being prompted for.
+        @param prompt: question asked of the user.
+        @return:
+        """
+        try:
+            value = input(prompt)
+            return data_type(value)
+        except ValueError:
+            return None
+
+    # Prompt should be replaced with higher level versions of this depending on the user interface.
+    prompt = _text_prompt
 
 # ==========
 # END KERNEL
