@@ -4854,9 +4854,9 @@ class Elemental(Service):
             self("material save %s\n" % opname)
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Add"))
+        @self.tree_submenu(_("Save"))
         # @self.tree_user_parameter("opname", prompt=_("Save under what name"))
-        @self.tree_operation("Custom", node_type="branch ops", help="")
+        @self.tree_operation("New", node_type="branch ops", help="")
         def save_material_custom(node, **kwargs):
             opname = self.kernel.prompt(str, _("Name to store current operations under?"))
             if opname is not None:
