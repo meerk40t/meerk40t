@@ -4849,10 +4849,9 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Save"))
-        # @self.tree_user_parameter("opname", prompt=_("Save under what name"))
+        @self.tree_prompt("opname", _("Name to store current operations under?"))
         @self.tree_operation("New", node_type="branch ops", help="")
-        def save_material_custom(node, **kwargs):
-            opname = self.kernel.prompt(str, _("Name to store current operations under?"))
+        def save_material_custom(node, opname, **kwargs):
             if opname is not None:
                 self("material save %s\n" % opname.replace(" ", "_"))
 
@@ -5713,9 +5712,13 @@ class Elemental(Service):
         return decor
 
     @staticmethod
-    def tree_user_parameter(**kwargs):
+    def tree_prompt(attr, prompt, data_type=str):
         def decor(func):
-            func.user_prompt.append(kwargs)
+            func.user_prompt.append({
+                "attr": attr,
+                "prompt": prompt,
+                "type": data_type,
+            })
             return func
 
         return decor
