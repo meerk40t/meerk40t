@@ -742,7 +742,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window -p camera{v} open CameraInterface {v}\n".format(v=index))
+            kernel.console("window open -m {v} CameraInterface {v}\n".format(v=index))
 
 
 class CameraURIPanel(wx.Panel):
