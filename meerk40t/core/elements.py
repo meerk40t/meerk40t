@@ -4853,12 +4853,14 @@ class Elemental(Service):
         def add_materials(node, opname="saved", **kwargs):
             self("material save %s\n" % opname)
 
-        # @self.tree_separator_before()
-        # @self.tree_submenu(_("Add"))
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Add"))
         # @self.tree_user_parameter("opname", prompt=_("Save under what name"))
-        # @self.tree_operation("Custom", node_type="branch ops", help="")
-        # def save_material_custom(node, opname=None, **kwargs):
-        #     self("material save %s\n" % opname)
+        @self.tree_operation("Custom", node_type="branch ops", help="")
+        def save_material_custom(node, **kwargs):
+            opname = self.kernel.prompt(str, _("Name to store current operations under?"))
+            if opname is not None:
+                self("material save %s\n" % opname.replace(" ", "_"))
 
         @self.tree_submenu(_("Delete"))
         @self.tree_values("opname", values=self.op_data.section_set)

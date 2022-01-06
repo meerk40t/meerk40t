@@ -3328,6 +3328,7 @@ class Kernel:
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
