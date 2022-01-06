@@ -411,7 +411,7 @@ class RibbonPanel(wx.Panel):
             self.context.camera_default = 5
 
         v = self.context.camera_default
-        self.context("window toggle CameraInterface %d\n" % v)
+        self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
 
     def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
