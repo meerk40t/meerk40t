@@ -3853,7 +3853,7 @@ class Kernel:
         @return:
         """
         try:
-            value = input(prompt)
+            value = input(prompt + "\n?")
             return data_type(value)
         except ValueError:
             return None
