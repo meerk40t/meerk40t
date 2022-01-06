@@ -4821,7 +4821,7 @@ class Elemental(Service):
             ]
             return difference
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation(
             _("%s") % "{opname}", node_type="branch ops", help=""
@@ -4830,12 +4830,12 @@ class Elemental(Service):
             self("material load %s\n" % opname)
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
             self.load_default()
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
         @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
