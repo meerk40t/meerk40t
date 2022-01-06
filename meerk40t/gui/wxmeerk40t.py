@@ -174,6 +174,8 @@ def plugin(kernel, lifecycle):
             with wx.TextEntryDialog(None, prompt, _("Information Required:"), "") as dlg:
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()
+                else:
+                    return
             try:
                 return data_type(value)
             except ValueError:
