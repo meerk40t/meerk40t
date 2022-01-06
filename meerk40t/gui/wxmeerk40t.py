@@ -113,9 +113,15 @@ def plugin(kernel, lifecycle):
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
-            for window in kernel.match("window/.*", suffix=False):
-                if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
-                    kernel.console("window open %s\n" % window.split('/')[-1])
+            for window in kernel.derivable("window"):
+                wsplit = window.split(":")
+                window_name = wsplit[0]
+                window_index = wsplit[-1] if len(wsplit) > 1 else None
+                print(window_name, window_index)
+                if kernel.read_persistent(
+                    bool, "window/%s/open_on_start" % window_name, False
+                ):
+                    kernel.console("window open {window}\n".format(window=window_name))
             meerk40tgui.MainLoop()
 
 
@@ -409,7 +415,11 @@ class wxMeerK40t(wx.App, Module):
                 if window_uri not in context.registered:
                     window_uri = "window/%s/%s" % ("default", window)
 
-            window_name = window_uri + str(multi) if multi is not None else window_uri
+            window_name = (
+                "{window}:{multi}".format(window=window_uri, multi=multi)
+                if multi is not None
+                else window_uri
+            )
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)
@@ -531,7 +541,9 @@ class wxMeerK40t(wx.App, Module):
                     kernel._config = None
                     kernel.shutdown()
             else:
-                channel('Argument "sure" is required. Requires typing: "nuke_settings yes"')
+                channel(
+                    'Argument "sure" is required. Requires typing: "nuke_settings yes"'
+                )
 
     def update_language(self, lang):
         """
@@ -713,12 +725,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             except Exception:
                 pass
             if ref.startswith(ref_prefix):
-                branch = ref[len(ref_prefix):].strip("\n")
+                branch = ref[len(ref_prefix) :].strip("\n")
 
-    if (git and branch and branch != "main"):
+    if git and branch and branch != "main":
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
-"""It appears that you are running Meerk40t from source managed by Git,
+            """It appears that you are running Meerk40t from source managed by Git,
 from a branch '{branch}' which is not 'main',
 and that you are therefore running a development version of Meerk40t.
 
@@ -738,12 +750,12 @@ be found in "{filename}".
         style = wx.OK | wx.ICON_WARNING
     else:
         message = _(
-"""The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
 
 The good news is that you can help us fix this bug by anonymously sending us the crash details."""
         )
         ext_msg = _(
-"""Only the crash details below are sent. No data from your MeerK40t project is sent. No
+            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
 personal information is sent either.
 
 Send the following data to the MeerK40t team?
