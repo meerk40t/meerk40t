@@ -5717,6 +5717,14 @@ class Elemental(Service):
         return decor
 
     @staticmethod
+    def tree_user_parameter(**kwargs):
+        def decor(func):
+            func.user_prompt.append(kwargs)
+            return func
+
+        return decor
+
+    @staticmethod
     def tree_conditional(conditional):
         def decor(func):
             func.conditionals.append(conditional)
@@ -5779,6 +5787,7 @@ class Elemental(Service):
             inner.separate_before = False
             inner.conditionals = list()
             inner.try_conditionals = list()
+            inner.user_prompt = list()
             inner.calcs = list()
             inner.values = [0]
             registered_name = inner.__name__
