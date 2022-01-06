@@ -249,7 +249,7 @@ class Context:
 
         @return:
         """
-        yield from self._kernel.settings.derivable(self._path)
+        yield from self._kernel.derivable(self._path)
 
     def subpaths(self) -> Generator["Context", None, None]:
         """
@@ -296,7 +296,7 @@ class Context:
 
         # Key is not located in the attr. Load the value.
         if not key.startswith("_"):
-            load_value = self._kernel.settings.read_persistent(
+            load_value = self._kernel.read_persistent(
                 setting_type, self._path, key, default
             )
         else:
@@ -308,7 +308,7 @@ class Context:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
-        self._kernel.settings.write_persistent_attributes(self._path, self)
+        self._kernel.write_persistent_attributes(self._path, self)
 
     def write_persistent_attributes(self, obj: Any) -> None:
         """
@@ -316,7 +316,7 @@ class Context:
         @param obj:
         @return:
         """
-        self._kernel.settings.write_persistent_attributes(self._path, obj)
+        self._kernel.write_persistent_attributes(self._path, obj)
 
     def read_persistent(self, t: type, key: str) -> Any:
         """
@@ -328,7 +328,7 @@ class Context:
         @param key: relative key for the value
         @return: the value associated with the key otherwise None
         """
-        return self._kernel.settings.read_persistent(
+        return self._kernel.read_persistent(
             t,
             self._path,
             key
@@ -343,7 +343,7 @@ class Context:
         @param obj:
         @return:
         """
-        self._kernel.settings.read_persistent_attributes(self._path, obj)
+        self._kernel.read_persistent_attributes(self._path, obj)
 
     def read_persistent_string_dict(self, dictionary: Optional[Dict] = None, suffix: bool = False) -> Dict:
         """
@@ -353,13 +353,13 @@ class Context:
         @param suffix:
         @return:
         """
-        return self._kernel.settings.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
+        return self._kernel.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
 
     def clear_persistent(self) -> None:
         """
         Delegate to Kernel to clear the persistent settings located at this context.
         """
-        self._kernel.settings.clear_persistent(self._path)
+        self._kernel.clear_persistent(self._path)
 
     def write_persistent(self, key: str, value: Union[int, float, str, bool]) -> None:
         """
@@ -368,7 +368,7 @@ class Context:
 
         If the persistence object is not yet established this function cannot succeed.
         """
-        self._kernel.settings.write_persistent(self._path, key, value)
+        self._kernel.write_persistent(self._path, key, value)
 
     # ==========
     # DELEGATES
@@ -2098,9 +2098,9 @@ class Kernel(Settings):
             del self.contexts[context_name]
             if channel:
                 channel(_("Context Shutdown Finished: '%s'") % str(context))
-        self.settings.write_configuration()
+        self.write_configuration()
         try:
-            del self.settings
+            del self._config_dict
             if channel:
                 channel(_("Destroying persistence object"))
         except AttributeError:
