@@ -326,6 +326,12 @@ class wxMeerK40t(wx.App, Module):
             return "window", data
 
         @kernel.console_option(
+            "multi",
+            "m",
+            type=int,
+            help=_("Multi window flag for launching multiple copies of this window."),
+        )
+        @kernel.console_option(
             "driver",
             "d",
             type=bool,
@@ -360,6 +366,7 @@ class wxMeerK40t(wx.App, Module):
             driver=False,
             output=False,
             source=None,
+            multi=None,
             args=(),
             **kwargs
         ):
@@ -402,11 +409,13 @@ class wxMeerK40t(wx.App, Module):
                 if window_uri not in context.registered:
                     window_uri = "window/%s/%s" % ("default", window)
 
+            window_name = window_uri + str(multi) if multi is not None else window_uri
+
             def window_open(*a, **k):
-                path.open(window_uri, parent, *args)
+                path.open_as(window_uri, window_name, parent, *args)
 
             def window_close(*a, **k):
-                path.close(window_uri, *args)
+                path.close(window_name, *args)
 
             if command == "open":
                 if window_uri in context.registered:
@@ -418,7 +427,7 @@ class wxMeerK40t(wx.App, Module):
             else:
                 if window_uri in context.registered:
                     try:
-                        w = path.opened[window_uri]
+                        w = path.opened[window_name]
                         kernel.run_later(window_close, None)
                         channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
