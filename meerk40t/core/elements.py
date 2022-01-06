@@ -4847,12 +4847,6 @@ class Elemental(Service):
         def save_materials(node, opname="saved", **kwargs):
             self("material save %s\n" % opname)
 
-        @self.tree_submenu(_("Add"))
-        @self.tree_values("opname", values=difference_materials_saved())
-        @self.tree_operation("{opname}", node_type="branch ops", help="")
-        def add_materials(node, opname="saved", **kwargs):
-            self("material save %s\n" % opname)
-
         @self.tree_separator_before()
         @self.tree_submenu(_("Save"))
         # @self.tree_user_parameter("opname", prompt=_("Save under what name"))
