@@ -220,7 +220,7 @@ class CameraPanel(wx.Panel, Job):
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
-        self.context.listen("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;fps", self.on_fps_change)
         self.context.unlisten("camera;stopped", self.on_camera_stop)
         self.context.signal("camera;stopped", self.index)
 
