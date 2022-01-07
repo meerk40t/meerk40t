@@ -141,6 +141,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @self.context.console_command("aspect", input_type="scene")
         def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+            if zoom_x is None or zoom_y is None:
+                raise SyntaxError
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
