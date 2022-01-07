@@ -177,7 +177,8 @@ class CameraPanel(wx.Panel, Job):
             self.check_fisheye.SetValue(self.setting.correction_fisheye)
             self.check_perspective.SetValue(self.setting.correction_perspective)
             self.slider_fps.SetValue(self.setting.fps)
-            self.on_slider_fps()
+
+        self.on_fps_change(None)
 
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
@@ -209,6 +210,8 @@ class CameraPanel(wx.Panel, Job):
         self.context.schedule(self)
         self.context.listen("refresh_scene", self.on_refresh_scene)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
+        self.context.listen("camera;fps", self.on_fps_change)
+        self.context.listen("camera;stopped", self.on_camera_stop)
 
     def finalize(self, *args):
         self.context("camera%d stop\n" % self.index)
@@ -217,6 +220,22 @@ class CameraPanel(wx.Panel, Job):
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
+        self.context.unlisten("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;stopped", self.on_camera_stop)
+        self.context.signal("camera;stopped", self.index)
+
+    def on_camera_stop(self, origin, index):
+        if index == self.index:
+            self.context("camera%d start\n" % self.index)
+
+    def on_fps_change(self, origin, *args):
+        # Set the camera fps.
+        fps = self.setting.fps
+        if fps == 0:
+            tick = 5
+        else:
+            tick = 1.0 / fps
+        self.interval = tick
 
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
@@ -329,13 +348,8 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        fps = self.slider_fps.GetValue()
-        if fps == 0:
-            tick = 5
-        else:
-            tick = 1.0 / fps
-        self.setting.fps = fps
-        self.interval = tick
+        self.setting.fps = self.slider_fps.GetValue()
+        self.context.signal("camera;fps", self.setting.fps)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
