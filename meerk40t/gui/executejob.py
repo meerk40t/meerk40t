@@ -313,21 +313,6 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def pane_show(self):
-        rotary_context = self.context.get_context("rotary/1")
-        rotary_context.setting(bool, "rotary", False)
-        rotary_context.setting(float, "scale_x", 1.0)
-        rotary_context.setting(float, "scale_y", 1.0)
-        self.context.setting(int, "opt_closed_distance", 15)
-        self.context.setting(bool, "opt_merge_passes", False)
-        self.context.setting(bool, "opt_merge_ops", False)
-        self.context.setting(bool, "opt_reduce_travel", True)
-        self.context.setting(bool, "opt_inner_first", True)
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_rapid_between", True)
-        self.context.setting(int, "opt_jog_minimum", 256)
-        self.context.setting(int, "opt_jog_mode", 0)
-
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
