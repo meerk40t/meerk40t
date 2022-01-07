@@ -53,7 +53,7 @@ class RotarySettingsPanel(wx.Panel):
     def pane_show(self):
         self.text_rotary_scalex.SetValue(str(self.service.scale_x))
         self.text_rotary_scaley.SetValue(str(self.service.scale_y))
-        self.checkbox_rotary.SetValue(self.service.rotary)
+        self.checkbox_rotary.SetValue(self.service.rotary_enabled)
         self.on_check_rotary(None)
 
     def pane_hide(self):

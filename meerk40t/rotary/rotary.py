@@ -10,7 +10,7 @@ def plugin(kernel, lifecycle=None):
 
         choices = [
             {
-                "attr": "rotary",
+                "attr": "rotary_enabled",
                 "object": rotary,
                 "default": False,
                 "type": bool,

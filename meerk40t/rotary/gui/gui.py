@@ -13,7 +13,7 @@ def plugin(kernel, lifecycle):
     # if lifecycle == "service":
     #     return "provider/camera/mk"
     if lifecycle == "register":
-        _ = kernel.translate
+        _ = kernel.translation
         kernel.register("window/Rotary", RotarySettings)
         kernel.register(
             "button/config/Rotary",
