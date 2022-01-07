@@ -554,14 +554,20 @@ class ConfigurationInterfacePanel(wx.Panel):
 
         self.radio_usb = wx.RadioButton(self, wx.ID_ANY, _("USB"), style=wx.RB_GROUP)
         self.radio_usb.SetValue(1)
+        self.radio_usb.SetToolTip(
+            _("Select this if you have an m2-nano controller physically connected to this computer using a USB cable.")
+        )
         sizer_interface_radio.Add(self.radio_usb, 1, 0, 0)
 
         self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, _("Networked"))
+        self.radio_tcp.SetToolTip(
+            _("Select this to connect this instance of Meerk40t to another instance of Meerk40t running as a remote server.")
+        )
         sizer_interface_radio.Add(self.radio_tcp, 4, 0, 0)
 
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
-            _("DEBUG. Without a K40 connected continue to process things as if there was one.")
+            _("Select this only for debugging without a physical laser available. Execute a burn as if there was an m2-nano controller physically connected by USB.")
         )
         sizer_interface_radio.Add(self.radio_mock, 1, 0, 0)
 
