@@ -728,10 +728,8 @@ class wxMeerK40t(wx.App, Module):
         def nuke_settings(command, channel, _, sure=None, **kwargs):
             if sure == "yes":
                 kernel = self.context.kernel
-                if kernel._config is not None:
-                    kernel._config.DeleteAll()
-                    kernel._config = None
-                    kernel.shutdown()
+                kernel.delete_all_persistent()
+                kernel.shutdown()
             else:
                 channel(
                     'Argument "sure" is required. Requires typing: "nuke_settings yes"'
