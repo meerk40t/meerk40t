@@ -229,8 +229,6 @@ def plugin(kernel, lifecycle=None):
         # context.setting(bool, "opt_merge_passes", False)
         # context.setting(bool, "opt_merge_ops", False)
         # context.setting(bool, "opt_inner_first", True)
-        context.setting(bool, "opt_reduce_directions", False)
-        context.setting(bool, "opt_remove_overlap", False)
 
     elif lifecycle == "poststart":
         if hasattr(kernel.args, "auto") and kernel.args.auto:
