@@ -721,11 +721,11 @@ class CameraInterface(MWindow):
     def sub_register(kernel):
         def camera_click(index=None):
             def specific(event=None):
-                kernel.root.setting(int, "camera_default", 1)
+                kernel.root.setting(int, "camera_default", 0)
                 if index is not None:
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
-                kernel.console("window toggle CameraInterface %d\n" % v)
+                kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
 
             return specific
 
@@ -737,11 +737,11 @@ class CameraInterface(MWindow):
                 "tip": _("Opens Camera Window"),
                 "action": camera_click(),
                 "alt-action": (
+                    (_("Camera %d") % 0, camera_click(0)),
                     (_("Camera %d") % 1, camera_click(1)),
                     (_("Camera %d") % 2, camera_click(2)),
                     (_("Camera %d") % 3, camera_click(3)),
                     (_("Camera %d") % 4, camera_click(4)),
-                    (_("Camera %d") % 5, camera_click(5)),
                 ),
             },
         )
