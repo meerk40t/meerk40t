@@ -21,7 +21,7 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 
 """
-APPLICATION_NAME = "MeerK40t"
+APPLICATION_NAME = "MeerK40t-galvo"
 APPLICATION_VERSION = "0.8.0-beta1"
 
 if not getattr(sys, "frozen", False):
