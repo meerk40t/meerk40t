@@ -60,9 +60,6 @@ class Driver:
         self.laser = False
         context._quit = False
 
-        self.rapid_override = False
-        self.rapid_override_speed_x = 50.0
-        self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
         self.last_fetch = None
