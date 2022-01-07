@@ -1355,8 +1355,9 @@ class MeerK40t(MWindow):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
-    @signal_listener("active")
-    def on_active_change(self, origin, active):
+    @signal_listener("device;renamed")
+    @lookup_listener("service/device/active")
+    def on_active_change(self, *args):
         self.__set_titlebar()
 
     def window_close_veto(self):

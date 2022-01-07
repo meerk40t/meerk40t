@@ -190,7 +190,6 @@ class LaserPanel(wx.Panel):
         if index == -1:
             disable_window(self)
 
-    @signal_listener("device;modified")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
     def spooler_lookup(self, *args):
