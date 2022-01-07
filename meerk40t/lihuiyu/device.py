@@ -672,6 +672,83 @@ class LihuiyuDevice(Service):
                 channel(_("Emulator cannot be attached to any device."))
             return
 
+        @kernel.console_argument("transition_type", type=str)
+        @kernel.console_command(
+            "test_jog_transition",
+            help="test_jog_transition <finish,jog,switch>",
+            input_type=("spooler", None),
+            hidden=True,
+        )
+        def run_jog_transition_test(data, transition_type, **kwgs):
+            """ "
+            The Jog Transition Test is intended to test the jogging
+            """
+            if transition_type == "jog":
+                command = COMMAND_JOG
+            elif transition_type == "finish":
+                command = COMMAND_JOG_FINISH
+            elif transition_type == "switch":
+                command = COMMAND_JOG_SWITCH
+            else:
+                raise SyntaxError
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+
+            def jog_transition_test():
+                yield COMMAND_SET_ABSOLUTE
+                yield COMMAND_MODE_RAPID
+                yield COMMAND_HOME
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MOVE, 3000, 3000
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_LASER_ON
+                yield COMMAND_WAIT, 0.05
+                yield COMMAND_LASER_OFF
+                yield COMMAND_WAIT_FINISH
+
+                yield COMMAND_SET_SPEED, 10.0
+
+                def pos(i):
+                    if i < 3:
+                        x = 200
+                    elif i < 6:
+                        x = -200
+                    else:
+                        x = 0
+                    if i % 3 == 0:
+                        y = 200
+                    elif i % 3 == 1:
+                        y = -200
+                    else:
+                        y = 0
+                    return x, y
+
+                for q in range(8):
+                    top = q & 1
+                    left = q & 2
+                    x_val = q & 3
+                    yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
+                    yield COMMAND_MODE_PROGRAM
+                    for j in range(9):
+                        jx, jy = pos(j)
+                        for k in range(9):
+                            kx, ky = pos(k)
+                            yield COMMAND_MOVE, 3000, 3000
+                            yield COMMAND_MOVE, 3000 + jx, 3000 + jy
+                            yield command, 3000 + jx + kx, 3000 + jy + ky
+                    yield COMMAND_MOVE, 3000, 3000
+                    yield COMMAND_MODE_RAPID
+                    yield COMMAND_WAIT_FINISH
+                    yield COMMAND_LASER_ON
+                    yield COMMAND_WAIT, 0.05
+                    yield COMMAND_LASER_OFF
+                    yield COMMAND_WAIT_FINISH
+
+            spooler.job(jog_transition_test)
+
+
     @property
     def output(self):
         """
