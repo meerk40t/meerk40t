@@ -87,9 +87,10 @@ def plugin(kernel, lifecycle=None):
                 )
             )
     if lifecycle == "boot":
+        # TODO: DO NOT USE THIS IN REAL CODE, ONLY BALOR HARD LINK
         if not hasattr(kernel, "device"):
             # Nothing has yet established a device. Boot this device.
-            kernel.root("service device start lhystudios\n")
+            kernel.root("service device start -i balor\n")
 
 
 class LihuiyuDevice(Service):
