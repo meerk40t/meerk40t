@@ -160,9 +160,9 @@ def run():
 
     kernel.add_plugin(ruida_driver.plugin)
 
-    # from .device import dummydevice
-    #
-    # kernel.add_plugin(dummydevice.plugin)
+    from .rotary import rotary
+
+    kernel.add_plugin(rotary.plugin)
 
     from .core import spoolers
 
@@ -208,6 +208,7 @@ def run():
 
     kernel.add_plugin(pathoptimize.plugin)
 
+
     from .extra import updater
 
     kernel.add_plugin(updater.plugin)
@@ -251,6 +252,7 @@ def run():
             from .gui.scene import scene
 
             from .camera.gui import gui as cameragui
+            from .rotary.gui import gui as rotarygui
             from .grbl.gui import gui as grblgui
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
@@ -270,6 +272,7 @@ def run():
             kernel.add_plugin(moshigui.plugin)
             kernel.add_plugin(grblgui.plugin)
             kernel.add_plugin(ruidagui.plugin)
+            kernel.add_plugin(rotarygui.plugin)
     else:
         # Complete Gui Suppress implies no-gui.
         args.no_gui = True

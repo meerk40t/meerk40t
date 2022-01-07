@@ -41,7 +41,7 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
-from .rotarysettings import RotarySettings
+from meerk40t.rotary.gui.rotarysettings import RotarySettings
 from .simulation import Simulation
 from .textproperty import TextProperty
 from .wxmmain import MeerK40t

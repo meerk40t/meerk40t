@@ -6,8 +6,8 @@
 
 import wx
 
-from .icons import icons8_roll_50
-from .mwindow import MWindow
+from meerk40t.gui.icons import icons8_roll_50
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -16,7 +16,7 @@ class RotarySettingsPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.service = context.rotary
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
@@ -51,12 +51,9 @@ class RotarySettingsPanel(wx.Panel):
         )
 
     def pane_show(self):
-        self.context.setting(bool, "rotary", False)
-        self.context.setting(float, "scale_x", 1.0)
-        self.context.setting(float, "scale_y", 1.0)
-        self.text_rotary_scalex.SetValue(str(self.context.scale_x))
-        self.text_rotary_scaley.SetValue(str(self.context.scale_y))
-        self.checkbox_rotary.SetValue(self.context.rotary)
+        self.text_rotary_scalex.SetValue(str(self.service.scale_x))
+        self.text_rotary_scaley.SetValue(str(self.service.scale_y))
+        self.checkbox_rotary.SetValue(self.service.rotary)
         self.on_check_rotary(None)
 
     def pane_hide(self):
@@ -105,7 +102,6 @@ class RotarySettingsPanel(wx.Panel):
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: RotarySettings.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_circumference = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Object Circumference:")), wx.HORIZONTAL
@@ -147,21 +143,21 @@ class RotarySettingsPanel(wx.Panel):
         # end wxGlade
 
     def on_check_rotary(self, event=None):
-        self.context.rotary = self.checkbox_rotary.GetValue()
+        self.service.rotary = self.checkbox_rotary.GetValue()
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_text_rotary_scale_y(self, event=None):
-        if self.context is not None:
+        if self.service is not None:
             try:
-                self.context.scale_y = float(self.text_rotary_scaley.GetValue())
+                self.service.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
     def on_text_rotary_scale_x(self, event=None):
-        if self.context is not None:
+        if self.service is not None:
             try:
-                self.context.scale_x = float(self.text_rotary_scalex.GetValue())
+                self.service.scale_x = float(self.text_rotary_scalex.GetValue())
             except ValueError:
                 pass
 
@@ -190,27 +186,13 @@ class RotarySettings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(222, 347, *args, **kwds)
 
-        self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context.rotary)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle(_("RotarySettings"))
-
-    @staticmethod
-    def sub_register(kernel):
-        kernel.register(
-            "button/config/Rotary",
-            {
-                "label": _("Rotary"),
-                "icon": icons8_roll_50,
-                "tip": _("Opens Rotary Window"),
-                "action": lambda v: kernel.console(
-                    "window -p rotary/1 toggle Rotary\n"
-                ),
-            },
-        )
 
     def window_open(self):
         self.panel.pane_show()
