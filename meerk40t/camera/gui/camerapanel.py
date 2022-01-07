@@ -69,7 +69,18 @@ class CameraPanel(wx.Panel, Job):
         self.camera = self.context.get_context(
             "camera/%d" % self.index
         )  # camera service location.
-        self.camera.setting(int, "fps", 5)
+        self.camera.setting(int, "width", 640)
+        self.camera.setting(int, "height", 480)
+        self.camera.setting(int, "fps", 1)
+        self.camera.setting(bool, "correction_fisheye", False)
+        self.camera.setting(bool, "correction_perspective", False)
+        self.camera.setting(str, "fisheye", "")
+        self.camera.setting(str, "perspective", "")
+        self.camera.setting(str, "uri", "0")
+        self.camera.setting(int, "index", 0)
+        self.camera.setting(bool, "autonormal", False)
+        self.camera.setting(bool, "aspect", False)
+        self.camera.setting(str, "preserve_aspect", "xMinYMin meet")
         self.last_frame_index = -1
 
         if not pane:
