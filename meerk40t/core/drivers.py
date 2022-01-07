@@ -201,13 +201,7 @@ class Driver:
                 self.move(x, y)
             elif command == COMMAND_JOG:
                 x, y = values
-                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_SWITCH:
-                x, y = values
-                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_FINISH:
-                x, y = values
-                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
+                self.jog(x, y, mode=0)
             elif command == COMMAND_HOME:
                 self.home(*values)
             elif command == COMMAND_LOCK:
@@ -378,7 +372,7 @@ class Driver:
         if self.plot is None:
             self.plot = self.plot_planner.gen()
 
-    def jog(self, x, y, mode=0, min_jog=127):
+    def jog(self, x, y, **kwargs):
         self.current_x = x
         self.current_y = y
 
