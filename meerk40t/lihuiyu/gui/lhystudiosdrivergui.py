@@ -646,6 +646,7 @@ class ConfigurationInterfacePanel(wx.Panel):
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
         self.context.label = self.text_device_label.GetValue()
+        self.context.signal("device;renamed")
 
     def on_radio_interface(
         self, event

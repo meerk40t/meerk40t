@@ -58,16 +58,8 @@ class Driver:
         self.properties = 0
         self.is_relative = False
         self.laser = False
-        self.root_context.setting(bool, "opt_rapid_between", True)
-        self.root_context.setting(int, "opt_jog_mode", 0)
-        self.root_context.setting(int, "opt_jog_minimum", 127)
         context._quit = False
 
-        self.rapid = self.root_context.opt_rapid_between
-        self.jog = self.root_context.opt_jog_mode
-        self.rapid_override = False
-        self.rapid_override_speed_x = 50.0
-        self.rapid_override_speed_y = 50.0
         self._thread = None
         self._shutdown = False
         self.last_fetch = None
@@ -175,8 +167,6 @@ class Driver:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
-            self.rapid = self.root_context.opt_rapid_between
-            self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
@@ -211,13 +201,7 @@ class Driver:
                 self.move(x, y)
             elif command == COMMAND_JOG:
                 x, y = values
-                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_SWITCH:
-                x, y = values
-                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_FINISH:
-                x, y = values
-                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
+                self.jog(x, y, mode=0)
             elif command == COMMAND_HOME:
                 self.home(*values)
             elif command == COMMAND_LOCK:
@@ -388,7 +372,7 @@ class Driver:
         if self.plot is None:
             self.plot = self.plot_planner.gen()
 
-    def jog(self, x, y, mode=0, min_jog=127):
+    def jog(self, x, y, **kwargs):
         self.current_x = x
         self.current_y = y
 

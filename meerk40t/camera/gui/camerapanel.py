@@ -155,7 +155,8 @@ class CameraPanel(wx.Panel, Job):
             self.check_fisheye.SetValue(self.camera.correction_fisheye)
             self.check_perspective.SetValue(self.camera.correction_perspective)
             self.slider_fps.SetValue(self.camera.fps)
-            self.on_slider_fps()
+
+        self.on_fps_change(None)
 
         self.widget_scene.widget_root.set_aspect(self.camera.aspect)
 
@@ -175,12 +176,30 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.context("camera%d start\n" % self.index)
         self.context.schedule(self)
+        self.context.listen("camera;fps", self.on_fps_change)
+        self.context.listen("camera;stopped", self.on_camera_stop)
 
     def pane_hide(self, *args):
         self.context("camera%d stop\n" % self.index)
         self.context.unschedule(self)
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
+        self.context.unlisten("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;stopped", self.on_camera_stop)
+        self.context.signal("camera;stopped", self.index)
+
+    def on_camera_stop(self, origin, index):
+        if index == self.index:
+            self.context("camera%d start\n" % self.index)
+
+    def on_fps_change(self, origin, *args):
+        # Set the camera fps.
+        fps = self.camera.fps
+        if fps == 0:
+            tick = 5
+        else:
+            tick = 1.0 / fps
+        self.interval = tick
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
@@ -294,13 +313,8 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        fps = self.slider_fps.GetValue()
-        if fps == 0:
-            tick = 5
-        else:
-            tick = 1.0 / fps
-        self.camera.fps = fps
-        self.interval = tick
+        self.camera.fps = self.slider_fps.GetValue()
+        self.context.signal("camera;fps", self.setting.fps)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -637,7 +651,13 @@ class CamImageWidget(Widget):
 
 class CameraInterface(MWindow):
     def __init__(self, context, path, parent, index=0, **kwds):
-        index = int(index)
+        if isinstance(index,str):
+            try:
+                index=int(index)
+            except ValueError:
+                pass
+        if index is None:
+            index = 0
         super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
         self.add_module_delegate(self.panel)
@@ -701,11 +721,11 @@ class CameraInterface(MWindow):
     def sub_register(kernel):
         def camera_click(index=None):
             def specific(event=None):
-                kernel.root.setting(int, "camera_default", 1)
+                kernel.root.setting(int, "camera_default", 0)
                 if index is not None:
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
-                kernel.console("window toggle CameraInterface %d\n" % v)
+                kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
 
             return specific
 
@@ -717,11 +737,11 @@ class CameraInterface(MWindow):
                 "tip": _("Opens Camera Window"),
                 "action": camera_click(),
                 "alt-action": (
+                    (_("Camera %d") % 0, camera_click(0)),
                     (_("Camera %d") % 1, camera_click(1)),
                     (_("Camera %d") % 2, camera_click(2)),
                     (_("Camera %d") % 3, camera_click(3)),
                     (_("Camera %d") % 4, camera_click(4)),
-                    (_("Camera %d") % 5, camera_click(5)),
                 ),
             },
         )
@@ -732,7 +752,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window open CameraInterface %d\n" % index)
+            kernel.console("window open -m {v} CameraInterface {v}\n".format(v=index))
 
 
 class CameraURIPanel(wx.Panel):

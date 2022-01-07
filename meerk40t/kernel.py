@@ -249,7 +249,7 @@ class Context:
 
         @return:
         """
-        yield from self._kernel.settings.derivable(self._path)
+        yield from self._kernel.derivable(self._path)
 
     def subpaths(self) -> Generator["Context", None, None]:
         """
@@ -296,7 +296,7 @@ class Context:
 
         # Key is not located in the attr. Load the value.
         if not key.startswith("_"):
-            load_value = self._kernel.settings.read_persistent(
+            load_value = self._kernel.read_persistent(
                 setting_type, self._path, key, default
             )
         else:
@@ -308,7 +308,7 @@ class Context:
         """
         Commit any and all values currently stored as attr for this object to persistent storage.
         """
-        self._kernel.settings.write_persistent_attributes(self._path, self)
+        self._kernel.write_persistent_attributes(self._path, self)
 
     def write_persistent_attributes(self, obj: Any) -> None:
         """
@@ -316,7 +316,7 @@ class Context:
         @param obj:
         @return:
         """
-        self._kernel.settings.write_persistent_attributes(self._path, obj)
+        self._kernel.write_persistent_attributes(self._path, obj)
 
     def read_persistent(self, t: type, key: str) -> Any:
         """
@@ -328,7 +328,7 @@ class Context:
         @param key: relative key for the value
         @return: the value associated with the key otherwise None
         """
-        return self._kernel.settings.read_persistent(
+        return self._kernel.read_persistent(
             t,
             self._path,
             key
@@ -343,7 +343,7 @@ class Context:
         @param obj:
         @return:
         """
-        self._kernel.settings.read_persistent_attributes(self._path, obj)
+        self._kernel.read_persistent_attributes(self._path, obj)
 
     def read_persistent_string_dict(self, dictionary: Optional[Dict] = None, suffix: bool = False) -> Dict:
         """
@@ -353,13 +353,13 @@ class Context:
         @param suffix:
         @return:
         """
-        return self._kernel.settings.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
+        return self._kernel.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
 
     def clear_persistent(self) -> None:
         """
         Delegate to Kernel to clear the persistent settings located at this context.
         """
-        self._kernel.settings.clear_persistent(self._path)
+        self._kernel.clear_persistent(self._path)
 
     def write_persistent(self, key: str, value: Union[int, float, str, bool]) -> None:
         """
@@ -368,7 +368,7 @@ class Context:
 
         If the persistence object is not yet established this function cannot succeed.
         """
-        self._kernel.settings.write_persistent(self._path, key, value)
+        self._kernel.write_persistent(self._path, key, value)
 
     # ==========
     # DELEGATES
@@ -960,6 +960,13 @@ class Settings:
         except KeyError:
             pass
 
+    def delete_all_persistent(self):
+        """
+        Deletes all persistent settings.
+        @return:
+        """
+        self._config_dict.clear()
+
     def keylist(self, section: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
@@ -997,8 +1004,7 @@ class Settings:
 # ==========
 
 
-
-class Kernel:
+class Kernel(Settings):
     """
     The Kernel serves as the central hub of communication between different objects within the system, stores the
     main lookup of registered objects, as well as providing a scheduler, signals, channels, and a command console to be
@@ -1021,7 +1027,8 @@ class Kernel:
         self.version = version
 
         # Persistent Settings
-        self.settings = Settings(self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        Settings.__init__(self, self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        self.settings = self
 
         # Boot State
         self._booted = False
@@ -1061,6 +1068,7 @@ class Kernel:
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
         self.run_later = lambda execute, op: execute(op)
+
         self.state = STATE_INITIALIZE
 
         # Scheduler
@@ -2097,9 +2105,9 @@ class Kernel:
             del self.contexts[context_name]
             if channel:
                 channel(_("Context Shutdown Finished: '%s'") % str(context))
-        self.settings.write_configuration()
+        self.write_configuration()
         try:
-            del self.settings
+            del self._config_dict
             if channel:
                 channel(_("Destroying persistence object"))
         except AttributeError:
@@ -3328,6 +3336,7 @@ class Kernel:
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
@@ -3837,6 +3846,29 @@ class Kernel:
                 find = b.find(" ")
                 text = b[find + 1 :]
                 root("{batch}\n".format(batch=text))
+
+    # ==========
+    # KERNEL REPLACEABLE
+    # ==========
+
+    def _text_prompt(self, data_type, prompt):
+        """
+        Kernel Prompt should be replaced with higher level versions of this depending on the user interface.
+
+        Default this is purely text based input() prompt.
+
+        @param data_type: type of data being prompted for.
+        @param prompt: question asked of the user.
+        @return:
+        """
+        try:
+            value = input(prompt + "\n?")
+            return data_type(value)
+        except ValueError:
+            return None
+
+    # Prompt should be replaced with higher level versions of this depending on the user interface.
+    prompt = _text_prompt
 
 # ==========
 # END KERNEL

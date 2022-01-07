@@ -61,7 +61,6 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.widget_scene = self.scene.scene
         context = self.context
-        self._rotary_view = False
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
@@ -129,10 +128,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.laserpath_widget.clear_laserpath()
             self.request_refresh()
 
-        @context.console_command("rotaryview", help=_("Rotary View of Scene"))
-        def toggle_rotary_view(*args, **kwargs):
-            self.toggle_rotary_view()
-
         @self.context.console_command("scene", output_type="scene")
         def scene(command, _, channel, **kwargs):
             channel("scene: %s" % str(self.widget_scene))
@@ -146,6 +141,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @self.context.console_command("aspect", input_type="scene")
         def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+            if zoom_x is None or zoom_y is None:
+                raise SyntaxError
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
@@ -293,13 +290,6 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_element_modified(self, *args):
         self.widget_scene.request_refresh(*args)
-
-    def toggle_rotary_view(self):
-        if self._rotary_view:
-            self.widget_scene.rotary_stretch()
-        else:
-            self.widget_scene.rotary_unstretch()
-        self._rotary_view = not self._rotary_view
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

@@ -1664,7 +1664,7 @@ class Elemental(Service):
 
         self._init_commands(kernel)
         self._init_tree(kernel)
-        self.load_persistent_operations("default")
+        self.load_persistent_operations("previous")
 
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
@@ -1699,10 +1699,86 @@ class Elemental(Service):
             channel(_("loading..."))
             return "file", new_file
 
+        # ==========
+        # MATERIALS COMMANDS
+        # ==========
+
+        @self.console_command(
+            "material", help=_("material base operation"), input_type=(None, "ops"), output_type="materials"
+        )
+        def materials(command, channel, _, data=None, remainder=None, **kwargs):
+            if data is None:
+                data = list(self.ops(emphasized=True))
+            if remainder is None:
+                channel("----------")
+                channel(_("Materials:"))
+                secs = self.op_data.section_set()
+                for section in secs:
+                    channel(section)
+                channel("----------")
+            return "materials", data
+
+        @self.console_argument("name", help=_("Name to save the materials under"))
+        @self.console_command(
+            "save",
+            help=_("Save current materials to persistent settings"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def save_materials(command, channel, _, data=None, name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.save_persistent_operations(name)
+            return "materials", data
+
+        @self.console_argument("name", help=_("Name to load the materials from"))
+        @self.console_command(
+            "load",
+            help=_("Load materials from persistent settings"),
+            input_type="materials",
+            output_type="ops",
+        )
+        def load_materials(name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.load_persistent_operations(name)
+            return "ops", list(self.ops())
+
+        @self.console_argument("name", help=_("Name to delete the materials from"))
+        @self.console_command(
+            "delete",
+            help=_("Delete materials from persistent settings"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def load_materials(name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.clear_persistent_operations(name)
+            return "materials", list(self.ops())
+
+        @self.console_argument("name", help=_("Name to display the materials from"))
+        @self.console_command(
+            "list",
+            help=_("Show information about materials"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def materials_list(channel, _, data=None, name=None, **kwargs):
+            channel("----------")
+            channel(_("Materials Current:"))
+            secs = self.op_data.section_set()
+            for section in secs:
+                subsection = self.op_data.derivable(section)
+                for subsect in subsection:
+                    label = self.op_data.read_persistent(str, subsect, "label", "-")
+                    channel("{subsection}: {label}".format(section=section, subsection=subsect, label=label))
+            channel("----------")
 
         # ==========
         # OPERATION BASE
         # ==========
+
         @self.console_command("operations", help=_("Show information about operations"))
         def element(**kwargs):
             self(".operation* list\n")
@@ -1753,38 +1829,6 @@ class Elemental(Service):
                 except IndexError:
                     channel(_("index %d out of range") % value)
             return "ops", op_values
-
-        # ==========
-        # OPERATION SUBCOMMANDS
-        # ==========
-
-        @self.console_argument("name", help=_("Name to save the operation under"))
-        @self.console_command(
-            "save",
-            help=_("Save current operations to persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def save_operations(command, channel, _, data=None, name=None, **kwargs):
-            if name is None:
-                raise SyntaxError
-            self.save_persistent_operations(name)
-            return "ops", list(self.ops())
-
-        @self.console_argument("name", help=_("Name to load the operation from"))
-        @self.console_command(
-            "load",
-            help=_("Load operations from persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def load_operations(name=None, **kwargs):
-            if name is None:
-                raise SyntaxError
-            if "/" in name:
-                raise SyntaxError
-            self.load_persistent_operations(name)
-            return "ops", list(self.ops())
 
         @self.console_command(
             "select",
@@ -4763,34 +4807,59 @@ class Elemental(Service):
             union = [
                 d
                 for d in self.op_data.section_set()
-                if d not in materials and d != "default"
+                if d not in materials and d != "previous"
             ]
             union.extend(materials)
             return union
 
-        @self.tree_submenu(_("Use"))
+        def difference_materials_saved():
+            secs = self.op_data.section_set()
+            difference = [
+                m
+                for m in materials
+                if m not in secs
+            ]
+            return difference
+
+        @self.tree_submenu(_("Load"))
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation(
-            _("Load: %s") % "{opname}", node_type="branch ops", help=""
+            _("%s") % "{opname}", node_type="branch ops", help=""
         )
         def load_ops(node, opname, **kwargs):
-            self("operation load %s\n" % opname)
+            self("material load %s\n" % opname)
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
             self.load_default()
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
+        @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
             self.load_default2()
 
         @self.tree_submenu(_("Save"))
-        @self.tree_values("opname", values=union_materials_saved)
+        @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
-        def save_ops(node, opname="saved", **kwargs):
-            self("operation save %s\n" % opname)
+        def save_materials(node, opname="saved", **kwargs):
+            self("material save %s\n" % opname)
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Save"))
+        @self.tree_prompt("opname", _("Name to store current operations under?"))
+        @self.tree_operation("New", node_type="branch ops", help="")
+        def save_material_custom(node, opname, **kwargs):
+            if opname is not None:
+                self("material save %s\n" % opname.replace(" ", "_"))
+
+        @self.tree_submenu(_("Delete"))
+        @self.tree_values("opname", values=self.op_data.section_set)
+        @self.tree_operation("{opname}", node_type="branch ops", help="")
+        def remove_ops(node, opname="saved", **kwargs):
+            self("material delete %s\n" % opname)
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Append operation"))
@@ -5424,7 +5493,7 @@ class Elemental(Service):
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
-        self.save_persistent_operations("default")
+        self.save_persistent_operations("previous")
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
@@ -5439,6 +5508,13 @@ class Elemental(Service):
                 settings.write_persistent_attributes(section, op.settings)
             elif isinstance(op, CommandOperation):
                 settings.write_persistent_attributes(section, op)
+        settings.write_configuration()
+
+    def clear_persistent_operations(self, name):
+        settings = self.op_data
+        subitems = list(settings.derivable(name))
+        for section in subitems:
+            settings.clear_persistent(section)
         settings.write_configuration()
 
     def load_persistent_operations(self, name):
@@ -5636,6 +5712,18 @@ class Elemental(Service):
         return decor
 
     @staticmethod
+    def tree_prompt(attr, prompt, data_type=str):
+        def decor(func):
+            func.user_prompt.append({
+                "attr": attr,
+                "prompt": prompt,
+                "type": data_type,
+            })
+            return func
+
+        return decor
+
+    @staticmethod
     def tree_conditional(conditional):
         def decor(func):
             func.conditionals.append(conditional)
@@ -5698,6 +5786,7 @@ class Elemental(Service):
             inner.separate_before = False
             inner.conditionals = list()
             inner.try_conditionals = list()
+            inner.user_prompt = list()
             inner.calcs = list()
             inner.values = [0]
             registered_name = inner.__name__

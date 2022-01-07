@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, lookup_listener
 
 _ = wx.GetTranslation
 
@@ -75,7 +75,7 @@ class DevicePanel(wx.Panel):
     def pane_hide(self, *args):
         pass
 
-    @signal_listener("device;modified")
+    @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
         self.devices_tree.DeleteAllItems()
         root = self.devices_tree.AddRoot("Devices")
@@ -105,7 +105,7 @@ class DevicePanel(wx.Panel):
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
                     service.label = dlg.GetValue()
-            self.context.signal("device;modified")
+            self.context.signal("device;renamed")
 
         return rename
 
@@ -125,6 +125,7 @@ class DevicePanel(wx.Panel):
                     )
                 )
         self.refresh_device_tree()
+        self.context.signal("device;modified")
 
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         s = self.devices_tree.GetSelection()
