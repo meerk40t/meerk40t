@@ -216,28 +216,22 @@ def plugin(kernel, lifecycle=None):
                     "How close (mils) do endpoints need to be to count as closed?"
                 ),
             },
-            # {
-            #     "attr": "opt_jog_minimum",
-            #     "object": context,
-            #     "default": 256,
-            #     "type": int,
-            #     "label": _("Minimum Jog Distance"),
-            #     "tip": _(
-            #         "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
-            #     ),
-            # },
-            # {
-            #     "attr": "opt_rapid_between",
-            #     "object": context,
-            #     "default": True,
-            #     "type": bool,
-            #     "label": _("Rapid Moves Between Objects"),
-            #     "tip": _(
-            #         "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-            #     ),
-            # },
         ]
         kernel.register_choices("optimize", choices)
+
+        context.setting(bool, "opt_2opt", False)
+        context.setting(bool, "opt_nearest_neighbor", True)
+        context.setting(bool, "opt_reduce_directions", False)
+        context.setting(bool, "opt_remove_overlap", False)
+        context.setting(bool, "opt_start_from_position", False)
+
+        # context.setting(int, "opt_closed_distance", 15)
+        # context.setting(bool, "opt_merge_passes", False)
+        # context.setting(bool, "opt_merge_ops", False)
+        # context.setting(bool, "opt_inner_first", True)
+        context.setting(bool, "opt_reduce_directions", False)
+        context.setting(bool, "opt_remove_overlap", False)
+
     elif lifecycle == "poststart":
         if hasattr(kernel.args, "auto") and kernel.args.auto:
             elements = kernel.elements
@@ -763,15 +757,6 @@ class Planner(Service):
         rotary_context.setting(bool, "rotary", False)
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
-
-        self.setting(bool, "opt_2opt", False)
-        self.setting(bool, "opt_nearest_neighbor", True)
-
-        self.setting(bool, "opt_reduce_directions", False)
-        self.setting(bool, "opt_remove_overlap", False)
-        self.setting(bool, "opt_reduce_directions", False)
-        self.setting(bool, "opt_start_from_position", False)
-        self.setting(int, "opt_jog_mode", 0)
 
         @self.console_argument("alias", type=str, help=_("plan command name to alias"))
         @self.console_command(
