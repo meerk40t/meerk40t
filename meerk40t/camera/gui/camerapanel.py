@@ -69,7 +69,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera = self.context.get_context(
             "camera/%d" % self.index
         )  # camera service location.
-
+        self.camera.setting(int, "fps", 5)
         self.last_frame_index = -1
 
         if not pane:
@@ -194,7 +194,7 @@ class CameraPanel(wx.Panel, Job):
 
     def on_fps_change(self, origin, *args):
         # Set the camera fps.
-        fps = self.camera.fps
+        fps = self.context.fps
         if fps == 0:
             tick = 5
         else:
@@ -314,7 +314,7 @@ class CameraPanel(wx.Panel, Job):
         :return:
         """
         self.camera.fps = self.slider_fps.GetValue()
-        self.context.signal("camera;fps", self.setting.fps)
+        self.context.signal("camera;fps", self.context.fps)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
