@@ -16,7 +16,7 @@ class RotarySettingsPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.service = context.rotary
+        self.rotary = context
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
@@ -51,9 +51,9 @@ class RotarySettingsPanel(wx.Panel):
         )
 
     def pane_show(self):
-        self.text_rotary_scalex.SetValue(str(self.service.scale_x))
-        self.text_rotary_scaley.SetValue(str(self.service.scale_y))
-        self.checkbox_rotary.SetValue(self.service.rotary_enabled)
+        self.text_rotary_scalex.SetValue(str(self.rotary.scale_x))
+        self.text_rotary_scaley.SetValue(str(self.rotary.scale_y))
+        self.checkbox_rotary.SetValue(self.rotary.rotary_enabled)
         self.on_check_rotary(None)
 
     def pane_hide(self):
@@ -143,21 +143,21 @@ class RotarySettingsPanel(wx.Panel):
         # end wxGlade
 
     def on_check_rotary(self, event=None):
-        self.service.rotary = self.checkbox_rotary.GetValue()
+        self.rotary.rotary_enabled = self.checkbox_rotary.GetValue()
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_text_rotary_scale_y(self, event=None):
-        if self.service is not None:
+        if self.rotary is not None:
             try:
-                self.service.scale_y = float(self.text_rotary_scaley.GetValue())
+                self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
     def on_text_rotary_scale_x(self, event=None):
-        if self.service is not None:
+        if self.rotary is not None:
             try:
-                self.service.scale_x = float(self.text_rotary_scalex.GetValue())
+                self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
             except ValueError:
                 pass
 
