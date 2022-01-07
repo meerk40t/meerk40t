@@ -89,7 +89,6 @@ ID_MENU_FILE_CLEAR = wx.NewId()
 ID_MENU_KEYMAP = wx.NewId()
 ID_MENU_DEVICE_MANAGER = wx.NewId()
 ID_MENU_CONFIG = wx.NewId()
-ID_MENU_ROTARY = wx.NewId()
 ID_MENU_NAVIGATION = wx.NewId()
 ID_MENU_NOTES = wx.NewId()
 ID_MENU_OPERATIONS = wx.NewId()
@@ -696,12 +695,6 @@ class MeerK40t(MWindow):
         )
         def theme(command, channel, _, **kwargs):
             channel(str(wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)))
-
-        @context.console_command(
-            "rotaryscale", help=_("Rotary Scale selected elements")
-        )
-        def apply_rotary_scale(*args, **kwargs):
-            self.apply_rotary_scale()
 
         context.setting(str, "file0", None)
         context.setting(str, "file1", None)
@@ -1810,20 +1803,3 @@ class MeerK40t(MWindow):
             self.context.signal("refresh_scene", "Scene")
 
         return toggle
-
-    def apply_rotary_scale(self):
-        r = self.context.get_context("rotary/1")
-        sx = r.scale_x
-        sy = r.scale_y
-        spooler, input_driver, output = self.context.root.device()
-
-        mx = Matrix(
-            "scale(%f, %f, %f, %f)"
-            % (sx, sy, input_driver.current_x, input_driver.current_y)
-        )
-        for element in self.context.elements.elems():
-            try:
-                element *= mx
-                element.node.modified()
-            except AttributeError:
-                pass

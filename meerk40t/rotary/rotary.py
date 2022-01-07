@@ -1,4 +1,5 @@
 from meerk40t.kernel import Service
+from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):
@@ -59,6 +60,27 @@ class Rotary(Service):
                 )
             )
             return "rotary", None
+
+        @self.console_command(
+            "rotaryscale", help=_("Rotary Scale selected elements")
+        )
+        def apply_rotary_scale(*args, **kwargs):
+            sx = self.scale_x
+            sy = self.scale_y
+            mx = Matrix(
+                "scale(%f, %f, %f, %f)"
+                % (sx, sy, self.device.current_x, self.device.current_y)
+            )
+            for element in self.elements.elems():
+                if hasattr(element, "rotary_scale"):
+                    # This element is already scaled
+                    return
+                try:
+                    element.rotary_scale = sx, sy
+                    element *= mx
+                    element.node.modified()
+                except AttributeError:
+                    pass
 
     def service_detach(self, *args, **kwargs):
         pass

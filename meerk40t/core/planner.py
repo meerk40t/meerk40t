@@ -289,17 +289,17 @@ class CutPlan:
     def preprocess(self):
         context = self.context
         _ = context._
-        rotary_context = context.get_context("rotary/1")
+        rotary = context.rotary
         # ==========
         # before
         # ==========
         if context.prephysicalhome:
-            if not rotary_context.rotary:
+            if not rotary.rotary_enabled:
                 self.plan.insert(0, context.lookup("plan/physicalhome"))
             else:
                 self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
         if context.prehome:
-            if not rotary_context.rotary:
+            if not rotary.rotary_enabled:
                 self.plan.insert(0, context.lookup("plan/home"))
             else:
                 self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
@@ -307,12 +307,12 @@ class CutPlan:
         # After
         # ==========
         if context.autohome:
-            if not rotary_context.rotary:
+            if not rotary.rotary_enabled:
                 self.plan.append(context.lookup("plan/home"))
             else:
                 self.plan.append(_("Home After: Disabled (Rotary On)"))
         if context.autophysicalhome:
-            if not rotary_context.rotary:
+            if not rotary.rotary_enabled:
                 self.plan.append(context.lookup("plan/physicalhome"))
             else:
                 self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
@@ -329,7 +329,7 @@ class CutPlan:
         # Conditional Ops
         # ==========
         self.conditional_jobadd_strip_text()
-        if rotary_context.rotary:
+        if rotary.rotary_enabled:
             self.conditional_jobadd_scale_rotary()
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
@@ -622,12 +622,13 @@ class CutPlan:
                 pass
 
     def scale_for_rotary(self):
-        r = self.context.get_context("rotary/1")
+        rotary = self.context.rotary
+        device = self.context.device
         scale_str = "scale(%f,%f,%f,%f)" % (
-            r.scale_x,
-            r.scale_y,
-            self.context.device.current_x,
-            self.context.device.current_y,
+            rotary.scale_x,
+            rotary.scale_y,
+            device.current_x,
+            device.current_y,
         )
         for o in self.plan:
             if isinstance(o, LaserOperation):
@@ -699,8 +700,8 @@ class CutPlan:
                 pass
 
     def conditional_jobadd_scale_rotary(self):
-        rotary_context = self.context.get_context("rotary/1")
-        if rotary_context.scale_x != 1.0 or rotary_context.scale_y != 1.0:
+        rotary = self.context.rotary
+        if rotary.scale_x != 1.0 or rotary.scale_y != 1.0:
             self.commands.append(self.scale_for_rotary)
 
 
@@ -750,11 +751,6 @@ class Planner(Service):
         self.register("plan/shutdown", shutdown)
 
         _ = self.kernel.translation
-
-        rotary_context = self.get_context("rotary/1")
-        rotary_context.setting(bool, "rotary", False)
-        rotary_context.setting(float, "scale_x", 1.0)
-        rotary_context.setting(float, "scale_y", 1.0)
 
         @self.console_argument("alias", type=str, help=_("plan command name to alias"))
         @self.console_command(

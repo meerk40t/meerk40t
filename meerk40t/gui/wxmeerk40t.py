@@ -41,7 +41,6 @@ from meerk40t.gui.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
-from meerk40t.rotary.gui.rotarysettings import RotarySettings
 from .simulation import Simulation
 from .textproperty import TextProperty
 from .wxmmain import MeerK40t
@@ -465,7 +464,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/GroupProperty", GroupProperty)
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
-        kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
         kernel.register("window/Navigation", Navigation)

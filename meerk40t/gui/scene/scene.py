@@ -486,26 +486,6 @@ class Scene(Module, Job):
         dc.SelectObject(wx.NullBitmap)
         del dc
 
-    def rotary_stretch(self):
-        """
-        Rotary Stretch of Scene based on values in "rotary/1"
-        """
-        r = self.context.get_context("rotary/1")
-        scale_x = r.scale_x
-        scale_y = r.scale_y
-        self.widget_root.scene_widget.matrix.post_scale(scale_x, scale_y)
-        self.request_refresh()
-
-    def rotary_unstretch(self):
-        """
-        Rotary UnStretch of Scene based on values in "rotary/1"
-        """
-        r = self.context.get_context("rotary/1")
-        scale_x = r.scale_x
-        scale_y = r.scale_y
-        self.widget_root.scene_widget.matrix.post_scale(1.0 / scale_x, 1.0 / scale_y)
-        self.request_refresh()
-
     def _signal_widget(self, widget, *args, **kwargs):
         """
         Calls the signal widget with the given args. Calls signal for the entire widget node tree.

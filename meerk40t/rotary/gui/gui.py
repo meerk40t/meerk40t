@@ -8,6 +8,8 @@ except ImportError as e:
 
     raise Mk40tImportAbort("wxpython")
 
+ROTARY_VIEW = False
+
 
 def plugin(kernel, lifecycle):
     # if lifecycle == "service":
@@ -26,3 +28,20 @@ def plugin(kernel, lifecycle):
                 ),
             },
         )
+
+        @kernel.console_command("rotaryview", help=_("Rotary View of Scene"))
+        def toggle_rotary_view(*args, **kwargs):
+            """
+            Rotary Stretch/Unstretch of Scene based on values in rotary service
+            """
+            global ROTARY_VIEW
+            rotary = kernel.rotary
+            if ROTARY_VIEW:
+                rotary("scene scale {x} {y}\n".format(x=rotary.scale_x, y=rotary.scale_y))
+            else:
+                try:
+                    rotary("scene scale {ix} {iy}\n".format(ix=1.0/rotary.scale_x, iy=1.0/rotary.scale_y))
+                except ZeroDivisionError:
+                    pass
+            ROTARY_VIEW = not ROTARY_VIEW
+
