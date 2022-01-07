@@ -960,6 +960,13 @@ class Settings:
         except KeyError:
             pass
 
+    def delete_all_persistent(self):
+        """
+        Deletes all persistent settings.
+        @return:
+        """
+        self._config_dict.clear()
+
     def keylist(self, section: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
