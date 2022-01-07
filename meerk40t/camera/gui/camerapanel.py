@@ -194,7 +194,7 @@ class CameraPanel(wx.Panel, Job):
 
     def on_fps_change(self, origin, *args):
         # Set the camera fps.
-        fps = self.setting.fps
+        fps = self.camera.fps
         if fps == 0:
             tick = 5
         else:
