@@ -696,7 +696,6 @@ class LhystudiosDriver:
         self.context = context
         self.name = str(self.context)
 
-        self.root_context = context.root
         self.settings = LaserSettings()
 
         self.next = None
@@ -859,7 +858,7 @@ class LhystudiosDriver:
                         self.move_absolute(x, y)
                     else:
                         # Jog is performable and requested. # We have not flagged our direction or state.
-                        self.jog_absolute(x, y, mode=self.root_context.opt_jog_mode)
+                        self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
                 continue
             dx = x - sx
             dy = y - sy
