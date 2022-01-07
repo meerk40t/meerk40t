@@ -42,7 +42,7 @@ Values of 100 or have pulses > 1/10" and are generally used only for dotted or p
 
 OPERATION_PASSES_TOOLTIP = _(
     """"How many times to repeat this operation?
-    
+
 Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements.
 
 The number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings.
@@ -75,9 +75,9 @@ Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving no
 
 OPERATION_RASTERSWING_TOOLTIP = _(
     """"Raster on forward and backswing or only forward swing?
-    
+
 Rastering only on forward swings will double the time required to complete the raster.
-    
+
 It seems doubtful that there will be significant quality benefits from rastering in one direction."""
 )
 
@@ -102,7 +102,7 @@ As an example, instead of 1010 it will burn 1100 - because the laser beam is ove
 
 OPERATION_DOTLENGTH_TOOLTIP = _(
     """For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes.
-    
+
 When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:
 
 If you set Dot Length to 500 = 1/2", a PPI of 500 would result in 1/2" dashes and 1/2" gaps.
@@ -984,7 +984,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.combo_dot_length_units.SetSelection(0)
         sizer_20.Add(self.combo_dot_length_units, 0, 0, 0)
 
-        self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, "Group Pulses")
+        self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, "Pulse Grouping")
         self.check_shift_enabled.SetToolTip(OPERATION_SHIFT_TOOLTIP)
         sizer_19.Add(self.check_shift_enabled, 0, 0, 0)
 

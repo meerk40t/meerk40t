@@ -691,9 +691,16 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_autolock.SetValue(1)
         sizer_general.Add(self.check_autolock, 0, 0, 0)
 
-        self.check_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Shifting"))
+        self.check_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
         self.check_plot_shift.SetToolTip(
-            _('Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds. \n\nIt works by swapping adjacent on or off bits to group on and off together and reduce the number of switches.\n\nAs an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.\nWhilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked.')
+            "\n".join([
+                _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
+                "",
+                _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
+                "",
+                _('As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'),
+                _('Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked.'),
+            ]),
         )
         sizer_general.Add(self.check_plot_shift, 0, 0, 0)
 
