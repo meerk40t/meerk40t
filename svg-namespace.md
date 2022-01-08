@@ -85,6 +85,12 @@ so that these can be saved and reloaded.
     * Attribute: args="str,..."
     * Attribute: output="bool"
 
+### Optimisation settings: `<meerk40t:opt>`
+The `<meerk40t:opt>` tag is a new tag to store details of
+the execution optimisation settings (rapid move, merge passes, merge ops etc.)
+
+Note: We will need an option to determine whether these get applied when the file is loaded.
+
 ### Note: `<meerk40t:note>`
 This is identical to the earlier `<note>` tag:
 
