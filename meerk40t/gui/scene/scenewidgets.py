@@ -848,8 +848,8 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         context = self.scene.context
-        wmils = context.device.bedwidth
-        hmils = context.device.bedheight
+        wmils = context.device.bedwidth * context.device.scale_x
+        hmils = context.device.bedheight * context.device.scale_y
         kernel_root = context.root
         convert = kernel_root.units_convert
         marks = kernel_root.units_marks
@@ -877,8 +877,8 @@ class GridWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
-            wmils = context.device.bedwidth
-            hmils = context.device.bedheight
+            wmils = context.device.bedwidth * context.device.scale_x
+            hmils = context.device.bedheight * context.device.scale_y
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)
