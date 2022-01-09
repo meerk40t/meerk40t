@@ -4263,6 +4263,8 @@ def console_command(
                 else:
                     kwargs[key].append(value)
 
+            # TODO: Options with default values should be passed to the function with those values.
+
             # Any singleton list arguments should become their only element.
             for a in range(len(stack)):
                 k = stack[a]
