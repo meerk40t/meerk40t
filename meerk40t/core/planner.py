@@ -524,37 +524,40 @@ class CutPlan:
             pass
 
     def optimize_travel_2opt(self):
+        channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 self.plan[i] = short_travel_cutcode_2opt(
-                    self.plan[i], channel=self.context.channel("optimize")
+                    self.plan[i], channel=channel
                 )
 
     def optimize_cuts(self):
+        channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=self.context.channel("optimize")
+                        c, channel=channel
                     )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
-                    c, channel=self.context.channel("optimize")
+                    c, channel=channel
                 )
 
     def optimize_travel(self):
         last = None
+        channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=self.context.channel("optimize")
+                        c, channel=channel
                     )
                     c = self.plan[i]
                 if last is not None:
                     self.plan[i].start = last
                 self.plan[i] = short_travel_cutcode(
-                    c, channel=self.context.channel("optimize")
+                    c, channel=channel
                 )
                 last = self.plan[i].end()
 

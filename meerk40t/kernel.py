@@ -779,7 +779,6 @@ class Kernel:
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console", timestamp=True)
-        self._console_channel.timestamp = True
         self.console_channel_file = None
 
         if config is not None:
@@ -1861,6 +1860,8 @@ class Kernel:
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
             self.channels[channel] = chan
+        elif "timestamp" in kwargs and isinstance(kwargs["timestamp"], bool):
+            self.channels[channel].timestamp = kwargs["timestamp"]
 
         return self.channels[channel]
 
@@ -2708,7 +2709,20 @@ class Channel:
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
+        console_open_print = False
         for w in self.watchers:
+            if (
+                isinstance(w, Channel)
+                and w.name == "console"
+                and print in w.watchers
+            ):
+                console_open_print = True
+                break
+        for w in self.watchers:
+            # Avoid double printing if this channel is watched and printed
+            # and console is also printed
+            if w is print and console_open_print:
+                continue
             # Avoid double timestamp and indent
             if isinstance(w, Channel):
                 w(original_msg, indent=indent)
