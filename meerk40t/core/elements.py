@@ -6930,7 +6930,7 @@ class Elemental(Service):
             for op in default_raster_ops:
                 debug(
                     "classify: default raster op selected: {op}".format(
-                        l=len(op.children),
+                        op=str(op)
                     )
                 )
 
