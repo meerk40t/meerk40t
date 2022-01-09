@@ -240,17 +240,17 @@ class LhystudiosControllerPanel(wx.Panel):
         ).watch(self.update_text)
         self.on_network_update()
 
+    def pane_hide(self):
+        self.context.channel("{name}/usb".format(name=self.context.label)).unwatch(
+            self.update_text
+        )
+
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
         if self.context.networked:
             self.button_device_connect.Enable(False)
         else:
             self.button_device_connect.Enable(True)
-
-    def pane_hide(self):
-        self.context.channel("{name}/usb".format(name=self.context.label)).unwatch(
-            self.update_text
-        )
 
     def restore(self, *args, **kwargs):
         self.set_widgets()
