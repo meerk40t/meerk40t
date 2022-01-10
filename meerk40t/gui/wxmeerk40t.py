@@ -194,13 +194,8 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("function/interrupt", interrupt_popup)
 
         def interrupt():
-            from ..device.lasercommandconstants import (
-                COMMAND_FUNCTION,
-                COMMAND_WAIT_FINISH,
-            )
-
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, kernel_root.lookup("function/interrupt")
+            yield "wait_finish"
+            yield "function", kernel_root.lookup("function/interrupt")
 
         kernel_root.planner.register("plan/interrupt", interrupt)
 

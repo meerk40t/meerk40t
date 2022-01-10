@@ -23,7 +23,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..device.lasercommandconstants import *
 from ..kernel import Module, Service
 
 STATE_ABORT = -1
@@ -286,13 +285,13 @@ class GRBLDriver(Driver):
         Driver.set_speed(self, speed)
         self.speed_updated = True
 
-    def ensure_program_mode(self, *values):
+    def program_mode(self, *values):
         self.output.write("M3" + self.context.line_end)
-        Driver.ensure_program_mode(self, *values)
+        Driver.program_mode(self, *values)
 
-    def ensure_finished_mode(self, *values):
+    def finished_mode(self, *values):
         self.output.write("M5" + self.context.line_end)
-        Driver.ensure_finished_mode(self, *values)
+        Driver.finished_mode(self, *values)
 
     def move(self, x, y):
         line = []
@@ -335,7 +334,7 @@ class GRBLDriver(Driver):
                 if on > 1:
                     # Special Command.
                     if on & PLOT_FINISH:  # Plot planner is ending.
-                        self.ensure_rapid_mode()
+                        self.rapid_mode()
                         break
                     elif on & PLOT_SETTING:  # Plot planner settings have changed.
                         p_set = self.plot_planner.settings
@@ -348,12 +347,12 @@ class GRBLDriver(Driver):
                         ):
                             self.set_speed(p_set.speed)
                             self.set_step(p_set.raster_step)
-                            self.ensure_rapid_mode()
+                            self.rapid_mode()
                         self.settings.set_values(p_set)
                     elif on & (
                         PLOT_RAPID | PLOT_JOG
                     ):  # Plot planner requests position change.
-                        self.ensure_rapid_mode()
+                        self.rapid_mode()
                     continue
                 if on == 0:
                     self.laser_on()
@@ -563,8 +562,8 @@ def get_command_code(lines):
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_WAIT_FINISH
+                    yield "rapid_mode"
+                    yield "wait_finish"
                 elif v == 2:
                     return 0
                 elif v == 30:
@@ -573,14 +572,14 @@ def get_command_code(lines):
                     on_mode = True
                 elif v == 5:
                     on_mode = False
-                    yield COMMAND_LASER_OFF
+                    yield "laser_off"
                 elif v == 7:
                     #  Coolant control.
                     pass
                 elif v == 8:
-                    yield COMMAND_SIGNAL, ("coolant", True)
+                    yield "signal", ("coolant", True)
                 elif v == 9:
-                    yield COMMAND_SIGNAL, ("coolant", False)
+                    yield "signal", ("coolant", False)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -612,8 +611,8 @@ def get_command_code(lines):
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_WAIT, t
+                    yield "rapid_mode"
+                    yield "wait", t
                 elif v == 10.0:
                     if "l" in gc:
                         l = float(gc["l"].pop(0))
@@ -634,12 +633,12 @@ def get_command_code(lines):
                 elif v == 21.0 or v == 71.0:
                     scale = MILS_IN_MM  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
+                    yield "rapid_mode"
+                    yield "home"
                     if home_adjust is not None:
-                        yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
+                        yield "move_abs", home_adjust[0], home_adjust[1]
                     if home is not None:
-                        yield COMMAND_MOVE, home
+                        yield "move", home
                 elif v == 28.1:
                     if "x" in gc and "y" in gc:
                         x = gc["x"].pop(0)
@@ -655,29 +654,29 @@ def get_command_code(lines):
                         home = (x, y)
                 elif v == 28.2:
                     # Run homing cycle.
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
+                    yield "rapid_mode"
+                    yield "home"
                     if home_adjust is not None:
-                        yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
+                        yield "move_abs", home_adjust[0], home_adjust[1]
                 elif v == 28.3:
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
+                    yield "rapid_mode"
+                    yield "home"
                     if home_adjust is not None:
-                        yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
+                        yield "move", home_adjust[0], home_adjust[1]
                     if "x" in gc:
                         x = gc["x"].pop(0)
                         if len(gc["x"]) == 0:
                             del gc["x"]
                         if x is None:
                             x = 0
-                        yield COMMAND_MOVE, x, 0
+                        yield "move", x, 0
                     if "y" in gc:
                         y = gc["y"].pop(0)
                         if len(gc["y"]) == 0:
                             del gc["y"]
                         if y is None:
                             y = 0
-                        yield COMMAND_MOVE, 0, y
+                        yield "move", 0, y
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if "p" in gc:
@@ -686,12 +685,12 @@ def get_command_code(lines):
                             del gc["p"]
                     else:
                         p = None
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
+                    yield "rapid_mode"
+                    yield "home"
                     if home_adjust is not None:
-                        yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
+                        yield "move", home_adjust[0], home_adjust[1]
                     if home2 is not None:
-                        yield COMMAND_MOVE, home2
+                        yield "move", home2
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if "x" in gc and "y" in gc:
@@ -741,9 +740,9 @@ def get_command_code(lines):
                     # Motion mode cancel. Canned cycle.
                     pass
                 elif v == 90.0:
-                    yield COMMAND_SET_ABSOLUTE
+                    yield "set", "relative", False
                 elif v == 91.0:
-                    yield COMMAND_SET_INCREMENTAL
+                    yield "set", "relative", True
                 elif v == 91.1:
                     # Offset mode for certain cam. Incremental distance mode for arcs.
                     pass  # ARC IJK Distance Modes # TODO Implement
@@ -777,7 +776,7 @@ def get_command_code(lines):
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 power = v
-                yield COMMAND_SET_POWER, v
+                yield "set", "power", v
 
             del gc["s"]
         if "x" in gc or "y" in gc:
@@ -802,17 +801,17 @@ def get_command_code(lines):
             else:
                 y = 0
             if move_mode == 0:
-                yield COMMAND_MODE_PROGRAM
-                yield COMMAND_MOVE, x, y
+                yield "program_mode"
+                yield "move", x, y
             elif move_mode >= 1:
-                yield COMMAND_MODE_PROGRAM
+                yield "program_mode"
                 if power == 0:
-                    yield COMMAND_MOVE, x, y
+                    yield "move", x, y
                 else:
                     if used_speed != speed:
-                        yield COMMAND_SET_SPEED, speed
+                        yield "set", "speed", speed
                         used_speed = speed
-                    yield COMMAND_CUT, x, y
+                    yield "cut", x, y
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
 
@@ -994,11 +993,11 @@ class GRBLEmulator(Module):
             elif data == "$N":
                 pass
             elif data == "$H":
-                self.spooler.job(COMMAND_HOME)
+                self.spooler.job("home")
                 if self.home_adjust is not None:
-                    self.spooler.job(COMMAND_MODE_RAPID)
+                    self.spooler.job("rapid_mode")
                     self.spooler.job(
-                        COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                        "move", self.home_adjust[0], self.home_adjust[1]
                     )
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
@@ -1020,8 +1019,8 @@ class GRBLEmulator(Module):
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_WAIT_FINISH)
+                    self.spooler.job("rapid_mode")
+                    self.spooler.job("wait_finish")
                 elif v == 2:
                     return 0
                 elif v == 30:
@@ -1030,14 +1029,14 @@ class GRBLEmulator(Module):
                     self.on_mode = True
                 elif v == 5:
                     self.on_mode = False
-                    self.spooler.job(COMMAND_LASER_OFF)
+                    self.spooler.job("laser_off")
                 elif v == 7:
                     #  Coolant control.
                     pass
                 elif v == 8:
-                    self.spooler.job(COMMAND_SIGNAL, ("coolant", True))
+                    self.spooler.job("signal", ("coolant", True))
                 elif v == 9:
-                    self.spooler.job(COMMAND_SIGNAL, ("coolant", False))
+                    self.spooler.job("signal", ("coolant", False))
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -1069,8 +1068,8 @@ class GRBLEmulator(Module):
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_WAIT, t)
+                    self.spooler.job("rapid_mode")
+                    self.spooler.job("wait", t)
                 elif v == 10.0:
                     if "l" in gc:
                         l = float(gc["l"].pop(0))
@@ -1091,14 +1090,14 @@ class GRBLEmulator(Module):
                 elif v == 21.0 or v == 71.0:
                     self.scale = MILS_IN_MM  # g21 is mm mode. 39.3701 mils in a mm
                 elif v == 28.0:
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_HOME)
+                    self.spooler.job("rapid_mode")
+                    self.spooler.job("home")
                     if self.home_adjust is not None:
                         self.spooler.job(
-                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                            "move", self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home is not None:
-                        self.spooler.job(COMMAND_MOVE, self.home)
+                        self.spooler.job("move", self.home)
                 elif v == 28.1:
                     if "x" in gc and "y" in gc:
                         x = gc["x"].pop(0)
@@ -1114,18 +1113,18 @@ class GRBLEmulator(Module):
                         self.home = (x, y)
                 elif v == 28.2:
                     # Run homing cycle.
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_HOME)
+                    self.spooler.job("rapid")
+                    self.spooler.job("home")
                     if self.home_adjust is not None:
                         self.spooler.job(
-                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                            "move", self.home_adjust[0], self.home_adjust[1]
                         )
                 elif v == 28.3:
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_HOME)
+                    self.spooler.job("rapid")
+                    self.spooler.job("home")
                     if self.home_adjust is not None:
                         self.spooler.job(
-                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                            "move", self.home_adjust[0], self.home_adjust[1]
                         )
                     if "x" in gc:
                         x = gc["x"].pop(0)
@@ -1133,14 +1132,14 @@ class GRBLEmulator(Module):
                             del gc["x"]
                         if x is None:
                             x = 0
-                        self.spooler.job(COMMAND_MOVE, x, 0)
+                        self.spooler.job("move", x, 0)
                     if "y" in gc:
                         y = gc["y"].pop(0)
                         if len(gc["y"]) == 0:
                             del gc["y"]
                         if y is None:
                             y = 0
-                        self.spooler.job(COMMAND_MOVE, 0, y)
+                        self.spooler.job("move", 0, y)
                 elif v == 30.0:
                     # Goto predefined position. Return to secondary home position.
                     if "p" in gc:
@@ -1149,14 +1148,14 @@ class GRBLEmulator(Module):
                             del gc["p"]
                     else:
                         p = None
-                    self.spooler.job(COMMAND_MODE_RAPID)
-                    self.spooler.job(COMMAND_HOME)
+                    self.spooler.job("rapid_mode")
+                    self.spooler.job("home")
                     if self.home_adjust is not None:
                         self.spooler.job(
-                            COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
+                            "move", self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home2 is not None:
-                        self.spooler.job(COMMAND_MOVE, self.home2)
+                        self.spooler.job("move", self.home2)
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if "x" in gc and "y" in gc:
@@ -1206,9 +1205,9 @@ class GRBLEmulator(Module):
                     # Motion mode cancel. Canned cycle.
                     pass
                 elif v == 90.0:
-                    self.spooler.job(COMMAND_SET_ABSOLUTE)
+                    self.spooler.job("set", "relative", False)
                 elif v == 91.0:
-                    self.spooler.job(COMMAND_SET_INCREMENTAL)
+                    self.spooler.job("set", "relative", True)
                 elif v == 91.1:
                     # Offset mode for certain cam. Incremental distance mode for arcs.
                     pass  # ARC IJK Distance Modes # TODO Implement
@@ -1242,7 +1241,7 @@ class GRBLEmulator(Module):
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 self.power = v
-                self.spooler.job(COMMAND_SET_POWER, v)
+                self.spooler.job("set", "power", v)
 
             del gc["s"]
         if "x" in gc or "y" in gc:
@@ -1267,17 +1266,17 @@ class GRBLEmulator(Module):
             else:
                 y = 0
             if self.move_mode == 0:
-                self.spooler.job(COMMAND_MODE_PROGRAM)
-                self.spooler.job(COMMAND_MOVE, x, y)
+                self.spooler.job("program_mode")
+                self.spooler.job("move", x, y)
             elif self.move_mode >= 1:
-                self.spooler.job(COMMAND_MODE_PROGRAM)
+                self.spooler.job("program_mode")
                 if self.power == 0:
-                    self.spooler.job(COMMAND_MOVE, x, y)
+                    self.spooler.job("move", x, y)
                 else:
                     if self.used_speed != self.speed:
-                        self.spooler.job(COMMAND_SET_SPEED, self.speed)
+                        self.spooler.job("set", "speed", self.speed)
                         self.used_speed = self.speed
-                    self.spooler.job(COMMAND_CUT, x, y)
+                    self.spooler.job("cut", x, y)
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
         return 0

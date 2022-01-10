@@ -1098,7 +1098,6 @@ class Kernel(Settings):
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console", timestamp=True)
-        self._console_channel.timestamp = True
         self.console_channel_file = None
 
         self.current_directory = "."
@@ -2889,6 +2888,8 @@ class Kernel(Settings):
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
             self.channels[channel] = chan
+        elif "timestamp" in kwargs and isinstance(kwargs["timestamp"], bool):
+            self.channels[channel].timestamp = kwargs["timestamp"]
 
         return self.channels[channel]
 
@@ -3336,6 +3337,22 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        def beep(channel, _, **kwargs):
+            import platform
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                try:
+                    import winsound
+
+                    for x in range(5):
+                        winsound.Beep(2000, 100)
+                except Exception:
+                    pass
+            elif OS_NAME == "Darwin":  # Mac
+                import os
+                os.system("afplay /System/Library/Sounds/Ping.aiff")
+            else:  # Assuming other linux like system
+                print("\a")  # Beep.
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
@@ -3940,7 +3957,20 @@ class Channel:
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
+        console_open_print = False
         for w in self.watchers:
+            if (
+                isinstance(w, Channel)
+                and w.name == "console"
+                and print in w.watchers
+            ):
+                console_open_print = True
+                break
+        for w in self.watchers:
+            # Avoid double printing if this channel is watched and printed
+            # and console is also printed
+            if w is print and console_open_print:
+                continue
             # Avoid double timestamp and indent
             if isinstance(w, Channel):
                 w(original_msg, indent=indent)
@@ -4248,6 +4278,8 @@ def console_command(
                     kwargs[key] = [value]
                 else:
                     kwargs[key].append(value)
+
+            # TODO: Options with default values should be passed to the function with those values.
 
             # Any singleton list arguments should become their only element.
             for a in range(len(stack)):

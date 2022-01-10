@@ -12,17 +12,7 @@ from meerk40t.tools.rasterplotter import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..device.lasercommandconstants import (
-    COMMAND_CUT,
-    COMMAND_HOME,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_PLOT,
-    COMMAND_PLOT_START,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_INCREMENTAL,
-)
+
 from ..svgelements import Color, Path, Point
 
 """
@@ -383,8 +373,8 @@ class CutCode(CutGroup):
 
     def generate(self):
         for cutobject in self.flat():
-            yield COMMAND_PLOT, cutobject
-        yield COMMAND_PLOT_START
+            yield "plot", cutobject
+        yield "plot_start"
 
     def length_travel(self, include_start=False):
         cutcode = list(self.flat())
@@ -433,7 +423,6 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        relative = False
         settings = LaserSettings()
         for code in lasercode:
             if isinstance(code, int):
@@ -442,34 +431,35 @@ class CutCode(CutGroup):
                 cmd = code[0]
             else:
                 continue
-            # print(lasercode_string(cmd))
-            if cmd == COMMAND_PLOT:
+            if cmd == "plot":
                 cutcode.extend(code[1])
-            elif cmd == COMMAND_SET_ABSOLUTE:
-                pass
-            elif cmd == COMMAND_SET_INCREMENTAL:
-                pass
-            elif cmd == COMMAND_MODE_PROGRAM:
-                pass
-            elif cmd == COMMAND_MODE_RAPID:
-                pass
-            elif cmd == COMMAND_MOVE:
+            elif cmd == "move_rel":
                 nx = code[1]
                 ny = code[2]
-                if relative:
-                    nx = x + nx
-                    ny = y + ny
+                nx = x + nx
+                ny = y + ny
                 x = nx
                 y = ny
-            elif cmd == COMMAND_HOME:
-                x = 0
-                y = 0
-            elif cmd == COMMAND_CUT:
+            elif cmd == "move_abs":
                 nx = code[1]
                 ny = code[2]
-                if relative:
-                    nx = x + nx
-                    ny = y + ny
+                x = nx
+                y = ny
+            elif cmd == "home":
+                x = 0
+                y = 0
+            elif cmd == "cut_abs":
+                nx = code[1]
+                ny = code[2]
+                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
+                cutcode.append(cut)
+                x = nx
+                y = ny
+            elif cmd == "cut_rel":
+                nx = code[1]
+                ny = code[2]
+                nx = x + nx
+                ny = y + ny
                 cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
                 cutcode.append(cut)
                 x = nx
