@@ -788,7 +788,7 @@ class LhystudiosDriver:
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = context.plot_shift
-        self.plot = None
+        self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -906,11 +906,12 @@ class LhystudiosDriver:
 
         :return:
         """
-        if self.plot is None:
+        if self.plot_data is None:
             return False
-        if self.hold():
-            return True
-        for x, y, on in self.plot:
+        for x, y, on in self.plot_data:
+            if self.hold_work():
+                time.sleep(0.05)
+                continue
             sx = self.current_x
             sy = self.current_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
@@ -985,9 +986,7 @@ class LhystudiosDriver:
                         else:
                             self.v_switch_g(dx)
             self.goto_octent_abs(x, y, on & 1)
-            if self.hold():
-                return True
-        self.plot = None
+        self.plot_data = None
         return False
 
     def pause(self, *values):
@@ -1871,9 +1870,9 @@ class LhystudiosDriver:
         self.plot_planner.push(plot)
 
     def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
-        # TODO: Process here.
+        if self.plot_data is None:
+            self.plot_data = self.plot_planner.gen()
+        self.plotplanner_process()
 
     def set(self, attribute, value):
         if attribute == "power":

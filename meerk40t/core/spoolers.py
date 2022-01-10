@@ -358,27 +358,18 @@ class Spooler:
                 function()
             return
 
-        # FUNCTION
-        try:
-            program()
-            return
-        except TypeError:
-            # Not a callable
-            pass
-
         # .generator is a Generator
-        if hasattr(program, "generator"):
-            program = getattr(program, "generator")
+        if hasattr(program, "generate"):
+            program = getattr(program, "generate")
 
         # GENERATOR
         try:
-            iterator = iter(program)
+            for p in program():
+                self._execute_program(p)
+            return
         except TypeError:
             pass
-        else:
-            for program in iterator:
-                self._execute_program(program)
-            return
+        print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):
         while True:
