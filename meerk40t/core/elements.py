@@ -3,18 +3,6 @@ import os.path
 import re
 from copy import copy
 
-from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_LASER_OFF,
-    COMMAND_LASER_ON,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -1150,8 +1138,7 @@ class LaserOperation(Node):
 
     def generate(self):
         if self.operation == "Dots":
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
+            yield "rapid_mode"
             for path_node in self.children:
                 try:
                     obj = abs(path_node.object)
@@ -1160,12 +1147,12 @@ class LaserOperation(Node):
                     continue
                 if first is None:
                     continue
-                yield COMMAND_MOVE, first[0], first[1]
-                yield COMMAND_WAIT, 4.000  # I don't know how long the move will take to finish.
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON  # This can't be sent early since these are timed operations.
-                yield COMMAND_WAIT, (self.settings.speed / 1000.0)
-                yield COMMAND_LASER_OFF
+                yield "move_abs", first[0], first[1]
+                yield "wait", 4.000  # I don't know how long the move will take to finish.
+                yield "wait_finish"
+                yield "laser_on"  # This can't be sent early since these are timed operations.
+                yield "wait", (self.settings.speed / 1000.0)
+                yield "laser_off"
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -4399,10 +4386,10 @@ class Elemental(Service):
             hull.append(hull[0])  # loop
 
             def trace_hull():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MODE_RAPID
+                yield "wait_finish"
+                yield "rapid_mode"
                 for p in hull:
-                    yield COMMAND_MOVE, p[0], p[1]
+                    yield "move_abs", p[0], p[1]
 
             spooler.job(trace_hull)
 
@@ -4417,12 +4404,12 @@ class Elemental(Service):
                 return
 
             def trace_quick():
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, bbox[0], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[1]
+                yield "rapid_mode"
+                yield "move_abs", bbox[0], bbox[1]
+                yield "move_abs", bbox[2], bbox[1]
+                yield "move_abs", bbox[2], bbox[3]
+                yield "move_abs", bbox[0], bbox[3]
+                yield "move_abs", bbox[0], bbox[1]
 
             spooler.job(trace_quick)
 
@@ -4886,21 +4873,21 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation("Home", COMMAND_HOME), type="cmdop", pos=pos
+                CommandOperation("Home", "home"), type="cmdop", pos=pos
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop", pos=pos
+                CommandOperation("Origin", "home", 0, 0), type="cmdop", pos=pos
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation("Beep", COMMAND_BEEP), type="cmdop", pos=pos
+                CommandOperation("Beep", "beep"), type="cmdop", pos=pos
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -4909,7 +4896,7 @@ class Elemental(Service):
             self.op_branch.add(
                 CommandOperation(
                     "Interrupt",
-                    COMMAND_FUNCTION,
+                    "function",
                     self.lookup("function/interrupt"),
                 ),
                 type="cmdop",
@@ -4929,7 +4916,7 @@ class Elemental(Service):
             self.op_branch.add(
                 CommandOperation(
                     "Shutdown",
-                    COMMAND_FUNCTION,
+                    "function",
                     self.console_function("quit\n"),
                 ),
                 type="cmdop",

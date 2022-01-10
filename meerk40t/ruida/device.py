@@ -4,7 +4,6 @@ from typing import Tuple, Union
 
 from ..core.cutcode import CutCode, LaserSettings, LineCut
 from ..core.spoolers import Spooler
-from ..device.lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 from ..kernel import Module, Service
 from ..svgelements import Color, Point
 
@@ -311,8 +310,8 @@ class RuidaEmulator(Module):
 
     def generate(self):
         for cutobject in self.cutcode:
-            yield COMMAND_PLOT, cutobject
-        yield COMMAND_PLOT_START
+            yield "plot", cutobject
+        yield "plot_start"
 
     @property
     def cutset(self):

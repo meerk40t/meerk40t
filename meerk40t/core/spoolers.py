@@ -62,37 +62,6 @@ def plugin(kernel, lifecycle):
             spooler.clear_queue()
             return data_type, spooler
 
-        def execute_absolute_position(position_x, position_y):
-            x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=kernel.device.bedwidth
-            )
-            y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=kernel.device.bedheight
-            )
-
-            def move():
-                yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, int(x_pos), int(y_pos)
-
-            return move
-
-        def execute_relative_position(position_x, position_y):
-            x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=kernel.device.bedwidth
-            )
-            y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=kernel.device.bedheight
-            )
-
-            def move():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, int(x_pos), int(y_pos)
-                yield COMMAND_SET_ABSOLUTE
-
-            return move
-
         @kernel.console_command(
             "+laser",
             hidden=True,
@@ -104,7 +73,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job(COMMAND_LASER_ON)
+            spooler.job("laser_on")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -118,7 +87,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job(COMMAND_LASER_OFF)
+            spooler.job("laser_off")
             return "spooler", spooler
 
         @kernel.console_argument(
@@ -173,9 +142,9 @@ def plugin(kernel, lifecycle):
             if idx == 0 and idy == 0:
                 return
             if force:
-                spooler.job("move", idx, idy)
+                spooler.job("move_rel", idx, idy)
             else:
-                if spooler.job_if_idle("move", idx, idy):
+                if spooler.job_if_idle("move_rel", idx, idy):
                     channel(_("Position moved: %d %d") % (idx, idy))
                     spooler._dx -= idx
                     spooler._dy -= idy
@@ -199,9 +168,9 @@ def plugin(kernel, lifecycle):
             if y is None:
                 raise SyntaxError
             if force:
-                spooler.job("move", x, y)
+                spooler.job("move_abs", x, y)
             else:
-                if not spooler.job_if_idle(execute_absolute_position(x, y)):
+                if not spooler.job_if_idle("move_abs", x, y):
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -220,16 +189,10 @@ def plugin(kernel, lifecycle):
             spooler = data
             if dy is None:
                 raise SyntaxError
-            dx = Length(dx).value(
-                ppi=1000.0, relative_length=kernel.device.bedwidth
-            )
-            dy = Length(dy).value(
-                ppi=1000.0, relative_length=kernel.device.bedheight
-            )
             if force:
-                spooler.job("move", int(dx), int(dy))
+                spooler.job("move_rel", dx, dy)
             else:
-                if not spooler.job_if_idle("move", dx, dy):
+                if not spooler.job_if_idle("move_rel", dx, dy):
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -246,11 +209,9 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=kernel.device.bedwidth)
-                y = y.value(ppi=1000.0, relative_length=kernel.device.bedheight)
-                spooler.job(COMMAND_HOME, int(x), int(y))
+                spooler.job("home", x, y)
                 return "spooler", spooler
-            spooler.job(COMMAND_HOME)
+            spooler.job("home")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -263,7 +224,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job(COMMAND_UNLOCK)
+            spooler.job("unlock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -276,7 +237,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job(COMMAND_LOCK)
+            spooler.job("lock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -291,19 +252,18 @@ def plugin(kernel, lifecycle):
 
             def home_dot_test():
                 for i in range(25):
-                    yield COMMAND_SET_ABSOLUTE
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_MOVE, 3000, 3000
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_LASER_ON
-                    yield COMMAND_WAIT, 0.05
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
-                yield COMMAND_HOME
-                yield COMMAND_WAIT_FINISH
+                    yield "rapid_mode"
+                    yield "home"
+                    yield "laser_off"
+                    yield "wait_finish"
+                    yield "move_abs", 3000, 3000
+                    yield "wait_finish"
+                    yield "laser_on"
+                    yield "wait", 0.05
+                    yield "laser_off"
+                    yield "wait_finish"
+                yield "home"
+                yield "wait_finish"
 
             spooler.job(home_dot_test)
             return "spooler", spooler
@@ -368,6 +328,60 @@ class Spooler:
             )
             self._thread.stop = clear_thread
 
+    def _execute_program(self, program):
+        """
+        This executes the different classes of spoolable object.
+
+        (str, attribute, ...) calls self.driver.str(*attributes)
+        str, calls self.driver.str()
+        callable, callable()
+        has_attribute(generator), recursive call to list of lines produced by generator
+        generator, recursive call to list of lines produced by generator
+
+        @param program: line to be executed.
+        @return:
+        """
+
+        # TUPLE[str, Any,...]
+        if isinstance(program, tuple):
+            attr = program[0]
+
+            if hasattr(self.driver, attr):
+                function = getattr(self.driver, attr)
+                function(*program[1:])
+            return
+
+        # STRING
+        if isinstance(program, str):
+            attr = program[0]
+
+            if hasattr(self.driver, attr):
+                function = getattr(self.driver, attr)
+                function(*program[1:])
+            return
+
+        # FUNCTION
+        try:
+            program()
+            return
+        except TypeError:
+            # Not a callable
+            pass
+
+        # .generator is a Generator
+        if hasattr(program, "generator"):
+            program = getattr(program, "generator")
+
+        # GENERATOR
+        try:
+            iterator = iter(program)
+        except TypeError:
+            pass
+        else:
+            for program in iterator:
+                self._execute_program(program)
+            return
+
     def run(self):
         while True:
             # Forever Looping.
@@ -381,10 +395,7 @@ class Spooler:
                     program = self._realtime_queue.pop()
                 if program is not None:
                     # Process all data in the program.
-                    attr = program[0]
-                    if hasattr(self.driver, attr):
-                        function = getattr(self.driver, attr)
-                        function(*program[1:])
+                    self._execute_program(program)
             # Check if driver is holding work.
             if self.driver.hold_work():
                 time.sleep(0.01)
@@ -396,20 +407,13 @@ class Spooler:
                     program = self._queue.pop()
                 if program is not None:
                     # Process all data in the program.
-                    attr = program[0]
-
-                    if hasattr(self.driver, attr):
-                        function = getattr(self.driver, attr)
-                        function(*program[1:])
+                    self._execute_program(program)
             # Check if driver is holding idle.
             if self.driver.hold_idle():
                 time.sleep(0.01)
                 continue
             if self._idle is not None:
-                attr = self._idle[0]
-                if hasattr(self.driver, attr):
-                    function = getattr(self.driver, attr)
-                    function(*program[1:])
+                self._execute_program(self._idle)
                 # Finished idle cycle.
                 continue
             else:
@@ -454,7 +458,7 @@ class Spooler:
         """
         Send a single job event with parameters as needed.
 
-        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
+        The job can be a single command with ("move" 20 20) or without parameters ("home"), or a generator
         which can yield many lasercode commands.
 
         :param job: job to send to the spooler.

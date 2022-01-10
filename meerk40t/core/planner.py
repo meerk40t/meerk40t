@@ -3,18 +3,6 @@ from os import times
 from time import time
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
-from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_POSITION,
-    COMMAND_UNLOCK,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
 from ..kernel import Service
 from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -744,12 +732,12 @@ class Planner(Service):
         self.register("plan/interrupt", interrupt)
 
         def shutdown():
-            yield COMMAND_WAIT_FINISH
+            yield "wait_finish"
 
             def shutdown_program():
                 self("quit\n")
 
-            yield COMMAND_FUNCTION, shutdown_program
+            yield "function", shutdown_program
 
         self.register("plan/shutdown", shutdown)
 
@@ -1301,42 +1289,41 @@ def make_actual(image_element, step_level=None):
 
 
 def origin():
-    yield COMMAND_MODE_RAPID
-    yield COMMAND_SET_ABSOLUTE
-    yield COMMAND_MOVE, 0, 0
+    yield "rapid_mode"
+    yield "move_abs", 0, 0
 
 
 def unlock():
-    yield COMMAND_MODE_RAPID
-    yield COMMAND_UNLOCK
+    yield "rapid_mode"
+    yield "unlock"
 
 
 def home():
-    yield COMMAND_HOME
+    yield "home"
 
 
 def physicalhome():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_HOME, 0, 0
+    yield "wait_finish"
+    yield "home", 0, 0
 
 
 def offset(x, y):
     def offset_value():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_SET_POSITION, -int(x), -int(y)
+        yield "wait_finish"
+        yield "set_position", -int(x), -int(y)
 
     return offset_value
 
 
 def wait():
     wait_amount = 5.0
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_WAIT, wait_amount
+    yield "wait_finish"
+    yield "wait", wait_amount
 
 
 def beep():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_BEEP
+    yield "wait_finish"
+    yield "beep"
 
 
 def interrupt_text():
@@ -1345,8 +1332,8 @@ def interrupt_text():
 
 
 def interrupt():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_FUNCTION, interrupt_text
+    yield "wait_finish"
+    yield "function", interrupt_text
 
 
 def reify_matrix(self):
