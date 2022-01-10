@@ -23,7 +23,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..device.lasercommandconstants import *
 from ..kernel import Module, Service
 
 STATE_ABORT = -1

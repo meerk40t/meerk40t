@@ -3,8 +3,6 @@ from threading import Lock
 
 from meerk40t.svgelements import Length
 
-from ..device.lasercommandconstants import *
-
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -353,11 +351,11 @@ class Spooler:
 
         # STRING
         if isinstance(program, str):
-            attr = program[0]
+            attr = program
 
             if hasattr(self.driver, attr):
                 function = getattr(self.driver, attr)
-                function(*program[1:])
+                function()
             return
 
         # FUNCTION
