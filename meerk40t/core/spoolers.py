@@ -1,3 +1,4 @@
+import time
 from threading import Lock
 
 from meerk40t.svgelements import Length
@@ -172,9 +173,9 @@ def plugin(kernel, lifecycle):
             if idx == 0 and idy == 0:
                 return
             if force:
-                spooler.job(execute_relative_position(idx, idy))
+                spooler.job("move", idx, idy)
             else:
-                if spooler.job_if_idle(execute_relative_position(idx, idy)):
+                if spooler.job_if_idle("move", idx, idy):
                     channel(_("Position moved: %d %d") % (idx, idy))
                     spooler._dx -= idx
                     spooler._dy -= idy
@@ -198,7 +199,7 @@ def plugin(kernel, lifecycle):
             if y is None:
                 raise SyntaxError
             if force:
-                spooler.job(execute_absolute_position(x, y))
+                spooler.job("move", x, y)
             else:
                 if not spooler.job_if_idle(execute_absolute_position(x, y)):
                     channel(_("Busy Error"))
@@ -219,10 +220,16 @@ def plugin(kernel, lifecycle):
             spooler = data
             if dy is None:
                 raise SyntaxError
+            dx = Length(dx).value(
+                ppi=1000.0, relative_length=kernel.device.bedwidth
+            )
+            dy = Length(dy).value(
+                ppi=1000.0, relative_length=kernel.device.bedheight
+            )
             if force:
-                spooler.job(execute_relative_position(dx, dy))
+                spooler.job("move", int(dx), int(dy))
             else:
-                if not spooler.job_if_idle(execute_relative_position(dx, dy)):
+                if not spooler.job_if_idle("move", dx, dy):
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -304,7 +311,8 @@ def plugin(kernel, lifecycle):
 
 class Spooler:
     """
-    A spooler stores spoolable lasercode events as a synchronous queue.
+    Stores spoolable lasercode events as a synchronous queue.
+    Stores an idle job operation for running constantly.
 
     * peek()
     * pop()
@@ -317,27 +325,96 @@ class Spooler:
 
     def __init__(self, context, *args, **kwargs):
         self.context = context
-        self.queue_lock = Lock()
+        self.driver = None
+        self._realtime_lock = Lock()
+        self._realtime_queue = []
+        self._lock = Lock()
         self._queue = []
+        self._idle = None
+        self._shutdown = False
+        self._thread = None
 
     def __repr__(self):
         return "Spooler(%s)" % str(self.context)
 
     def __del__(self):
         self.name = None
-        self.queue_lock = None
+        self._lock = None
         self._queue = None
 
     def __len__(self):
         return len(self._queue)
 
-    def as_device(self):
-        links = []
-        obj = self
-        while obj is not None:
-            links.append(str(obj))
-            obj = obj.next
-        return " -> ".join(links)
+    def service_attach(self, *args, **kwargs):
+        self.restart()
+
+    def service_detach(self):
+        self.shutdown()
+
+    def shutdown(self, *args, **kwargs):
+        self._shutdown = True
+
+    def restart(self):
+        self._shutdown = False
+        if self._thread is None:
+
+            def clear_thread(*a):
+                self._shutdown = True
+
+            self._thread = self.context.threaded(
+                self.run,
+                result=clear_thread,
+                thread_name="Spooler(%s)" % self.context.path,
+            )
+            self._thread.stop = clear_thread
+
+    def run(self):
+        while True:
+            # Forever Looping.
+            if self._shutdown:
+                # We have been told to stop.
+                break
+            if len(self._realtime_queue):
+                # There is realtime work.
+                with self._lock:
+                    # threadsafe
+                    program = self._realtime_queue.pop()
+                if program is not None:
+                    # Process all data in the program.
+                    attr = program[0]
+                    if hasattr(self.driver, attr):
+                        function = getattr(self.driver, attr)
+                        function(*program[1:])
+            # Check if driver is holding work.
+            if self.driver.hold_work():
+                time.sleep(0.01)
+                continue
+            if len(self._queue):
+                # There is active work to do.
+                with self._lock:
+                    # threadsafe
+                    program = self._queue.pop()
+                if program is not None:
+                    # Process all data in the program.
+                    attr = program[0]
+
+                    if hasattr(self.driver, attr):
+                        function = getattr(self.driver, attr)
+                        function(*program[1:])
+            # Check if driver is holding idle.
+            if self.driver.hold_idle():
+                time.sleep(0.01)
+                continue
+            if self._idle is not None:
+                attr = self._idle[0]
+                if hasattr(self.driver, attr):
+                    function = getattr(self.driver, attr)
+                    function(*program[1:])
+                # Finished idle cycle.
+                continue
+            else:
+                # There is nothing to send or do.
+                time.sleep(0.1)
 
     @property
     def queue(self):
@@ -355,12 +432,23 @@ class Spooler:
         if len(self._queue) == 0:
             self.context.signal("spooler;queue", len(self._queue))
             return None
-        self.queue_lock.acquire(True)
-        queue_head = self._queue[0]
-        del self._queue[0]
-        self.queue_lock.release()
+        with self._lock:
+            queue_head = self._queue[0]
+            del self._queue[0]
         self.context.signal("spooler;queue", len(self._queue))
         return queue_head
+
+    def realtime(self, *job):
+        """
+        Enqueues a job into the realtime buffer. This preempts the regular work and is checked before hold_work.
+        @param job:
+        @return:
+        """
+        with self._realtime_lock:
+            if len(job) == 1:
+                self._realtime_queue.extend(job)
+            else:
+                self._realtime_queue.append(job)
 
     def job(self, *job):
         """
@@ -372,49 +460,61 @@ class Spooler:
         :param job: job to send to the spooler.
         :return:
         """
-        self.queue_lock.acquire(True)
-
-        if len(job) == 1:
-            self._queue.extend(job)
-        else:
-            self._queue.append(job)
-        self.queue_lock.release()
+        with self._lock:
+            if len(job) == 1:
+                self._queue.extend(job)
+            else:
+                self._queue.append(job)
         self.context.signal("spooler;queue", len(self._queue))
 
     def jobs(self, jobs):
         """
-        Send several jobs generators to be appended to the end of the queue.
+        Send several jobs be appended to the end of the queue.
 
         The jobs parameter must be suitable to be .extended to the end of the queue list.
+
         :param jobs: jobs to extend
         :return:
         """
-        self.queue_lock.acquire(True)
-        if isinstance(jobs, (list, tuple)):
-            self._queue.extend(jobs)
-        else:
-            self._queue.append(jobs)
-        self.queue_lock.release()
+        with self._lock:
+            if isinstance(jobs, (list, tuple)):
+                self._queue.extend(jobs)
+            else:
+                self._queue.append(jobs)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def job_if_idle(self, element):
+    def set_idle(self, job):
+        """
+        Sets the idle job.
+
+        @param job:
+        @return:
+        """
+        self._idle = job
+
+    def job_if_idle(self, *element):
+        """
+        Deprecated.
+
+        This should be fed into various forms of idle job.
+        @param element:
+        @return:
+        """
         if len(self._queue) == 0:
-            self.job(element)
+            self.job(*element)
             return True
         else:
             return False
 
     def clear_queue(self):
-        self.queue_lock.acquire(True)
-        self._queue = []
-        self.queue_lock.release()
+        with self._lock:
+            self._queue.clear()
         self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
-        self.queue_lock.acquire(True)
-        if index is None:
-            self._queue.remove(element)
-        else:
-            del self._queue[index]
-        self.queue_lock.release()
+        with self._lock:
+            if index is None:
+                self._queue.remove(element)
+            else:
+                del self._queue[index]
         self.context.signal("spooler;queue", len(self._queue))

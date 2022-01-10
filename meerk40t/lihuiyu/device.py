@@ -200,7 +200,10 @@ class LihuiyuDevice(Service):
         self.state = 0
         self.spooler = Spooler(self)
         self.driver = LhystudiosDriver(self)
-        self.add_service_delegate(self.driver)
+        self.spooler.driver = self.driver
+
+        self.add_service_delegate(self.spooler)
+        # self.add_service_delegate(self.driver)
 
         self.settings = self.driver.settings
 
@@ -850,6 +853,12 @@ class LhystudiosDriver:
 
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
+
+    def hold_work(self):
+        return self.hold()
+
+    def hold_idle(self):
+        return False
 
     def update_codes(self):
         if not self.context.swap_xy:

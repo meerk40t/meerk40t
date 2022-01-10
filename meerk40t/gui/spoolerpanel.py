@@ -123,7 +123,7 @@ class SpoolerPanel(wx.Panel):
         index = event.Index
         spooler = self.selected_device.spooler
         try:
-            element = spooler._queue[index]
+            element = spooler.queue[index]
         except IndexError:
             return
         menu = wx.Menu()
