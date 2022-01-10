@@ -3,7 +3,6 @@ import platform
 import time
 
 from ..core.cutcode import LaserSettings
-from ..device.lasercommandconstants import *
 from .plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
@@ -64,265 +63,51 @@ class Driver:
         self._shutdown = False
         self.last_fetch = None
 
-    def shutdown(self, *args, **kwargs):
-        self._shutdown = True
 
-    def added(self, origin=None, *args):
-        if self._thread is None:
+    # self.laser_off()
+    # self.laser_on()
+    # self.laser_disable()
+    # self.laser_enable()
+    # self.cut(x, y)
+    # self.move(x, y)
+    # self.home(*values)
+    # self.lock_rail()
+    # self.unlock_rail()
+    # self.plot_plot(values[0])
+    # self.send_blob(values[0], values[1])
+    # self.plot_start()
+    # self.set_speed(values[0])
+    # self.set_power(values[0])
+    # self.set_ppi(values[0])
+    # self.set_pwm(values[0])
+    # self.set_step(values[0])
+    # self.set_overscan(values[0])
+    # self.set_acceleration(values[0])
+    # self.set_d_ratio(values[0])
+    # self.set_directions(values[0], values[1], values[2], values[3])
+    # self.set_incremental()
+    # self.set_absolute()
+    # self.set_position(values[0], values[1])
+    # self.ensure_rapid_mode(*values)
+    # self.ensure_program_mode(*values)
+    # self.ensure_raster_mode(*values)
+    # self.ensure_finished_mode(*values)
+    # self.wait(values[0])
+    # self.wait_finish()
+    # self.function()
+    # self.signal()
+    # # Realtime:
+    # self.pause()
+    # self.resume()
+    # self.reset()
+    # self.status()
 
-            def clear_thread(*a):
-                self._shutdown = True
 
-            self._thread = self.context.threaded(
-                self._driver_threaded,
-                result=clear_thread,
-                thread_name="Driver(%s)" % self.context.path,
-            )
-            self._thread.stop = clear_thread
+    def hold_work(self):
+        return self.hold()
 
-    def _driver_threaded(self, *args):
-        """
-        Fetch and Execute.
-
-        :param args:
-        :return:
-        """
-        while True:
-            if self._shutdown:
-                return
-            if self.spooled_item is None:
-                self._fetch_next_item_from_spooler()
-            if self.spooled_item is None:
-                # There is no data to interpret. Fetch Failed.
-                if self.context._quit:
-                    self.context("quit\n")
-                    self._shutdown = True
-                    return
-                time.sleep(0.1)
-            self._process_spooled_item()
-
-    def _process_spooled_item(self):
-        """
-        Default Execution Cycle. If Held, we wait. Otherwise we process the spooler.
-
-        Processes one item in the spooler. If the spooler item is a generator. Process one generated item.
-        """
-        if self.hold():
-            time.sleep(0.01)
-            return
-        if self.plotplanner_process():
-            return
-        if self.spooled_item is None:
-            return  # Fetch Next.
-
-        # We have a spooled item to process.
-        if self.command(self.spooled_item):
-            self.spooled_item = None
-            self.spooler.pop()
-            return
-
-        # We are dealing with an iterator/generator
-        try:
-            e = next(self.spooled_item)
-            if not self.command(e):
-                raise ValueError
-        except StopIteration:
-            # The spooled item is finished.
-            self.spooled_item = None
-            self.spooler.pop()
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        :return: if execute tick was processed.
-        """
+    def hold_idle(self):
         return False
-
-    def _fetch_next_item_from_spooler(self):
-        """
-        Fetches the next item from the spooler.
-
-        :return:
-        """
-        if self.spooler is None:
-            return  # Spooler does not exist.
-        element = self.spooler.peek()
-
-        if self.last_fetch is not None:
-            self.context.channel("spooler")(
-                "Time between fetches: %f" % (time.time() - self.last_fetch)
-            )
-            self.last_fetch = None
-
-        if element is None:
-            return  # Spooler is empty.
-
-        self.last_fetch = time.time()
-
-        # self.spooler.pop()
-        if isinstance(element, int):
-            self.spooled_item = (element,)
-        elif isinstance(element, tuple):
-            self.spooled_item = element
-        else:
-            try:
-                self.spooled_item = element.generate()
-            except AttributeError:
-                try:
-                    self.spooled_item = element()
-                except TypeError:
-                    # This could be a text element, some unrecognized type.
-                    return
-
-    def command(self, command, *values):
-        """Commands are middle language LaserCommandConstants there values are given."""
-        if isinstance(command, tuple):
-            values = command[1:]
-            command = command[0]
-        if not isinstance(command, int):
-            return False  # Command type is not recognized.
-
-        try:
-            if command == COMMAND_LASER_OFF:
-                self.laser_off()
-            elif command == COMMAND_LASER_ON:
-                self.laser_on()
-            elif command == COMMAND_LASER_DISABLE:
-                self.laser_disable()
-            elif command == COMMAND_LASER_ENABLE:
-                self.laser_enable()
-            elif command == COMMAND_CUT:
-                x, y = values
-                self.cut(x, y)
-            elif command == COMMAND_MOVE:
-                x, y = values
-                self.move(x, y)
-            elif command == COMMAND_JOG:
-                x, y = values
-                self.jog(x, y, mode=0)
-            elif command == COMMAND_HOME:
-                self.home(*values)
-            elif command == COMMAND_LOCK:
-                self.lock_rail()
-            elif command == COMMAND_UNLOCK:
-                self.unlock_rail()
-            elif command == COMMAND_PLOT:
-                self.plot_plot(values[0])
-            elif command == COMMAND_BLOB:
-                self.send_blob(values[0], values[1])
-            elif command == COMMAND_PLOT_START:
-                self.plot_start()
-            elif command == COMMAND_SET_SPEED:
-                self.set_speed(values[0])
-            elif command == COMMAND_SET_POWER:
-                self.set_power(values[0])
-            elif command == COMMAND_SET_PPI:
-                self.set_ppi(values[0])
-            elif command == COMMAND_SET_PWM:
-                self.set_pwm(values[0])
-            elif command == COMMAND_SET_STEP:
-                self.set_step(values[0])
-            elif command == COMMAND_SET_OVERSCAN:
-                self.set_overscan(values[0])
-            elif command == COMMAND_SET_ACCELERATION:
-                self.set_acceleration(values[0])
-            elif command == COMMAND_SET_D_RATIO:
-                self.set_d_ratio(values[0])
-            elif command == COMMAND_SET_DIRECTION:
-                self.set_directions(values[0], values[1], values[2], values[3])
-            elif command == COMMAND_SET_INCREMENTAL:
-                self.set_incremental()
-            elif command == COMMAND_SET_ABSOLUTE:
-                self.set_absolute()
-            elif command == COMMAND_SET_POSITION:
-                self.set_position(values[0], values[1])
-            elif command == COMMAND_MODE_RAPID:
-                self.ensure_rapid_mode(*values)
-            elif command == COMMAND_MODE_PROGRAM:
-                self.ensure_program_mode(*values)
-            elif command == COMMAND_MODE_RASTER:
-                self.ensure_raster_mode(*values)
-            elif command == COMMAND_MODE_FINISHED:
-                self.ensure_finished_mode(*values)
-            elif command == COMMAND_WAIT:
-                self.wait(values[0])
-            elif command == COMMAND_WAIT_FINISH:
-                self.wait_finish()
-            elif command == COMMAND_BEEP:
-                OS_NAME = platform.system()
-                if OS_NAME == "Windows":
-                    try:
-                        import winsound
-
-                        for x in range(5):
-                            winsound.Beep(2000, 100)
-                    except Exception:
-                        pass
-                elif OS_NAME == "Darwin":  # Mac
-                    os.system("afplay /System/Library/Sounds/Ping.aiff")
-                else:  # Assuming other linux like system
-                    print("\a")  # Beep.
-            elif command == COMMAND_FUNCTION:
-                if len(values) >= 1:
-                    t = values[0]
-                    if callable(t):
-                        t()
-            elif command == COMMAND_SIGNAL:
-                if isinstance(values, str):
-                    self.context.signal(values, None)
-                elif len(values) >= 2:
-                    self.context.signal(values[0], *values[1:])
-        except AttributeError:
-            pass
-        return True
-
-    def realtime_command(self, command, *values):
-        """Asks for the execution of a realtime command. Unlike the spooled commands these
-        return False if rejected and something else if able to be performed. These will not
-        be queued. If rejected. They must be performed in realtime or cancelled.
-        """
-        try:
-            if command == REALTIME_PAUSE:
-                self.pause()
-            elif command == REALTIME_RESUME:
-                self.resume()
-            elif command == REALTIME_RESET:
-                self.reset()
-            elif command == REALTIME_STATUS:
-                self.status()
-            elif command == REALTIME_SAFETY_DOOR:
-                self.safety_door()
-            elif command == REALTIME_JOG_CANCEL:
-                self.jog_cancel(*values)
-            elif command == REALTIME_SPEED_PERCENT:
-                self.realtime_speed_percent(*values)
-            elif command == REALTIME_SPEED:
-                self.realtime_speed(*values)
-            elif command == REALTIME_RAPID_PERCENT:
-                self.realtime_rapid_percent(*values)
-            elif command == REALTIME_RAPID:
-                self.realtime_rapid(*values)
-            elif command == REALTIME_POWER_PERCENT:
-                self.realtime_power_percent(*values)
-            elif command == REALTIME_POWER:
-                self.realtime_power(*values)
-            elif command == REALTIME_OVERSCAN:
-                self.realtime_overscan(*values)
-            elif command == REALTIME_LASER_DISABLE:
-                self.realtime_laser_disable(*values)
-            elif command == REALTIME_LASER_ENABLE:
-                self.realtime_laser_enable(*values)
-            elif command == REALTIME_FLOOD_COOLANT:
-                self.realtime_flood_coolant(*values)
-            elif command == REALTIME_MIST_COOLANT:
-                self.realtime_mist_coolant(*values)
-        except AttributeError:
-            pass  # Method doesn't exist.
-
-    def data_output(self, e):
-        self.output.write(e)
 
     def hold(self):
         """
@@ -388,19 +173,19 @@ class Driver:
         self.current_x = 0
         self.current_y = 0
 
-    def ensure_rapid_mode(self, *values):
+    def rapid_mode(self, *values):
         if self.state == DRIVER_STATE_RAPID:
             return
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
-    def ensure_finished_mode(self, *values):
+    def finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_program_mode(self, *values):
+    def program_mode(self, *values):
         if self.state == DRIVER_STATE_PROGRAM:
             return
         self.state = DRIVER_STATE_PROGRAM

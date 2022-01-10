@@ -3337,6 +3337,22 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        def beep(channel, _, **kwargs):
+            import platform
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                try:
+                    import winsound
+
+                    for x in range(5):
+                        winsound.Beep(2000, 100)
+                except Exception:
+                    pass
+            elif OS_NAME == "Darwin":  # Mac
+                import os
+                os.system("afplay /System/Library/Sounds/Ping.aiff")
+            else:  # Assuming other linux like system
+                print("\a")  # Beep.
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):

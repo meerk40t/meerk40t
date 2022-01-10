@@ -1,6 +1,4 @@
 import math
-import os
-import platform
 import socket
 import threading
 import time
@@ -27,7 +25,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..device.lasercommandconstants import *
 from ..kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -200,7 +197,10 @@ class LihuiyuDevice(Service):
         self.state = 0
         self.spooler = Spooler(self)
         self.driver = LhystudiosDriver(self)
-        self.add_service_delegate(self.driver)
+        self.spooler.driver = self.driver
+
+        self.add_service_delegate(self.spooler)
+        # self.add_service_delegate(self.driver)
 
         self.settings = self.driver.settings
 
@@ -272,10 +272,10 @@ class LihuiyuDevice(Service):
                     return
 
             def timed_fire():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON
-                yield COMMAND_WAIT, value
-                yield COMMAND_LASER_OFF
+                yield "wait_finish"
+                yield "laser_on"
+                yield "wait", value
+                yield "laser_off"
 
             if self.spooler.job_if_idle(timed_fire):
                 channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
@@ -295,12 +295,12 @@ class LihuiyuDevice(Service):
             dy = Length(dy).value(ppi=1000.0, relative_length=self.bedheight)
 
             def move_at_speed():
-                yield COMMAND_SET_SPEED, speed
-                yield COMMAND_MODE_PROGRAM
+                yield "set", "speed", speed
+                yield "program_mode"
                 x = self.current_x
                 y = self.current_y
-                yield COMMAND_MOVE, x + dx, y + dy
-                yield COMMAND_MODE_RAPID
+                yield "move_abs", x + dx, y + dy
+                yield "rapid_mode"
 
             if not self.spooler.job_if_idle(move_at_speed):
                 channel(_("Busy"))
@@ -684,11 +684,11 @@ class LihuiyuDevice(Service):
             The Jog Transition Test is intended to test the jogging
             """
             if transition_type == "jog":
-                command = COMMAND_JOG
+                command = "jog"
             elif transition_type == "finish":
-                command = COMMAND_JOG_FINISH
+                command = "jog_finish"
             elif transition_type == "switch":
-                command = COMMAND_JOG_SWITCH
+                command = "jog_switch"
             else:
                 raise SyntaxError
             if data is None:
@@ -696,19 +696,16 @@ class LihuiyuDevice(Service):
             spooler = data
 
             def jog_transition_test():
-                yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_HOME
-                yield COMMAND_LASER_OFF
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MOVE, 3000, 3000
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON
-                yield COMMAND_WAIT, 0.05
-                yield COMMAND_LASER_OFF
-                yield COMMAND_WAIT_FINISH
-
-                yield COMMAND_SET_SPEED, 10.0
+                yield "rapid_mode"
+                yield "laser_off"
+                yield "wait_finish"
+                yield "move_abs", 3000, 3000
+                yield "wait_finish"
+                yield "laser_on"
+                yield "wait", 0.05
+                yield "laser_off"
+                yield "wait_finish"
+                yield "set", "speed", 10.0
 
                 def pos(i):
                     if i < 3:
@@ -729,22 +726,22 @@ class LihuiyuDevice(Service):
                     top = q & 1
                     left = q & 2
                     x_val = q & 3
-                    yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
-                    yield COMMAND_MODE_PROGRAM
+                    yield "set_direction", top, left, x_val, not x_val
+                    yield "program"
                     for j in range(9):
                         jx, jy = pos(j)
                         for k in range(9):
                             kx, ky = pos(k)
-                            yield COMMAND_MOVE, 3000, 3000
-                            yield COMMAND_MOVE, 3000 + jx, 3000 + jy
+                            yield "move_abs", 3000, 3000
+                            yield "move_abs", 3000 + jx, 3000 + jy
                             yield command, 3000 + jx + kx, 3000 + jy + ky
-                    yield COMMAND_MOVE, 3000, 3000
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_LASER_ON
-                    yield COMMAND_WAIT, 0.05
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
+                    yield "move_abs", 3000, 3000
+                    yield "rapid_mode"
+                    yield "wait_finish"
+                    yield "laser_on"
+                    yield "wait", 0.05
+                    yield "laser_off"
+                    yield "wait_finish"
 
             spooler.job(jog_transition_test)
 
@@ -791,7 +788,7 @@ class LhystudiosDriver:
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = context.plot_shift
-        self.plot = None
+        self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -851,6 +848,37 @@ class LhystudiosDriver:
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
 
+    def hold_work(self):
+        """
+        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
+        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
+        as soon as it does not hold the data.
+
+        :return: Whether data interpretation should hold.
+        """
+        temp_hold = False
+        fail_hold = False
+        for i, hold in enumerate(self.temp_holds):
+            if not hold():
+                self.temp_holds[i] = None
+                fail_hold = True
+            else:
+                temp_hold = True
+        if fail_hold:
+            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
+        if temp_hold:
+            return True
+        for hold in self.holds:
+            if hold():
+                return True
+        return False
+
+    def hold_idle(self):
+        return False
+
+    def data_output(self, e):
+        self.output.write(e)
+
     def update_codes(self):
         if not self.context.swap_xy:
             self.CODE_RIGHT = b"B"
@@ -878,11 +906,12 @@ class LhystudiosDriver:
 
         :return:
         """
-        if self.plot is None:
+        if self.plot_data is None:
             return False
-        if self.hold():
-            return True
-        for x, y, on in self.plot:
+        for x, y, on in self.plot_data:
+            if self.hold_work():
+                time.sleep(0.05)
+                continue
             sx = self.current_x
             sy = self.current_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
@@ -890,7 +919,7 @@ class LhystudiosDriver:
             if on > 1:
                 # Special Command.
                 if on & PLOT_FINISH:  # Plot planner is ending.
-                    self.ensure_rapid_mode()
+                    self.rapid_mode()
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = self.plot_planner.settings
@@ -931,7 +960,7 @@ class LhystudiosDriver:
                     if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
-                        self.ensure_rapid_mode()
+                        self.rapid_mode()
                         self.move_absolute(x, y)
                     else:
                         # Jog is performable and requested. # We have not flagged our direction or state.
@@ -941,9 +970,9 @@ class LhystudiosDriver:
             dy = y - sy
             step = self.settings.raster_step
             if step == 0:
-                self.ensure_program_mode()
+                self.program_mode()
             else:
-                self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
+                self.raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
                         if self.context.nse_raster:
@@ -957,9 +986,7 @@ class LhystudiosDriver:
                         else:
                             self.v_switch_g(dx)
             self.goto_octent_abs(x, y, on & 1)
-            if self.hold():
-                return True
-        self.plot = None
+        self.plot_data = None
         return False
 
     def pause(self, *values):
@@ -985,7 +1012,7 @@ class LhystudiosDriver:
         self.context.signal("driver;mode", self.state)
         self.is_paused = False
 
-    def send_blob(self, blob_type, data):
+    def blob(self, blob_type, data):
         if blob_type == "egv":
             self.data_output(data)
 
@@ -1017,9 +1044,9 @@ class LhystudiosDriver:
             self.mode_shift_on_the_fly(dx, dy)
         else:
             # Finish-out Jog
-            self.ensure_rapid_mode()
+            self.rapid_mode()
             self.move_relative(dx, dy)
-            self.ensure_program_mode()
+            self.program_mode()
 
     def _nse_jog_event(self, dx=0, dy=0, speed=None):
         """
@@ -1066,6 +1093,26 @@ class LhystudiosDriver:
         self.data_output(b"SE")
         self.declare_directions()
         self.state = original_state
+
+    def move_abs(self, x, y):
+        x = Length(x).value(
+            ppi=1000.0, relative_length=self.context.bedwidth
+        )
+        y = Length(y).value(
+            ppi=1000.0, relative_length=self.context.bedheight
+        )
+        self.rapid_mode()
+        self.move_absolute(int(x), int(y))
+
+    def move_rel(self, dx, dy):
+        dx = Length(dx).value(
+            ppi=1000.0, relative_length=self.context.bedwidth
+        )
+        dy = Length(dy).value(
+            ppi=1000.0, relative_length=self.context.bedheight
+        )
+        self.rapid_mode()
+        self.move_relative(int(dx), int(dy))
 
     def move(self, x, y):
         self.goto(x, y, False)
@@ -1122,20 +1169,20 @@ class LhystudiosDriver:
                 self.set_acceleration(None)
                 self.set_step(0)
                 if dx != 0:
-                    self.ensure_rapid_mode()
+                    self.rapid_mode()
                     self.set_speed(self.context.rapid_override_speed_x)
-                    self.ensure_program_mode()
+                    self.program_mode()
                     self.goto_octent(dx, 0, cut)
                 if dy != 0:
                     if (
                         self.context.rapid_override_speed_x
                         != self.context.rapid_override_speed_y
                     ):
-                        self.ensure_rapid_mode()
+                        self.rapid_mode()
                         self.set_speed(self.context.rapid_override_speed_y)
-                        self.ensure_program_mode()
+                        self.program_mode()
                     self.goto_octent(0, dy, cut)
-                self.ensure_rapid_mode()
+                self.rapid_mode()
             else:
                 self.data_output(b"I")
                 if dx != 0:
@@ -1147,7 +1194,7 @@ class LhystudiosDriver:
                     self.data_output(b"IS2P\n")
         elif self.state == DRIVER_STATE_RASTER:
             # goto in raster, switches to program to recall this function.
-            self.ensure_program_mode()
+            self.program_mode()
             self.goto_relative(dx, dy, cut)
             return
         elif self.state == DRIVER_STATE_PROGRAM:
@@ -1264,7 +1311,7 @@ class LhystudiosDriver:
         self.laser = True
         return True
 
-    def ensure_rapid_mode(self, *values):
+    def rapid_mode(self, *values):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
@@ -1336,7 +1383,7 @@ class LhystudiosDriver:
         else:
             self.state = DRIVER_STATE_PROGRAM
 
-    def ensure_finished_mode(self, *values):
+    def finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
             return
         if self.state in (
@@ -1351,7 +1398,7 @@ class LhystudiosDriver:
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self, raster_horizontal=True, *values):
+    def raster_mode(self, raster_horizontal=True, *values):
         """
         Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
@@ -1361,7 +1408,7 @@ class LhystudiosDriver:
         """
         if self.state == DRIVER_STATE_RASTER:
             return
-        self.ensure_finished_mode()
+        self.finished_mode()
 
         speed_code = LaserSpeed(
             self.context.board,
@@ -1382,7 +1429,7 @@ class LhystudiosDriver:
         self.state = DRIVER_STATE_RASTER
         self.context.signal("driver;mode", self.state)
 
-    def ensure_program_mode(self, *values):
+    def program_mode(self, *values):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
 
@@ -1391,7 +1438,7 @@ class LhystudiosDriver:
         """
         if self.state == DRIVER_STATE_PROGRAM:
             return
-        self.ensure_finished_mode()
+        self.finished_mode()
 
         speed_code = LaserSpeed(
             self.context.board,
@@ -1502,11 +1549,11 @@ class LhystudiosDriver:
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
-            self.ensure_finished_mode()
+            self.finished_mode()
             self.move_relative(0, delta)
             self.set_prop(STATE_X_STEPPER_ENABLE)
             self.unset_prop(STATE_Y_STEPPER_ENABLE)
-            self.ensure_raster_mode(raster_horizontal=True)
+            self.raster_mode(raster_horizontal=True)
 
         # We reverse direction and step.
         if self.is_prop(STATE_X_FORWARD_LEFT):
@@ -1538,11 +1585,11 @@ class LhystudiosDriver:
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
-            self.ensure_finished_mode()
+            self.finished_mode()
             self.move_relative(delta, 0)
             self.set_prop(STATE_Y_STEPPER_ENABLE)
             self.unset_prop(STATE_X_STEPPER_ENABLE)
-            self.ensure_raster_mode(raster_horizontal=False)
+            self.raster_mode(raster_horizontal=False)
 
         # We reverse direction and step.
         if self.is_prop(STATE_Y_FORWARD_TOP):
@@ -1566,7 +1613,7 @@ class LhystudiosDriver:
 
     def home(self, *values):
         x, y = self.calc_home_position()
-        self.ensure_rapid_mode()
+        self.rapid_mode()
         self.data_output(b"IPP\n")
         old_x = self.current_x
         old_y = self.current_y
@@ -1577,12 +1624,12 @@ class LhystudiosDriver:
         adjust_x = self.context.home_adjust_x
         adjust_y = self.context.home_adjust_y
         try:
-            adjust_x = int(values[0])
-        except (ValueError, IndexError):
-            pass
-        try:
-            adjust_y = int(values[1])
-        except (ValueError, IndexError):
+            adjust_x = values[0]
+            adjust_y = values[1]
+            if isinstance(adjust_x, str):
+                adjust_y = adjust_y.value(ppi=1000.0, relative_length=self.context.bedwidth)
+                adjust_y = adjust_y.value(ppi=1000.0, relative_length=self.context.bedheight)
+        except IndexError:
             pass
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
@@ -1597,11 +1644,11 @@ class LhystudiosDriver:
         )
 
     def lock_rail(self):
-        self.ensure_rapid_mode()
+        self.rapid_mode()
         self.data_output(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
-        self.ensure_rapid_mode()
+        self.rapid_mode()
         self.data_output(b"IS2P\n")
 
     def abort(self):
@@ -1809,269 +1856,13 @@ class LhystudiosDriver:
     # ORIGINAL DRIVER CODE
     ######################
 
-    def shutdown(self, *args, **kwargs):
-        self._shutdown = True
-
-    def added(self, origin=None, *args):
-        if self._thread is None:
-
-            def clear_thread(*a):
-                self._shutdown = True
-
-            self._thread = self.context.threaded(
-                self._driver_threaded,
-                result=clear_thread,
-                thread_name="Driver(%s)" % self.context.path,
-            )
-            self._thread.stop = clear_thread
-
-    def _driver_threaded(self, *args):
-        """
-        Fetch and Execute.
-
-        :param args:
-        :return:
-        """
-        while True:
-            if self._shutdown:
-                return
-            if self.spooled_item is None:
-                self._fetch_next_item_from_spooler()
-            if self.spooled_item is None:
-                # There is no data to interpret. Fetch Failed.
-                if self.context._quit:
-                    self.context("quit\n")
-                    self._shutdown = True
-                    return
-                time.sleep(0.1)
-            self._process_spooled_item()
-
-    def _process_spooled_item(self):
-        """
-        Default Execution Cycle. If Held, we wait. Otherwise we process the spooler.
-
-        Processes one item in the spooler. If the spooler item is a generator. Process one generated item.
-        """
-        if self.hold():
-            time.sleep(0.01)
-            return
-        if self.plotplanner_process():
-            return
-        if self.spooled_item is None:
-            return  # Fetch Next.
-
-        # We have a spooled item to process.
-        if self.command(self.spooled_item):
-            self.spooled_item = None
-            self.spooler.pop()
-            return
-
-        # We are dealing with an iterator/generator
-        try:
-            e = next(self.spooled_item)
-            if not self.command(e):
-                raise ValueError
-        except StopIteration:
-            # The spooled item is finished.
-            self.spooled_item = None
-            self.spooler.pop()
-
-    def _fetch_next_item_from_spooler(self):
-        """
-        Fetches the next item from the spooler.
-
-        :return:
-        """
-        if self.spooler is None:
-            return  # Spooler does not exist.
-        element = self.spooler.peek()
-
-        if self.last_fetch is not None:
-            self.context.channel("spooler")(
-                "Time between fetches: %f" % (time.time() - self.last_fetch)
-            )
-            self.last_fetch = None
-
-        if element is None:
-            return  # Spooler is empty.
-
-        self.last_fetch = time.time()
-
-        # self.spooler.pop()
-        if isinstance(element, int):
-            self.spooled_item = (element,)
-        elif isinstance(element, tuple):
-            self.spooled_item = element
-        else:
-            try:
-                self.spooled_item = element.generate()
-            except AttributeError:
-                try:
-                    self.spooled_item = element()
-                except TypeError:
-                    # This could be a text element, some unrecognized type.
-                    return
-
-    def command(self, command, *values):
-        """Commands are middle language LaserCommandConstants there values are given."""
-        if isinstance(command, tuple):
-            values = command[1:]
-            command = command[0]
-        if not isinstance(command, int):
-            return False  # Command type is not recognized.
-
-        try:
-            if command == COMMAND_LASER_OFF:
-                self.laser_off()
-            elif command == COMMAND_LASER_ON:
-                self.laser_on()
-            elif command == COMMAND_LASER_DISABLE:
-                self.laser_disable()
-            elif command == COMMAND_LASER_ENABLE:
-                self.laser_enable()
-            elif command == COMMAND_CUT:
-                x, y = values
-                self.cut(x, y)
-            elif command == COMMAND_MOVE:
-                x, y = values
-                self.move(x, y)
-            elif command == COMMAND_JOG:
-                x, y = values
-                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_SWITCH:
-                x, y = values
-                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_FINISH:
-                x, y = values
-                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_HOME:
-                self.home(*values)
-            elif command == COMMAND_LOCK:
-                self.lock_rail()
-            elif command == COMMAND_UNLOCK:
-                self.unlock_rail()
-            elif command == COMMAND_PLOT:
-                self.plot_plot(values[0])
-            elif command == COMMAND_BLOB:
-                self.send_blob(values[0], values[1])
-            elif command == COMMAND_PLOT_START:
-                self.plot_start()
-            elif command == COMMAND_SET_SPEED:
-                self.set_speed(values[0])
-            elif command == COMMAND_SET_POWER:
-                self.set_power(values[0])
-            elif command == COMMAND_SET_PPI:
-                self.set_ppi(values[0])
-            elif command == COMMAND_SET_PWM:
-                self.set_pwm(values[0])
-            elif command == COMMAND_SET_STEP:
-                self.set_step(values[0])
-            elif command == COMMAND_SET_OVERSCAN:
-                self.set_overscan(values[0])
-            elif command == COMMAND_SET_ACCELERATION:
-                self.set_acceleration(values[0])
-            elif command == COMMAND_SET_D_RATIO:
-                self.set_d_ratio(values[0])
-            elif command == COMMAND_SET_DIRECTION:
-                self.set_directions(values[0], values[1], values[2], values[3])
-            elif command == COMMAND_SET_INCREMENTAL:
-                self.set_incremental()
-            elif command == COMMAND_SET_ABSOLUTE:
-                self.set_absolute()
-            elif command == COMMAND_SET_POSITION:
-                self.set_position(values[0], values[1])
-            elif command == COMMAND_MODE_RAPID:
-                self.ensure_rapid_mode(*values)
-            elif command == COMMAND_MODE_PROGRAM:
-                self.ensure_program_mode(*values)
-            elif command == COMMAND_MODE_RASTER:
-                self.ensure_raster_mode(*values)
-            elif command == COMMAND_MODE_FINISHED:
-                self.ensure_finished_mode(*values)
-            elif command == COMMAND_WAIT:
-                self.wait(values[0])
-            elif command == COMMAND_WAIT_FINISH:
-                self.wait_finish()
-            elif command == COMMAND_BEEP:
-                OS_NAME = platform.system()
-                if OS_NAME == "Windows":
-                    try:
-                        import winsound
-
-                        for x in range(5):
-                            winsound.Beep(2000, 100)
-                    except Exception:
-                        pass
-                elif OS_NAME == "Darwin":  # Mac
-                    os.system("afplay /System/Library/Sounds/Ping.aiff")
-                else:  # Assuming other linux like system
-                    print("\a")  # Beep.
-            elif command == COMMAND_FUNCTION:
-                if len(values) >= 1:
-                    t = values[0]
-                    if callable(t):
-                        t()
-            elif command == COMMAND_SIGNAL:
-                if isinstance(values, str):
-                    self.context.signal(values, None)
-                elif len(values) >= 2:
-                    self.context.signal(values[0], *values[1:])
-        except AttributeError:
-            pass
-        return True
-
-    def realtime_command(self, command, *values):
-        """Asks for the execution of a realtime command. Unlike the spooled commands these
-        return False if rejected and something else if able to be performed. These will not
-        be queued. If rejected. They must be performed in realtime or cancelled.
-        """
-        try:
-            if command == REALTIME_PAUSE:
-                self.pause()
-            elif command == REALTIME_RESUME:
-                self.resume()
-            elif command == REALTIME_RESET:
-                self.reset()
-            elif command == REALTIME_STATUS:
-                self.status()
-        except AttributeError:
-            pass  # Method doesn't exist.
-
-    def data_output(self, e):
-        self.output.write(e)
-
-    def hold(self):
-        """
-        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
-        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
-        as soon as it does not hold the data.
-
-        :return: Whether data interpretation should hold.
-        """
-        temp_hold = False
-        fail_hold = False
-        for i, hold in enumerate(self.temp_holds):
-            if not hold():
-                self.temp_holds[i] = None
-                fail_hold = True
-            else:
-                temp_hold = True
-        if fail_hold:
-            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
-        if temp_hold:
-            return True
-        for hold in self.holds:
-            if hold():
-                return True
-        return False
-
     def laser_disable(self, *values):
         self.settings.laser_enabled = False
 
     def laser_enable(self, *values):
         self.settings.laser_enabled = True
 
-    def plot_plot(self, plot):
+    def plot(self, plot):
         """
         :param plot:
         :return:
@@ -2079,8 +1870,21 @@ class LhystudiosDriver:
         self.plot_planner.push(plot)
 
     def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
+        if self.plot_data is None:
+            self.plot_data = self.plot_planner.gen()
+        self.plotplanner_process()
+
+    def set(self, attribute, value):
+        if attribute == "power":
+            self.set_power(value)
+        if attribute == "ppi":
+            self.set_power(value)
+        if attribute == "pwm":
+            self.set_power(value)
+        if attribute == "overscan":
+            self.set_overscan(value)
+        if attribute == "relative":
+            self.is_relative = value
 
     def set_power(self, power=1000.0):
         self.settings.power = power
@@ -3302,7 +3106,7 @@ class EGVBlob:
         return cutcode
 
     def generate(self):
-        yield COMMAND_BLOB, "egv", LhystudiosParser.remove_header(self.data)
+        yield "blob", "egv", LhystudiosParser.remove_header(self.data)
 
 
 class EgvLoader:
