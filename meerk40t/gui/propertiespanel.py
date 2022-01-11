@@ -91,18 +91,18 @@ class PropertiesPanel(wx.Panel):
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
-                def on_textbox_text(param, ctrl, obj):
+                def on_textbox_text(param, ctrl, obj, dtype):
                     def text(event=None):
                         v = ctrl.GetValue()
                         try:
-                            setattr(obj, param, data_type(v))
+                            setattr(obj, param, dtype(v))
                         except ValueError:
                             # If cannot cast to data_type, pass
                             pass
 
                     return text
 
-                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control, obj))
+                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 control_sizer = wx.StaticBoxSizer(
