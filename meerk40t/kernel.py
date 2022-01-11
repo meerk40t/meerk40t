@@ -842,7 +842,7 @@ class Settings:
                 return value == "True"
 
             return t(value)
-        except KeyError:
+        except (KeyError, ValueError):
             return default
 
     def read_persistent_attributes(self, section: str, obj: Any):
