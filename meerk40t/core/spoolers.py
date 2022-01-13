@@ -270,6 +270,8 @@ class Spooler:
     Stores spoolable lasercode events as a synchronous queue.
     Stores an idle job operation for running constantly.
 
+    Spooler should be registered as a service_delegate of the service running the driver to process data.
+
     * peek()
     * pop()
     * job(job)
@@ -279,9 +281,10 @@ class Spooler:
     * remove(job)
     """
 
-    def __init__(self, context, *args, **kwargs):
+    def __init__(self, context, driver=None, **kwargs):
         self.context = context
-        self.driver = None
+        self.driver = driver
+        self.foreground_only = True
         self._realtime_lock = Lock()
         self._realtime_queue = []
         self._lock = Lock()
@@ -301,11 +304,16 @@ class Spooler:
     def __len__(self):
         return len(self._queue)
 
-    def service_attach(self, *args, **kwargs):
+    def added(self, *args, **kwargs):
         self.restart()
 
+    def service_attach(self, *args, **kwargs):
+        if self.foreground_only:
+            self.restart()
+
     def service_detach(self):
-        self.shutdown()
+        if self.foreground_only:
+            self.shutdown()
 
     def shutdown(self, *args, **kwargs):
         self._shutdown = True
