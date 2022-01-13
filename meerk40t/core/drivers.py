@@ -18,11 +18,10 @@ PLOT_DIRECTION = 32
 
 class Driver:
     """
-    A driver takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
-
-    These drive hardware specific backend information from the reusable spoolers and server objects that may also be
-    common within devices.
+    A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
+    system. The spooled command consist of a method and some data. These are sent to the driver associated with that
+    spooler in linear order as the driver is ready to receive more data. If a method does not exist, it will
+    not be called; it will be as if the command didn't exist.
     """
 
     def __init__(self, context, name=None):
@@ -36,9 +35,22 @@ class Driver:
         self.paused = False
 
     def hold_work(self):
+        """
+        Required.
+
+        Spooler check. to see if the work cycle should be held.
+
+        @return: hold?
+        """
         return self.hold or self.paused
 
     def hold_idle(self):
+        """
+        Required.
+
+        Spooler check. Should the idle job be processed or held.
+        @return:
+        """
         return False
 
     def laser_off(self, *values):
