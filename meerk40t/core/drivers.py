@@ -1,9 +1,6 @@
-import os
-import platform
 import time
 
 from ..core.cutcode import LaserSettings
-from .plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -21,262 +18,244 @@ PLOT_DIRECTION = 32
 
 class Driver:
     """
-    A driver takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
-
-    These drive hardware specific backend information from the reusable spoolers and server objects that may also be
-    common within devices.
+    A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
+    system. The spooled command consist of a method and some data. These are sent to the driver associated with that
+    spooler in linear order as the driver is ready to receive more data. If a method does not exist, it will
+    not be called; it will be as if the command didn't exist.
     """
 
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.root_context = context.root
         self.settings = LaserSettings()
 
-        self.next = None
-        self.prev = None
-
-        self.spooler = None
-        self.output = None
-
-        self.process_item = None
-        self.spooled_item = None
-        self.holds = []
-        self.temp_holds = []
-
-        self.current_x = 0
-        self.current_y = 0
-
-        context.setting(bool, "plot_shift", False)
-        self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = context.plot_shift
-        self.plot = None
-
-        self.state = DRIVER_STATE_RAPID
-        self.properties = 0
-        self.is_relative = False
-        self.laser = False
-        context._quit = False
-
-        self._thread = None
-        self._shutdown = False
-        self.last_fetch = None
-
-
-    # self.laser_off()
-    # self.laser_on()
-    # self.laser_disable()
-    # self.laser_enable()
-    # self.cut(x, y)
-    # self.move(x, y)
-    # self.home(*values)
-    # self.lock_rail()
-    # self.unlock_rail()
-    # self.plot_plot(values[0])
-    # self.send_blob(values[0], values[1])
-    # self.plot_start()
-    # self.set_speed(values[0])
-    # self.set_power(values[0])
-    # self.set_ppi(values[0])
-    # self.set_pwm(values[0])
-    # self.set_step(values[0])
-    # self.set_overscan(values[0])
-    # self.set_acceleration(values[0])
-    # self.set_d_ratio(values[0])
-    # self.set_directions(values[0], values[1], values[2], values[3])
-    # self.set_incremental()
-    # self.set_absolute()
-    # self.set_position(values[0], values[1])
-    # self.ensure_rapid_mode(*values)
-    # self.ensure_program_mode(*values)
-    # self.ensure_raster_mode(*values)
-    # self.ensure_finished_mode(*values)
-    # self.wait(values[0])
-    # self.wait_finish()
-    # self.function()
-    # self.signal()
-    # # Realtime:
-    # self.pause()
-    # self.resume()
-    # self.reset()
-    # self.status()
-
+        self.native_x = 0
+        self.native_y = 0
+        self.hold = False
+        self.paused = False
 
     def hold_work(self):
-        return self.hold()
+        """
+        Required.
+
+        Spooler check. to see if the work cycle should be held.
+
+        @return: hold?
+        """
+        return self.hold or self.paused
 
     def hold_idle(self):
-        return False
-
-    def hold(self):
         """
-        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
-        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
-        as soon as it does not hold the data.
+        Required.
 
-        :return: Whether data interpretation should hold.
+        Spooler check. Should the idle job be processed or held.
+        @return:
         """
-        temp_hold = False
-        fail_hold = False
-        for i, hold in enumerate(self.temp_holds):
-            if not hold():
-                self.temp_holds[i] = None
-                fail_hold = True
-            else:
-                temp_hold = True
-        if fail_hold:
-            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
-        if temp_hold:
-            return True
-        for hold in self.holds:
-            if hold():
-                return True
         return False
 
     def laser_off(self, *values):
-        self.laser = False
+        """
+        Turn laser off in place.
+
+        @param values:
+        @return:
+        """
+        pass
 
     def laser_on(self, *values):
-        self.laser = True
-
-    def laser_disable(self, *values):
-        self.settings.laser_enabled = False
-
-    def laser_enable(self, *values):
-        self.settings.laser_enabled = True
-
-    def plot_plot(self, plot):
         """
-        :param plot:
-        :return:
+        Turn laser on in place.
+
+        @param values:
+        @return:
         """
-        self.plot_planner.push(plot)
+        pass
+
+    def plot(self, plot):
+        """
+        Gives the driver a bit of cutcode that should be plotted.
+        @param plot:
+        @return:
+        """
+        pass
 
     def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
 
-    def jog(self, x, y, **kwargs):
-        self.current_x = x
-        self.current_y = y
+        @return:
+        """
 
-    def move(self, x, y):
-        self.current_x = x
-        self.current_y = y
+    def blob(self, data_type, data):
+        """
+        Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
+        bunch of .rd code, or Lihuiyu device it could be egv code. It's a method of sending pre-chewed data to the
+        device.
 
-    def cut(self, x, y):
-        self.current_x = x
-        self.current_y = y
+        @param type:
+        @param data:
+        @return:
+        """
 
     def home(self, *values):
-        self.current_x = 0
-        self.current_y = 0
+        """
+        Home the laser.
+
+        @param values:
+        @return:
+        """
+
+    def lock_rail(self):
+        """
+        For plotter-style lasers this should prevent the laser bar from moving.
+        @return:
+        """
+
+    def unlock_rail(self):
+        """
+        For plotter-style jobs this should free the laser head to be movable by the user.
+
+        @return:
+        """
 
     def rapid_mode(self, *values):
-        if self.state == DRIVER_STATE_RAPID:
-            return
-        self.state = DRIVER_STATE_RAPID
-        self.context.signal("driver;mode", self.state)
+        """
+        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
+        batch of commands.
+
+        @param values:
+        @return:
+        """
 
     def finished_mode(self, *values):
-        if self.state == DRIVER_STATE_FINISH:
-            return
-        self.state = DRIVER_STATE_FINISH
-        self.context.signal("driver;mode", self.state)
+        """
+        Finished mode is after a large batch of jobs is done.
+
+        @param values:
+        @return:
+        """
 
     def program_mode(self, *values):
-        if self.state == DRIVER_STATE_PROGRAM:
-            return
-        self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+        """
+        Program mode is the state lasers often use to send a large batch of commands.
+        @param values:
+        @return:
+        """
 
-    def ensure_raster_mode(self, *values):
-        if self.state == DRIVER_STATE_RASTER:
-            return
-        self.state = DRIVER_STATE_RASTER
-        self.context.signal("driver;mode", self.state)
+    def raster_mode(self, *values):
+        """
+        Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
+        many lasers have specialty values
+        @param values:
+        @return:
+        """
 
-    def set_speed(self, speed=None):
-        self.settings.speed = speed
-
-    def set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
-
-    def set_ppi(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
-
-    def set_pwm(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
-
-    def set_d_ratio(self, d_ratio=None):
-        self.settings.d_ratio = d_ratio
-
-    def set_acceleration(self, accel=None):
-        self.settings.acceleration = accel
-
-    def set_step(self, step=None):
-        self.settings.raster_step = step
-
-    def set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
-
-    def set_incremental(self, *values):
-        self.is_relative = True
-
-    def set_absolute(self, *values):
-        self.is_relative = False
+    def set(self, key, value):
+        """
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
 
     def set_position(self, x, y):
-        self.current_x = x
-        self.current_y = y
+        """
+        This should set an offset position.
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        used in step-repeat.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        pass
 
     def wait(self, t):
+        """
+        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
+        called first this should pause the machine without current work acting as a dwell.
+
+        @param t:
+        @return:
+        """
         time.sleep(float(t))
 
     def wait_finish(self, *values):
-        """Adds an additional holding requirement if the pipe has any data."""
-        self.temp_holds.append(lambda: len(self.output) != 0)
+        """
+        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
+        from being sent with returning True for the until that criteria is met.
+
+        @param values:
+        @return:
+        """
+        self.hold = True
+
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.context.signal(signal, *args)
+
+    def pause(self, *args):
+        """
+        Asks that the laser be paused.
+
+        @param args:
+        @return:
+        """
+        self.paused = True
+
+    def resume(self, *args):
+        """
+        Asks that the laser be resumed.
+
+        To work this command should usually be put into the realtime work queue for the laser.
+
+        @param args:
+        @return:
+        """
+        self.paused = False
+
+    def reset(self, *args):
+        """
+        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+        deleted.
+
+        @param args:
+        @return:
+        """
 
     def reset(self):
-        if self.spooler is not None:
-            self.spooler.clear_queue()
-        self.plot_planner.clear()
-        self.spooled_item = None
-        self.temp_holds.clear()
+        """
+        Asks that the device resets, and clears all current work.
+        @return:
+        """
 
     def status(self):
+        """
+        Asks that this device status be updated.
+
+        @return:
+        """
         parts = list()
-        parts.append("x=%f" % self.current_x)
-        parts.append("y=%f" % self.current_y)
+        parts.append("x=%f" % self.native_x)
+        parts.append("y=%f" % self.native_y)
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
         self.context.signal("driver;status", status)
-
-    def set_prop(self, mask):
-        self.properties |= mask
-
-    def unset_prop(self, mask):
-        self.properties &= ~mask
-
-    def is_prop(self, mask):
-        return bool(self.properties & mask)
-
-    def toggle_prop(self, mask):
-        if self.is_prop(mask):
-            self.unset_prop(mask)
-        else:
-            self.set_prop(mask)
