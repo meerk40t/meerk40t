@@ -351,7 +351,7 @@ class MoshiDriver(Driver):
             move_y = 0
         self.start_program_mode(offset_x, offset_y, move_x, move_y)
 
-    def ensure_raster_mode(self, *values):
+    def raster_mode(self, *values):
         """
         Ensure the driver is currently in a raster program state. If it is not in a raster program state
         we write the raster program state.
@@ -545,7 +545,7 @@ class MoshiDriver(Driver):
             self.program_mode(x, y, x1, y1)
         else:
             if self.context.enable_raster:
-                self.ensure_raster_mode(x, y, x1, y1)
+                self.raster_mode(x, y, x1, y1)
             else:
                 self.program_mode(x, y, x1, y1)
 
