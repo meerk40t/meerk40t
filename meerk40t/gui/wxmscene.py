@@ -202,8 +202,8 @@ class MeerK40tScenePanel(wx.Panel):
         def scene(command, _, channel, data, x, y, width, height, **kwargs):
             x = self.context.device.length(x, 0)
             y = self.context.device.length(y, 1)
-            width = self.context.device.length(x, 0)
-            height = self.context.device.length(y, 1)
+            width = self.context.device.length(width, 0)
+            height = self.context.device.length(height, 1)
             bbox = (x, y, width, height)
             data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
             data.request_refresh()
