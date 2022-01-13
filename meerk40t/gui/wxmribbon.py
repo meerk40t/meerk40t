@@ -55,7 +55,6 @@ class RibbonPanel(wx.Panel):
         self.Layout()
         # self._ribbon
         self.pipe_state = None
-        self.ribbon_position_units = self.context.units_index
 
     def set_buttons(self, new_values, button_bar):
         button_bar.ClearButtons()
@@ -132,12 +131,6 @@ class RibbonPanel(wx.Panel):
             _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
-        self.ribbon_position_x = 0.0
-        self.ribbon_position_y = 0.0
-        self.ribbon_position_h = 0.0
-        self.ribbon_position_w = 0.0
-        self.ribbon_position_units = 0
-        self.ribbon_position_name = None
 
         home = RB.RibbonPage(
             self._ribbon,

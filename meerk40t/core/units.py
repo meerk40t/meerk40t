@@ -38,14 +38,38 @@ class ViewPort:
         self.width = Length(width).value(ppi=NM_PER_INCH)
         self.height = Length(height).value(ppi=NM_PER_INCH)
 
-    def length(self, value, axis, relative_length=None):
+    def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False):
+        """
+        Axis 0 is X
+        Axis 1 is Y
+
+        Axis -1 is 1D in x, y space. eg. a line width.
+
+        @param value:
+        @param axis:
+        @param new_units:
+        @param relative_length:
+        @return:
+        """
         if axis == 0:
             if relative_length is None:
                 relative_length = self.width
         else:
             if relative_length is None:
                 relative_length = self.height
-        return Length(value).value(ppi=NM_PER_INCH, relative_length=relative_length)
+        if new_units is None:
+            return Length(value).value(ppi=NM_PER_INCH, relative_length=relative_length)
+        if as_float:
+            value = str(value) + new_units
+            return Length(value).value(ppi=NM_PER_INCH, relative_length=relative_length)
+        if new_units == "mm":
+            return Length(value).to_mm(ppi=NM_PER_INCH, relative_length=relative_length)
+        elif new_units == "inch":
+            return Length(value).to_inch(ppi=NM_PER_INCH, relative_length=relative_length)
+        elif new_units == "cm":
+            return Length(value).to_cm(ppi=NM_PER_INCH, relative_length=relative_length)
+        elif new_units == "px":
+            return Length(value).to_px(ppi=NM_PER_INCH, relative_length=relative_length)
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -196,6 +220,11 @@ class ViewPort:
                     Length.str(scale_x),
                     Length.str(scale_y),
                 )
+
+
+    @staticmethod
+    def conversion(units, amount=1):
+        return Length("{amount}{units}".format(units=units, amount=amount)).value(ppi=NM_PER_INCH)
 
 
 class Length(object):

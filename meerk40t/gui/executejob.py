@@ -166,14 +166,12 @@ class PlannerPanel(wx.Panel):
             "",
         )
 
-        if self.context:
-            conversion = self.context.units_convert
-            name = self.context.units_name
-            if height:
-                height = "%.1f%s" % (height / conversion, name)
-            if width:
-                width = "%.1f%s" % (width / conversion, name)
-        dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
+        name = self.context.units_name
+        if width:
+            width = self.context.device.length(width, new_units=name)
+        else:
+            width = "%f%%" % (100.0 / rows)
+        dlg.SetValue(str(width))
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = self.context.device.length(dlg.GetValue(), 0, relative_length=width)
@@ -196,7 +194,11 @@ class PlannerPanel(wx.Panel):
             _("Enter Y Delta"),
             "",
         )
-        dlg.SetValue(str(height) if height is not None else "%f%%" % (100.0 / rows))
+        if height:
+            height = self.context.device.length(height, new_units=name)
+        else:
+            height = "%f%%" % (100.0 / cols)
+        dlg.SetValue(str(height))
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = self.context.device.length(dlg.GetValue(), 1, relative_length=height)

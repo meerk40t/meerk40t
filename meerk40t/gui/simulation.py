@@ -253,9 +253,6 @@ class SimulationPanel(wx.Panel, Job):
 
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
-        self.context.setting(int, "units_marks", 10)
-        self.context.setting(int, "units_index", 0)
-        self.context.setting(float, "units_convert", MILS_IN_MM)
 
         bbox = self.context.device.bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
