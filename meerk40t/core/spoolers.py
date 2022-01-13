@@ -89,7 +89,7 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
         @kernel.console_argument(
-            "amount", type=Length, help=_("amount to move in the set direction.")
+            "amount", type=str, help=_("amount to move in the set direction.")
         )
         @kernel.console_command(
             ("left", "right", "up", "down"),
@@ -103,20 +103,18 @@ def plugin(kernel, lifecycle):
             spooler = data
             if amount is None:
                 amount = Length("1mm")
-            max_bed_height = kernel.device.bedheight
-            max_bed_width = kernel.device.bedwidth
             if not hasattr(spooler, "_dx"):
                 spooler._dx = 0
             if not hasattr(spooler, "_dy"):
                 spooler._dy = 0
             if command.endswith("right"):
-                spooler._dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
+                spooler._dx += kernel.device.length(amount, 0)
             elif command.endswith("left"):
-                spooler._dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
+                spooler._dx -= kernel.device.length(amount, 0)
             elif command.endswith("up"):
-                spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
+                spooler._dy -= kernel.device.length(amount, 1)
             elif command.endswith("down"):
-                spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
+                spooler._dy += kernel.device.length(amount, 1)
             kernel.console(".timer 1 0 spool jog\n")
             return "spooler", spooler
 
@@ -272,6 +270,8 @@ class Spooler:
     Stores spoolable lasercode events as a synchronous queue.
     Stores an idle job operation for running constantly.
 
+    Spooler should be registered as a service_delegate of the service running the driver to process data.
+
     * peek()
     * pop()
     * job(job)
@@ -281,9 +281,10 @@ class Spooler:
     * remove(job)
     """
 
-    def __init__(self, context, *args, **kwargs):
+    def __init__(self, context, driver=None, **kwargs):
         self.context = context
-        self.driver = None
+        self.driver = driver
+        self.foreground_only = True
         self._realtime_lock = Lock()
         self._realtime_queue = []
         self._lock = Lock()
@@ -303,11 +304,16 @@ class Spooler:
     def __len__(self):
         return len(self._queue)
 
-    def service_attach(self, *args, **kwargs):
+    def added(self, *args, **kwargs):
         self.restart()
 
+    def service_attach(self, *args, **kwargs):
+        if self.foreground_only:
+            self.restart()
+
     def service_detach(self):
-        self.shutdown()
+        if self.foreground_only:
+            self.shutdown()
 
     def shutdown(self, *args, **kwargs):
         self._shutdown = True

@@ -40,7 +40,7 @@ of zero will remain zero.
 class PlotPlanner:
     def __init__(self, settings):
         self.settings = settings
-        self.debug = False
+        self.debug = True
 
         self.abort = False
         self.force_shift = False
@@ -98,8 +98,10 @@ class PlotPlanner:
             cut_set = cut.settings
             cur_set = self.settings
             start = cut.start()
-            new_start_x = int(start.x)
-            new_start_y = int(start.y)
+            new_start_x = start[0]
+            new_start_y = start[1]
+            assert isinstance(new_start_x, int)
+            assert isinstance(new_start_y, int)
             flush = False
             jog = 0
             if self.pos_x != new_start_x or self.pos_y != new_start_y:

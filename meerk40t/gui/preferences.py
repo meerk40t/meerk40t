@@ -44,9 +44,6 @@ class PreferencesUnitsPanel(wx.Panel):
         # end wxGlade
 
         self.context.setting(str, "units_name", "mm")
-        self.context.setting(int, "units_marks", 10)
-        self.context.setting(int, "units_index", 0)
-        self.context.setting(float, "units_convert", MILS_IN_MM)
         self.radio_units.SetSelection(self.context.units_index)
 
     def on_radio_units(self, event):
@@ -62,46 +59,26 @@ class PreferencesUnitsPanel(wx.Panel):
     def set_inch(self):
         context_root = self.context.root
         p = context_root
-        p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            1000.0,
-            "inch",
-            1,
-            2,
-        )
-        p.signal("units")
+        p.units_name = "inch"
+        p.signal("units", p.units_name)
 
     def set_mil(self):
         context_root = self.context.root
         p = context_root
-        p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            1.0,
-            "mil",
-            1000,
-            3,
-        )
-        p.signal("units")
+        p.units_name = "mil"
+        p.signal("mil", p.units_name)
 
     def set_cm(self):
         context_root = self.context.root
         p = context_root
-        p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            393.7,
-            "cm",
-            1,
-            1,
-        )
-        p.signal("units")
+        p.units_name = "cm"
+        p.signal("cm", p.units_name)
 
     def set_mm(self):
         context_root = self.context.root
         p = context_root
-        p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            39.37,
-            "mm",
-            10,
-            0,
-        )
-        p.signal("units")
+        p.units_name = "mm"
+        p.signal("mm", p.units_name)
 
 
 # end of class PreferencesUnitsPanel

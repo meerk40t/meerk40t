@@ -3,6 +3,7 @@ from copy import copy
 from os import path as ospath
 
 from ..core.planner import make_actual, needs_actualization
+from ..core.units import NM_PER_INCH, NM_PER_PIXEL
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 from .actualize import actualize
 
@@ -348,10 +349,10 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_argument("left", help="left side of crop", type=Length)
-    @context.console_argument("upper", help="upper side of crop", type=Length)
-    @context.console_argument("right", help="right side of crop", type=Length)
-    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_argument("left", help="left side of crop", type=int)
+    @context.console_argument("upper", help="upper side of crop", type=int)
+    @context.console_argument("right", help="right side of crop", type=int)
+    @context.console_argument("lower", help="lower side of crop", type=int)
     @context.console_command(
         "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
@@ -359,30 +360,6 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             try:
-                left = int(
-                    left.value(
-                        ppi=1000.0,
-                        relative_length=element.image_width,
-                    )
-                )
-                upper = int(
-                    upper.value(
-                        ppi=1000.0,
-                        relative_length=element.image_height,
-                    )
-                )
-                right = int(
-                    right.value(
-                        ppi=1000.0,
-                        relative_length=element.image_width,
-                    )
-                )
-                lower = int(
-                    lower.value(
-                        ppi=1000.0,
-                        relative_length=element.image_height,
-                    )
-                )
                 if left >= right:
                     raise SyntaxError(
                         _("Right margin is to the left of the left margin.")
@@ -825,7 +802,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument(
         "x",
-        type=Length,
+        type=int,
         help=_("X position at which to slice the image"),
     )
     @context.console_command(
@@ -836,12 +813,6 @@ def plugin(kernel, lifecycle=None):
     )
     def image(command, channel, _, data, x, **kwargs):
         for element in data:
-            x = int(
-                x.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
             img = element.image
             image_left = img.crop((0, 0, x, element.image_height))
             image_right = img.crop((x, 0, element.image_width, element.image_height))
@@ -871,7 +842,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument(
         "y",
-        type=Length,
+        type=int,
         help=_("Y position at which to slash the image"),
     )
     @context.console_command(
@@ -882,12 +853,6 @@ def plugin(kernel, lifecycle=None):
     )
     def image(command, channel, _, data, y, **kwargs):
         for element in data:
-            y = int(
-                y.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
             img = element.image
             image_top = img.crop((0, 0, element.image_width, y))
             image_bottom = img.crop((0, y, element.image_width, element.image_height))
@@ -922,10 +887,10 @@ def plugin(kernel, lifecycle=None):
         action="store_true",
         type=bool,
     )
-    @context.console_argument("left", help="left side of crop", type=Length)
-    @context.console_argument("upper", help="upper side of crop", type=Length)
-    @context.console_argument("right", help="right side of crop", type=Length)
-    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_argument("left", help="left side of crop", type=int)
+    @context.console_argument("upper", help="upper side of crop", type=int)
+    @context.console_argument("right", help="right side of crop", type=int)
+    @context.console_argument("lower", help="lower side of crop", type=int)
     @context.console_command(
         "pop",
         help=_("Pop pixels for more efficient rastering"),
@@ -938,31 +903,6 @@ def plugin(kernel, lifecycle=None):
         from PIL import Image
 
         for element in data:
-            left = int(
-                left.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
-            upper = int(
-                upper.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
-            right = int(
-                right.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
-            lower = int(
-                lower.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
-
             img = element.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -1838,7 +1778,9 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
+                    image *= "scale(%f,%f)" % (NM_PER_INCH / dpi[0], NM_PER_INCH / dpi[1])
+                else:
+                    image *= "scale(%f,%f)" % (NM_PER_PIXEL / dpi[0], NM_PER_PIXEL / dpi[1])
         except (KeyError, IndexError):
             pass
 

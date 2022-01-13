@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.units import NM_PER_INCH
 from meerk40t.gui.icons import icon_meerk40t, icons8_console_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -195,18 +196,14 @@ class MeerK40tScenePanel(wx.Panel):
 
         @self.context.console_argument("x", type=Length, help="x position")
         @self.context.console_argument("y", type=Length, help="y position")
-        @self.context.console_argument("width", type=Length, help="width of view")
-        @self.context.console_argument("height", type=Length, help="height of view")
+        @self.context.console_argument("width", type=str, help="width of view")
+        @self.context.console_argument("height", type=str, help="height of view")
         @self.context.console_command("focus", input_type="scene")
         def scene(command, _, channel, data, x, y, width, height, **kwargs):
-            x = x.value(ppi=1000.0, relative_length=self.context.device.bedwidth)
-            y = y.value(ppi=1000.0, relative_length=self.context.device.bedheight)
-            width = width.value(
-                ppi=1000.0, relative_length=self.context.device.bedwidth
-            )
-            height = height.value(
-                ppi=1000.0, relative_length=self.context.device.bedheight
-            )
+            x = self.context.device.length(x, 0)
+            y = self.context.device.length(y, 1)
+            width = self.context.device.length(width, 0)
+            height = self.context.device.length(height, 1)
             bbox = (x, y, width, height)
             data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
             data.request_refresh()

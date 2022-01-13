@@ -141,8 +141,18 @@ class CutObject:
         if settings is None:
             settings = LaserSettings()
         self.settings = settings
-        self._start = start
-        self._end = end
+        if start is not None:
+            self._start_x = int(round(start[0]))
+            self._start_y = int(round(start[1]))
+        else:
+            self._start_x = None
+            self._start_y = None
+        if end is not None:
+            self._end_x = int(round(end[0]))
+            self._end_y = int(round(end[1]))
+        else:
+            self._end_x = None
+            self._end_y = None
         self.normal = True  # Normal or Reversed.
         self.parent = parent
         self.next = None
@@ -161,49 +171,43 @@ class CutObject:
         return True
 
     def start(self):
-        return self._start if self.normal else self._end
+        return (self._start_x, self._start_y) if self.normal else (self._end_x, self._end_y)
 
     def end(self):
-        return self._end if self.normal else self._start
+        return (self._start_x, self._start_y) if not self.normal else (self._end_x, self._end_y)
 
     def length(self):
-        return Point.distance(self.start(), self.end())
+        return Point.distance((self._start_x, self._start_y), (self._end_x, self._end_y))
 
     def upper(self):
-        return min(self.start()[0], self.end()[0])
+        return min(self._start_y, self._end_y)
 
     def lower(self):
-        return max(self.start()[0], self.end()[0])
+        return max(self._start_y, self._end_y)
 
     def left(self):
-        return min(self.start()[1], self.end()[1])
+        return min(self._start_x, self._end_x)
 
     def right(self):
-        return max(self.start()[1], self.end()[1])
+        return max(self._start_x, self._end_x)
 
     def extra(self):
         return 0
 
     def major_axis(self):
-        start = self.start()
-        end = self.end()
-        if abs(start.x - end.x) > abs(start.y - end.y):
+        if abs(self._start_x - self._end_x) > abs(self._start_y - self._end_y):
             return 0  # X-Axis
         else:
             return 1  # Y-Axis
 
     def x_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.x < end.x:
+        if self._start_x < self._end_x:
             return 1
         else:
             return -1
 
     def y_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.y < end.y:
+        if self._start_y < self._end_y:
             return 1
         else:
             return -1
@@ -310,7 +314,8 @@ class CutCode(CutGroup):
         self.operation = "CutCode"
 
         self.travel_speed = 20.0
-        self.start = None
+        self.start_x = None
+        self.start_y = None
         self.mode = None
 
     def __str__(self):
@@ -334,7 +339,7 @@ class CutCode(CutGroup):
                 c = settings.line_color if settings.line_color is not None else "blue"
                 path.stroke = Color(c)
 
-            if len(path) == 0 or last.x != start.x or last.y != start.y:
+            if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
                 path.move(e.start())
             if isinstance(e, LineCut):
                 path.line(end)
@@ -651,16 +656,16 @@ class RasterCut(CutObject):
         return Point(self.plot.final_position_in_scene())
 
     def lower(self):
-        return self.plot.offset_x + self.height
+        return self.plot.offset_y + self.height
 
     def upper(self):
-        return self.plot.offset_x
+        return self.plot.offset_y
 
     def right(self):
-        return self.plot.offset_y + self.width
+        return self.plot.offset_x + self.width
 
     def left(self):
-        return self.plot.offset_y
+        return self.plot.offset_x
 
     def length(self):
         return (

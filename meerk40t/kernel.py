@@ -2854,6 +2854,7 @@ class Kernel(Settings):
             # Handle is excluded. triggers a knock-on effect bug in wxPython GTK systems.
             if attr == "Handle":
                 continue
+                # TODO: exclude properties.
             func = getattr(scan_object, attr)
             if hasattr(func, "signal_listener"):
                 for sl in func.signal_listener:

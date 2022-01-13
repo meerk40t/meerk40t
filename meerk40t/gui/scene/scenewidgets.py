@@ -1,3 +1,4 @@
+from meerk40t.core.units import NM_PER_MM
 from meerk40t.gui.scene.scene import Widget
 from meerk40t.gui.wxutils import create_menu
 
@@ -570,16 +571,11 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x0, y1, x0, y0)
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.context
-                conversion, name, marks, index = (
-                    p.units_convert,
-                    p.units_name,
-                    p.units_marks,
-                    p.units_index,
-                )
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
-                gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
-                gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
+                name = p.units_name
+                gc.DrawText(str(p.device.length(y0, 1, name)), center_x, y0 / 2.0)
+                gc.DrawText(str(p.device.length(x0, 0, name)), x0 / 2.0, center_y)
+                gc.DrawText(str(p.device.length((y1 - y0), 1, name)), x1, center_y)
+                gc.DrawText(str(p.device.length((x1 - x0), 0, name)), center_x, y1)
 
 
 class RectSelectWidget(Widget):
@@ -848,26 +844,23 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         context = self.scene.context
-        wmils = context.device.bedwidth * context.device.scale_x
-        hmils = context.device.bedheight * context.device.scale_y
-        kernel_root = context.root
-        convert = kernel_root.units_convert
-        marks = kernel_root.units_marks
-        step = convert * marks
+        width_in_nm = context.device.width_as_nm
+        height_in_nm = context.device.height_as_nm
+        step = context.device.length("10mm", as_float=True)
         starts = []
         ends = []
         if step == 0:
             self.grid = None
             return starts, ends
         x = 0.0
-        while x < wmils:
+        while x < width_in_nm:
             starts.append((x, 0))
-            ends.append((x, hmils))
+            ends.append((x, height_in_nm))
             x += step
         y = 0.0
-        while y < hmils:
+        while y < height_in_nm:
             starts.append((0, y))
-            ends.append((wmils, y))
+            ends.append((width_in_nm, y))
             y += step
         self.grid = starts, ends
 
@@ -877,17 +870,17 @@ class GridWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
-            wmils = context.device.bedwidth * context.device.scale_x
-            hmils = context.device.bedheight * context.device.scale_y
+            width_in_nm = context.device.width_as_nm
+            height_in_nm = context.device.height_as_nm
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)
-                gc.DrawRectangle(0, 0, wmils, hmils)
+                gc.DrawRectangle(0, 0, width_in_nm, height_in_nm)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, wmils, hmils)
+                gc.DrawRectangle(0, 0, width_in_nm, height_in_nm)
             else:
-                gc.DrawBitmap(background, 0, 0, wmils, hmils)
+                gc.DrawBitmap(background, 0, 0, width_in_nm, height_in_nm)
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
@@ -939,9 +932,7 @@ class GuideWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
-        scaled_conversion = (
-            p.units_convert * self.scene.widget_root.scene_widget.matrix.value_scale_x()
-        )
+        scaled_conversion = p.device.length(1.0, new_units=p.units_name, as_float=True) * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         if scaled_conversion == 0:
             return
         edge_gap = 5
@@ -969,15 +960,13 @@ class GuideWidget(Widget):
                 mark_point = (x - sx) / scaled_conversion
                 if round(mark_point * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                if mark_point >= 0 or p.show_negative_guide:
-                    starts.append((x, edge_gap))
-                    ends.append((x, length + edge_gap))
+                starts.append((x, edge_gap))
+                ends.append((x, length + edge_gap))
 
-                    starts.append((x, h - edge_gap))
-                    ends.append((x, h - length - edge_gap))
+                starts.append((x, h - edge_gap))
+                ends.append((x, h - length - edge_gap))
 
-                    # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-                    gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
+                gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
             x += points
 
         y = offset_y
