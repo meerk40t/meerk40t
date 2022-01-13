@@ -437,7 +437,6 @@ class Jog(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         context.setting(str, "jog_amount", "10mm")
-        self.jog = self.context.device.length(context.jog_amount)
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
@@ -566,44 +565,28 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.jog
-        dy = -self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative -{jog} -{jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = 0
-        dy = -self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative 0 -{jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.jog
-        dy = -self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative {jog} -{jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.jog
-        dy = 0
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative -{jog} 0\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.jog
-        dy = 0
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative {jog} 0\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.jog
-        dy = self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative -{jog} {jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = 0
-        dy = self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative 0 {jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.jog
-        dy = self.jog
-        self.context("move_relative %s %s\n" % (dx, dy))
+        self.context("move_relative {jog} {jog}\n".format(jog=self.context.jog_amount))
 
     def on_button_navigate_unlock(
         self, event=None
@@ -1015,7 +998,6 @@ class JogDistancePanel(wx.Panel):
         main_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
         )
-        row_1 = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.text_jog_amount, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
@@ -1030,11 +1012,12 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self, event):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(self.text_jog_amount.GetValue())
+            jog = self.context.device.length(self.text_jog_amount.GetValue(), new_units=self.context.units_name)
         except ValueError:
             return
         self.context.jog_amount = str(jog)
         self.context.signal("jog_amount", str(jog))
+        print(self.context.jog_amount)
 
 
 class NavigationPanel(wx.Panel):
