@@ -371,6 +371,13 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.SetSizer(sizer_27)
 
+        self.spin_home_x.SetValue(self.context.home_adjust_x)
+        self.spin_home_y.SetValue(self.context.home_adjust_y)
+        self.text_bedwidth.SetValue(self.context.bedwidth)
+        self.text_bedheight.SetValue(self.context.bedheight)
+        self.text_scale_x.SetValue("%.4f" % self.context.scale_x)
+        self.text_scale_y.SetValue("%.4f" % self.context.scale_y)
+
         self.Layout()
 
         self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
@@ -382,17 +389,7 @@ class ConfigurationLaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_bedheight, self.text_bedheight)
         self.Bind(wx.EVT_TEXT, self.on_text_x_scale, self.text_scale_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
-        # end wxGlade
-        self.spin_home_x.SetValue(self.context.home_adjust_x)
-        self.spin_home_y.SetValue(self.context.home_adjust_y)
-        self.text_bedwidth.SetValue(self.context.bedwidth)
-        self.text_bedheight.SetValue(self.context.bedheight)
-        self.text_scale_x.SetValue("%.4f" % self.context.scale_x)
-        self.text_scale_y.SetValue("%.4f" % self.context.scale_y)
 
-        # Disables of features not yet supported.
-        self.text_scale_x.Enable(False)
-        self.text_scale_y.Enable(False)
 
     def pane_show(self):
         pass

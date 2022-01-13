@@ -1102,16 +1102,16 @@ class LhystudiosDriver:
     def move_abs(self, x, y):
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
-        x = int(self.service.scale_x * x * NM_PER_INCH / 1000)
-        y = int(self.service.scale_y * y * NM_PER_INCH / 1000)
+        x = int(round(self.service.scale_x * x * NM_PER_INCH / 1000))
+        y = int(round(self.service.scale_y * y * NM_PER_INCH / 1000))
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
-        dx = int(self.service.scale_x * dx / NM_PER_MIL)
-        dy = int(self.service.scale_y * dy / NM_PER_MIL)
+        dx = int(round(self.service.scale_x * dx / NM_PER_MIL))
+        dy = int(round(self.service.scale_y * dy / NM_PER_MIL))
         self.rapid_mode()
         self.move_relative(dx, dy)
 
