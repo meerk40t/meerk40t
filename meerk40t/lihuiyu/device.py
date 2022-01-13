@@ -770,6 +770,15 @@ class LihuiyuDevice(Service, ViewPort):
         return float(self.driver.native_y * NM_PER_MIL) / self.scale_y
 
     @property
+    def get_native_scale_x(self):
+        return self.scale_x / float(NM_PER_MIL)
+
+    @property
+    def get_native_scale_y(self):
+        return self.scale_y / float(NM_PER_MIL)
+
+
+    @property
     def output(self):
         """
         This is the controller in controller mode and the tcp in network mode.
@@ -925,6 +934,7 @@ class LhystudiosDriver:
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
+            print(x,y,on)
             if self.hold_work():
                 time.sleep(0.05)
                 continue
@@ -1637,8 +1647,8 @@ class LhystudiosDriver:
         self.data_output(b"IPP\n")
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
-        self.native_x = x
-        self.native_y = y
+        self.native_x = 0
+        self.native_y = 0
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         adjust_x = self.service.home_adjust_x
@@ -1828,7 +1838,6 @@ class LhystudiosDriver:
         self.unset_prop(STATE_Y_FORWARD_TOP)
 
     def move_right(self, dx=0):
-        self.native_x += dx
         if not self.is_right or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1837,10 +1846,10 @@ class LhystudiosDriver:
             self.set_right()
         if dx != 0:
             self.data_output(lhymicro_distance(abs(dx)))
+            self.native_x += dx
             self.check_bounds()
 
     def move_left(self, dx=0):
-        self.native_x -= abs(dx)
         if not self.is_left or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1849,10 +1858,10 @@ class LhystudiosDriver:
             self.set_left()
         if dx != 0:
             self.data_output(lhymicro_distance(abs(dx)))
+            self.native_x -= abs(dx)
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        self.native_y += dy
         if not self.is_bottom or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1861,10 +1870,10 @@ class LhystudiosDriver:
             self.set_bottom()
         if dy != 0:
             self.data_output(lhymicro_distance(abs(dy)))
+            self.native_y += dy
             self.check_bounds()
 
     def move_top(self, dy=0):
-        self.native_y -= abs(dy)
         if not self.is_top or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1873,7 +1882,9 @@ class LhystudiosDriver:
             self.set_top()
         if dy != 0:
             self.data_output(lhymicro_distance(abs(dy)))
+            self.native_y -= abs(dy)
             self.check_bounds()
+
 
     ######################
     # ORIGINAL DRIVER CODE

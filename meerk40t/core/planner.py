@@ -324,8 +324,7 @@ class CutPlan:
         # Conditional Ops
         # ==========
         self.conditional_jobadd_strip_text()
-        if rotary.rotary_enabled:
-            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_scale()
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
 
@@ -619,14 +618,16 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def scale_for_rotary(self):
-        rotary = self.context.rotary
+    def scale_to_device_native(self):
+        # rotary = self.context.rotary
+        #
+        # if rotary.rotary_enabled:
+        #     axis = rotary.axis
+        # TODO: Correct rotary.
         device = self.context.device
-        scale_str = "scale(%f,%f,%f,%f)" % (
-            rotary.scale_x,
-            rotary.scale_y,
-            device.current_x,
-            device.current_y,
+        scale_str = "scale(%f,%f)" % (
+            device.get_native_scale_x,
+            device.get_native_scale_y,
         )
         for o in self.plan:
             if isinstance(o, LaserOperation):
@@ -697,10 +698,8 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def conditional_jobadd_scale_rotary(self):
-        rotary = self.context.rotary
-        if rotary.scale_x != 1.0 or rotary.scale_y != 1.0:
-            self.commands.append(self.scale_for_rotary)
+    def conditional_jobadd_scale(self):
+        self.commands.append(self.scale_to_device_native)
 
 
 class Planner(Service):

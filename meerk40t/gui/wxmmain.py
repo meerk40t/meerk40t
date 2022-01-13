@@ -1457,7 +1457,6 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
-
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
         self.usb_running = value
