@@ -4,7 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .units import PX_PER_uM, NM_PER_PIXEL
+from .units import NM_PER_INCH
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -267,7 +267,6 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        # context.root.setting(bool, "classify_reverse", False)
         reverse = False
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
@@ -275,7 +274,7 @@ class SVGLoader:
             ppi = 96.0
         if ppi == 0:
             ppi = 96.0
-        scale_factor = 1000.0 / ppi
+        scale_factor = NM_PER_INCH / ppi
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
