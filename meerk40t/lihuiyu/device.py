@@ -212,9 +212,8 @@ class LihuiyuDevice(Service, ViewPort):
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
-        self.spooler = Spooler(self)
         self.driver = LhystudiosDriver(self)
-        self.spooler.driver = self.driver
+        self.spooler = Spooler(self, driver=self.driver)
 
         self.add_service_delegate(self.spooler)
         # self.add_service_delegate(self.driver)
@@ -227,7 +226,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.controller = LhystudiosController(self)
         self.add_service_delegate(self.controller)
 
-        self.driver.spooler = self.spooler
         self.driver.output = self.controller if not self.networked else self.tcp
 
         self.viewbuffer = ""
@@ -779,20 +777,17 @@ class LhystudiosDriver:
     """
     LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
     to write to the usb.
-
-    The interpret() ticks to process additional data.
     """
 
-    def __init__(self, context, *args, **kwargs):
-        self.context = context
-        self.name = str(self.context)
+    def __init__(self, service, *args, **kwargs):
+        self.service = service
+        self.name = str(self.service)
 
         self.settings = LaserSettings()
 
         self.next = None
         self.prev = None
 
-        self.spooler = None
         self.output = None
 
         self.process_item = None
@@ -804,7 +799,7 @@ class LhystudiosDriver:
         self.current_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = context.plot_shift
+        self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
@@ -812,14 +807,11 @@ class LhystudiosDriver:
         self.is_relative = False
         self.laser = False
 
-        context._quit = False
+        service._quit = False
 
         self._thread = None
         self._shutdown = False
         self.last_fetch = None
-
-        kernel = context._kernel
-        _ = kernel.translation
 
         self.CODE_RIGHT = b"B"
         self.CODE_LEFT = b"T"
@@ -830,7 +822,7 @@ class LhystudiosDriver:
         self.CODE_LASER_OFF = b"U"
 
         self.is_paused = False
-        self.context._buffer_size = 0
+        self.service._buffer_size = 0
 
         def primary_hold():
             if self.output is None:
@@ -839,7 +831,7 @@ class LhystudiosDriver:
             buffer = len(self.output)
             if buffer is None:
                 return False
-            return self.context.buffer_limit and buffer > self.context.buffer_max
+            return self.service.buffer_limit and buffer > self.service.buffer_max
 
         self.holds.append(primary_hold)
 
@@ -848,7 +840,6 @@ class LhystudiosDriver:
         self.max_y = self.current_y
         self.min_x = self.current_x
         self.min_y = self.current_y
-        self.context = context
 
         # Step amount expected of the current operation
         self.step = 0
@@ -897,7 +888,7 @@ class LhystudiosDriver:
         self.output.write(e)
 
     def update_codes(self):
-        if not self.context.swap_xy:
+        if not self.service.swap_xy:
             self.CODE_RIGHT = b"B"
             self.CODE_LEFT = b"T"
             self.CODE_TOP = b"L"
@@ -907,11 +898,11 @@ class LhystudiosDriver:
             self.CODE_LEFT = b"L"
             self.CODE_TOP = b"T"
             self.CODE_BOTTOM = b"B"
-        if self.context.flip_x:
+        if self.service.flip_x:
             q = self.CODE_LEFT
             self.CODE_LEFT = self.CODE_RIGHT
             self.CODE_RIGHT = q
-        if self.context.flip_y:
+        if self.service.flip_y:
             q = self.CODE_TOP
             self.CODE_TOP = self.CODE_BOTTOM
             self.CODE_BOTTOM = q
@@ -981,7 +972,7 @@ class LhystudiosDriver:
                         self.move_absolute(x, y)
                     else:
                         # Jog is performable and requested. # We have not flagged our direction or state.
-                        self.jog_absolute(x, y, mode=self.context.opt_jog_mode)
+                        self.jog_absolute(x, y, mode=self.service.opt_jog_mode)
                 continue
             dx = x - sx
             dy = y - sy
@@ -992,13 +983,13 @@ class LhystudiosDriver:
                 self.raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
-                        if self.context.nse_raster:
+                        if self.service.nse_raster:
                             self.h_switch(dy)
                         else:
                             self.h_switch_g(dy)
                 elif self.is_prop(STATE_Y_STEPPER_ENABLE):
                     if dx != 0:
-                        if self.context.nse_raster:
+                        if self.service.nse_raster:
                             self.v_switch(dx)
                         else:
                             self.v_switch_g(dx)
@@ -1015,18 +1006,17 @@ class LhystudiosDriver:
         self.is_paused = False
 
     def reset(self):
-        if self.spooler is not None:
-            self.spooler.clear_queue()
+        self.service.spooler.clear_queue()
         self.plot_planner.clear()
         self.spooled_item = None
         self.temp_holds.clear()
 
-        self.context.signal("pipe;buffer", 0)
+        self.service.signal("pipe;buffer", 0)
         self.data_output(b"~I*\n~")
         self.laser = False
         self.properties = 0
         self.state = DRIVER_STATE_RAPID
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
         self.is_paused = False
 
     def blob(self, blob_type, data):
@@ -1096,14 +1086,14 @@ class LhystudiosDriver:
             self.goto_x(dx)
         if speed is not None:
             speed_code = LaserSpeed(
-                self.context.board,
+                self.service.board,
                 self.settings.speed,
                 self.settings.raster_step,
                 d_ratio=self.settings.implicit_d_ratio,
                 acceleration=self.settings.implicit_accel,
                 fix_limit=True,
                 fix_lows=True,
-                fix_speeds=self.context.fix_speeds,
+                fix_speeds=self.service.fix_speeds,
                 raster_horizontal=True,
             ).speedcode
             self.data_output(bytes(speed_code, "utf8"))
@@ -1112,16 +1102,17 @@ class LhystudiosDriver:
         self.state = original_state
 
     def move_abs(self, x, y):
-        x = self.context.length(x,0)
-        y = self.context.length(y,1)
+        x = self.service.length(x, 0)
+        y = self.service.length(y, 1)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx = self.context.length(dx, 0)
-        dy = self.context.length(dy, 1)
+        dx = self.service.length(dx, 0)
+        dy = self.service.length(dy, 1)
+        dx, dy = self.service.get_native(dx, dy)
         self.rapid_mode()
-        self.move_relative(int(dx), int(dy))
+        self.move_relative(dx, dy)
 
     def move(self, x, y):
         self.goto(x, y, False)
@@ -1173,22 +1164,22 @@ class LhystudiosDriver:
         dx = int(round(dx))
         dy = int(round(dy))
         if self.state == DRIVER_STATE_RAPID:
-            if self.context.rapid_override and (dx != 0 or dy != 0):
+            if self.service.rapid_override and (dx != 0 or dy != 0):
                 # Rapid movement override. Should make programmed jogs.
                 self.set_acceleration(None)
                 self.set_step(0)
                 if dx != 0:
                     self.rapid_mode()
-                    self.set_speed(self.context.rapid_override_speed_x)
+                    self.set_speed(self.service.rapid_override_speed_x)
                     self.program_mode()
                     self.goto_octent(dx, 0, cut)
                 if dy != 0:
                     if (
-                        self.context.rapid_override_speed_x
-                        != self.context.rapid_override_speed_y
+                        self.service.rapid_override_speed_x
+                        != self.service.rapid_override_speed_y
                     ):
                         self.rapid_mode()
-                        self.set_speed(self.context.rapid_override_speed_y)
+                        self.set_speed(self.service.rapid_override_speed_y)
                         self.program_mode()
                     self.goto_octent(0, dy, cut)
                 self.rapid_mode()
@@ -1199,7 +1190,7 @@ class LhystudiosDriver:
                 if dy != 0:
                     self.goto_y(dy)
                 self.data_output(b"S1P\n")
-                if not self.context.autolock:
+                if not self.service.autolock:
                     self.data_output(b"IS2P\n")
         elif self.state == DRIVER_STATE_RASTER:
             # goto in raster, switches to program to recall this function.
@@ -1223,7 +1214,7 @@ class LhystudiosDriver:
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
         self.check_bounds()
-        self.context.signal(
+        self.service.signal(
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
         )
@@ -1257,7 +1248,7 @@ class LhystudiosDriver:
                     "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
                     % (str(dx), str(dy))
                 )
-        self.context.signal(
+        self.service.signal(
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
         )
@@ -1293,7 +1284,7 @@ class LhystudiosDriver:
             self.data_output(b"I")
             self.data_output(self.CODE_LASER_OFF)
             self.data_output(b"S1P\n")
-            if not self.context.autolock:
+            if not self.service.autolock:
                 self.data_output(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_OFF)
@@ -1310,7 +1301,7 @@ class LhystudiosDriver:
             self.data_output(b"I")
             self.data_output(self.CODE_LASER_ON)
             self.data_output(b"S1P\n")
-            if not self.context.autolock:
+            if not self.service.autolock:
                 self.data_output(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
             self.data_output(self.CODE_LASER_ON)
@@ -1325,7 +1316,7 @@ class LhystudiosDriver:
             return
         if self.state == DRIVER_STATE_FINISH:
             self.data_output(b"S1P\n")
-            if not self.context.autolock:
+            if not self.service.autolock:
                 self.data_output(b"IS2P\n")
         elif self.state in (
             DRIVER_STATE_PROGRAM,
@@ -1335,7 +1326,7 @@ class LhystudiosDriver:
             self.data_output(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
 
     def instance_step(self):
         """
@@ -1346,7 +1337,7 @@ class LhystudiosDriver:
         self.step_index = 0
         self.step = self.settings.raster_step
         self.step_value_set = 0
-        if self.context.nse_raster and not self.context.nse_stepraster:
+        if self.service.nse_raster and not self.service.nse_stepraster:
             return 0
         self.step_value_set = self.step
         return self.step_value_set
@@ -1367,15 +1358,15 @@ class LhystudiosDriver:
         self.data_output(b"@NSE")
         self.state = DRIVER_STATE_RAPID
         speed_code = LaserSpeed(
-            self.context.board,
+            self.service.board,
             self.settings.speed,
             self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=True if self.context.twitchless and not self.step else None,
-            fix_speeds=self.context.fix_speeds,
+            suffix_c=True if self.service.twitchless and not self.step else None,
+            fix_speeds=self.service.fix_speeds,
             raster_horizontal=True,
         ).speedcode
         self.data_output(bytes(speed_code, "utf8"))
@@ -1405,7 +1396,7 @@ class LhystudiosDriver:
         elif self.state == DRIVER_STATE_RAPID:
             self.data_output(b"I")
         self.state = DRIVER_STATE_FINISH
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
 
     def raster_mode(self, raster_horizontal=True, *values):
         """
@@ -1420,14 +1411,14 @@ class LhystudiosDriver:
         self.finished_mode()
 
         speed_code = LaserSpeed(
-            self.context.board,
+            self.service.board,
             self.settings.speed,
             self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            fix_speeds=self.context.fix_speeds,
+            fix_speeds=self.service.fix_speeds,
             raster_horizontal=raster_horizontal,
         ).speedcode
         self.data_output(bytes(speed_code, "utf8"))
@@ -1436,7 +1427,7 @@ class LhystudiosDriver:
         self.declare_directions()
         self.data_output(b"S1E")
         self.state = DRIVER_STATE_RASTER
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values):
         """
@@ -1450,15 +1441,15 @@ class LhystudiosDriver:
         self.finished_mode()
 
         speed_code = LaserSpeed(
-            self.context.board,
+            self.service.board,
             self.settings.speed,
             self.instance_step(),
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=True if self.context.twitchless else None,
-            fix_speeds=self.context.fix_speeds,
+            suffix_c=True if self.service.twitchless else None,
+            fix_speeds=self.service.fix_speeds,
             raster_horizontal=True,
         ).speedcode
         self.data_output(bytes(speed_code, "utf8"))
@@ -1467,7 +1458,7 @@ class LhystudiosDriver:
         self.declare_directions()
         self.data_output(b"S1E")
         self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
 
     def h_switch(self, dy: float):
         """
@@ -1614,10 +1605,10 @@ class LhystudiosDriver:
     def calc_home_position(self):
         x = 0
         y = 0
-        if self.context.home_right:
-            x = int(self.context.device.width)
-        if self.context.home_bottom:
-            y = int(self.context.device.height)
+        if self.service.home_right:
+            x = int(self.service.device.width)
+        if self.service.home_bottom:
+            y = int(self.service.device.height)
         return x, y
 
     def home(self, *values):
@@ -1630,14 +1621,14 @@ class LhystudiosDriver:
         self.current_y = y
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
-        adjust_x = self.context.home_adjust_x
-        adjust_y = self.context.home_adjust_y
+        adjust_x = self.service.home_adjust_x
+        adjust_y = self.service.home_adjust_y
         try:
             adjust_x = values[0]
             adjust_y = values[1]
             if isinstance(adjust_x, str):
-                adjust_x = self.context.length(adjust_x, 0)
-                adjust_y = self.context.length(adjust_y, 1)
+                adjust_x = self.service.length(adjust_x, 0)
+                adjust_y = self.service.length(adjust_y, 1)
         except IndexError:
             pass
         if adjust_x != 0 or adjust_y != 0:
@@ -1647,8 +1638,8 @@ class LhystudiosDriver:
             self.current_x = x
             self.current_y = y
 
-        self.context.signal("driver;mode", self.state)
-        self.context.signal(
+        self.service.signal("driver;mode", self.state)
+        self.service.signal(
             "driver;position", (old_x, old_y, self.current_x, self.current_y)
         )
 
@@ -1712,7 +1703,7 @@ class LhystudiosDriver:
         self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
     def set_requested_directions(self):
-        if self.context.strict:
+        if self.service.strict:
             self.unset_prop(STATE_X_FORWARD_LEFT)
             self.unset_prop(STATE_Y_FORWARD_TOP)
             self.unset_prop(STATE_HORIZONTAL_MAJOR)
@@ -1943,7 +1934,7 @@ class LhystudiosDriver:
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
-        self.context.signal("driver;status", status)
+        self.service.signal("driver;status", status)
 
     def set_prop(self, mask):
         self.properties |= mask
