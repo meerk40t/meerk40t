@@ -15,14 +15,17 @@ Please note we have a [Code of Conduct](CODE_OF_CONDUCT.md), please follow it in
 
 ## Pull Requests
 
-Code improvements and language improvements need to be submitted as Push Requests.
-Usually you will need to fork the
+Code improvements and language improvements need to be submitted as Pull Requests.
+Usually you will need to:
+
+1. On Github, fork the
 [MeerK40t/MeerK40t repo](/meerk40t/meerk40t),
-then use Git to clone your fork to your computer,
-create a new Git branch for your changes,
-code and test your changes,
-use Git to push them up to Github,
-and then create a Github Push Request.
+2. Use Git to clone your fork to your computer
+3. Create a new Git branch for your changes
+4. Code and test your changes
+5. Use Git to push them up to Github; and
+6. Create a Github Push Request.
+
 If you are not a Git expert (and how many of us are?),
 you may want to install Github Desktop to make this easy for you.
 
