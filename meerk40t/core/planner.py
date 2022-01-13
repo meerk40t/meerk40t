@@ -4,7 +4,7 @@ from time import time
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..kernel import Service
-from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
 
@@ -238,6 +238,10 @@ def plugin(kernel, lifecycle=None):
                 kernel.root._quit = True
 
 
+class CutPlanningFailedError(Exception):
+    pass
+
+
 class CutPlan:
     """
     Cut Plan is a centralized class to modify plans with specific methods.
@@ -271,8 +275,11 @@ class CutPlan:
         # Using copy of commands, so commands can add ops.
         cmds = self.commands[:]
         self.commands.clear()
-        for cmd in cmds:
-            cmd()
+        try:
+            for cmd in cmds:
+                cmd()
+        except AssertionError:
+            raise CutPlanningFailedError("Raster too large.")
 
     def preprocess(self):
         context = self.context
@@ -317,8 +324,7 @@ class CutPlan:
         # Conditional Ops
         # ==========
         self.conditional_jobadd_strip_text()
-        if rotary.rotary_enabled:
-            self.conditional_jobadd_scale_rotary()
+        self.conditional_jobadd_scale()
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
 
@@ -612,14 +618,16 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def scale_for_rotary(self):
-        rotary = self.context.rotary
+    def scale_to_device_native(self):
+        # rotary = self.context.rotary
+        #
+        # if rotary.rotary_enabled:
+        #     axis = rotary.axis
+        # TODO: Correct rotary.
         device = self.context.device
-        scale_str = "scale(%f,%f,%f,%f)" % (
-            rotary.scale_x,
-            rotary.scale_y,
-            device.current_x,
-            device.current_y,
+        scale_str = "scale(%f,%f)" % (
+            device.get_native_scale_x,
+            device.get_native_scale_y,
         )
         for o in self.plan:
             if isinstance(o, LaserOperation):
@@ -690,10 +698,8 @@ class CutPlan:
             except AttributeError:
                 pass
 
-    def conditional_jobadd_scale_rotary(self):
-        rotary = self.context.rotary
-        if rotary.scale_x != 1.0 or rotary.scale_y != 1.0:
-            self.commands.append(self.scale_for_rotary)
+    def conditional_jobadd_scale(self):
+        self.commands.append(self.scale_to_device_native)
 
 
 class Planner(Service):
@@ -1006,7 +1012,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
-            data.execute()
+            try:
+                data.execute()
+            except CutPlanningFailedError as e:
+                self.signal("cutplanning;failed", str(e))
+                data.clear()
+                return
             self.signal("plan", data.name, 3)
             return data_type, data
 
@@ -1057,10 +1068,10 @@ class Planner(Service):
         @self.console_argument("cols", type=int, help=_("columns for the grid"))
         @self.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.console_argument(
-            "x_distance", type=Length, help=_("x_distance each column step")
+            "x_distance", type=str, help=_("x_distance each column step")
         )
         @self.console_argument(
-            "y_distance", type=Length, help=_("y_distance each row step")
+            "y_distance", type=str, help=_("y_distance each row step")
         )
         @self.console_command(
             "step_repeat",
@@ -1115,17 +1126,13 @@ class Planner(Service):
 
             try:
                 if x_distance is None:
-                    x_distance = Length("%f%%" % (100.0 / (cols + 1)))
+                    x_distance = "%f%%" % (100.0 / (cols + 1))
                 if y_distance is None:
-                    y_distance = Length("%f%%" % (100.0 / (rows + 1)))
+                    y_distance = "%f%%" % (100.0 / (rows + 1))
             except Exception:
                 pass
-            x_distance = x_distance.value(
-                ppi=1000.0, relative_length=self.device.bedwidth
-            )
-            y_distance = y_distance.value(
-                ppi=1000.0, relative_length=self.device.bedheight
-            )
+            x_distance = self.device.length(x_distance,1)
+            y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
             y_pos = 0

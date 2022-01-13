@@ -821,7 +821,9 @@ class ShadowTree:
         """
         first_element = self.context.first_element(emphasized=True)
         if hasattr(first_element, "node"):
-            self.activated_node(first_element.node)
+            activate = self.context.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(first_element.node)
 
     def on_item_selection_changed(self, event):
         """

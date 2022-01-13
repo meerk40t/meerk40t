@@ -86,7 +86,8 @@ class DevicePanel(wx.Panel):
 
     def on_tree_device_activated(self, event):  # wxGlade: DevicePanel.<event_handler>
         device = self.devices_tree.GetItemData(event.GetItem())
-        device.kernel.activate_service_path("device", device.path)
+        if device is not None:
+            device.kernel.activate_service_path("device", device.path)
 
     def on_tree_device_right_click(self, event):
         index = event.GetItem()

@@ -3,6 +3,7 @@ import os.path
 import re
 from copy import copy
 
+from .units import NM_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -14,7 +15,6 @@ from ..svgelements import (
     CubicBezier,
     Ellipse,
     Group,
-    Length,
     Line,
     Matrix,
     Move,
@@ -2069,7 +2069,7 @@ class Elemental(Service):
         @self.console_option("speed", "s", type=float)
         @self.console_option("power", "p", type=float)
         @self.console_option("step", "S", type=int)
-        @self.console_option("overscan", "o", type=Length)
+        @self.console_option("overscan", "o", type=str)
         @self.console_option("passes", "x", type=int)
         @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
@@ -2106,9 +2106,7 @@ class Elemental(Service):
             if step is not None:
                 op.settings.raster_step = step
             if overscan is not None:
-                op.settings.overscan = int(
-                    overscan.value(ppi=1000.0, relative_length=self.device.bedwidth)
-                )
+                op.settings.overscan = self.device.length(overscan, -1)
             if command == "cut":
                 op.operation = "Cut"
             elif command == "engrave":
@@ -2145,7 +2143,6 @@ class Elemental(Service):
                     op.settings.raster_step = step_size
                     op.notify_update()
             return "ops", data
-
 
         @self.console_option(
             "difference",
@@ -2833,10 +2830,10 @@ class Elemental(Service):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             for node in data:
-                bw = self.device.bedwidth
-                bh = self.device.bedheight
-                dx = (bw - left_edge - right_edge) / 2.0
-                dy = (bh - top_edge - bottom_edge) / 2.0
+                device_width = self.device.width
+                device_height = self.device.height
+                dx = (device_width - left_edge - right_edge) / 2.0
+                dy = (device_height - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
                 for q in node.flat(types="elem"):
                     obj = q.object
@@ -2935,14 +2932,14 @@ class Elemental(Service):
                 "none",
             ):
                 for node in data:
-                    bw = self.device.bedwidth
-                    bh = self.device.bedheight
+                    device_width = self.device.width
+                    device_height = self.device.height
 
                     matrix = Viewbox.viewbox_transform(
                         0,
                         0,
-                        bw,
-                        bh,
+                        device_width,
+                        device_height,
                         left_edge,
                         top_edge,
                         right_edge - left_edge,
@@ -2960,8 +2957,8 @@ class Elemental(Service):
 
         @self.console_argument("c", type=int, help=_("Number of columns"))
         @self.console_argument("r", type=int, help=_("Number of rows"))
-        @self.console_argument("x", type=Length, help=_("x distance"))
-        @self.console_argument("y", type=Length, help=_("y distance"))
+        @self.console_argument("x", type=str, help=_("x distance"))
+        @self.console_argument("y", type=str, help=_("y distance"))
         @self.console_command(
             "grid",
             help=_("grid <columns> <rows> <x_distance> <y_distance>"),
@@ -2969,7 +2966,7 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_grid(
-            command, channel, _, c: int, r: int, x: Length, y: Length, data=None, **kwargs
+            command, channel, _, c: int, r: int, x: str, y: str, data=None, **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -2979,19 +2976,17 @@ class Elemental(Service):
             if r is None:
                 raise SyntaxError
             if x is None:
-                x = Length("100%")
+                x = "100%"
             if y is None:
-                y = Length("100%")
+                y = "100%"
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
                 height = bounds[3] - bounds[1]
             except Exception:
                 raise SyntaxError
-            x = x.value(ppi=1000, relative_length=width)
-            y = y.value(ppi=1000, relative_length=height)
-            if isinstance(x, Length) or isinstance(y, Length):
-                raise SyntaxError
+            x = self.device.length(x, 0, percent=width)
+            y = self.device.length(y, 1, percent=height)
             y_pos = 0
             data_out = list(data)
             for j in range(r):
@@ -3046,9 +3041,9 @@ class Elemental(Service):
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
-        @self.console_argument("x_pos", type=Length)
-        @self.console_argument("y_pos", type=Length)
-        @self.console_argument("r_pos", type=Length)
+        @self.console_argument("x_pos", type=str)
+        @self.console_argument("y_pos", type=str)
+        @self.console_argument("r_pos", type=str)
         @self.console_command(
             "circle",
             help=_("circle <x> <y> <r> or circle <r>"),
@@ -3063,12 +3058,11 @@ class Elemental(Service):
                     r_pos = x_pos
                     x_pos = 0
                     y_pos = 0
+
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            r_pos = self.device.length(r_pos, -1)
             circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
-            circ.render(
-                ppi=1000.0,
-                width=self.device.bedwidth,
-                height=self.device.bedheight,
-            )
             self.add_element(circ)
             if data is None:
                 return "elements", [circ]
@@ -3076,10 +3070,10 @@ class Elemental(Service):
                 data.append(circ)
                 return "elements", data
 
-        @self.console_argument("x_pos", type=Length)
-        @self.console_argument("y_pos", type=Length)
-        @self.console_argument("rx_pos", type=Length)
-        @self.console_argument("ry_pos", type=Length)
+        @self.console_argument("x_pos", type=str)
+        @self.console_argument("y_pos", type=str)
+        @self.console_argument("rx_pos", type=str)
+        @self.console_argument("ry_pos", type=str)
         @self.console_command(
             "ellipse",
             help=_("ellipse <cx> <cy> <rx> <ry>"),
@@ -3089,12 +3083,11 @@ class Elemental(Service):
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
             if ry_pos is None:
                 raise SyntaxError
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            rx_pos = self.device.length(rx_pos, 0)
+            ry_pos = self.device.length(ry_pos, 1)
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
-            ellip.render(
-                ppi=1000.0,
-                width=self.device.bedwidth,
-                height=self.device.bedheight,
-            )
             self.add_element(ellip)
             if data is None:
                 return "elements", [ellip]
@@ -3103,17 +3096,17 @@ class Elemental(Service):
                 return "elements", data
 
         @self.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
+            "x_pos", type=str, help=_("x position for top left corner of rectangle.")
         )
         @self.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
+            "y_pos", type=str, help=_("y position for top left corner of rectangle.")
         )
-        @self.console_argument("width", type=Length, help=_("width of the rectangle."))
+        @self.console_argument("width", type=str, help=_("width of the rectangle."))
         @self.console_argument(
-            "height", type=Length, help=_("height of the rectangle.")
+            "height", type=str, help=_("height of the rectangle.")
         )
-        @self.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
-        @self.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
+        @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
+        @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
         @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
@@ -3128,13 +3121,14 @@ class Elemental(Service):
             """
             if x_pos is None:
                 raise SyntaxError
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            rx_pos = self.device.length(rx, 0)
+            ry_pos = self.device.length(ry, 1)
+            width = self.device.length(width, 0)
+            height = self.device.length(height, 1)
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-            rect.render(
-                ppi=1000.0,
-                width=self.device.bedwidth,
-                height=self.device.bedheight,
-            )
-            # rect = Path(rect)
+
             self.add_element(rect)
             if data is None:
                 return "elements", [rect]
@@ -3142,10 +3136,10 @@ class Elemental(Service):
                 data.append(rect)
                 return "elements", data
 
-        @self.console_argument("x0", type=Length, help=_("start x position"))
-        @self.console_argument("y0", type=Length, help=_("start y position"))
-        @self.console_argument("x1", type=Length, help=_("end x position"))
-        @self.console_argument("y1", type=Length, help=_("end y position"))
+        @self.console_argument("x0", type=str, help=_("start x position"))
+        @self.console_argument("y0", type=str, help=_("start y position"))
+        @self.console_argument("x1", type=str, help=_("end x position"))
+        @self.console_argument("y1", type=str, help=_("end y position"))
         @self.console_command(
             "line",
             help=_("adds line to scene"),
@@ -3158,12 +3152,11 @@ class Elemental(Service):
             """
             if y1 is None:
                 raise SyntaxError
+            x0 = self.device.length(x0, 0)
+            y0 = self.device.length(y0, 1)
+            x1 = self.device.length(x1, 0)
+            y1 = self.device.length(y1, 1)
             simple_line = SimpleLine(x0, y0, x1, y1)
-            simple_line.render(
-                ppi=1000.0,
-                width=self.device.bedwidth,
-                height=self.device.bedheight,
-            )
             self.add_element(simple_line)
             if data is None:
                 return "elements", [simple_line]
@@ -3196,6 +3189,7 @@ class Elemental(Service):
         def element_polygon(args=tuple(), **kwargs):
             try:
                 element = Polygon(list(map(float, args)))
+                element *= "Scale({scale})".format(scale=NM_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(
                     _(
@@ -3212,6 +3206,7 @@ class Elemental(Service):
         def element_polyline(command, channel, _, args=tuple(), **kwargs):
             try:
                 element = Polyline(list(map(float, args)))
+                element *= "Scale({scale})".format(scale=NM_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(
                     _(
@@ -3254,7 +3249,7 @@ class Elemental(Service):
                 return "elements", data
 
         @self.console_argument(
-            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
+            "stroke_width", type=str, help=_("Stroke-width for the given stroke")
         )
         @self.console_command(
             "stroke-width",
@@ -3287,11 +3282,7 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            stroke_width = stroke_width.value(
-                ppi=1000.0, relative_length=self.device.bedwidth
-            )
-            if isinstance(stroke_width, Length):
-                raise SyntaxError
+            stroke_width = self.device.length(stroke_width, -1)
             for e in data:
                 e.stroke_width = stroke_width
                 if hasattr(e, "node"):
@@ -3408,8 +3399,8 @@ class Elemental(Service):
                         e.node.altered()
             return "elements", data
 
-        @self.console_argument("x_offset", type=Length, help=_("x offset."))
-        @self.console_argument("y_offset", type=Length, help=_("y offset"))
+        @self.console_argument("x_offset", type=str, help=_("x offset."))
+        @self.console_argument("y_offset", type=str, help=_("y offset"))
         @self.console_command(
             "outline",
             help=_("outline the current selected elements"),
@@ -3442,13 +3433,14 @@ class Elemental(Service):
             y_pos = bounds[1]
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
+
             offset_x = (
-                y_offset.value(ppi=1000.0, relative_length=width)
+                self.device.length(x_offset, 0)
                 if len(args) >= 1
                 else 0
             )
             offset_y = (
-                x_offset.value(ppi=1000.0, relative_length=height)
+                self.device.length(y_offset, 1)
                 if len(args) >= 2
                 else offset_x
             )
@@ -3467,8 +3459,8 @@ class Elemental(Service):
                 return "elements", data
 
         @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
-        @self.console_option("cx", "x", type=Length, help=_("center x"))
-        @self.console_option("cy", "y", type=Length, help=_("center y"))
+        @self.console_option("cx", "x", type=str, help=_("center x"))
+        @self.console_option("cy", "y", type=str, help=_("center y"))
         @self.console_option(
             "absolute",
             "a",
@@ -3524,11 +3516,11 @@ class Elemental(Service):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                cx = self.device.length(cx, 0)
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(ppi=1000.0, relative_length=self.device.bedheight)
+                cy = self.device.length(cy, 1)
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -3560,8 +3552,8 @@ class Elemental(Service):
 
         @self.console_argument("scale_x", type=float, help=_("scale_x value"))
         @self.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @self.console_option("px", "x", type=Length, help=_("scale x origin point"))
-        @self.console_option("py", "y", type=Length, help=_("scale y origin point"))
+        @self.console_option("px", "x", type=str, help=_("scale x origin point"))
+        @self.console_option("py", "y", type=str, help=_("scale y origin point"))
         @self.console_option(
             "absolute",
             "a",
@@ -3616,17 +3608,17 @@ class Elemental(Service):
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
-                center_x = px.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                center_x = self.device.length(px, 0)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                center_y = py.value(ppi=1000.0, relative_length=self.device.bedheight)
+                center_x = self.device.length(py, 1)
             else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
+                center_x = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
+            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_x))
             try:
                 if not absolute:
                     for e in data:
@@ -3651,9 +3643,7 @@ class Elemental(Service):
                         osy = e.transform.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix(
-                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
-                        )
+                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_x))
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
@@ -3661,8 +3651,8 @@ class Elemental(Service):
                 raise SyntaxError
             return "elements", data
 
-        @self.console_argument("tx", type=Length, help=_("translate x value"))
-        @self.console_argument("ty", type=Length, help=_("translate y value"))
+        @self.console_argument("tx", type=str, help=_("translate x value"))
+        @self.console_argument("ty", type=str, help=_("translate y value"))
         @self.console_option(
             "absolute",
             "a",
@@ -3705,11 +3695,11 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                tx = self.device.length(tx, 0)
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(ppi=1000.0, relative_length=self.device.bedheight)
+                ty = self.device.length(ty, 0)
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -3768,13 +3758,13 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner")
+            "x_pos", type=str, help=_("x position for top left corner")
         )
         @self.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner")
+            "y_pos", type=str, help=_("y position for top left corner")
         )
-        @self.console_argument("width", type=Length, help=_("new width of selected"))
-        @self.console_argument("height", type=Length, help=_("new height of selected"))
+        @self.console_argument("width", type=str, help=_("new width of selected"))
+        @self.console_argument("height", type=str, help=_("new height of selected"))
         @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -3785,10 +3775,10 @@ class Elemental(Service):
             if height is None:
                 raise SyntaxError
             try:
-                x_pos = x_pos.value(ppi=1000.0, relative_length=self.device.bedwidth)
-                y_pos = y_pos.value(ppi=1000.0, relative_length=self.device.bedheight)
-                width = width.value(ppi=1000.0, relative_length=self.device.bedwidth)
-                height = height.value(ppi=1000.0, relative_length=self.device.bedheight)
+                x_pos = self.device.length(x_pos, 0)
+                y_pos = self.device.length(y_pos, 1)
+                width = self.device.length(width, 0)
+                height = self.device.length(height, 1)
                 area = self.selected_area()
                 if area is None:
                     return
@@ -3824,8 +3814,8 @@ class Elemental(Service):
         @self.console_argument("kx", type=float, help=_("skew_x value"))
         @self.console_argument("sy", type=float, help=_("scale_y value"))
         @self.console_argument("ky", type=float, help=_("skew_y value"))
-        @self.console_argument("tx", type=Length, help=_("translate_x value"))
-        @self.console_argument("ty", type=Length, help=_("translate_y value"))
+        @self.console_argument("tx", type=str, help=_("translate_x value"))
+        @self.console_argument("ty", type=str, help=_("translate_y value"))
         @self.console_command(
             "matrix",
             help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
@@ -3860,8 +3850,8 @@ class Elemental(Service):
                     kx,
                     sy,
                     ky,
-                    tx.value(ppi=1000.0, relative_length=self.device.bedwidth),
-                    ty.value(ppi=1000.0, relative_length=self.device.bedheight),
+                    self.device.length(tx, 0),
+                    self.device.length(ty, 1),
                 )
                 for e in data:
                     try:
@@ -4255,8 +4245,8 @@ class Elemental(Service):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @self.console_option("dx", "x", help=_("paste offset x"), type=Length)
-        @self.console_option("dy", "y", help=_("paste offset y"), type=Length)
+        @self.console_option("dx", "x", help=_("paste offset x"), type=str)
+        @self.console_option("dy", "y", help=_("paste offset y"), type=str)
         @self.console_command(
             "paste",
             help=_("clipboard paste"),
@@ -4274,11 +4264,11 @@ class Elemental(Service):
                 if dx is None:
                     dx = 0
                 else:
-                    dx = dx.value(ppi=1000.0, relative_length=self.device.bedwidth)
+                    dx = self.device.length(dx, 0)
                 if dy is None:
                     dy = 0
                 else:
-                    dy = dy.value(ppi=1000.0, relative_length=self.device.bedheight)
+                    dy = self.device.length(dy, 1)
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m

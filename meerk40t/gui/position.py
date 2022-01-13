@@ -1,8 +1,8 @@
 import wx
 from wx import aui
 
+from meerk40t.core.units import ViewPort
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
-from meerk40t.svgelements import Length
 
 _ = wx.GetTranslation
 
@@ -42,10 +42,11 @@ class PositionPanel(wx.Panel):
         self.button_aspect_ratio = wx.BitmapButton(
             self, wx.ID_ANY, icons8_lock_50.GetBitmap()
         )
+        self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
-            choices=[_("mm"), _("cm"), _("inch"), _("mil"), "%"],
+            choices=self.choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_box_units.SetSelection(0)
@@ -70,10 +71,8 @@ class PositionPanel(wx.Panel):
         self.position_y = 0.0
         self.position_h = 0.0
         self.position_w = 0.0
-        self.position_units = 0
-        self.position_name = None
-        self.context.setting(int, "units_index", 0)
-        self.position_units = self.context.units_index
+        self.context.setting(int, "units_name", "mm")
+        self.position_units = self.context.units_name
         self._update_position()
 
     def pane_show(self, *args):
@@ -143,7 +142,8 @@ class PositionPanel(wx.Panel):
                 self.text_x.Enable(False)
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
-            self.combo_box_units.SetSelection(self.position_units)
+            if self.position_units in self.choices:
+                self.combo_box_units.SetSelection(self.choices.index(self.position_units))
             return
         if not self.text_x.IsEnabled():
             self.text_w.Enable(True)
@@ -153,22 +153,13 @@ class PositionPanel(wx.Panel):
             self.button_aspect_ratio.Enable(True)
 
         x0, y0, x1, y1 = bounds
-        conversion, name, index = (39.37, "mm", 0)
-        if self.position_units == 2:
-            conversion, name, index = (1000.0, "in", 2)
-        elif self.position_units == 3:
-            conversion, name, index = (1.0, "mil", 3)
-        elif self.position_units == 1:
-            conversion, name, index = (393.7, "cm", 1)
-        elif self.position_units == 0:
-            conversion, name, index = (39.37, "mm", 0)
-        self.position_name = name
+        conversion = ViewPort.conversion(self.position_units)
         self.position_x = x0 / conversion
         self.position_y = y0 / conversion
         self.position_w = (x1 - x0) / conversion
         self.position_h = (y1 - y0) / conversion
 
-        if self.position_units == 4:
+        if self.position_units == "%":
             self.text_x.SetValue("%.2f" % 100)
             self.text_y.SetValue("%.2f" % 100)
             self.text_w.SetValue("%.2f" % 100)
@@ -181,7 +172,7 @@ class PositionPanel(wx.Panel):
         self.combo_box_units.SetSelection(self.position_units)
 
     def space_changed(self, origin, *args):
-        self.position_units = self.context.units_index
+        self.position_units = self.context.units_name
         self._update_position()
 
     def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
@@ -195,51 +186,14 @@ class PositionPanel(wx.Panel):
         event.Skip()
         original = self.position_w
 
-        if self.position_units == 4:
+        if self.position_units == "%":
             ratio_w = float(self.text_w.GetValue()) / 100.0
             w = self.position_w * ratio_w
         else:
             try:
                 w = float(self.text_w.GetValue())
             except ValueError:
-                if self.position_units == 0:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_mm(
-                            ppi=1000,
-                            relative_length=self.context.device.bedwidth,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 1:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_cm(
-                            ppi=1000,
-                            relative_length=self.context.device.bedwidth,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 2:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_inch(
-                            ppi=1000,
-                            relative_length=self.context.device.bedwidth,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 3:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .value(
-                            ppi=1000,
-                            relative_length=self.context.device.bedwidth,
-                        )
-                        .amount
-                    )
-                else:
-                    return
+                w = self.context.device.length(self.text_w.GetValue(), 0, self.position_units)
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -275,39 +229,7 @@ class PositionPanel(wx.Panel):
             try:
                 h = float(self.text_h.GetValue())
             except ValueError:
-                if self.position_units == 0:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_mm(
-                            ppi=1000,
-                            relative_length=self.context.device.bedheight,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 1:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_cm(
-                            ppi=1000,
-                            relative_length=self.context.device.bedheight,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 2:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_inch(
-                            ppi=1000,
-                            relative_length=self.context.device.bedheight,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 3:
-                    h = Length(self.text_h.GetValue()).value(
-                        ppi=1000, relative_length=self.context.device.bedheight
-                    )
-                else:
-                    return
+                h = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
@@ -322,13 +244,13 @@ class PositionPanel(wx.Panel):
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.position_x,
-                self.position_name,
+                self.position_units,
                 self.position_y,
-                self.position_name,
+                self.position_units,
                 self.position_w,
-                self.position_name,
+                self.position_units,
                 self.position_h,
-                self.position_name,
+                self.position_units,
             )
         )
         self._update_position()
@@ -338,40 +260,18 @@ class PositionPanel(wx.Panel):
             x = float(self.text_x.GetValue())
             self.position_x = x
         except ValueError:
-            if self.position_units == 0:
-                x = Length(self.text_x.GetValue()).to_mm(
-                    ppi=1000, relative_length=self.context.device.bedwidth
-                )
-                self.position_x = x.amount
-            elif self.position_units == 1:
-                x = Length(self.text_x.GetValue()).to_cm(
-                    ppi=1000, relative_length=self.context.device.bedwidth
-                )
-                self.position_x = x.amount
-            elif self.position_units == 2:
-                x = Length(self.text_x.GetValue()).to_inch(
-                    ppi=1000, relative_length=self.context.device.bedwidth
-                )
-                self.position_x = x.amount
-            elif self.position_units == 3:
-                x = Length(self.text_x.GetValue()).value(
-                    ppi=1000, relative_length=self.context.device.bedwidth
-                )
-                self.position_x = x.amount
-            elif self.position_units == 4:
-                ratio_x = float(self.text_x.GetValue()) / 100.0
-                self.position_x *= ratio_x
+            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.position_x,
-                self.position_name,
+                self.position_units,
                 self.position_y,
-                self.position_name,
+                self.position_units,
                 self.position_w,
-                self.position_name,
+                self.position_units,
                 self.position_h,
-                self.position_name,
+                self.position_units,
             )
         )
         self._update_position()
@@ -382,40 +282,18 @@ class PositionPanel(wx.Panel):
             y = float(self.text_y.GetValue())
             self.position_y = y
         except ValueError:
-            if self.position_units == 0:
-                y = Length(self.text_y.GetValue()).to_mm(
-                    ppi=1000, relative_length=self.context.device.bedheight
-                )
-                self.position_y = y.amount
-            elif self.position_units == 1:
-                y = Length(self.text_y.GetValue()).to_cm(
-                    ppi=1000, relative_length=self.context.device.bedheight
-                )
-                self.position_y = y.amount
-            elif self.position_units == 2:
-                y = Length(self.text_y.GetValue()).to_inch(
-                    ppi=1000, relative_length=self.context.device.bedheight
-                )
-                self.position_y = y.amount
-            elif self.position_units == 3:
-                y = Length(self.text_y.GetValue()).value(
-                    ppi=1000, relative_length=self.context.device.bedheight
-                )
-                self.position_y = y.amount
-            elif self.position_units == 4:
-                ratio_y = float(self.text_y.GetValue()) / 100.0
-                self.position_y *= ratio_y
+            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.position_x,
-                self.position_name,
+                self.position_units,
                 self.position_y,
-                self.position_name,
+                self.position_units,
                 self.position_w,
-                self.position_name,
+                self.position_units,
                 self.position_h,
-                self.position_name,
+                self.position_units,
             )
         )
         self._update_position()

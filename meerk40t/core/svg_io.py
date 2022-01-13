@@ -4,6 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
+from .units import NM_PER_INCH, NM_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -85,18 +86,15 @@ class SVGWriter:
             "xmlns:meerK40t",
             "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
         )
-        # Native unit is mils, these must convert to mm and to px
-        # mils_per_px = 1000.0 / 96.0
-        px_per_mils = 96.0 / 1000.0
-        step_width = context.device.bedwidth
-        step_height = context.device.bedheight
-        root.set(SVG_ATTR_WIDTH, str(step_width))
-        root.set(SVG_ATTR_HEIGHT, str(step_height))
-        px_width = step_width * px_per_mils
-        px_height = step_height * px_per_mils
+        scene_width = context.device.width_as_inch
+        scene_height = context.device.height_as_inch
+        root.set(SVG_ATTR_WIDTH, str(scene_width))
+        root.set(SVG_ATTR_HEIGHT, str(scene_height))
+        px_width = scene_width.value(ppi=96.0)
+        px_height = scene_height.value(ppi=96.0)
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % px_per_mils
+        scale = "scale(%f)" % (1.0 / NM_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         for operation in elements.ops():
@@ -128,15 +126,14 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
-
             if isinstance(element, Shape) and not isinstance(element, Path):
                 element = Path(element)
 
             if isinstance(element, Path):
-                element = abs(element)
+                element = abs(element * scale)
                 subelement = SubElement(root, SVG_TAG_PATH)
+
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
 
                 for key, val in element.values.items():
                     if key in (
@@ -186,7 +183,7 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                # subelement.set(SVG_ATTR_TRANSFORM, scale)
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set(
@@ -268,7 +265,6 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        # context.root.setting(bool, "classify_reverse", False)
         reverse = False
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
@@ -276,15 +272,15 @@ class SVGLoader:
             ppi = 96.0
         if ppi == 0:
             ppi = 96.0
-        scale_factor = 1000.0 / ppi
+        scale_factor = NM_PER_INCH / ppi
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
         svg = SVG.parse(
             source=source,
             reify=True,
-            width=str(context.device.bedwidth),
-            height=str(context.device.bedheight),
+            width=context.device.width_as_mm,
+            height=context.device.height_as_mm,
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,
