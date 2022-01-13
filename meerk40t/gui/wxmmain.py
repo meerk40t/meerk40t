@@ -1446,6 +1446,18 @@ class MeerK40t(MWindow):
             dlg.ShowModal()
             dlg.Destroy()
 
+    @signal_listener("cutplanning;failed")
+    def on_usb_error(self, origin, error):
+        dlg = wx.MessageDialog(
+            None,
+            _("Cut planning failed because: {error}".format(error=error)),
+            _("Cut Planning Failed"),
+            wx.OK | wx.ICON_WARNING,
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
+
+
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
         self.usb_running = value

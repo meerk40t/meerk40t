@@ -238,6 +238,10 @@ def plugin(kernel, lifecycle=None):
                 kernel.root._quit = True
 
 
+class CutPlanningFailedError(Exception):
+    pass
+
+
 class CutPlan:
     """
     Cut Plan is a centralized class to modify plans with specific methods.
@@ -271,8 +275,11 @@ class CutPlan:
         # Using copy of commands, so commands can add ops.
         cmds = self.commands[:]
         self.commands.clear()
-        for cmd in cmds:
-            cmd()
+        try:
+            for cmd in cmds:
+                cmd()
+        except AssertionError:
+            raise CutPlanningFailedError("Raster too large.")
 
     def preprocess(self):
         context = self.context
@@ -1006,7 +1013,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
-            data.execute()
+            try:
+                data.execute()
+            except CutPlanningFailedError as e:
+                self.signal("cutplanning;failed", str(e))
+                data.clear()
+                return
             self.signal("plan", data.name, 3)
             return data_type, data
 

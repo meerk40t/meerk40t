@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.planner import CutPlanningFailedError
 from meerk40t.gui.icons import (
     icons8_delete_50,
     icons8_emergency_stop_button_50,
@@ -228,6 +229,7 @@ class LaserPanel(wx.Panel):
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool\n")
+
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
