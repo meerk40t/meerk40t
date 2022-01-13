@@ -9,7 +9,7 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import CutCode, LaserSettings, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
-from ..core.units import ViewPort
+from ..core.units import ViewPort, NM_PER_INCH, NM_PER_MIL
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -212,11 +212,10 @@ class LihuiyuDevice(Service, ViewPort):
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
+
         self.driver = LhystudiosDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
-
         self.add_service_delegate(self.spooler)
-        # self.add_service_delegate(self.driver)
 
         self.settings = self.driver.settings
 
@@ -760,7 +759,6 @@ class LihuiyuDevice(Service, ViewPort):
 
             spooler.job(jog_transition_test)
 
-
     @property
     def output(self):
         """
@@ -1104,13 +1102,16 @@ class LhystudiosDriver:
     def move_abs(self, x, y):
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
+        x = int(self.service.scale_x * x * NM_PER_INCH / 1000)
+        y = int(self.service.scale_y * y * NM_PER_INCH / 1000)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
-        dx, dy = self.service.get_native(dx, dy)
+        dx = int(self.service.scale_x * dx / NM_PER_MIL)
+        dy = int(self.service.scale_y * dy / NM_PER_MIL)
         self.rapid_mode()
         self.move_relative(dx, dy)
 
