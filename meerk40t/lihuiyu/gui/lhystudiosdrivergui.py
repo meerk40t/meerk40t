@@ -390,7 +390,6 @@ class ConfigurationLaserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_x_scale, self.text_scale_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
 
-
     def pane_show(self):
         pass
 
@@ -405,10 +404,10 @@ class ConfigurationLaserPanel(wx.Panel):
 
     def on_button_set_home_current(self, event=None):
         x, y = self.calc_home_position()
-        current_x = self.context.device.current_x - x
-        current_y = self.context.device.current_y - y
-        self.context.home_adjust_x = int(current_x)
-        self.context.home_adjust_y = int(current_y)
+        native_x = self.context.device.native_x - x
+        native_y = self.context.device.native_y - y
+        self.context.home_adjust_x = int(native_x)
+        self.context.home_adjust_y = int(native_y)
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 

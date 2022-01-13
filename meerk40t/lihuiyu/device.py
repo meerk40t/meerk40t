@@ -102,20 +102,20 @@ class LihuiyuDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "x",
+                "attr": "adjust_x",
                 "object": self,
                 "default": "0",
                 "type": str,
                 "label": _("Y"),
-                "tip": _("Home Offset-X position"),
+                "tip": _("Offset-X position"),
             },
             {
-                "attr": "y",
+                "attr": "adjust_y",
                 "object": self,
                 "default": "0",
                 "type": str,
                 "label": _("Y"),
-                "tip": _("Home Offset-Y position"),
+                "tip": _("Offset-Y position"),
             },
             {
                 "attr": "bedwidth",
@@ -156,7 +156,7 @@ class LihuiyuDevice(Service, ViewPort):
         ]
 
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.x, self.y, self.bedwidth, self.bedheight)
+        ViewPort.__init__(self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight)
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
@@ -209,8 +209,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "max_speed_raster_enabled", False)
         self.setting(float, "max_speed_raster", 750.0)
 
-        self.current_x = 0.0
-        self.current_y = 0.0
         self.state = 0
 
         self.driver = LhystudiosDriver(self)
@@ -311,9 +309,7 @@ class LihuiyuDevice(Service, ViewPort):
             def move_at_speed():
                 yield "set", "speed", speed
                 yield "program_mode"
-                x = self.current_x
-                y = self.current_y
-                yield "move_abs", x + dx, y + dy
+                yield "move_rel", dx, dy
                 yield "rapid_mode"
 
             if not self.spooler.job_if_idle(move_at_speed):
@@ -760,6 +756,20 @@ class LihuiyuDevice(Service, ViewPort):
             spooler.job(jog_transition_test)
 
     @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known x value.
+        """
+        return float(self.driver.native_x * NM_PER_MIL) / self.scale_x
+
+    @property
+    def current_y(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return float(self.driver.native_y * NM_PER_MIL) / self.scale_y
+
+    @property
     def output(self):
         """
         This is the controller in controller mode and the tcp in network mode.
@@ -793,8 +803,8 @@ class LhystudiosDriver:
         self.holds = []
         self.temp_holds = []
 
-        self.current_x = 0
-        self.current_y = 0
+        self.native_x = 0
+        self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
@@ -834,10 +844,10 @@ class LhystudiosDriver:
         self.holds.append(primary_hold)
 
         self.update_codes()
-        self.max_x = self.current_x
-        self.max_y = self.current_y
-        self.min_x = self.current_x
-        self.min_y = self.current_y
+        self.max_x = self.native_x
+        self.max_y = self.native_y
+        self.min_x = self.native_x
+        self.min_y = self.native_y
 
         # Step amount expected of the current operation
         self.step = 0
@@ -918,8 +928,8 @@ class LhystudiosDriver:
             if self.hold_work():
                 time.sleep(0.05)
                 continue
-            sx = self.current_x
-            sy = self.current_y
+            sx = self.native_x
+            sy = self.native_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
             if on > 1:
@@ -1037,7 +1047,7 @@ class LhystudiosDriver:
             self.jog_absolute(x, y, **kwargs)
 
     def jog_absolute(self, x, y, **kwargs):
-        self.jog_relative(x - self.current_x, y - self.current_y, **kwargs)
+        self.jog_relative(x - self.native_x, y - self.native_y, **kwargs)
 
     def jog_relative(self, dx, dy, mode=0):
         self.laser_off()
@@ -1149,7 +1159,7 @@ class LhystudiosDriver:
         :param cut:
         :return:
         """
-        self.goto_relative(x - self.current_x, y - self.current_y, cut)
+        self.goto_relative(x - self.native_x, y - self.native_y, cut)
 
     def goto_relative(self, dx, dy, cut):
         """
@@ -1164,6 +1174,8 @@ class LhystudiosDriver:
             return
         dx = int(round(dx))
         dy = int(round(dy))
+        old_current_x = self.service.current_x
+        old_current_y = self.service.current_y
         if self.state == DRIVER_STATE_RAPID:
             if self.service.rapid_override and (dx != 0 or dy != 0):
                 # Rapid movement override. Should make programmed jogs.
@@ -1215,19 +1227,23 @@ class LhystudiosDriver:
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
         self.check_bounds()
+        new_current_x = self.service.current_x
+        new_current_y = self.service.current_y
         self.service.signal(
             "driver;position",
-            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+            (old_current_x, old_current_y, new_current_x, new_current_y),
         )
 
     def goto_octent_abs(self, x, y, on):
-        dx = x - self.current_x
-        dy = y - self.current_y
+        dx = x - self.native_x
+        dy = y - self.native_y
         self.goto_octent(dx, dy, on)
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
             return
+        old_current_x = self.service.current_x
+        old_current_y = self.service.current_y
         if on:
             self.laser_on()
         else:
@@ -1249,9 +1265,12 @@ class LhystudiosDriver:
                     "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
                     % (str(dx), str(dy))
                 )
+
+        new_current_x = self.service.current_x
+        new_current_y = self.service.current_y
         self.service.signal(
             "driver;position",
-            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+            (old_current_x, old_current_y, new_current_x, new_current_y),
         )
 
     def set_speed(self, speed=None):
@@ -1490,9 +1509,9 @@ class LhystudiosDriver:
             else:
                 self.data_output(self.CODE_BOTTOM)
             self.data_output(lhymicro_distance(abs(delta)))
-            self.current_y += delta
+            self.native_y += delta
         self.data_output(b"SE")
-        self.current_y += step_amount
+        self.native_y += step_amount
         self.toggle_prop(STATE_X_FORWARD_LEFT)
         self.laser = False
         self.step_index += 1
@@ -1524,9 +1543,9 @@ class LhystudiosDriver:
             else:
                 self.data_output(self.CODE_RIGHT)
             self.data_output(lhymicro_distance(abs(delta)))
-            self.current_x += delta
+            self.native_x += delta
         self.data_output(b"SE")
-        self.current_x += step_amount
+        self.native_x += step_amount
         self.toggle_prop(STATE_Y_FORWARD_TOP)
         self.laser = False
         self.step_index += 1
@@ -1563,7 +1582,7 @@ class LhystudiosDriver:
         else:
             self.data_output(self.CODE_LEFT)
             self.set_prop(STATE_X_FORWARD_LEFT)
-        self.current_y += step_amount
+        self.native_y += step_amount
         self.laser = False
         self.step_index += 1
 
@@ -1599,7 +1618,7 @@ class LhystudiosDriver:
         else:
             self.data_output(self.CODE_TOP)
             self.set_prop(STATE_Y_FORWARD_TOP)
-        self.current_x += step_amount
+        self.native_x += step_amount
         self.laser = False
         self.step_index += 1
 
@@ -1616,10 +1635,10 @@ class LhystudiosDriver:
         x, y = self.calc_home_position()
         self.rapid_mode()
         self.data_output(b"IPP\n")
-        old_x = self.current_x
-        old_y = self.current_y
-        self.current_x = x
-        self.current_y = y
+        old_current_x = self.service.current_x
+        old_current_y = self.service.current_y
+        self.native_x = x
+        self.native_y = y
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         adjust_x = self.service.home_adjust_x
@@ -1636,12 +1655,15 @@ class LhystudiosDriver:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
             # Erase adjustment
-            self.current_x = x
-            self.current_y = y
+            self.native_x = x
+            self.native_y = y
 
         self.service.signal("driver;mode", self.state)
+        new_current_x = self.service.current_x
+        new_current_y = self.service.current_y
         self.service.signal(
-            "driver;position", (old_x, old_y, self.current_x, self.current_y)
+            "driver;position",
+            (old_current_x, old_current_y, new_current_x, new_current_y),
         )
 
     def lock_rail(self):
@@ -1656,10 +1678,10 @@ class LhystudiosDriver:
         self.data_output(b"I\n")
 
     def check_bounds(self):
-        self.min_x = min(self.min_x, self.current_x)
-        self.min_y = min(self.min_y, self.current_y)
-        self.max_x = max(self.max_x, self.current_x)
-        self.max_y = max(self.max_y, self.current_y)
+        self.min_x = min(self.min_x, self.native_x)
+        self.min_y = min(self.min_y, self.native_y)
+        self.max_x = max(self.max_x, self.native_x)
+        self.max_y = max(self.max_y, self.native_y)
 
     def reset_modes(self):
         self.laser = False
@@ -1698,8 +1720,8 @@ class LhystudiosDriver:
             if not self.is_prop(STATE_Y_FORWARD_TOP):
                 self.data_output(self.CODE_TOP)
                 self.set_prop(STATE_Y_FORWARD_TOP)
-        self.current_x += dx
-        self.current_y += dy
+        self.native_x += dx
+        self.native_y += dy
         self.check_bounds()
         self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
@@ -1806,7 +1828,7 @@ class LhystudiosDriver:
         self.unset_prop(STATE_Y_FORWARD_TOP)
 
     def move_right(self, dx=0):
-        self.current_x += dx
+        self.native_x += dx
         if not self.is_right or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1818,7 +1840,7 @@ class LhystudiosDriver:
             self.check_bounds()
 
     def move_left(self, dx=0):
-        self.current_x -= abs(dx)
+        self.native_x -= abs(dx)
         if not self.is_left or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1830,7 +1852,7 @@ class LhystudiosDriver:
             self.check_bounds()
 
     def move_bottom(self, dy=0):
-        self.current_y += dy
+        self.native_y += dy
         if not self.is_bottom or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1842,7 +1864,7 @@ class LhystudiosDriver:
             self.check_bounds()
 
     def move_top(self, dy=0):
-        self.current_y -= abs(dy)
+        self.native_y -= abs(dy)
         if not self.is_top or self.state not in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
@@ -1918,8 +1940,8 @@ class LhystudiosDriver:
         self.is_relative = False
 
     def set_position(self, x, y):
-        self.current_x = x
-        self.current_y = y
+        self.native_x = x
+        self.native_y = y
 
     def wait(self, t):
         time.sleep(float(t))
@@ -1930,8 +1952,8 @@ class LhystudiosDriver:
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.current_x)
-        parts.append("y=%f" % self.current_y)
+        parts.append("x=%f" % self.native_x)
+        parts.append("y=%f" % self.native_y)
         parts.append("speed=%f" % self.settings.speed)
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
