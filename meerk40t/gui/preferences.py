@@ -63,7 +63,7 @@ class PreferencesUnitsPanel(wx.Panel):
         context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            1000.0,
+            25400000,
             "inch",
             1,
             2,
@@ -74,7 +74,7 @@ class PreferencesUnitsPanel(wx.Panel):
         context_root = self.context.root
         p = context_root
         p.units_convert, p.units_name, p.units_marks, p.units_index = (
-            1.0,
+            25400,
             "mil",
             1000,
             3,

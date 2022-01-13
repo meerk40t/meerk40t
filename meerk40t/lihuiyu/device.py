@@ -9,6 +9,7 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import CutCode, LaserSettings, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
+from ..core.units import ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -89,7 +90,7 @@ def plugin(kernel, lifecycle=None):
             kernel.root("service device start lhystudios\n")
 
 
-class LihuiyuDevice(Service):
+class LihuiyuDevice(Service, ViewPort):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
     """
@@ -97,23 +98,38 @@ class LihuiyuDevice(Service):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "LihuiyuDevice"
-
         _ = kernel.translation
 
         choices = [
             {
+                "attr": "x",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y"),
+                "tip": _("Home Offset-X position"),
+            },
+            {
+                "attr": "y",
+                "object": self,
+                "default": "0",
+                "type": str,
+                "label": _("Y"),
+                "tip": _("Home Offset-Y position"),
+            },
+            {
                 "attr": "bedwidth",
                 "object": self,
-                "default": 12205.0,
-                "type": float,
+                "default": "310mm",
+                "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": 8268.0,
-                "type": float,
+                "default": "210mm",
+                "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
@@ -138,8 +154,9 @@ class LihuiyuDevice(Service):
                 ),
             },
         ]
-        self.register_choices("bed_dim", choices)
 
+        self.register_choices("bed_dim", choices)
+        ViewPort.__init__(self, self.x, self.y, self.bedwidth, self.bedheight)
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
@@ -284,15 +301,15 @@ class LihuiyuDevice(Service):
             return
 
         @self.console_argument("speed", type=float, help=_("Set the movement speed"))
-        @self.console_argument("dx", type=Length, help=_("change in x"))
-        @self.console_argument("dy", type=Length, help=_("change in y"))
+        @self.console_argument("dx", type=str, help=_("change in x"))
+        @self.console_argument("dy", type=str, help=_("change in y"))
         @self.console_command(
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
-            dx = Length(dx).value(ppi=1000.0, relative_length=self.bedwidth)
-            dy = Length(dy).value(ppi=1000.0, relative_length=self.bedheight)
+            dx = self.length(dx, 0)
+            dy = self.length(dy, 0)
 
             def move_at_speed():
                 yield "set", "speed", speed
@@ -1095,22 +1112,14 @@ class LhystudiosDriver:
         self.state = original_state
 
     def move_abs(self, x, y):
-        x = Length(x).value(
-            ppi=1000.0, relative_length=self.context.bedwidth
-        )
-        y = Length(y).value(
-            ppi=1000.0, relative_length=self.context.bedheight
-        )
+        x = self.context.length(x,0)
+        y = self.context.length(y,1)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx = Length(dx).value(
-            ppi=1000.0, relative_length=self.context.bedwidth
-        )
-        dy = Length(dy).value(
-            ppi=1000.0, relative_length=self.context.bedheight
-        )
+        x = self.context.length(dx, 0)
+        y = self.context.length(dy, 1)
         self.rapid_mode()
         self.move_relative(int(dx), int(dy))
 
@@ -1606,9 +1615,9 @@ class LhystudiosDriver:
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.context.device.bedwidth)
+            x = int(self.context.device.width)
         if self.context.home_bottom:
-            y = int(self.context.device.bedheight)
+            y = int(self.context.device.height)
         return x, y
 
     def home(self, *values):
@@ -1627,8 +1636,8 @@ class LhystudiosDriver:
             adjust_x = values[0]
             adjust_y = values[1]
             if isinstance(adjust_x, str):
-                adjust_y = adjust_y.value(ppi=1000.0, relative_length=self.context.bedwidth)
-                adjust_y = adjust_y.value(ppi=1000.0, relative_length=self.context.bedheight)
+                adjust_x = self.context.length(adjust_x, 0)
+                adjust_y = self.context.length(adjust_y, 1)
         except IndexError:
             pass
         if adjust_x != 0 or adjust_y != 0:

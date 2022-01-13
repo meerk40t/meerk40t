@@ -4,7 +4,7 @@ from time import time
 
 from ..core.cutcode import CutCode, CutGroup, CutObject
 from ..kernel import Service
-from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .elements import LaserOperation
 
@@ -1057,10 +1057,10 @@ class Planner(Service):
         @self.console_argument("cols", type=int, help=_("columns for the grid"))
         @self.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.console_argument(
-            "x_distance", type=Length, help=_("x_distance each column step")
+            "x_distance", type=str, help=_("x_distance each column step")
         )
         @self.console_argument(
-            "y_distance", type=Length, help=_("y_distance each row step")
+            "y_distance", type=str, help=_("y_distance each row step")
         )
         @self.console_command(
             "step_repeat",
@@ -1115,17 +1115,13 @@ class Planner(Service):
 
             try:
                 if x_distance is None:
-                    x_distance = Length("%f%%" % (100.0 / (cols + 1)))
+                    x_distance = "%f%%" % (100.0 / (cols + 1))
                 if y_distance is None:
-                    y_distance = Length("%f%%" % (100.0 / (rows + 1)))
+                    y_distance = "%f%%" % (100.0 / (rows + 1))
             except Exception:
                 pass
-            x_distance = x_distance.value(
-                ppi=1000.0, relative_length=self.device.bedwidth
-            )
-            y_distance = y_distance.value(
-                ppi=1000.0, relative_length=self.device.bedheight
-            )
+            x_distance = self.device.length(x_distance,1)
+            y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
             y_pos = 0

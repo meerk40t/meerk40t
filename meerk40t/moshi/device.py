@@ -5,6 +5,7 @@ from ..core.cutcode import LaserSettings
 from ..core.drivers import Driver
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
+from ..core.units import ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -75,7 +76,7 @@ def get_code_string_from_moshicode(code):
         return "UNK %02x" % code
 
 
-class MoshiDevice(Service):
+class MoshiDevice(Service, ViewPort):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
     """
@@ -110,16 +111,16 @@ class MoshiDevice(Service):
             {
                 "attr": "bedwidth",
                 "object": self,
-                "default": 12205.0,
-                "type": float,
+                "default": "330mm",
+                "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": 8268.0,
-                "type": float,
+                "default": "210mm",
+                "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
@@ -145,6 +146,7 @@ class MoshiDevice(Service):
             },
         ]
         self.register_choices("bed_dim", choices)
+        ViewPort.__init__(self, self.bedwidth, self.bedheight)
 
         self.current_x = 0.0
         self.current_y = 0.0
@@ -685,9 +687,9 @@ class MoshiDriver(Driver):
         y = self.context.home_adjust_y
 
         if self.context.home_right:
-            x += int(self.context.device.bedwidth)
+            x += int(self.context.device.width)
         if self.context.home_bottom:
-            y += int(self.context.device.bedheight)
+            y += int(self.context.device.height)
         return x, y
 
     def home(self, *values):

@@ -257,12 +257,7 @@ class SimulationPanel(wx.Panel, Job):
         self.context.setting(int, "units_index", 0)
         self.context.setting(float, "units_convert", MILS_IN_MM)
 
-        bbox = (
-            0,
-            0,
-            self.context.device.bedwidth,
-            self.context.device.bedheight,
-        )
+        bbox = self.context.device.bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )

@@ -4,6 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
+from .units import PX_PER_uM, NM_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -85,18 +86,16 @@ class SVGWriter:
             "xmlns:meerK40t",
             "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
         )
-        # Native unit is mils, these must convert to mm and to px
-        # mils_per_px = 1000.0 / 96.0
-        px_per_mils = 96.0 / 1000.0
-        step_width = context.device.bedwidth
-        step_height = context.device.bedheight
-        root.set(SVG_ATTR_WIDTH, str(step_width))
-        root.set(SVG_ATTR_HEIGHT, str(step_height))
-        px_width = step_width * px_per_mils
-        px_height = step_height * px_per_mils
+        # Native unit is nanometer, these must convert to px
+        scene_width = context.device.width
+        scene_height = context.device.height
+        root.set(SVG_ATTR_WIDTH, str(scene_width))
+        root.set(SVG_ATTR_HEIGHT, str(scene_height))
+        px_width = scene_width / NM_PER_PIXEL
+        px_height = scene_height / NM_PER_PIXEL
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % px_per_mils
+        scale = "scale(%f)" % (1.0 / NM_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         for operation in elements.ops():
@@ -283,8 +282,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=source,
             reify=True,
-            width=str(context.device.bedwidth),
-            height=str(context.device.bedheight),
+            width=context.device.width_as_mm,
+            height=context.device.height_as_mm,
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,

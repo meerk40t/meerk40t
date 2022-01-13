@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.units import NM_PER_INCH, NM_PER_MM
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -564,43 +565,43 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog
+        dx = -self.context.navigate_jog  # TODO: UNITS
         dy = -self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = -self.context.navigate_jog
+        dy = -self.context.navigate_jog  # TODO: UNITS
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog
+        dx = self.context.navigate_jog  # TODO: UNITS
         dy = -self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog
+        dx = -self.context.navigate_jog  # TODO: UNITS
         dy = 0
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog
+        dx = self.context.navigate_jog  # TODO: UNITS
         dy = 0
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog
+        dx = -self.context.navigate_jog  # TODO: UNITS
         dy = self.context.navigate_jog
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = self.context.navigate_jog
+        dy = self.context.navigate_jog  # TODO: UNITS
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
-        dy = self.context.navigate_jog
+        dy = self.context.navigate_jog  # TODO: UNITS
         self.context("move_relative %d %d\n" % (dx, dy))
 
     def on_button_navigate_unlock(
@@ -668,15 +669,9 @@ class MovePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         try:
-            width = self.context.device.bedwidth
-            height = self.context.device.bedheight
-            x = Length(self.text_position_x.GetValue()).value(
-                ppi=1000.0, relative_length=width
-            )
-            y = Length(self.text_position_y.GetValue()).value(
-                ppi=1000.0, relative_length=height
-            )
-            if x > width or y > height or x < 0 or y < 0:
+            x = self.context.device.length(self.text_position_x.GetValue(), 0)
+            y = self.context.device.length(self.text_position_y.GetValue(), 0)
+            if not self.context.device.contains(x, y):
                 dlg = wx.MessageDialog(
                     None,
                     _("Cannot Move Outside Bed Dimensions"),
@@ -1083,22 +1078,22 @@ class JogDistancePanel(wx.Panel):
         self.Children[0].SetFocus()
 
     def set_jog_distances(self, jog_mils):
-        self.spin_jog_mils.SetValue(jog_mils)
+        self.spin_jog_mils.SetValue(jog_mils) # TODO: UNITS
         self.spin_jog_mm.SetValue(jog_mils / MILS_IN_MM)
         self.spin_jog_cm.SetValue(jog_mils / (MILS_IN_MM * 10.0))
-        self.spin_jog_inch.SetValue(jog_mils / 1000.0)
+        self.spin_jog_inch.SetValue(jog_mils / 1000.0) # 25400000
 
     def on_spin_jog_distance(self, event):  # wxGlade: Navigation.<event_handler>
         if event.Id == self.spin_jog_mils.Id:
-            self.context.navigate_jog = float(self.spin_jog_mils.GetValue())
+            self.context.navigate_jog = float(self.spin_jog_mils.GetValue() * NM_PER_MIL)
         elif event.Id == self.spin_jog_mm.Id:
-            self.context.navigate_jog = float(self.spin_jog_mm.GetValue() * MILS_IN_MM)
+            self.context.navigate_jog = float(self.spin_jog_mm.GetValue() * NM_PER_MM)
         elif event.Id == self.spin_jog_cm.Id:
             self.context.navigate_jog = float(
                 self.spin_jog_cm.GetValue() * MILS_IN_MM * 10.0
             )
         else:
-            self.context.navigate_jog = float(self.spin_jog_inch.GetValue() * 1000.0)
+            self.context.navigate_jog = float(self.spin_jog_inch.GetValue() * NM_PER_INCH)
         self.set_jog_distances(int(self.context.navigate_jog))
 
 

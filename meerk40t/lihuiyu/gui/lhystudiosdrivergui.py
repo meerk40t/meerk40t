@@ -318,13 +318,12 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_bed.Add(sizer_14, 1, 0, 0)
 
-        self.spin_bedwidth = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "12205.0", min=1.0, max=100000.0
+        self.text_bedwidth = wx.TextCtrl(
+            self, wx.ID_ANY, "310mm",
         )
-        self.spin_bedwidth.SetMinSize((80, 23))
-        self.spin_bedwidth.SetToolTip(_("Width of the laser bed."))
-        self.spin_bedwidth.SetIncrement(40.0)
-        sizer_14.Add(self.spin_bedwidth, 4, 0, 0)
+        self.text_bedwidth.SetMinSize((80, 23))
+        self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
+        sizer_14.Add(self.text_bedwidth, 4, 0, 0)
 
         label_17 = wx.StaticText(self, wx.ID_ANY, _("steps"))
         sizer_14.Add(label_17, 1, 0, 0)
@@ -337,13 +336,12 @@ class ConfigurationLaserPanel(wx.Panel):
         label_3 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_15.Add(label_3, 0, 0, 0)
 
-        self.spin_bedheight = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "8268.0", min=1.0, max=100000.0
+        self.text_bedheight = wx.TextCtrl(
+            self, wx.ID_ANY, "210mm"
         )
-        self.spin_bedheight.SetMinSize((80, 23))
-        self.spin_bedheight.SetToolTip(_("Height of the laser bed."))
-        self.spin_bedheight.SetIncrement(40.0)
-        sizer_15.Add(self.spin_bedheight, 4, 0, 0)
+        self.text_bedheight.SetMinSize((80, 23))
+        self.text_bedheight.SetToolTip(_("Height of the laser bed."))
+        sizer_15.Add(self.text_bedheight, 4, 0, 0)
 
         label_18 = wx.StaticText(self, wx.ID_ANY, _("steps"))
         sizer_15.Add(label_18, 1, 0, 0)
@@ -375,26 +373,22 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_x, self.spin_home_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_y, self.spin_home_y)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.spin_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_bedwidth, self.spin_bedwidth)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_bedheight, self.spin_bedheight)
+        self.Bind(wx.EVT_TEXT, self.on_text_bedwidth, self.text_bedwidth)
+        self.Bind(wx.EVT_TEXT, self.on_text_bedheight, self.text_bedheight)
         self.Bind(wx.EVT_TEXT, self.on_text_x_scale, self.text_scale_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_scale, self.text_scale_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale, self.text_scale_y)
         # end wxGlade
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
-        self.spin_bedwidth.SetValue(self.context.bedwidth)
-        self.spin_bedheight.SetValue(self.context.bedheight)
-        self.text_scale_x.SetValue("%.3f" % self.context.scale_x)
-        self.text_scale_y.SetValue("%.3f" % self.context.scale_y)
+        self.text_bedwidth.SetValue(self.context.bedwidth)
+        self.text_bedheight.SetValue(self.context.bedheight)
+        self.text_scale_x.SetValue("%.4f" % self.context.scale_x)
+        self.text_scale_y.SetValue("%.4f" % self.context.scale_y)
 
         # Disables of features not yet supported.
         self.text_scale_x.Enable(False)
@@ -425,23 +419,23 @@ class ConfigurationLaserPanel(wx.Panel):
         x = 0
         y = 0
         if self.context.home_right:
-            x = int(self.context.device.bedwidth)
+            x = int(self.context.device.width)
         if self.context.home_bottom:
-            y = int(self.context.device.bedheight)
+            y = int(self.context.device.height)
         return x, y
 
-    def spin_on_bedwidth(self, event=None):
-        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
-        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
+    def on_text_bedwidth(self, event=None):
+        self.context.device.width = self.text_bedwidth.GetValue()
+        self.context.device.height = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
+            "bed_size", (self.context.device.width, self.context.device.height)
         )
 
-    def spin_on_bedheight(self, event=None):
-        self.context.device.bedwidth = float(self.spin_bedwidth.GetValue())
-        self.context.device.bedheight = float(self.spin_bedheight.GetValue())
+    def on_text_bedheight(self, event=None):
+        self.context.device.width = self.text_bedwidth.GetValue()
+        self.context.device.height = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
+            "bed_size", (self.context.device.width, self.context.device.height)
         )
 
     def on_text_x_scale(self, event=None):

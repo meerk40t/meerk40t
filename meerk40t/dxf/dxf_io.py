@@ -1,6 +1,7 @@
 import os
 
 from ..core.exceptions import Mk40tImportAbort
+from ..core.units import NM_PER_INCH, NM_PER_MM
 
 try:
     import ezdxf
@@ -78,10 +79,10 @@ class DxfLoader:
         unit = dxf.header.get("$INSUNITS")
 
         if unit is not None and unit != 0:
-            du = units.DrawingUnits(1000.0, unit="in")
+            du = units.DrawingUnits(NM_PER_INCH, unit="in")
             scale = du.factor(decode(unit))
         else:
-            scale = MILS_PER_MM
+            scale = NM_PER_MM
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
@@ -94,21 +95,17 @@ class DxfLoader:
             g.extend(elements)
             bbox = g.bbox()
             if bbox is not None:
-                bw = kernel.device.bedwidth
-                bh = kernel.device.bedheight
-                bx = 0
-                by = 0
+                viewport = kernel.device
                 x = bbox[0]
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
-                if w > bw or h > bh:
+                if w > viewport.width or h > viewport.height:
                     # Cannot fit to bed. Scale.
-                    vb = Viewbox("%f %f %f %f" % (bx, by, bw, bh))
                     bb = Viewbox(
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
                     )
-                    matrix = bb.transform(vb)
+                    matrix = bb.transform(viewport)
                     for e in elements:
                         e *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:
