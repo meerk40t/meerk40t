@@ -11,8 +11,6 @@ on:
     paths:
       - '**.py'
       - '.github/workflows/unittests.yml'
-  schedule:
-    - cron: '0 23 * * 5'
 
 concurrency:
   group: unittests-${{ github.ref }}
@@ -27,23 +25,17 @@ jobs:
 
     name: ${{ matrix.os }}+py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-#         os: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04, windows-2016, windows-2019, windows-2022, macos-10.15, macos-11]
         os: [ubuntu-18.04, windows-2019, macos-10.15, macos-11]
-#        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10.0-rc.2]
         python-version: [3.9]
 
     steps:
 
     - name: Checkout ${{ github.ref }}
       uses: actions/checkout@v2
-
-#    - name: Install Ubuntu dependencies
-#      run: >
-#        sudo apt-get update -q && sudo apt-get install -y libgtk-3-dev
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -85,4 +77,7 @@ jobs:
 
     - name: Run Unittests
       run: |
-        python -m unittest discover test
+        python -m unittest discover test -v
+        if ${{ matrix.experimental }} == true; then
+            exit 0
+        fi
