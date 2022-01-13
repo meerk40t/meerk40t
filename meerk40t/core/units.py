@@ -36,6 +36,13 @@ class ViewPort:
     The x, y, width and height are of the viewport are stored in nm. These are converted to native units
     """
     def __init__(self, x, y, width, height):
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.set_params(x, y, width, height)
+
+    def set_params(self, x, y, width, height):
         self.x = Length(x).value(ppi=NM_PER_INCH)
         self.y = Length(y).value(ppi=NM_PER_INCH)
         self.width = Length(width).value(ppi=NM_PER_INCH)
