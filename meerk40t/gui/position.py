@@ -169,7 +169,7 @@ class PositionPanel(wx.Panel):
             self.text_y.SetValue("%.2f" % self.position_y)
             self.text_w.SetValue("%.2f" % self.position_w)
             self.text_h.SetValue("%.2f" % self.position_h)
-        self.combo_box_units.SetSelection(self.position_units)
+        # self.combo_box_units.SetSelection(self.position_units)
 
     def space_changed(self, origin, *args):
         self.position_units = self.context.units_name
