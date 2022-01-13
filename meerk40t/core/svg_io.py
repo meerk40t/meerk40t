@@ -4,7 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .units import NM_PER_INCH
+from .units import NM_PER_INCH, NM_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -86,13 +86,12 @@ class SVGWriter:
             "xmlns:meerK40t",
             "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
         )
-        # Native unit is nanometer, these must convert to px
-        scene_width = context.device.width
-        scene_height = context.device.height
+        scene_width = context.device.width_as_inch
+        scene_height = context.device.height_as_inch
         root.set(SVG_ATTR_WIDTH, str(scene_width))
         root.set(SVG_ATTR_HEIGHT, str(scene_height))
-        px_width = scene_width / NM_PER_PIXEL
-        px_height = scene_height / NM_PER_PIXEL
+        px_width = scene_width.value(ppi=96.0)
+        px_height = scene_height.value(ppi=96.0)
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
         scale = "scale(%f)" % (1.0 / NM_PER_PIXEL)
@@ -127,15 +126,14 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
-
             if isinstance(element, Shape) and not isinstance(element, Path):
                 element = Path(element)
 
             if isinstance(element, Path):
-                element = abs(element)
+                element = abs(element * scale)
                 subelement = SubElement(root, SVG_TAG_PATH)
+
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
 
                 for key, val in element.values.items():
                     if key in (
@@ -185,7 +183,7 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                # subelement.set(SVG_ATTR_TRANSFORM, scale)
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set(

@@ -101,21 +101,21 @@ class ViewPort:
         return Length(self.height).to_mm(ppi=NM_PER_INCH)
 
     @property
+    def width_as_inch(self):
+        return Length(self.width).to_inch(ppi=NM_PER_INCH)
+
+    @property
+    def height_as_inch(self):
+        return Length(self.height).to_inch(ppi=NM_PER_INCH)
+
+
+    @property
     def width_as_nm(self):
         return Length(self.width).value(ppi=NM_PER_INCH)
 
     @property
     def height_as_nm(self):
         return Length(self.height).value(ppi=NM_PER_INCH)
-
-    @property
-    def width_as_px(self):
-        return Length(self.width).to_px(ppi=NM_PER_INCH)
-
-    @property
-    def height_as_px(self):
-        return Length(self.height).to_px(ppi=NM_PER_INCH)
-
 
     @staticmethod
     def viewbox_transform(
@@ -562,24 +562,6 @@ class Length(object):
         return Length("%scm" % (Length.str(v)))
 
     def to_inch(
-        self,
-        ppi=NM_PER_INCH,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        viewbox=None,
-    ):
-        value = self.value(
-            ppi=ppi,
-            relative_length=relative_length,
-            font_size=font_size,
-            font_height=font_height,
-            viewbox=viewbox,
-        )
-        v = value / ppi
-        return Length("%sin" % (Length.str(v)))
-
-    def to_px(
         self,
         ppi=NM_PER_INCH,
         relative_length=None,
