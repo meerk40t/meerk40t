@@ -1118,8 +1118,8 @@ class LhystudiosDriver:
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        x = self.context.length(dx, 0)
-        y = self.context.length(dy, 1)
+        dx = self.context.length(dx, 0)
+        dy = self.context.length(dy, 1)
         self.rapid_mode()
         self.move_relative(int(dx), int(dy))
 

@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import NM_PER_INCH, NM_PER_MM
+from meerk40t.core.units import NM_PER_INCH, NM_PER_MM, NM_PER_MIL, NM_PER_CM
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -436,7 +436,8 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        context.setting(float, "navigate_jog", 394.0)
+        context.setting(str, "jog_amount", "10mm")
+        self.jog = self.context.device.length(context.jog_amount)
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
@@ -565,44 +566,44 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog  # TODO: UNITS
-        dy = -self.context.navigate_jog
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dx = -self.jog
+        dy = -self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = -self.context.navigate_jog  # TODO: UNITS
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dy = -self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog  # TODO: UNITS
-        dy = -self.context.navigate_jog
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dx = self.jog
+        dy = -self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog  # TODO: UNITS
+        dx = -self.jog
         dy = 0
-        self.context("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog  # TODO: UNITS
+        dx = self.jog
         dy = 0
-        self.context("move_relative %d %d\n" % (dx, dy))
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog  # TODO: UNITS
-        dy = self.context.navigate_jog
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dx = -self.jog
+        dy = self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = self.context.navigate_jog  # TODO: UNITS
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dy = self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog
-        dy = self.context.navigate_jog  # TODO: UNITS
-        self.context("move_relative %d %d\n" % (dx, dy))
+        dx = self.jog
+        dy = self.jog
+        self.context("move_relative %s %s\n" % (dx, dy))
 
     def on_button_navigate_unlock(
         self, event=None
@@ -624,8 +625,9 @@ class MovePanel(wx.Panel):
         self.button_navigate_move_to = wx.BitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0in")
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0in")
+        units = self.context.units_name
+        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0" + units)
+        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0" + units)
 
         self.__set_properties()
         self.__do_layout()
@@ -669,8 +671,8 @@ class MovePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         try:
-            x = self.context.device.length(self.text_position_x.GetValue(), 0)
-            y = self.context.device.length(self.text_position_y.GetValue(), 0)
+            x = self.text_position_x.GetValue()
+            y = self.text_position_y.GetValue()
             if not self.context.device.contains(x, y):
                 dlg = wx.MessageDialog(
                     None,
@@ -681,7 +683,7 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            self.context("move %d %d\n" % (x, y))
+            self.context("move %s %s\n" % (x, y))
         except ValueError:
             return
 
@@ -944,25 +946,25 @@ class Transform(wx.Panel):
 
     def on_translate_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = -self.context.navigate_jog
+        dy = -self.jog
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_left(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = -self.context.navigate_jog
+        dx = -self.jog
         dy = 0
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_right(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.navigate_jog
+        dx = self.jog
         dy = 0
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
     def on_translate_down(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
-        dy = self.context.navigate_jog
+        dy = self.jog
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
@@ -1005,96 +1007,34 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.spin_jog_mils = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "100.0", min=0.0, max=10000.0
+        self.text_jog_amount = wx.TextCtrl(
+            self, wx.ID_ANY, "10mm",
         )
-        self.spin_jog_inch = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "0.394", min=0.0, max=10.0
-        )
-        self.spin_jog_mm = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "10.0", min=0.0, max=254.0
-        )
-        self.spin_jog_cm = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=25.4)
-
-        # begin wxGlade: JogDistancePanel.__set_properties
-        self.spin_jog_mils.SetMinSize((80, 23))
-        self.spin_jog_mils.SetToolTip(
-            _("Set Jog Distance in mils (1/1000th of an inch)")
-        )
-        self.spin_jog_mm.SetMinSize((80, 23))
-        self.spin_jog_mm.SetToolTip(_("Set Jog Distance in mm"))
-        self.spin_jog_cm.SetMinSize((80, 23))
-        self.spin_jog_cm.SetToolTip(_("Set Jog Distance in cm"))
-        self.spin_jog_inch.SetMinSize((80, 23))
-        self.spin_jog_inch.SetToolTip(_("Set Jog Distance in inch"))
-        # end wxGlade
-        # begin wxGlade: JogDistancePanel.__do_layout
+        self.text_jog_amount.SetMinSize((80, 23))
+        self.text_jog_amount.SetToolTip(_("Set Jog Distance in mm"))
         main_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
         )
         row_1 = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(row_1, 0, wx.EXPAND, 0)
-        if pane:
-            row_2 = wx.BoxSizer(wx.HORIZONTAL)
-            main_sizer.Add(row_2, 0, wx.EXPAND, 0)
-        else:
-            row_2 = row_1
-        cm_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("cm")), wx.VERTICAL
-        )
-        mm_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("mm")), wx.VERTICAL
-        )
-        in_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("inches")), wx.VERTICAL
-        )
-        st_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("steps")), wx.VERTICAL
-        )
-        st_sizer.Add(self.spin_jog_mils, 0, 0, 0)
-        row_1.Add(st_sizer, 0, wx.EXPAND, 0)
-        in_sizer.Add(self.spin_jog_inch, 0, 0, 0)
-        row_1.Add(in_sizer, 0, wx.EXPAND, 0)
-        mm_sizer.Add(self.spin_jog_mm, 0, 0, 0)
-        row_2.Add(mm_sizer, 0, wx.EXPAND, 0)
-        cm_sizer.Add(self.spin_jog_cm, 0, 0, 0)
-        row_2.Add(cm_sizer, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.text_jog_amount, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
 
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mils)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_mils)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_mm)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_mm)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_cm)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_cm)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_spin_jog_distance, self.spin_jog_inch)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_jog_distance, self.spin_jog_inch)
+        self.Bind(wx.EVT_TEXT, self.on_text_jog_amount, self.text_jog_amount)
         # end wxGlade
 
     def pane_show(self, *args):
-        self.set_jog_distances(self.context.navigate_jog)
+        self.text_jog_amount.SetValue(str(self.context.jog_amount))
         self.Children[0].SetFocus()
 
-    def set_jog_distances(self, jog_mils):
-        self.spin_jog_mils.SetValue(jog_mils) # TODO: UNITS
-        self.spin_jog_mm.SetValue(jog_mils / MILS_IN_MM)
-        self.spin_jog_cm.SetValue(jog_mils / (MILS_IN_MM * 10.0))
-        self.spin_jog_inch.SetValue(jog_mils / 1000.0) # 25400000
-
-    def on_spin_jog_distance(self, event):  # wxGlade: Navigation.<event_handler>
-        if event.Id == self.spin_jog_mils.Id:
-            self.context.navigate_jog = float(self.spin_jog_mils.GetValue() * NM_PER_MIL)
-        elif event.Id == self.spin_jog_mm.Id:
-            self.context.navigate_jog = float(self.spin_jog_mm.GetValue() * NM_PER_MM)
-        elif event.Id == self.spin_jog_cm.Id:
-            self.context.navigate_jog = float(
-                self.spin_jog_cm.GetValue() * MILS_IN_MM * 10.0
-            )
-        else:
-            self.context.navigate_jog = float(self.spin_jog_inch.GetValue() * NM_PER_INCH)
-        self.set_jog_distances(int(self.context.navigate_jog))
+    def on_text_jog_amount(self, event):  # wxGlade: Navigation.<event_handler>
+        try:
+            jog = self.context.device.length(self.text_jog_amount.GetValue())
+        except ValueError:
+            return
+        self.context.jog_amount = str(jog)
+        self.context.signal("jog_amount", str(jog))
 
 
 class NavigationPanel(wx.Panel):
