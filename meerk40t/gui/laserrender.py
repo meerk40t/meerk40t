@@ -504,14 +504,11 @@ class LaserRender:
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
         self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
-        try:
-            img = bmp.ConvertToImage()
-            buf = img.GetData()
-            image = Image.frombuffer(
-                "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
-            )
-        except AssertionError:
-            print(xmin, ymin, xmax, ymax)
+        img = bmp.ConvertToImage()
+        buf = img.GetData()
+        image = Image.frombuffer(
+            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+        )
         gc.PopState()
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
