@@ -245,7 +245,7 @@ def run():
     else:
         kernel.add_plugin(dxf_io.plugin)
 
-    from balor import main
+    from balormk import main
     kernel.add_plugin(main.plugin)
 
     if not args.gui_suppress:
@@ -260,7 +260,7 @@ def run():
             from .moshi.gui import gui as moshigui
             from .ruida.gui import gui as ruidagui
 
-            from balor.gui import gui as balorgui
+            from balormk.gui import gui as balorgui
 
         except Mk40tImportAbort as e:
             args.no_gui = True
