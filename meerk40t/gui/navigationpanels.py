@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import NM_PER_INCH, NM_PER_MM, NM_PER_MIL, NM_PER_CM
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_MIL, UNITS_PER_CM
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,

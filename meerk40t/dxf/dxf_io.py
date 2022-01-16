@@ -1,7 +1,7 @@
 import os
 
 from ..core.exceptions import Mk40tImportAbort
-from ..core.units import NM_PER_INCH, NM_PER_MM
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
     import ezdxf
@@ -79,10 +79,10 @@ class DxfLoader:
         unit = dxf.header.get("$INSUNITS")
 
         if unit is not None and unit != 0:
-            du = units.DrawingUnits(NM_PER_INCH, unit="in")
+            du = units.DrawingUnits(UNITS_PER_INCH, unit="in")
             scale = du.factor(decode(unit))
         else:
-            scale = NM_PER_MM
+            scale = UNITS_PER_MM
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(

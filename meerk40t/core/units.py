@@ -13,7 +13,14 @@ NM_PER_MM = 1000000
 NM_PER_CM = 10000000
 NM_PER_PIXEL = NM_PER_INCH / DEFAULT_PPI
 PX_PER_uM = DEFAULT_PPI / NM_PER_INCH
-uM_PER_NM = 1/1000.0
+
+UNITS_PER_INCH = NM_PER_INCH
+UNITS_PER_MIL = NM_PER_MIL
+UNITS_PER_uM = NM_PER_uM
+UNITS_PER_MM = NM_PER_MM
+UNITS_PER_CM = NM_PER_CM
+UNITS_PER_PIXEL = UNITS_PER_INCH / DEFAULT_PPI
+PX_PER_UNIT = DEFAULT_PPI / UNITS_PER_INCH
 
 UNITS_NANOMETER = 0
 UNITS_MM = 1
@@ -33,7 +40,7 @@ nanometers.
 
 class ViewPort:
     """
-    The x, y, width and height are of the viewport are stored in nm. These are converted to native units
+    The x, y, width and height are of the viewport are stored in nm. These are converted to mk native units
     """
     def __init__(self, x, y, width, height):
         self.x = None
@@ -43,10 +50,10 @@ class ViewPort:
         self.set_params(x, y, width, height)
 
     def set_params(self, x, y, width, height):
-        self.x = Length(x).value(ppi=NM_PER_INCH)
-        self.y = Length(y).value(ppi=NM_PER_INCH)
-        self.width = Length(width).value(ppi=NM_PER_INCH)
-        self.height = Length(height).value(ppi=NM_PER_INCH)
+        self.x = Length(x).value(ppi=UNITS_PER_INCH)
+        self.y = Length(y).value(ppi=UNITS_PER_INCH)
+        self.width = Length(width).value(ppi=UNITS_PER_INCH)
+        self.height = Length(height).value(ppi=UNITS_PER_INCH)
 
     def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False):
         """
@@ -68,18 +75,18 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            return Length(value).value(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
         if as_float:
             value = str(value) + new_units
-            return Length(value).value(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
         if new_units == "mm":
-            return Length(value).to_mm(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length)
         elif new_units == "inch":
-            return Length(value).to_inch(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).to_inch(ppi=UNITS_PER_INCH, relative_length=relative_length)
         elif new_units == "cm":
-            return Length(value).to_cm(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).to_cm(ppi=UNITS_PER_INCH, relative_length=relative_length)
         elif new_units == "px":
-            return Length(value).to_px(ppi=NM_PER_INCH, relative_length=relative_length)
+            return Length(value).to_px(ppi=UNITS_PER_INCH, relative_length=relative_length)
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -104,28 +111,28 @@ class ViewPort:
 
     @property
     def width_as_mm(self):
-        return Length(self.width).to_mm(ppi=NM_PER_INCH)
+        return Length(self.width).to_mm(ppi=UNITS_PER_INCH)
 
     @property
     def height_as_mm(self):
-        return Length(self.height).to_mm(ppi=NM_PER_INCH)
+        return Length(self.height).to_mm(ppi=UNITS_PER_INCH)
 
     @property
     def width_as_inch(self):
-        return Length(self.width).to_inch(ppi=NM_PER_INCH)
+        return Length(self.width).to_inch(ppi=UNITS_PER_INCH)
 
     @property
     def height_as_inch(self):
-        return Length(self.height).to_inch(ppi=NM_PER_INCH)
+        return Length(self.height).to_inch(ppi=UNITS_PER_INCH)
 
 
     @property
     def width_as_nm(self):
-        return Length(self.width).value(ppi=NM_PER_INCH)
+        return Length(self.width).value(ppi=UNITS_PER_INCH)
 
     @property
     def height_as_nm(self):
-        return Length(self.height).value(ppi=NM_PER_INCH)
+        return Length(self.height).value(ppi=UNITS_PER_INCH)
 
     @staticmethod
     def viewbox_transform(
@@ -234,7 +241,7 @@ class ViewPort:
 
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).value(ppi=NM_PER_INCH)
+        return Length("{amount}{units}".format(units=units, amount=amount)).value(ppi=UNITS_PER_INCH)
 
 
 class Length(object):
@@ -537,7 +544,7 @@ class Length(object):
 
     def to_mm(
         self,
-        ppi=NM_PER_INCH,
+        ppi=UNITS_PER_INCH,
         relative_length=None,
         font_size=None,
         font_height=None,
@@ -555,7 +562,7 @@ class Length(object):
 
     def to_cm(
         self,
-        ppi=NM_PER_INCH,
+        ppi=UNITS_PER_INCH,
         relative_length=None,
         font_size=None,
         font_height=None,
@@ -573,7 +580,7 @@ class Length(object):
 
     def to_inch(
         self,
-        ppi=NM_PER_INCH,
+        ppi=UNITS_PER_INCH,
         relative_length=None,
         font_size=None,
         font_height=None,

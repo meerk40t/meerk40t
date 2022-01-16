@@ -1,4 +1,4 @@
-from meerk40t.core.units import NM_PER_MM
+from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.gui.scene.scene import Widget
 from meerk40t.gui.wxutils import create_menu
 

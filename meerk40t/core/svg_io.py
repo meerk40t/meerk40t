@@ -4,7 +4,7 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .units import NM_PER_INCH, NM_PER_PIXEL
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -94,7 +94,7 @@ class SVGWriter:
         px_height = scene_height.value(ppi=96.0)
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % (1.0 / NM_PER_PIXEL)
+        scale = "scale(%f)" % (1.0 / UNITS_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         for operation in elements.ops():
@@ -272,7 +272,7 @@ class SVGLoader:
             ppi = 96.0
         if ppi == 0:
             ppi = 96.0
-        scale_factor = NM_PER_INCH / ppi
+        scale_factor = UNITS_PER_INCH / ppi
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")

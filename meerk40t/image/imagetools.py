@@ -3,7 +3,7 @@ from copy import copy
 from os import path as ospath
 
 from ..core.planner import make_actual, needs_actualization
-from ..core.units import NM_PER_INCH, NM_PER_PIXEL
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 from .actualize import actualize
 
@@ -1778,9 +1778,9 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (NM_PER_INCH / dpi[0], NM_PER_INCH / dpi[1])
+                    image *= "scale(%f,%f)" % (UNITS_PER_INCH / dpi[0], UNITS_PER_INCH / dpi[1])
                 else:
-                    image *= "scale(%f,%f)" % (NM_PER_PIXEL / dpi[0], NM_PER_PIXEL / dpi[1])
+                    image *= "scale(%f,%f)" % (UNITS_PER_PIXEL / dpi[0], UNITS_PER_PIXEL / dpi[1])
         except (KeyError, IndexError):
             pass
 

@@ -3,7 +3,7 @@ import os.path
 import re
 from copy import copy
 
-from .units import NM_PER_PIXEL
+from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -3189,7 +3189,7 @@ class Elemental(Service):
         def element_polygon(args=tuple(), **kwargs):
             try:
                 element = Polygon(list(map(float, args)))
-                element *= "Scale({scale})".format(scale=NM_PER_PIXEL)
+                element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(
                     _(
@@ -3206,7 +3206,7 @@ class Elemental(Service):
         def element_polyline(command, channel, _, args=tuple(), **kwargs):
             try:
                 element = Polyline(list(map(float, args)))
-                element *= "Scale({scale})".format(scale=NM_PER_PIXEL)
+                element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(
                     _(
