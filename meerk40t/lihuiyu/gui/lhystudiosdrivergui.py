@@ -356,7 +356,7 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_x.SetToolTip(
-            _("Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for")
+            _("Scale factor for the X-axis. Board units to actual physical units.")
         )
         sizer_19.Add(self.text_scale_x, 0, 0, 0)
 
@@ -365,7 +365,7 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y.SetToolTip(
-            _("Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for")
+            _("Scale factor for the Y-axis. Board units to actual physical units.")
         )
         sizer_20.Add(self.text_scale_y, 0, 0, 0)
 

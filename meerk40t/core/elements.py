@@ -109,7 +109,7 @@ group_simplify_re = re.compile(
     "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
 )
 subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
-# I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
+# Ideally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
 # but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
 element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
 # image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
