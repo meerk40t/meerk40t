@@ -9,7 +9,7 @@ from math import ceil
 
 import wx
 
-from ..core.units import UNITS_INCH, UNITS_MM, UNITS_PERCENT, UNITS_CM, NM_PER_INCH, NM_PER_MM, NM_PER_CM
+from ..core.units import UNITS_INCH, UNITS_MM, UNITS_PERCENT, UNITS_CM, UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_CM
 from ..image.imagetools import RasterScripts
 from ..kernel import signal_listener
 from ..svgelements import Matrix, SVGImage
@@ -850,14 +850,14 @@ class ResamplePanel(wx.Panel):
             width = 100
             height = 100
         elif units == UNITS_INCH:
-            width /= NM_PER_INCH
-            height /= NM_PER_INCH
+            width /= UNITS_PER_INCH
+            height /= UNITS_PER_INCH
         elif units == UNITS_MM:
-            width /= NM_PER_MM
-            height /= NM_PER_MM
+            width /= UNITS_PER_MM
+            height /= UNITS_PER_MM
         elif units == UNITS_CM:
-            width /= NM_PER_CM
-            height /= NM_PER_CM
+            width /= UNITS_PER_CM
+            height /= UNITS_PER_CM
         self.text_resample_height.SetValue(str(width))
         self.text_resample_width.SetValue(str(height))
 

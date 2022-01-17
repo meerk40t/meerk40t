@@ -201,7 +201,7 @@ def plugin(kernel, lifecycle=None):
                 "type": int,
                 "label": _("Closed Distance"),
                 "tip": _(
-                    "How close (mils) do endpoints need to be to count as closed?"
+                    "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
             },
         ]
@@ -1523,7 +1523,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         start_time = time()
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
-        channel("Length at start: {length:.0f} mils".format(length=start_length))
+        channel("Length at start: {length:.0f} steps".format(length=start_length))
 
     curr = context.start
     if curr is None:
@@ -1633,7 +1633,7 @@ def short_travel_cutcode(context: CutCode, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:+.0%}), "
+                "Length at end: {length:.0f} steps ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU"
             ).format(
@@ -1671,7 +1671,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         start_time = time()
         start_times = times()
         channel("Executing 2-Opt Short-Travel optimization")
-        channel("Length at start: {length:.0f} mils".format(length=start_length))
+        channel("Length at start: {length:.0f} steps".format(length=start_length))
 
     ordered = CutCode(context.flat())
     length = len(ordered)
@@ -1776,7 +1776,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:+.0%}), "
+                "Length at end: {length:.0f} steps ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU"
             ).format(
@@ -1801,7 +1801,7 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         start_time = time()
         start_times = times()
         channel("Executing Inner Selection-Only optimization")
-        channel("Length at start: {length:.0f} mils".format(length=start_length))
+        channel("Length at start: {length:.0f} steps".format(length=start_length))
 
     for c in context.flat():
         c.burns_done = 0
@@ -1822,7 +1822,7 @@ def inner_selection_cutcode(context: CutCode, channel=None):
         end_length = ordered.length_travel(True)
         channel(
             (
-                "Length at end: {length:.0f} mils ({delta:+.0%}), "
+                "Length at end: {length:.0f} steps ({delta:+.0%}), "
                 + "optimized in {elapsed:.3f} elapsed seconds "
                 + "using {cpu:.3f} seconds CPU "
                 + "in {iterations} iterations"

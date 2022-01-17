@@ -9,7 +9,7 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import CutCode, LaserSettings, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
-from ..core.units import ViewPort, NM_PER_INCH, NM_PER_MIL
+from ..core.units import ViewPort, UNITS_PER_INCH, UNITS_PER_MIL
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -141,7 +141,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": float,
                 "label": _("X Scale Factor"),
                 "tip": _(
-                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the X-axis. Board units to actual physical units."
                 ),
             },
             {
@@ -151,7 +151,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Y Scale Factor"),
                 "tip": _(
-                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
         ]
@@ -761,22 +761,22 @@ class LihuiyuDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return float(self.driver.native_x * NM_PER_MIL) / self.scale_x
+        return float(self.driver.native_x * UNITS_PER_MIL) / self.scale_x
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return float(self.driver.native_y * NM_PER_MIL) / self.scale_y
+        return float(self.driver.native_y * UNITS_PER_MIL) / self.scale_y
 
     @property
     def get_native_scale_x(self):
-        return self.scale_x / float(NM_PER_MIL)
+        return self.scale_x / float(UNITS_PER_MIL)
 
     @property
     def get_native_scale_y(self):
-        return self.scale_y / float(NM_PER_MIL)
+        return self.scale_y / float(UNITS_PER_MIL)
 
 
     @property
@@ -1123,16 +1123,16 @@ class LhystudiosDriver:
     def move_abs(self, x, y):
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x * NM_PER_INCH / 1000))
-        y = int(round(self.service.scale_y * y * NM_PER_INCH / 1000))
+        x = int(round(self.service.scale_x * x * UNITS_PER_INCH / 1000))
+        y = int(round(self.service.scale_y * y * UNITS_PER_INCH / 1000))
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
-        dx = int(round(self.service.scale_x * dx / NM_PER_MIL))
-        dy = int(round(self.service.scale_y * dy / NM_PER_MIL))
+        dx = int(round(self.service.scale_x * dx / UNITS_PER_MIL))
+        dy = int(round(self.service.scale_y * dy / UNITS_PER_MIL))
         self.rapid_mode()
         self.move_relative(dx, dy)
 

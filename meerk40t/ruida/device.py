@@ -4,11 +4,11 @@ from typing import Tuple, Union
 
 from ..core.cutcode import CutCode, LaserSettings, LineCut
 from ..core.spoolers import Spooler
-from ..core.units import NM_PER_uM
+from ..core.units import UNITS_PER_uM
 from ..kernel import Module, Service
 from ..svgelements import Color, Point
 
-UNITS_PER_uM = NM_PER_uM
+UNITS_PER_uM = UNITS_PER_uM
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -199,7 +199,7 @@ class RuidaDevice(Service):
                 "type": float,
                 "label": _("X Scale Factor"),
                 "tip": _(
-                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the X-axis. Board units to actual physical units."
                 ),
             },
             {
@@ -209,7 +209,7 @@ class RuidaDevice(Service):
                 "type": float,
                 "label": _("Y Scale Factor"),
                 "tip": _(
-                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
         ]
@@ -2073,7 +2073,7 @@ class RuidaEmulator(Module):
         if mem == 0x0221:
             if self.device is not None:
                 try:
-                    self.x = int(self.device.current_x * NM_PER_uM)
+                    self.x = int(self.device.current_x * UNITS_PER_uM)
                 except AttributeError:
                     pass
             x = int(self.x)
@@ -2085,7 +2085,7 @@ class RuidaEmulator(Module):
         if mem == 0x0231:
             if self.device is not None:
                 try:
-                    self.y = int(self.device.current_y * NM_PER_uM)
+                    self.y = int(self.device.current_y * UNITS_PER_uM)
                 except AttributeError:
                     pass
             y = int(self.y)

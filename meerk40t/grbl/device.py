@@ -7,7 +7,7 @@ import time
 from ..core.cutcode import LaserSettings
 from ..core.drivers import Driver
 from ..core.spoolers import Spooler
-from ..core.units import NM_PER_INCH, NM_PER_MM
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -173,7 +173,7 @@ class GRBLDevice(Service):
                 "type": float,
                 "label": _("X Scale Factor"),
                 "tip": _(
-                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the X-axis. Board units to actual physical units."
                 ),
             },
             {
@@ -183,7 +183,7 @@ class GRBLDevice(Service):
                 "type": float,
                 "label": _("Y Scale Factor"),
                 "tip": _(
-                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
         ]
@@ -247,7 +247,7 @@ class GRBLDriver(Driver):
         Driver.__init__(self, context=context, name=str(context))
         self.context.setting(str, "line_end", "\n")
         self.plot = None
-        self.scale = NM_PER_INCH  # g21 default.
+        self.scale = UNITS_PER_INCH  # g21 default.
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 default
         self.feed_invert = lambda s: s * (self.scale * 60.0)
         self.power_updated = True
@@ -257,10 +257,10 @@ class GRBLDriver(Driver):
         return "GRBLDriver(%s)" % self.name
 
     def g20(self):
-        self.scale = NM_PER_INCH  # g20 is inch mode.
+        self.scale = UNITS_PER_INCH  # g20 is inch mode.
 
     def g21(self):
-        self.scale = NM_PER_MM  # g21 is mm mode.
+        self.scale = UNITS_PER_MM  # g21 is mm mode.
 
     def g93(self):
         # Feed Rate in Minutes / Unit
@@ -630,9 +630,9 @@ def get_command_code(lines):
                 elif v == 19:
                     return 2  # Set the YZ plane for arc.
                 elif v == 20.0 or v == 70.0:
-                    scale = NM_PER_INCH  # g20 is inch mode.
+                    scale = UNITS_PER_INCH  # g20 is inch mode.
                 elif v == 21.0 or v == 71.0:
-                    scale = NM_PER_MM  # g21 is mm mode.
+                    scale = UNITS_PER_MM  # g21 is mm mode.
                 elif v == 28.0:
                     yield "rapid_mode"
                     yield "home"
@@ -1087,9 +1087,9 @@ class GRBLEmulator(Module):
                 elif v == 19:
                     return 2  # Set the YZ plane for arc.
                 elif v == 20.0 or v == 70.0:
-                    self.scale = NM_PER_INCH  # g20 is inch mode.
+                    self.scale = UNITS_PER_INCH  # g20 is inch mode.
                 elif v == 21.0 or v == 71.0:
-                    self.scale = NM_PER_MM  # g21 is mm mode.
+                    self.scale = UNITS_PER_MM  # g21 is mm mode.
                 elif v == 28.0:
                     self.spooler.job("rapid_mode")
                     self.spooler.job("home")

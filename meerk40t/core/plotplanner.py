@@ -40,7 +40,7 @@ of zero will remain zero.
 class PlotPlanner:
     def __init__(self, settings):
         self.settings = settings
-        self.debug = True
+        self.debug = False
 
         self.abort = False
         self.force_shift = False

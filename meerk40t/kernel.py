@@ -3819,6 +3819,10 @@ class Kernel(Settings):
                 self.current_directory = "."
                 channel(_("Working directory"))
                 return
+            if directory == "&":
+                self.current_directory = os.path.dirname(self._config_file)
+                channel(_("Configuration Directory: {dir}").format(dir=str(self.current_directory)))
+                return
             if directory == "@":
                 import sys
 

@@ -131,7 +131,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": float,
                 "label": _("X Scale Factor"),
                 "tip": _(
-                    "Scale factor for the X-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the X-axis. Board units to actual physical units."
                 ),
             },
             {
@@ -141,7 +141,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Y Scale Factor"),
                 "tip": _(
-                    "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is usually at 1:1 steps/mils but due to functional issues it can deviate and needs to be accounted for"
+                    "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
         ]

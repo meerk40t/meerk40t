@@ -6,7 +6,7 @@ from wx import aui
 
 from ..core.cutcode import CutCode
 from ..core.elements import LaserOperation
-from ..core.units import NM_PER_INCH
+from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import Color, Length, Matrix, Path, SVGImage, SVGText, Group, SVGElement
 from .icons import (
@@ -275,7 +275,7 @@ class MeerK40t(MWindow):
                 mx = Matrix(m)
                 width_in_nm = context.device.width
                 height_in_nm = context.device.height
-                mx.render(ppi=NM_PER_INCH, width=width_in_nm, height=height_in_nm)
+                mx.render(ppi=UNITS_PER_INCH, width=width_in_nm, height=height_in_nm)
                 if mx.is_identity():
                     dlg.Destroy()
                     dlg = wx.MessageDialog(
@@ -307,7 +307,7 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 width_in_nm = context.device.width
-                length = Length(dlg.GetValue()).value(ppi=NM_PER_INCH, relative_length=width_in_nm)
+                length = Length(dlg.GetValue()).value(ppi=UNITS_PER_INCH, relative_length=width_in_nm)
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
