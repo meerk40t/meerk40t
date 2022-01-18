@@ -3,20 +3,31 @@ name: Python code quality
 on:
   push:
     branches: [main, legacy, 0.7]
+    paths:
+      - '**.py'
+      - '.github/workflows/python-code-quality.yml'
+      - 'pyproject.toml'
   pull_request:
     branches: [main, legacy, 0.7]
-  schedule:
-    - cron: '0 22 * * 5'
+    paths:
+      - '**.py'
+      - '.github/workflows/python-code-quality.yml'
+      - 'pyproject.toml'
 
 concurrency:
   group: codequality-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   analyze:
 
-    name: ${{ matrix.os }} / ${{ matrix.python-version }}
+    name: Lint ${{ matrix.os }} / ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -24,30 +35,47 @@ jobs:
         python-version: [3.9]
 
     steps:
-
-    - uses: actions/checkout@v2
+    - name: Checkout ${{ github.ref }}
+      uses: actions/checkout@v2
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Get full Python version
+    - name: Identify precise Python version
       id: full-python-version
       shell: bash
       run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
 
-    - uses: actions/cache@v2
+    - name: Cache Python env for ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}
+      uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ runner.os }}-python-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
+        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip setuptools wheel babel
-        pip install --upgrade --upgrade-strategy eager pylint flake8 flake8-deprecated black mypy isort
-        pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
-        if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+        python3 -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
+        pip3 install --upgrade --upgrade-strategy eager pylint pyproject-flake8 flake8-deprecated black mypy isort
+        if [ "${{ runner.os }}" == "Windows" ]; then
+            pip3 install --upgrade --upgrade-strategy eager wxPython
+        else
+            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+        fi
+        if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+
+    - name: List environment
+      env:
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
+        JOB_CONTEXT: ${{ toJSON(job) }}
+        STEPS_CONTEXT: ${{ toJSON(steps) }}
+        RUNNER_CONTEXT: ${{ toJSON(runner) }}
+        STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        MATRIX_CONTEXT: ${{ toJSON(matrix) }}
+      run: |
+        pip3 list
+        env
 
     - name: Create output directory
       run: mkdir -p artifacts
@@ -56,13 +84,13 @@ jobs:
       id: pylint
       continue-on-error: true
       run: |
-        pylint --rcfile=.pylintrc --ignore=svgelements.py --output-format=text:artifacts/pylint.txt,colorized meerk40t
+        pylint -j 0 --output-format=text:artifacts/pylint.txt,colorized meerk40t
 
     - name: Analyse with flake8
       id: flake8
       continue-on-error: true
       run: |
-        flake8 meerk40t --tee --output-file=artifacts/flake8.txt
+        pflake8 meerk40t --tee --output-file=artifacts/flake8.txt
 
     - name: Analyse with black
       id: black
