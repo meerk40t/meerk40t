@@ -15,6 +15,7 @@ from .icons import (
     icons8_home_filled_50,
     icons8_pause_50,
 )
+from .operationpropertymain import ParameterPanel
 
 try:
     import wx
@@ -456,6 +457,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
+        kernel.register("operationproperty/Main", ParameterPanel)
         kernel.register("window/GroupProperty", GroupProperty)
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

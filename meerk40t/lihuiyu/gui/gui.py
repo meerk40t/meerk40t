@@ -5,6 +5,7 @@ from meerk40t.gui.icons import (
     icons8_pause_50,
 )
 from meerk40t.kernel import signal_listener
+from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
 from meerk40t.lihuiyu.gui.lhystudiosaccel import LhystudiosAccelerationChart
 from meerk40t.lihuiyu.gui.lhystudioscontrollergui import LhystudiosControllerGui
 from meerk40t.lihuiyu.gui.lhystudiosdrivergui import LhystudiosDriverGui
@@ -30,6 +31,7 @@ def plugin(service, lifecycle):
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)
         service.register("window/Network-Controller", TCPController)
+        service.register("operationproperty/Lihuiyu", LhyAdvancedPanel)
         _ = service.kernel.translation
 
         def controller_click(i=None):
