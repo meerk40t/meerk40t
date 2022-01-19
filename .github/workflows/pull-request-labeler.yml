@@ -1,12 +1,14 @@
 # Add labels to Pull-Requests based on the types of files modified
+# https://github.com/actions/labeler
+
 name: "Pull Request Labeler"
 on:
-- pull_request
 - pull_request_target
 
 jobs:
   labeler:
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
     - uses: actions/labeler@v3
       with:
