@@ -576,7 +576,9 @@ class CutPlan:
                     )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
-                    c, channel=channel
+                    c,
+                    channel=channel,
+                    grouped_inner=self.context.opt_inners_grouped,
                 )
 
     def optimize_travel(self):
@@ -594,7 +596,8 @@ class CutPlan:
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,
-                    complete=self.context.opt_complete_subpaths,
+                    complete_path=self.context.opt_complete_subpaths,
+                    grouped_inner=self.context.opt_inners_grouped,
                 )
                 last = self.plan[i].end()
 
@@ -1563,9 +1566,9 @@ def inner_first_ident(context: CutGroup, channel=None):
                     outer.contains = list()
                 outer.contains.append(inner)
 
-                # if inner.inside is None:
-                    # inner.inside = list()
-                # inner.inside.append(outer)
+                if inner.inside is None:
+                    inner.inside = list()
+                inner.inside.append(outer)
 
     context.constrained = constrained
 
@@ -1595,7 +1598,7 @@ def inner_first_ident(context: CutGroup, channel=None):
     return context
 
 
-def short_travel_cutcode(context: CutCode, channel=None, complete: Optional[bool]=False):
+def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
     optimizing with greedy/brute for shortest distances optimizations.
@@ -1649,23 +1652,27 @@ def short_travel_cutcode(context: CutCode, channel=None, complete: Optional[bool
                     backwards = True
                     distance = abs(complex(closest.end()) - curr)
             # Gap or continuing on path not permitted, try reversing
-            if distance > 50 and last_segment.burns_done < last_segment.passes:
-                # last_segment is a copy so we cannot use it to increment burns_done
+            if (
+                distance > 50
+                and last_segment.burns_done < last_segment.passes
+                and last_segment.reversible()
+            ):
+                # last_segment is a copy so we need to get original
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
-        # Travel only if path is complete or gap > 1/20"
+        # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
             closest = None
-            for cut in context.candidate(complete=complete):
+            for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
                 s = cut.start()
                 if (
                     abs(s.x - curr.real) <= distance
                     and abs(s.y - curr.imag) <= distance
                     and (
-                        not complete
+                        not complete_path
                         or cut.closed
                         or cut.first
                     )
@@ -1685,7 +1692,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete: Optional[bool
                     abs(e.x - curr.real) <= distance
                     and abs(e.y - curr.imag) <= distance
                     and (
-                        not complete
+                        not complete_path
                         or cut.closed
                         or cut.last
                     )
@@ -1889,7 +1896,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode, channel=None):
+def inner_selection_cutcode(context: CutCode, channel=None, grouped_inner: Optional[bool]=False):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
@@ -1909,12 +1916,12 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     ordered = CutCode()
     iterations = 0
     while True:
-        c = list(context.candidate())
+        c = list(context.candidate(grouped_inner=grouped_inner))
         if len(c) == 0:
             break
         for o in c:
             o.burns_done += 1
-        ordered.extend(c)
+        ordered.extend(copy(c))
         iterations += 1
 
     if channel:
