@@ -1,6 +1,7 @@
 from abc import ABC
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from meerk40t.tools.rasterplotter import (
+from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
     RIGHT,
@@ -10,7 +11,7 @@ from meerk40t.tools.rasterplotter import (
     Y_AXIS,
     RasterPlotter,
 )
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from ..tools.zinglplotter import ZinglPlotter
 
 from ..device.lasercommandconstants import (
     COMMAND_CUT,
@@ -163,6 +164,9 @@ class CutObject:
         self.mode = None
         self.inside = None
         self.contains = None
+        self.first = False
+        self.last = False
+        self.closed = False
         self.path = None
         self.original_op = None
         self.pass_index = -1
@@ -249,6 +253,8 @@ class CutGroup(list, CutObject, ABC):
     """
     CutGroups are group container CutObject. They are used to group objects together such as
     to maintain the relationship between within a closed path object.
+
+    CutGroups should either contain pathsegments or other CutGroups but not both.
     """
 
     def __init__(
@@ -298,7 +304,7 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self):
+    def candidate(self, complete: Optional[bool]=False):
         """
         Candidates are cutobjects with burns done < passes that do not contain
         another constrained cutcode object. Which is to say that the
@@ -307,6 +313,26 @@ class CutGroup(list, CutObject, ABC):
         for c in self:
             if c.contains_uncut_objects():
                 continue
+            # If we are only burning complete subpaths then
+            # if this is not a closed path we should only yield first and last segments
+            # Planner will need to determine which end of the subpath is yoielded
+            # and only consider the direction starting from the end
+            if (
+                complete
+                and isinstance(c, CutGroup)
+                and not c.closed
+                and not isinstance(c[0], CutGroup)
+                and not isinstance(c[-1], CutGroup)
+            ):
+                if c[0].burns_done < c[0].passes:
+                    yield c[0]
+                # Do not yield same segment a 2nd time if only one segment
+                if len(c) > 1 and c[-1].burns_done < c[-1].passes:
+                    yield c[-1]
+                continue
+            # If we are either burning any path segment
+            # or this is a closed path
+            # then we should yield all segments.
             for s in c.flat():
                 if s is None:
                     continue
