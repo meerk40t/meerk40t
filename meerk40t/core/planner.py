@@ -153,7 +153,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
-                "default": False,
+                "default": True,
                 "type": bool,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
