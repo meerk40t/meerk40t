@@ -275,6 +275,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Group Inner Burns"),
                 "tip": _(
                     "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
+                    + "This option only does something if Burn Inner First is also selected. "
                     + "If your design has multiple separate pieces on it, "
                     + "this should mostly cause each piece to be burned in entirety "
                     + "before moving on to burn another piece. "
