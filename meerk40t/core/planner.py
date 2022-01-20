@@ -154,7 +154,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
-                "default": False,
+                "default": True,
                 "type": bool,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
@@ -180,7 +180,7 @@ def plugin(kernel, lifecycle=None):
                 "object": context,
                 # Default is false for backwards compatibility.
                 # Initial tests suggest that in most cases this actually results in shorter burn times.
-                "default": False,
+                "default": True,
                 "type": bool,
                 "label": _("Burn Complete Subpaths"),
                 "tip": _(
@@ -251,7 +251,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_inner_first",
                 "object": context,
-                "default": False,
+                "default": True,
                 "type": bool,
                 "label": _("Burn Inner First"),
                 "tip": _(
