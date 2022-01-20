@@ -277,7 +277,9 @@ def plugin(kernel, lifecycle=None):
                     "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
                     + "If your design has multiple separate pieces on it, "
                     + "this should mostly cause each piece to be burned in entirety "
-                    + "before moving on to burn another piece."
+                    + "before moving on to burn another piece. "
+                    + "This can reduce the risk of e.g. a shift ruining an entire piece of material "
+                    + "by trying to ensure that one piece is finished before starting on another."
                 )
                 + "\n\n"
                 + _(
