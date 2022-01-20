@@ -283,6 +283,10 @@ def plugin(kernel, lifecycle=None):
                 )
                 + "\n\n"
                 + _(
+                    "This optimization works best with Merge Operations also checked though this is not a requirement. "
+                )
+                + "\n\n"
+                + _(
                     "Because this optimisation is done once rasters have been turned into images, "
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
