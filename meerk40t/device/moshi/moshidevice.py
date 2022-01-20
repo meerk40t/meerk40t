@@ -45,6 +45,7 @@ MILS_IN_MM = 39.3701
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
+STATUS_ERROR = 237 # ERROR
 
 
 def plugin(kernel, lifecycle=None):
@@ -163,6 +164,8 @@ def get_code_string_from_moshicode(code):
         return "OK"
     elif code == STATUS_PROCESSING:
         return "Processing"
+    elif code == STATUS_ERROR:
+        return "Error"
     elif code == 0:
         return "USB Failed"
     else:
@@ -688,7 +691,7 @@ class MoshiController:
         self.prev = None
 
         self._thread = None
-        self._buffer = b""  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 
@@ -807,20 +810,24 @@ class MoshiController:
 
     def realtime_pipe(self, data):
         if self.connection is not None:
-            self.connection.write_addr(data)
+            try:
+                self.connection.write_addr(data)
+            except ConnectionError:
+                pass
 
     realtime_write = realtime_pipe
 
     def open(self):
         self.pipe_channel("open()")
         if self.connection is None:
-            self.connection = self.ch341.connect(
+            connection = self.ch341.connect(
                 driver_index=self.context.usb_index,
                 chipv=self.context.usb_version,
                 bus=self.context.usb_bus,
                 address=self.context.usb_address,
                 mock=self.context.mock,
             )
+            self.connection = connection
             if self.context.mock:
                 self.connection.mock_status = 205
                 self.connection.mock_finish = 207
@@ -884,7 +891,7 @@ class MoshiController:
         """
         Abort the current buffer and data queue.
         """
-        self._buffer = b""
+        self._buffer = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
         self.update_state(STATE_TERMINATE)
@@ -977,20 +984,18 @@ class MoshiController:
                 if self.state == STATE_INITIALIZE:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
-
                 if self.is_shutdown:
                     break
+                if len(self._buffer) == 0 and len(self._programs) == 0:
+                    self.pipe_channel("Nothing to process")
+                    break  # There is nothing to run.
+                if self.connection is None:
+                    self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
-                    if len(self._programs) == 0:
-                        self.pipe_channel("Nothing to process")
-                        # time.sleep(0.4)
-                        break  # There is nothing to run.
                     self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
-                    self.open()
                     self.wait_until_accepting_packets()
-
                     self.realtime_prologue()
                     self._buffer = self._programs.pop(0).data
                     assert len(self._buffer) != 0
@@ -1049,7 +1054,7 @@ class MoshiController:
             return False
 
         length = min(32, len(buffer))
-        packet = bytes(buffer[:length])
+        packet = buffer[:length]
 
         # Packet is prepared and ready to send. Open Channel.
 
@@ -1098,6 +1103,8 @@ class MoshiController:
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
+            if status == STATUS_ERROR:
+                raise ConnectionRefusedError
             if status == STATUS_OK:
                 return
             time.sleep(0.05)
