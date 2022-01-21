@@ -475,6 +475,13 @@ def plugin(kernel, lifecycle=None):
                         % root.active
                     )
                     return
+                if output.type != "lhystudios":
+                    channel(
+                        _(
+                            "Lhyserver cannot attach to non-Lhystudios controllers."
+                        )
+                    )
+                    return
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 if quit:
                     root.close("lhyserver")
