@@ -2,7 +2,7 @@
 
 "Context: Config":
 - '*'
-- '.*/**'
+- '.*/**/*'
 
 "Context: Docs":
 - '**.md'
@@ -11,22 +11,22 @@
 - 'meerk40t/*.py'
 
 "Context: Core":
-- 'meerk40t/core/**.py'
+- 'meerk40t/core/**/*.py'
 
 "Context: Devices":
-- 'meerk40t/device/**.py'
+- 'meerk40t/device/**/*.py'
 
 "Context: GUI":
-- 'meerk40t/gui/**.py'
+- 'meerk40t/gui/**/*.py'
 
 "Context: Misc":
-- 'meerk40t/dxf/**.py'
-- 'meerk40t/extra/**.py'
-- 'meerk40t/image/**.py'
-- 'meerk40t/tools/**.py'
+- 'meerk40t/dxf/**/*.py'
+- 'meerk40t/extra/**/*.py'
+- 'meerk40t/image/**/*.py'
+- 'meerk40t/tools/**/*.py'
 
 "Context: Tests":
-- 'test/**.py'
+- 'test/**/*.py'
 
 "Context: I18n":
-- 'locale/**'
+- 'locale/**/*'
