@@ -623,8 +623,9 @@ class MovePanel(wx.Panel):
         self.button_navigate_move_to = wx.BitmapButton(
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0in")
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0in")
+        default_pos = "0{units}".format(units=context.root.units_name)
+        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
+        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
 
         self.__set_properties()
         self.__do_layout()
