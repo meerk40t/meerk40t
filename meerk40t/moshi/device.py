@@ -163,8 +163,6 @@ class MoshiDevice(Service, ViewPort):
         self.register_choices("bed_dim", choices)
         ViewPort.__init__(self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight)
 
-        self.current_x = 0.0
-        self.current_y = 0.0
         self.settings = LaserSettings()
         self.state = 0
 
@@ -293,6 +291,30 @@ class MoshiDevice(Service, ViewPort):
         return self.controller.viewbuffer()
 
 
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known x value.
+        """
+        return float(self.driver.native_x * UNITS_PER_MIL) / self.scale_x
+
+    @property
+    def current_y(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return float(self.driver.native_y * UNITS_PER_MIL) / self.scale_y
+
+    @property
+    def get_native_scale_x(self):
+        return self.scale_x / float(UNITS_PER_MIL)
+
+    @property
+    def get_native_scale_y(self):
+        return self.scale_y / float(UNITS_PER_MIL)
+
+
+
 class MoshiDriver:
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
@@ -394,6 +416,7 @@ class MoshiDriver:
         y = int(round(self.service.scale_y * y / UNITS_PER_MIL))
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
+        self.rapid_mode()
 
     def move_rel(self, dx, dy):
         dx = self.service.length(dx, 0)
@@ -404,6 +427,7 @@ class MoshiDriver:
         x = self.native_x + dx
         y = self.native_y + dy
         self._move_absolute(int(x), int(y))
+        self.rapid_mode()
 
     def home(self, *values):
         """
@@ -833,8 +857,8 @@ class MoshiDriver:
         Goto absolute position. Cut flags whether this should be with or without the laser.
         """
         self._ensure_program_or_raster_mode(x, y)
-        old_x = self.native_x
-        old_y = self.native_y
+        oldx = self.service.current_x
+        oldy = self.service.current_y
 
         if self.state == DRIVER_STATE_PROGRAM:
             if cut:
@@ -857,21 +881,26 @@ class MoshiDriver:
                     self.program.move_horizontal_abs(x=x)
         self.native_x = x
         self.native_y = y
-        self.service.signal("driver;position", (old_x, old_y, x, y))
+        x = self.service.current_x
+        y = self.service.current_y
+        self.service.signal("driver;position", (oldx, oldy, x, y))
 
     def _move_absolute(self, x, y):
         """
         Move to a position x, y. This is an absolute position.
         """
+        oldx = self.service.current_x
+        oldy = self.service.current_y
         self._ensure_program_or_raster_mode(x, y)
-        oldx = self.native_x
-        oldy = self.native_y
         self.program.move_abs(x, y)
         self.native_x = x
         self.native_y = y
-        x = self.native_x
-        y = self.native_y
-        self.service.signal("driver;position", (oldx, oldy, x, y))
+        x = self.service.current_x
+        y = self.service.current_y
+        self.service.signal(
+            "driver;position",
+            (oldx, oldy, x, y),
+        )
 
     def calc_home_position(self):
         """
