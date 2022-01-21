@@ -314,7 +314,6 @@ class MoshiDevice(Service, ViewPort):
         return self.scale_y / float(UNITS_PER_MIL)
 
 
-
 class MoshiDriver:
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
@@ -343,7 +342,6 @@ class MoshiDriver:
         self.paused = False
 
         self.service._buffer_size = 0
-        self.thread = None
 
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
@@ -1229,14 +1227,13 @@ class MoshiController:
                 if self.state == STATE_INITIALIZE:
                     # If we are initialized. Change that to active since we're running.
                     self.update_state(STATE_ACTIVE)
-
                 if self.is_shutdown:
                     break
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
                     if len(self._programs) == 0:
                         self.pipe_channel("Nothing to process")
-                        # time.sleep(0.4)
+                        time.sleep(0.4)
                         break  # There is nothing to run.
                     self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
