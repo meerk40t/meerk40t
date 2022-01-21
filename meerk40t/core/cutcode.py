@@ -1,6 +1,7 @@
 from abc import ABC
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from meerk40t.tools.rasterplotter import (
+from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
     RIGHT,
@@ -10,7 +11,7 @@ from meerk40t.tools.rasterplotter import (
     Y_AXIS,
     RasterPlotter,
 )
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from ..tools.zinglplotter import ZinglPlotter
 
 from ..device.lasercommandconstants import (
     COMMAND_CUT,
@@ -163,6 +164,9 @@ class CutObject:
         self.mode = None
         self.inside = None
         self.contains = None
+        self.first = False
+        self.last = False
+        self.closed = False
         self.path = None
         self.original_op = None
         self.pass_index = -1
@@ -228,7 +232,16 @@ class CutObject:
     def generator(self):
         raise NotImplementedError
 
-    def contains_uncut_objects(self):
+    def contains_burned_groups(self):
+        if self.contains is None:
+            return False
+        for c in self.contains:
+            for pp in c.flat():
+                if pp.burns_done > 0:
+                    return True
+        return False
+
+    def contains_unburned_groups(self):
         if self.contains is None:
             return False
         for c in self.contains:
@@ -243,6 +256,9 @@ class CutObject:
     def candidate(self):
         if self.burns_done < self.passes:
             yield self
+
+    def is_burned(self):
+        return self.burns_done == self.passes
 
 
 class CutGroup(list, CutObject, ABC):
@@ -298,20 +314,76 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self):
-        """
-        Candidates are cutobjects with burns done < passes that do not contain
-        another constrained cutcode object. Which is to say that the
-        inner-most non-containing cutcode are the only candidates for cutting.
-        """
+    def is_burned(self):
         for c in self:
-            if c.contains_uncut_objects():
-                continue
-            for s in c.flat():
-                if s is None:
+            if c.burns_done != c.passes:
+                return False
+        return True
+
+    def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+        """
+        Candidates are CutObjects:
+        1. That do not contain one or more unburned inner constrained cutcode objects.
+        2. With Group Inner Burns, containing object is a candidate only if:
+            a. It already has one containing object already burned; or
+            b. There are no containing objects with at least one inner element burned.
+        3. With burns done < passes (> 1 only if merge passes)
+        4. With Burn Complete Paths on and non-closed subpath, only first and last segments of the subpath else all segments
+        """
+        candidates = list(self)
+        if grouped_inner:
+            # Create list of exactly those groups which are:
+            #   a.  Unburned; and either
+            #   b1. Inside an outer which has at least one inner burned; or
+            #   b2. An outer which has all inner burned.
+            # by removing from the list:
+            #   1. Candidates already burned
+            #   2. Candidates which are neither inner or outer
+            #   3. Candidates which are outer and have at least one inner not yet burned
+            #   4. Candidates which are inner and all outers have no inners burned
+            # If the resulting list is empty then normal rules apply instead.
+            for grp in self:
+                if (
+                    grp.is_burned()
+                    or (grp.contains is None and grp.inside is None)
+                    or (grp.contains is not None and grp.contains_unburned_groups())
+                ):
+                    candidates.remove(grp)
                     continue
-                if s.burns_done < s.passes:
-                    yield s
+                if grp.inside is not None:
+                    for outer in grp.inside:
+                        if outer.contains_burned_groups():
+                            break
+                    else:
+                        candidates.remove(grp)
+            if len(candidates) == 0:
+                candidates = list(self)
+
+        for grp in candidates:
+            if grp.contains_unburned_groups():
+                continue
+            # If we are only burning complete subpaths then
+            # if this is not a closed path we should only yield first and last segments
+            # Planner will need to determine which end of the subpath is yoielded
+            # and only consider the direction starting from the end
+            if (
+                complete_path
+                and not grp.closed
+            ):
+                if grp[0].burns_done < grp[0].passes:
+                    yield grp[0]
+                # Do not yield same segment a 2nd time if only one segment
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
+                    yield grp[-1]
+                continue
+            # If we are either burning any path segment
+            # or this is a closed path
+            # then we should yield all segments.
+            for seg in grp.flat():
+                if seg is None:
+                    continue
+                if seg.burns_done < seg.passes:
+                    yield seg
 
 
 class CutCode(CutGroup):
