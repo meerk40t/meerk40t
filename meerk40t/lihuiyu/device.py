@@ -777,7 +777,6 @@ class LihuiyuDevice(Service, ViewPort):
     def get_native_scale_y(self):
         return self.scale_y / float(UNITS_PER_MIL)
 
-
     @property
     def output(self):
         """
