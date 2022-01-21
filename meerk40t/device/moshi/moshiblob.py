@@ -428,7 +428,7 @@ class MoshiBlob:
 
         :return:
         """
-        assert self._stage == 3
+        # assert self._stage == 3
         self._stage = 4
         if self.channel:
             self.channel("Termination.")
