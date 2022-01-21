@@ -2419,11 +2419,11 @@ msgstr "Tastenkürzel"
 
 #: meerk40t/gui/wxmeerk40t.py:1704
 msgid "&New\tCtrl-N"
-msgstr "&Neu\tStrg-N"
+msgstr "&Neu\tCtrl-N"
 
 #: meerk40t/gui/wxmeerk40t.py:1705
 msgid "&Open Project\tCtrl-O"
-msgstr "&Oeffne Pr&ojekt\tStrg-O"
+msgstr "&Oeffne Pr&ojekt\tCtrl-O"
 
 #: meerk40t/gui/wxmeerk40t.py:1707
 msgid "&Recent"
@@ -2435,11 +2435,11 @@ msgstr "&Importiere Datei"
 
 #: meerk40t/gui/wxmeerk40t.py:1710
 msgid "&Save\tCtrl-S"
-msgstr "&Speichern\tStrg-S"
+msgstr "&Speichern\tCtrl-S"
 
 #: meerk40t/gui/wxmeerk40t.py:1711
 msgid "Save &As\tCtrl-Shift-S"
-msgstr "Speichern &als\Strg-Shift-S"
+msgstr "Speichern &als\tCtrl-Shift-S"
 
 #: meerk40t/gui/wxmeerk40t.py:1714
 msgid "E&xit"
