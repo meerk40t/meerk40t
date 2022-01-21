@@ -178,7 +178,7 @@ def get_code_string_from_moshicode(code):
 class MoshiDriver(Driver):
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion. The Moshibaord Driver overloads the Driver class to take spoolable values from
+    agnostic fashion. The Moshiboard Driver overloads the Driver class to take spoolable values from
     the spooler and converts them into Moshiboard specific actions.
 
     """
@@ -219,6 +219,7 @@ class MoshiDriver(Driver):
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
         context.setting(bool, "enable_raster", True)
+        context.setting(int, "rapid_speed", 40)
 
         self.pipe_channel = context.channel("%s/events" % name)
 
@@ -313,7 +314,7 @@ class MoshiDriver(Driver):
         if speed is None and self.settings.speed is not None:
             speed = int(self.settings.speed)
         if speed is None:
-            speed = 20
+            speed = self.context.rapid_speed
         if normal_speed is None:
             normal_speed = speed
 
