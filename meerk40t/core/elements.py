@@ -2985,8 +2985,8 @@ class Elemental(Service):
                 height = bounds[3] - bounds[1]
             except Exception:
                 raise SyntaxError
-            x = self.device.length(x, 0, percent=width)
-            y = self.device.length(y, 1, percent=height)
+            x = self.device.length(x, 0, relative_length=width)
+            y = self.device.length(y, 1, relative_length=height)
             y_pos = 0
             data_out = list(data)
             for j in range(r):

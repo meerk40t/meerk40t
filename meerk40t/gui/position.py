@@ -193,7 +193,7 @@ class PositionPanel(wx.Panel):
             try:
                 w = float(self.text_w.GetValue())
             except ValueError:
-                w = self.context.device.length(self.text_w.GetValue(), 0, self.position_units)
+                w = self.context.device.length(self.text_w.GetValue(), 0, new_unit=self.position_units)
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -222,14 +222,14 @@ class PositionPanel(wx.Panel):
     def on_text_h_enter(self, event):
         event.Skip()
         original = self.position_h
-        if self.position_units == 4:
+        if self.position_units == "%":
             ratio_w = float(self.text_h.GetValue()) / 100.0
             h = self.position_h * ratio_w
         else:
             try:
                 h = float(self.text_h.GetValue())
             except ValueError:
-                h = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
+                h = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
@@ -260,7 +260,7 @@ class PositionPanel(wx.Panel):
             x = float(self.text_x.GetValue())
             self.position_x = x
         except ValueError:
-            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
+            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -282,7 +282,7 @@ class PositionPanel(wx.Panel):
             y = float(self.text_y.GetValue())
             self.position_y = y
         except ValueError:
-            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, self.position_units)
+            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (

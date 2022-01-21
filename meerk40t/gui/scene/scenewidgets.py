@@ -571,11 +571,44 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x0, y1, x0, y0)
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.context
-                name = p.units_name
-                gc.DrawText(str(p.device.length(y0, 1, name)), center_x, y0 / 2.0)
-                gc.DrawText(str(p.device.length(x0, 0, name)), x0 / 2.0, center_y)
-                gc.DrawText(str(p.device.length((y1 - y0), 1, name)), x1, center_y)
-                gc.DrawText(str(p.device.length((x1 - x0), 0, name)), center_x, y1)
+                units = p.units_name
+                # scale(%.13f,%.13f)
+                gc.DrawText(
+                    "{distance:.2f}{units}".format(
+                        distance=p.device.length(y0, 1, new_units=units, as_float=True),
+                        units=units,
+                    ),
+                    center_x,
+                    y0 / 2.0,
+                )
+                gc.DrawText(
+                    "{distance:.2f}{units}".format(
+                        distance=p.device.length(x0, 0, new_units=units, as_float=True),
+                        units=units,
+                    ),
+                    x0 / 2.0,
+                    center_y,
+                )
+                gc.DrawText(
+                    "{distance:.2f}{units}".format(
+                        distance=p.device.length(
+                            (y1 - y0), 1, new_units=units, as_float=True
+                        ),
+                        units=units,
+                    ),
+                    x1,
+                    center_y,
+                )
+                gc.DrawText(
+                    "{distance:.2f}{units}".format(
+                        distance=p.device.length(
+                            (x1 - x0), 0, new_units=units, as_float=True
+                        ),
+                        units=units,
+                    ),
+                    center_x,
+                    y1,
+                )
 
 
 class RectSelectWidget(Widget):
@@ -932,7 +965,10 @@ class GuideWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
-        scaled_conversion = p.device.length(1.0, new_units=p.units_name, as_float=True) * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        scaled_conversion = (
+            p.device.length(str(1) + p.units_name, as_float=True)
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
         if scaled_conversion == 0:
             return
         edge_gap = 5
