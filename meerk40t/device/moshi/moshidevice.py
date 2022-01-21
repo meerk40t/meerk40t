@@ -45,7 +45,8 @@ MILS_IN_MM = 39.3701
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
-STATUS_ERROR = 237 # ERROR
+STATUS_ERROR = 237  # ERROR
+STATUS_RESET = 239  # Seen during reset
 
 
 def plugin(kernel, lifecycle=None):
@@ -76,9 +77,9 @@ def plugin(kernel, lifecycle=None):
             Force USB Disconnect Event for Moshiboard
             """
             spooler, driver, output = data
-            if output.connection is not None:
+            try:
                 output.close()
-            else:
+            except ConnectionError:
                 channel("Usb is not connected.")
 
         @context.console_command(
@@ -166,6 +167,8 @@ def get_code_string_from_moshicode(code):
         return "Processing"
     elif code == STATUS_ERROR:
         return "Error"
+    elif code == STATUS_RESET:
+        return "Resetting"
     elif code == 0:
         return "USB Failed"
     else:
@@ -701,7 +704,7 @@ class MoshiController:
         self._status = [0] * 6
         self._usb_state = -1
 
-        self.connection = None
+        self._connection = None
 
         self.max_attempts = 5
         self.refuse_counts = 0
@@ -809,17 +812,19 @@ class MoshiController:
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
-        if self.connection is not None:
+        if self._connection is not None:
             try:
-                self.connection.write_addr(data)
+                self._connection.write_addr(data)
             except ConnectionError:
-                pass
+                self.pipe_channel("Connection error")
+        else:
+            self.pipe_channel("Not connected")
 
     realtime_write = realtime_pipe
 
     def open(self):
         self.pipe_channel("open()")
-        if self.connection is None:
+        if self._connection is None:
             connection = self.ch341.connect(
                 driver_index=self.context.usb_index,
                 chipv=self.context.usb_version,
@@ -827,20 +832,22 @@ class MoshiController:
                 address=self.context.usb_address,
                 mock=self.context.mock,
             )
-            self.connection = connection
+            self._connection = connection
             if self.context.mock:
-                self.connection.mock_status = 205
-                self.connection.mock_finish = 207
+                self._connection.mock_status = 205
+                self._connection.mock_finish = 207
         else:
-            self.connection.open()
-        if self.connection is None:
+            self._connection.open()
+        if self._connection is None:
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
 
     def close(self):
         self.pipe_channel("close()")
-        if self.connection is not None:
-            self.connection.close()
-            self.connection = None
+        if self._connection is not None:
+            self._connection.close()
+            self._connection = None
+        else:
+            raise ConnectionError
 
     def push_program(self, program):
         self.pipe_channel("Pushed: %s" % str(program.data))
@@ -989,7 +996,7 @@ class MoshiController:
                 if len(self._buffer) == 0 and len(self._programs) == 0:
                     self.pipe_channel("Nothing to process")
                     break  # There is nothing to run.
-                if self.connection is None:
+                if self._connection is None:
                     self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
@@ -1070,18 +1077,18 @@ class MoshiController:
         """
         Send packet to the CH341 connection.
         """
-        if self.connection is None:
+        if self._connection is None:
             raise ConnectionError
-        self.connection.write(packet)
+        self._connection.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
         """
         Request a status update from the CH341 connection.
         """
-        if self.connection is None:
+        if self._connection is None:
             raise ConnectionError
-        self._status = self.connection.get_status()
+        self._status = self._connection.get_status()
         if self.context is not None:
             try:
                 self.context.signal(
