@@ -900,6 +900,7 @@ class MoshiController:
         Abort the current buffer and data queue.
         """
         self._buffer = bytearray()
+        self._programs.clear()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
         self.update_state(STATE_TERMINATE)
@@ -1041,7 +1042,10 @@ class MoshiController:
                     break
                 self.connection_errors += 1
                 time.sleep(0.5)
-                self.close()
+                try:
+                    self.close()
+                except ConnectionError:
+                    pass
                 continue
         self.context.signal("pipe;running", False)
         self._thread = None
