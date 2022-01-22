@@ -648,11 +648,9 @@ class CutPlan:
                         image_element.image_width == 1
                         and image_element.image_height == 1
                     ):
-                        """
-                        TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
-                            time around because the renderer is what sets the size of the text. If the size hasn't
-                            already been set, the initial bounds are wrong.
-                        """
+                        # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
+                        #  around because the renderer is what sets the size of the text. If the size hasn't already
+                        #  been set, the initial bounds are wrong.
                         image_element = self.make_image_for_op(op)
                     op.children.clear()
                     op.add(image_element, type="opnode")

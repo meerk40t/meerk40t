@@ -21,9 +21,6 @@ class PlannerPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
-        # TODO, integrate
-        self.context.setting(bool, "opt_complete_subpaths", False)
-        self.context.setting(bool, "opt_inners_grouped", False)
 
         self.plan_name = plan_name
         self.available_devices = list(self.context.kernel.services("device"))

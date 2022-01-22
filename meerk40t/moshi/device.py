@@ -72,6 +72,10 @@ def get_code_string_from_moshicode(code):
         return "OK"
     elif code == STATUS_PROCESSING:
         return "Processing"
+    elif code == STATUS_ERROR:
+        return "Error"
+    elif code == STATUS_RESET:
+        return "Resetting"
     elif code == 0:
         return "USB Failed"
     else:
@@ -106,6 +110,7 @@ class MoshiDevice(Service, ViewPort):
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(str, "label", path)
+        self.setting(int, "rapid_speed", 40)
 
         _ = self._
         choices = [
@@ -316,24 +321,6 @@ class MoshiDevice(Service, ViewPort):
         return self.scale_y / float(UNITS_PER_MIL)
 
 
-
-def get_code_string_from_moshicode(code):
-    """
-    Moshiboard CH341 codes into code strings.
-    """
-    if code == STATUS_OK:
-        return "OK"
-    elif code == STATUS_PROCESSING:
-        return "Processing"
-    elif code == STATUS_ERROR:
-        return "Error"
-    elif code == STATUS_RESET:
-        return "Resetting"
-    elif code == 0:
-        return "USB Failed"
-    else:
-        return "UNK %02x" % code
-
 class MoshiDriver:
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
@@ -368,8 +355,6 @@ class MoshiDriver:
 
         name = self.service.label
         self.pipe_channel = service.channel("%s/events" % name)
-
-        service.setting(int, "rapid_speed", 40) #TODO
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name

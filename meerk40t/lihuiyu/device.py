@@ -655,13 +655,6 @@ class LihuiyuDevice(Service, ViewPort):
                 if quit:
                     self.close(server_name)
                     return
-                # if output.type != "lhystudios": #TODO
-                #     channel(
-                #         _(
-                #             "Lhyserver cannot attach to non-Lhystudios controllers."
-                #         )
-                #     )
-                #     return
                 channel(_("TCP Server for Lhystudios on port: %d" % port))
                 if not silent:
                     console = kernel.channel("console")
