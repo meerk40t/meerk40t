@@ -1785,7 +1785,7 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
 
     def clear_and_open(self, pathname):
-        self.clear_projcet()
+        self.clear_project()
         if self.load(pathname):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):
