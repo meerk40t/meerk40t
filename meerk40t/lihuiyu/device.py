@@ -778,7 +778,6 @@ class LihuiyuDevice(Service, ViewPort):
     def get_native_scale_y(self):
         return self.scale_y / float(UNITS_PER_MIL)
 
-
     @property
     def output(self):
         """
@@ -802,9 +801,6 @@ class LhystudiosDriver:
         self.name = str(self.service)
 
         self.settings = LaserSettings()
-
-        self.next = None
-        self.prev = None
 
         self.output = None
 
@@ -935,7 +931,6 @@ class LhystudiosDriver:
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            print(x,y,on)
             if self.hold_work():
                 time.sleep(0.05)
                 continue
@@ -1123,8 +1118,8 @@ class LhystudiosDriver:
     def move_abs(self, x, y):
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x * UNITS_PER_INCH / 1000))
-        y = int(round(self.service.scale_y * y * UNITS_PER_INCH / 1000))
+        x = int(round(self.service.scale_x * x / UNITS_PER_MIL))
+        y = int(round(self.service.scale_y * y / UNITS_PER_MIL))
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 

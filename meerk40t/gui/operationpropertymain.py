@@ -856,11 +856,12 @@ class ParameterPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-        # TODO: restore module delegate
-        # self.context.add_module_delegate(self.raster_panel.panel_start)
-
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
+        try:
+            self.raster_panel.panel_start.on_element_property_reload(origin=origin, *args)
+        except AttributeError:
+            pass
         if self.operation.operation not in ("Raster", "Image"):
             if self.raster_panel.Shown:
                 self.raster_panel.Hide()

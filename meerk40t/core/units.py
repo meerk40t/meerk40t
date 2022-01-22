@@ -76,17 +76,14 @@ class ViewPort:
                 relative_length = self.height
         if new_units is None:
             return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
-        if as_float:
-            value = str(value) + new_units
-            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
-        if new_units == "mm":
-            return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length)
+        elif new_units == "mm":
+            return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
         elif new_units == "inch":
-            return Length(value).to_inch(ppi=UNITS_PER_INCH, relative_length=relative_length)
+            return Length(value).to_inch(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
         elif new_units == "cm":
-            return Length(value).to_cm(ppi=UNITS_PER_INCH, relative_length=relative_length)
+            return Length(value).to_cm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
         elif new_units == "px":
-            return Length(value).to_px(ppi=UNITS_PER_INCH, relative_length=relative_length)
+            return Length(value).to_px(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -549,6 +546,7 @@ class Length(object):
         font_size=None,
         font_height=None,
         viewbox=None,
+        as_float=False,
     ):
         value = self.value(
             ppi=ppi,
@@ -558,6 +556,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.0393701)
+        if as_float:
+            return v
         return Length("%smm" % (Length.str(v)))
 
     def to_cm(
@@ -567,6 +567,7 @@ class Length(object):
         font_size=None,
         font_height=None,
         viewbox=None,
+        as_float=False,
     ):
         value = self.value(
             ppi=ppi,
@@ -576,6 +577,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.393701)
+        if as_float:
+            return v
         return Length("%scm" % (Length.str(v)))
 
     def to_inch(
@@ -585,6 +588,7 @@ class Length(object):
         font_size=None,
         font_height=None,
         viewbox=None,
+        as_float=False,
     ):
         value = self.value(
             ppi=ppi,
@@ -594,6 +598,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / ppi
+        if as_float:
+            return v
         return Length("%sin" % (Length.str(v)))
 
     def value(

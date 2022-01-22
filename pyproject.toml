@@ -10,11 +10,11 @@ warn_return_any = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
-exclude = svgelements\.py
+exclude = "svgelements\.py"
 
 
 [tool.isort]
-profile = black
+profile = "black"
 line_length = 88
 src_paths =  ["meerk40t"]
 

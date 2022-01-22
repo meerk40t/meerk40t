@@ -1236,10 +1236,14 @@ class LaserOperation(Node):
                                     passes=passes,
                                 )
                             )
+                    if len(group) > 0:
+                        group[0].first = True
                     for i, cut_obj in enumerate(group):
+                        cut_obj.closed = closed
                         try:
                             cut_obj.next = group[i + 1]
                         except IndexError:
+                            cut_obj.last = True
                             cut_obj.next = group[0]
                         cut_obj.previous = group[i - 1]
                     yield group
@@ -2985,8 +2989,8 @@ class Elemental(Service):
                 height = bounds[3] - bounds[1]
             except Exception:
                 raise SyntaxError
-            x = self.device.length(x, 0, percent=width)
-            y = self.device.length(y, 1, percent=height)
+            x = self.device.length(x, 0, relative_length=width)
+            y = self.device.length(y, 1, relative_length=height)
             y_pos = 0
             data_out = list(data)
             for j in range(r):

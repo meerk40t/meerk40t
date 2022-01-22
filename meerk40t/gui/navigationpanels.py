@@ -609,8 +609,9 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
         units = self.context.units_name
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, "0" + units)
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, "0" + units)
+        default_pos = "0{units}".format(units=units)
+        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
+        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
 
         self.__set_properties()
         self.__do_layout()

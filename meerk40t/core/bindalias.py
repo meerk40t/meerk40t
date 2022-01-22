@@ -149,6 +149,7 @@ class Bind(Service):
         self.keymap["control+alt+s"] = "image wizard Stipo"
         self.keymap["home"] = "home"
         self.keymap["control+z"] = "reset"
+        self.keymap["control+b"] = "align bedcenter"
         self.keymap["control+alt+shift+escape"] = "reset_bind_alias"
 
 
