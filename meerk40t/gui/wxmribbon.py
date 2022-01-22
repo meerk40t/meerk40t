@@ -214,7 +214,7 @@ class RibbonPanel(wx.Panel):
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context(".on_click_save\n"),
+            lambda e: self.context(".dialog_save\n"),
             id=ID_SAVE,
         )
         toolbar.Bind(

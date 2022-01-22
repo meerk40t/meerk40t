@@ -338,7 +338,7 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 gui.load(pathname)
 
-        @context.console_command("dialog_save", hidden=True)
+        @context.console_command("dialog_save_as", hidden=True)
         def save_dialog(**kwargs):
             files = context.save_types()
             with wx.FileDialog(
@@ -356,6 +356,15 @@ class MeerK40t(MWindow):
                 gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
+
+        @context.console_command("dialog_save", hidden=True)
+        def save_or_save_as(**kwargs):
+            if gui.working_file is None:
+                context('.dialog_save_as\n')
+            else:
+                gui.set_file_as_recently_used(gui.working_file)
+                gui.validate_save()
+                context.save(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def evg_in_dialog(**kwargs):
@@ -1768,7 +1777,7 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def clear(self):
+    def clear_project(self):
         context = self.context
         self.working_file = None
         self.validate_save()
@@ -1776,10 +1785,16 @@ class MeerK40t(MWindow):
         self.context(".laserpath_clear\n")
 
     def clear_and_open(self, pathname):
-        self.clear()
-        self.load(pathname)
-        self.working_file = pathname
-        self.set_file_as_recently_used(self.working_file)
+        self.clear_projcet()
+        if self.load(pathname):
+            try:
+                if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                    # or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                    # TODO: Disabled uniform_svg, no longer detecting namespace.
+                    self.working_file = pathname
+                    self.validate_save()
+            except AttributeError:
+                pass
 
     def load(self, pathname):
         self.context.setting(bool, "auto_note", True)
@@ -1807,14 +1822,6 @@ class MeerK40t(MWindow):
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
-                try:
-                    if self.context.uniform_svg and pathname.lower().endswith("svg"):
-                        # or (len(elements) > 0 and "meerK40t" in elements[0].values):
-                        # TODO: Disabled uniform_svg, no longer detecting namespace.
-                        self.working_file = pathname
-                        self.validate_save()
-                except AttributeError:
-                    pass
                 return True
             return False
 
@@ -1852,7 +1859,7 @@ class MeerK40t(MWindow):
         # event.Skip()
 
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.clear()
+        self.clear_project()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
@@ -1867,15 +1874,10 @@ class MeerK40t(MWindow):
         self.context("pause\n")
 
     def on_click_save(self, event):
-        if self.working_file is None:
-            self.on_click_save_as(event)
-        else:
-            self.set_file_as_recently_used(self.working_file)
-            self.validate_save()
-            self.context.save(self.working_file)
+        self.context("dialog_save\n")
 
     def on_click_save_as(self, event=None):
-        self.context("dialog_save\n")
+        self.context("dialog_save_as\n")
 
     def on_click_close(self, event=None):
         try:
