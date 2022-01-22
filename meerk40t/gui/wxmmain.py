@@ -1778,6 +1778,8 @@ class MeerK40t(MWindow):
     def clear_and_open(self, pathname):
         self.clear()
         self.load(pathname)
+        self.working_file = pathname
+        self.set_file_as_recently_used(self.working_file)
 
     def load(self, pathname):
         self.context.setting(bool, "auto_note", True)
