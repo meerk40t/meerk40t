@@ -149,6 +149,8 @@ class Context:
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
+        if len(data) and data[-1] != "\n":
+            data += "\n"
         return self._kernel.console(data)
 
     def boot(self, channel: "Channel" = None):
