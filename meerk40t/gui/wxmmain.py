@@ -1768,8 +1768,15 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
+    def clear(self):
+        context = self.context
+        self.working_file = None
+        self.validate_save()
+        context.elements.clear_all()
+        self.context(".laserpath_clear\n")
+
     def clear_and_open(self, pathname):
-        self.on_click_new()
+        self.clear()
         self.load(pathname)
 
     def load(self, pathname):
@@ -1843,11 +1850,7 @@ class MeerK40t(MWindow):
         # event.Skip()
 
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        context = self.context
-        self.working_file = None
-        self.validate_save()
-        context.elements.clear_all()
-        self.context(".laserpath_clear\n")
+        self.clear()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
