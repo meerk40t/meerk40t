@@ -1777,7 +1777,15 @@ class MeerK40t(MWindow):
 
     def clear_and_open(self, pathname):
         self.clear()
-        self.load(pathname)
+        if self.load(pathname):
+            try:
+                if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                    # or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                    # TODO: Disabled uniform_svg, no longer detecting namespace.
+                    self.working_file = pathname
+                    self.validate_save()
+            except AttributeError:
+                pass
 
     def load(self, pathname):
         self.context.setting(bool, "auto_note", True)
@@ -1805,14 +1813,6 @@ class MeerK40t(MWindow):
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
-                try:
-                    if self.context.uniform_svg and pathname.lower().endswith("svg"):
-                        # or (len(elements) > 0 and "meerK40t" in elements[0].values):
-                        # TODO: Disabled uniform_svg, no longer detecting namespace.
-                        self.working_file = pathname
-                        self.validate_save()
-                except AttributeError:
-                    pass
                 return True
             return False
 
