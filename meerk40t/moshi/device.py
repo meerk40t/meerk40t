@@ -47,6 +47,8 @@ from .moshiblob import (
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
+STATUS_ERROR = 237  # ERROR
+STATUS_RESET = 239  # Seen during reset
 
 
 def plugin(kernel, lifecycle=None):
@@ -220,9 +222,9 @@ class MoshiDevice(Service, ViewPort):
             """
             Force USB Disconnect Event for Moshiboard
             """
-            if self.controller.connection is not None:
+            try:
                 self.controller.close()
-            else:
+            except ConnectionError:
                 channel("Usb is not connected.")
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
@@ -314,10 +316,28 @@ class MoshiDevice(Service, ViewPort):
         return self.scale_y / float(UNITS_PER_MIL)
 
 
+
+def get_code_string_from_moshicode(code):
+    """
+    Moshiboard CH341 codes into code strings.
+    """
+    if code == STATUS_OK:
+        return "OK"
+    elif code == STATUS_PROCESSING:
+        return "Processing"
+    elif code == STATUS_ERROR:
+        return "Error"
+    elif code == STATUS_RESET:
+        return "Resetting"
+    elif code == 0:
+        return "USB Failed"
+    else:
+        return "UNK %02x" % code
+
 class MoshiDriver:
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion. The Moshibaord Driver overloads the Driver class to take spoolable values from
+    agnostic fashion. The Moshiboard Driver overloads the Driver class to take spoolable values from
     the spooler and converts them into Moshiboard specific actions.
 
     """
@@ -348,6 +368,8 @@ class MoshiDriver:
 
         name = self.service.label
         self.pipe_channel = service.channel("%s/events" % name)
+
+        service.setting(int, "rapid_speed", 40) #TODO
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
@@ -961,7 +983,7 @@ class MoshiController:
         self._status = [0] * 6
         self._usb_state = -1
 
-        self.connection = None
+        self._connection = None
 
         self.max_attempts = 5
         self.refuse_counts = 0
@@ -1058,32 +1080,40 @@ class MoshiController:
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
-        if self.connection is not None:
-            self.connection.write_addr(data)
+        if self._connection is not None:
+            try:
+                self._connection.write_addr(data)
+            except ConnectionError:
+                self.pipe_channel("Connection error")
+        else:
+            self.pipe_channel("Not connected")
 
     def open(self):
         self.pipe_channel("open()")
-        if self.connection is None:
-            self.connection = self.ch341.connect(
+        if self._connection is None:
+            connection = self.ch341.connect(
                 driver_index=self.context.usb_index,
                 chipv=self.context.usb_version,
                 bus=self.context.usb_bus,
                 address=self.context.usb_address,
                 mock=self.context.mock,
             )
+            self._connection = connection
             if self.context.mock:
-                self.connection.mock_status = 205
-                self.connection.mock_finish = 207
+                self._connection.mock_status = 205
+                self._connection.mock_finish = 207
         else:
-            self.connection.open()
-        if self.connection is None:
+            self._connection.open()
+        if self._connection is None:
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
 
     def close(self):
         self.pipe_channel("close()")
-        if self.connection is not None:
-            self.connection.close()
-            self.connection = None
+        if self._connection is not None:
+            self._connection.close()
+            self._connection = None
+        else:
+            raise ConnectionError
 
     def push_program(self, program):
         self.pipe_channel("Pushed: %s" % str(program.data))
@@ -1134,7 +1164,8 @@ class MoshiController:
         """
         Abort the current buffer and data queue.
         """
-        self._buffer = b""
+        self._buffer = bytearray()
+        self._programs.clear()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
         self.update_state(STATE_TERMINATE)
@@ -1229,17 +1260,16 @@ class MoshiController:
                     self.update_state(STATE_ACTIVE)
                 if self.is_shutdown:
                     break
+                if len(self._buffer) == 0 and len(self._programs) == 0:
+                    self.pipe_channel("Nothing to process")
+                    break  # There is nothing to run.
+                if self._connection is None:
+                    self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
-                    if len(self._programs) == 0:
-                        self.pipe_channel("Nothing to process")
-                        time.sleep(0.4)
-                        break  # There is nothing to run.
                     self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
-                    self.open()
                     self.wait_until_accepting_packets()
-
                     self.realtime_prologue()
                     self._buffer = self._programs.pop(0).data
                     assert len(self._buffer) != 0
@@ -1277,7 +1307,10 @@ class MoshiController:
                     break
                 self.connection_errors += 1
                 time.sleep(0.5)
-                self.close()
+                try:
+                    self.close()
+                except ConnectionError:
+                    pass
                 continue
         self.context.signal("pipe;running", False)
         self._thread = None
@@ -1298,7 +1331,7 @@ class MoshiController:
             return False
 
         length = min(32, len(buffer))
-        packet = bytes(buffer[:length])
+        packet = buffer[:length]
 
         # Packet is prepared and ready to send. Open Channel.
 
@@ -1314,18 +1347,18 @@ class MoshiController:
         """
         Send packet to the CH341 connection.
         """
-        if self.connection is None:
+        if self._connection is None:
             raise ConnectionError
-        self.connection.write(packet)
+        self._connection.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
         """
         Request a status update from the CH341 connection.
         """
-        if self.connection is None:
+        if self._connection is None:
             raise ConnectionError
-        self._status = self.connection.get_status()
+        self._status = self._connection.get_status()
         if self.context is not None:
             try:
                 self.context.signal(
@@ -1347,6 +1380,8 @@ class MoshiController:
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
+            if status == STATUS_ERROR:
+                raise ConnectionRefusedError
             if status == STATUS_OK:
                 return
             time.sleep(0.05)

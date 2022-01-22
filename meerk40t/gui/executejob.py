@@ -21,6 +21,9 @@ class PlannerPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        # TODO, integrate
+        self.context.setting(bool, "opt_complete_subpaths", False)
+        self.context.setting(bool, "opt_inners_grouped", False)
 
         self.plan_name = plan_name
         self.available_devices = list(self.context.kernel.services("device"))
@@ -40,7 +43,7 @@ class PlannerPanel(wx.Panel):
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        choices = self.context.lookup("choices/optimize")[:5]
+        choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = PropertiesPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )

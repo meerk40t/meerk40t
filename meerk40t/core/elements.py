@@ -1236,10 +1236,14 @@ class LaserOperation(Node):
                                     passes=passes,
                                 )
                             )
+                    if len(group) > 0:
+                        group[0].first = True
                     for i, cut_obj in enumerate(group):
+                        cut_obj.closed = closed
                         try:
                             cut_obj.next = group[i + 1]
                         except IndexError:
+                            cut_obj.last = True
                             cut_obj.next = group[0]
                         cut_obj.previous = group[i - 1]
                     yield group
