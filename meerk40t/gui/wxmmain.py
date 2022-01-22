@@ -325,6 +325,17 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
+                gui.clear_and_open(pathname)
+
+        @context.console_command("dialog_import", hidden=True)
+        def import_dialog(**kwargs):
+            files = context.load_types()
+            with wx.FileDialog(
+                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
                 gui.load(pathname)
 
         @context.console_command("dialog_save", hidden=True)
@@ -1143,7 +1154,7 @@ class MeerK40t(MWindow):
         # ==========
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
+        self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
         self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
@@ -1757,6 +1768,10 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
+    def clear_and_open(self, pathname):
+        self.on_click_new()
+        self.load(pathname)
+
     def load(self, pathname):
         self.context.setting(bool, "auto_note", True)
         self.context.setting(bool, "uniform_svg", False)
@@ -1836,6 +1851,9 @@ class MeerK40t(MWindow):
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
+
+    def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        self.context("dialog_import\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
