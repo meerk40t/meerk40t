@@ -5,7 +5,7 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation
+from ..core.elements import LaserOperation, ConsoleOperation
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import Color, Length, Matrix, Path, SVGImage, SVGText, Group, SVGElement
@@ -191,6 +191,8 @@ class MeerK40t(MWindow):
         if isinstance(node, LaserOperation):
             root.open("window/OperationProperty", gui, node=node)
             return
+        if isinstance(node, ConsoleOperation):
+            root.open("window/ConsoleProperty", gui, node=node)
         if node is None:
             return
         obj = node.object

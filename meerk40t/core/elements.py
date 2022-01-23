@@ -1427,7 +1427,7 @@ class ConsoleOperation(Node):
         command = self.command
         if not command.endswith("\n"):
             command += "\n"
-        yield (COMMAND_CONSOLE, command)
+        yield "console", command
 
 
 class CommandOperation(Node):
@@ -4936,7 +4936,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
         def append_operation_interrupt_console(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 ConsoleOperation("interrupt \"Spooling was interrupted\""),
                 type="consoleop",
                 pos=pos,
