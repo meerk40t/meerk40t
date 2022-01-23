@@ -32,6 +32,7 @@ from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
 from .notes import Notes
+from .consoleproperty import ConsoleProperty
 from .operationproperty import OperationProperty
 from .panes.camerapanel import CameraInterface
 from .panes.consolepanel import Console
@@ -237,7 +238,7 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
-        # kernel.register("window/ConsoleProperty", ConsoleProperty)
+        kernel.register("window/ConsoleProperty", ConsoleProperty)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)

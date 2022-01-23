@@ -4635,7 +4635,7 @@ class Elemental(Modifier):
         @self.tree_separator_after()
         @self.tree_operation(_("Edit"), node_type="consoleop", help="")
         def edit_console_command(node, **kwargs):
-            pass
+            self.context.open("window/ConsoleProperty", self.context.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
