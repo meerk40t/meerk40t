@@ -315,20 +315,6 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
-        @context.console_command("dialog_load", hidden=True)
-        def load_dialog(**kwargs):
-            # This code should load just specific project files rather than all importable formats.
-            files = context.load_types()
-            with wx.FileDialog(
-                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-<<<<<<< HEAD
-=======
-                gui.clear_and_open(pathname)
-
         @context.console_argument("message", help=_("Message to display, optional"), default="")
         @context.console_command("interrupt", hidden=True)
         def interrupt(message="", **kwargs):
@@ -344,16 +330,17 @@ class MeerK40t(MWindow):
             dlg.ShowModal()
             dlg.Destroy()
 
-        @context.console_command("dialog_import", hidden=True)
-        def import_dialog(**kwargs):
+        @context.console_command("dialog_load", hidden=True)
+        def load_dialog(**kwargs):
+            # This code should load just specific project files rather than all importable formats.
             files = context.load_types()
             with wx.FileDialog(
-                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                gui, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
->>>>>>> 3017137d (adding consoleop to places)
+                gui.clear_and_open(pathname)
                 gui.load(pathname)
 
         @context.console_command("dialog_save", hidden=True)
