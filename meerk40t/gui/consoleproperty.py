@@ -42,7 +42,6 @@ class ConsolePropertiesPanel(wx.Panel):
             style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP
         )
 
-        self.__set_properties()
         self.__do_layout()
 
         if node:
@@ -55,9 +54,6 @@ class ConsolePropertiesPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_change_command, self.command_text)
         # end wxGlade
 
-    def __set_properties(self):
-        pass
-
     def __do_layout(self):
         # begin wxGlade: NotePanel.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
@@ -69,13 +65,15 @@ class ConsolePropertiesPanel(wx.Panel):
         # end wxGlade
 
     def on_change_name(self, event=None):
-        self.console_operation.name = self.command_name.GetValue()
-        self.console_operation.label = (
-            self.console_operation.name or self.console_operation.command)
+        self.console_operation.set_name(self.command_name.GetValue())
         self.context.signal("element_property_update", self.console_operation)
 
     def on_change_command(self, event=None):
-        self.console_operation.command = self.command_text.GetValue()
-        self.console_operation.label = (
-            self.console_operation.name or self.console_operation.command)
+        raw = self.command_text.GetValue()
+        # Mac converts " to smart quotes, can't figure out
+        # how to disable autocorrect in this textctrl 🙃
+        command = raw.replace("“", '"').replace("”", '"')
+        # TODO: It would be really nice to do some validation on here,
+        # to catch mistakes.
+        self.console_operation.set_command(command)
         self.context.signal("element_property_update", self.console_operation)

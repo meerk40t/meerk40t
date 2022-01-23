@@ -1364,9 +1364,20 @@ class ConsoleOperation(Node):
         super().__init__(type="consoleop")
         self.name = name
         self.command = command
-        self.label = name or command
+        self._update_label()
         self.output = True
         self.operation = "Console"
+
+    def set_name(self, name):
+        self.name = name
+        self._update_label()
+
+    def set_command(self, command):
+        self.command = command
+        self._update_label()
+
+    def _update_label(self):
+        self.label = self.name or self.command
 
     def __repr__(self):
         return "ConsoleOperation('%s', '%s')" % (self.command, self.name)
