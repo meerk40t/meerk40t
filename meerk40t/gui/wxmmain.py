@@ -315,6 +315,21 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
+        @context.console_argument("message", help=_("Message to display, optional"), default="")
+        @context.console_command("interrupt", hidden=True)
+        def interrupt(message="", **kwargs):
+            if not message:
+                message = _("Spooling Interrupted.")
+
+            dlg = wx.MessageDialog(
+                None,
+                message + "\n\n" + _("Press OK to Continue."),
+                _("Interrupt"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
             # This code should load just specific project files rather than all importable formats.
@@ -325,6 +340,7 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
+                gui.clear_and_open(pathname)
                 gui.load(pathname)
 
         @context.console_command("dialog_save", hidden=True)
