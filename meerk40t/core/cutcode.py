@@ -364,11 +364,12 @@ class CutGroup(list, CutObject, ABC):
                 continue
             # If we are only burning complete subpaths then
             # if this is not a closed path we should only yield first and last segments
-            # Planner will need to determine which end of the subpath is yoielded
+            # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
             if (
                 complete_path
                 and not grp.closed
+                and isinstance(grp, CutGroup)
             ):
                 if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
