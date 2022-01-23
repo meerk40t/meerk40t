@@ -983,7 +983,7 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"), depth=1
             ):
                 try:
                     if not c.output:
