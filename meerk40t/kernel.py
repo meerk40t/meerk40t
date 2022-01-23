@@ -1502,6 +1502,8 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
+    read_persistent_string_dict = load_persistent_string_dict
+
     def keylist(self, path: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
