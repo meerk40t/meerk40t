@@ -1360,37 +1360,28 @@ class ConsoleOperation(Node):
     Node type "consoleop"
     """
 
-    def __init__(self, command, name="", **kwargs):
+    def __init__(self, command, **kwargs):
         super().__init__(type="consoleop")
-        self.name = name
         self.command = command
-        self._update_label()
         self.output = True
         self.operation = "Console"
 
-    def set_name(self, name):
-        self.name = name
-        self._update_label()
-
     def set_command(self, command):
         self.command = command
-        self._update_label()
-
-    def _update_label(self):
-        self.label = self.name or self.command
+        self.label = command
 
     def __repr__(self):
-        return "ConsoleOperation('%s', '%s')" % (self.command, self.name)
+        return "ConsoleOperation('%s', '%s')" % (self.command)
 
     def __str__(self):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
-        parts.append(self.name)
+        parts.append(self.command)
         return " ".join(parts)
 
     def __copy__(self):
-        return ConsoleOperation(self.label, self.command)
+        return ConsoleOperation(self.command)
 
     def __len__(self):
         return 1
@@ -5758,9 +5749,9 @@ class Elemental(Modifier):
                 op = CommandOperation(name, command)
                 op_setting_context.load_persistent_object(op)
             elif op_type == "consoleop":
-                name = op_setting_context.get_persistent_value(str, "label")
-                command = op_setting_context.get_persistent_value(int, "command")
-                op = ConsoleOperation(command, name)
+                # name = op_setting_context.get_persistent_value(str, "label")
+                command = op_setting_context.get_persistent_value(str, "command")
+                op = ConsoleOperation(command)
                 op_setting_context.load_persistent_object(op)
             else:
                 continue

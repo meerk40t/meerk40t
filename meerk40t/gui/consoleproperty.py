@@ -2,7 +2,6 @@ import wx
 
 from .icons import icons8_comments_50
 from .mwindow import MWindow
-from .panes.notespanel import NotePanel
 
 _ = wx.GetTranslation
 
@@ -27,7 +26,7 @@ class ConsolePropertiesPanel(wx.Panel):
         self.context = context
 
         self.console_operation = node
-        self.command_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        # self.command_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.command_text = wx.TextCtrl(
             self,
             wx.ID_ANY,
@@ -38,11 +37,11 @@ class ConsolePropertiesPanel(wx.Panel):
         self.__do_layout()
 
         if node:
-            self.command_name.SetValue(node.name)
+            # self.command_name.SetValue(node.name)
             self.command_text.SetValue(node.command)
 
-        self.Bind(wx.EVT_TEXT, self.on_change_name, self.command_name)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_change_name, self.command_name)
+        # self.Bind(wx.EVT_TEXT, self.on_change_name, self.command_name)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_change_name, self.command_name)
         self.Bind(wx.EVT_TEXT, self.on_change_command, self.command_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_change_command, self.command_text)
         # end wxGlade
@@ -50,16 +49,16 @@ class ConsolePropertiesPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: NotePanel.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.command_name, 0, wx.EXPAND, 0)
+        # sizer_1.Add(self.command_name, 0, wx.EXPAND, 0)
         sizer_1.Add(self.command_text, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
         self.Layout()
         # end wxGlade
 
-    def on_change_name(self, event=None):
-        self.console_operation.set_name(self.command_name.GetValue())
-        self.context.signal("element_property_update", self.console_operation)
+    # def on_change_name(self, event=None):
+        # self.console_operation.set_name(self.command_name.GetValue())
+        # self.context.signal("element_property_update", self.console_operation)
 
     def on_change_command(self, event=None):
         raw = self.command_text.GetValue()
