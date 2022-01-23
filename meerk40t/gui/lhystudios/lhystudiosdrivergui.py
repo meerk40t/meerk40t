@@ -138,16 +138,9 @@ class LhystudiosConfigurationPanel(wx.Panel):
         )
         self.checkbox_strict.SetToolTip(
             _(
-                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
-                + "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
-                + "This option changes how travel moves are performed and result in a noticeable faster travel time. "
+                "Forces the device to enter and exit programmed speed mode from the same direction. "
+                + "This may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
             )
-            + "\n\n"
-            + _(
-                "If this works OK for you please leave it on. "
-                + "If you have any problems, we would very much appreciate it "
-                + "if you could leave a comment on Github issue #{issue}."
-            ).format(issue=772)
         )
         self.checkbox_alternative_raster.SetToolTip(
             _(
@@ -161,7 +154,19 @@ class LhystudiosConfigurationPanel(wx.Panel):
                 + "if you could leave a comment on Github issue #{issue}."
             ).format(issue=773)
         )
-        self.checkbox_twitchless.SetToolTip(_("Forces the device to utilize twitchless mode for vector engraving"))
+        self.checkbox_twitchless.SetToolTip(
+            _(
+                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                + "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                + "This option changes how travel moves are performed and result in a noticeable faster travel time. "
+            )
+            + "\n\n"
+            + _(
+                "If this works OK for you please leave it on. "
+                + "If you have any problems, we would very much appreciate it "
+                + "if you could leave a comment on Github issue #{issue}."
+            ).format(issue=772)
+        )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_y.SetMinSize((80, 23))
