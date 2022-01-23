@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot
+from ..core.elements import LaserOperation, isDot, ConsoleOperation
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -824,6 +824,10 @@ class ShadowTree:
             activate = self.context.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(first_element.node)
+        # TODO: Activate ConsoleOperation
+        # if isinstance(node, ConsoleOperation):
+        #     self.context.open("window/ConsoleProperty", self.gui, node=node)
+        #     return
 
     def on_item_selection_changed(self, event):
         """

@@ -34,6 +34,7 @@ from .imageproperty import ImageProperty
 from .keymap import Keymap
 from .laserrender import LaserRender
 from .notes import Notes
+from .consoleproperty import ConsoleProperty
 from .operationproperty import OperationProperty
 
 from meerk40t.gui.consolepanel import Console
@@ -453,6 +454,7 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
+        kernel.register("window/ConsoleProperty", ConsoleProperty)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
