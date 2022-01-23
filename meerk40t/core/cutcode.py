@@ -660,7 +660,7 @@ class RasterCut(CutObject):
     def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
         CutObject.__init__(self, settings=settings, passes=passes)
         assert image.mode in ("L", "1")
-
+        self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.tx = tx
         self.ty = ty
