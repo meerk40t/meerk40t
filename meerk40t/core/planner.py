@@ -3,7 +3,7 @@ from time import time
 from os import times
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from .cutcode import CutCode, CutGroup, CutObject
+from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -1499,6 +1499,14 @@ def is_inside(inner, outer):
         return False
     if inner.bounding_box is None:
         return False
+    # Raster is inner if the bboxes overlap anywhere
+    if isinstance(inner, RasterCut):
+        return (
+            inner.bounding_box[0] <= outer.bounding_box[2]
+            and inner.bounding_box[1] <= outer.bounding_box[3]
+            and inner.bounding_box[2] >= outer.bounding_box[0]
+            and inner.bounding_box[3] >= outer.bounding_box[1]
+        )
     if outer.bounding_box[0] > inner.bounding_box[0]:
         # outer minx > inner minx (is not contained)
         return False
@@ -1569,8 +1577,8 @@ def inner_first_ident(context: CutGroup, channel=None):
         start_times = times()
         channel("Executing Inner-First Identification")
 
-    groups = [cut for cut in context if isinstance(cut, CutGroup)]
-    closed_groups = [g for g in groups if g.closed]
+    groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
+    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
 
     constrained = False
