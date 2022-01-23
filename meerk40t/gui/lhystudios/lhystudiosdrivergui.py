@@ -214,7 +214,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         )
         self.spin_packet_buffer_max.SetToolTip(_("Current maximum write buffer limit."))
         self.checkbox_autolock.SetToolTip(_(
-            "Leave the steppers energised and the rail locked after the burn has finished."
+            "Leave the steppers energised and the rail locked after the burn has finished. "
+            + "By default, if this option is not selected, the rail is unlocked at the end of the burn."
         ))
         self.checkbox_autolock.SetValue(1)
         # end wxGlade
