@@ -204,8 +204,8 @@ class Node:
             if drop_node.type == "opnode":
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type == "cmdop":
-            if drop_node.type == "op" or drop_node.type == "cmdop":
+        elif drag_node.type in ("cmdop", "consoleop"):
+            if drop_node.type in ("op", "cmdop", "consoleop"):
                 drop_node.insert_sibling(drag_node)
         elif drag_node.type == "op":
             if drop_node.type == "op":
@@ -1438,6 +1438,7 @@ class RootNode(Node):
         self.bootstrap = {
             "op": LaserOperation,
             "cmdop": CommandOperation,
+            "consoleop": ConsoleOperation,
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem": ElemNode,
@@ -4575,6 +4576,7 @@ class Elemental(Modifier):
             "op",
             "opnode",
             "cmdop",
+            "consoleop",
             "lasercode",
             "cutcode",
             "blob",
@@ -4588,6 +4590,11 @@ class Elemental(Modifier):
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
         def operation_property(node, **kwargs):
             self.context.open("window/OperationProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_operation(_("Edit"), node_type="consoleop", help="")
+        def edit_console_command(node, **kwargs):
+            pass
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
@@ -4629,7 +4636,7 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop"), help="")
+        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
@@ -4825,7 +4832,7 @@ class Elemental(Modifier):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "lasercode", "cutcode", "blob"),
+            node_type=("op", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
             help="",
         )
         def remove_n_ops(node, **kwargs):
@@ -5016,12 +5023,11 @@ class Elemental(Modifier):
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
-                CommandOperation(
-                    "Interrupt",
-                    COMMAND_FUNCTION,
-                    self.context.registered["function/interrupt"],
+                ConsoleOperation(
+                    "Interrupt (console)",
+                    "interrupt",
                 ),
-                type="cmdop",
+                type="consoleop",
                 pos=pos,
             )
 
@@ -5683,6 +5689,11 @@ class Elemental(Modifier):
                 command = op_setting_context.get_persistent_value(int, "command")
                 op = CommandOperation(name, command)
                 op_setting_context.load_persistent_object(op)
+            elif op_type == "consoleop":
+                name = op_setting_context.get_persistent_value(str, "label")
+                command = op_setting_context.get_persistent_value(int, "command")
+                op = ConsoleOperation(name, command)
+                op_setting_context.load_persistent_object(op)
             else:
                 continue
             try:
@@ -5771,7 +5782,7 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(types=("op", "cmdop"), depth=1, **kwargs):
+        for item in operations.flat(types=("op", "cmdop", "consoleop"), depth=1, **kwargs):
             yield item
 
     def elems(self, **kwargs):

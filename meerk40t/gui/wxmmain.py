@@ -325,6 +325,34 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
+<<<<<<< HEAD
+=======
+                gui.clear_and_open(pathname)
+
+        @context.console_argument("message", help=_("Message to display, optional"), default="")
+        @context.console_command("interrupt", hidden=True)
+        def interrupt(_, __, ___, message="", **kwargs):
+            if len(message):
+                message = "\n\n" + message
+            dlg = wx.MessageDialog(
+                None,
+                _("Spooling Interrupted. Press OK to Continue." + message),
+                _("Interrupt"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        @context.console_command("dialog_import", hidden=True)
+        def import_dialog(**kwargs):
+            files = context.load_types()
+            with wx.FileDialog(
+                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
+>>>>>>> 3017137d (adding consoleop to places)
                 gui.load(pathname)
 
         @context.console_command("dialog_save", hidden=True)
