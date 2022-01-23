@@ -5759,8 +5759,8 @@ class Elemental(Modifier):
                 op_setting_context.load_persistent_object(op)
             elif op_type == "consoleop":
                 name = op_setting_context.get_persistent_value(str, "label")
-                command = op_setting_context.get_persistent_value(int, "command")
-                op = ConsoleOperation(command, name)
+                command = op_setting_context.get_persistent_value(str, "command")
+                op = ConsoleOperation(name, command)
                 op_setting_context.load_persistent_object(op)
             else:
                 continue
