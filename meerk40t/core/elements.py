@@ -5721,7 +5721,7 @@ class Elemental(Modifier):
                         if isinstance(value, Color):
                             value = value.argb
                         op_set.write_persistent(key, value)
-            elif isinstance(op, CommandOperation):
+            elif isinstance(op, CommandOperation) or isinstance(op, ConsoleOperation):
                 for key in dir(op):
                     value = getattr(op, key)
                     if key.startswith("_"):
