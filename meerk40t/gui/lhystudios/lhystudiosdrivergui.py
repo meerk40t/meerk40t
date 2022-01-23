@@ -39,7 +39,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
-        self.checkbox_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict"))
+        self.checkbox_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict Programmed Speed Mode"))
         self.spin_home_x = wx.SpinCtrl(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
@@ -253,6 +253,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
 
         sizer_board_1.Add(self.combobox_board, 1, wx.EXPAND | wx.RIGHT, 1)
         sizer_board_1.Add(self.checkbox_fix_speeds, 0, *checkbox_border)
+        sizer_board_1.Add(self.checkbox_strict, 0, *checkbox_border)
 
         sizer_board_2.Add(self.checkbox_alternative_raster, 0, *checkbox_border)
         sizer_board_2.Add(self.checkbox_twitchless, 0, *checkbox_border)
@@ -268,7 +269,6 @@ class LhystudiosConfigurationPanel(wx.Panel):
         sizer_16.Add(self.checkbox_home_bottom, 0, *checkbox_border)
         sizer_config.Add(sizer_16, 1, wx.EXPAND, 0)
         sizer_3.Add(self.checkbox_swap_xy, 0, *checkbox_border)
-        sizer_3.Add(self.checkbox_strict, 0, *checkbox_border)
         sizer_config.Add(sizer_3, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_config, 1, wx.EXPAND, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X ")
