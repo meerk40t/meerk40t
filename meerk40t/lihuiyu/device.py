@@ -1980,6 +1980,31 @@ class LhystudiosDriver:
         else:
             self.set_prop(mask)
 
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def beep(self):
+        self.service("beep\n")
+
+    def console(self, value):
+        self.service(value)
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.service.signal(signal, *args)
+
     @property
     def type(self):
         return "lhystudios"

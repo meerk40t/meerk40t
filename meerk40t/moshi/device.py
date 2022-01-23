@@ -713,6 +713,12 @@ class MoshiDriver:
         """
         function()
 
+    def beep(self):
+        self.service("beep\n")
+
+    def console(self, value):
+        self.service(value)
+
     def signal(self, signal, *args):
         """
         This asks that this signal be broadcast.
