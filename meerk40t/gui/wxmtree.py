@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot
+from ..core.elements import LaserOperation, isDot, ConsoleOperation
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -859,6 +859,8 @@ class ShadowTree:
         if isinstance(node, LaserOperation):
             self.context.open("window/OperationProperty", self.gui, node=node)
             return
+        if isinstance(node, ConsoleOperation):
+            self.context.open("window/ConsoleProperty", self.gui, node=node)
         if node is None:
             return
         obj = node.object
