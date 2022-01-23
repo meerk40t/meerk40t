@@ -235,14 +235,9 @@ class Driver:
         """
         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
         deleted.
+        Asks that the device resets, and clears all current work.
 
         @param args:
-        @return:
-        """
-
-    def reset(self):
-        """
-        Asks that the device resets, and clears all current work.
         @return:
         """
 
