@@ -1360,15 +1360,16 @@ class ConsoleOperation(Node):
     Node type "consoleop"
     """
 
-    def __init__(self, name, command, **kwargs):
+    def __init__(self, command, name="", **kwargs):
         super().__init__(type="consoleop")
-        self.label = self.name = name
+        self.name = name
         self.command = command
+        self.label = name or command
         self.output = True
         self.operation = "Console"
 
     def __repr__(self):
-        return "ConsoleOperation('%s', '%s')" % (self.label, self.command)
+        return "ConsoleOperation('%s', '%s')" % (self.command, self.name)
 
     def __str__(self):
         parts = list()
@@ -5062,13 +5063,8 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
         def append_operation_interrupt_console(node, pos=None, **kwargs):
-            cmd = "interrupt \"Spooling was interrupted\""
-            fn = self.context.console_function(cmd)
             self.context.elements.op_branch.add(
-                ConsoleOperation(
-                    "Interrupt (console)",
-                    cmd,
-                ),
+                ConsoleOperation("interrupt \"Spooling was interrupted\""),
                 type="consoleop",
                 pos=pos,
             )
@@ -5753,7 +5749,7 @@ class Elemental(Modifier):
             elif op_type == "consoleop":
                 name = op_setting_context.get_persistent_value(str, "label")
                 command = op_setting_context.get_persistent_value(int, "command")
-                op = ConsoleOperation(name, command)
+                op = ConsoleOperation(command, name)
                 op_setting_context.load_persistent_object(op)
             else:
                 continue
