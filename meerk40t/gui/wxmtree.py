@@ -861,6 +861,7 @@ class ShadowTree:
             return
         if isinstance(node, ConsoleOperation):
             self.context.open("window/ConsoleProperty", self.gui, node=node)
+            return
         if node is None:
             return
         obj = node.object
