@@ -340,7 +340,7 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
-                gui.clear_and_open(pathname)
+                # gui.clear_and_open(pathname)
                 gui.load(pathname)
 
         @context.console_command("dialog_save", hidden=True)
