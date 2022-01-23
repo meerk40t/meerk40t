@@ -300,6 +300,10 @@ class Driver:
                     t = values[0]
                     if callable(t):
                         t()
+            elif command == COMMAND_CONSOLE:
+                if len(values) == 1:
+                    fn = self.context.console_function(values[0])
+                    fn()
             elif command == COMMAND_SIGNAL:
                 if isinstance(values, str):
                     self.context.signal(values, None)

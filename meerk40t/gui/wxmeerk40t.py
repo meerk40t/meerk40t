@@ -237,6 +237,7 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
+        # kernel.register("window/ConsoleProperty", ConsoleProperty)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)

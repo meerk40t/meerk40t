@@ -6,6 +6,7 @@ from copy import copy
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
+    COMMAND_CONSOLE,
     COMMAND_HOME,
     COMMAND_LASER_OFF,
     COMMAND_LASER_ON,
@@ -1348,6 +1349,45 @@ class CutNode(Node):
 
     def as_cutobjects(self, closed_distance=15):
         yield from self.object
+
+
+class ConsoleOperation(Node):
+    """
+    ConsoleOperation contains a console command (as a string) to be run.
+
+    NOTE: This will eventually replace ConsoleOperation.
+
+    Node type "consoleop"
+    """
+
+    def __init__(self, name, command, **kwargs):
+        super().__init__(type="consoleop")
+        self.label = self.name = name
+        self.command = command
+        self.output = True
+        self.operation = "Console"
+
+    def __repr__(self):
+        return "ConsoleOperation('%s', '%s')" % (self.label, self.command)
+
+    def __str__(self):
+        parts = list()
+        if not self.output:
+            parts.append("(Disabled)")
+        parts.append(self.name)
+        return " ".join(parts)
+
+    def __copy__(self):
+        return ConsoleOperation(self.label, self.command)
+
+    def __len__(self):
+        return 1
+
+    def generate(self):
+        command = self.command
+        if not command.endswith("\n"):
+            command += "\n"
+        yield (COMMAND_CONSOLE, command)
 
 
 class CommandOperation(Node):
@@ -5020,14 +5060,29 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
-        def append_operation_interrupt(node, pos=None, **kwargs):
+        @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
+        def append_operation_interrupt_console(node, pos=None, **kwargs):
+            cmd = "interrupt \"Spooling was interrupted\""
+            fn = self.context.console_function(cmd)
             self.context.elements.op_branch.add(
                 ConsoleOperation(
                     "Interrupt (console)",
-                    "interrupt",
+                    cmd,
                 ),
                 type="consoleop",
+                pos=pos,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
+        def append_operation_interrupt(node, pos=None, **kwargs):
+            self.context.elements.op_branch.add(
+                CommandOperation(
+                    "Interrupt",
+                    COMMAND_FUNCTION,
+                    self.context.registered["function/interrupt"],
+                ),
+                type="cmdop",
                 pos=pos,
             )
 
@@ -5037,6 +5092,7 @@ class Elemental(Modifier):
             append_operation_home(node, **kwargs)
             append_operation_beep(node, **kwargs)
             append_operation_interrupt(node, **kwargs)
+            append_operation_interrupt_console(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
@@ -5220,6 +5276,11 @@ class Elemental(Modifier):
         @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
+        def add_operation_interrupt_console(node, **kwargs):
+            append_operation_interrupt_console(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")

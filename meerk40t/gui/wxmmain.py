@@ -331,12 +331,13 @@ class MeerK40t(MWindow):
 
         @context.console_argument("message", help=_("Message to display, optional"), default="")
         @context.console_command("interrupt", hidden=True)
-        def interrupt(_, __, ___, message="", **kwargs):
-            if len(message):
-                message = "\n\n" + message
+        def interrupt(message="", **kwargs):
+            if not message:
+                message = _("Spooling Interrupted.")
+
             dlg = wx.MessageDialog(
                 None,
-                _("Spooling Interrupted. Press OK to Continue." + message),
+                message + "\n\n" + _("Press OK to Continue."),
                 _("Interrupt"),
                 wx.OK,
             )
