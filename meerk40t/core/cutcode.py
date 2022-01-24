@@ -183,9 +183,12 @@ class CutObject:
         if self.parent is not None:
             # If we are resetting then we are going to be resetting all
             # so don't bother looping
-            if burns != 0:
-                for o in self.parent:
-                    burns = burns if o._burns_done == 0 else min(burns, o._burns_done)
+            if burns == 0:
+                self.parent._burns_done = 0
+                return
+            for o in self.parent:
+                burns = min(burns, o._burns_done)
+            self.parent.burn_started = True
             self.parent._burns_done = burns
 
     def reversible(self):
@@ -253,8 +256,11 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            if c.burns_done > 0:
-                return True
+            if isinstance(c, CutGroup):
+                if c.burn_started:
+                    return True
+            elif c.burns_done == c.passes:
+                    return True
         return False
 
     def contains_unburned_groups(self):
@@ -290,6 +296,7 @@ class CutGroup(list, CutObject, ABC):
         CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
         self.closed = closed
         self.constrained = constrained
+        self.burn_started = False
 
     def __copy__(self):
         return CutGroup(self.parent, self)
