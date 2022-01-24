@@ -99,7 +99,7 @@ msgstr "* Den Anwendern, die durch Bearbeiten und Ergänzen des Wikis anderen An
 msgid ""
 "* Icons8 (https://icons8.com/) for their great icons used throughout the "
 "project.\n"
-msgstr "* Icons8 (https://icons8.com/) für ihre tollen Icons, die wir überall im Projekt verwendet haben.\n""
+msgstr "* Icons8 (https://icons8.com/) für ihre tollen Icons, die wir überall im Projekt verwendet haben.\n"
 
 #: meerk40t/gui/about.py:111
 msgid ""
@@ -535,7 +535,8 @@ msgid ""
 "Ensure that inside burns are done before an outside cut which might result in "
 "the cut piece shifting or dropping out of the material, while still requiring "
 "additonal cuts."
-msgstr ""
+msgstr "Stelle sicher, dass innenliegende Gravuren vor einem umgebenden Schnitt gemacht werden, da ansonsten ausgeschnittene Teile verrutschen oder "
+"sich aus dem TrÃ¤ger lösen könnten und somit das Ergebnis beeinträchtigen würden."
 
 #: meerk40t/gui/executejob.py:365
 msgid "Optimizations"
@@ -543,7 +544,7 @@ msgstr "Optimierungen"
 
 #: meerk40t/gui/executejob.py:473
 msgid "How many copies wide?"
-msgstr "Wieviele Kopien horizontal"
+msgstr "Wieviele Kopien horizontal?"
 
 #: meerk40t/gui/executejob.py:473
 msgid "Enter Columns"
@@ -551,7 +552,7 @@ msgstr "Anzahl der Spalten"
 
 #: meerk40t/gui/executejob.py:488
 msgid "How many copies high?"
-msgstr "Wieviele Kopien vertikal"
+msgstr "Wieviele Kopien vertikal?"
 
 #: meerk40t/gui/executejob.py:488
 msgid "Enter Rows"
@@ -579,7 +580,7 @@ msgstr "Verarbeite..."
 
 #: meerk40t/gui/executejob.py:636
 msgid "Determining validity of operations..."
-msgstr "Prüfe die Gültigkeit der Arbeitsgänge"
+msgstr "Prüfe die Gültigkeit der Arbeitsgänge..."
 
 #: meerk40t/gui/executejob.py:642
 msgid "Validating operation data..."
@@ -599,7 +600,7 @@ msgstr "Wende Optimierungen an..."
 
 #: meerk40t/gui/executejob.py:654
 msgid "Sending data to laser..."
-msgstr "Sende Daten an den Laser"
+msgstr "Sende Daten an den Laser..."
 
 #: meerk40t/gui/executejob.py:750
 msgid "Copy"
@@ -615,7 +616,7 @@ msgstr "Verarbeite Arbeitsgänge"
 
 #: meerk40t/gui/executejob.py:757
 msgid "Determine what needs to be done validate these operations."
-msgstr "Was soll bei der Prüfung der Arbeitsgänge getestet werden"
+msgstr "Was soll bei der Prüfung der Arbeitsgänge getestet werden."
 
 #: meerk40t/gui/executejob.py:760
 msgid "Validate"
@@ -623,7 +624,7 @@ msgstr "Überprüfe"
 
 #: meerk40t/gui/executejob.py:763
 msgid "Run the commands to make these operations valid."
-msgstr "Führe Kommandos aus, damit die Arbeitsgänge gültig werden"
+msgstr "Führe Kommandos aus, damit die Arbeitsgänge gültig werden."
 
 #: meerk40t/gui/executejob.py:766
 msgid "Blob"
@@ -639,7 +640,7 @@ msgstr "Verarbeite Optimierungen"
 
 #: meerk40t/gui/executejob.py:773
 msgid "Determine what needs to be done to optimize this cutcode."
-msgstr "Prüft wie die Schnitt-Befehle optimiert werden können"
+msgstr "Prüft wie die Schnitt-Befehle optimiert werden können."
 
 #: meerk40t/gui/executejob.py:776
 msgid "Optimize"
@@ -675,7 +676,7 @@ msgstr "Bild-Eigenschaften"
 
 #: meerk40t/gui/imageproperty.py:88
 msgid "Scan gap / step size image native value."
-msgstr "Scan-Gap / native Schrittgröße Bild."
+msgstr "Scan-Gap/Schrittgröße Bild."
 
 #: meerk40t/gui/imageproperty.py:90
 msgid "X property of image"
@@ -1125,7 +1126,7 @@ msgstr "Punktlänge (mils)"
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:42
 #: meerk40t/gui/operationproperty.py:99
 msgid "Pulse Grouping"
-msgstr ""
+msgstr "Puls Gruppierung"
 
 #: meerk40t/gui/operationproperty.py:283
 msgid "Operation Properties"
@@ -1144,7 +1145,7 @@ msgstr "Operation"
 #: meerk40t/gui/operationproperty.py:302
 msgid ""
 "Cut & Engrave are vector operations, Raster and Image are raster operations."
-msgstr "Schneiden und Gravieren sind Vektor-Abläufe, Rastern und Bild sind Raster-Abläufe"
+msgstr "Schneiden und Gravieren sind Vektor-Arbeitsgänge, Rastern und Bild sind Raster-Arbeitsgänge"
 
 #: meerk40t/gui/operationproperty.py:305
 msgid ""
@@ -1155,18 +1156,21 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:312
 msgid "Enable this operation for inclusion in Execute Job."
-msgstr "Aktiviere diesen Ablauf, damit er im Jobablauf ausgeführt wird"
+msgstr "Aktiviere diesen Arbeitsgang, damit er im Jobablauf ausgeführt wird"
 
 #: meerk40t/gui/operationproperty.py:318
 msgid ""
 "When classifying elements, Default operations gain all appropriate elements not "
 "matched to an existing operation of the same colour, rather than a new operation "
 "of that color being created."
-msgstr ""
+msgstr "Beim Klassifizieren der Elemente werden einem Standard-Arbeitsgang alle diejenigen Elemente "
+"zugeordnet, die nicht einem anderen Vorgang mit derselben Farbe zugeordnet werden konnten. In einem "
+"solchen Fall erfolgt wie beschrieben die Zuordnung zum Standard-Arbeitsgang anstatt einer Neuanlage "
+"eines Arbeitsgangs mit dieser Farbe."
 
 #: meerk40t/gui/operationproperty.py:321
 msgid "Raster operations created automatically by Meerkat "
-msgstr ""
+msgstr "Raster-Arbeitsgänge, die automatisch von Meerk40t angelegt wurden"
 
 #: meerk40t/gui/operationproperty.py:329
 msgid "Speed at which the head moves in mm/s."
@@ -1182,15 +1186,15 @@ msgstr ""
 msgid ""
 "For Raster/Image operations, this is the speed of the head as it sweeps "
 "backwards and forwards."
-msgstr ""
+msgstr "Bei Raster/Bild Arbeitsgängen entspricht das der Geschwindigkeit des Laserkopfes, mit der er sich vor und zurück bewegt."
 
 #: meerk40t/gui/operationproperty.py:342
 msgid "Pulses Per Inch - This is software created laser power control."
-msgstr ""
+msgstr "Pulse pro Inch - Dies ist eine Software-gestützte Steuerung der Laserstärke."
 
 #: meerk40t/gui/operationproperty.py:345
 msgid "1000 is always on, 500 is half power (fire every other step)."
-msgstr ""
+msgstr "1000 heisst Laserdauerfeuer, 500 entspricht halber Stärke (feuern bei jedem zweiten Schritt)."
 
 #: meerk40t/gui/operationproperty.py:346
 msgid ""
