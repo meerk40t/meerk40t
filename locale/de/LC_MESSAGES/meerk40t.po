@@ -5352,7 +5352,7 @@ msgstr "Sonstiges-3"
 #: meerk40t/core/elements.py:4568 meerk40t/core/elements.py:4578
 #: meerk40t/core/elements.py:4583
 msgid "Use"
-msgstr ""
+msgstr "Nutze"
 
 #: meerk40t/core/elements.py:4573
 #, python-format
@@ -5361,11 +5361,11 @@ msgstr "Lade: %s"
 
 #: meerk40t/core/elements.py:4579
 msgid "Other/Blue/Red"
-msgstr ""
+msgstr "Sonstige/Blau/Rot"
 
 #: meerk40t/core/elements.py:4584
 msgid "Basic"
-msgstr ""
+msgstr "Standard"
 
 #: meerk40t/core/elements.py:4588 meerk40t/gui/panes/toolbarproject.py:37
 #: meerk40t/gui/wxmeerk40t.py:1183
@@ -5375,23 +5375,23 @@ msgstr "Speichern"
 #: meerk40t/core/elements.py:4595 meerk40t/core/elements.py:4600
 #: meerk40t/core/elements.py:4605 meerk40t/core/elements.py:4610
 msgid "Add operation"
-msgstr ""
+msgstr "Arbeitsgang hinzufügen"
 
 #: meerk40t/core/elements.py:4596
 msgid "Add Image"
-msgstr ""
+msgstr "Füge Bild hinzu"
 
 #: meerk40t/core/elements.py:4601
 msgid "Add Raster"
-msgstr ""
+msgstr "Füge Raster hinzu"
 
 #: meerk40t/core/elements.py:4606
 msgid "Add Engrave"
-msgstr ""
+msgstr "Füge Gravieren hinzu"
 
 #: meerk40t/core/elements.py:4611
 msgid "Add Cut"
-msgstr ""
+msgstr "Füge Schneiden hinzu"
 
 #: meerk40t/core/elements.py:4615 meerk40t/core/elements.py:4622
 #: meerk40t/core/elements.py:4629 meerk40t/core/elements.py:4636
@@ -5409,11 +5409,11 @@ msgstr "Füge Signalton hinzu"
 
 #: meerk40t/core/elements.py:4630
 msgid "Add Move Origin"
-msgstr ""
+msgstr "Füge 'Bewegung zum Ursprung' hinzu"
 
 #: meerk40t/core/elements.py:4637
 msgid "Add Interrupt"
-msgstr ""
+msgstr "Füge Unterbrechung hinzu"
 
 #: meerk40t/core/elements.py:4649
 msgid "Add Shutdown"
@@ -5421,64 +5421,64 @@ msgstr "Fügre 'Shutdown' hinzu"
 
 #: meerk40t/core/elements.py:4661
 msgid "Reclassify operations"
-msgstr ""
+msgstr "Re-Definiere Arbeitsgang"
 
 #: meerk40t/core/elements.py:4672
 msgid "Duplicate operation(s)"
-msgstr ""
+msgstr "Dupliziere Arbeitsgänge"
 
 #: meerk40t/core/elements.py:4674
 msgid "duplicate operation element nodes"
-msgstr ""
+msgstr "Dupliziere Arbeitsgang Unterelemente"
 
 #: meerk40t/core/elements.py:4695 meerk40t/core/elements.py:4704
 #: meerk40t/gui/operationproperty.py:101 meerk40t/gui/operationproperty.py:519
 msgid "Passes"
-msgstr "Passes"
+msgstr "Durchgänge"
 
 #: meerk40t/core/elements.py:4696
 msgid "Add 1 pass"
-msgstr ""
+msgstr "Füge einen Durchgang hinzu"
 
 #: meerk40t/core/elements.py:4706
 #, python-format
 msgid "Add %s passes"
-msgstr ""
+msgstr "Füge %s Durchgänge hinzu"
 
 #: meerk40t/core/elements.py:4727 meerk40t/core/elements.py:4736
 #: meerk40t/core/elements.py:4787 meerk40t/core/elements.py:4792
 msgid "Duplicate element(s)"
-msgstr ""
+msgstr "Dupliziere Element(e)"
 
 #: meerk40t/core/elements.py:4728
 msgid "Duplicate elements 1 time"
-msgstr ""
+msgstr "Dupliziere Elemente 1-mal"
 
 #: meerk40t/core/elements.py:4739
 #, python-format
 msgid "Duplicate elements %s times"
-msgstr ""
+msgstr "Dupliziere Elemente %s-mal "
 
 #: meerk40t/core/elements.py:4751
 msgid "Make raster image"
-msgstr ""
+msgstr "Erzeuge Raster-Bild"
 
 #: meerk40t/core/elements.py:4753
 msgid "Convert a vector element into a raster element."
-msgstr ""
+msgstr "Wandle ein Vektor-Element in ein Raster-Element um."
 
 #: meerk40t/core/elements.py:4781
 #, python-format
 msgid "Reload '%s'"
-msgstr ""
+msgstr "Lade alte Version von '%s'"
 
 #: meerk40t/core/elements.py:4810
 msgid "Reset user changes"
-msgstr ""
+msgstr "Mache Anwender-Veränderungen rückgängig"
 
 #: meerk40t/core/elements.py:4819
 msgid "Convert to path"
-msgstr ""
+msgstr "Wandle in Pfad um"
 
 #: meerk40t/core/elements.py:4826
 msgid "Scale"
@@ -5487,7 +5487,7 @@ msgstr "Skalieren"
 #: meerk40t/core/elements.py:4830
 #, python-format
 msgid "Scale %s%%"
-msgstr ""
+msgstr "Skaliere %s%%"
 
 #: meerk40t/core/elements.py:4845
 msgid "Rotate"
@@ -5496,7 +5496,7 @@ msgstr "Drehen"
 #: meerk40t/core/elements.py:4890
 #, python-format
 msgid "Rotate %sÂ°"
-msgstr ""
+msgstr "Drehe um %s°"
 
 #: meerk40t/core/elements.py:4904
 msgid "Reify User Changes"
@@ -5512,11 +5512,11 @@ msgstr "Elemente verbinden"
 
 #: meerk40t/core/elements.py:4917
 msgid "Merge this node's children into 1 path."
-msgstr ""
+msgstr "Verbinde alle Unter-Knoten zu einem Pfad."
 
 #: meerk40t/core/elements.py:4954
 msgid "Actualize pixels"
-msgstr ""
+msgstr "Aktualisiere Pixel"
 
 #: meerk40t/core/elements.py:4959
 msgid "Z-depth divide"
@@ -5570,16 +5570,16 @@ msgstr "Speichern als .png"
 #: meerk40t/core/elements.py:5033 meerk40t/gui/panes/toolbarproject.py:67
 #: meerk40t/gui/wxmeerk40t.py:1197
 msgid "RasterWizard"
-msgstr "RasterWizard"
+msgstr "Raster-Assistent"
 
 #: meerk40t/core/elements.py:5038
 #, python-format
 msgid "RasterWizard: %s"
-msgstr "RasterWizard: %s"
+msgstr "Raster-Assistent: %s"
 
 #: meerk40t/core/elements.py:5044
 msgid "Apply raster script"
-msgstr ""
+msgstr "Raster-Script anwenden"
 
 #: meerk40t/core/elements.py:5048
 #, python-format
@@ -5588,31 +5588,31 @@ msgstr "Übernehmen: %s"
 
 #: meerk40t/core/elements.py:5053
 msgid "Convert to SVG"
-msgstr ""
+msgstr "In SVG wandeln"
 
 #: meerk40t/core/elements.py:5058
 msgid "Process as Operation"
-msgstr ""
+msgstr "Als Arbeitsgang ausführen"
 
 #: meerk40t/core/elements.py:5065
 msgid "Expand all children"
-msgstr ""
+msgstr "Alle Unterknoten zeigen"
 
 #: meerk40t/core/elements.py:5074
 msgid "Collapse all children"
-msgstr ""
+msgstr "Alle Unterknoten verbergen"
 
 #: meerk40t/core/elements.py:5082
 msgid "Element"
-msgstr ""
+msgstr "Element"
 
 #: meerk40t/core/elements.py:6017
 msgid "All valid types"
-msgstr ""
+msgstr "Alle gültigen Typen"
 
 #: meerk40t/core/inputs.py:71
 msgid "new input type"
-msgstr ""
+msgstr "Neuer Eingabe-Typ"
 
 #: meerk40t/core/inputs.py:74
 msgid "input<?> <command>"
@@ -5633,11 +5633,11 @@ msgstr ""
 
 #: meerk40t/core/inputs.py:147
 msgid "list input types"
-msgstr ""
+msgstr "Eingabe-TYpen auflisten"
 
 #: meerk40t/core/inputs.py:150
 msgid "Input types:"
-msgstr ""
+msgstr "Eingabe-Type:"
 
 #: meerk40t/core/output.py:18
 msgid "Port of TCPOutput to change."
@@ -5795,19 +5795,19 @@ msgstr ""
 
 #: meerk40t/core/planner.py:677
 msgid "Physical Home Before: Disabled (Rotary On)"
-msgstr ""
+msgstr "Hartes Home zu Beginn: Deaktiviert (Rotary On)"
 
 #: meerk40t/core/planner.py:682
 msgid "Home Before: Disabled (Rotary On)"
-msgstr "Home Before: Deaktiviert (Rotary On)"
+msgstr "Home zu Beginn: Deaktiviert (Rotary On)"
 
 #: meerk40t/core/planner.py:690
 msgid "Home After: Disabled (Rotary On)"
-msgstr "Home After: Deaktiviert (Rotary On)"
+msgstr "Home am Ende: Deaktiviert (Rotary On)"
 
 #: meerk40t/core/planner.py:695
 msgid "Physical Home After: Disabled (Rotary On)"
-msgstr ""
+msgstr "Hartes Home am Ende: Deaktiviert (Rotary On)"
 
 #: meerk40t/core/planner.py:718
 msgid "plan<?> validate"
