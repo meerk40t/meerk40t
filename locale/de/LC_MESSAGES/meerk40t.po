@@ -509,7 +509,7 @@ msgstr "Arbeitsgänge werden zum aktuellen Job hinzugefügt"
 
 #: meerk40t/gui/executejob.py:311
 msgid "Commands being applied to the current job"
-msgstr ""
+msgstr "Kommandos, die auf den aktuellen Job angewendet werden"
 
 #: meerk40t/gui/executejob.py:319
 msgid "Combine passes into the same optimization"
@@ -523,7 +523,8 @@ msgstr "Füge Arbeitsgänge in dieselbe Optimierung zusammen"
 msgid ""
 "Travel between objects (laser off) at the default/rapid speed rather than at the "
 "current laser-on speed"
-msgstr ""
+msgstr "Bewegung zwischen Objekten (Laser aus) mit Standard-/schneller Geschwindigkeit "
+"statt mit der aktuellen Geschwindigkeit, die beim aktuellen Arbeitsgang eingestellt ist"
 
 #: meerk40t/gui/executejob.py:330
 msgid "Reduce the travel time by optimizing the order of the elements"
@@ -829,19 +830,19 @@ msgstr "Navigation"
 
 #: meerk40t/gui/navigation.py:300 meerk40t/gui/panes/jogdistancepanel.py:42
 msgid "Set Jog Distance in mils (1/1000th of an inch)"
-msgstr "Jog-Abstand in mils (1/1000 Zoll) einstellen."
+msgstr "Schrittweite in mils (1/1000 Zoll) einstellen."
 
 #: meerk40t/gui/navigation.py:303 meerk40t/gui/panes/jogdistancepanel.py:45
 msgid "Set Jog Distance in mm"
-msgstr "Jog-Abstand in mm einstellen"
+msgstr "Schrittweite in mm einstellen"
 
 #: meerk40t/gui/navigation.py:305 meerk40t/gui/panes/jogdistancepanel.py:47
 msgid "Set Jog Distance in cm"
-msgstr "Jog-Abstand in cm einstellen"
+msgstr "Schrittweite in cm einstellen"
 
 #: meerk40t/gui/navigation.py:307 meerk40t/gui/panes/jogdistancepanel.py:49
 msgid "Set Jog Distance in inch"
-msgstr "Jog-Abstand in Zoll einstellen"
+msgstr "Schrittweite in Zoll einstellen"
 
 #: meerk40t/gui/navigation.py:309 meerk40t/gui/panes/jog.py:96
 msgid "Move laser diagonally in the up and left direction"
@@ -2276,7 +2277,7 @@ msgstr "startet die GUI"
 
 #: meerk40t/gui/wxmeerk40t.py:448
 msgid "Jog"
-msgstr ""
+msgstr "Schrittweite"
 
 #: meerk40t/gui/wxmeerk40t.py:467
 msgid "Drag"
@@ -2651,7 +2652,7 @@ msgstr "Sprachen"
 
 #: meerk40t/gui/wxmeerk40t.py:2324
 msgid "No active device existed. Add a primary device."
-msgstr "Kein aktives Gerär vorhanden. Bitte primäres Gerät hinzufügen."
+msgstr "Kein aktives Gerät vorhanden. Bitte primäres Gerät hinzufügen."
 
 #: meerk40t/gui/wxmeerk40t.py:2325
 msgid "Active Device"
@@ -2700,7 +2701,7 @@ msgstr "Datei laden ..."
 
 #: meerk40t/gui/wxmeerk40t.py:2587
 msgid "File is Malformed."
-msgstr ""
+msgstr "Datei hat nicht das erwartete Format."
 
 #: meerk40t/gui/wxmeerk40t.py:2624
 #, python-format
@@ -2715,7 +2716,7 @@ msgstr "Fehler aufgetreten"
 
 #: meerk40t/gui/wxmeerk40t.py:2893
 msgid "Save Project"
-msgstr ""
+msgstr "Projekt speichern"
 
 #: meerk40t/gui/wxmeerk40t.py:2964
 msgid "Enter Forced Gear"
@@ -2737,11 +2738,12 @@ msgstr "FPS-Limit-Eintrag"
 msgid ""
 "Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
 "translate, etc..."
-msgstr ""
+msgstr "Verwenden Sie SVG-Umwandlungs-Befehle, z.B. 'scale(1.49, 1, $x, $y)', rotate, "
+"translate, etc..."
 
 #: meerk40t/gui/wxmeerk40t.py:2993
 msgid "Transform Entry"
-msgstr "Eintrag transformieren"
+msgstr "Eintrag umwandeln"
 
 #: meerk40t/gui/wxmeerk40t.py:3015
 msgid "The entered command does nothing."
@@ -2897,7 +2899,13 @@ msgid ""
 "    Send the following data to the MeerK40t team?\n"
 "    ------\n"
 "    "
-msgstr ""
+msgstr "\n"
+"    Es tut uns leid, MeerK40t ist abgestürzt!\n"
+"    Die gute Nachricht: Sie können nun die Merrk40t-Entwicklung unterstützen, in dem Sie uns das Fehlerprotokoll schicken.\n"
+"\n"
+"    Sollen die folgenden Daten an das Meerk40t-Team geschickt werden?\n"
+"    ------\n"
+"    "
 
 #: meerk40t/gui/wxmeerk40t.py:4510
 msgid "Crash Detected! Send Log?"
@@ -2905,11 +2913,11 @@ msgstr "Das Programm ist abgestürzt! Fehlerprotokoll senden?"
 
 #: meerk40t/gui/file/fileoutput.py:20
 msgid "File Overwrite"
-msgstr ""
+msgstr "Datei überschreiben"
 
 #: meerk40t/gui/file/fileoutput.py:20
 msgid "File Append"
-msgstr ""
+msgstr "An Datei anhängen"
 
 #: meerk40t/gui/file/fileoutput.py:20
 msgid "File Increment"
@@ -2931,15 +2939,15 @@ msgstr "Dateiname"
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:23
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:28
 msgid "infinity"
-msgstr ""
+msgstr "Unendlich"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:103
 msgid "Acceleration Chart"
-msgstr ""
+msgstr "Beschleunigungs-Daten"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:105
 msgid "Enable defined acceleration chart for vectors"
-msgstr ""
+msgstr "Aktiviere vordefinierte Beschleunigung für Vektoren"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:108
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:111
@@ -2955,27 +2963,27 @@ msgstr ""
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:147
 #, python-format
 msgid "Upper limit for accel level %d"
-msgstr ""
+msgstr "Oberes Limit für Beschleunigung %d"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:120
 msgid "Enable defined acceleration chart for vertical rasters"
-msgstr ""
+msgstr "Aktiviere vordefinierte Beschleunigung für vertikales Rastern"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:135
 msgid "Enable defined acceleration chart for horizontal rasters"
-msgstr ""
+msgstr "Aktiviere vordefinierte Beschleunigung für horizontales Rastern"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:155
 msgid "Horizontal Raster"
-msgstr ""
+msgstr "Horizontales Raster"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:162
 msgid "Vertical Raster"
-msgstr ""
+msgstr "Vertikales Raster"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:169
 msgid "Vector"
-msgstr ""
+msgstr "Vektor"
 
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:179
 #: meerk40t/gui/lhystudios/lhystudiosaccel.py:185
