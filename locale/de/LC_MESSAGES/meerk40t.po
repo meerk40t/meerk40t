@@ -1,4 +1,4 @@
-# German translations for PROJECT.
+# German translations for Meerk40t.
 # Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
@@ -6,10 +6,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
+"Project-Id-Version: Meerk40t 0.7\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
 "POT-Creation-Date: 2021-09-11 02:52-0700\n"
-"PO-Revision-Date: 2021-09-11 03:17-0700\n"
+"PO-Revision-Date: 2022-01-24 03:17-0700\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org, JP>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -38,12 +38,14 @@ msgstr "Meerk40t ist ein kostenloses, auf der MIT Lizenz basierendes Open-Source
 
 #: meerk40t/gui/about.py:59
 msgid ""
-"Participation in the project is highly encouraged. Past participation, and \n"
+"Participation in the project is highly encouraged. Past participation, "
+"and \n"
 msgstr "Mithilfe bei diesem Projekt ist jederzeit willkommen. Vielen Dank für die \n"
 
 #: meerk40t/gui/about.py:62
 msgid ""
-"continuing participation is graciously thanked. This program is mostly the\n"
+"continuing participation is graciously thanked. This program is mostly "
+"the\n"
 msgstr "vergangene und aktuelle Hilfe. Dieses Programm ist im Wesentlichen das Werk \n"
 
 #: meerk40t/gui/about.py:65
@@ -73,13 +75,14 @@ msgstr "* Alois Zingl für seinen brillianten Bresenham-Algorithmus zum Kurven-Z
 
 #: meerk40t/gui/about.py:92
 msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
+"* @joerlane for his hardware investigation wizardry into how the M2-Nano "
+"works.\n"
 msgstr "* @joerlane für seine Zauberkräfte bei der Analyse, wie der M2-Nano arbeitet.\n"
 
 #: meerk40t/gui/about.py:95
 msgid ""
 "* All the MeerKittens, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n"
-msgstr "* Allen Unterstützern von MeerK40t, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n""
+msgstr "* Allen Unterstützern von MeerK40t, Sophist-UK,  tiger12506, frogmaster, inspectionsbybob. \n"
 
 #: meerk40t/gui/about.py:98
 msgid ""
@@ -911,11 +914,11 @@ msgstr "Richten Sie den Laser an der ersten Position aus"
 
 #: meerk40t/gui/navigation.py:382 meerk40t/gui/panes/dragpanel.py:155
 msgid "Perform a convex hull trace of the selection"
-msgstr "Umrisse der Auswahl nachfahren"
+msgstr "Umrisse der Auswahl genau nachfahren"
 
 #: meerk40t/gui/navigation.py:386 meerk40t/gui/panes/dragpanel.py:159
 msgid "Perform a simple trace of the selection"
-msgstr "Zeige einen vereinfachten Umriss der Auswahl"
+msgstr "Umrisse der Auswahl vereinfacht umfahren"
 
 #: meerk40t/gui/navigation.py:402 meerk40t/gui/panes/transformpanel.py:92
 msgid "Scale Down"
@@ -1003,7 +1006,7 @@ msgstr "Bewegen zu"
 
 #: meerk40t/gui/navigation.py:446 meerk40t/gui/panes/pulsepanel.py:45
 msgid "Short Pulse"
-msgstr "Kurzer Puls"
+msgstr "Kurzer Laserpuls"
 
 #: meerk40t/gui/navigation.py:458 meerk40t/gui/panes/jogdistancepanel.py:55
 msgid "Jog Distance"
@@ -1293,7 +1296,7 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:413
 msgid "Show advanced options?"
-msgstr ""
+msgstr "Erweiterte Optionen zeigen?"
 
 #: meerk40t/gui/operationproperty.py:415
 msgid "Enables the ability to modify the diagonal ratio."
@@ -1470,7 +1473,7 @@ msgstr "Speedcode (erweitert)"
 
 #: meerk40t/gui/operationproperty.py:539
 msgid "Start Preference"
-msgstr "Einstellungen starten"
+msgstr "Start-Vorgabe"
 
 #: meerk40t/gui/operationproperty.py:549
 msgid "Speed (mm/s)"
@@ -1494,7 +1497,7 @@ msgstr "Rasterrichtung"
 
 #: meerk40t/gui/operationproperty.py:867
 msgid "Pass Through"
-msgstr "Pass Trough"
+msgstr "Pass Through"
 
 #: meerk40t/gui/pathproperty.py:19 meerk40t/gui/pathproperty.py:36
 msgid "None"
@@ -2198,7 +2201,7 @@ msgid ""
 "Scale factor for the Y-axis. This defines the ratio of mils to steps. This is "
 "usually at 1:1 steps/mils but due to functional issues it can deviate and needs "
 "to be accounted for"
-msgstr "Skalierungsfaktor für die Y-Achse. DIes bestimmt das Verhältnis von mils pro "
+msgstr "Skalierungsfaktor für die Y-Achse. Dies bestimmt das Verhältnis von mils pro "
 "Schrittmotor-Drehung. Dies ist normalerweise 1:2 Schritte / mils kann aber bei "
 "Genauigkeits-Problemen angepasst werden."
 
@@ -2423,7 +2426,7 @@ msgstr "Konfiguration"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:65 meerk40t/gui/wxmeerk40t.py:1352
 msgid "Keymap"
-msgstr "Tastenkürzel"
+msgstr "Tastenbelegung"
 
 #: meerk40t/gui/wxmeerk40t.py:1704
 msgid "&New\tCtrl-N"
@@ -2431,7 +2434,7 @@ msgstr "&Neu\tCtrl-N"
 
 #: meerk40t/gui/wxmeerk40t.py:1705
 msgid "&Open Project\tCtrl-O"
-msgstr "&Oeffne Pr&ojekt\tCtrl-O"
+msgstr "&Öffne Pr&ojekt\tCtrl-O"
 
 #: meerk40t/gui/wxmeerk40t.py:1707
 msgid "&Recent"
@@ -3263,7 +3266,7 @@ msgstr "GESPERRT"
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:617
 msgid "Force Continue"
-msgstr "Weiter zwingen"
+msgstr "Weitermachen"
 
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:637
 msgid "Pause Controller"
@@ -3275,7 +3278,7 @@ msgstr "Manueller Reset"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:27
 msgid "Fix rated to actual speed"
-msgstr ""
+msgstr "Geschw.-Abweichung korrigieren"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:29
 msgid "Flip X"
@@ -3319,7 +3322,7 @@ msgstr "Schreibpuffer begrenzen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:52
 msgid "Automatically lock rail"
-msgstr "Schiene automatisch verriegeln"
+msgstr "Schiene nach Ende des Jobs automatisch verriegeln"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:107
 msgid "Lhystudios-Prefererences"
@@ -3327,7 +3330,7 @@ msgstr "Lhystudios-Einstellungen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:109
 msgid "Select the board to use. This has an effects the speedcodes used."
-msgstr ""
+msgstr "Wählt das zu verwendende Controller-Board aus. Dies hat einen Einfluss auf die verwendeten Speedcodes."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:113
 #, python-format
@@ -3454,7 +3457,7 @@ msgstr "Konfiguration"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:214
 msgid "Board Setup"
-msgstr "Board Setup"
+msgstr "Controller Setup"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:234
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:240
@@ -3564,15 +3567,15 @@ msgstr "Öffnet Spooler-Fenster"
 
 #: meerk40t/gui/panes/toolbarcontrol.py:105
 msgid "Opens Controller Window"
-msgstr "Öffnet Kontroller-Fenster"
+msgstr "Öffnet Controller-Fenster"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:29
 msgid "Opens Device Manager"
-msgstr "Öfnnet Geräte-Manager"
+msgstr "Öffnet Geräte-Manager"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:42
 msgid "Opens Configuration Window"
-msgstr "Öffnet Konfigurations-Fenster"
+msgstr "Öffnet Hardware-Konfigurations-Fenster"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:55
 msgid "Opens Settings Window"
@@ -3599,7 +3602,7 @@ msgid "Simulate the current laser job"
 msgstr "Simuliere den aktuellen Laser-Job"
 
 #: meerk40t/gui/panes/toolbarproject.py:70
-msgid "Run RasterWizard "
+msgid "Run RasterWizard"
 msgstr "Starte Raster-Assistent"
 
 #: meerk40t/gui/panes/toolbarproject.py:83
@@ -4559,55 +4562,55 @@ msgstr ""
 
 #: meerk40t/core/elements.py:2182 meerk40t/core/elements.py:4337
 msgid "Set operation passes"
-msgstr ""
+msgstr "Anzahl der Wiederholungen"
 
 #: meerk40t/core/elements.py:2184
 msgid "passes <passes>"
-msgstr ""
+msgstr "<passes> Durchläufe"
 
 #: meerk40t/core/elements.py:2191
 #, python-format
 msgid "Passes for '%s' is currently: %d"
-msgstr ""
+msgstr "Zahl der Wiederholungen für '%s' ist aktuell: %d"
 
 #: meerk40t/core/elements.py:2200
 #, python-format
 msgid "Passes for '%s' updated %d -> %d"
-msgstr ""
+msgstr "Wiederholungen für '%s' angepasst: %d -> %d"
 
 #: meerk40t/core/elements.py:2208
 msgid "Disable the given operations"
-msgstr ""
+msgstr "Deaktiviere die gewählten Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:2215
 #, python-format
 msgid "Operation '%s' disabled."
-msgstr ""
+msgstr "Arbeitsablauf '%s' deaktiviert"
 
 #: meerk40t/core/elements.py:2221
 msgid "Enable the given operations"
-msgstr ""
+msgstr "Aktiviere die gewählten Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:2228
 #, python-format
 msgid "Operation '%s' enabled."
-msgstr ""
+msgstr "Arbeitsablauf '%s' aktiviert"
 
 #: meerk40t/core/elements.py:2237
 msgid "Duplicate elements"
-msgstr ""
+msgstr "Elemente duplizieren"
 
 #: meerk40t/core/elements.py:2250
 msgid "Delete elements"
-msgstr ""
+msgstr "Elemente löschen"
 
 #: meerk40t/core/elements.py:2253
 msgid "Deletingâ€¦"
-msgstr ""
+msgstr "Lösche"
 
 #: meerk40t/core/elements.py:2266
 msgid "Show information about elements"
-msgstr ""
+msgstr "Zeigt Infos zu den Elementen an"
 
 #: meerk40t/core/elements.py:2273
 msgid "element*, all elements"
@@ -5234,15 +5237,15 @@ msgstr ""
 
 #: meerk40t/core/elements.py:4348
 msgid "Execute operation(s)"
-msgstr ""
+msgstr "Führe markierte Arbeitsabläufe aus"
 
 #: meerk40t/core/elements.py:4350
 msgid "Execute Job for the selected operation(s)."
-msgstr ""
+msgstr "Führe Job für die markierten Arbeitsabläufe aus."
 
 #: meerk40t/core/elements.py:4359
 msgid "Simulate operation(s)"
-msgstr ""
+msgstr "Simuliere markierte Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:4361
 msgid "Run simulation for the selected operation(s)"
@@ -5250,56 +5253,56 @@ msgstr ""
 
 #: meerk40t/core/elements.py:4370 meerk40t/core/elements.py:4374
 msgid "Clear all"
-msgstr ""
+msgstr "Alles löschen"
 
 #: meerk40t/core/elements.py:4399
 #, python-format
 msgid "Remove %s selected items"
-msgstr ""
+msgstr "Lösche %s markierte Element"
 
 #: meerk40t/core/elements.py:4424
 #, python-format
 msgid "Remove '%s'"
-msgstr ""
+msgstr "Lösche '%s'"
 
 #: meerk40t/core/elements.py:4448
 #, python-format
 msgid "Remove %s operations"
-msgstr ""
+msgstr "Lösche %s Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:4461
 #, python-format
 msgid "Remove %s elements"
-msgstr ""
+msgstr "Lösche %s Elemente"
 
 #: meerk40t/core/elements.py:4476 meerk40t/core/elements.py:4485
 msgid "Convert to Cutcode"
-msgstr ""
+msgstr "Wandle in Cutcode um"
 
 #: meerk40t/core/elements.py:4493
 msgid "Convert to Path"
-msgstr ""
+msgstr "Wandle in Pfad um"
 
 #: meerk40t/core/elements.py:4507 meerk40t/core/elements.py:4512
 msgid "Clone reference"
-msgstr ""
+msgstr "Verweis klonen"
 
 #: meerk40t/core/elements.py:4508 meerk40t/core/elements.py:4788
 msgid "Make 1 copy"
-msgstr ""
+msgstr "Erzeuge 1 Kopie"
 
 #: meerk40t/core/elements.py:4515 meerk40t/core/elements.py:4795
 #, python-format
 msgid "Make %s copies"
-msgstr ""
+msgstr "Erzeuge %s Kopien"
 
 #: meerk40t/core/elements.py:4526
 msgid "Reverse subitems order"
-msgstr ""
+msgstr "Kehre Reihenfolge der Unterelement um"
 
 #: meerk40t/core/elements.py:4528
 msgid "Reverse the items within this subitem"
-msgstr ""
+msgstr "Kehre die Reihenfolge der Elente dieses Knoten um"
 
 #: meerk40t/core/elements.py:4536
 msgid "Refresh classification"
@@ -5457,7 +5460,7 @@ msgstr "Dupliziere Elemente 1-mal"
 #: meerk40t/core/elements.py:4739
 #, python-format
 msgid "Duplicate elements %s times"
-msgstr "Dupliziere Elemente %s-mal "
+msgstr "Dupliziere Elemente %s-mal"
 
 #: meerk40t/core/elements.py:4751
 msgid "Make raster image"
@@ -5495,7 +5498,7 @@ msgstr "Drehen"
 
 #: meerk40t/core/elements.py:4890
 #, python-format
-msgid "Rotate %sÂ°"
+msgid "Rotate %s°"
 msgstr "Drehe um %s°"
 
 #: meerk40t/core/elements.py:4904
@@ -5525,7 +5528,7 @@ msgstr ""
 #: meerk40t/core/elements.py:4962
 #, python-format
 msgid "Divide into %s images"
-msgstr ""
+msgstr "Spalte in %s Bilder auf"
 
 #: meerk40t/core/elements.py:4985 meerk40t/core/elements.py:4991
 #: meerk40t/core/elements.py:4997 meerk40t/core/elements.py:5003
@@ -5745,7 +5748,7 @@ msgstr ""
 
 #: meerk40t/core/planner.py:542 meerk40t/core/planner.py:576
 msgid "Copied Operations."
-msgstr "Kopiere Arbeitsgänge"
+msgstr "Arbeitsgänge kopiert."
 
 #: meerk40t/core/planner.py:548
 msgid "plan<?> copy"
@@ -6471,7 +6474,7 @@ msgstr ""
 #: meerk40t/device/moshi/moshidevice.py:95
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:602
 msgid "Hold Controller"
-msgstr "Halten Sie den Controller an"
+msgstr "Controller anhalten"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:362
 #: meerk40t/device/moshi/moshidevice.py:106
@@ -6751,7 +6754,7 @@ msgstr "Bewegung beim Schneiden nach Optimierung: %f"
 
 #: meerk40t/extra/pathoptimize.py:55
 msgid "Optimization not found."
-msgstr "Keine Optimierungen gefunden"
+msgstr "Keine Optimierungen gefunden."
 
 #: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:94
 msgid "return paths around image"
@@ -7152,3 +7155,31 @@ msgstr ""
 #: meerk40t/image/imagetools.py:1007
 msgid "halftone the provided image"
 msgstr ""
+
+#: meerk40t/gui/wxmribbon.py:296
+msgid "Pause"
+msgstr "Pause"
+
+#: meerk40t/gui/wxmribbon.py:296
+msgid "Pause the laser"
+msgstr "Laser anhalten"
+
+#: meerk40t/gui/wxmribbon.py:303
+msgid "Stop"
+msgstr "Stop"
+
+#: meerk40t/gui/wxmribbon.py:305
+msgid "Emergency stop the laser"
+msgstr "Notfall-Stop des Lasers"
+
+#: meerk40t/gui/rotarysettings.py:21
+msgid "Enable Rotary"
+msgstr "Drehachse verwenden"
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:433
+msgid "Lhystudios-Configuration"
+msgstr "Konfiguration des K40-Controllers"
+
+#: meerk40t/core/elements.py:5258
+msgid "Add special operation(s)"
+msgstr "Füge speziellen Arbeitsablauf hinzu"
