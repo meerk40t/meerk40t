@@ -528,7 +528,7 @@ msgstr "Bewegung zwischen Objekten (Laser aus) mit Standard-/schneller Geschwind
 
 #: meerk40t/gui/executejob.py:330
 msgid "Reduce the travel time by optimizing the order of the elements"
-msgstr ""
+msgstr "Verringere die Zeit für Bewegungen durch optimierte Neuanordnung der Elemente"
 
 #: meerk40t/gui/executejob.py:333
 msgid ""
@@ -783,7 +783,7 @@ msgstr "Hotkey hinzufügen"
 
 #: meerk40t/gui/keymap.py:42
 msgid "Keymap Settings"
-msgstr "Keymap-Einstellungen"
+msgstr "Tastaturbelegung"
 
 #: meerk40t/gui/keymap.py:43
 msgid "What keys are bound to which actions?"
@@ -1140,7 +1140,7 @@ msgstr "Zeige/Ändere die Farbe dieses Laysers"
 
 #: meerk40t/gui/operationproperty.py:300
 msgid "Operation Type"
-msgstr "Operation"
+msgstr "Typ des Arbeitsgangs"
 
 #: meerk40t/gui/operationproperty.py:302
 msgid ""
@@ -1152,7 +1152,9 @@ msgid ""
 "Cut and Engrave operations are essentially the same except that for a Cut "
 "operation with Cut Outer Paths last, only closed Paths in Cut operations are "
 "considered as being Outer-most."
-msgstr ""
+msgstr "Schneiden und Gravieren sind im wesentlichen gleich, mit dem Unterschied, dass bei einem "
+"Schneiden-Arbeitsgang mit der 'Schneide Umriss zuletzt'-Option nur geschlossene Pfade als Umriss "
+"genutzt werden."
 
 #: meerk40t/gui/operationproperty.py:312
 msgid "Enable this operation for inclusion in Execute Job."
@@ -1180,7 +1182,8 @@ msgstr "Geschwindigkeit, mit der sich der Kopf bewegt, in mm/sec"
 msgid ""
 "For Cut/Engrave vector operations, this is the speed of the head regardless of "
 "direction i.e. the separate x/y speeds vary according to the direction."
-msgstr ""
+msgstr "Bei Schneiden/Gravieren-Arbeitsgängen ist das Geschwindigkeit des Laserkopfes "
+"ohne Berücksichtigung der Richtung, d.h. die separaten X/Y-Geschwindigkeiten hängen von der Richtung ab."
 
 #: meerk40t/gui/operationproperty.py:333
 msgid ""
@@ -1200,7 +1203,7 @@ msgstr "1000 heisst Laserdauerfeuer, 500 entspricht halber Stärke (feuern bei j
 msgid ""
 "Values of 100 or have pulses > 1/10\" and are generally used only for dotted or "
 "perforated lines."
-msgstr ""
+msgstr "Werte von 100 oder niedriger führen zu Pulsen < 1/10 Zoll und werden normalweise für gepunktete Linien oder Perforierungen genutzt."
 
 #: meerk40t/gui/operationproperty.py:355
 msgid ""
@@ -1270,7 +1273,7 @@ msgstr ""
 
 #: meerk40t/gui/operationproperty.py:394
 msgid "Crosshatch - DESCRIPTION needed."
-msgstr ""
+msgstr "Fadenkreuz - Beschreibung benötigt"
 
 #: meerk40t/gui/operationproperty.py:402
 msgid "Raster on forward and backswing or only forward swing?"
