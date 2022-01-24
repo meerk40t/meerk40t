@@ -1,4 +1,3 @@
-from setuptools import setup
 import os, polib
 
 def create_mo_files():
