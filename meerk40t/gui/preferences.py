@@ -26,7 +26,7 @@ class PreferencesPanel(wx.Panel):
         self.radio_units = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Units:"),
+            _("Units"),
             choices=["mm", "cm", "inch", "steps"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
@@ -281,22 +281,22 @@ class PreferencesPanel(wx.Panel):
         sizer_preferences = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gui_options = wx.BoxSizer(wx.VERTICAL)
         sizer_bed = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
         )
         sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_7 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Y Scale Factor")), wx.HORIZONTAL
         )
         sizer_4 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("X Scale Factor")), wx.HORIZONTAL
         )
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixels Per Inch:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixels Per Inch")), wx.HORIZONTAL
         )
         sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Language:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL
         )
         sizer_gui_options.Add(self.radio_units, 0, wx.EXPAND, 0)
         sizer_2.Add(self.combo_language, 0, 0, 0)
