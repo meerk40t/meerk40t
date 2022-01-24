@@ -34,26 +34,26 @@ msgid ""
 "MeerK40t is a free MIT Licensed open source project for lasering on K40 "
 "Devices.\n"
 "\n"
-msgstr ""
+msgstr "Meerk40t ist ein kostenloses, auf der MIT Lizenz basierendes Open-Source Projekt, um auf K40 Geräten zu lasern\n"
 
 #: meerk40t/gui/about.py:59
 msgid ""
 "Participation in the project is highly encouraged. Past participation, and \n"
-msgstr ""
+msgstr "Mithilfe bei diesem Projekt ist jederzeit willkommen. Vielen Dank für die \n"
 
 #: meerk40t/gui/about.py:62
 msgid ""
 "continuing participation is graciously thanked. This program is mostly the\n"
-msgstr ""
+msgstr "vergangene und aktuelle Hilfe. Dieses Programm ist im Wesentlichen das Werk \n"
 
 #: meerk40t/gui/about.py:65
 msgid ""
 "brainchild of Tatarize, who sincerely hopes his contributions will be but \n"
-msgstr ""
+msgstr "von Tartarize, der hofft, dass seine Arbeit am Ende ein kleiner Teil eines \n"
 
 #: meerk40t/gui/about.py:68
 msgid "the barest trickle that becomes a raging river."
-msgstr ""
+msgstr "viel größeren Werks sein wird."
 
 #: meerk40t/gui/about.py:85
 msgid "Thanks go out to...\n"
@@ -74,7 +74,7 @@ msgstr "* Alois Zingl für seinen brillianten Bresenham-Algorithmus zum Kurven-Z
 #: meerk40t/gui/about.py:92
 msgid ""
 "* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
-msgstr "* @joerlane für seine Zauberkräfte bei der Analyse wie der M2-Nano arbeitet.\n"
+msgstr "* @joerlane für seine Zauberkräfte bei der Analyse, wie der M2-Nano arbeitet.\n"
 
 #: meerk40t/gui/about.py:95
 msgid ""
@@ -1809,7 +1809,7 @@ msgstr ""
 
 #: meerk40t/gui/rasterwizard.py:1424
 msgid "Sharpen Threshold Amount"
-msgstr "Schwellenwert schärfen"
+msgstr "Schwellwert schärfen"
 
 #: meerk40t/gui/rasterwizard.py:1430
 msgid "Sharpen"
@@ -1858,11 +1858,11 @@ msgstr "Kontrast zurücksetzen"
 
 #: meerk40t/gui/rasterwizard.py:1691
 msgid "Contrast amount"
-msgstr "Kontrastmenge"
+msgstr "Kontrast"
 
 #: meerk40t/gui/rasterwizard.py:1693
 msgid "Contrast the lights and darks by how much?"
-msgstr "Kontrastieren Sie die Lichter und Dunkelheiten um wie viel?"
+msgstr "Wie stark den Kontrast anpassen?"
 
 #: meerk40t/gui/rasterwizard.py:1695
 msgid "Brightness amount"
@@ -1870,7 +1870,7 @@ msgstr "Helligkeitsbetrag"
 
 #: meerk40t/gui/rasterwizard.py:1697
 msgid "Make the image how much more bright?"
-msgstr "Machen Sie das Bild wie viel heller?"
+msgstr "Wie stark soll das Bild aufgehellt werden?"
 
 #: meerk40t/gui/rasterwizard.py:1704
 msgid "Contrast"
@@ -1878,11 +1878,11 @@ msgstr "Kontrast"
 
 #: meerk40t/gui/rasterwizard.py:1707
 msgid "Brightness Amount"
-msgstr "Helligkeitsbetrag"
+msgstr "Helligkeit"
 
 #: meerk40t/gui/rasterwizard.py:1710
 msgid "Contrast Amount"
-msgstr "Kontrastbetrag"
+msgstr "Kontrast"
 
 #: meerk40t/gui/rasterwizard.py:1829
 msgid "Enable Halftone"
@@ -1991,11 +1991,11 @@ msgstr "Drehschritte"
 
 #: meerk40t/gui/rotarysettings.py:122
 msgid "Scale X"
-msgstr "Skala X"
+msgstr "Skaliere X"
 
 #: meerk40t/gui/rotarysettings.py:125
 msgid "Scale Y"
-msgstr "Y-Skalen"
+msgstr "Skaliere Y"
 
 #: meerk40t/gui/panes/jogdistancepanel.py:65 meerk40t/gui/rotarysettings.py:135
 msgid "steps"
@@ -2023,11 +2023,11 @@ msgstr "Benutzerdefiniert"
 
 #: meerk40t/gui/settings.py:46
 msgid "Save Window Positions"
-msgstr ""
+msgstr "Fensterpositionen speichern"
 
 #: meerk40t/gui/settings.py:47
 msgid "Open Windows at the same place they were last closed"
-msgstr "Speichere zuletzt verwendete Fensterpositionen"
+msgstr "Speichere die zuletzt verwendeten Positionen der Fenster"
 
 #: meerk40t/gui/settings.py:52
 msgid "Print Shutdown"
@@ -2039,7 +2039,7 @@ msgstr "Drucke das Shutdown-Protokoll, wenn Meerk40t beendet wird"
 
 #: meerk40t/gui/settings.py:58
 msgid "SVG Uniform Save"
-msgstr "SVG Uniform Speichern"
+msgstr "SVG Uniform speichern"
 
 #: meerk40t/gui/settings.py:59
 msgid "Do not treat overwriting SVG differently if they are MeerK40t files"
@@ -2088,41 +2088,41 @@ msgstr "Öffne das Spooler-Fenster automatisch, sobald ein Job ausgeführt wird"
 
 #: meerk40t/gui/settings.py:99
 msgid "MouseWheel Pan"
-msgstr ""
+msgstr "Mausrad Verhalten"
 
 #: meerk40t/gui/settings.py:102
 msgid "Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
-msgstr ""
+msgstr "Deaktiviert: Mausrad=Zoom, Shift+Mausrad=Horizontales Verschieben"
 
 #: meerk40t/gui/settings.py:103
 msgid ""
 "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal "
 "pan."
-msgstr ""
+msgstr "Aktiviert: Mausrad=Vertikales Verschieben, Strg+Mausrad=Zoom, Shift+Mausrad=Horizontales Verschieben"
 
 #: meerk40t/gui/settings.py:112
 msgid "Invert MouseWheel Pan"
-msgstr ""
+msgstr "Mausrad-Richtung umdrehen beim Verschieben"
 
 #: meerk40t/gui/settings.py:113
 msgid "Reverses the direction of the MouseWheel for horizontal & vertical pan"
-msgstr ""
+msgstr "Dreht die Richtung des Mausrad beim horizontalen & vertikalen Verschieben um"
 
 #: meerk40t/gui/settings.py:120
 msgid "Invert MouseWheel Zoom"
-msgstr ""
+msgstr "Mausrad-Richtung umdrehen beim Zoomen"
 
 #: meerk40t/gui/settings.py:121
 msgid "Reverses the direction of the MouseWheel for zoom"
-msgstr ""
+msgstr "Dreht die Richtung des Mausrad beim Zoomen um"
 
 #: meerk40t/gui/settings.py:126
 msgid "Default Operation Other/Red/Blue"
-msgstr ""
+msgstr "Standard Verhalten Sonstiges/Rot/Blau"
 
 #: meerk40t/gui/settings.py:127
 msgid "Sets Operations to Other/Red/Blue if loaded with no operations."
-msgstr ""
+msgstr "Setze die Arbeitsabläufe auf Sonstiges/Rot/Blau falls keine Anweisungen spezifiziert sind"
 
 #: meerk40t/gui/settings.py:132
 msgid "Classify Reversed"
@@ -3264,21 +3264,21 @@ msgstr ""
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:29
 msgid "Flip X"
-msgstr "Flip X"
+msgstr "X Umdrehen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:30
 #: meerk40t/gui/moshi/moshidrivergui.py:14
 msgid "Home Right"
-msgstr ""
+msgstr "Home Rechts"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:31
 msgid "Flip Y"
-msgstr "Flip Y"
+msgstr "Y Umdrehen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:32
 #: meerk40t/gui/moshi/moshidrivergui.py:15
 msgid "Home Bottom"
-msgstr ""
+msgstr "Home Unten"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:33
 msgid "Swap X and Y"
@@ -3291,7 +3291,7 @@ msgstr ""
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:41
 #: meerk40t/gui/moshi/moshidrivergui.py:22
 msgid "Set Current"
-msgstr "Home-Position übernehmen"
+msgstr "Position übernehmen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:43
 #: meerk40t/gui/moshi/moshidrivergui.py:23
@@ -3308,7 +3308,7 @@ msgstr "Schiene automatisch verriegeln"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:107
 msgid "Lhystudios-Prefererences"
-msgstr ""
+msgstr "Lhystudios-Einstellungen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:109
 msgid "Select the board to use. This has an effects the speedcodes used."
@@ -3319,25 +3319,25 @@ msgstr ""
 msgid ""
 "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated "
 "speed."
-msgstr ""
+msgstr "Korrigiere Geschwindigkeits-Abweichung. Bei Lhystudio sind das 92% der korrekt angebebenen Geschwindigkeit."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:118
 msgid "Flip the Right and Left commands sent to the controller"
-msgstr "Drehe an den Controller gesendeten Befehl von rechts und links um"
+msgstr "Drehe die an den Controller gesendeten Befehle 'Rechts'- 'Links' um"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:121
 #: meerk40t/gui/moshi/moshidrivergui.py:46
 msgid "Indicates the device Home is on the right"
-msgstr "Home-Position des Geräts auf der rechten Seite"
+msgstr "Home-Position des Geräts ist auf der rechten Seite"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:124
 msgid "Flip the Top and Bottom commands sent to the controller"
-msgstr "Drehe an den Controller gesendeten Befehl von Top und Bottom um"
+msgstr "Drehe die an den Controller gesendeten Befehle 'Hoch'- 'Runter' um"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:127
 #: meerk40t/gui/moshi/moshidrivergui.py:49
 msgid "Indicates the device Home is on the bottom"
-msgstr "Home-Position des Geräts unten"
+msgstr "Home-Position des Geräts ist unten"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:130
 msgid "Swaps the X and Y axis. This happens before the FlipX and FlipY."
@@ -3354,17 +3354,17 @@ msgstr ""
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:138
 #: meerk40t/gui/moshi/moshidrivergui.py:52
 msgid "Translate Home X"
-msgstr "Übersetzen Home X"
+msgstr "Verschiebe Home X"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:140
 #: meerk40t/gui/moshi/moshidrivergui.py:54
 msgid "Translate Home Y"
-msgstr "Übersetzen Startseite Y"
+msgstr "Verschiebe Home Y"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:142
 #: meerk40t/gui/moshi/moshidrivergui.py:56
 msgid "Set Home Position based on the current position"
-msgstr "Home-Position basierend auf aktuelle Position einstellen"
+msgstr "Home-Position basierend auf aktueller Position einstellen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:150
 msgid ""
@@ -3376,19 +3376,19 @@ msgstr ""
 msgid ""
 "Whilst the Pulse Grouping option in Operations are set for that operation before "
 "the job is spooled, and cannot be changed on the fly,"
-msgstr ""
+msgstr "Obwohl die Puls-Gruppen-Option in den Arbeitsabläufen vor dem Job-Ablauf eingestellt wird, und nicht on-the-fly verändert werden kann,"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:163
 msgid ""
 "this global Pulse Grouping option is checked as instructions are sent to the "
 "laser and can turned on and off during the burn process."
-msgstr ""
+msgstr "wird diese globale Plus-Gruppen-Option beim Senden zum Laser geprüft, und kann somit während des Brennvorgangs verändert werden."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:166
 msgid ""
 "Because the changes are believed to be small enough to be undetectable, you may "
 "wish to leave this permanently checked."
-msgstr ""
+msgstr "Es wird empfohlen diese Option dauerhaft eingeschaltet zu lassen, da die Veränderungen nur minimal sind."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:173
 #: meerk40t/gui/moshi/moshidrivergui.py:59
@@ -3420,12 +3420,12 @@ msgstr "Allgemeine Optionen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:197
 msgid "Write Buffer"
-msgstr ""
+msgstr "Schreib-Puffer"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:200
 #: meerk40t/gui/moshi/moshidrivergui.py:68
 msgid "Pulse Planner"
-msgstr ""
+msgstr "Puls-Einstellungen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:203
 #: meerk40t/gui/moshi/moshidrivergui.py:71
@@ -3435,7 +3435,7 @@ msgstr "Home-Position verschieben"
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:208
 #: meerk40t/gui/moshi/moshidrivergui.py:76
 msgid "Configuration"
-msgstr ""
+msgstr "Konfiguration"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:214
 msgid "Board Setup"
@@ -3450,7 +3450,7 @@ msgstr "mil"
 
 #: meerk40t/gui/moshi/moshicontrollergui.py:34
 msgid "Sends Stop command"
-msgstr ""
+msgstr "Sendet Stop-Kommando"
 
 #: meerk40t/gui/moshi/moshicontrollergui.py:37
 msgid "Free Motor"
@@ -3466,7 +3466,7 @@ msgstr ""
 
 #: meerk40t/gui/moshi/moshidrivergui.py:44
 msgid "Moshiboard-Prefererences"
-msgstr ""
+msgstr "Moshiboard-Einstellungen"
 
 #: meerk40t/gui/panes/camerapanel.py:228
 msgid "Update Background"
@@ -6456,7 +6456,7 @@ msgstr ""
 #: meerk40t/device/moshi/moshidevice.py:95
 #: meerk40t/gui/lhystudios/lhystudioscontrollergui.py:602
 msgid "Hold Controller"
-msgstr "Halten Sie den Controller gedrückt"
+msgstr "Halten Sie den Controller an"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:362
 #: meerk40t/device/moshi/moshidevice.py:106
@@ -6466,23 +6466,23 @@ msgstr "Controller fortsetzen"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:368
 msgid "Lhystudios Channel Resumed."
-msgstr ""
+msgstr "Lhystudios Kanal fortgesetzt."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:371
 msgid "Connects USB"
-msgstr ""
+msgstr "Verbindet mit USB"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:376
 msgid "CH341 Opened."
-msgstr ""
+msgstr "CH341 geöffnet."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:379
 msgid "Disconnects USB"
-msgstr ""
+msgstr "Von USB trennen"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:384
 msgid "CH341 Closed."
-msgstr ""
+msgstr "CH341 geschlossen."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:387
 msgid "Reset USB device"
@@ -6704,7 +6704,7 @@ msgstr "Inkspace konnte nicht in den Standard-Installations-Verzeichnissen gefun
 
 #: meerk40t/extra/inkscape.py:203
 msgid "invoke inkscape to convert elements"
-msgstr "Rufe Inkscape uaf, um Elemente zu konvertieren"
+msgstr "Rufe Inkscape auf, um Elemente zu konvertieren"
 
 #: meerk40t/extra/pathoptimize.py:10
 msgid "optimize <type>"
@@ -6712,31 +6712,31 @@ msgstr "Optimiere <type>"
 
 #: meerk40t/extra/pathoptimize.py:17
 msgid "Optimizations: cut_inner, travel, cut_travel"
-msgstr ""
+msgstr "Optimierungen: cut_inner, travel, cut_travel"
 
 #: meerk40t/extra/pathoptimize.py:27
 #, python-format
 msgid "Travel Optimizing: %f"
-msgstr ""
+msgstr "Bewegungs-Optimierung: %f"
 
 #: meerk40t/extra/pathoptimize.py:38
 #, python-format
 msgid "Optimized: %f"
-msgstr ""
+msgstr "Optimiert: %f"
 
 #: meerk40t/extra/pathoptimize.py:42
 #, python-format
 msgid "Cut Travel Initial: %f"
-msgstr ""
+msgstr "Bewegung beim Schneiden zu Beginn: %f"
 
 #: meerk40t/extra/pathoptimize.py:51
 #, python-format
 msgid "Cut Travel Optimized: %f"
-msgstr ""
+msgstr "Bewegung beim Schneiden nach Optimierung: %f"
 
 #: meerk40t/extra/pathoptimize.py:55
 msgid "Optimization not found."
-msgstr ""
+msgstr "Keine Optimierungen gefunden"
 
 #: meerk40t/extra/vectrace.py:10 meerk40t/image/imagetools.py:94
 msgid "return paths around image"
