@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+from .units import UNITS_PER_MM
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -27,8 +28,6 @@ All CutObjects have a .start() .end() and .generator() functions. They also have
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
-
-MILS_IN_MM = 39.3701
 
 
 class LaserSettings:
@@ -493,7 +492,7 @@ class CutCode(CutGroup):
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
             if curr.settings.speed:
-                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+                distance += (curr.length() / UNITS_PER_MM) / curr.settings.speed
         return distance
 
     @classmethod
