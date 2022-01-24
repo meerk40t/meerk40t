@@ -329,12 +329,6 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def is_burned(self):
-        for c in self:
-            if c.burns_done != c.passes:
-                return False
-        return True
-
     def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
         """
         Candidates are CutObjects:
