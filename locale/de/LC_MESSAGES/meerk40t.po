@@ -8,17 +8,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-09-11 02:52-0700\n"
-"PO-Revision-Date: 2021-09-11 03:17-0700\n"
+"POT-Creation-Date: 22-01-25 04:44UTC\n"
+"PO-Revision-Date: 22-01-25 04:44UTC\n"
+"Last-Translator: \n"
 "Language: de\n"
 "Language-Team: de <LL@li.org, JP>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
-"Last-Translator: \n"
-"X-Generator: Poedit 2.4.2\n"
+"Generated-By: Poboy 0.0.1\n"
 
 #: meerk40t/gui/about.py:22
 #, python-format
@@ -1736,10 +1735,6 @@ msgstr "Aussteuerung Rot-Anteil"
 #: meerk40t/gui/rasterwizard.py:1100
 msgid "Red Factor"
 msgstr "Rot Anteil"
-
-#: meerk40t/gui/rasterwizard.py:1101
-msgid "Aussteuerung Grün-Anteil"
-msgstr "Grüne Komponentensteuerung"
 
 #: meerk40t/gui/rasterwizard.py:1102
 msgid "Green Factor"
@@ -5493,11 +5488,6 @@ msgstr "Skaliere %s%%"
 msgid "Rotate"
 msgstr "Drehen"
 
-#: meerk40t/core/elements.py:4890
-#, python-format
-msgid "Rotate %sÂ°"
-msgstr "Drehe um %s°"
-
 #: meerk40t/core/elements.py:4904
 msgid "Reify User Changes"
 msgstr "Benutzeränderungen überprüfen"
@@ -5554,14 +5544,6 @@ msgstr "Horizontal spiegeln"
 #: meerk40t/core/elements.py:5010
 msgid "Flip vertical"
 msgstr ""
-
-#: meerk40t/core/elements.py:5016
-msgid "Rotate 90Â° CW"
-msgstr "Drehe 90° nach rechts"
-
-#: meerk40t/core/elements.py:5022
-msgid "Rotate 90Â° CCW"
-msgstr "Drehe 90° nach links"
 
 #: meerk40t/core/elements.py:5028
 msgid "Save output.png"
@@ -6683,10 +6665,6 @@ msgstr "Inkscape-Dateiname fn - Dateiname nicht angegeben"
 msgid "inkscape filename %s - file not found"
 msgstr "Inkscape-Dateiname %s - Datei nicht vorhanden"
 
-#: meerk40t/extra/inkscape.py:128
-msgid "Inkscape Version   - get the inkscape version"
-msgstr "Inkscape-Version - hole die Versionsnummer"
-
 #: meerk40t/extra/inkscape.py:146
 msgid "inkscape locate    - set the path to inkscape on your computer"
 msgstr "Suche Inkscape - bestimmt das Verzeichnis, in dem Imkscape zu finden ist"
@@ -7152,3 +7130,51 @@ msgstr ""
 #: meerk40t/image/imagetools.py:1007
 msgid "halftone the provided image"
 msgstr ""
+#: meerk40t/gui/camerainteface.py:201
+msgid "Export Snapsnot"
+msgstr ""
+
+#: meerk40t/gui/rasterwizard.py:1101
+msgid "Green component control"
+msgstr ""
+
+#: meerk40t/gui/wxmeerk40t.py:1723
+msgid "Zoom &In\tCtrl-+"
+msgstr ""
+
+#: meerk40t/core/elements.py:2253
+msgid "Deleting…"
+msgstr ""
+
+#: meerk40t/core/elements.py:4890
+#, python-format
+msgid "Rotate %s°"
+msgstr "Drehe um %s°"
+
+#: meerk40t/core/elements.py:5016
+msgid "Rotate 90° CW"
+msgstr "Drehe 90° nach rechts"
+
+#: meerk40t/core/elements.py:5022
+msgid "Rotate 90° CCW"
+msgstr "Drehe 90° nach links"
+
+#: meerk40t/extra/inkscape.py:128
+msgid "inkscape version   - get the inkscape version"
+msgstr "Inkscape-Version - hole die Versionsnummer"
+
+#~ msgid "Aussteuerung Grün-Anteil"
+#~ msgstr "Grüne Komponentensteuerung"
+
+#~ msgid "Rotate %sÂ°"
+#~ msgstr "Drehe um %s°"
+
+#~ msgid "Rotate 90Â° CW"
+#~ msgstr "Drehe 90° nach rechts"
+
+#~ msgid "Rotate 90Â° CCW"
+#~ msgstr "Drehe 90° nach links"
+
+#~ msgid "Inkscape Version   - get the inkscape version"
+#~ msgstr "Inkscape-Version - hole die Versionsnummer"
+

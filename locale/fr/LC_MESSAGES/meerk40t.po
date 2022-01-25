@@ -7,17 +7,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-09-11 02:52-0700\n"
-"PO-Revision-Date: 2021-09-11 03:16-0700\n"
+"POT-Creation-Date: 22-01-25 04:44UTC\n"
+"PO-Revision-Date: 22-01-25 04:44UTC\n"
+"Last-Translator: \n"
 "Language: fr\n"
 "Language-Team: fr <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
-"Last-Translator: \n"
-"X-Generator: Poedit 2.4.2\n"
+"Generated-By: Poboy 0.0.1\n"
 
 #: meerk40t/gui/about.py:22
 #, python-format
@@ -7117,3 +7116,7 @@ msgstr ""
 #: meerk40t/image/imagetools.py:1007
 msgid "halftone the provided image"
 msgstr ""
+#: meerk40t/gui/camerainteface.py:201
+msgid "Export Snapsnot"
+msgstr ""
+
