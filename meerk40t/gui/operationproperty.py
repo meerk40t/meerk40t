@@ -52,7 +52,7 @@ class OperationPropertyPanel(wx.Panel):
         self.radio_directional_raster = wx.RadioBox(
             self.raster_panel,
             wx.ID_ANY,
-            _("Directional Raster"),
+            _("Directional Raster:"),
             choices=[_("Bidirectional"), _("Unidirectional")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
@@ -500,27 +500,27 @@ class OperationPropertyPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         extras_sizer = wx.BoxSizer(wx.VERTICAL)
         passes_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Passes")), wx.VERTICAL
+            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Passes:")), wx.VERTICAL
         )
         sizer_22 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_ppi_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Advanced PPI")),
+            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Advanced PPI:")),
             wx.HORIZONTAL,
         )
         sizer_19 = wx.BoxSizer(wx.VERTICAL)
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Speedcode Advanced")),
+            wx.StaticBox(self.advanced_panel, wx.ID_ANY, _("Speedcode Advanced:")),
             wx.VERTICAL,
         )
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         param_sizer = wx.BoxSizer(wx.VERTICAL)
         raster_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.raster_panel, wx.ID_ANY, _("Raster")), wx.VERTICAL
+            wx.StaticBox(self.raster_panel, wx.ID_ANY, _("Raster:")), wx.VERTICAL
         )
         sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self.raster_panel, wx.ID_ANY, _("Start Preference")),
+            wx.StaticBox(self.raster_panel, wx.ID_ANY, _("Start Preference:")),
             wx.VERTICAL,
         )
         sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
@@ -530,10 +530,10 @@ class OperationPropertyPanel(wx.Panel):
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
         power_sizer = wx.StaticBoxSizer(self.power_label, wx.HORIZONTAL)
         speed_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.main_panel, wx.ID_ANY, _("Speed (mm/s)")), wx.HORIZONTAL
+            wx.StaticBox(self.main_panel, wx.ID_ANY, _("Speed (mm/s):")), wx.HORIZONTAL
         )
         layer_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self.main_panel, wx.ID_ANY, _("Layer")), wx.HORIZONTAL
+            wx.StaticBox(self.main_panel, wx.ID_ANY, _("Layer:")), wx.HORIZONTAL
         )
         layers_sizer = wx.BoxSizer(wx.VERTICAL)
         # layers_sizer.Add(self.button_add_layer, 0, 0, 0)
@@ -846,9 +846,9 @@ class OperationPropertyPanel(wx.Panel):
 
     def update_power_label(self):
         if self.operation.settings.power <= 100:
-            self.power_label.SetLabel(_("Power (ppi)") + "⚠️")
+            self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         else:
-            self.power_label.SetLabel(_("Power (ppi)"))
+            self.power_label.SetLabel(_("Power (ppi):"))
 
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:

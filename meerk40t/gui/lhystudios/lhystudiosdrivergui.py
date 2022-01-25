@@ -201,28 +201,28 @@ class LhystudiosConfigurationPanel(wx.Panel):
         # begin wxGlade: LhystudiosDriver.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_general = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("General Options")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("General Options:")), wx.HORIZONTAL
         )
         sizer_buffer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Write Buffer")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Write Buffer:")), wx.HORIZONTAL
         )
         sizer_6 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Pulse Planner")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Pulse Planner:")), wx.HORIZONTAL
         )
         sizer_home = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position:")), wx.HORIZONTAL
         )
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_config = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Configuration:")), wx.HORIZONTAL
         )
         sizer_3 = wx.BoxSizer(wx.VERTICAL)
         sizer_16 = wx.BoxSizer(wx.VERTICAL)
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
 
         sizer_board = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Board Setup:")), wx.HORIZONTAL
         )
         sizer_board_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_board_2 = wx.BoxSizer(wx.VERTICAL)
