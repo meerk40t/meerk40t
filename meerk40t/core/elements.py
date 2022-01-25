@@ -6,6 +6,7 @@ from copy import copy
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
+    COMMAND_CONSOLE,
     COMMAND_HOME,
     COMMAND_LASER_OFF,
     COMMAND_LASER_ON,
@@ -204,8 +205,8 @@ class Node:
             if drop_node.type == "opnode":
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type == "cmdop":
-            if drop_node.type == "op" or drop_node.type == "cmdop":
+        elif drag_node.type in ("cmdop", "consoleop"):
+            if drop_node.type in ("op", "cmdop", "consoleop"):
                 drop_node.insert_sibling(drag_node)
         elif drag_node.type == "op":
             if drop_node.type == "op":
@@ -1163,7 +1164,12 @@ class LaserOperation(Node):
                         isinstance(sp[-1], Close)
                         or abs(sp.z_point - sp.current_point) <= closed_distance
                     )
-                    group = CutGroup(None, closed=closed, settings=settings)
+                    group = CutGroup(
+                        None,
+                        closed=closed,
+                        settings=settings,
+                        passes=passes,
+                    )
                     group.path = Path(subpath)
                     group.original_op = self._operation
                     for seg in subpath:
@@ -1172,12 +1178,24 @@ class LaserOperation(Node):
                         elif isinstance(seg, Close):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                        parent=group,
+                                    )
                                 )
                         elif isinstance(seg, Line):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                        parent=group,
+                                    )
                                 )
                         elif isinstance(seg, QuadraticBezier):
                             group.append(
@@ -1187,6 +1205,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                         elif isinstance(seg, CubicBezier):
@@ -1198,6 +1217,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                     if len(group) > 0:
@@ -1350,6 +1370,48 @@ class CutNode(Node):
         yield from self.object
 
 
+class ConsoleOperation(Node):
+    """
+    ConsoleOperation contains a console command (as a string) to be run.
+
+    NOTE: This will eventually replace ConsoleOperation.
+
+    Node type "consoleop"
+    """
+
+    def __init__(self, command, **kwargs):
+        super().__init__(type="consoleop")
+        self.command = command
+        self.output = True
+        self.operation = "Console"
+
+    def set_command(self, command):
+        self.command = command
+        self.label = command
+
+    def __repr__(self):
+        return "ConsoleOperation('%s', '%s')" % (self.command)
+
+    def __str__(self):
+        parts = list()
+        if not self.output:
+            parts.append("(Disabled)")
+        parts.append(self.command)
+        return " ".join(parts)
+
+    def __copy__(self):
+        return ConsoleOperation(self.command)
+
+    def __len__(self):
+        return 1
+
+    def generate(self):
+        command = self.command
+        if not command.endswith("\n"):
+            command += "\n"
+        yield (COMMAND_CONSOLE, command)
+
+
 class CommandOperation(Node):
     """
     CommandOperation is a basic command operation. It contains nothing except a single command to be executed.
@@ -1438,6 +1500,7 @@ class RootNode(Node):
         self.bootstrap = {
             "op": LaserOperation,
             "cmdop": CommandOperation,
+            "consoleop": ConsoleOperation,
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem": ElemNode,
@@ -4575,6 +4638,7 @@ class Elemental(Modifier):
             "op",
             "opnode",
             "cmdop",
+            "consoleop",
             "lasercode",
             "cutcode",
             "blob",
@@ -4588,6 +4652,11 @@ class Elemental(Modifier):
         @self.tree_operation(_("Operation properties"), node_type="op", help="")
         def operation_property(node, **kwargs):
             self.context.open("window/OperationProperty", self.context.gui, node=node)
+
+        @self.tree_separator_after()
+        @self.tree_operation(_("Edit"), node_type="consoleop", help="")
+        def edit_console_command(node, **kwargs):
+            self.context.open("window/ConsoleProperty", self.context.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
@@ -4629,7 +4698,7 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop"), help="")
+        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
@@ -4825,7 +4894,7 @@ class Elemental(Modifier):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "lasercode", "cutcode", "blob"),
+            node_type=("op", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
             help="",
         )
         def remove_n_ops(node, **kwargs):
@@ -5013,6 +5082,15 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
+        def append_operation_interrupt_console(node, pos=None, **kwargs):
+            self.context.elements.op_branch.add(
+                ConsoleOperation("interrupt \"Spooling was interrupted\""),
+                type="consoleop",
+                pos=pos,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
@@ -5031,6 +5109,7 @@ class Elemental(Modifier):
             append_operation_home(node, **kwargs)
             append_operation_beep(node, **kwargs)
             append_operation_interrupt(node, **kwargs)
+            append_operation_interrupt_console(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
@@ -5214,6 +5293,11 @@ class Elemental(Modifier):
         @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
+        def add_operation_interrupt_console(node, **kwargs):
+            append_operation_interrupt_console(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
@@ -5647,7 +5731,7 @@ class Elemental(Modifier):
                         if isinstance(value, Color):
                             value = value.argb
                         op_set.write_persistent(key, value)
-            elif isinstance(op, CommandOperation):
+            elif isinstance(op, CommandOperation) or isinstance(op, ConsoleOperation):
                 for key in dir(op):
                     value = getattr(op, key)
                     if key.startswith("_"):
@@ -5682,6 +5766,11 @@ class Elemental(Modifier):
                 name = op_setting_context.get_persistent_value(str, "label")
                 command = op_setting_context.get_persistent_value(int, "command")
                 op = CommandOperation(name, command)
+                op_setting_context.load_persistent_object(op)
+            elif op_type == "consoleop":
+                # name = op_setting_context.get_persistent_value(str, "label")
+                command = op_setting_context.get_persistent_value(str, "command")
+                op = ConsoleOperation(command)
                 op_setting_context.load_persistent_object(op)
             else:
                 continue
@@ -5771,7 +5860,7 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(types=("op", "cmdop"), depth=1, **kwargs):
+        for item in operations.flat(types=("op", "cmdop", "consoleop"), depth=1, **kwargs):
             yield item
 
     def elems(self, **kwargs):

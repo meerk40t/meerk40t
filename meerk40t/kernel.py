@@ -149,6 +149,8 @@ class Context:
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
+        if len(data) and data[-1] != "\n":
+            data += "\n"
         return self._kernel.console(data)
 
     def boot(self, channel: "Channel" = None):
@@ -1499,6 +1501,8 @@ class Kernel:
                 k = k.split("/")[-1]
             dictionary[k] = item
         return dictionary
+
+    read_persistent_string_dict = load_persistent_string_dict
 
     def keylist(self, path: str) -> Generator[str, None, None]:
         """

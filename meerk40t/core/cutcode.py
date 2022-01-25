@@ -159,7 +159,7 @@ class CutObject:
         self.next = None
         self.previous = None
         self.passes = passes
-        self.burns_done = 0
+        self._burns_done = 0
 
         self.mode = None
         self.inside = None
@@ -167,9 +167,29 @@ class CutObject:
         self.first = False
         self.last = False
         self.closed = False
-        self.path = None
         self.original_op = None
         self.pass_index = -1
+
+    @property
+    def burns_done(self):
+        return self._burns_done
+
+    @burns_done.setter
+    def burns_done(self, burns):
+        """
+        Maintain parent burns_done
+        """
+        self._burns_done = burns
+        if self.parent is not None:
+            # If we are resetting then we are going to be resetting all
+            # so don't bother looping
+            if burns == 0:
+                self.parent._burns_done = 0
+                return
+            for o in self.parent:
+                burns = min(burns, o._burns_done)
+            self.parent.burn_started = True
+            self.parent._burns_done = burns
 
     def reversible(self):
         return True
@@ -236,8 +256,10 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done > 0:
+            if isinstance(c, CutGroup):
+                if c.burn_started:
+                    return True
+            elif c.burns_done == c.passes:
                     return True
         return False
 
@@ -245,9 +267,8 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done < pp.passes:
-                    return True
+            if c.burns_done < c.passes:
+                return True
         return False
 
     def flat(self):
@@ -269,12 +290,13 @@ class CutGroup(list, CutObject, ABC):
 
     def __init__(
         self, parent, children=(),
-        settings=None, constrained=False, closed=False
+        settings=None, passes=1, constrained=False, closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings)
+        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
         self.closed = closed
         self.constrained = constrained
+        self.burn_started = False
 
     def __copy__(self):
         return CutGroup(self.parent, self)
@@ -313,12 +335,6 @@ class CutGroup(list, CutObject, ABC):
                 continue
             for s in c.flat():
                 yield s
-
-    def is_burned(self):
-        for c in self:
-            if c.burns_done != c.passes:
-                return False
-        return True
 
     def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
         """
@@ -364,11 +380,12 @@ class CutGroup(list, CutObject, ABC):
                 continue
             # If we are only burning complete subpaths then
             # if this is not a closed path we should only yield first and last segments
-            # Planner will need to determine which end of the subpath is yoielded
+            # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
             if (
                 complete_path
                 and not grp.closed
+                and isinstance(grp, CutGroup)
             ):
                 if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
@@ -575,8 +592,8 @@ class CutCode(CutGroup):
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
 
     def generator(self):
@@ -586,8 +603,8 @@ class LineCut(CutObject):
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
         self._control = control_point
 
@@ -614,8 +631,8 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -656,10 +673,10 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
-        CutObject.__init__(self, settings=settings, passes=passes)
+    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
-
+        self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.tx = tx
         self.ty = ty
@@ -765,8 +782,8 @@ class RawCut(CutObject):
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
 
     def __len__(self):
