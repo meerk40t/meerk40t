@@ -1164,7 +1164,12 @@ class LaserOperation(Node):
                         isinstance(sp[-1], Close)
                         or abs(sp.z_point - sp.current_point) <= closed_distance
                     )
-                    group = CutGroup(None, closed=closed, settings=settings)
+                    group = CutGroup(
+                        None,
+                        closed=closed,
+                        settings=settings,
+                        passes=passes,
+                    )
                     group.path = Path(subpath)
                     group.original_op = self._operation
                     for seg in subpath:
@@ -1173,12 +1178,24 @@ class LaserOperation(Node):
                         elif isinstance(seg, Close):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                        parent=group,
+                                    )
                                 )
                         elif isinstance(seg, Line):
                             if seg.start != seg.end:
                                 group.append(
-                                    LineCut(seg.start, seg.end, settings=settings, passes=passes)
+                                    LineCut(
+                                        seg.start,
+                                        seg.end,
+                                        settings=settings,
+                                        passes=passes,
+                                        parent=group,
+                                    )
                                 )
                         elif isinstance(seg, QuadraticBezier):
                             group.append(
@@ -1188,6 +1205,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                         elif isinstance(seg, CubicBezier):
@@ -1199,6 +1217,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                     if len(group) > 0:
