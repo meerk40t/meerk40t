@@ -1,6 +1,7 @@
 import functools
 import os.path
 import re
+import wx
 from copy import copy
 
 from ..device.lasercommandconstants import (
@@ -53,6 +54,7 @@ from .cutcode import (
     QuadCut,
     RasterCut,
 )
+_ = wx.GetTranslation
 
 
 def plugin(kernel, lifecycle=None):
@@ -1507,8 +1509,8 @@ class RootNode(Node):
             "opnode": OpNode,
             "cutcode": CutNode,
         }
-        self.add(type="branch ops", label="Operations")
-        self.add(type="branch elems", label="Elements")
+        self.add(type="branch ops", label=_("Operations"))
+        self.add(type="branch elems", label=_("Elements"))
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
