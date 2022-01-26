@@ -200,8 +200,6 @@ class PositionPanel(wx.Panel):
 
     def on_text_w_enter(self, event):
         event.Skip()
-        original = self.position_w
-
         if self.position_units == 4:
             ratio_w = float(self.text_w.GetValue()) / 100.0
             w = self.position_w * ratio_w
@@ -247,16 +245,16 @@ class PositionPanel(wx.Panel):
                     )
                 else:
                     return
-        if abs(w) < 1e-8:
-            self.text_w.SetValue(str(self.position_w))
+        if abs(w) < 1e-8 or abs(self.position_w - w) < 1e-1:
+            self._update_position()
             return
+        original = self.position_w
         self.position_w = w
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
+                self._update_position()
                 return
             self.position_h *= self.position_w / original
-        if self.position_w == 0:
-            return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -274,7 +272,6 @@ class PositionPanel(wx.Panel):
 
     def on_text_h_enter(self, event):
         event.Skip()
-        original = self.position_h
         if self.position_units == 4:
             ratio_w = float(self.text_h.GetValue()) / 100.0
             h = self.position_h * ratio_w
@@ -315,16 +312,16 @@ class PositionPanel(wx.Panel):
                     )
                 else:
                     return
-        if abs(h) < 1e-8:
-            self.text_h.SetValue(str(self.position_h))
+        if abs(h) < 1e-8 or abs(self.position_h - h) < 1e-1:
+            self._update_position()
             return
+        original = self.position_h
         self.position_h = h
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
+                self._update_position()
                 return
             self.position_w *= self.position_h / original
-        if self.position_h == 0:
-            return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -341,20 +338,20 @@ class PositionPanel(wx.Panel):
         self._update_position()
 
     def on_text_x_enter(self, event=None):
+        event.Skip()
         try:
             x = float(self.text_x.GetValue())
-            self.position_x = x
         except ValueError:
             if self.position_units == 0:
                 x = Length(self.text_x.GetValue()).to_mm(
                     ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
                 )
-                self.position_x = x.amount
+                x = x.amount
             elif self.position_units == 1:
                 x = Length(self.text_x.GetValue()).to_cm(
                     ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
                 )
-                self.position_x = x.amount
+                x = x.amount
             elif self.position_units == 2:
                 x = Length(self.text_x.GetValue()).to_inch(
                     ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
@@ -364,10 +361,14 @@ class PositionPanel(wx.Panel):
                 x = Length(self.text_x.GetValue()).value(
                     ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
                 )
-                self.position_x = x.amount
+                x = x.amount
             elif self.position_units == 4:
                 ratio_x = float(self.text_x.GetValue()) / 100.0
-                self.position_x *= ratio_x
+                x = self.position_x * ratio_x
+        if abs(x - self.position_x) < 1e-1:
+            self._update_position()
+            return
+        self.position_x = x
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -382,36 +383,39 @@ class PositionPanel(wx.Panel):
             )
         )
         self._update_position()
-        event.Skip()
 
     def on_text_y_enter(self, event=None):
+        event.Skip()
         try:
             y = float(self.text_y.GetValue())
-            self.position_y = y
         except ValueError:
             if self.position_units == 0:
                 y = Length(self.text_y.GetValue()).to_mm(
                     ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
                 )
-                self.position_y = y.amount
+                y = y.amount
             elif self.position_units == 1:
                 y = Length(self.text_y.GetValue()).to_cm(
                     ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
                 )
-                self.position_y = y.amount
+                y = y.amount
             elif self.position_units == 2:
                 y = Length(self.text_y.GetValue()).to_inch(
                     ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
                 )
-                self.position_y = y.amount
+                y = y.amount
             elif self.position_units == 3:
                 y = Length(self.text_y.GetValue()).value(
                     ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
                 )
-                self.position_y = y.amount
+                y = y.amount
             elif self.position_units == 4:
                 ratio_y = float(self.text_y.GetValue()) / 100.0
-                self.position_y *= ratio_y
+                y = self.position_y * ratio_y
+        if abs(y - self.position_y) < 1e-1:
+            self._update_position()
+            return
+        self.position_y = y
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -426,7 +430,6 @@ class PositionPanel(wx.Panel):
             )
         )
         self._update_position()
-        event.Skip()
 
     def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
         self.position_units = self.combo_box_units.GetSelection()

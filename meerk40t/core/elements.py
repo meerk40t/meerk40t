@@ -3952,7 +3952,9 @@ class Elemental(Modifier):
         @context.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner")
         )
-        @context.console_argument("width", type=Length, help=_("new width of selected"))
+        @context.console_argument(
+            "width", type=Length, help=_("new width of selected")
+        )
         @context.console_argument(
             "height", type=Length, help=_("new height of selected")
         )
@@ -3962,10 +3964,14 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_resize(command, x_pos, y_pos, width, height, data=None, **kwargs):
+        def element_resize(command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs):
             if height is None:
                 raise SyntaxError
             try:
+                area = self.selected_area()
+                if area is None:
+                    channel(_("resize: nothing selected"))
+                    return
                 x_pos = x_pos.value(
                     ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
@@ -3978,17 +3984,17 @@ class Elemental(Modifier):
                 height = height.value(
                     ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
                 )
-                area = self.selected_area()
-                if area is None:
-                    return
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
+                if w == 0 or h == 0: # dot
+                    channel(_("resize: cannot resize a dot"))
+                    return
                 sx = width / w
                 sy = height / h
-                if abs(sx - 1.0) < 1e-1:
-                    sx = 1.0
-                if abs(sy - 1.0) < 1e-1:
-                    sy = 1.0
+                # Don't do anything if scale is 1
+                if sx == 1.0 and sy == 1.0:
+                    channel(_("resize: nothing to do - scale factors 1"))
+                    return
 
                 m = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
@@ -3998,10 +4004,12 @@ class Elemental(Modifier):
                     data = list(self.elems(emphasized=True))
                 for e in data:
                     try:
-                        if e.lock and (not sx == 1.0 or not sy == 1.0):
-                            continue
+                        if e.lock:
+                            channel(_("resize: cannot resize a locked image"))
+                            return
                     except AttributeError:
                         pass
+                for e in data:
                     e *= m
                     if hasattr(e, "node"):
                         e.node.modified()
