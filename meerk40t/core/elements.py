@@ -190,62 +190,102 @@ class Node:
             if drop_node.type == "op":
                 # Disallow drop of non-image elems onto an Image op.
                 # Disallow drop of image elems onto a Dot op.
-                # Dragging element into operation adds that element to the op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dot")
+                ):
+                    return False
+                # Dragging element onto operation adds that element to the op.
                 drop_node.add(drag_node.object, type="opnode", pos=0)
                 return True
             elif drop_node.type == "opnode":
+                op = drop_node.parent
                 # Disallow drop of non-image elems onto an opnode inside an Image op.
                 # Disallow drop of image elems onto an opnode inside a Dot op.
-                drop_index = drop_node.parent.children.index(drop_node)
-                drop_node.parent.add(drag_node.object, type="opnode", pos=drop_index)
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dot")
+                ):
+                    return False
+                # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
+                drop_index = op.children.index(drop_node)
+                op.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
             elif drop_node.type == "group":
+                # Dragging element onto a group moves it to the group node.
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type == "opnode":
             if drop_node.type == "op":
                 # Disallow drop of non-image opnodes onto an Image op.
                 # Disallow drop of image opnodes onto a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dot")
+                ):
+                    return False
+                # Move an opnode to end of op.
                 drop_node.append_child(drag_node)
                 return True
             if drop_node.type == "opnode":
+                op = drop_node.parent
                 # Disallow drop of non-image opnodes onto an opnode inside an Image op.
                 # Disallow drop of image opnodes onto an opnode inside a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dot")
+                ):
+                    return False
+                # Move an opnode to after another opnode.
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type in ("cmdop", "consoleop"):
+        elif drag_node.type in ("op", "cmdop", "consoleop"):
             if drop_node.type in ("op", "cmdop", "consoleop"):
-                drop_node.insert_sibling(drag_node)
-                return True
-        elif drag_node.type == "op":
-            if drop_node.type == "op":
-                # Dragging operation to different operation.
+                # Move operation to a different position.
                 drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type == "branch ops":
-                # Dragging operation to op branch.
+                # Dragging operation to op branch to effectively move to bottom.
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type in "file":
             if drop_node.type == "op":
-                # Disallow drop of non-image elems onto an Image op.
-                # Disallow drop of image elems onto a Dot op.
+                some_nodes = False
                 for e in drag_node.flat("elem"):
+                    # Disallow drop of non-image elems onto an Image op.
+                    # Disallow drop of image elems onto a Dot op.
+                    if (
+                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dot")
+                    ):
+                        continue
+                    # Add element to operation
                     drop_node.add(e.object, type="opnode")
-                return True
+                    some_nodes = True
+                return some_nodes
         elif drag_node.type == "group":
             if drop_node.type == "elem":
+                # Move a group
                 drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type in ("group", "file"):
+                # Move a group
                 drop_node.append_child(drag_node)
                 return True
             elif drop_node.type == "op":
-                # Disallow drop of non-image elems onto an Image op.
-                # Disallow drop of image elems onto a Dot op.
+                some_nodes = False
                 for e in drag_node.flat("elem"):
+                    # Disallow drop of non-image elems onto an Image op.
+                    # Disallow drop of image elems onto a Dot op.
+                    if (
+                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dot")
+                    ):
+                        continue
+                    # Add element to operation
                     drop_node.add(e.object, type="opnode")
-                return True
+                    some_nodes = True
+                return some_nodes
         return False
 
     def reverse(self):
