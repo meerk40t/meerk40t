@@ -188,10 +188,14 @@ class Node:
         drop_node = self
         if drag_node.type == "elem":
             if drop_node.type == "op":
+                # Disallow drop of non-image elems onto an Image op.
+                # Disallow drop of image elems onto a Dot op.
                 # Dragging element into operation adds that element to the op.
                 drop_node.add(drag_node.object, type="opnode", pos=0)
                 return True
             elif drop_node.type == "opnode":
+                # Disallow drop of non-image elems onto an opnode inside an Image op.
+                # Disallow drop of image elems onto an opnode inside a Dot op.
                 drop_index = drop_node.parent.children.index(drop_node)
                 drop_node.parent.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
@@ -200,14 +204,19 @@ class Node:
                 return True
         elif drag_node.type == "opnode":
             if drop_node.type == "op":
+                # Disallow drop of non-image opnodes onto an Image op.
+                # Disallow drop of image opnodes onto a Dot op.
                 drop_node.append_child(drag_node)
                 return True
             if drop_node.type == "opnode":
+                # Disallow drop of non-image opnodes onto an opnode inside an Image op.
+                # Disallow drop of image opnodes onto an opnode inside a Dot op.
                 drop_node.insert_sibling(drag_node)
                 return True
         elif drag_node.type in ("cmdop", "consoleop"):
             if drop_node.type in ("op", "cmdop", "consoleop"):
                 drop_node.insert_sibling(drag_node)
+                return True
         elif drag_node.type == "op":
             if drop_node.type == "op":
                 # Dragging operation to different operation.
@@ -216,8 +225,11 @@ class Node:
             elif drop_node.type == "branch ops":
                 # Dragging operation to op branch.
                 drop_node.append_child(drag_node)
+                return True
         elif drag_node.type in "file":
             if drop_node.type == "op":
+                # Disallow drop of non-image elems onto an Image op.
+                # Disallow drop of image elems onto a Dot op.
                 for e in drag_node.flat("elem"):
                     drop_node.add(e.object, type="opnode")
                 return True
@@ -229,9 +241,12 @@ class Node:
                 drop_node.append_child(drag_node)
                 return True
             elif drop_node.type == "op":
+                # Disallow drop of non-image elems onto an Image op.
+                # Disallow drop of image elems onto a Dot op.
                 for e in drag_node.flat("elem"):
                     drop_node.add(e.object, type="opnode")
                 return True
+        return False
 
     def reverse(self):
         self._children.reverse()
