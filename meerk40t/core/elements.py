@@ -1507,8 +1507,8 @@ class RootNode(Node):
             "opnode": OpNode,
             "cutcode": CutNode,
         }
-        self.add(type="branch ops", label="Operations")
-        self.add(type="branch elems", label="Elements")
+        self.add(type="branch ops", label=context._("Operations"))
+        self.add(type="branch elems", label=context._("Elements"))
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
