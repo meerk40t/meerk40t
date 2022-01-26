@@ -192,7 +192,7 @@ class Node:
                 # Disallow drop of image elems onto a Dot op.
                 if (
                     (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dot")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
                 ):
                     return False
                 # Dragging element onto operation adds that element to the op.
@@ -204,7 +204,7 @@ class Node:
                 # Disallow drop of image elems onto an opnode inside a Dot op.
                 if (
                     (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dot")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
                 ):
                     return False
                 # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
@@ -221,7 +221,7 @@ class Node:
                 # Disallow drop of image opnodes onto a Dot op.
                 if (
                     (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dot")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
                 ):
                     return False
                 # Move an opnode to end of op.
@@ -233,7 +233,7 @@ class Node:
                 # Disallow drop of image opnodes onto an opnode inside a Dot op.
                 if (
                     (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dot")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
                 ):
                     return False
                 # Move an opnode to after another opnode.
@@ -256,7 +256,7 @@ class Node:
                     # Disallow drop of image elems onto a Dot op.
                     if (
                         (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dot")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
                     ):
                         continue
                     # Add element to operation
@@ -279,7 +279,7 @@ class Node:
                     # Disallow drop of image elems onto a Dot op.
                     if (
                         (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dot")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
                     ):
                         continue
                     # Add element to operation
