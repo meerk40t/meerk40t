@@ -1544,6 +1544,7 @@ class RootNode(Node):
     """
 
     def __init__(self, context):
+        _ = context._
         super().__init__(None)
         self._root = self
         self.set_label("Project")
@@ -1562,8 +1563,8 @@ class RootNode(Node):
             "opnode": OpNode,
             "cutcode": CutNode,
         }
-        self.add(type="branch ops", label="Operations")
-        self.add(type="branch elems", label="Elements")
+        self.add(type="branch ops", label=_("Operations"))
+        self.add(type="branch elems", label=_("Elements"))
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
