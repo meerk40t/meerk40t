@@ -23,7 +23,7 @@ for full details.
 
 """
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.4004"
+APPLICATION_VERSION = "0.7.4005"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
