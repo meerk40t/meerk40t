@@ -278,13 +278,15 @@ class ScenePanel(wx.Panel):
 
     def on_magnify_mouse(self, event):
         """
-        Magnify Mouse is a Mac Event called with pinch to zoom on a trackpad.
+        Magnify Mouse is a Mac-only Event called with pinch to zoom on a trackpad.
         """
-        magnify = event.GetMagnification()
-        if magnify > 0:
-            self.scene.event(event.GetPosition(), "zoom-in")
-        if magnify < 0:
-            self.scene.event(event.GetPosition(), "zoom-out")
+        magnification = event.GetMagnification()
+        if event.IsGestureStart():
+            self.scene.event(event.GetPosition(), "gesture-start")
+        elif event.IsGestureEnd():
+            self.scene.event(event.GetPosition(), "gesture-end")
+        else:
+            self.scene.event(event.GetPosition(), "zoom {mag}",format(mag=magnification))
 
     def on_gesture(self, event):
         """
@@ -301,7 +303,7 @@ class ScenePanel(wx.Panel):
                 zoom = event.GetZoomFactor()
             except AttributeError:
                 zoom = 1.0
-            self.scene.event(event.GetPosition(), "zoom %f" % zoom)
+            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoon=zoom))
 
     def on_paint(self, event=None):
         """
@@ -1384,7 +1386,7 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "lost":
             return RESPONSE_CONSUME
-        elif str(event_type).startswith("zoom"):
+        elif str(event_type).startswith("zoom "):
             if self._previous_zoom is None:
                 return RESPONSE_CONSUME
             try:
