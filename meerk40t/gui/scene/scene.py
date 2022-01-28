@@ -286,7 +286,9 @@ class ScenePanel(wx.Panel):
         # elif event.IsGestureEnd():
         #     self.scene.event(event.GetPosition(), "gesture-end")
         # else:
-        self.scene.event(event.GetPosition(), "magnify {mag}".format(mag=(1.0 + magnification)))
+        self.scene.event(
+            event.GetPosition(), "magnify {mag}".format(mag=(1.0 + magnification))
+        )
 
     def on_gesture(self, event):
         """
@@ -743,11 +745,15 @@ class Scene(Module, Job):
             ):
                 if previous_top_element is not None:
                     if self.log_events:
-                        self.log_events("Converted %s: %s" % ("hover_end", str(window_pos)))
+                        self.log_events(
+                            "Converted %s: %s" % ("hover_end", str(window_pos))
+                        )
                     previous_top_element.event(window_pos, window_pos, "hover_end")
                 current_widget.event(window_pos, space_pos, "hover_start")
                 if self.log_events:
-                    self.log_events("Converted %s: %s" % ("hover_start", str(window_pos)))
+                    self.log_events(
+                        "Converted %s: %s" % ("hover_start", str(window_pos))
+                    )
                 previous_top_element = current_widget
             if event_type == "leftup" and time.time() - self.time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
@@ -774,6 +780,7 @@ class Scene(Module, Job):
         @return:
         """
         import platform
+
         if cursor == "sizing":
             new_cursor = wx.CURSOR_SIZING
         elif cursor in ("size_nw", "size_se"):
