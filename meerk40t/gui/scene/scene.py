@@ -384,6 +384,7 @@ class Scene(Module, Job):
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
         context.setting(bool, "mouse_wheel_pan", False)
+        context.setting(float, "zoom_factor", 0.1)
         context.setting(int, "fps", 40)
         if context.fps <= 0:
             context.fps = 60
@@ -1304,6 +1305,9 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CHAIN
         if self.aspect:
             return RESPONSE_CONSUME
+        zf = self.scene.context.zoom_factor + 1.0
+        if zf == 0:
+            zf = 1.0
         if event_type == "wheelup" and self.scene.context.mouse_wheel_pan:
             if self.scene.context.mouse_pan_invert:
                 self.scene_widget.matrix.post_translate(0, 25)
@@ -1317,16 +1321,16 @@ class SceneSpaceWidget(Widget):
         elif event_type == "wheelup" or event_type == "wheelup_ctrl":
             if self.scene.context.mouse_zoom_invert:
                 self.scene_widget.matrix.post_scale(
-                    1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+                    1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
                 )
             else:
                 self.scene_widget.matrix.post_scale(
-                    1.1, 1.1, space_pos[0], space_pos[1]
+                    zf, zf, space_pos[0], space_pos[1]
                 )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "zoom-in":
-            self.scene_widget.matrix.post_scale(1.1, 1.1, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_scale(zf, zf, space_pos[0], space_pos[1])
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "rightdown+alt":
@@ -1346,17 +1350,17 @@ class SceneSpaceWidget(Widget):
         elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
             if self.scene.context.mouse_zoom_invert:
                 self.scene_widget.matrix.post_scale(
-                    1.1, 1.1, space_pos[0], space_pos[1]
+                    zf, zf, space_pos[0], space_pos[1]
                 )
             else:
                 self.scene_widget.matrix.post_scale(
-                    1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+                    1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
                 )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "zoom-out":
             self.scene_widget.matrix.post_scale(
-                1.0 / 1.1, 1.0 / 1.1, space_pos[0], space_pos[1]
+                1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
             )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
