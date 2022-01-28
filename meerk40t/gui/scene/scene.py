@@ -1362,16 +1362,16 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(25, 0)
-            else:
                 self.scene_widget.matrix.post_translate(-25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(25, 0)
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "wheelright":
             if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(-25, 0)
-            else:
                 self.scene_widget.matrix.post_translate(25, 0)
+            else:
+                self.scene_widget.matrix.post_translate(-25, 0)
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "middledown":
