@@ -281,12 +281,12 @@ class ScenePanel(wx.Panel):
         Magnify Mouse is a Mac-only Event called with pinch to zoom on a trackpad.
         """
         magnification = event.GetMagnification()
-        if event.IsGestureStart():
-            self.scene.event(event.GetPosition(), "gesture-start")
-        elif event.IsGestureEnd():
-            self.scene.event(event.GetPosition(), "gesture-end")
-        else:
-            self.scene.event(event.GetPosition(), "zoom {mag}",format(mag=magnification))
+        # if event.IsGestureStart():
+        #     self.scene.event(event.GetPosition(), "gesture-start")
+        # elif event.IsGestureEnd():
+        #     self.scene.event(event.GetPosition(), "gesture-end")
+        # else:
+        self.scene.event(event.GetPosition(), "magnify {mag}".format(mag=(1.0 + magnification)))
 
     def on_gesture(self, event):
         """
@@ -1400,6 +1400,15 @@ class SceneSpaceWidget(Widget):
             )
             self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self._previous_zoom = zoom
+            self.scene.context.signal("refresh_scene", 0)
+
+            return RESPONSE_CONSUME
+        elif str(event_type).startswith("magnify "):
+            magnify = float(event_type.split(" ")[1])
+            self.scene_widget.matrix.post_scale(
+                magnify, magnify, space_pos[0], space_pos[1]
+            )
+            self.scene_widget.matrix.post_translate(space_pos[4], space_pos[5])
             self.scene.context.signal("refresh_scene", 0)
 
             return RESPONSE_CONSUME
