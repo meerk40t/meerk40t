@@ -303,7 +303,7 @@ class ScenePanel(wx.Panel):
                 zoom = event.GetZoomFactor()
             except AttributeError:
                 zoom = 1.0
-            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoon=zoom))
+            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoom=zoom))
 
     def on_paint(self, event=None):
         """
