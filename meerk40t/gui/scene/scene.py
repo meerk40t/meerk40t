@@ -1343,10 +1343,10 @@ class SceneSpaceWidget(Widget):
             )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == "zoom-in":
-            self.scene_widget.matrix.post_scale(self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1])
-            self.scene.context.signal("refresh_scene", 0)
-            return RESPONSE_CONSUME
+        # elif event_type == "zoom-in":
+        #     self.scene_widget.matrix.post_scale(self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1])
+        #     self.scene.context.signal("refresh_scene", 0)
+        #     return RESPONSE_CONSUME
         elif event_type == "rightdown+alt":
             self._previous_zoom = 1.0
             self._placement_event = space_pos
@@ -1367,12 +1367,12 @@ class SceneSpaceWidget(Widget):
             )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
-        elif event_type == "zoom-out":
-            self.scene_widget.matrix.post_scale(
-                self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
-            )
-            self.scene.context.signal("refresh_scene", 0)
-            return RESPONSE_CONSUME
+        # elif event_type == "zoom-out":
+        #     self.scene_widget.matrix.post_scale(
+        #         self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
+        #     )
+        #     self.scene.context.signal("refresh_scene", 0)
+        #     return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             self.scene_widget.matrix.post_translate(self.pan_factor, 0)
             self.scene.context.signal("refresh_scene", 0)
