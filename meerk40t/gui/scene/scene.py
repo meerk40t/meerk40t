@@ -1296,6 +1296,32 @@ class SceneSpaceWidget(Widget):
         """
         return HITCHAIN_DELEGATE_AND_HIT
 
+    @property
+    def pan_factor(self):
+        pf = self.scene.context.pan_factor
+        if self.scene.context.mouse_pan_invert:
+            pf = -pf
+        return pf
+
+    @property
+    def zoom_factor(self):
+        zf = self.scene.context.zoom_factor
+        if self.scene.context.mouse_zoom_invert:
+            zf = -zf
+        zf += 1.0
+        return zf
+
+    @property
+    def zoom_forward(self):
+        return self.zoom_factor
+
+    @property
+    def zoom_backwards(self):
+        zf = self.zoom_factor
+        if zf == 0:
+            return 1.0
+        return 1.0 / zf
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
         Process the zooming and panning of otherwise unhit-widget events.
@@ -1306,33 +1332,19 @@ class SceneSpaceWidget(Widget):
             return RESPONSE_CHAIN
         if self.aspect:
             return RESPONSE_CONSUME
-        zf = self.scene.context.zoom_factor + 1.0
-        if zf == 0:
-            zf = 1.0
-        pf = self.scene.context.pan_factor
+
         if event_type == "wheelup" and self.scene.context.mouse_wheel_pan:
-            if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(0, pf)
-            else:
-                self.scene_widget.matrix.post_translate(0, -pf)
+            self.scene_widget.matrix.post_translate(0, -self.pan_factor)
         elif event_type == "wheeldown" and self.scene.context.mouse_wheel_pan:
-            if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(0, -pf)
-            else:
-                self.scene_widget.matrix.post_translate(0, pf)
+            self.scene_widget.matrix.post_translate(0, self.pan_factor)
         elif event_type == "wheelup" or event_type == "wheelup_ctrl":
-            if self.scene.context.mouse_zoom_invert:
-                self.scene_widget.matrix.post_scale(
-                    1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
-                )
-            else:
-                self.scene_widget.matrix.post_scale(
-                    zf, zf, space_pos[0], space_pos[1]
-                )
+            self.scene_widget.matrix.post_scale(
+                self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
+            )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "zoom-in":
-            self.scene_widget.matrix.post_scale(zf, zf, space_pos[0], space_pos[1])
+            self.scene_widget.matrix.post_scale(self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1])
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "rightdown+alt":
@@ -1350,34 +1362,23 @@ class SceneSpaceWidget(Widget):
             self._placement_event = None
             self._placement_event_type = None
         elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
-            if self.scene.context.mouse_zoom_invert:
-                self.scene_widget.matrix.post_scale(
-                    zf, zf, space_pos[0], space_pos[1]
-                )
-            else:
-                self.scene_widget.matrix.post_scale(
-                    1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
-                )
+            self.scene_widget.matrix.post_scale(
+                self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
+            )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "zoom-out":
             self.scene_widget.matrix.post_scale(
-                1.0 / zf, 1.0 / zf, space_pos[0], space_pos[1]
+                self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
             )
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":
-            if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(-pf, 0)
-            else:
-                self.scene_widget.matrix.post_translate(pf, 0)
+            self.scene_widget.matrix.post_translate(self.pan_factor, 0)
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "wheelright":
-            if self.scene.context.mouse_pan_invert:
-                self.scene_widget.matrix.post_translate(pf, 0)
-            else:
-                self.scene_widget.matrix.post_translate(-pf, 0)
+            self.scene_widget.matrix.post_translate(-self.pan_factor, 0)
             self.scene.context.signal("refresh_scene", 0)
             return RESPONSE_CONSUME
         elif event_type == "middledown":
