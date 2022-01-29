@@ -883,6 +883,8 @@ class MeerK40t(MWindow):
         self.populate_recent_menu()
 
     def __set_menubar(self):
+        import platform
+
         self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
@@ -891,13 +893,13 @@ class MeerK40t(MWindow):
         self.file_menu.Append(wx.ID_NEW, _("&New\tCtrl-N"), "")
         self.file_menu.Append(wx.ID_OPEN, _("&Open Project\tCtrl-O"), "")
         self.recent_file_menu = wx.Menu()
-        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
         self.file_menu.AppendSeparator()
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
-        import platform
 
         if platform.system() == "Darwin":
             self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
