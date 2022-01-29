@@ -3,7 +3,7 @@ from os import times
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 from time import time
 
-from ..core.cutcode import CutCode, CutGroup, CutObject
+from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -1434,50 +1434,72 @@ def bounding_box(elements):
     return xmin, ymin, xmax, ymax
 
 
-def is_inside(inner_path, outer_path):
+def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
     :param inner_path: inner path
     :param outer_path: outer path
     :return: whether path1 is wholly inside path2.
     """
-    if hasattr(inner_path, "path") and inner_path.path is not None:
-        inner_path = inner_path.path
-    if hasattr(outer_path, "path") and outer_path.path is not None:
-        outer_path = outer_path.path
-    if not hasattr(inner_path, "bounding_box"):
-        inner_path.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer_path, "bounding_box"):
-        outer_path.bounding_box = Group.union_bbox([outer_path])
-    if outer_path.bounding_box is None:
+    inner_path = inner
+    outer_path = outer
+    if hasattr(inner, "path") and inner.path is not None:
+        inner_path = inner.path
+    if hasattr(outer, "path") and outer.path is not None:
+        outer_path = outer.path
+    if not hasattr(inner, "bounding_box"):
+        inner.bounding_box = Group.union_bbox([inner_path])
+    if not hasattr(outer, "bounding_box"):
+        outer.bounding_box = Group.union_bbox([outer_path])
+    if outer.bounding_box is None:
         return False
-    if inner_path.bounding_box is None:
+    if inner.bounding_box is None:
         return False
-    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+    # Raster is inner if the bboxes overlap anywhere
+    if isinstance(inner, RasterCut):
+        return (
+            inner.bounding_box[0] <= outer.bounding_box[2]
+            and inner.bounding_box[1] <= outer.bounding_box[3]
+            and inner.bounding_box[2] >= outer.bounding_box[0]
+            and inner.bounding_box[3] >= outer.bounding_box[1]
+        )
+    if outer.bounding_box[0] > inner.bounding_box[0]:
         # outer minx > inner minx (is not contained)
         return False
-    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+    if outer.bounding_box[1] > inner.bounding_box[1]:
         # outer miny > inner miny (is not contained)
         return False
-    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+    if outer.bounding_box[2] < inner.bounding_box[2]:
         # outer maxx < inner maxx (is not contained)
         return False
-    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+    if outer.bounding_box[3] < inner.bounding_box[3]:
         # outer maxy < inner maxy (is not contained)
         return False
-    if outer_path.bounding_box == inner_path.bounding_box:
-        if outer_path == inner_path:  # This is the same object.
+    if outer.bounding_box == inner.bounding_box:
+        if outer == inner:  # This is the same object.
             return False
-    if not hasattr(outer_path, "vm"):
+
+    # Inner bbox is entirely inside outer bbox,
+    # however that does not mean that inner is actually inside outer
+    # i.e. inner could be small and between outer and the bbox corner,
+    # or small and  contained in a concave indentation.
+    #
+    # VectorMontonizer can determine whether a point is inside a polygon.
+    # The code below uses a brute force approach by considering a fixed number of points,
+    # however we should consider a future enhancement whereby we create
+    # a polygon more intelligently based on size and curvature
+    # i.e. larger bboxes need more points and
+    # tighter curves need more points (i.e. compare vector directions)
+    if not hasattr(outer, "vm"):
         outer_path = Polygon(
-            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
         vm.add_cluster(outer_path)
-        outer_path.vm = vm
+        outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
-        if not outer_path.vm.is_point_inside(p.x, p.y):
+        if not outer.vm.is_point_inside(p.x, p.y):
             return False
     return True
 
@@ -1511,8 +1533,8 @@ def inner_first_ident(context: CutGroup, channel=None):
         start_times = times()
         channel("Executing Inner-First Identification")
 
-    groups = [cut for cut in context if isinstance(cut, CutGroup)]
-    closed_groups = [g for g in groups if g.closed]
+    groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
+    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
 
     constrained = False

@@ -197,13 +197,13 @@ class PositionPanel(wx.Panel):
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
+        original = self.position_w
         self.position_w = w
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
+                self._update_position()
                 return
             self.position_h *= self.position_w / original
-        if self.position_w == 0:
-            return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -233,13 +233,13 @@ class PositionPanel(wx.Panel):
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
+        original = self.position_h
         self.position_h = h
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
+                self._update_position()
                 return
             self.position_w *= self.position_h / original
-        if self.position_h == 0:
-            return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -256,9 +256,9 @@ class PositionPanel(wx.Panel):
         self._update_position()
 
     def on_text_x_enter(self, event=None):
+        event.Skip()
         try:
             x = float(self.text_x.GetValue())
-            self.position_x = x
         except ValueError:
             self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
         self.context(
@@ -275,12 +275,11 @@ class PositionPanel(wx.Panel):
             )
         )
         self._update_position()
-        event.Skip()
 
     def on_text_y_enter(self, event=None):
+        event.Skip()
         try:
             y = float(self.text_y.GetValue())
-            self.position_y = y
         except ValueError:
             self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
         self.context(
@@ -297,7 +296,6 @@ class PositionPanel(wx.Panel):
             )
         )
         self._update_position()
-        event.Skip()
 
     def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
         self.position_units = self.combo_box_units.GetSelection()

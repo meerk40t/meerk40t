@@ -411,10 +411,20 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
-                # gui.clear_and_open(pathname)
+                gui.clear_and_open(pathname)
+
+        @context.console_command("dialog_import", hidden=True)
+        def import_dialog(**kwargs):
+            files = context.load_types()
+            with wx.FileDialog(
+                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
                 gui.load(pathname)
 
-        @context.console_command("dialog_save", hidden=True)
+        @context.console_command("dialog_save_as", hidden=True)
         def save_dialog(**kwargs):
             files = context.elements.save_types()
             with wx.FileDialog(
@@ -432,6 +442,15 @@ class MeerK40t(MWindow):
                 gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
+
+        @context.console_command("dialog_save", hidden=True)
+        def save_or_save_as(**kwargs):
+            if gui.working_file is None:
+                context('.dialog_save_as\n')
+            else:
+                gui.set_file_as_recently_used(gui.working_file)
+                gui.validate_save()
+                context.save(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def egv_in_dialog(**kwargs):
@@ -1159,7 +1178,7 @@ class MeerK40t(MWindow):
         # ==========
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
+        self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
         self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
@@ -1672,6 +1691,25 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
+    def clear_project(self):
+        context = self.context
+        self.working_file = None
+        self.validate_save()
+        context.elements.clear_all()
+        self.context(".laserpath_clear\n")
+
+    def clear_and_open(self, pathname):
+        self.clear_project()
+        if self.load(pathname):
+            try:
+                if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                    # or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                    # TODO: Disabled uniform_svg, no longer detecting namespace.
+                    self.working_file = pathname
+                    self.validate_save()
+            except AttributeError:
+                pass
+
     def load(self, pathname):
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
@@ -1695,16 +1733,6 @@ class MeerK40t(MWindow):
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
-                try:
-                    if self.context.elements.uniform_svg and pathname.lower().endswith(
-                        "svg"
-                    ):
-                        # or (len(elements) > 0 and "meerK40t" in elements[0].values):
-                        # TODO: Disabled uniform_svg, no longer detecting namespace.
-                        self.working_file = pathname
-                        self.validate_save()
-                except AttributeError:
-                    pass
                 return True
             return False
 
@@ -1742,13 +1770,13 @@ class MeerK40t(MWindow):
         # event.Skip()
 
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.working_file = None
-        self.validate_save()
-        self.context.elements.clear_all()
-        self.context(".laserpath_clear\n")
+        self.clear_project()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
+
+    def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        self.context("dialog_import\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -1757,15 +1785,10 @@ class MeerK40t(MWindow):
         self.context("pause\n")
 
     def on_click_save(self, event):
-        if self.working_file is None:
-            self.on_click_save_as(event)
-        else:
-            self.set_file_as_recently_used(self.working_file)
-            self.validate_save()
-            self.context.elements.save(self.working_file)
+        self.context("dialog_save\n")
 
     def on_click_save_as(self, event=None):
-        self.context("dialog_save\n")
+        self.context("dialog_save_as\n")
 
     def on_click_close(self, event=None):
         try:
