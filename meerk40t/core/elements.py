@@ -35,7 +35,6 @@ from .cutcode import (
     CubicCut,
     CutCode,
     CutGroup,
-    LaserSettings,
     LineCut,
     QuadCut,
     RasterCut,
@@ -998,7 +997,7 @@ class LaserOperation(Node):
         self.default = False
 
         self._status_value = "Queued"
-        self.settings = LaserSettings(*args, **kwargs)
+        self.settings = dict(**kwargs)
 
         try:
             self.color = Color(kwargs["color"])
@@ -1027,7 +1026,8 @@ class LaserOperation(Node):
                 self.output = obj.output
                 self.show = obj.show
                 self.default = obj.default
-                self.settings = LaserSettings(obj.settings)
+                self.settings = dict()
+                self.settings.update(obj.settings)
 
         if self.operation == "Cut":
             if self.settings.speed is None:
@@ -1364,7 +1364,8 @@ class LaserOperation(Node):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
-                settings = LaserSettings(self.settings)
+                settings = dict()
+                settings.update(self.settings)
                 try:
                     settings.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:

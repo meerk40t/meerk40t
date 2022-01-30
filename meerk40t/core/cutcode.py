@@ -29,6 +29,7 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
+
 class CutObject:
     """
     CutObjects are small vector cuts which have on them a laser settings object.
@@ -38,7 +39,7 @@ class CutObject:
 
     def __init__(self, start=None, end=None, settings=None, parent=None, passes=1):
         if settings is None:
-            settings = LaserSettings()
+            settings = dict()
         self.settings = settings
         if start is not None:
             self._start_x = int(round(start[0]))
@@ -416,7 +417,7 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = LaserSettings()
+        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code

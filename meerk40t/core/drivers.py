@@ -1,6 +1,5 @@
 import time
 
-from ..core.cutcode import LaserSettings
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -27,7 +26,7 @@ class Driver:
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.settings = LaserSettings()
+        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
