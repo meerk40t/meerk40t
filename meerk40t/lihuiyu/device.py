@@ -1166,6 +1166,55 @@ class LhystudiosDriver:
         """
         self.goto_relative(x - self.native_x, y - self.native_y, cut)
 
+    def _move_in_rapid_mode(self, dx, dy, cut):
+        if self.service.rapid_override and (dx != 0 or dy != 0):
+            # Rapid movement override. Should make programmed jogs.
+            self.set_acceleration(None)
+            self.set_step(0)
+            if dx != 0:
+                self.rapid_mode()
+                self.set_speed(self.service.rapid_override_speed_x)
+                self.program_mode()
+                self.goto_octent(dx, 0, cut)
+            if dy != 0:
+                if (
+                        self.service.rapid_override_speed_x
+                        != self.service.rapid_override_speed_y
+                ):
+                    self.rapid_mode()
+                    self.set_speed(self.service.rapid_override_speed_y)
+                    self.program_mode()
+                self.goto_octent(0, dy, cut)
+            self.rapid_mode()
+        else:
+            self.data_output(b"I")
+            if dx != 0:
+                self.goto_x(dx)
+            if dy != 0:
+                self.goto_y(dy)
+            self.data_output(b"S1P\n")
+            if not self.service.autolock:
+                self.data_output(b"IS2P\n")
+
+    def _commit_mode(self):
+        # Unknown utility ported from deleted branch
+        self.data_output(b"N")
+        speed_code = LaserSpeed(
+            self.service.board,
+            self.settings.speed,
+            self.settings.raster_step,
+            d_ratio=self.settings.implicit_d_ratio,
+            acceleration=self.settings.implicit_accel,
+            fix_limit=True,
+            fix_lows=True,
+            fix_speeds=self.service.fix_speeds,
+            raster_horizontal=True,
+        ).speedcode
+        speed_code = bytes(speed_code, "utf8")
+        self.data_output(speed_code)
+        self.data_output(b"SE")
+        self.laser = False
+
     def goto_relative(self, dx, dy, cut):
         """
         Goto relative dx, dy. With cut set or not set.
@@ -1182,34 +1231,7 @@ class LhystudiosDriver:
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
         if self.state == DRIVER_STATE_RAPID:
-            if self.service.rapid_override and (dx != 0 or dy != 0):
-                # Rapid movement override. Should make programmed jogs.
-                self.set_acceleration(None)
-                self.set_step(0)
-                if dx != 0:
-                    self.rapid_mode()
-                    self.set_speed(self.service.rapid_override_speed_x)
-                    self.program_mode()
-                    self.goto_octent(dx, 0, cut)
-                if dy != 0:
-                    if (
-                        self.service.rapid_override_speed_x
-                        != self.service.rapid_override_speed_y
-                    ):
-                        self.rapid_mode()
-                        self.set_speed(self.service.rapid_override_speed_y)
-                        self.program_mode()
-                    self.goto_octent(0, dy, cut)
-                self.rapid_mode()
-            else:
-                self.data_output(b"I")
-                if dx != 0:
-                    self.goto_x(dx)
-                if dy != 0:
-                    self.goto_y(dy)
-                self.data_output(b"S1P\n")
-                if not self.service.autolock:
-                    self.data_output(b"IS2P\n")
+            self._move_in_rapid_mode(dx, dy, cut)
         elif self.state == DRIVER_STATE_RASTER:
             # goto in raster, switches to program to recall this function.
             self.program_mode()
