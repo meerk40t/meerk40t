@@ -2905,7 +2905,7 @@ class LhystudiosParser:
             self.speed_code += c
             return
         speed = LaserSpeed(
-            self.speed_code, board=self.board, fix_speeds=self.fix_speeds
+            speed=self.speed_code, board=self.board, fix_speeds=self.fix_speeds
         )
         self.settings.steps = speed.raster_step
         self.settings.speed = speed.speed
