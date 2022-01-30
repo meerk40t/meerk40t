@@ -1252,6 +1252,7 @@ class LhystudiosDriver:
                 self.goto_y(dy)
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
+            # TODO: Consider replace with ensure_rapid and move_in_rapid_mode
             self.mode_shift_on_the_fly(dx, dy)
         self.check_bounds()
         new_current_x = self.service.current_x
