@@ -423,7 +423,7 @@ class PanelStartPreference(wx.Panel):
         pass
 
     @signal_listener("element_property_reload")
-    def on_element_property_reload(self, origin=None, *args):
+    def on_element_property_reload(self, *args, **kwargs):
         self._toggle_sliders()
         self.raster_lines = None
         self.travel_lines = None
@@ -771,8 +771,8 @@ class RasterSettingsPanel(wx.Panel):
         self.operation = node
         if self.operation.settings.get("raster_step") is not None:
             self.text_raster_step.SetValue(str(self.operation.settings.get("raster_step")))
-        if self.operation.settings.overscan is not None:
-            self.text_overscan.SetValue(str(self.operation.settings.overscan))
+        if self.operation.settings.get("overscan") is not None:
+            self.text_overscan.SetValue(str(self.operation.settings.get("overscan")))
         if self.operation.settings.get("raster_direction") is not None:
             self.combo_raster_direction.SetSelection(
                 self.operation.settings.get("raster_direction")
