@@ -210,7 +210,7 @@ class LaserRender:
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.settings.line_color
+            c = cut.settings.get("line_color",0)
             if c is not color:
                 color = c
                 last_point = None

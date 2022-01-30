@@ -447,7 +447,7 @@ class MoshiDriver:
         except (ValueError, IndexError):
             pass
         self.rapid_mode()
-        self.settings.speed = 40
+        self.settings["speed"] =  40
         self.program_mode(x, y, x, y)
         self.rapid_mode()
         self.native_x = x
@@ -551,8 +551,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.settings.get("speed", 0) is not None:
+            speed = int(self.settings.get("speed", 0))
         if speed is None:
             speed = 20
         if normal_speed is None:
@@ -606,8 +606,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.settings.get("speed", 0) is not None:
+            speed = int(self.settings.get("speed", 0))
         if speed is None:
             speed = 160
         self.program.raster_speed(speed)
@@ -641,21 +641,21 @@ class MoshiDriver:
             self._set_step(value)
 
     def _set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.settings["power"] = power
+        if self.settings.get("power", 0) > 1000.0:
+            self.settings["power"] =  1000.0
+        if self.settings.get("power", 0) <= 0:
+            self.settings["power"] =  0.0
 
     def _set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
+        self.settings["overscan"] = overscan
 
     def _set_speed(self, speed=None):
         """
         Set the speed for the driver.
         """
-        if self.settings.speed != speed:
-            self.settings.speed = speed
+        if self.settings.get("speed", 0) != speed:
+            self.settings["speed"] = speed
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -663,8 +663,8 @@ class MoshiDriver:
         """
         Set the raster step for the driver.
         """
-        if self.settings.raster_step != step:
-            self.settings.raster_step = step
+        if self.settings.get("raster_step", 0) != step:
+            self.settings["raster_step"] = step
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -771,8 +771,8 @@ class MoshiDriver:
         parts = list()
         parts.append("x=%f" % self.native_x)
         parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("speed=%f" % self.settings.get("speed", 0))
+        parts.append("power=%d" % self.settings.get("power", 0))
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -836,7 +836,7 @@ class MoshiDriver:
                         self._set_speed(p_set.speed)
                         self._set_step(p_set.raster_step)
                         self.rapid_mode()
-                    self.settings.set_values(p_set)
+                    self.settings.update(p_set)
                 continue
             self._goto_absolute(x, y, on & 1)
         self.plot_data = None
@@ -853,7 +853,7 @@ class MoshiDriver:
             x1 = x
         if y1 is None:
             y1 = y
-        if self.settings.raster_step == 0:
+        if self.settings.get("raster_step", 0) == 0:
             self.program_mode(x, y, x1, y1)
         else:
             if self.service.enable_raster:
@@ -926,10 +926,10 @@ class MoshiDriver:
         return x, y
 
     def laser_disable(self, *values):
-        self.settings.laser_enabled = False
+        self.settings["laser_enabled"] = False
 
     def laser_enable(self, *values):
-        self.settings.laser_enabled = True
+        self.settings["laser_enabled"] = True
 
 
 class MoshiController:

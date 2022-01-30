@@ -424,7 +424,7 @@ class CutPlan:
                         if pass_idx == 1:
                             blob_plan.append(op)
                         continue
-                    copies = op.settings.implicit_passes
+                    copies = op.settings.get("implicit_passes",0)
                     if passes_first:
                         if pass_idx > copies - 1:
                             continue
@@ -458,8 +458,8 @@ class CutPlan:
         self.plan.clear()
         for blob in blob_plan:
             try:
-                blob.settings.jog_distance = context.opt_jog_minimum
-                blob.settings.jog_enable = context.opt_rapid_between
+                blob.settings["jog_distance"] = context.opt_jog_minimum
+                blob.settings["jog_enable"] = context.opt_rapid_between
             except AttributeError:
                 pass
             # We can only merge and check for other criteria if we have the right objects
@@ -625,7 +625,7 @@ class CutPlan:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        step = op.settings.raster_step
+        step = op.settings.get("raster_step",0)
         if step == 0:
             step = 1
         image = make_raster(subitems, bounds, step=step)
@@ -663,8 +663,8 @@ class CutPlan:
                 if op.operation == "Raster":
                     for elem in op.children:
                         elem = elem.object
-                        if needs_actualization(elem, op.settings.raster_step):
-                            make_actual(elem, op.settings.raster_step)
+                        if needs_actualization(elem, op.settings.get("raster_step",0)):
+                            make_actual(elem, op.settings.get("raster_step",0))
                 if op.operation == "Image":
                     for elem in op.children:
                         elem = elem.object
@@ -741,7 +741,7 @@ class CutPlan:
                 if op.operation == "Raster":
                     for elem in op.children:
                         elem = elem.object
-                        if needs_actualization(elem, op.settings.raster_step):
+                        if needs_actualization(elem, op.settings.get("raster_step",0)):
                             self.commands.append(self.actualize)
                             return
                 if op.operation == "Image":

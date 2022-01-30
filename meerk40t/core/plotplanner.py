@@ -373,7 +373,7 @@ class PPI(PlotManipulation):
             px = x
             py = y
             # PPI is always on.
-            self.ppi_total += self.planner.settings.power * on
+            self.ppi_total += self.planner.settings.get("power",0) * on
             if on and self.dot_left > 0:
                 # Process remaining dot_length, must be on or partially on.
                 self.dot_left -= 1
@@ -383,8 +383,8 @@ class PPI(PlotManipulation):
                 if self.ppi_total >= 1000.0:
                     # PPI >= 1000: triggers on.
                     on = 1
-                    self.ppi_total -= 1000.0 * self.planner.settings.dot_length
-                    self.dot_left = self.planner.settings.dot_length - 1
+                    self.ppi_total -= 1000.0 * self.planner.settings.get("dot_length",0)
+                    self.dot_left = self.planner.settings.get("dot_length",0) - 1
                 else:
                     # PPI < 1000: triggers off.
                     on = 0
@@ -415,7 +415,7 @@ class Shift(PlotManipulation):
         """
         for x, y, on in plot:
             if (x is None or y is None) or (
-                not self.planner.force_shift and not self.planner.settings.shift_enabled
+                not self.planner.force_shift and not self.planner.settings.get("shift_enabled",0)
             ):
                 # If we have an established buffer, flush the buffer.
                 yield from self.flush()

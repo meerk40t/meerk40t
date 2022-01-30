@@ -325,7 +325,7 @@ class CutCode(CutGroup):
             settings = e.settings
             if path is None:
                 path = Path()
-                c = settings.line_color if settings.line_color is not None else "blue"
+                c = settings.get("line_color", "blue")
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
@@ -408,8 +408,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            if curr.settings.speed:
-                distance += (curr.length() / UNITS_PER_MM) / curr.settings.speed
+            if curr.settings.get("speed", 0):
+                distance += (curr.length() / UNITS_PER_MM) / curr.settings.get("speed", 1)
         return distance
 
     @classmethod
@@ -488,7 +488,7 @@ class CutCode(CutGroup):
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        settings["raster_step"] = 0
 
     def generator(self):
         start = self.start()
@@ -499,7 +499,7 @@ class LineCut(CutObject):
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        settings["raster_step"] = 0
         self._control = control_point
 
     def c(self):
@@ -527,7 +527,7 @@ class QuadCut(CutObject):
 class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        settings["raster_step"] = 0
         self._control1 = control1
         self._control2 = control2
 
@@ -575,11 +575,11 @@ class RasterCut(CutObject):
         self.tx = tx
         self.ty = ty
 
-        step = self.settings.raster_step
+        step = self.settings.get("raster_step", 2)
         self.step = step
         assert step > 0
 
-        direction = self.settings.raster_direction
+        direction = self.settings.get("raster_direction", 0)
         traverse = 0
         if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
@@ -593,7 +593,7 @@ class RasterCut(CutObject):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        if self.settings.raster_swing:
+        if self.settings.get("raster_swing", 0):
             traverse |= UNIDIRECTIONAL
         width, height = image.size
         self.width = width
@@ -602,7 +602,7 @@ class RasterCut(CutObject):
         def image_filter(pixel):
             return (255 - pixel) / 255.0
 
-        overscan = self.settings.overscan
+        overscan = self.settings.get("overscan", 0)
         if overscan is None:
             overscan = 20
         else:

@@ -302,13 +302,13 @@ class GRBLDriver(Driver):
         line.append("X%f" % (x / self.scale))
         line.append("Y%f" % (y / self.scale))
         if self.power_updated:
-            if self.settings.power is not None:
-                line.append("S%f" % self.settings.power)
+            if self.settings.get("power", 0) is not None:
+                line.append("S%f" % self.settings.get("power", 0))
             self.power_updated = False
-        if self.settings.speed is None:
-            self.settings.speed = 20.0
+        if self.settings.get("speed", 0) is None:
+            self.settings["speed"] = 20.0
         if self.speed_updated:
-            line.append("F%d" % int(self.feed_convert(self.settings.speed)))
+            line.append("F%d" % int(self.feed_convert(self.settings.get("speed", 0))))
             self.speed_updated = False
         self.output.write(" ".join(line) + self.context.line_end)
         Driver.move(self, x, y)
@@ -348,7 +348,7 @@ class GRBLDriver(Driver):
                             self.set_speed(p_set.speed)
                             self.set_step(p_set.raster_step)
                             self.rapid_mode()
-                        self.settings.set_values(p_set)
+                        self.settings.update(p_set)
                     elif on & (
                         PLOT_RAPID | PLOT_JOG
                     ):  # Plot planner requests position change.
@@ -911,11 +911,11 @@ class GRBLEmulator(Module):
             parts = list()
             parts.append(state)
             parts.append("MPos:%f,%f,%f" % (x, y, z))
-            speed = device.settings.speed
+            speed = device.settings.get("speed")
             if speed is None:
                 speed = 30.0
             f = self.feed_invert(speed)
-            power = device.settings.power
+            power = device.settings.get("power")
             if power is None:
                 power = 1000
             s = power
