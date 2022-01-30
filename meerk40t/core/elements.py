@@ -222,50 +222,105 @@ class Node:
         drop_node = self
         if drag_node.type == "elem":
             if drop_node.type == "op":
-                # Dragging element into operation adds that element to the op.
+                # Disallow drop of non-image elems onto an Image op.
+                # Disallow drop of image elems onto a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                ):
+                    return False
+                # Dragging element onto operation adds that element to the op.
                 drop_node.add(drag_node.object, type="opnode", pos=0)
                 return True
             elif drop_node.type == "opnode":
-                drop_index = drop_node.parent.children.index(drop_node)
-                drop_node.parent.add(drag_node.object, type="opnode", pos=drop_index)
+                op = drop_node.parent
+                # Disallow drop of non-image elems onto an opnode inside an Image op.
+                # Disallow drop of image elems onto an opnode inside a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                ):
+                    return False
+                # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
+                drop_index = op.children.index(drop_node)
+                op.add(drag_node.object, type="opnode", pos=drop_index)
                 return True
             elif drop_node.type == "group":
+                # Dragging element onto a group moves it to the group node.
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type == "opnode":
             if drop_node.type == "op":
+                # Disallow drop of non-image opnodes onto an Image op.
+                # Disallow drop of image opnodes onto a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                ):
+                    return False
+                # Move an opnode to end of op.
                 drop_node.append_child(drag_node)
                 return True
             if drop_node.type == "opnode":
+                op = drop_node.parent
+                # Disallow drop of non-image opnodes onto an opnode inside an Image op.
+                # Disallow drop of image opnodes onto an opnode inside a Dot op.
+                if (
+                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
+                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                ):
+                    return False
+                # Move an opnode to after another opnode.
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type in ("cmdop", "consoleop"):
+        elif drag_node.type in ("op", "cmdop", "consoleop"):
             if drop_node.type in ("op", "cmdop", "consoleop"):
-                drop_node.insert_sibling(drag_node)
-        elif drag_node.type == "op":
-            if drop_node.type == "op":
-                # Dragging operation to different operation.
+                # Move operation to a different position.
                 drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type == "branch ops":
-                # Dragging operation to op branch.
+                # Dragging operation to op branch to effectively move to bottom.
                 drop_node.append_child(drag_node)
+                return True
         elif drag_node.type in "file":
             if drop_node.type == "op":
+                some_nodes = False
                 for e in drag_node.flat("elem"):
+                    # Disallow drop of non-image elems onto an Image op.
+                    # Disallow drop of image elems onto a Dot op.
+                    if (
+                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                    ):
+                        continue
+                    # Add element to operation
                     drop_node.add(e.object, type="opnode")
-                return True
+                    some_nodes = True
+                return some_nodes
         elif drag_node.type == "group":
             if drop_node.type == "elem":
+                # Move a group
                 drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type in ("group", "file"):
+                # Move a group
                 drop_node.append_child(drag_node)
                 return True
             elif drop_node.type == "op":
+                some_nodes = False
                 for e in drag_node.flat("elem"):
+                    # Disallow drop of non-image elems onto an Image op.
+                    # Disallow drop of image elems onto a Dot op.
+                    if (
+                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
+                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                    ):
+                        continue
+                    # Add element to operation
                     drop_node.add(e.object, type="opnode")
-                return True
+                    some_nodes = True
+                return some_nodes
+        return False
 
     def reverse(self):
         self._children.reverse()
@@ -1189,7 +1244,12 @@ class LaserOperation(Node):
                         isinstance(sp[-1], Close)
                         or abs(sp.z_point - sp.current_point) <= closed_distance
                     )
-                    group = CutGroup(None, closed=closed, settings=settings)
+                    group = CutGroup(
+                        None,
+                        closed=closed,
+                        settings=settings,
+                        passes=passes,
+                    )
                     group.path = Path(subpath)
                     group.original_op = self.operation
                     for seg in subpath:
@@ -1203,6 +1263,7 @@ class LaserOperation(Node):
                                         seg.end,
                                         settings=settings,
                                         passes=passes,
+                                        parent=group,
                                     )
                                 )
                         elif isinstance(seg, Line):
@@ -1213,6 +1274,7 @@ class LaserOperation(Node):
                                         seg.end,
                                         settings=settings,
                                         passes=passes,
+                                        parent=group,
                                     )
                                 )
                         elif isinstance(seg, QuadraticBezier):
@@ -1223,6 +1285,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                         elif isinstance(seg, CubicBezier):
@@ -1234,6 +1297,7 @@ class LaserOperation(Node):
                                     seg.end,
                                     settings=settings,
                                     passes=passes,
+                                    parent=group,
                                 )
                             )
                     if len(group) > 0:
@@ -3818,25 +3882,29 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_resize(command, x_pos, y_pos, width, height, data=None, **kwargs):
+        def element_resize(command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs):
             if height is None:
                 raise SyntaxError
             try:
+                area = self.selected_area()
+                if area is None:
+                    channel(_("resize: nothing selected"))
+                    return
                 x_pos = self.device.length(x_pos, 0)
                 y_pos = self.device.length(y_pos, 1)
                 width = self.device.length(width, 0)
                 height = self.device.length(height, 1)
-                area = self.selected_area()
-                if area is None:
-                    return
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
+                if w == 0 or h == 0: # dot
+                    channel(_("resize: cannot resize a dot"))
+                    return
                 sx = width / w
                 sy = height / h
-                if abs(sx - 1.0) < 1e-1:
-                    sx = 1.0
-                if abs(sy - 1.0) < 1e-1:
-                    sy = 1.0
+                # Don't do anything if scale is 1
+                if sx == 1.0 and sy == 1.0:
+                    channel(_("resize: nothing to do - scale factors 1"))
+                    return
 
                 m = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
@@ -3846,10 +3914,12 @@ class Elemental(Service):
                     data = list(self.elems(emphasized=True))
                 for e in data:
                     try:
-                        if e.lock and (not sx == 1.0 or not sy == 1.0):
-                            continue
+                        if e.lock:
+                            channel(_("resize: cannot resize a locked image"))
+                            return
                     except AttributeError:
                         pass
+                for e in data:
                     e *= m
                     if hasattr(e, "node"):
                         e.node.modified()
