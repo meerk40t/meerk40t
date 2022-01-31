@@ -7,7 +7,7 @@ from hashlib import md5
 from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import CutCode, LaserSettings, RawCut
+from ..core.cutcode import CutCode, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
 from ..core.units import ViewPort, UNITS_PER_INCH, UNITS_PER_MIL
 from ..device.basedevice import (
@@ -2783,7 +2783,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = LaserSettings(speed=20.0, power=1000.0)
+        self.settings = { "speed": 20.0, "power": 1000.0 }
 
         self.small_jump = True
         self.speed_code = None
@@ -3158,7 +3158,7 @@ class EGVBlob:
             if self._cut is not None and len(self._cut):
                 self._cutcode.append(self._cut)
             self._cut = RawCut()
-            self._cut.settings = LaserSettings(parser.settings)
+            self._cut.settings = parser.settings
 
         def position(p):
             if p is None or self._cut is None:

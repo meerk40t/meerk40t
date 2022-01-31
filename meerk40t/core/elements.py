@@ -3,6 +3,7 @@ import os.path
 import re
 from copy import copy
 
+from .LaserSettings import LaserSettings
 from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
@@ -35,7 +36,6 @@ from .cutcode import (
     CubicCut,
     CutCode,
     CutGroup,
-    LaserSettings,
     LineCut,
     QuadCut,
     RasterCut,
@@ -978,7 +978,7 @@ class GroupNode(Node):
         return False
 
 
-class LaserOperation(Node):
+class LaserOperation(Node, LaserSettings):
     """
     Default object defining any operation done on the laser.
 
@@ -987,6 +987,8 @@ class LaserOperation(Node):
 
     def __init__(self, *args, **kwargs):
         super().__init__()
+        self._status_value = "Queued"
+
         self.operation = "Unknown"
         try:
             self.operation = kwargs["operation"]
@@ -997,7 +999,7 @@ class LaserOperation(Node):
         self.show = True
         self.default = False
 
-        self._status_value = "Queued"
+
         self.settings = LaserSettings(*args, **kwargs)
 
         try:
@@ -1027,7 +1029,7 @@ class LaserOperation(Node):
                 self.output = obj.output
                 self.show = obj.show
                 self.default = obj.default
-                self.settings = LaserSettings(obj.settings)
+                self.settings = dict(obj.settings)
 
         if self.operation == "Cut":
             if self.settings.speed is None:

@@ -4,7 +4,6 @@ import socket
 import threading
 import time
 
-from ..core.cutcode import LaserSettings
 from ..core.drivers import Driver
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
@@ -191,7 +190,7 @@ class GRBLDevice(Service):
 
         self.current_x = 0.0
         self.current_y = 0.0
-        self.settings = LaserSettings()
+        self.settings = dict()
         self.state = 0
 
         self.setting(int, "port", 23)

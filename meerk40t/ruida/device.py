@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ..core.cutcode import CutCode, LaserSettings, LineCut
+from ..core.cutcode import CutCode, LineCut
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM
 from ..kernel import Module, Service
@@ -267,8 +267,7 @@ class RuidaEmulator(Module):
 
         self.cutcode = CutCode()
 
-        # self.layer_settings = []
-        self.settings = LaserSettings()
+        self.settings = dict()
         self._use_set = None
         self.spooler = None
         self.device = None
