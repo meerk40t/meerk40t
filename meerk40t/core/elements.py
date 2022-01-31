@@ -3,7 +3,7 @@ import os.path
 import re
 from copy import copy
 
-from .LaserSettings import LaserSettings
+from .LaserSettings import Parameters
 from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
@@ -978,7 +978,7 @@ class GroupNode(Node):
         return False
 
 
-class LaserOperation(Node, LaserSettings):
+class LaserOperation(Node, Parameters):
     """
     Default object defining any operation done on the laser.
 
@@ -5563,7 +5563,7 @@ class Elemental(Service):
                 op.hex_color = ""
                 settings.read_persistent_attributes(section, op)
                 update_dict = settings.read_persistent_string_dict(section, suffix=True)
-                LaserSettings.validate(update_dict)
+                Parameters.validate(update_dict)
                 op.settings.update(update_dict)
                 if op.hex_color is not None:
                     op.color = Color(op.hex_color)

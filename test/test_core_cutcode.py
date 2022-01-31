@@ -3,7 +3,7 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut, RasterCut
+from meerk40t.core.cutcode import Parameters, LineCut, CutCode, QuadCut, RasterCut
 from meerk40t.core.elements import LaserOperation
 from meerk40t.svgelements import Point, Path, SVGImage
 
@@ -16,7 +16,7 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         cutcode = CutCode()
-        settings = LaserSettings()
+        settings = Parameters()
         cutcode.append(LineCut(Point(0, 0), Point(100, 100), settings=settings))
         cutcode.append(LineCut(Point(100, 100), Point(0, 0), settings=settings))
         cutcode.append(LineCut(Point(50, -50), Point(100, -100), settings=settings))

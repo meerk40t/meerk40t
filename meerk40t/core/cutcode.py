@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from .LaserSettings import LaserSettings
+from .LaserSettings import Parameters
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -32,7 +32,7 @@ are references to settings which may be shared by all CutObjects created by a La
 MILS_IN_MM = 39.3701
 
 
-class CutObject(LaserSettings):
+class CutObject(Parameters):
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or

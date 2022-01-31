@@ -2,7 +2,7 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode
+from meerk40t.core.cutcode import Parameters, LineCut, CutCode
 from meerk40t.core.elements import LaserOperation
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
@@ -26,14 +26,14 @@ class TestPlotplanner(unittest.TestCase):
 
         :return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings(power=1000)
+        plan = PlotPlanner(Parameters(power=1000))
+        settings = Parameters(power=1000)
         for i in range(211):
             plan.push(LineCut(Point(0, 0), Point(5, 100), settings=settings))
             plan.push(LineCut(Point(100, 50), Point(0, 0), settings=settings))
             plan.push(
                 LineCut(
-                    Point(50, -50), Point(100, -100), settings=LaserSettings(power=0)
+                    Point(50, -50), Point(100, -100), settings=Parameters(power=0)
                 )
             )
             q = 0
@@ -78,7 +78,7 @@ class TestPlotplanner(unittest.TestCase):
         cutcode.extend(vectorop.as_cutobjects())
         cutcode.extend(rasterop.as_cutobjects())
 
-        plan = PlotPlanner(LaserSettings(power=500))
+        plan = PlotPlanner(Parameters(power=500))
         for c in cutcode.flat():
             plan.push(c)
 

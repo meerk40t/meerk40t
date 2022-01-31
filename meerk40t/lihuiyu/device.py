@@ -6,7 +6,7 @@ from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from ..core.LaserSettings import LaserSettings
+from ..core.LaserSettings import Parameters
 
 from ..core.cutcode import CutCode, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
@@ -788,7 +788,7 @@ class LihuiyuDevice(Service, ViewPort):
             return self.controller
 
 
-class LhystudiosDriver(LaserSettings):
+class LhystudiosDriver(Parameters):
     """
     LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
     to write to the usb.
@@ -2781,7 +2781,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = LaserSettings({ "speed": 20.0, "power": 1000.0 })
+        self.settings = Parameters({"speed": 20.0, "power": 1000.0})
 
         self.small_jump = True
         self.speed_code = None

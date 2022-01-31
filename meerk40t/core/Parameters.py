@@ -3,7 +3,7 @@ from typing import Dict
 from meerk40t.svgelements import Color
 
 
-class LaserSettings:
+class Parameters:
     def __init__(self, settings: Dict = None, **kwargs):
         self.settings = settings
         if self.settings is None:
