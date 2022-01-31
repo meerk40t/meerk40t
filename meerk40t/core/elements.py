@@ -5538,6 +5538,7 @@ class Elemental(Service):
             section = "%s %06i" % (name, i)
             if isinstance(op, LaserOperation):
                 op.hex_color = op.color.hexa
+                settings.write_persistent_attributes(section, op)
                 settings.write_persistent_dict(section, op.settings)
             elif isinstance(op, (CommandOperation, ConsoleOperation)):
                 settings.write_persistent_attributes(section, op)
