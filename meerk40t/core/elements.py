@@ -3,7 +3,7 @@ import os.path
 import re
 from copy import copy
 
-from .LaserSettings import Parameters
+from .Parameters import Parameters
 from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings

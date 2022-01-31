@@ -6,7 +6,7 @@ from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from ..core.LaserSettings import Parameters
+from ..core.Parameters import Parameters
 
 from ..core.cutcode import CutCode, RawCut
 from ..core.plotplanner import grouped, PlotPlanner

@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from .LaserSettings import Parameters
+from .Parameters import Parameters
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
