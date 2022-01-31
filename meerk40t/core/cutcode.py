@@ -322,10 +322,9 @@ class CutCode(CutGroup):
         for e in self.flat():
             start = e.start()
             end = e.end()
-            settings = e.settings
             if path is None:
                 path = Path()
-                c = settings.line_color if settings.line_color is not None else "blue"
+                c = e.line_color if e.line_color is not None else "blue"
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
@@ -342,11 +341,11 @@ class CutCode(CutGroup):
                         path.line(x, y)
                     else:
                         path.move(x, y)
-            if previous_settings is not settings and previous_settings is not None:
+            if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
                     path = None
-            previous_settings = settings
+            previous_settings = e.settings
             last = end
         if path is not None and len(path) != 0:
             yield path
@@ -408,8 +407,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            if curr.settings.speed:
-                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.speed != 0:
+                distance += (curr.length() / MILS_IN_MM) / curr.speed
         return distance
 
     @classmethod

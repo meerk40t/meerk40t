@@ -1,6 +1,6 @@
 from typing import Dict
 
-from svgelements import Color
+from meerk40t.svgelements import Color
 
 
 class LaserSettings:
@@ -9,6 +9,45 @@ class LaserSettings:
         if self.settings is None:
             self.settings = dict()
         self.settings.update(kwargs)
+
+    @staticmethod
+    def validate(settings: Dict):
+        for v in ("speed","dratio"):
+            if v in settings:
+                settings[v] = float(settings[v])
+        for v in (
+            "power",
+            "raster_step",
+            "raster_direction",
+            "overscan",
+            "acceleration",
+            "dot_length",
+            "passes",
+            "raster_direction",
+            "raster_preference_top",
+            "raster_preference_right",
+            "raster_preference_bottom",
+        ):
+            if v in settings:
+                settings[v] = int(float(settings[v]))
+        for v in (
+            "passes_custom",
+            "dot_length_custom",
+            "acceleration_custom",
+            "dratio_custom",
+            "default",
+            "output",
+            "laser_enabled",
+            "ppi_enabled",
+            "shift_enabled",
+            "raster_swing",
+            "advanced",
+        ):
+            if v in settings:
+                settings[v] = settings[v] in ("True", "true")
+        for v in ("color", "line_color"):
+            if v in settings:
+                settings[v] = Color(settings[v])
 
     @property
     def color(self):
@@ -140,7 +179,7 @@ class LaserSettings:
 
     @property
     def dot_length_custom(self):
-        return self.settings.get("dot_length_custom", 1)
+        return self.settings.get("dot_length_custom", False)
 
     @dot_length_custom.setter
     def dot_length_custom(self, value):
@@ -170,7 +209,7 @@ class LaserSettings:
 
     @property
     def passes_custom(self):
-        return self.settings.get("passes_custom", 0)
+        return self.settings.get("passes_custom", False)
 
     @passes_custom.setter
     def passes_custom(self, value):
@@ -208,7 +247,7 @@ class LaserSettings:
 
     @property
     def acceleration_custom(self):
-        return self.settings.get("acceleration_custom", 0)
+        return self.settings.get("acceleration_custom", False)
 
     @acceleration_custom.setter
     def acceleration_custom(self, value):

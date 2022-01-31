@@ -6,6 +6,7 @@ from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
+from ..core.LaserSettings import LaserSettings
 
 from ..core.cutcode import CutCode, RawCut
 from ..core.plotplanner import grouped, PlotPlanner
@@ -215,8 +216,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
-        self.settings = self.driver.settings
-
         self.tcp = TCPOutput(self)
         self.add_service_delegate(self.tcp)
 
@@ -387,10 +386,10 @@ class LihuiyuDevice(Service, ViewPort):
             fly can be used to check the various properties of that mode.
             """
             if accel is None:
-                if self.settings.acceleration is None:
+                if self.driver.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: %d") % self.settings.acceleration)
+                    channel(_("Acceleration: %d") % self.driver.acceleration)
 
             else:
                 try:
@@ -400,7 +399,7 @@ class LihuiyuDevice(Service, ViewPort):
                         channel(_("Acceleration is set to default."))
                         return
                     self.driver.set_acceleration(v)
-                    channel(_("Acceleration: %d") % self.driver.settings.acceleration)
+                    channel(_("Acceleration: %d") % self.driver.acceleration)
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
@@ -789,17 +788,16 @@ class LihuiyuDevice(Service, ViewPort):
             return self.controller
 
 
-class LhystudiosDriver:
+class LhystudiosDriver(LaserSettings):
     """
     LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
     to write to the usb.
     """
 
     def __init__(self, service, *args, **kwargs):
+        super().__init__()
         self.service = service
         self.name = str(self.service)
-
-        self.settings = LaserSettings()
 
         self.output = None
 
@@ -957,7 +955,7 @@ class LhystudiosDriver:
                         self.set_step(p_set.raster_step)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
-                    self.settings.set_values(p_set)
+                    self.settings.update(p_set)
                 elif on & PLOT_AXIS:  # Major Axis.
                     self.set_prop(REQUEST_AXIS)
                     if x == 0:  # X Major / Horizontal.
@@ -989,11 +987,11 @@ class LhystudiosDriver:
                 continue
             dx = x - sx
             dy = y - sy
-            step = self.settings.raster_step
+            step = self.raster_step
             if step == 0:
                 self.program_mode()
             else:
-                self.raster_mode(raster_horizontal=self.settings.horizontal_raster)
+                self.raster_mode(raster_horizontal=self.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
                         if self.service.nse_raster:
@@ -1100,10 +1098,10 @@ class LhystudiosDriver:
         if speed is not None:
             speed_code = LaserSpeed(
                 self.service.board,
-                self.settings.speed,
-                self.settings.raster_step,
-                d_ratio=self.settings.implicit_d_ratio,
-                acceleration=self.settings.implicit_accel,
+                self.speed,
+                self.raster_step,
+                d_ratio=self.implicit_d_ratio,
+                acceleration=self.implicit_accel,
                 fix_limit=True,
                 fix_lows=True,
                 fix_speeds=self.service.fix_speeds,
@@ -1201,10 +1199,10 @@ class LhystudiosDriver:
         self.data_output(b"N")
         speed_code = LaserSpeed(
             self.service.board,
-            self.settings.speed,
-            self.settings.raster_step,
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
+            self.speed,
+            self.raster_step,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=self.service.fix_speeds,
@@ -1302,26 +1300,26 @@ class LhystudiosDriver:
         )
 
     def set_speed(self, speed=None):
-        if self.settings.speed != speed:
-            self.settings.speed = speed
+        if self.speed != speed:
+            self.speed = speed
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_d_ratio(self, dratio=None):
-        if self.settings.dratio != dratio:
-            self.settings.dratio = dratio
+        if self.dratio != dratio:
+            self.dratio = dratio
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_acceleration(self, accel=None):
-        if self.settings.acceleration != accel:
-            self.settings.acceleration = accel
+        if self.acceleration != accel:
+            self.acceleration = accel
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
     def set_step(self, step=None):
-        if self.settings.raster_step != step:
-            self.settings.raster_step = step
+        if self.raster_step != step:
+            self.raster_step = step
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -1383,7 +1381,7 @@ class LhystudiosDriver:
         @return:
         """
         self.step_index = 0
-        self.step = self.settings.raster_step
+        self.step = self.raster_step
         self.step_value_set = 0
         if self.service.nse_raster and not self.service.nse_stepraster:
             return 0
@@ -1407,10 +1405,10 @@ class LhystudiosDriver:
         self.state = DRIVER_STATE_RAPID
         speed_code = LaserSpeed(
             self.service.board,
-            self.settings.speed,
+            self.speed,
             self.instance_step(),
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             suffix_c=True if self.service.twitchless and not self.step else None,
@@ -1460,10 +1458,10 @@ class LhystudiosDriver:
 
         speed_code = LaserSpeed(
             self.service.board,
-            self.settings.speed,
+            self.speed,
             self.instance_step(),
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             fix_speeds=self.service.fix_speeds,
@@ -1490,10 +1488,10 @@ class LhystudiosDriver:
 
         speed_code = LaserSpeed(
             self.service.board,
-            self.settings.speed,
+            self.speed,
             self.instance_step(),
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             suffix_c=True if self.service.twitchless else None,
@@ -1909,10 +1907,10 @@ class LhystudiosDriver:
     ######################
 
     def laser_disable(self, *values):
-        self.settings.laser_enabled = False
+        self.laser_enabled = False
 
     def laser_enable(self, *values):
-        self.settings.laser_enabled = True
+        self.laser_enabled = True
 
     def plot(self, plot):
         """
@@ -1939,28 +1937,28 @@ class LhystudiosDriver:
             self.is_relative = value
 
     def set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_ppi(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_pwm(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
+        self.overscan = overscan
 
     def set_incremental(self, *values):
         self.is_relative = True
@@ -1983,8 +1981,8 @@ class LhystudiosDriver:
         parts = list()
         parts.append("x=%f" % self.native_x)
         parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("speed=%f" % self.speed)
+        parts.append("power=%d" % self.power)
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -2783,7 +2781,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = { "speed": 20.0, "power": 1000.0 }
+        self.settings = LaserSettings({ "speed": 20.0, "power": 1000.0 })
 
         self.small_jump = True
         self.speed_code = None
@@ -2907,7 +2905,7 @@ class LhystudiosParser:
         speed = LaserSpeed(
             speed=self.speed_code, board=self.board, fix_speeds=self.fix_speeds
         )
-        self.settings.steps = speed.raster_step
+        self.settings.raster_step = speed.raster_step
         self.settings.speed = speed.speed
         if self.channel:
             self.channel("Setting Speed: %f" % self.settings.speed)
