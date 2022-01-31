@@ -998,7 +998,7 @@ class LaserOperation(Node, Parameters):
                 self.settings = dict(obj.settings)
 
     def __repr__(self):
-        return "LaserOperation('%s', %s)" % (self.type, str(self._operation))
+        return "LaserOperation('%s', %s)" % (self.type, str(self.operation))
 
     def __str__(self):
         op = self.operation
@@ -1691,7 +1691,6 @@ class Elemental(Service):
     def _init_commands(self, kernel):
 
         _ = kernel.translation
-
 
         @self.console_argument("filename")
         @self.console_command(
@@ -4596,8 +4595,7 @@ class Elemental(Service):
             help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
-            settings = node
-            settings.raster_step = i
+            node.raster_step = i
             self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwargs):
@@ -5535,12 +5533,13 @@ class Elemental(Service):
 
     def save_persistent_operations(self, name):
         settings = self.op_data
+        settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             section = "%s %06i" % (name, i)
             if isinstance(op, LaserOperation):
                 op.hex_color = op.color.hexa
                 settings.write_persistent_dict(section, op.settings)
-            elif isinstance(op, CommandOperation):
+            elif isinstance(op, (CommandOperation, ConsoleOperation)):
                 settings.write_persistent_attributes(section, op)
         settings.write_configuration()
 
@@ -5558,7 +5557,7 @@ class Elemental(Service):
         ops = list()
         for section in subitems:
             op_type = settings.read_persistent(str, section, "type")
-            if op_type in ["op", ""]:
+            if op_type in ("op", "", None):
                 op = LaserOperation()
                 op.hex_color = ""
                 settings.read_persistent_attributes(section, op)
