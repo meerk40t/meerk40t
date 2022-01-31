@@ -1,5 +1,7 @@
 from typing import Dict
 
+from svgelements import Color
+
 
 class LaserSettings:
     def __init__(self, settings: Dict = None, **kwargs):
@@ -8,154 +10,141 @@ class LaserSettings:
             self.settings = dict()
         self.settings.update(kwargs)
 
-        self.operation = "Unknown"
-        try:
-            self.operation = kwargs["operation"]
-        except KeyError:
-            pass
-        self.color = None
-        self.output = True
-        self.show = True
-        self.default = False
+    @property
+    def color(self):
+        color = self.settings.get("color")
+        if color is None:
+            if self.operation == "Cut":
+                return Color("red")
+            elif self.operation == "Engrave":
+                return Color("blue")
+            elif self.operation == "Raster":
+                return Color("black")
+            elif self.operation == "Image":
+                return Color("transparent")
+            elif self.operation == "Dots":
+                return Color("transparent")
+            else:
+                return Color("white")
+        if isinstance(color, Color):
+            return color
+        return Color(color)
 
-        try:
-            self.color = Color(kwargs["color"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.output = bool(kwargs["output"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.show = bool(kwargs["show"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.default = bool(kwargs["default"])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        if self.operation == "Cut":
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("red")
-        elif self.operation == "Engrave":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("blue")
-        elif self.operation == "Raster":
-            if self.settings.raster_step == 0:
-                self.settings.raster_step = 2
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("black")
-        elif self.operation == "Image":
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        elif self.operation == "Dots":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        else:
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("white")
-
-        self.line_color = None
-
-        self.laser_enabled = True
-        self.speed = None
-        self.power = None
-        self.dratio_custom = False
-        self.dratio = 0.261
-        self.acceleration_custom = False
-        self.acceleration = 1
-
-        self.raster_step = 0
-        self.raster_direction = 1  # Bottom To Top - Default.
-        self.raster_swing = False  # False = bidirectional, True = Unidirectional
-        self.raster_preference_top = 0
-        self.raster_preference_right = 0
-        self.raster_preference_left = 0
-        self.raster_preference_bottom = 0
-        self.overscan = 20
-
-        self.advanced = False
-
-        self.ppi_enabled = True
-
-        self.dot_length_custom = False
-        self.dot_length = 1
-
-        self.shift_enabled = False
-
-        self.passes_custom = False
-        self.passes = 1
-
-        self.jog_distance = 255
-        self.jog_enable = True
-
-        for k in kwargs:
-            value = kwargs[k]
-            if hasattr(self, k):
-                q = getattr(self, k)
-                if q is None:
-                    setattr(self, k, value)
-                else:
-                    t = type(q)
-                    setattr(self, k, t(value))
-
-    def set_values(self, obj):
-        for q in dir(obj):
-            if q.startswith("_") or q.startswith("implicit"):
-                continue
-            obj_type = type(obj)
-            if hasattr(obj_type, q) and isinstance(getattr(obj_type, q), property):
-                # Do not set property values
-                continue
-
-            value = getattr(obj, q)
-            if isinstance(value, (int, float, bool, str)):
-                setattr(self, q, value)
+    @color.setter
+    def color(self, value):
+        if isinstance(value, Color):
+            value = value.hexa
+        self.settings["color"] = value
 
     @property
-    def horizontal_raster(self):
-        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
+    def operation(self):
+        return self.settings.get("operation", "Unknown")
+
+    @operation.setter
+    def operation(self, value):
+        self.settings["operation"] = value
 
     @property
-    def vertical_raster(self):
-        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
+    def default(self):
+        return self.settings.get("default", False)
+
+    @default.setter
+    def default(self, value):
+        self.settings["default"] = value
 
     @property
-    def implicit_accel(self):
-        if not self.acceleration_custom:
-            return None
-        return self.acceleration
+    def output(self):
+        return self.settings.get("output", True)
+
+    @output.setter
+    def output(self, value):
+        self.settings["output"] = value
 
     @property
-    def implicit_d_ratio(self):
-        if not self.dratio_custom:
-            return None
-        return self.dratio
+    def raster_step(self):
+        return self.settings.get("raster_step", 2 if self.operation == "Raster" else 0)
+
+    @raster_step.setter
+    def raster_step(self, value):
+        self.settings["raster_step"] = value
+
+    @property
+    def overscan(self):
+        return self.settings.get("overscan", 20)
+
+    @overscan.setter
+    def overscan(self, value):
+        self.settings["overscan"] = value
+
+    @property
+    def speed(self):
+        speed = self.settings.get("speed")
+        if speed is None:
+            if self.operation == "Cut":
+                return 10.0
+            elif self.operation == "Engrave":
+                return 35.0
+            elif self.operation == "Raster":
+                return 150.0
+            elif self.operation == "Image":
+                return 150.0
+            elif self.operation == "Dots":
+                return 35.0
+            else:
+                return 10.0
+        return speed
+
+    @speed.setter
+    def speed(self, value):
+        self.settings["speed"] = value
+
+    @property
+    def power(self):
+        return self.settings.get("power", 1000)
+
+    @power.setter
+    def power(self, value):
+        self.settings["power"] = value
+
+    @property
+    def line_color(self):
+        return self.settings.get("line_color", 0)
+
+    @line_color.setter
+    def line_color(self, value):
+        self.settings["line_color"] = value
+
+    @property
+    def laser_enabled(self):
+        return self.settings.get("laser_enabled", True)
+
+    @laser_enabled.setter
+    def laser_enabled(self, value):
+        self.settings["laser_enabled"] = value
+
+    @property
+    def ppi_enabled(self):
+        return self.settings.get("ppi_enabled", True)
+
+    @ppi_enabled.setter
+    def ppi_enabled(self, value):
+        self.settings["ppi_enabled"] = value
+
+    @property
+    def dot_length(self):
+        return self.settings.get("dot_length", 1)
+
+    @dot_length.setter
+    def dot_length(self, value):
+        self.settings["dot_length"] = value
+
+    @property
+    def dot_length_custom(self):
+        return self.settings.get("dot_length_custom", 1)
+
+    @dot_length_custom.setter
+    def dot_length_custom(self, value):
+        self.settings["dot_length_custom"] = value
 
     @property
     def implicit_dotlength(self):
@@ -164,7 +153,135 @@ class LaserSettings:
         return self.dot_length
 
     @property
+    def shift_enabled(self):
+        return self.settings.get("shift_enabled", False)
+
+    @shift_enabled.setter
+    def shift_enabled(self, value):
+        self.settings["shift_enabled"] = value
+
+    @property
+    def passes(self):
+        return self.settings.get("passes", 0)
+
+    @passes.setter
+    def passes(self, value):
+        self.settings["passes"] = value
+
+    @property
+    def passes_custom(self):
+        return self.settings.get("passes_custom", 0)
+
+    @passes_custom.setter
+    def passes_custom(self, value):
+        self.settings["passes_custom"] = value
+
+    @property
     def implicit_passes(self):
         if not self.passes_custom:
             return 1
         return self.passes
+
+    @property
+    def raster_direction(self):
+        return self.settings.get("raster_direction", 0)
+
+    @raster_direction.setter
+    def raster_direction(self, value):
+        self.settings["raster_direction"] = value
+
+    @property
+    def raster_swing(self):
+        return self.settings.get("raster_swing", False)
+
+    @raster_swing.setter
+    def raster_swing(self, value):
+        self.settings["raster_swing"] = value
+
+    @property
+    def acceleration(self):
+        return self.settings.get("acceleration", 0)
+
+    @acceleration.setter
+    def acceleration(self, value):
+        self.settings["acceleration"] = value
+
+    @property
+    def acceleration_custom(self):
+        return self.settings.get("acceleration_custom", 0)
+
+    @acceleration_custom.setter
+    def acceleration_custom(self, value):
+        self.settings["acceleration_custom"] = value
+
+    @property
+    def implicit_accel(self):
+        if not self.acceleration_custom:
+            return None
+        return self.acceleration
+
+    @property
+    def dratio(self):
+        return self.settings.get("dratio", 0.261)
+
+    @dratio.setter
+    def dratio(self, value):
+        self.settings["dratio"] = value
+
+    @property
+    def dratio_custom(self):
+        return self.settings.get("dratio_custom", False)
+
+    @dratio_custom.setter
+    def dratio_custom(self, value):
+        self.settings["dratio_custom"] = value
+
+    @property
+    def implicit_d_ratio(self):
+        if not self.dratio_custom:
+            return None
+        return self.dratio
+
+    @property
+    def raster_preference_top(self):
+        return self.settings.get("raster_preference_top", 0)
+
+    @raster_preference_top.setter
+    def raster_preference_top(self, value):
+        self.settings["raster_preference_top"] = value
+
+    @property
+    def raster_preference_right(self):
+        return self.settings.get("raster_preference_right", 0)
+
+    @raster_preference_right.setter
+    def raster_preference_right(self, value):
+        self.settings["raster_preference_right"] = value
+
+    @property
+    def raster_preference_left(self):
+        return self.settings.get("raster_preference_left", 0)
+
+    @raster_preference_left.setter
+    def raster_preference_left(self, value):
+        self.settings["raster_preference_left"] = value
+
+    @property
+    def raster_preference_bottom(self):
+        return self.settings.get("raster_preference_bottom", 0)
+
+    @raster_preference_bottom.setter
+    def raster_preference_bottom(self, value):
+        self.settings["raster_preference_bottom"] = value
+
+    @property
+    def horizontal_raster(self):
+        return self.raster_step and (
+            self.raster_direction == 0 or self.raster_direction == 1
+        )
+
+    @property
+    def vertical_raster(self):
+        return self.raster_step and (
+            self.raster_direction == 2 or self.raster_direction == 3
+        )
