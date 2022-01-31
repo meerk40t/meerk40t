@@ -8,6 +8,78 @@ class LaserSettings:
             self.settings = dict()
         self.settings.update(kwargs)
 
+        self.operation = "Unknown"
+        try:
+            self.operation = kwargs["operation"]
+        except KeyError:
+            pass
+        self.color = None
+        self.output = True
+        self.show = True
+        self.default = False
+
+        try:
+            self.color = Color(kwargs["color"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.output = bool(kwargs["output"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.show = bool(kwargs["show"])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            self.default = bool(kwargs["default"])
+        except (ValueError, TypeError, KeyError):
+            pass
+
+        if self.operation == "Cut":
+            if self.settings.speed is None:
+                self.settings.speed = 10.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("red")
+        elif self.operation == "Engrave":
+            if self.settings.speed is None:
+                self.settings.speed = 35.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("blue")
+        elif self.operation == "Raster":
+            if self.settings.raster_step == 0:
+                self.settings.raster_step = 2
+            if self.settings.speed is None:
+                self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("black")
+        elif self.operation == "Image":
+            if self.settings.speed is None:
+                self.settings.speed = 150.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("transparent")
+        elif self.operation == "Dots":
+            if self.settings.speed is None:
+                self.settings.speed = 35.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("transparent")
+        else:
+            if self.settings.speed is None:
+                self.settings.speed = 10.0
+            if self.settings.power is None:
+                self.settings.power = 1000.0
+            if self.color is None:
+                self.color = Color("white")
+
         self.line_color = None
 
         self.laser_enabled = True
