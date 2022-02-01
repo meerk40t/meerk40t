@@ -24,7 +24,7 @@ should be toggled and move by anything executing these in the planning process. 
 be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
 to LaserCode.
 
-All CutObjects have a .start() .end() and .generator() functions. They also have a settings object that contains all
+All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
@@ -93,11 +93,23 @@ class CutObject(Parameters):
     def reversible(self):
         return True
 
+    @property
     def start(self):
         return (self._start_x, self._start_y) if self.normal else (self._end_x, self._end_y)
 
+    @property
     def end(self):
         return (self._start_x, self._start_y) if not self.normal else (self._end_x, self._end_y)
+
+    @start.setter
+    def start(self, value):
+        self._start_x = value[0]
+        self._start_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        self._end_x = value[0]
+        self._end_y = value[1]
 
     def length(self):
         return Point.distance((self._start_x, self._start_y), (self._end_x, self._end_y))
@@ -206,17 +218,19 @@ class CutGroup(list, CutObject, ABC):
     def reverse(self):
         pass
 
+    @property
     def start(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[0].start() if self.normal else self[-1].end()
+        return self[0].start if self.normal else self[-1].end
 
+    @property
     def end(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[-1].end() if self.normal else self[0].start()
+        return self[-1].end if self.normal else self[0].start
 
     def flat(self):
         """
@@ -303,8 +317,6 @@ class CutCode(CutGroup):
         self.operation = "CutCode"
 
         self.travel_speed = 20.0
-        self.start_x = None
-        self.start_y = None
         self.mode = None
 
     def __str__(self):
@@ -320,15 +332,15 @@ class CutCode(CutGroup):
         path = None
         previous_settings = None
         for e in self.flat():
-            start = e.start()
-            end = e.end()
+            start = e.start
+            end = e.end
             if path is None:
                 path = Path()
                 c = e.line_color if e.line_color is not None else "blue"
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
-                path.move(e.start())
+                path.move(e.start)
             if isinstance(e, LineCut):
                 path.line(end)
             elif isinstance(e, QuadCut):
@@ -376,13 +388,13 @@ class CutCode(CutGroup):
         distance = 0
         if include_start:
             if self.start is not None:
-                distance += abs(complex(self.start) - complex(cutcode[0].start()))
+                distance += abs(complex(self.start) - complex(cutcode[0].start))
             else:
-                distance += abs(0 - complex(cutcode[0].start()))
+                distance += abs(0 - complex(cutcode[0].start))
         for i in range(1, len(cutcode)):
             prev = cutcode[i - 1]
             curr = cutcode[i]
-            delta = Point.distance(prev.end(), curr.start())
+            delta = Point.distance(prev.end, curr.start)
             distance += delta
         return distance
 
@@ -490,8 +502,8 @@ class LineCut(CutObject):
         self.raster_step = 0
 
     def generator(self):
-        start = self.start()
-        end = self.end()
+        start = self.start
+        end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
 
@@ -505,14 +517,14 @@ class QuadCut(CutObject):
         return self._control
 
     def length(self):
-        return Point.distance(self.start(), self.c()) + Point.distance(
-            self.c(), self.end()
+        return Point.distance(self.start, self.c()) + Point.distance(
+            self.c(), self.end
         )
 
     def generator(self):
-        start = self.start()
+        start = self.start
         c = self.c()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_quad_bezier(
             start[0],
             start[1],
@@ -538,16 +550,16 @@ class CubicCut(CutObject):
 
     def length(self):
         return (
-            Point.distance(self.start(), self.c1())
+            Point.distance(self.start, self.c1())
             + Point.distance(self.c1(), self.c2())
-            + Point.distance(self.c2(), self.end())
+            + Point.distance(self.c2(), self.end)
         )
 
     def generator(self):
-        start = self.start()
+        start = self.start
         c1 = self.c1()
         c2 = self.c2()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_cubic_bezier(
             start[0],
             start[1],
@@ -629,11 +641,13 @@ class RasterCut(CutObject):
     def reverse(self):
         pass
 
+    @property
     def start(self):
-        return Point(self.plot.initial_position_in_scene())
+        return self.plot.initial_position_in_scene()
 
+    @property
     def end(self):
-        return Point(self.plot.final_position_in_scene())
+        return self.plot.final_position_in_scene()
 
     def lower(self):
         return self.plot.offset_y + self.height
@@ -699,17 +713,30 @@ class RawCut(CutObject):
     def reverse(self):
         self.plot = list(reversed(self.plot))
 
+    @property
     def start(self):
         try:
-            return Point(self.plot[0][:2])
+            return self.plot[0][:2]
         except IndexError:
             return None
 
+    @property
     def end(self):
         try:
-            return Point(self.plot[-1][:2])
+            return self.plot[-1][:2]
         except IndexError:
             return None
+
+    @start.setter
+    def start(self, value):
+        self._start_x = value[0]
+        self._start_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        self._end_x = value[0]
+        self._end_y = value[1]
+
 
     def generator(self):
         return self.plot

@@ -576,14 +576,15 @@ class CutPlan:
                     )
                     c = self.plan[i]
                 if last is not None:
-                    self.plan[i].start = last
+                    cur = self.plan[i]
+                    cur._start_x, cur._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=self.context.opt_inners_grouped,
                 )
-                last = self.plan[i].end()
+                last = self.plan[i].end
 
     def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
@@ -1628,14 +1629,16 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
                 if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
-                    distance = abs(complex(closest.start()) - curr)
+                    start = closest.start
+                    distance = abs(complex(start[0], start[1]) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
-                    distance = abs(complex(closest.end()) - curr)
+                    end = closest.end
+                    distance = abs(complex(end[0], end[1]) - curr)
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
@@ -1652,17 +1655,17 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         if distance > 50:
             closest = None
             for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
-                s = cut.start()
+                s = cut.start
                 if (
-                    abs(s.x - curr.real) <= distance
-                    and abs(s.y - curr.imag) <= distance
+                    abs(s[0] - curr.real) <= distance
+                    and abs(s[1] - curr.imag) <= distance
                     and (
                         not complete_path
                         or cut.closed
                         or cut.first
                     )
                 ):
-                    d = abs(complex(s) - curr)
+                    d = abs(complex(s[0], s[1]) - curr)
                     if d < distance:
                         closest = cut
                         backwards = False
@@ -1672,17 +1675,17 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
 
                 if not cut.reversible():
                     continue
-                e = cut.end()
+                e = cut.end
                 if (
-                    abs(e.x - curr.real) <= distance
-                    and abs(e.y - curr.imag) <= distance
+                    abs(e[0] - curr.real) <= distance
+                    and abs(e[1] - curr.imag) <= distance
                     and (
                         not complete_path
                         or cut.closed
                         or cut.last
                     )
                 ):
-                    d = abs(complex(e) - curr)
+                    d = abs(complex(e[0], e[1]) - curr)
                     if d < distance:
                         closest = cut
                         backwards = True
@@ -1698,7 +1701,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
             if (
                 closest.next
                 and closest.next.burns_done <= closest.burns_done
-                and closest.next.start() == closest.end()
+                and closest.next.start == closest.end
             ):
                 closest = closest.next
                 backwards = False
@@ -1706,7 +1709,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
             if (
                 closest.previous
                 and closest.previous.burns_done < closest.burns_done
-                and closest.previous.end() == closest.start()
+                and closest.previous.end == closest.start
             ):
                 closest = closest.previous
                 backwards = True
@@ -1715,11 +1718,11 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         c = copy(closest)
         if backwards:
             c.reverse()
-        end = c.end()
-        curr = complex(end)
+        end = c.end
+        curr = complex(end[0], end[1])
         ordered.append(c)
 
-    ordered.start = context.start
+    ordered._start_x, ordered._start_y = context.start
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
@@ -1784,7 +1787,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     endpoints = np.zeros((length, 4), dtype="complex")
     # start, index, reverse-index, end
     for i in range(length):
-        endpoints[i] = complex(ordered[i].start()), i, ~i, complex(ordered[i].end())
+        endpoints[i] = complex(ordered[i].start), i, ~i, complex(ordered[i].end)
     indexes0 = np.arange(0, length - 1)
     indexes1 = indexes0 + 1
 

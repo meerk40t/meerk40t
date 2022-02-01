@@ -370,14 +370,10 @@ class Spooler:
             program = getattr(program, "generate")
 
         # GENERATOR
-        try:
-            for p in program():
-                if self._shutdown:
-                    return
-                self._execute_program(p)
-            return
-        except TypeError:
-            pass
+        for p in program():
+            if self._shutdown:
+                return
+            self._execute_program(p)
         print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):

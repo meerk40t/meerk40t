@@ -98,7 +98,7 @@ class PlotPlanner(Parameters):
         self.pos_y = None
         while len(self.queue):
             cut = self.queue.pop(0)
-            start = cut.start()
+            start = cut.start
             new_start_x = start[0]
             new_start_y = start[1]
             assert isinstance(new_start_x, int)
