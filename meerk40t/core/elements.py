@@ -1182,7 +1182,7 @@ class LaserOperation(Node, Parameters):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=settings,
+                                        settings=self.settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1193,7 +1193,7 @@ class LaserOperation(Node, Parameters):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=settings,
+                                        settings=self.settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1204,7 +1204,7 @@ class LaserOperation(Node, Parameters):
                                     seg.start,
                                     seg.control,
                                     seg.end,
-                                    settings=settings,
+                                    settings=self.settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1216,7 +1216,7 @@ class LaserOperation(Node, Parameters):
                                     seg.control1,
                                     seg.control2,
                                     seg.end,
-                                    settings=settings,
+                                    settings=self.settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1233,9 +1233,9 @@ class LaserOperation(Node, Parameters):
                         cut_obj.previous = group[i - 1]
                     yield group
         elif self.operation == "Raster":
-            step = settings.raster_step
+            step = self.raster_step
             assert step > 0
-            direction = settings.raster_direction
+            direction = self.raster_direction
             for element in self.children:
                 svg_image = element.object
                 if not isinstance(svg_image, SVGImage):
@@ -1335,7 +1335,7 @@ class LaserOperation(Node, Parameters):
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         crosshatch=True,
-                        settings=settings,
+                        settings=self.settings,
                         passes=passes,
                     )
                     cut.path = path

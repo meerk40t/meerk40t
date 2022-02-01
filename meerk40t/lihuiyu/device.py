@@ -222,7 +222,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.controller = LhystudiosController(self)
         self.add_service_delegate(self.controller)
 
-        self.driver.output = self.controller if not self.networked else self.tcp
+        self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
         self.viewbuffer = ""
 
@@ -418,7 +418,7 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("Updates network state for m2nano networked."),
         )
         def network_update(**kwargs):
-            self.driver.output = self.controller if not self.networked else self.tcp
+            self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
         @self.console_command(
             "status",
@@ -513,8 +513,8 @@ class LihuiyuDevice(Service, ViewPort):
                     if not data:
                         break
                     buffer = bytes(data, "utf8")
-                    self.output.write(buffer)
-                self.output.write(b"\n")
+                    self.out_pipe.write(buffer)
+                self.out_pipe.write(b"\n")
 
         @self.console_argument("filename", type=str)
         @self.console_command(
@@ -549,7 +549,7 @@ class LihuiyuDevice(Service, ViewPort):
             if not remainder:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                self.output.write(
+                self.out_pipe.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
                 )
 
@@ -565,7 +565,7 @@ class LihuiyuDevice(Service, ViewPort):
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
                 )
                 code = b"A%s\n" % challenge
-                self.output.write(code)
+                self.out_pipe.write(code)
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
@@ -799,7 +799,7 @@ class LhystudiosDriver(Parameters):
         self.service = service
         self.name = str(self.service)
 
-        self.output = None
+        self.out_pipe = None
 
         self.process_item = None
         self.spooled_item = None
@@ -836,10 +836,10 @@ class LhystudiosDriver(Parameters):
         self.service._buffer_size = 0
 
         def primary_hold():
-            if self.output is None:
+            if self.out_pipe is None:
                 return True
 
-            buffer = len(self.output)
+            buffer = len(self.out_pipe)
             if buffer is None:
                 return False
             return self.service.buffer_limit and buffer > self.service.buffer_max
@@ -896,7 +896,7 @@ class LhystudiosDriver(Parameters):
         return False
 
     def data_output(self, e):
-        self.output.write(e)
+        self.out_pipe.write(e)
 
     def update_codes(self):
         if not self.service.swap_xy:
@@ -941,21 +941,20 @@ class LhystudiosDriver(Parameters):
                     self.rapid_mode()
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = self.plot_planner.settings
-                    s_set = self.settings
-                    if p_set.power != s_set.power:
+                    p_set = Parameters(self.plot_planner.settings)
+                    if p_set.power != self.power:
                         self.set_power(p_set.power)
                     if (
-                        p_set.raster_step != s_set.raster_step
-                        or p_set.speed != s_set.speed
-                        or s_set.implicit_d_ratio != p_set.implicit_d_ratio
-                        or s_set.implicit_accel != p_set.implicit_accel
+                        p_set.raster_step != self.raster_step
+                        or p_set.speed != self.speed
+                        or self.implicit_d_ratio != p_set.implicit_d_ratio
+                        or self.implicit_accel != p_set.implicit_accel
                     ):
                         self.set_speed(p_set.speed)
                         self.set_step(p_set.raster_step)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
-                    self.settings.update(p_set)
+                    self.settings.update(p_set.settings)
                 elif on & PLOT_AXIS:  # Major Axis.
                     self.set_prop(REQUEST_AXIS)
                     if x == 0:  # X Major / Horizontal.
@@ -1975,7 +1974,7 @@ class LhystudiosDriver(Parameters):
 
     def wait_finish(self, *values):
         """Adds an additional holding requirement if the pipe has any data."""
-        self.temp_holds.append(lambda: len(self.output) != 0)
+        self.temp_holds.append(lambda: len(self.out_pipe) != 0)
 
     def status(self):
         parts = list()

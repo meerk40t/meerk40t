@@ -487,7 +487,7 @@ class CutCode(CutGroup):
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
 
     def generator(self):
         start = self.start()
@@ -498,7 +498,7 @@ class LineCut(CutObject):
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control = control_point
 
     def c(self):
@@ -526,7 +526,7 @@ class QuadCut(CutObject):
 class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
 
