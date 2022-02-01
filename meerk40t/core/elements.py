@@ -994,7 +994,7 @@ class LaserOperation(Node, Parameters):
             obj = args[0]
             if isinstance(obj, SVGElement):
                 self.add(obj, type="opnode")
-            elif hasattr("settings", obj):
+            elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
     def __repr__(self):
