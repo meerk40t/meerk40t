@@ -4029,7 +4029,7 @@ class Channel:
         if self.greet is not None:
             monitor_function(self.greet)
         if self.buffer is not None:
-            for line in self.buffer:
+            for line in list(self.buffer):
                 monitor_function(line)
 
     def unwatch(self, monitor_function: Callable):
