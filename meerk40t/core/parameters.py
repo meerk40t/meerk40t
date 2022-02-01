@@ -235,7 +235,7 @@ class Parameters:
 
     @property
     def raster_direction(self):
-        return self.settings.get("raster_direction", 0)
+        return self.settings.get("raster_direction", 1)
 
     @raster_direction.setter
     def raster_direction(self, value):
