@@ -1126,6 +1126,14 @@ class LhystudiosDriver(Parameters):
         self.rapid_mode()
         self.move_relative(dx, dy)
 
+    def dwell(self, time_in_ms):
+        self.program_mode()
+        self.raster_mode()
+        self.wait_finish()
+        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.wait(time_in_ms / 1000.0)
+        self.laser_off()
+
     def move(self, x, y):
         self.goto(x, y, False)
 
@@ -1899,7 +1907,6 @@ class LhystudiosDriver(Parameters):
             self.native_y -= abs(dy)
             self.check_bounds()
 
-
     ######################
     # ORIGINAL DRIVER CODE
     ######################
@@ -1972,7 +1979,7 @@ class LhystudiosDriver(Parameters):
         time.sleep(float(t))
 
     def wait_finish(self, *values):
-        """Adds an additional holding requirement if the pipe has any data."""
+        """Adds a temp hold requirement if the pipe has any data."""
         self.temp_holds.append(lambda: len(self.out_pipe) != 0)
 
     def status(self):

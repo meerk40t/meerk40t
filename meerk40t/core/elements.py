@@ -1126,11 +1126,7 @@ class LaserOperation(Node, Parameters):
                 if first is None:
                     continue
                 yield "move_abs", first[0], first[1]
-                yield "wait", 4.000  # I don't know how long the move will take to finish.
-                yield "wait_finish"
-                yield "laser_on"  # This can't be sent early since these are timed operations.
-                yield "wait", (self.speed / 1000.0)
-                yield "laser_off"
+                yield "dwell", self.dwell_time
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
