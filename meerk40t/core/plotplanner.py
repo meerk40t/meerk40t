@@ -1,5 +1,5 @@
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from .Parameters import Parameters
+from .parameters import Parameters
 
 from ..device.basedevice import (
     PLOT_AXIS,
