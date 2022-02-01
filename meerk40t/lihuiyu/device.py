@@ -2206,7 +2206,8 @@ class LhystudiosController:
         Controller state change to Started.
         :return:
         """
-        if self._thread is None or not self._thread.is_alive():
+
+        if not self.is_shutdown and (self._thread is None or not self._thread.is_alive()):
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name="LhyPipe(%s)" % self.context.path,
@@ -2391,7 +2392,6 @@ class LhystudiosController:
                 self.count += 1
             self.context.signal("pipe;running", queue_processed)
         self._thread = None
-        self.is_shutdown = False
         self.update_state(STATE_END)
         self.pre_ok = False
         self.context.signal("pipe;running", False)

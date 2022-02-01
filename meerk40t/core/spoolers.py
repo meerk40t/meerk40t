@@ -345,7 +345,8 @@ class Spooler:
         @param program: line to be executed.
         @return:
         """
-
+        if self._shutdown:
+            return
         # TUPLE[str, Any,...]
         if isinstance(program, tuple):
             attr = program[0]
@@ -371,6 +372,8 @@ class Spooler:
         # GENERATOR
         try:
             for p in program():
+                if self._shutdown:
+                    return
                 self._execute_program(p)
             return
         except TypeError:
