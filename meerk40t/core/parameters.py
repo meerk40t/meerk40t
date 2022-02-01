@@ -342,12 +342,12 @@ class Parameters:
         self.settings["jog_enable"] = value
 
     @property
-    def dwell(self):
-        return self.settings.get("dwell", 1.0)
+    def dwell_time(self):
+        return self.settings.get("dwell_time", 50.0)
 
-    @dwell.setter
-    def dwell(self, value):
-        self.settings["dwell"] = value
+    @dwell_time.setter
+    def dwell_time(self, value):
+        self.settings["dwell_time"] = value
 
     @property
     def horizontal_raster(self):
