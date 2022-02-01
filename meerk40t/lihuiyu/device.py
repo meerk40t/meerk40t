@@ -928,9 +928,6 @@ class LhystudiosDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            if self.hold_work():
-                time.sleep(0.05)
-                continue
             sx = self.native_x
             sy = self.native_y
             # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
