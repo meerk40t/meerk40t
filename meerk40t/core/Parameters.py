@@ -2,6 +2,42 @@ from typing import Dict
 
 from meerk40t.svgelements import Color
 
+INT_PARAMETERS = (
+    "power",
+    "raster_step",
+    "raster_direction",
+    "overscan",
+    "acceleration",
+    "dot_length",
+    "passes",
+    "jog_distance",
+    "raster_direction",
+    "raster_preference_top",
+    "raster_preference_right",
+    "raster_preference_bottom",
+)
+
+FLOAT_PARAMETERS = (
+    "speed",
+    "dratio",
+    "dwell",
+)
+
+BOOL_PARAMETERS = (
+    "passes_custom",
+    "dot_length_custom",
+    "acceleration_custom",
+    "dratio_custom",
+    "default",
+    "output",
+    "laser_enabled",
+    "job_enabled",
+    "ppi_enabled",
+    "shift_enabled",
+    "raster_swing",
+    "advanced",
+)
+
 
 class Parameters:
     def __init__(self, settings: Dict = None, **kwargs):
@@ -12,39 +48,15 @@ class Parameters:
 
     @staticmethod
     def validate(settings: Dict):
-        for v in ("speed","dratio"):
+        for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
-        for v in (
-            "power",
-            "raster_step",
-            "raster_direction",
-            "overscan",
-            "acceleration",
-            "dot_length",
-            "passes",
-            "raster_direction",
-            "raster_preference_top",
-            "raster_preference_right",
-            "raster_preference_bottom",
-        ):
+        for v in INT_PARAMETERS:
             if v in settings:
                 settings[v] = int(float(settings[v]))
-        for v in (
-            "passes_custom",
-            "dot_length_custom",
-            "acceleration_custom",
-            "dratio_custom",
-            "default",
-            "output",
-            "laser_enabled",
-            "ppi_enabled",
-            "shift_enabled",
-            "raster_swing",
-            "advanced",
-        ):
+        for v in BOOL_PARAMETERS:
             if v in settings:
-                settings[v] = settings[v] in ("True", "true")
+                settings[v] = settings[v].lower() == "true"
         for v in ("color", "line_color"):
             if v in settings:
                 settings[v] = Color(settings[v])
@@ -312,6 +324,30 @@ class Parameters:
     @raster_preference_bottom.setter
     def raster_preference_bottom(self, value):
         self.settings["raster_preference_bottom"] = value
+
+    @property
+    def jog_distance(self):
+        return self.settings.get("jog_distance", 15)
+
+    @jog_distance.setter
+    def jog_distance(self, value):
+        self.settings["jog_distance"] = value
+
+    @property
+    def jog_enable(self):
+        return self.settings.get("jog_enable", True)
+
+    @jog_enable.setter
+    def jog_enable(self, value):
+        self.settings["jog_enable"] = value
+
+    @property
+    def dwell(self):
+        return self.settings.get("dwell", 1.0)
+
+    @dwell.setter
+    def dwell(self, value):
+        self.settings["dwell"] = value
 
     @property
     def horizontal_raster(self):
