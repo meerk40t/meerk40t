@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+from .parameters import Parameters
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -31,117 +32,15 @@ are references to settings which may be shared by all CutObjects created by a La
 MILS_IN_MM = 39.3701
 
 
-class LaserSettings:
-    def __init__(self, *args, **kwargs):
-        self.line_color = None
-
-        self.laser_enabled = True
-        self.speed = None
-        self.power = None
-        self.dratio_custom = False
-        self.dratio = 0.261
-        self.acceleration_custom = False
-        self.acceleration = 1
-
-        self.raster_step = 0
-        self.raster_direction = 1  # Bottom To Top - Default.
-        self.raster_swing = False  # False = bidirectional, True = Unidirectional
-        self.raster_preference_top = 0
-        self.raster_preference_right = 0
-        self.raster_preference_left = 0
-        self.raster_preference_bottom = 0
-        self.overscan = 20
-
-        self.advanced = False
-
-        self.ppi_enabled = True
-
-        self.dot_length_custom = False
-        self.dot_length = 1
-
-        self.shift_enabled = False
-
-        self.passes_custom = False
-        self.passes = 1
-
-        self.jog_distance = 255
-        self.jog_enable = True
-
-        for k in kwargs:
-            value = kwargs[k]
-            if hasattr(self, k):
-                q = getattr(self, k)
-                if q is None:
-                    setattr(self, k, value)
-                else:
-                    t = type(q)
-                    setattr(self, k, t(value))
-        if len(args) == 1:
-            obj = args[0]
-            try:
-                obj = obj.settings
-            except AttributeError:
-                pass
-            if isinstance(obj, LaserSettings):
-                self.set_values(obj)
-
-    def set_values(self, obj):
-        for q in dir(obj):
-            if q.startswith("_") or q.startswith("implicit"):
-                continue
-            obj_type = type(obj)
-            if hasattr(obj_type, q) and isinstance(getattr(obj_type, q), property):
-                # Do not set property values
-                continue
-
-            value = getattr(obj, q)
-            if isinstance(value, (int, float, bool, str)):
-                setattr(self, q, value)
-
-    @property
-    def horizontal_raster(self):
-        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
-
-    @property
-    def implicit_accel(self):
-        if not self.acceleration_custom:
-            return None
-        return self.acceleration
-
-    @property
-    def implicit_d_ratio(self):
-        if not self.dratio_custom:
-            return None
-        return self.dratio
-
-    @property
-    def implicit_dotlength(self):
-        if not self.dot_length_custom:
-            return 1
-        return self.dot_length
-
-    @property
-    def implicit_passes(self):
-        if not self.passes_custom:
-            return 1
-        return self.passes
-
-
-class CutObject:
+class CutObject(Parameters):
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
 
-    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1):
-        if settings is None:
-            settings = LaserSettings()
-        self.settings = settings
+    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs):
+        super().__init__(settings)
         if start is not None:
             self._start_x = int(round(start[0]))
             self._start_y = int(round(start[1]))
@@ -423,10 +322,9 @@ class CutCode(CutGroup):
         for e in self.flat():
             start = e.start()
             end = e.end()
-            settings = e.settings
             if path is None:
                 path = Path()
-                c = settings.line_color if settings.line_color is not None else "blue"
+                c = e.line_color if e.line_color is not None else "blue"
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
@@ -443,11 +341,11 @@ class CutCode(CutGroup):
                         path.line(x, y)
                     else:
                         path.move(x, y)
-            if previous_settings is not settings and previous_settings is not None:
+            if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
                     path = None
-            previous_settings = settings
+            previous_settings = e.settings
             last = end
         if path is not None and len(path) != 0:
             yield path
@@ -509,8 +407,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            if curr.settings.speed:
-                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.speed != 0:
+                distance += (curr.length() / MILS_IN_MM) / curr.speed
         return distance
 
     @classmethod
@@ -518,7 +416,7 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = LaserSettings()
+        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
@@ -589,7 +487,7 @@ class CutCode(CutGroup):
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
 
     def generator(self):
         start = self.start()
@@ -600,7 +498,7 @@ class LineCut(CutObject):
 class QuadCut(CutObject):
     def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control = control_point
 
     def c(self):
@@ -628,7 +526,7 @@ class QuadCut(CutObject):
 class CubicCut(CutObject):
     def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
 
@@ -676,11 +574,11 @@ class RasterCut(CutObject):
         self.tx = tx
         self.ty = ty
 
-        step = self.settings.raster_step
+        step = self.raster_step
         self.step = step
         assert step > 0
 
-        direction = self.settings.raster_direction
+        direction = self.raster_direction
         traverse = 0
         if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
@@ -694,7 +592,7 @@ class RasterCut(CutObject):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        if self.settings.raster_swing:
+        if self.raster_swing:
             traverse |= UNIDIRECTIONAL
         width, height = image.size
         self.width = width
@@ -703,7 +601,7 @@ class RasterCut(CutObject):
         def image_filter(pixel):
             return (255 - pixel) / 255.0
 
-        overscan = self.settings.overscan
+        overscan = self.overscan
         if overscan is None:
             overscan = 20
         else:

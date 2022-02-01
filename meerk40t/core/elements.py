@@ -3,6 +3,7 @@ import os.path
 import re
 from copy import copy
 
+from .parameters import Parameters
 from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
@@ -35,7 +36,6 @@ from .cutcode import (
     CubicCut,
     CutCode,
     CutGroup,
-    LaserSettings,
     LineCut,
     QuadCut,
     RasterCut,
@@ -978,104 +978,27 @@ class GroupNode(Node):
         return False
 
 
-class LaserOperation(Node):
+class LaserOperation(Node, Parameters):
     """
     Default object defining any operation done on the laser.
 
-    This is an Node type "op".
+    This is a Node of type "op".
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.operation = "Unknown"
-        try:
-            self.operation = kwargs["operation"]
-        except KeyError:
-            pass
-        self.color = None
-        self.output = True
-        self.show = True
-        self.default = False
-
+        self.settings.update(kwargs)
         self._status_value = "Queued"
-        self.settings = LaserSettings(*args, **kwargs)
-
-        try:
-            self.color = Color(kwargs["color"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.output = bool(kwargs["output"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.show = bool(kwargs["show"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.default = bool(kwargs["default"])
-        except (ValueError, TypeError, KeyError):
-            pass
 
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
                 self.add(obj, type="opnode")
-            elif isinstance(obj, LaserOperation):
-                self.operation = obj.operation
-                self.color = Color(obj.color)
-                self.output = obj.output
-                self.show = obj.show
-                self.default = obj.default
-                self.settings = LaserSettings(obj.settings)
-
-        if self.operation == "Cut":
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("red")
-        elif self.operation == "Engrave":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("blue")
-        elif self.operation == "Raster":
-            if self.settings.raster_step == 0:
-                self.settings.raster_step = 2
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("black")
-        elif self.operation == "Image":
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        elif self.operation == "Dots":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        else:
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("white")
+            elif hasattr(obj, "settings"):
+                self.settings = dict(obj.settings)
 
     def __repr__(self):
-        return "LaserOperation('%s', %s)" % (self.type, str(self._operation))
+        return "LaserOperation('%s', %s)" % (self.type, str(self.operation))
 
     def __str__(self):
         op = self.operation
@@ -1084,55 +1007,55 @@ class LaserOperation(Node):
             parts.append("(Disabled)")
         if self.default:
             parts.append("✓")
-        if self.settings.passes_custom and self.settings.passes != 1:
-            parts.append("%dX" % self.settings.passes)
+        if self.passes_custom and self.passes != 1:
+            parts.append("%dX" % self.passes)
         if op is None:
             op = "Unknown"
         if self.operation == "Raster":
-            op += str(self.settings.raster_step)
+            op += str(self.raster_step)
         parts.append(op)
         if op == "Dots":
-            parts.append("%gms dwell" % self.settings.speed)
+            parts.append("%gms dwell" % self.speed)
             return " ".join(parts)
-        if self.settings.speed is not None:
-            parts.append("%gmm/s" % self.settings.speed)
+        if self.speed is not None:
+            parts.append("%gmm/s" % self.speed)
         if self.operation in ("Raster", "Image"):
-            if self.settings.raster_swing:
+            if self.raster_swing:
                 raster_dir = "-"
             else:
                 raster_dir = "="
-            if self.settings.raster_direction == 0:
+            if self.raster_direction == 0:
                 raster_dir += "T2B"
-            elif self.settings.raster_direction == 1:
+            elif self.raster_direction == 1:
                 raster_dir += "B2T"
-            elif self.settings.raster_direction == 2:
+            elif self.raster_direction == 2:
                 raster_dir += "R2L"
-            elif self.settings.raster_direction == 3:
+            elif self.raster_direction == 3:
                 raster_dir += "L2R"
-            elif self.settings.raster_direction == 4:
+            elif self.raster_direction == 4:
                 raster_dir += "X"
             else:
-                raster_dir += "%d" % self.settings.raster_direction
+                raster_dir += "%d" % self.raster_direction
             parts.append(raster_dir)
-        if self.settings.power is not None:
-            parts.append("%gppi" % self.settings.power)
+        if self.power is not None:
+            parts.append("%gppi" % self.power)
         if self.operation in ("Raster", "Image"):
-            if isinstance(self.settings.overscan, str):
-                parts.append("±%s" % self.settings.overscan)
+            if isinstance(self.overscan, str):
+                parts.append("±%s" % self.overscan)
             else:
-                parts.append("±%d" % self.settings.overscan)
+                parts.append("±%d" % self.overscan)
         if (
             self.operation in ("Cut", "Engrave", "Raster")
             and not self.default
             and self.color is not None
         ):
             parts.append("%s" % self.color.hex)
-        if self.settings.dratio_custom:
-            parts.append("d:%g" % self.settings.dratio)
-        if self.settings.acceleration_custom:
-            parts.append("a:%d" % self.settings.acceleration)
-        if self.settings.dot_length_custom:
-            parts.append("dot: %d" % self.settings.dot_length)
+        if self.dratio_custom:
+            parts.append("d:%g" % self.dratio)
+        if self.acceleration_custom:
+            parts.append("a:%d" % self.acceleration)
+        if self.dot_length_custom:
+            parts.append("dot: %d" % self.dot_length)
         return " ".join(parts)
 
     def __copy__(self):
@@ -1157,7 +1080,7 @@ class LaserOperation(Node):
                     except AttributeError:
                         length = 0
                     try:
-                        estimate += length / (MILS_IN_MM * self.settings.speed)
+                        estimate += length / (MILS_IN_MM * self.speed)
                     except ZeroDivisionError:
                         estimate = float("inf")
             hours, remainder = divmod(estimate, 3600)
@@ -1180,7 +1103,7 @@ class LaserOperation(Node):
                         except (KeyError, ValueError):
                             step = 1
                     estimate += (e.image_width * e.image_height * step) / (
-                        MILS_IN_MM * self.settings.speed
+                        MILS_IN_MM * self.speed
                     )
             hours, remainder = divmod(estimate, 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -1206,15 +1129,13 @@ class LaserOperation(Node):
                 yield "wait", 4.000  # I don't know how long the move will take to finish.
                 yield "wait_finish"
                 yield "laser_on"  # This can't be sent early since these are timed operations.
-                yield "wait", (self.settings.speed / 1000.0)
+                yield "wait", (self.speed / 1000.0)
                 yield "laser_off"
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
         Generator of cutobjects for a particular operation.
         """
-        settings = self.settings
-
         if self.operation in ("Cut", "Engrave"):
             for element in self.children:
                 object_path = element.object
@@ -1235,7 +1156,7 @@ class LaserOperation(Node):
                     else:
                         path = abs(object_path)
                     path.approximate_arcs_with_cubics()
-                settings.line_color = path.stroke
+                self.line_color = path.stroke
                 for subpath in path.as_subpaths():
                     sp = Path(subpath)
                     if len(sp) == 0:
@@ -1247,7 +1168,7 @@ class LaserOperation(Node):
                     group = CutGroup(
                         None,
                         closed=closed,
-                        settings=settings,
+                        settings=self.settings,
                         passes=passes,
                     )
                     group.path = Path(subpath)
@@ -1261,7 +1182,7 @@ class LaserOperation(Node):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=settings,
+                                        settings=self.settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1272,7 +1193,7 @@ class LaserOperation(Node):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=settings,
+                                        settings=self.settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1283,7 +1204,7 @@ class LaserOperation(Node):
                                     seg.start,
                                     seg.control,
                                     seg.end,
-                                    settings=settings,
+                                    settings=self.settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1295,7 +1216,7 @@ class LaserOperation(Node):
                                     seg.control1,
                                     seg.control2,
                                     seg.end,
-                                    settings=settings,
+                                    settings=self.settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1312,9 +1233,9 @@ class LaserOperation(Node):
                         cut_obj.previous = group[i - 1]
                     yield group
         elif self.operation == "Raster":
-            step = settings.raster_step
+            step = self.raster_step
             assert step > 0
-            direction = settings.raster_direction
+            direction = self.raster_direction
             for element in self.children:
                 svg_image = element.object
                 if not isinstance(svg_image, SVGImage):
@@ -1341,7 +1262,7 @@ class LaserOperation(Node):
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
-                    settings=settings,
+                    settings=self.settings,
                     passes=passes,
                 )
                 cut.path = path
@@ -1353,7 +1274,7 @@ class LaserOperation(Node):
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         crosshatch=True,
-                        settings=settings,
+                        settings=self.settings,
                         passes=passes,
                     )
                     cut.path = path
@@ -1364,23 +1285,22 @@ class LaserOperation(Node):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
-                settings = LaserSettings(self.settings)
                 try:
-                    settings.raster_step = int(svg_image.values["raster_step"])
+                    self.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
                     # This overwrites any step that may have been defined in settings.
-                    settings.raster_step = (
+                    self.raster_step = (
                         1  # If raster_step is not set image defaults to 1.
                     )
-                if settings.raster_step <= 0:
-                    settings.raster_step = 1
+                if self.raster_step <= 0:
+                    self.raster_step = 1
                 try:
-                    settings.raster_direction = int(
+                    self.raster_direction = int(
                         svg_image.values["raster_direction"]
                     )
                 except KeyError:
                     pass
-                step = settings.raster_step
+                step = self.raster_step
                 matrix = svg_image.transform
                 pil_image = svg_image.image
                 pil_image, matrix = actualize(pil_image, matrix, step)
@@ -1402,20 +1322,20 @@ class LaserOperation(Node):
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
-                    settings=settings,
+                    settings=self.settings,
                     passes=passes,
                 )
                 cut.path = path
                 cut.original_op = self.operation
                 yield cut
 
-                if settings.raster_direction == 4:
+                if self.raster_direction == 4:
                     cut = RasterCut(
                         pil_image,
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         crosshatch=True,
-                        settings=settings,
+                        settings=self.settings,
                         passes=passes,
                     )
                     cut.path = path
@@ -1772,7 +1692,6 @@ class Elemental(Service):
 
         _ = kernel.translation
 
-
         @self.console_argument("filename")
         @self.console_command(
             "load",
@@ -2108,7 +2027,7 @@ class Elemental(Service):
                         operand.append(Color(value))
                     elif kind == "VAL":
                         if value == "step":
-                            operand.append(e.settings.raster_step)
+                            operand.append(e.raster_step)
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
@@ -2116,7 +2035,7 @@ class Elemental(Service):
                         elif value == "len":
                             operand.append(len(e.children))
                         else:
-                            operand.append(getattr(e.settings, value))
+                            operand.append(e.settings.get(value))
 
                     elif kind == "NUM":
                         operand.append(float(value))
@@ -2208,16 +2127,16 @@ class Elemental(Service):
             if default is not None:
                 op.default = default
             if speed is not None:
-                op.settings.speed = speed
+                op.speed = speed
             if power is not None:
-                op.settings.power = power
+                op.power = power
             if passes is not None:
-                op.settings.passes_custom = True
-                op.settings.passes = passes
+                op.passes_custom = True
+                op.passes = passes
             if step is not None:
-                op.settings.raster_step = step
+                op.raster_step = step
             if overscan is not None:
-                op.settings.overscan = self.device.length(overscan, -1)
+                op.overscan = self.device.length(overscan, -1)
             if command == "cut":
                 op.operation = "Cut"
             elif command == "engrave":
@@ -2243,7 +2162,7 @@ class Elemental(Service):
                 found = False
                 for op in data:
                     if op.operation in ("Raster", "Image"):
-                        step = op.settings.raster_step
+                        step = op.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
                 if not found:
@@ -2251,7 +2170,7 @@ class Elemental(Service):
                 return
             for op in data:
                 if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step_size
+                    op.raster_step = step_size
                     op.notify_update()
             return "ops", data
 
@@ -2269,7 +2188,7 @@ class Elemental(Service):
         def op_speed(command, channel, _, speed=None, difference=None, data=None, **kwrgs):
             if speed is None:
                 for op in data:
-                    old_speed = op.settings.speed
+                    old_speed = op.speed
                     channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
                 return
             if speed.endswith("%"):
@@ -2285,7 +2204,7 @@ class Elemental(Service):
                 return
 
             for op in data:
-                old_speed = op.settings.speed
+                old_speed = op.speed
                 if percent and difference:
                     s = old_speed + old_speed * (new_speed / 100.0)
                 elif difference:
@@ -2294,7 +2213,7 @@ class Elemental(Service):
                     s = old_speed * (new_speed / 100.0)
                 else:
                     s = new_speed
-                op.settings.speed = s
+                op.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
                 )
@@ -2310,12 +2229,12 @@ class Elemental(Service):
         def op_power(command, channel, _, power=None, data=None, **kwrgs):
             if power is None:
                 for op in data:
-                    old_ppi = op.settings.power
+                    old_ppi = op.power
                     channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
                 return
             for op in data:
-                old_ppi = op.settings.power
-                op.settings.power = power
+                old_ppi = op.power
+                op.power = power
                 channel(
                     _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
                 )
@@ -2329,16 +2248,16 @@ class Elemental(Service):
         def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
             if passes is None:
                 for op in data:
-                    old_passes = op.settings.passes
+                    old_passes = op.passes
                     channel(
                         _("Passes for '%s' is currently: %d") % (str(op), old_passes)
                     )
                 return
             for op in data:
-                old_passes = op.settings.passes
-                op.settings.passes = passes
+                old_passes = op.passes
+                op.passes = passes
                 if passes >= 1:
-                    op.settings.passes_custom = True
+                    op.passes_custom = True
                 channel(
                     _("Passes for '%s' updated %d -> %d")
                     % (str(op), old_passes, passes)
@@ -4632,7 +4551,7 @@ class Elemental(Service):
                 n.operation = "Cut"
 
         def radio_match(node, speed=0, **kwargs):
-            return node.settings.speed == float(speed)
+            return node.speed == float(speed)
 
         @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_submenu(_("Speed"))
@@ -4640,7 +4559,7 @@ class Elemental(Service):
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
         @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_raster(node, speed=150, **kwargs):
-            node.settings.speed = float(speed)
+            node.speed = float(speed)
             self.signal("element_property_reload", node)
 
         @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
@@ -4649,22 +4568,22 @@ class Elemental(Service):
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
         def set_speed_vector(node, speed=35, **kwargs):
-            node.settings.speed = float(speed)
+            node.speed = float(speed)
             self.signal("element_property_reload", node)
 
         def radio_match(node, power=0, **kwargs):
-            return node.settings.power == float(power)
+            return node.power == float(power)
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
         @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
         def set_power(node, power=1000, **kwargs):
-            node.settings.power = float(power)
+            node.power = float(power)
             self.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwargs):
-            return node.settings.raster_step == i
+            return node.raster_step == i
 
         @self.tree_conditional(lambda node: node.operation == "Raster")
         @self.tree_submenu(_("Step"))
@@ -4676,22 +4595,21 @@ class Elemental(Service):
             help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
-            settings = node.settings
-            settings.raster_step = i
+            node.raster_step = i
             self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwargs):
             return (
-                node.settings.passes_custom and passvalue == node.settings.passes
-            ) or (not node.settings.passes_custom and passvalue == 1)
+                node.passes_custom and passvalue == node.passes
+            ) or (not node.passes_custom and passvalue == 1)
 
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
         @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
         def set_n_passes(node, passvalue=1, **kwargs):
-            node.settings.passes = passvalue
-            node.settings.passes_custom = passvalue != 1
+            node.passes = passvalue
+            node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
         @self.tree_separator_after()
@@ -5148,7 +5066,7 @@ class Elemental(Service):
             bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
-            step = float(node.settings.raster_step)
+            step = float(node.raster_step)
             if step == 0:
                 step = 1
             xmin, ymin, xmax, ymax = bounds
@@ -5615,13 +5533,14 @@ class Elemental(Service):
 
     def save_persistent_operations(self, name):
         settings = self.op_data
+        settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             section = "%s %06i" % (name, i)
             if isinstance(op, LaserOperation):
-                op.hex_color = op.color.hexa
-                settings.write_persistent_attributes(section, op)
-                settings.write_persistent_attributes(section, op.settings)
-            elif isinstance(op, CommandOperation):
+                op.settings["type"] = "op"
+                op.settings["hex_color"] = op.color.hexa
+                settings.write_persistent_dict(section, op.settings)
+            elif isinstance(op, (CommandOperation, ConsoleOperation)):
                 settings.write_persistent_attributes(section, op)
         settings.write_configuration()
 
@@ -5639,13 +5558,15 @@ class Elemental(Service):
         ops = list()
         for section in subitems:
             op_type = settings.read_persistent(str, section, "type")
-            if op_type in ["op", ""]:
+            if op_type in ("op", "", None):
                 op = LaserOperation()
-                op.hex_color = ""
                 settings.read_persistent_attributes(section, op)
-                settings.read_persistent_attributes(section, op.settings)
-                if op.hex_color is not None:
-                    op.color = Color(op.hex_color)
+                update_dict = settings.read_persistent_string_dict(section, suffix=True)
+                Parameters.validate(update_dict)
+                op.settings.update(update_dict)
+                hexa = op.settings.get("hex_color")
+                if hexa is not None:
+                    op.color = Color(hexa)
             elif op_type == "cmdop":
                 name = settings.read_persistent(str, section, "label")
                 command = settings.read_persistent(int, section, "command")
@@ -5654,7 +5575,7 @@ class Elemental(Service):
             elif op_type == "consoleop":
                 command = settings.read_persistent(int, section, "command")
                 op = ConsoleOperation(command)
-                op_setting_context.load_persistent_object(op)
+                settings.read_persistent_attributes(section, op)
             else:
                 continue
             ops.append(op)

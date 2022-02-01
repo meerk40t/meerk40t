@@ -253,21 +253,21 @@ class SpeedPpiPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.settings.speed is not None:
-            self.text_speed.SetValue(str(self.operation.settings.speed))
-        if self.operation.settings.power is not None:
+        if self.operation.speed is not None:
+            self.text_speed.SetValue(str(self.operation.speed))
+        if self.operation.power is not None:
             self.update_power_label()
-            self.text_power.SetValue(str(self.operation.settings.power))
+            self.text_power.SetValue(str(self.operation.power))
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.speed = float(self.text_speed.GetValue())
+            self.operation.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
 
     def update_power_label(self):
-        # if self.operation.settings.power <= 100:
+        # if self.operation.power <= 100:
         #     self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         # else:
         #     self.power_label.SetLabel(_("Power (ppi):"))
@@ -275,7 +275,7 @@ class SpeedPpiPanel(wx.Panel):
 
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.power = float(self.text_power.GetValue())
+            self.operation.power = float(self.text_power.GetValue())
         except ValueError:
             return
         self.update_power_label()
@@ -321,20 +321,20 @@ class PassesPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.settings.passes_custom is not None:
-            self.check_passes.SetValue(self.operation.settings.passes_custom)
-        if self.operation.settings.passes is not None:
-            self.text_passes.SetValue(str(self.operation.settings.passes))
+        if self.operation.passes_custom is not None:
+            self.check_passes.SetValue(self.operation.passes_custom)
+        if self.operation.passes is not None:
+            self.text_passes.SetValue(str(self.operation.passes))
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
-        self.operation.settings.passes_custom = bool(on)
+        self.operation.passes_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.passes = int(self.text_passes.GetValue())
+            self.operation.passes = int(self.text_passes.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
@@ -423,7 +423,7 @@ class PanelStartPreference(wx.Panel):
         pass
 
     @signal_listener("element_property_reload")
-    def on_element_property_reload(self, origin=None, *args):
+    def on_element_property_reload(self, *args):
         self._toggle_sliders()
         self.raster_lines = None
         self.travel_lines = None
@@ -431,19 +431,19 @@ class PanelStartPreference(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.settings.raster_preference_top is not None:
-            self.slider_top.SetValue(self.operation.settings.raster_preference_top + 1)
-        if self.operation.settings.raster_preference_left is not None:
+        if self.operation.raster_preference_top is not None:
+            self.slider_top.SetValue(self.operation.raster_preference_top + 1)
+        if self.operation.raster_preference_left is not None:
             self.slider_left.SetValue(
-                self.operation.settings.raster_preference_left + 1
+                self.operation.raster_preference_left + 1
             )
-        if self.operation.settings.raster_preference_right is not None:
+        if self.operation.raster_preference_right is not None:
             self.slider_right.SetValue(
-                self.operation.settings.raster_preference_right + 1
+                self.operation.raster_preference_right + 1
             )
-        if self.operation.settings.raster_preference_bottom is not None:
+        if self.operation.raster_preference_bottom is not None:
             self.slider_bottom.SetValue(
-                self.operation.settings.raster_preference_bottom + 1
+                self.operation.raster_preference_bottom + 1
             )
 
     def on_display_paint(self, event=None):
@@ -480,7 +480,7 @@ class PanelStartPreference(wx.Panel):
         top = True
 
         last = None
-        direction = self.operation.settings.raster_direction
+        direction = self.operation.raster_direction
         r_start = list()
         r_end = list()
         t_start = list()
@@ -488,7 +488,7 @@ class PanelStartPreference(wx.Panel):
         d_start = list()
         d_end = list()
         factor = 3
-        unidirectional = self.operation.settings.raster_swing
+        unidirectional = self.operation.raster_swing
 
         if direction == 0 or direction == 1 or direction == 4:
             # Direction Line
@@ -496,7 +496,7 @@ class PanelStartPreference(wx.Panel):
             d_end.append((w * 0.05, h * 0.95))
             if direction == 1:
                 # Bottom to Top
-                if self.operation.settings.raster_preference_bottom > 0:
+                if self.operation.raster_preference_bottom > 0:
                     # if bottom preference is left
                     right = False
                 # Direction Arrow
@@ -506,10 +506,10 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.05 + 4))
                 start = int(h * 0.9)
                 end = int(h * 0.1)
-                step = -self.operation.settings.raster_step * factor
+                step = -self.operation.raster_step * factor
             else:
                 # Top to Bottom or Crosshatch
-                if self.operation.settings.raster_preference_top > 0:
+                if self.operation.raster_preference_top > 0:
                     # if top preference is left
                     right = False
                 d_start.append((w * 0.05, h * 0.95))
@@ -518,7 +518,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.95 - 4))
                 start = int(h * 0.1)
                 end = int(h * 0.9)
-                step = self.operation.settings.raster_step * factor
+                step = self.operation.raster_step * factor
             if step == 0:
                 step = 1
             for pos in range(start, end, step):
@@ -543,7 +543,7 @@ class PanelStartPreference(wx.Panel):
             d_end.append((w * 0.95, h * 0.05))
             if direction == 2:
                 # Right to Left
-                if self.operation.settings.raster_preference_right > 0:
+                if self.operation.raster_preference_right > 0:
                     # if right preference is bottom
                     top = False
                 # Direction Arrow
@@ -553,10 +553,10 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
                 start = int(w * 0.9)
                 end = int(w * 0.1)
-                step = -self.operation.settings.raster_step * factor
+                step = -self.operation.raster_step * factor
             else:
                 # Left to Right or Crosshatch
-                if self.operation.settings.raster_preference_left > 0:
+                if self.operation.raster_preference_left > 0:
                     # if left preference is bottom
                     top = False
                 d_start.append((w * 0.95, h * 0.05))
@@ -565,7 +565,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
                 start = int(w * 0.1)
                 end = int(w * 0.9)
-                step = self.operation.settings.raster_step * factor
+                step = self.operation.raster_step * factor
             if step == 0:
                 step = 1
             for pos in range(start, end, step):
@@ -621,7 +621,7 @@ class PanelStartPreference(wx.Panel):
 
     def _toggle_sliders(self):
         if self.toggle_sliders:
-            direction = self.operation.settings.raster_direction
+            direction = self.operation.raster_direction
             self.slider_top.Enable(False)
             self.slider_right.Enable(False)
             self.slider_left.Enable(False)
@@ -639,15 +639,15 @@ class PanelStartPreference(wx.Panel):
                 self.slider_left.Enable(True)
 
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.raster_preference_top = self.slider_top.GetValue() - 1
+        self.operation.raster_preference_top = self.slider_top.GetValue() - 1
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.raster_preference_left = self.slider_left.GetValue() - 1
+        self.operation.raster_preference_left = self.slider_left.GetValue() - 1
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.raster_preference_right = (
+        self.operation.raster_preference_right = (
             self.slider_right.GetValue() - 1
         )
         self.context.elements.signal("element_property_reload", self.operation)
@@ -655,7 +655,7 @@ class PanelStartPreference(wx.Panel):
     def on_slider_bottom(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.raster_preference_bottom = (
+        self.operation.raster_preference_bottom = (
             self.slider_bottom.GetValue() - 1
         )
         self.context.elements.signal("element_property_reload", self.operation)
@@ -769,24 +769,24 @@ class RasterSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.settings.raster_step is not None:
-            self.text_raster_step.SetValue(str(self.operation.settings.raster_step))
-        if self.operation.settings.overscan is not None:
-            self.text_overscan.SetValue(str(self.operation.settings.overscan))
-        if self.operation.settings.raster_direction is not None:
+        if self.operation.raster_step is not None:
+            self.text_raster_step.SetValue(str(self.operation.raster_step))
+        if self.operation.overscan is not None:
+            self.text_overscan.SetValue(str(self.operation.overscan))
+        if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(
-                self.operation.settings.raster_direction
+                self.operation.raster_direction
             )
-        if self.operation.settings.raster_swing is not None:
+        if self.operation.raster_swing is not None:
             self.radio_directional_raster.SetSelection(
-                self.operation.settings.raster_swing
+                self.operation.raster_swing
             )
 
     def on_text_raster_step(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.raster_step = int(self.text_raster_step.GetValue())
+            self.operation.raster_step = int(self.text_raster_step.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_reload", self.operation)
@@ -800,20 +800,20 @@ class RasterSettingsPanel(wx.Panel):
                 overscan = int(overscan)
             except ValueError:
                 return
-        self.operation.settings.overscan = overscan
+        self.operation.overscan = overscan
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_combo_raster_direction(self, event=None):
-        self.operation.settings.raster_direction = (
+        self.operation.raster_direction = (
             self.combo_raster_direction.GetSelection()
         )
-        self.context.raster_direction = self.operation.settings.raster_direction
+        self.context.raster_direction = self.operation.raster_direction
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_radio_directional(
         self, event=None
     ):  # wxGlade: RasterProperty.<event_handler>
-        self.operation.settings.raster_swing = (
+        self.operation.raster_swing = (
             self.radio_directional_raster.GetSelection()
         )
         self.context.elements.signal("element_property_reload", self.operation)
@@ -859,7 +859,7 @@ class ParameterPanel(wx.Panel):
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
         try:
-            self.raster_panel.panel_start.on_element_property_reload(origin=origin, *args)
+            self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
         if self.operation.operation not in ("Raster", "Image"):

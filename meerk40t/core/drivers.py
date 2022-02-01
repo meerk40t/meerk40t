@@ -1,7 +1,5 @@
 import time
 
-from ..core.cutcode import LaserSettings
-
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
 DRIVER_STATE_PROGRAM = 2
@@ -27,7 +25,7 @@ class Driver:
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.settings = LaserSettings()
+        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -250,7 +248,7 @@ class Driver:
         parts = list()
         parts.append("x=%f" % self.native_x)
         parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("speed=%f" % self.settings.get("speed", 0.0))
+        parts.append("power=%d" % self.settings.get("power", 0))
         status = ";".join(parts)
         self.context.signal("driver;status", status)

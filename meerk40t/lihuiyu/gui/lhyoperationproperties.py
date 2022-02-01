@@ -136,35 +136,35 @@ class LhyAdvancedPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.settings.dratio is not None:
-            self.text_dratio.SetValue(str(self.operation.settings.dratio))
-        if self.operation.settings.dratio_custom is not None:
-            self.check_dratio_custom.SetValue(self.operation.settings.dratio_custom)
-        if self.operation.settings.acceleration is not None:
-            self.slider_accel.SetValue(self.operation.settings.acceleration)
-        if self.operation.settings.acceleration_custom is not None:
+        if self.operation.dratio is not None:
+            self.text_dratio.SetValue(str(self.operation.dratio))
+        if self.operation.dratio_custom is not None:
+            self.check_dratio_custom.SetValue(self.operation.dratio_custom)
+        if self.operation.acceleration is not None:
+            self.slider_accel.SetValue(self.operation.acceleration)
+        if self.operation.acceleration_custom is not None:
             self.checkbox_custom_accel.SetValue(
-                self.operation.settings.acceleration_custom
+                self.operation.acceleration_custom
             )
             self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
-        if self.operation.settings.dot_length_custom is not None:
+        if self.operation.dot_length_custom is not None:
             self.check_dot_length_custom.SetValue(
-                self.operation.settings.dot_length_custom
+                self.operation.dot_length_custom
             )
-        if self.operation.settings.dot_length is not None:
-            self.text_dot_length.SetValue(str(self.operation.settings.dot_length))
-        if self.operation.settings.shift_enabled is not None:
-            self.check_shift_enabled.SetValue(self.operation.settings.shift_enabled)
+        if self.operation.dot_length is not None:
+            self.text_dot_length.SetValue(str(self.operation.dot_length))
+        if self.operation.shift_enabled is not None:
+            self.check_shift_enabled.SetValue(self.operation.shift_enabled)
 
     def on_check_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()
         self.text_dratio.Enable(on)
-        self.operation.settings.dratio_custom = bool(on)
+        self.operation.dratio_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.dratio = float(self.text_dratio.GetValue())
+            self.operation.dratio = float(self.text_dratio.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
@@ -174,11 +174,11 @@ class LhyAdvancedPanel(wx.Panel):
     ):  # wxGlade: OperationProperty.<event_handler>
         on = self.checkbox_custom_accel.GetValue()
         self.slider_accel.Enable(on)
-        self.operation.settings.acceleration_custom = bool(on)
+        self.operation.acceleration_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_slider_accel(self, event=None):
-        self.operation.settings.acceleration = self.slider_accel.GetValue()
+        self.operation.acceleration = self.slider_accel.GetValue()
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_dot_length(
@@ -186,14 +186,14 @@ class LhyAdvancedPanel(wx.Panel):
     ):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dot_length_custom.GetValue()
         self.text_dot_length.Enable(on)
-        self.operation.settings.dot_length_custom = bool(on)
+        self.operation.dot_length_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_dot_length(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.settings.dot_length = int(self.text_dot_length.GetValue())
+            self.operation.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
@@ -201,7 +201,7 @@ class LhyAdvancedPanel(wx.Panel):
     def on_check_shift_enabled(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.settings.shift_enabled = bool(
+        self.operation.shift_enabled = bool(
             self.check_shift_enabled.GetValue()
         )
         self.context.elements.signal("element_property_reload", self.operation)

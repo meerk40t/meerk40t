@@ -915,6 +915,21 @@ class Settings:
         if isinstance(value, (str, int, float, bool)):
             config_section[str(key)] = str(value)
 
+    def write_persistent_dict(self, section, write_dict):
+        """
+        Write all valid attribute values of this object to the section provided.
+
+        @param section: section to write to
+        @param obj: object whose attributes should be written
+        @return:
+        """
+        for key in write_dict:
+            value = write_dict[key]
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float)):
+                self.write_persistent(section, key, value)
+
     def write_persistent_attributes(self, section, obj):
         """
         Write all valid attribute values of this object to the section provided.
@@ -4014,7 +4029,7 @@ class Channel:
         if self.greet is not None:
             monitor_function(self.greet)
         if self.buffer is not None:
-            for line in self.buffer:
+            for line in list(self.buffer):
                 monitor_function(line)
 
     def unwatch(self, monitor_function: Callable):
