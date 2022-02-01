@@ -2104,7 +2104,7 @@ class LhystudiosController:
 
     def shutdown(self, *args, **kwargs):
         if self._thread is not None:
-            self.write(b"\x18\n")
+            self.realtime_write(b"\x18\n")
 
     def __repr__(self):
         return "LhystudiosController(%s)" % str(self.context)
