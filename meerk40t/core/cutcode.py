@@ -574,11 +574,11 @@ class RasterCut(CutObject):
         self.tx = tx
         self.ty = ty
 
-        step = self.settings.raster_step
+        step = self.raster_step
         self.step = step
         assert step > 0
 
-        direction = self.settings.raster_direction
+        direction = self.raster_direction
         traverse = 0
         if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
@@ -592,7 +592,7 @@ class RasterCut(CutObject):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        if self.settings.raster_swing:
+        if self.raster_swing:
             traverse |= UNIDIRECTIONAL
         width, height = image.size
         self.width = width
@@ -601,7 +601,7 @@ class RasterCut(CutObject):
         def image_filter(pixel):
             return (255 - pixel) / 255.0
 
-        overscan = self.settings.overscan
+        overscan = self.overscan
         if overscan is None:
             overscan = 20
         else:

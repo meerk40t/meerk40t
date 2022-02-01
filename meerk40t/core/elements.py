@@ -5537,8 +5537,8 @@ class Elemental(Service):
         for i, op in enumerate(self.ops()):
             section = "%s %06i" % (name, i)
             if isinstance(op, LaserOperation):
-                op.hex_color = op.color.hexa
-                settings.write_persistent_attributes(section, op)
+                op.settings["type"] = "op"
+                op.settings["hex_color"] = op.color.hexa
                 settings.write_persistent_dict(section, op.settings)
             elif isinstance(op, (CommandOperation, ConsoleOperation)):
                 settings.write_persistent_attributes(section, op)
@@ -5560,13 +5560,13 @@ class Elemental(Service):
             op_type = settings.read_persistent(str, section, "type")
             if op_type in ("op", "", None):
                 op = LaserOperation()
-                op.hex_color = ""
                 settings.read_persistent_attributes(section, op)
                 update_dict = settings.read_persistent_string_dict(section, suffix=True)
                 Parameters.validate(update_dict)
                 op.settings.update(update_dict)
-                if op.hex_color is not None:
-                    op.color = Color(op.hex_color)
+                hexa = op.settings.get("hex_color")
+                if hexa is not None:
+                    op.color = Color(hexa)
             elif op_type == "cmdop":
                 name = settings.read_persistent(str, section, "label")
                 command = settings.read_persistent(int, section, "command")
