@@ -233,6 +233,8 @@ class GRBLDevice(Service, ViewPort):
         self.setting(int, "serial_baud_rate", 115200)
         self.setting(int, "serial_timeout", 5)
 
+        self.setting(str, "line_end", "\n")
+
         self.driver = GRBLDriver(self)
 
         self.spooler = Spooler(self, driver=self.driver)
@@ -276,7 +278,7 @@ class GRBLDevice(Service, ViewPort):
             help=_("link the serial connection"),
             input_type=None,
         )
-        def serial(command, channel, _, data=None, com=None, baud=9600, remainder=None, **kwgs):
+        def serial_connection(command, channel, _, data=None, com=None, baud=115200, remainder=None, **kwgs):
             if com is None:
                 import serial.tools.list_ports
 
@@ -287,10 +289,19 @@ class GRBLDevice(Service, ViewPort):
                     channel(x.description)
             else:
                 self.com_port = com.upper()
+                self.serial_baud_rate = baud
                 connection = SerialConnection(self)
                 self.channel("grbl").watch(connection.write)
 
-
+        @self.console_command(
+            "gcode",
+            help=_("Send raw gcode to the device"),
+            input_type=None,
+        )
+        def gcode(command, channel, _, data=None, remainder=None, **kwgs):
+            if remainder is not None:
+                channel(remainder)
+                self.channel("grbl")(remainder + self.line_end)
 
     @property
     def current_x(self):
@@ -345,8 +356,6 @@ class GRBLDriver(Parameters):
         self.units = None
         self.g21_units_mm()
         self.g91_absolute()
-
-        self.service.setting(str, "line_end", "\n")
 
         self.grbl = self.service.channel("grbl", line_end=self.service.line_end)
         self.grbl_settings = {
