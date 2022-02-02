@@ -851,6 +851,8 @@ class MeerK40t(MWindow):
 
         submenus = {}
         for window, _path, suffix_path in self.context.find("window/.*"):
+            if not window.window_menu(None):
+                continue
             submenu = None
             try:
                 submenu_name = window.submenu

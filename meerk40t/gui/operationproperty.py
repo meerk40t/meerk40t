@@ -58,3 +58,6 @@ class OperationProperty(MWindow):
 
     def window_preserve(self):
         return False
+
+    def window_menu(self):
+        return False
