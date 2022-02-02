@@ -8,7 +8,7 @@ from ..core.drivers import Driver
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MM, ViewPort
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM, ViewPort, UNITS_PER_MIL
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -302,21 +302,21 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+        self.scale = UNITS_PER_MIL
 
         self.service.setting(str, "line_end", "\n")
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
 
-        self.scale = UNITS_PER_INCH  # g21 default.
+        self.unit_scale = UNITS_PER_INCH / self.scale  # G21 Default.
         self.feed_convert = None
         self.feed_invert = None
         self.g94_feedrate()  # G94 DEFAULT, mm mode
         self.power_updated = True
         self.speed_updated = True
-        self.laser = False
 
-        self.relative = False
+        self._absolute = True
         self.grbl = self.service.channel("grbl", line_end=self.service.line_end)
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
@@ -359,9 +359,6 @@ class GRBLDriver(Parameters):
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.move_mode = 0
-        self.home = None
-        self.home2 = None
-        self.on_mode = 1
         self.buffer = ""
         self.reply = None
         self.elements = None
@@ -388,22 +385,19 @@ class GRBLDriver(Parameters):
         """
         return False
 
-    def move(self, x, y):
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = self.service.scale_x * x / self.scale
-        y = self.service.scale_y * y / self.scale
-        if self.relative:
-            self.native_x += x
-            self.native_y += y
-        else:
+    def move(self, x, y, absolute=False):
+        if self._absolute:
             self.native_x = x
             self.native_y = y
-        line = []
-        if self.laser:
-            line.append("G1")
         else:
-            line.append("G0")
+            self.native_x += x
+            self.native_y += y
+        line = []
+        if absolute and not self._absolute:
+            self.set_absolute()
+        line.append("G{move_mode}".format(move_mode=self.move_mode))
+        x /= self.unit_scale
+        y /= self.unit_scale
         line.append("X%f" % x)
         line.append("Y%f" % y)
         if self.power_updated:
@@ -411,7 +405,7 @@ class GRBLDriver(Parameters):
                 line.append("S%f" % self.power)
             self.power_updated = False
         if self.speed_updated:
-            line.append("F%d" % int(self.feed_convert(self.speed)))
+            line.append("F%f" % self.feed_convert(self.speed))
             self.speed_updated = False
         self.grbl(" ".join(line))
 
@@ -424,6 +418,7 @@ class GRBLDriver(Parameters):
         """
         if self.plot_data is None:
             return False
+        self.set_absolute()
         for x, y, on in self.plot_data:
             while self.hold_work():
                 time.sleep(0.05)
@@ -440,7 +435,7 @@ class GRBLDriver(Parameters):
                         or p_set.raster_step != self.raster_step
                     ):
                         self.set("speed", p_set.speed)
-                    self.settings.set_values(p_set)
+                    self.settings.update(p_set.settings)
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
@@ -455,14 +450,32 @@ class GRBLDriver(Parameters):
         return False
 
     def move_abs(self, x, y):
+        # TODO: Should use $J syntax
+        x = self.service.length(x, 0)
+        y = self.service.length(y, 1)
+        x = self.service.scale_x * x / self.scale
+        y = self.service.scale_y * y / self.scale
         self.rapid_mode()
-        self.relative = False
+        self.set_absolute()
         self.move(x, y)
 
     def move_rel(self, dx, dy):
+        # TODO: Should use $J syntax
+        dx = self.service.length(dx, 0)
+        dy = self.service.length(dy, 1)
+        dx = self.service.scale_x * dx / self.scale
+        dy = self.service.scale_y * dy / self.scale
         self.rapid_mode()
-        self.relative = True
+        self.set_relative()
         self.move(dx, dy)
+
+    def set_relative(self):
+        self._absolute = False
+        self.grbl("G90")
+
+    def set_absolute(self):
+        self._absolute = True
+        self.grbl("G91")
 
     def dwell(self, time_in_ms):
         self.laser_on()  # This can't be sent early since these are timed operations.
@@ -1095,10 +1108,12 @@ class GRBLDriver(Parameters):
         self.feed_invert = lambda s: s * (self.scale * 60.0)
 
     def g90(self):
-        self.relative = False
+        # self.relative = False
+        pass
 
     def g91(self):
-        self.relative = True
+        # self.relative = True
+        pass
 
 
 class TCPOutput:
