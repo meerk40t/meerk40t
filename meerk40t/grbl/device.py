@@ -1234,7 +1234,7 @@ class SerialConnection:
                         self.service.signal("serial;response", str_response)
                         self.reply(str_response)
 
-                        self.laser.write(line)
+                        self.laser.write(bytes(line, "utf-8"))
                         self.send(line)
                         self.service.signal("serial;buffer", len(self.buffer))
                         self.buffer.pop(0)
