@@ -1965,12 +1965,6 @@ class LhystudiosDriver(Parameters):
     def set_overscan(self, overscan=None):
         self.overscan = overscan
 
-    def set_incremental(self, *values):
-        self.is_relative = True
-
-    def set_absolute(self, *values):
-        self.is_relative = False
-
     def set_position(self, x, y):
         self.native_x = x
         self.native_y = y
