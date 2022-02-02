@@ -1170,7 +1170,9 @@ class GRBLDriver(Parameters):
 class SerialConnection:
     def __init__(self, context):
         self.service = context
-        self.channel = self.service.channel("console")
+        self.channel = self.service.channel("grbl_state")
+        self.send = self.service.channel("grbl_send")
+        self.reply = self.service.channel("grbl_recv")
         self.laser = None
 
         self.lock = threading.RLock()
@@ -1187,7 +1189,9 @@ class SerialConnection:
             self.channel("Connected")
             self.service.signal("serial;status", "connected")
         except (ConnectionError, TimeoutError):
-            self.disconnect()
+            self.channel("Connection Failed.")
+            if self.laser:
+                self.disconnect()
 
     def disconnect(self):
         self.channel("Disconnected")
@@ -1228,8 +1232,10 @@ class SerialConnection:
                         str_response = str(response, 'utf-8')
                         # TODO: Should check for response as ok, do character counting protocol.
                         self.service.signal("serial;response", str_response)
+                        self.reply(str_response)
 
                         self.laser.write(line)
+                        self.send(line)
                         self.service.signal("serial;buffer", len(self.buffer))
                         self.buffer.pop(0)
                     tries = 0
