@@ -51,6 +51,33 @@ class Driver:
         """
         return False
 
+    def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y
+
+        @param x:
+        @param y:
+        @return:
+        """
+
+    def move_rel(self, dx, dy):
+        """
+        Requests laser move relative position dx, dy
+
+        @param dx:
+        @param dy:
+        @return:
+        """
+
+    def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period.
+
+        @param time_in_ms:
+        @return:
+        """
+
+
     def laser_off(self, *values):
         """
         Turn laser off in place.
