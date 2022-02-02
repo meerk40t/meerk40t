@@ -275,22 +275,22 @@ class GRBLDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return float(self.driver.native_x * self.driver.scale) / self.scale_x
+        return float(self.driver.native_x * self.driver.stepper_step_size) / self.scale_x
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return float(self.driver.native_y * self.driver.scale) / self.scale_y
+        return float(self.driver.native_y * self.driver.stepper_step_size) / self.scale_y
 
     @property
     def get_native_scale_x(self):
-        return self.scale_x / float(self.driver.scale)
+        return self.scale_x / float(self.driver.stepper_step_size)
 
     @property
     def get_native_scale_y(self):
-        return self.scale_y / float(self.driver.scale)
+        return self.scale_y / float(self.driver.stepper_step_size)
 
 
 class GRBLDriver(Parameters):
@@ -302,21 +302,30 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
-        self.scale = UNITS_PER_MIL
-
-        self.service.setting(str, "line_end", "\n")
+        self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
 
-        self.unit_scale = UNITS_PER_INCH / self.scale  # G21 Default.
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+
+        self._absolute = True
+        self.feed_mode = None
         self.feed_convert = None
         self.feed_invert = None
         self.g94_feedrate()  # G94 DEFAULT, mm mode
-        self.power_updated = True
-        self.speed_updated = True
 
-        self._absolute = True
+        self.unit_scale = None
+        self.units = None
+        self.g21_units_mm()
+        self.g91_absolute()
+
+        self.service.setting(str, "line_end", "\n")
+
         self.grbl = self.service.channel("grbl", line_end=self.service.line_end)
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
@@ -403,85 +412,91 @@ class GRBLDriver(Parameters):
         y /= self.unit_scale
         line.append("X%f" % x)
         line.append("Y%f" % y)
-        if self.power_updated:
+        if self.power_dirty:
             if self.power is not None:
                 line.append("S%f" % self.power)
-            self.power_updated = False
-        if self.speed_updated:
+            self.power_dirty = False
+        if self.speed_dirty:
             line.append("F%f" % self.feed_convert(self.speed))
-            self.speed_updated = False
+            self.speed_dirty = False
         self.grbl(" ".join(line))
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        :return:
-        """
-        if self.plot_data is None:
-            return False
-        self.set_absolute()
-        for x, y, on in self.plot_data:
-            while self.hold_work():
-                time.sleep(0.05)
-            if on > 1:
-                # Special Command.
-                if on & PLOT_FINISH:  # Plot planner is ending.
-                    break
-                elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = Parameters(self.plot_planner.settings)
-                    if p_set.power != self.power:
-                        self.set("power", p_set.power)
-                    if (
-                        p_set.speed != self.speed
-                        or p_set.raster_step != self.raster_step
-                    ):
-                        self.set("speed", p_set.speed)
-                    self.settings.update(p_set.settings)
-                elif on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    self.move_mode = 0
-                    self.move(x, y)
-                continue
-            if on == 0:
-                self.move_mode = 0
-            else:
-                self.move_mode = 1
-            self.move(x, y)
-        self.plot_data = None
-        return False
 
     def move_abs(self, x, y):
         # TODO: Should use $J syntax
+        self.clean()
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
-        x = self.service.scale_x * x / self.scale
-        y = self.service.scale_y * y / self.scale
+        x = self.service.scale_x * x / self.stepper_step_size
+        y = self.service.scale_y * y / self.stepper_step_size
         self.rapid_mode()
-        self.set_absolute()
+        self.g91_absolute()
         self.move(x, y)
 
     def move_rel(self, dx, dy):
         # TODO: Should use $J syntax
+        self.clean()
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
-        dx = self.service.scale_x * dx / self.scale
-        dy = self.service.scale_y * dy / self.scale
+        dx = self.service.scale_x * dx / self.stepper_step_size
+        dy = self.service.scale_y * dy / self.stepper_step_size
         self.rapid_mode()
-        self.set_relative()
+        self.g90_relative()
         self.move(dx, dy)
 
-    def set_relative(self):
-        if self._absolute:
-            self._absolute = False
-            self.grbl("G90")
+    def clean(self):
+        if self.absolute_dirty:
+            if self._absolute:
+                self.grbl("G90")
+            else:
+                self.grbl("G91")
+        self.absolute_dirty = False
 
-    def set_absolute(self):
-        if not self._absolute:
-            self._absolute = True
-            self.grbl("G91")
+        if self.feedrate_dirty:
+            if self.feed_mode == 94:
+                self.grbl("G94")
+            else:
+                self.grbl("G93")
+        self.feedrate_dirty = False
+
+        if self.units_dirty:
+            if self.units == 20:
+                self.grbl("G20")
+            else:
+                self.grbl("G21")
+        self.units_dirty = False
+
+    def g90_relative(self):
+        self._absolute = False
+        self.absolute_dirty = True
+
+    def g91_absolute(self):
+        self._absolute = True
+        self.absolute_dirty = True
+
+    def g93_feedrate(self):
+        self.feed_mode = 93
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = lambda s: (60.0 / s) * self.stepper_step_size / UNITS_PER_MM
+        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.stepper_step_size
+        self.feedrate_dirty = True
+
+    def g94_feedrate(self):
+        self.feed_mode = 94
+        # Feed Rate in Units / Minute
+        self.feed_convert = lambda s: s / ((self.stepper_step_size / UNITS_PER_MM) * 60.0)
+        self.feed_invert = lambda s: s * ((self.stepper_step_size / UNITS_PER_MM) * 60.0)
+        # units to mm, seconds to minutes.
+        self.feedrate_dirty = True
+
+    def g20_units_inch(self):
+        self.units = 20
+        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size   # g20 is inch mode.
+        self.units_dirty = True
+
+    def g21_units_mm(self):
+        self.units = 21
+        self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
+        self.units_dirty = True
 
     def dwell(self, time_in_ms):
         self.laser_on()  # This can't be sent early since these are timed operations.
@@ -522,7 +537,39 @@ class GRBLDriver(Parameters):
         """
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
-        self.plotplanner_process()
+        self.g91_absolute()
+        self.g94_feedrate()
+        self.clean()
+        for x, y, on in self.plot_data:
+            while self.hold_work():
+                time.sleep(0.05)
+            if on > 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = Parameters(self.plot_planner.settings)
+                    if p_set.power != self.power:
+                        self.set("power", p_set.power)
+                    if (
+                            p_set.speed != self.speed
+                            or p_set.raster_step != self.raster_step
+                    ):
+                        self.set("speed", p_set.speed)
+                    self.settings.update(p_set.settings)
+                elif on & (
+                        PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    self.move_mode = 0
+                    self.move(x, y)
+                continue
+            if on == 0:
+                self.move_mode = 0
+            else:
+                self.move_mode = 1
+            self.move(x, y)
+        self.plot_data = None
+        return False
 
     def blob(self, data_type, data):
         """
@@ -587,9 +634,9 @@ class GRBLDriver(Parameters):
         @return:
         """
         if key == "power":
-            self.power_updated = True
+            self.power_dirty = True
         if key == "speed":
-            self.speed_updated = True
+            self.speed_dirty = True
         self.settings[key] = value
 
     def set_position(self, x, y):
@@ -712,8 +759,8 @@ class GRBLDriver(Parameters):
                 state = "Idle"
             else:
                 state = "Busy"
-            x = device.current_x / self.scale
-            y = device.current_y / self.scale
+            x = device.current_x / self.stepper_step_size
+            y = device.current_y / self.stepper_step_size
             z = 0.0
             parts = list()
             parts.append(state)
@@ -1085,42 +1132,6 @@ class GRBLDriver(Parameters):
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
         return 0
-
-    def g93_feedrate(self):
-        # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / UNITS_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.scale
-
-    def g94_feedrate(self):
-        # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
-        # units to mm, seconds to minutes.
-
-    def g20(self):
-        self.scale = UNITS_PER_INCH  # g20 is inch mode.
-
-    def g21(self):
-        self.scale = UNITS_PER_MM  # g21 is mm mode.
-
-    def g93(self):
-        # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (self.scale * 60.0) / s
-        self.feed_invert = lambda s: (self.scale * 60.0) / s
-
-    def g94(self):
-        # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / (self.scale * 60.0)
-        self.feed_invert = lambda s: s * (self.scale * 60.0)
-
-    def g90(self):
-        # self.relative = False
-        pass
-
-    def g91(self):
-        # self.relative = True
-        pass
-
 
 class TCPOutput:
     def __init__(self, context):
