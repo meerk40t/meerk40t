@@ -238,8 +238,6 @@ class GRBLDevice(Service, ViewPort):
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
-        self.controller = TCPOutput(self)
-
         self.viewbuffer = ""
 
         _ = self.kernel.translation
@@ -270,6 +268,15 @@ class GRBLDevice(Service, ViewPort):
                     channel("%d: %s" % (s, op_name))
                 channel(_("----------"))
             return "spooler", spooler
+
+        @self.console_command(
+            "serial",
+            help=_("link the serial connection"),
+            input_type=None,
+        )
+        def serial(command, channel, _, data=None, remainder=None, **kwgs):
+            connection = SerialConnection(self)
+            self.channel("grbl").watch(connection.write)
 
     @property
     def current_x(self):
@@ -403,8 +410,6 @@ class GRBLDriver(Parameters):
             self.native_x += x
             self.native_y += y
         line = []
-        if absolute and not self._absolute:
-            self.set_absolute()
         if self.move_mode == 0:
             line.append("G0")
         else:
@@ -1165,6 +1170,7 @@ class GRBLDriver(Parameters):
 class SerialConnection:
     def __init__(self, context):
         self.service = context
+        self.channel = self.service.channel("console")
         self.laser = None
 
         self.lock = threading.RLock()
@@ -1178,13 +1184,16 @@ class SerialConnection:
                 self.service.serial_baud_rate,
                 timeout=self.service.serial_timeout,
             )
+            self.channel("Connected")
             self.service.signal("serial;status", "connected")
         except (ConnectionError, TimeoutError):
             self.disconnect()
 
     def disconnect(self):
+        self.channel("Disconnected")
         self.service.signal("serial;status", "disconnected")
-        self.laser.close()
+        if self.laser:
+            self.laser.close()
 
     def write(self, data):
         self.service.signal("serial;write", data)
