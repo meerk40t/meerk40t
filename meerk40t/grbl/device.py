@@ -34,6 +34,39 @@ STATE_COMPACT = 2
 """
 GRBL device.
 """
+GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
+CODE_RE = re.compile(r"([A-Za-z])")
+FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
+
+
+def _tokenize_code(code_line):
+    pos = code_line.find("(")
+    while pos != -1:
+        end = code_line.find(")")
+        yield ["comment", code_line[pos + 1 : end]]
+        code_line = code_line[:pos] + code_line[end + 1 :]
+        pos = code_line.find("(")
+    pos = code_line.find(";")
+    if pos != -1:
+        yield ["comment", code_line[pos + 1 :]]
+        code_line = code_line[:pos]
+
+    code = None
+    for x in CODE_RE.split(code_line):
+        x = x.strip()
+        if len(x) == 0:
+            continue
+        if len(x) == 1 and x.isalpha():
+            if code is not None:
+                yield code
+            code = [x.lower()]
+            continue
+        if code is not None:
+            code.extend([float(v) for v in FLOAT_RE.findall(x) if len(v) != 0])
+            yield code
+        code = None
+    if code is not None:
+        yield code
 
 
 def plugin(kernel, lifecycle=None):
@@ -273,565 +306,231 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         self.out_pipe = None
         self.relative = False
+        self.cutcode = None
+        self.grbl_channel = self.service.channel("grbl")
+
+        self.grbl_settings = {
+            0: 10,  # step pulse microseconds
+            1: 25,  # step idle delay
+            2: 0,  # step pulse invert
+            3: 0,  # step direction invert
+            4: 0,  # invert step enable pin, boolean
+            5: 0,  # invert limit pins, boolean
+            6: 0,  # invert probe pin
+            10: 255,  # status report options
+            11: 0.010,  # Junction deviation, mm
+            12: 0.002,  # arc tolerance, mm
+            13: 0,  # Report in inches
+            20: 0,  # Soft limits enabled.
+            21: 0,  # hard limits enabled
+            22: 0,  # Homing cycle enable
+            23: 0,  # Homing direction invert
+            24: 25.000,  # Homing locate feed rate, mm/min
+            25: 500.000,  # Homing search seek rate, mm/min
+            26: 250,  # Homing switch debounce delay, ms
+            27: 1.000,  # Homing switch pull-off distance, mm
+            30: 1000,  # Maximum spindle speed, RPM
+            31: 0,  # Minimum spindle speed, RPM
+            32: 1,  # Laser mode enable, boolean
+            100: 250.000,  # X-axis steps per millimeter
+            101: 250.000,  # Y-axis steps per millimeter
+            102: 250.000,  # Z-axis steps per millimeter
+            110: 500.000,  # X-axis max rate mm/min
+            111: 500.000,  # Y-axis max rate mm/min
+            112: 500.000,  # Z-axis max rate mm/min
+            120: 10.000,  # X-axis acceleration, mm/s^2
+            121: 10.000,  # Y-axis acceleration, mm/s^2
+            122: 10.000,  # Z-axis acceleration, mm/s^2
+            130: 200.000,  # X-axis max travel mm.
+            131: 200.000,  # Y-axis max travel mm
+            132: 200.000,  # Z-axis max travel mm.
+        }
+
+        self.home_adjust = None
+        self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
+        self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
+        self.scale = (
+            UNITS_PER_MM  # G20 DEFAULT
+        )
+        self.feed_convert = None
+        self.feed_invert = None
+        self.g94_feedrate()  # G94 DEFAULT, mm mode
+        self.move_mode = 0
+        self.home = None
+        self.home2 = None
+        self.on_mode = 1
+        self.power = 0
+        self.speed = 0
+        self.used_speed = 0
+        self.buffer = ""
+        self.settings = {
+            0: 10,  # step pulse microseconds
+            1: 25,  # step idle delay
+            2: 0,  # step pulse invert
+            3: 0,  # step direction invert
+            4: 0,  # invert step enable pin, boolean
+            5: 0,  # invert limit pins, boolean
+            6: 0,  # invert probe pin
+            10: 255,  # status report options
+            11: 0.010,  # Junction deviation, mm
+            12: 0.002,  # arc tolerance, mm
+            13: 0,  # Report in inches
+            20: 0,  # Soft limits enabled.
+            21: 0,  # hard limits enabled
+            22: 0,  # Homing cycle enable
+            23: 0,  # Homing direction invert
+            24: 25.000,  # Homing locate feed rate, mm/min
+            25: 500.000,  # Homing search seek rate, mm/min
+            26: 250,  # Homing switch debounce delay, ms
+            27: 1.000,  # Homing switch pull-off distance, mm
+            30: 1000,  # Maximum spindle speed, RPM
+            31: 0,  # Minimum spindle speed, RPM
+            32: 1,  # Laser mode enable, boolean
+            100: 250.000,  # X-axis steps per millimeter
+            101: 250.000,  # Y-axis steps per millimeter
+            102: 250.000,  # Z-axis steps per millimeter
+            110: 500.000,  # X-axis max rate mm/min
+            111: 500.000,  # Y-axis max rate mm/min
+            112: 500.000,  # Z-axis max rate mm/min
+            120: 10.000,  # X-axis acceleration, mm/s^2
+            121: 10.000,  # Y-axis acceleration, mm/s^2
+            122: 10.000,  # Z-axis acceleration, mm/s^2
+            130: 200.000,  # X-axis max travel mm.
+            131: 200.000,  # Y-axis max travel mm
+            132: 200.000,  # Z-axis max travel mm.
+        }
+        self.reply = None
+        self.channel = None
+        self.elements = None
 
     def __repr__(self):
         return "GRBLDriver(%s)" % self.name
 
-    def g20(self):
-        self.scale = UNITS_PER_INCH  # g20 is inch mode.
-
-    def g21(self):
-        self.scale = UNITS_PER_MM  # g21 is mm mode.
-
-    def g93(self):
-        # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (self.scale * 60.0) / s
-        self.feed_invert = lambda s: (self.scale * 60.0) / s
-
-    def g94(self):
-        # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / (self.scale * 60.0)
-        self.feed_invert = lambda s: s * (self.scale * 60.0)
-
-    def g90(self):
-        self.relative = False
-
-    def g91(self):
-        self.relative = True
-
-    def move(self, x, y):
-        line = []
-        if self.laser:
-            line.append("G1")
-        else:
-            line.append("G0")
-        line.append("X%f" % (x / self.scale))
-        line.append("Y%f" % (y / self.scale))
-        if self.power_updated:
-            if self.settings.power is not None:
-                line.append("S%f" % self.settings.power)
-            self.power_updated = False
-        if self.settings.speed is None:
-            self.settings.speed = 20.0
-        if self.speed_updated:
-            line.append("F%d" % int(self.feed_convert(self.settings.speed)))
-            self.speed_updated = False
-        self.output.write(" ".join(line) + self.service.line_end)
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        :return:
-        """
-        if self.plot is not None:
-            while True:
-                try:
-                    if self.hold():
-                        return True
-                    x, y, on = next(self.plot)
-                except StopIteration:
-                    break
-                except TypeError:
-                    break
-                on = int(on)
-                if on > 1:
-                    # Special Command.
-                    if on & PLOT_FINISH:  # Plot planner is ending.
-                        self.rapid_mode()
-                        break
-                    elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                        p_set = self.plot_planner.settings
-                        s_set = self.settings
-                        if p_set.power != s_set.power:
-                            self.set_power(p_set.power)
-                        if (
-                            p_set.speed != s_set.speed
-                            or p_set.raster_step != s_set.raster_step
-                        ):
-                            self.set_speed(p_set.speed)
-                            self.set_step(p_set.raster_step)
-                            self.rapid_mode()
-                        self.settings.set_values(p_set)
-                    elif on & (
-                        PLOT_RAPID | PLOT_JOG
-                    ):  # Plot planner requests position change.
-                        self.rapid_mode()
-                    continue
-                if on == 0:
-                    self.laser_on()
-                else:
-                    self.laser_off()
-                self.move(x, y)
-            self.plot = None
-        return False
-
-    def hold_work(self):
-        """
-        Required.
-
-        Spooler check. to see if the work cycle should be held.
-
-        @return: hold?
-        """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
-
-    def move_abs(self, x, y):
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x / self.scale))
-        y = int(round(self.service.scale_y * y / self.scale))
-        self.rapid_mode()
-        self.move_absolute(int(x), int(y))
-
-    def move_rel(self, dx, dy):
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = int(round(self.service.scale_x * dx / self.scale))
-        dy = int(round(self.service.scale_y * dy / self.scale))
-        self.rapid_mode()
-        self.move_relative(dx, dy)
-
-    def dwell(self, time_in_ms):
-        self.program_mode()
-        self.raster_mode()
-        self.wait_finish()
-        self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms / 1000.0)
-        self.laser_off()
-
-    def laser_off(self, *values):
-        """
-        Turn laser off in place.
-
-        @param values:
-        @return:
-        """
-        pass
-
-    def laser_on(self, *values):
-        """
-        Turn laser on in place.
-
-        @param values:
-        @return:
-        """
-        pass
-
-    def plot(self, plot):
-        """
-        Gives the driver a bit of cutcode that should be plotted.
-        @param plot:
-        @return:
-        """
-        pass
-
-    def plot_start(self):
-        """
-        Called at the end of plot commands to ensure the driver can deal with them all as a group.
-
-        @return:
-        """
-
-    def blob(self, data_type, data):
-        """
-        Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
-        bunch of .rd code, or Lihuiyu device it could be egv code. It's a method of sending pre-chewed data to the
-        device.
-
-        @param type:
-        @param data:
-        @return:
-        """
-
-    def home(self, *values):
-        """
-        Home the laser.
-
-        @param values:
-        @return:
-        """
-
-    def lock_rail(self):
-        """
-        For plotter-style lasers this should prevent the laser bar from moving.
-        @return:
-        """
-
-    def unlock_rail(self):
-        """
-        For plotter-style jobs this should free the laser head to be movable by the user.
-
-        @return:
-        """
-
-    def rapid_mode(self, *values):
-        """
-        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
-        batch of commands.
-
-        @param values:
-        @return:
-        """
-
-    def finished_mode(self, *values):
-        """
-        Finished mode is after a large batch of jobs is done.
-
-        @param values:
-        @return:
-        """
-        self.out_pipe.write("M5" + self.service.line_end)
-        Driver.finished_mode(self, *values)
-
-    def program_mode(self, *values):
-        """
-        Program mode is the state lasers often use to send a large batch of commands.
-        @param values:
-        @return:
-        """
-        self.out_pipe.write("M3" + self.service.line_end)
-        Driver.program_mode(self, *values)
-
-    def raster_mode(self, *values):
-        """
-        Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
-        many lasers have specialty values
-        @param values:
-        @return:
-        """
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-        @param key:
-        @param value:
-        @return:
-        """
-        self.settings[key] = value
-
-    def set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-        self.power_updated = True
-
-    def set_ppi(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-        self.power_updated = True
-
-    def set_pwm(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-        self.power_updated = True
-
-    def set_overscan(self, overscan=None):
-        self.overscan = overscan
-
-    def set_speed(self, speed=None):
-        self.speed = speed
-        self.speed_updated = True
-
-    def set_position(self, x, y):
-        """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
-        used in step-repeat.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.native_x = x
-        self.native_y = y
-
-    def wait(self, t):
-        """
-        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
-        called first this should pause the machine without current work acting as a dwell.
-
-        @param t:
-        @return:
-        """
-        time.sleep(float(t))
-
-    def wait_finish(self, *values):
-        """
-        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
-        from being sent with returning True for the until that criteria is met.
-
-        @param values:
-        @return:
-        """
-        self.hold = True
-
-    def function(self, function):
-        """
-        This command asks that this function be executed at the appropriate time within the spooled cycle.
-
-        @param function:
-        @return:
-        """
-        function()
-
-    def signal(self, signal, *args):
-        """
-        This asks that this signal be broadcast.
-
-        @param signal:
-        @param args:
-        @return:
-        """
-        self.service.signal(signal, *args)
-
-    def pause(self, *args):
-        """
-        Asks that the laser be paused.
-
-        @param args:
-        @return:
-        """
-        self.paused = True
-
-    def resume(self, *args):
-        """
-        Asks that the laser be resumed.
-
-        To work this command should usually be put into the realtime work queue for the laser.
-
-        @param args:
-        @return:
-        """
-        self.paused = False
-
-    def reset(self, *args):
-        """
-        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
-        deleted.
-        Asks that the device resets, and clears all current work.
-
-        @param args:
-        @return:
-        """
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.get("speed", 0.0))
-        parts.append("power=%d" % self.settings.get("power", 0))
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
-
-
-class TCPOutput:
-    def __init__(self, context):
-        super().__init__()
-        self.service = context
-        self._stream = None
-
-        self.lock = threading.RLock()
-        self.buffer = bytearray()
-        self.thread = None
-
-    def connect(self):
-        try:
-            self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self._stream.connect((self.service.address, self.service.port))
-            self.service.signal("tcp;status", "connected")
-        except (ConnectionError, TimeoutError):
-            self.disconnect()
-
-    def disconnect(self):
-        self.service.signal("tcp;status", "disconnected")
-        self._stream.close()
-        self._stream = None
+    def grbl_write(self, data):
+        if self.grbl_channel is not None:
+            self.grbl_channel(data)
+        if self.reply is not None:
+            self.reply(data)
+
+    def realtime_write(self, bytes_to_write):
+        device = self.device
+        if bytes_to_write == "?":  # Status report
+            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+            if device.state == 0:
+                state = "Idle"
+            else:
+                state = "Busy"
+            x = device.current_x / self.scale
+            y = device.current_y / self.scale
+            z = 0.0
+            parts = list()
+            parts.append(state)
+            parts.append("MPos:%f,%f,%f" % (x, y, z))
+            speed = device.settings.speed
+            if speed is None:
+                speed = 30.0
+            f = self.feed_invert(speed)
+            power = device.settings.power
+            if power is None:
+                power = 1000
+            s = power
+            parts.append("FS:%f,%d" % (f, s))
+            self.grbl_write("<%s>\r\n" % "|".join(parts))
+        elif bytes_to_write == "~":  # Resume.
+            self.context("resume\n")
+        elif bytes_to_write == "!":  # Pause.
+            self.context("pause\n")
+        elif bytes_to_write == "\x18":  # Soft reset.
+            self.context("estop\n")
 
     def write(self, data):
-        self.service.signal("tcp;write", data)
-        with self.lock:
-            self.buffer += data
-            self.service.signal("tcp;buffer", len(self.buffer))
-        self._start()
+        if isinstance(data, bytes):
+            data = data.decode()
+        if "?" in data:
+            data = data.replace("?", "")
+            self.realtime_write("?")
+        if "~" in data:
+            data = data.replace("$", "")
+            self.realtime_write("~")
+        if "!" in data:
+            data = data.replace("!", "")
+            self.realtime_write("!")
+        if "\x18" in data:
+            data = data.replace("\x18", "")
+            self.realtime_write("\x18")
+        self.buffer += data
+        while "\b" in self.buffer:
+            self.buffer = re.sub(".\b", "", self.buffer, count=1)
+            if self.buffer.startswith("\b"):
+                self.buffer = re.sub("\b+", "", self.buffer)
 
-    realtime_write = write
+        while "\n" in self.buffer:
+            pos = self.buffer.find("\n")
+            command = self.buffer[0:pos].strip("\r")
+            self.buffer = self.buffer[pos + 1 :]
+            cmd = self.commandline(command)
+            if cmd == 0:  # Execute GCode.
+                self.grbl_write("ok\r\n")
+            else:
+                self.grbl_write("error:%d\r\n" % cmd)
 
-    def _start(self):
-        if self.thread is None:
-            self.thread = self.service.threaded(
-                self._sending,
-                thread_name="sender-%d" % self.service.port,
-                result=self._stop,
-            )
-
-    def _stop(self, *args):
-        self.thread = None
-
-    def _sending(self):
-        tries = 0
-        while True:
-            try:
-                if len(self.buffer):
-                    if self._stream is None:
-                        self.connect()
-                        if self._stream is None:
-                            return
-                    with self.lock:
-                        sent = self._stream.send(self.buffer)
-                        del self.buffer[:sent]
-                        self.service.signal("tcp;buffer", len(self.buffer))
-                    tries = 0
+    def process_line(self, data):
+        if data.startswith("$"):
+            if data == "$":
+                self.grbl_write(
+                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                )
+                return 0
+            elif data == "$$":
+                for s in self.settings:
+                    v = self.settings[s]
+                    if isinstance(v, int):
+                        self.grbl_write("$%d=%d\r\n" % (s, v))
+                    elif isinstance(v, float):
+                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
+                return 0
+            if GRBL_SET_RE.match(data):
+                settings = list(GRBL_SET_RE.findall(data))[0]
+                print(settings)
+                try:
+                    c = self.settings[int(settings[0])]
+                except KeyError:
+                    return 3
+                if isinstance(c, float):
+                    self.settings[int(settings[0])] = float(settings[1])
                 else:
-                    tries += 1
-                    time.sleep(0.1)
-            except (ConnectionError, OSError):
-                tries += 1
-                self.disconnect()
-                time.sleep(0.05)
-            if tries >= 20:
-                with self.lock:
-                    if len(self.buffer) == 0:
-                        break
+                    self.settings[int(settings[0])] = int(settings[1])
+                return 0
+            elif data == "$I":
+                pass
+            elif data == "$G":
+                pass
+            elif data == "$N":
+                pass
+            elif data == "$H":
+                self.spooler.job("home")
+                if self.home_adjust is not None:
+                    self.spooler.job("rapid_mode")
+                    self.spooler.job(
+                        "move", self.home_adjust[0], self.home_adjust[1]
+                    )
+                return 0
+                # return 5  # Homing cycle not enabled by settings.
+            return 3  # GRBL '$' system command was not recognized or supported.
+        if data.startswith("cat"):
+            return 2
+        commands = {}
+        for c in _tokenize_code(data):
+            g = c[0]
+            if g not in commands:
+                commands[g] = []
+            if len(c) >= 2:
+                commands[g].append(c[1])
+            else:
+                commands[g].append(None)
+        return self.command(commands)
 
-    def __repr__(self):
-        return "TCPOutput('%s:%s')" % (
-            self.service.address,
-            self.service.port,
-        )
-
-    def __len__(self):
-        return len(self.buffer)
-
-
-GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
-CODE_RE = re.compile(r"([A-Za-z])")
-FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
-
-
-def _tokenize_code(code_line):
-    pos = code_line.find("(")
-    while pos != -1:
-        end = code_line.find(")")
-        yield ["comment", code_line[pos + 1 : end]]
-        code_line = code_line[:pos] + code_line[end + 1 :]
-        pos = code_line.find("(")
-    pos = code_line.find(";")
-    if pos != -1:
-        yield ["comment", code_line[pos + 1 :]]
-        code_line = code_line[:pos]
-
-    code = None
-    for x in CODE_RE.split(code_line):
-        x = x.strip()
-        if len(x) == 0:
-            continue
-        if len(x) == 1 and x.isalpha():
-            if code is not None:
-                yield code
-            code = [x.lower()]
-            continue
-        if code is not None:
-            code.extend([float(v) for v in FLOAT_RE.findall(x) if len(v) != 0])
-            yield code
-        code = None
-    if code is not None:
-        yield code
-
-
-def get_command_code(lines):
-    home_adjust = None
-    flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
-    flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
-    scale = UNITS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
-
-    def g93_feed_convert(s):
-        return (60.0 / s) * scale / UNITS_PER_MM
-
-    def g93_feed_invert(s):
-        return (60.0 / s) * UNITS_PER_MM / scale
-
-    def g94_feed_convert(s):
-        return s / ((scale / UNITS_PER_MM) * 60.0)
-
-    def g94_feed_invert(s):
-        # units to mm, seconds to minutes.
-        return s * ((scale / UNITS_PER_MM) * 60.0)
-
-    feed_convert, feed_invert = (
-        g94_feed_convert,
-        g94_feed_invert,
-    )  # G94 DEFAULT, mm mode
-    move_mode = 0
-    home = None
-    home2 = None
-    on_mode = 1
-    power = 0
-    speed = 0
-    used_speed = 0
-    buffer = ""
-    settings = {
-        0: 10,  # step pulse microseconds
-        1: 25,  # step idle delay
-        2: 0,  # step pulse invert
-        3: 0,  # step direction invert
-        4: 0,  # invert step enable pin, boolean
-        5: 0,  # invert limit pins, boolean
-        6: 0,  # invert probe pin
-        10: 255,  # status report options
-        11: 0.010,  # Junction deviation, mm
-        12: 0.002,  # arc tolerance, mm
-        13: 0,  # Report in inches
-        20: 0,  # Soft limits enabled.
-        21: 0,  # hard limits enabled
-        22: 0,  # Homing cycle enable
-        23: 0,  # Homing direction invert
-        24: 25.000,  # Homing locate feed rate, mm/min
-        25: 500.000,  # Homing search seek rate, mm/min
-        26: 250,  # Homing switch debounce delay, ms
-        27: 1.000,  # Homing switch pull-off distance, mm
-        30: 1000,  # Maximum spindle speed, RPM
-        31: 0,  # Minimum spindle speed, RPM
-        32: 1,  # Laser mode enable, boolean
-        100: 250.000,  # X-axis steps per millimeter
-        101: 250.000,  # Y-axis steps per millimeter
-        102: 250.000,  # Z-axis steps per millimeter
-        110: 500.000,  # X-axis max rate mm/min
-        111: 500.000,  # Y-axis max rate mm/min
-        112: 500.000,  # Z-axis max rate mm/min
-        120: 10.000,  # X-axis acceleration, mm/s^2
-        121: 10.000,  # Y-axis acceleration, mm/s^2
-        122: 10.000,  # Z-axis acceleration, mm/s^2
-        130: 200.000,  # X-axis max travel mm.
-        131: 200.000,  # Y-axis max travel mm
-        132: 200.000,  # Z-axis max travel mm.
-    }
-
-    for line in lines:
+    def command(self, gc):
         gc = {}
         for c in _tokenize_code(line):
             g = c[0]
@@ -847,9 +546,9 @@ def get_command_code(lines):
                     yield "rapid_mode"
                     yield "wait_finish"
                 elif v == 2:
-                    return 0
+                    return
                 elif v == 30:
-                    return 0
+                    return
                 elif v == 3 or v == 4:
                     on_mode = True
                 elif v == 5:
@@ -1097,207 +796,6 @@ def get_command_code(lines):
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
 
-
-class GRBLEmulator(Module):
-    def __init__(self, context, path):
-        Module.__init__(self, context, path)
-        self.cutcode = None
-
-        self.spooler = context.device.spooler
-        self.device = context.device
-
-        self.home_adjust = None
-        self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
-        self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
-        self.scale = (
-            UNITS_PER_MM  # G20 DEFAULT
-        )
-        self.feed_convert = None
-        self.feed_invert = None
-        self.g94_feedrate()  # G94 DEFAULT, mm mode
-        self.move_mode = 0
-        self.home = None
-        self.home2 = None
-        self.on_mode = 1
-        self.power = 0
-        self.speed = 0
-        self.used_speed = 0
-        self.buffer = ""
-        self.settings = {
-            0: 10,  # step pulse microseconds
-            1: 25,  # step idle delay
-            2: 0,  # step pulse invert
-            3: 0,  # step direction invert
-            4: 0,  # invert step enable pin, boolean
-            5: 0,  # invert limit pins, boolean
-            6: 0,  # invert probe pin
-            10: 255,  # status report options
-            11: 0.010,  # Junction deviation, mm
-            12: 0.002,  # arc tolerance, mm
-            13: 0,  # Report in inches
-            20: 0,  # Soft limits enabled.
-            21: 0,  # hard limits enabled
-            22: 0,  # Homing cycle enable
-            23: 0,  # Homing direction invert
-            24: 25.000,  # Homing locate feed rate, mm/min
-            25: 500.000,  # Homing search seek rate, mm/min
-            26: 250,  # Homing switch debounce delay, ms
-            27: 1.000,  # Homing switch pull-off distance, mm
-            30: 1000,  # Maximum spindle speed, RPM
-            31: 0,  # Minimum spindle speed, RPM
-            32: 1,  # Laser mode enable, boolean
-            100: 250.000,  # X-axis steps per millimeter
-            101: 250.000,  # Y-axis steps per millimeter
-            102: 250.000,  # Z-axis steps per millimeter
-            110: 500.000,  # X-axis max rate mm/min
-            111: 500.000,  # Y-axis max rate mm/min
-            112: 500.000,  # Z-axis max rate mm/min
-            120: 10.000,  # X-axis acceleration, mm/s^2
-            121: 10.000,  # Y-axis acceleration, mm/s^2
-            122: 10.000,  # Z-axis acceleration, mm/s^2
-            130: 200.000,  # X-axis max travel mm.
-            131: 200.000,  # Y-axis max travel mm
-            132: 200.000,  # Z-axis max travel mm.
-        }
-        self.grbl_channel = None
-        self.reply = None
-        self.channel = None
-        self.elements = None
-
-    def module_open(self, *args, **kwargs):
-        self.grbl_channel = self.context.channel("grbl")
-
-    def close(self):
-        pass
-
-    def open(self):
-        pass
-
-    def grbl_write(self, data):
-        if self.grbl_channel is not None:
-            self.grbl_channel(data)
-        if self.reply is not None:
-            self.reply(data)
-
-    def realtime_write(self, bytes_to_write):
-        device = self.device
-        if bytes_to_write == "?":  # Status report
-            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if device.state == 0:
-                state = "Idle"
-            else:
-                state = "Busy"
-            x = device.current_x / self.scale
-            y = device.current_y / self.scale
-            z = 0.0
-            parts = list()
-            parts.append(state)
-            parts.append("MPos:%f,%f,%f" % (x, y, z))
-            speed = device.settings.speed
-            if speed is None:
-                speed = 30.0
-            f = self.feed_invert(speed)
-            power = device.settings.power
-            if power is None:
-                power = 1000
-            s = power
-            parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r\n" % "|".join(parts))
-        elif bytes_to_write == "~":  # Resume.
-            self.context("resume\n")
-        elif bytes_to_write == "!":  # Pause.
-            self.context("pause\n")
-        elif bytes_to_write == "\x18":  # Soft reset.
-            self.context("estop\n")
-
-    def write(self, data):
-        if isinstance(data, bytes):
-            data = data.decode()
-        if "?" in data:
-            data = data.replace("?", "")
-            self.realtime_write("?")
-        if "~" in data:
-            data = data.replace("$", "")
-            self.realtime_write("~")
-        if "!" in data:
-            data = data.replace("!", "")
-            self.realtime_write("!")
-        if "\x18" in data:
-            data = data.replace("\x18", "")
-            self.realtime_write("\x18")
-        self.buffer += data
-        while "\b" in self.buffer:
-            self.buffer = re.sub(".\b", "", self.buffer, count=1)
-            if self.buffer.startswith("\b"):
-                self.buffer = re.sub("\b+", "", self.buffer)
-
-        while "\n" in self.buffer:
-            pos = self.buffer.find("\n")
-            command = self.buffer[0:pos].strip("\r")
-            self.buffer = self.buffer[pos + 1 :]
-            cmd = self.commandline(command)
-            if cmd == 0:  # Execute GCode.
-                self.grbl_write("ok\r\n")
-            else:
-                self.grbl_write("error:%d\r\n" % cmd)
-
-    def commandline(self, data):
-        if data.startswith("$"):
-            if data == "$":
-                self.grbl_write(
-                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
-                )
-                return 0
-            elif data == "$$":
-                for s in self.settings:
-                    v = self.settings[s]
-                    if isinstance(v, int):
-                        self.grbl_write("$%d=%d\r\n" % (s, v))
-                    elif isinstance(v, float):
-                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
-                return 0
-            if GRBL_SET_RE.match(data):
-                settings = list(GRBL_SET_RE.findall(data))[0]
-                print(settings)
-                try:
-                    c = self.settings[int(settings[0])]
-                except KeyError:
-                    return 3
-                if isinstance(c, float):
-                    self.settings[int(settings[0])] = float(settings[1])
-                else:
-                    self.settings[int(settings[0])] = int(settings[1])
-                return 0
-            elif data == "$I":
-                pass
-            elif data == "$G":
-                pass
-            elif data == "$N":
-                pass
-            elif data == "$H":
-                self.spooler.job("home")
-                if self.home_adjust is not None:
-                    self.spooler.job("rapid_mode")
-                    self.spooler.job(
-                        "move", self.home_adjust[0], self.home_adjust[1]
-                    )
-                return 0
-                # return 5  # Homing cycle not enabled by settings.
-            return 3  # GRBL '$' system command was not recognized or supported.
-        if data.startswith("cat"):
-            return 2
-        commands = {}
-        for c in _tokenize_code(data):
-            g = c[0]
-            if g not in commands:
-                commands[g] = []
-            if len(c) >= 2:
-                commands[g].append(c[1])
-            else:
-                commands[g].append(None)
-        return self.command(commands)
-
-    def command(self, gc):
         if "m" in gc:
             for v in gc["m"]:
                 if v == 0 or v == 1:
@@ -1573,6 +1071,456 @@ class GRBLEmulator(Module):
         self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
         self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
+
+    def g20(self):
+        self.scale = UNITS_PER_INCH  # g20 is inch mode.
+
+    def g21(self):
+        self.scale = UNITS_PER_MM  # g21 is mm mode.
+
+    def g93(self):
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = lambda s: (self.scale * 60.0) / s
+        self.feed_invert = lambda s: (self.scale * 60.0) / s
+
+    def g94(self):
+        # Feed Rate in Units / Minute
+        self.feed_convert = lambda s: s / (self.scale * 60.0)
+        self.feed_invert = lambda s: s * (self.scale * 60.0)
+
+    def g90(self):
+        self.relative = False
+
+    def g91(self):
+        self.relative = True
+
+    def move(self, x, y):
+        line = []
+        if self.laser:
+            line.append("G1")
+        else:
+            line.append("G0")
+        line.append("X%f" % (x / self.scale))
+        line.append("Y%f" % (y / self.scale))
+        if self.power_updated:
+            if self.settings.power is not None:
+                line.append("S%f" % self.settings.power)
+            self.power_updated = False
+        if self.settings.speed is None:
+            self.settings.speed = 20.0
+        if self.speed_updated:
+            line.append("F%d" % int(self.feed_convert(self.settings.speed)))
+            self.speed_updated = False
+        self.output.write(" ".join(line) + self.service.line_end)
+
+    def plotplanner_process(self):
+        """
+        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
+        movements. Or updating the laser state based on the settings of the cutcode.
+
+        :return:
+        """
+        if self.plot is not None:
+            while True:
+                try:
+                    if self.hold():
+                        return True
+                    x, y, on = next(self.plot)
+                except StopIteration:
+                    break
+                except TypeError:
+                    break
+                on = int(on)
+                if on > 1:
+                    # Special Command.
+                    if on & PLOT_FINISH:  # Plot planner is ending.
+                        self.rapid_mode()
+                        break
+                    elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                        p_set = self.plot_planner.settings
+                        s_set = self.settings
+                        if p_set.power != s_set.power:
+                            self.set_power(p_set.power)
+                        if (
+                            p_set.speed != s_set.speed
+                            or p_set.raster_step != s_set.raster_step
+                        ):
+                            self.set_speed(p_set.speed)
+                            self.set_step(p_set.raster_step)
+                            self.rapid_mode()
+                        self.settings.set_values(p_set)
+                    elif on & (
+                        PLOT_RAPID | PLOT_JOG
+                    ):  # Plot planner requests position change.
+                        self.rapid_mode()
+                    continue
+                if on == 0:
+                    self.laser_on()
+                else:
+                    self.laser_off()
+                self.move(x, y)
+            self.plot = None
+        return False
+
+    def hold_work(self):
+        """
+        Required.
+
+        Spooler check. to see if the work cycle should be held.
+
+        @return: hold?
+        """
+        return self.hold or self.paused
+
+    def hold_idle(self):
+        """
+        Required.
+
+        Spooler check. Should the idle job be processed or held.
+        @return:
+        """
+        return False
+
+    def move_abs(self, x, y):
+        x = self.service.length(x, 0)
+        y = self.service.length(y, 1)
+        x = int(round(self.service.scale_x * x / self.scale))
+        y = int(round(self.service.scale_y * y / self.scale))
+        self.rapid_mode()
+        self.move_absolute(int(x), int(y))
+
+    def move_rel(self, dx, dy):
+        dx = self.service.length(dx, 0)
+        dy = self.service.length(dy, 1)
+        dx = int(round(self.service.scale_x * dx / self.scale))
+        dy = int(round(self.service.scale_y * dy / self.scale))
+        self.rapid_mode()
+        self.move_relative(dx, dy)
+
+    def dwell(self, time_in_ms):
+        self.program_mode()
+        self.raster_mode()
+        self.wait_finish()
+        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.wait(time_in_ms / 1000.0)
+        self.laser_off()
+
+    def laser_off(self, *values):
+        """
+        Turn laser off in place.
+
+        @param values:
+        @return:
+        """
+        pass
+
+    def laser_on(self, *values):
+        """
+        Turn laser on in place.
+
+        @param values:
+        @return:
+        """
+        pass
+
+    def plot(self, plot):
+        """
+        Gives the driver a bit of cutcode that should be plotted.
+        @param plot:
+        @return:
+        """
+        pass
+
+    def plot_start(self):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+
+    def blob(self, data_type, data):
+        """
+        @param type:
+        @param data:
+        @return:
+        """
+        if data_type != "gcode":
+            return
+        for line in data:
+            self.process_line(line)
+
+    def home(self, *values):
+        """
+        Home the laser.
+
+        @param values:
+        @return:
+        """
+
+    def lock_rail(self):
+        """
+        For plotter-style lasers this should prevent the laser bar from moving.
+        @return:
+        """
+
+    def unlock_rail(self):
+        """
+        For plotter-style jobs this should free the laser head to be movable by the user.
+
+        @return:
+        """
+
+    def rapid_mode(self, *values):
+        """
+        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
+        batch of commands.
+
+        @param values:
+        @return:
+        """
+
+    def finished_mode(self, *values):
+        """
+        Finished mode is after a large batch of jobs is done.
+
+        @param values:
+        @return:
+        """
+        self.out_pipe.write("M5" + self.service.line_end)
+        Driver.finished_mode(self, *values)
+
+    def program_mode(self, *values):
+        """
+        Program mode is the state lasers often use to send a large batch of commands.
+        @param values:
+        @return:
+        """
+        self.out_pipe.write("M3" + self.service.line_end)
+        Driver.program_mode(self, *values)
+
+    def raster_mode(self, *values):
+        """
+        Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
+        many lasers have specialty values
+        @param values:
+        @return:
+        """
+
+    def set(self, key, value):
+        """
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
+
+    def set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_ppi(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_pwm(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def set_speed(self, speed=None):
+        self.speed = speed
+        self.speed_updated = True
+
+    def set_position(self, x, y):
+        """
+        This should set an offset position.
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        used in step-repeat.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.native_x = x
+        self.native_y = y
+
+    def wait(self, t):
+        """
+        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
+        called first this should pause the machine without current work acting as a dwell.
+
+        @param t:
+        @return:
+        """
+        time.sleep(float(t))
+
+    def wait_finish(self, *values):
+        """
+        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
+        from being sent with returning True for the until that criteria is met.
+
+        @param values:
+        @return:
+        """
+        self.hold = True
+
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.service.signal(signal, *args)
+
+    def pause(self, *args):
+        """
+        Asks that the laser be paused.
+
+        @param args:
+        @return:
+        """
+        self.paused = True
+
+    def resume(self, *args):
+        """
+        Asks that the laser be resumed.
+
+        To work this command should usually be put into the realtime work queue for the laser.
+
+        @param args:
+        @return:
+        """
+        self.paused = False
+
+    def reset(self, *args):
+        """
+        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+        deleted.
+        Asks that the device resets, and clears all current work.
+
+        @param args:
+        @return:
+        """
+
+    def status(self):
+        """
+        Asks that this device status be updated.
+
+        @return:
+        """
+        parts = list()
+        parts.append("x=%f" % self.native_x)
+        parts.append("y=%f" % self.native_y)
+        parts.append("speed=%f" % self.settings.get("speed", 0.0))
+        parts.append("power=%d" % self.settings.get("power", 0))
+        status = ";".join(parts)
+        self.service.signal("driver;status", status)
+
+
+class TCPOutput:
+    def __init__(self, context):
+        super().__init__()
+        self.service = context
+        self._stream = None
+
+        self.lock = threading.RLock()
+        self.buffer = bytearray()
+        self.thread = None
+
+    def connect(self):
+        try:
+            self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._stream.connect((self.service.address, self.service.port))
+            self.service.signal("tcp;status", "connected")
+        except (ConnectionError, TimeoutError):
+            self.disconnect()
+
+    def disconnect(self):
+        self.service.signal("tcp;status", "disconnected")
+        self._stream.close()
+        self._stream = None
+
+    def write(self, data):
+        self.service.signal("tcp;write", data)
+        with self.lock:
+            self.buffer += data
+            self.service.signal("tcp;buffer", len(self.buffer))
+        self._start()
+
+    realtime_write = write
+
+    def _start(self):
+        if self.thread is None:
+            self.thread = self.service.threaded(
+                self._sending,
+                thread_name="sender-%d" % self.service.port,
+                result=self._stop,
+            )
+
+    def _stop(self, *args):
+        self.thread = None
+
+    def _sending(self):
+        tries = 0
+        while True:
+            try:
+                if len(self.buffer):
+                    if self._stream is None:
+                        self.connect()
+                        if self._stream is None:
+                            return
+                    with self.lock:
+                        sent = self._stream.send(self.buffer)
+                        del self.buffer[:sent]
+                        self.service.signal("tcp;buffer", len(self.buffer))
+                    tries = 0
+                else:
+                    tries += 1
+                    time.sleep(0.1)
+            except (ConnectionError, OSError):
+                tries += 1
+                self.disconnect()
+                time.sleep(0.05)
+            if tries >= 20:
+                with self.lock:
+                    if len(self.buffer) == 0:
+                        break
+
+    def __repr__(self):
+        return "TCPOutput('%s:%s')" % (
+            self.service.address,
+            self.service.port,
+        )
+
+    def __len__(self):
+        return len(self.buffer)
 
 
 class GcodeBlob(list):
