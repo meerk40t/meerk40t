@@ -384,7 +384,7 @@ class SVGLoader:
                                 if type_v in (str, int, float, Color):
                                     try:
                                         setattr(op, key, type_v(element.values[key]))
-                                    except (ValueError, KeyError):
+                                    except (ValueError, KeyError, AttributeError):
                                         pass
                                 elif type_v == bool:
                                     setattr(
