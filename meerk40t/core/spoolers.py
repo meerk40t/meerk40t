@@ -374,7 +374,7 @@ class Spooler:
             if self._shutdown:
                 return
             self._execute_program(p)
-        print("Unspoolable object: {s}".format(s=str(program)))
+        # print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):
         while True:
