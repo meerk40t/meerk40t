@@ -77,7 +77,6 @@ class Driver:
         @return:
         """
 
-
     def laser_off(self, *values):
         """
         Turn laser off in place.
