@@ -374,7 +374,7 @@ class TestCutcode(unittest.TestCase):
                 rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            laserop.settings.raster_step = (
+            laserop.raster_step = (
                 i  # Raster_Step should be ignored, set for next loop
             )
 
