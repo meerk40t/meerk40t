@@ -269,14 +269,28 @@ class GRBLDevice(Service, ViewPort):
                 channel(_("----------"))
             return "spooler", spooler
 
+        @self.console_argument("com")
+        @self.console_option("baud", "b")
         @self.console_command(
             "serial",
             help=_("link the serial connection"),
             input_type=None,
         )
-        def serial(command, channel, _, data=None, remainder=None, **kwgs):
-            connection = SerialConnection(self)
-            self.channel("grbl").watch(connection.write)
+        def serial(command, channel, _, data=None, com=None, baud=9600, remainder=None, **kwgs):
+            if com is None:
+                import serial.tools.list_ports
+
+                ports = serial.tools.list_ports.comports()
+
+                channel("Available COM ports")
+                for x in ports:
+                    channel(x.description)
+            else:
+                self.com_port = com.upper()
+                connection = SerialConnection(self)
+                self.channel("grbl").watch(connection.write)
+
+
 
     @property
     def current_x(self):
@@ -1228,7 +1242,7 @@ class SerialConnection:
                             return
                     with self.lock:
                         line = self.buffer[0]
-                        response = self.laser.read(10000)
+                        response = self.laser.readall()
                         str_response = str(response, 'utf-8')
                         # TODO: Should check for response as ok, do character counting protocol.
                         self.service.signal("serial;response", str_response)
