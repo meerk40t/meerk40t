@@ -3,8 +3,9 @@ from io import BytesIO
 from typing import Tuple, Union
 
 from ..core.cutcode import CutCode, LineCut
+from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_uM
+from ..core.units import UNITS_PER_uM, ViewPort
 from ..kernel import Module, Service
 from ..svgelements import Color, Point
 
@@ -164,7 +165,7 @@ def plugin(kernel, lifecycle=None):
             )
 
 
-class RuidaDevice(Service):
+class RuidaDevice(Service, ViewPort):
     """
     RuidaDevice is driver for the Ruida Controllers
     """
@@ -214,10 +215,9 @@ class RuidaDevice(Service):
             },
         ]
         self.register_choices("bed_dim", choices)
-
+        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
         self.current_x = 0.0
         self.current_y = 0.0
-        self.settings = LaserSettings()
         self.state = 0
 
         self.spooler = Spooler(self)
@@ -316,7 +316,7 @@ class RuidaEmulator(Module):
     def cutset(self):
         # self.settings.jog_enable = False
         if self._use_set is None:
-            self._use_set = LaserSettings(self.settings)
+            self._use_set = Parameters(self.settings)
         return self._use_set
 
     @staticmethod

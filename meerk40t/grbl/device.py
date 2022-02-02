@@ -6,7 +6,7 @@ import time
 
 from ..core.drivers import Driver
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -137,7 +137,7 @@ def plugin(kernel, lifecycle=None):
             )
 
 
-class GRBLDevice(Service):
+class GRBLDevice(Service, ViewPort):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
@@ -150,7 +150,7 @@ class GRBLDevice(Service):
         _ = self._
         choices = [
             {
-                "attr": "width",
+                "attr": "bedwidth",
                 "object": self,
                 "default": 3.10007e+8,
                 "type": float,
@@ -158,7 +158,7 @@ class GRBLDevice(Service):
                 "tip": _("Width of the laser bed."),
             },
             {
-                "attr": "height",
+                "attr": "bedheight",
                 "object": self,
                 "default": 2.1001e+8,
                 "type": float,
@@ -187,7 +187,7 @@ class GRBLDevice(Service):
             },
         ]
         self.register_choices("bed_dim", choices)
-
+        ViewPort.__init__(self, 0,0, self.bedwidth, self.bedheight)
         self.current_x = 0.0
         self.current_y = 0.0
         self.settings = dict()
