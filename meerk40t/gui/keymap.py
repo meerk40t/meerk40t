@@ -97,8 +97,7 @@ class KeymapPanel(wx.Panel):
 
     def reload_keymap(self):
         i = 0
-        for key in self.context.keymap:
-            value = self.context.keymap[key]
+        for key, value in self.context.keymap.items():
             m = self.list_keymap.InsertItem(i, str(key))
             i += 1
             if m != -1:

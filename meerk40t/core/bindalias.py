@@ -120,15 +120,11 @@ class BindAlias(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         # Keymap/alias values
-        self.keymap = {}
-        self.alias = {}
+        self.context.keymap = {}
+        self.context.alias = {}
 
     def attach(self, *a, **kwargs):
         _ = self.context._
-        self.context.keymap = self.keymap
-        self.context.alias = self.alias
-        self.context.default_keymap = self.default_keymap
-        self.context.default_alias = self.default_alias
 
         @self.context.console_command("bind", help=_("bind <key> <console command>"))
         def bind(command, channel, _, args=tuple(), **kwgs):
@@ -147,8 +143,7 @@ class BindAlias(Modifier):
             else:
                 key = args[0].lower()
                 if key == "default":
-                    context.keymap = dict()
-                    context.default_keymap()
+                    self.default_keymap()
                     channel(_("Keymap set to default."))
                     return
                 command_line = " ".join(args[1:])
@@ -196,8 +191,7 @@ class BindAlias(Modifier):
                 return
             alias = alias.lower()
             if alias == "default":
-                context.alias = dict()
-                context.default_alias()
+                self.default_alias()
                 channel(_("Aliases set to default."))
                 return
             if remainder is None:
@@ -217,8 +211,8 @@ class BindAlias(Modifier):
             Aliases with ; delimit multipart commands
             """
             context = self.context
-            if command in self.alias:
-                aliased_command = self.alias[command]
+            if command in context.alias:
+                aliased_command = context.alias[command]
                 for cmd in aliased_command.split(";"):
                     context("%s\n" % cmd)
             else:
@@ -238,56 +232,58 @@ class BindAlias(Modifier):
         keys.clear_persistent()
         alias.clear_persistent()
 
-        for key in self.keymap:
+        for key, value in self.keymap.items():
             if key is None or len(key) == 0:
                 continue
-            keys.write_persistent(key, self.keymap[key])
+            keys.write_persistent(key, value)
 
-        for key in self.alias:
+        for key, value in self.alias.items():
             if key is None or len(key) == 0:
                 continue
-            alias.write_persistent(key, self.alias[key])
+            alias.write_persistent(key, value)
 
     def boot_keymap(self):
-        self.keymap.clear()
-        prefs = self.context.derive("keymap")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap, suffix=True)
-        if not len(self.keymap):
+        context = self.context
+        context.keymap.clear()
+        prefs = context.derive("keymap")
+        prefs.kernel.load_persistent_string_dict(prefs.path, context.keymap, suffix=True)
+        if not len(context.keymap):
             self.default_keymap()
             return
         for key, values in DEFAULT_KEYMAP.items():
-            if key in self.keymap and self.keymap[key] in values[1:]:
+            if key in context.keymap and context.keymap[key] in values[1:]:
                 value = values[0]
                 if value:
-                    self.keymap[key] = value
+                    context.keymap[key] = value
                 else:
-                    del self.keymap[key]
+                    del context.keymap[key]
 
     def boot_alias(self):
-        self.alias.clear()
-        prefs = self.context.derive("alias")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias, suffix=True)
-        if not len(self.alias):
+        context = self.context
+        context.alias.clear()
+        prefs = context.derive("alias")
+        prefs.kernel.load_persistent_string_dict(prefs.path, context.alias, suffix=True)
+        if not len(context.alias):
             self.default_alias()
             return
         for key, values in DEFAULT_ALIAS.items():
-            if key in self.alias and self.alias[key] in values[1:]:
+            if key in context.alias and context.alias[key] in values[1:]:
                 value = values[0]
                 if value:
-                    self.alias[key] = value
+                    context.alias[key] = value
                 else:
-                    del self.alias[key]
+                    del context.alias[key]
 
     def default_keymap(self):
-        self.keymap = {}
+        self.context.keymap.clear()
         for key, values in DEFAULT_KEYMAP.items():
             value = values[0]
             if value:
-                self.keymap[key] = value
+                self.context.keymap[key] = value
 
     def default_alias(self):
-        self.alias = {}
+        self.context.alias.clear()
         for key, values in DEFAULT_ALIAS.items():
             value = values[0]
             if value:
-                self.alias[key] = value
+                self.context.alias[key] = value
