@@ -423,25 +423,44 @@ class GRBLDriver(Parameters):
 
     def move_abs(self, x, y):
         # TODO: Should use $J syntax
+        self.g91_absolute()
         self.clean()
+        old_current_x = self.service.current_x
+        old_current_y = self.service.current_y
+
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
         x = self.service.scale_x * x / self.stepper_step_size
         y = self.service.scale_y * y / self.stepper_step_size
         self.rapid_mode()
-        self.g91_absolute()
         self.move(x, y)
+        new_current_x = self.service.current_x
+        new_current_y = self.service.current_y
+        self.service.signal(
+            "driver;position",
+            (old_current_x, old_current_y, new_current_x, new_current_y),
+        )
 
     def move_rel(self, dx, dy):
         # TODO: Should use $J syntax
+        self.g90_relative()
         self.clean()
+        old_current_x = self.service.current_x
+        old_current_y = self.service.current_y
+
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
         dx = self.service.scale_x * dx / self.stepper_step_size
         dy = self.service.scale_y * dy / self.stepper_step_size
         self.rapid_mode()
-        self.g90_relative()
         self.move(dx, dy)
+
+        new_current_x = self.service.current_x
+        new_current_y = self.service.current_y
+        self.service.signal(
+            "driver;position",
+            (old_current_x, old_current_y, new_current_x, new_current_y),
+        )
 
     def clean(self):
         if self.absolute_dirty:
@@ -466,14 +485,20 @@ class GRBLDriver(Parameters):
         self.units_dirty = False
 
     def g90_relative(self):
+        if not self._absolute:
+            return
         self._absolute = False
         self.absolute_dirty = True
 
     def g91_absolute(self):
+        if self._absolute:
+            return
         self._absolute = True
         self.absolute_dirty = True
 
     def g93_feedrate(self):
+        if self.feed_mode == 93:
+            return
         self.feed_mode = 93
         # Feed Rate in Minutes / Unit
         self.feed_convert = lambda s: (60.0 / s) * self.stepper_step_size / UNITS_PER_MM
@@ -481,6 +506,8 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
 
     def g94_feedrate(self):
+        if self.feed_mode == 94:
+            return
         self.feed_mode = 94
         # Feed Rate in Units / Minute
         self.feed_convert = lambda s: s / ((self.stepper_step_size / UNITS_PER_MM) * 60.0)
