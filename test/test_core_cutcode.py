@@ -16,7 +16,7 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         cutcode = CutCode()
-        settings = Parameters()
+        settings = dict()
         cutcode.append(LineCut(Point(0, 0), Point(100, 100), settings=settings))
         cutcode.append(LineCut(Point(100, 100), Point(0, 0), settings=settings))
         cutcode.append(LineCut(Point(50, -50), Point(100, -100), settings=settings))
