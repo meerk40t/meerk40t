@@ -1,3 +1,4 @@
+import serial
 import os
 import re
 import socket
@@ -228,15 +229,16 @@ class GRBLDevice(Service, ViewPort):
         self.setting(int, "port", 23)
         self.setting(str, "address", "localhost")
 
+        self.setting(str, "com_port", 'COM8')
+        self.setting(int, "serial_baud_rate", 115200)
+        self.setting(int, "serial_timeout", 5)
+
         self.driver = GRBLDriver(self)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
-        # self.tcp = TCPOutput(self)
-        # self.add_service_delegate(self.tcp)
         self.controller = TCPOutput(self)
-        # self.driver.out_pipe = self.controller
 
         self.viewbuffer = ""
 
@@ -267,7 +269,6 @@ class GRBLDevice(Service, ViewPort):
                 for s, op_name in enumerate(spooler.queue):
                     channel("%d: %s" % (s, op_name))
                 channel(_("----------"))
-
             return "spooler", spooler
 
     @property
@@ -1159,6 +1160,91 @@ class GRBLDriver(Parameters):
                 # TODO: Implement CW_ARC
                 # TODO: Implement CCW_ARC
         return 0
+
+
+class SerialConnection:
+    def __init__(self, context):
+        self.service = context
+        self.laser = None
+
+        self.lock = threading.RLock()
+        self.buffer = []
+        self.thread = None
+
+    def connect(self):
+        try:
+            self.laser = serial.Serial(
+                self.service.com_port,
+                self.service.serial_baud_rate,
+                timeout=self.service.serial_timeout,
+            )
+            self.service.signal("serial;status", "connected")
+        except (ConnectionError, TimeoutError):
+            self.disconnect()
+
+    def disconnect(self):
+        self.service.signal("serial;status", "disconnected")
+        self.laser.close()
+
+    def write(self, data):
+        self.service.signal("serial;write", data)
+        with self.lock:
+            self.buffer.append(data)
+            self.service.signal("serial;buffer", len(self.buffer))
+        self._start()
+
+    def _start(self):
+        if self.thread is None:
+            self.thread = self.service.threaded(
+                self._sending,
+                thread_name="sender-%d" % self.service.port,
+                result=self._stop,
+            )
+
+    def _stop(self, *args):
+        self.thread = None
+
+    def _sending(self):
+        tries = 0
+        while True:
+            try:
+                if len(self.buffer):
+                    if self.laser is None:
+                        self.connect()
+                        if self.laser is None:
+                            return
+                    with self.lock:
+                        line = self.buffer[0]
+                        response = self.laser.read(10000)
+                        str_response = str(response, 'utf-8')
+                        # TODO: Should check for response as ok, do character counting protocol.
+                        self.service.signal("serial;response", str_response)
+
+                        self.laser.write(line)
+                        self.service.signal("serial;buffer", len(self.buffer))
+                        self.buffer.pop(0)
+                    tries = 0
+                else:
+                    tries += 1
+                    time.sleep(0.1)
+            except (ConnectionError, OSError):
+                tries += 1
+                self.disconnect()
+                time.sleep(0.05)
+            if tries >= 20:
+                with self.lock:
+                    if len(self.buffer) == 0:
+                        break
+
+    def __repr__(self):
+        return "TCPOutput('%s:%s')" % (
+            self.service.address,
+            self.service.port,
+        )
+
+    def __len__(self):
+        return len(self.buffer)
+
 
 class TCPOutput:
     def __init__(self, context):
