@@ -395,7 +395,10 @@ class GRBLDriver(Parameters):
         line = []
         if absolute and not self._absolute:
             self.set_absolute()
-        line.append("G{move_mode}".format(move_mode=self.move_mode))
+        if self.move_mode == 0:
+            line.append("G0")
+        else:
+            line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
         line.append("X%f" % x)
@@ -439,9 +442,10 @@ class GRBLDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    pass
+                    self.move_mode = 0
+                    self.move(x, y)
                 continue
-            if self.power == 0:
+            if on == 0:
                 self.move_mode = 0
             else:
                 self.move_mode = 1
