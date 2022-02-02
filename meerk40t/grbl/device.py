@@ -474,12 +474,14 @@ class GRBLDriver(Parameters):
         self.move(dx, dy)
 
     def set_relative(self):
-        self._absolute = False
-        self.grbl("G90")
+        if self._absolute:
+            self._absolute = False
+            self.grbl("G90")
 
     def set_absolute(self):
-        self._absolute = True
-        self.grbl("G91")
+        if not self._absolute:
+            self._absolute = True
+            self.grbl("G91")
 
     def dwell(self, time_in_ms):
         self.laser_on()  # This can't be sent early since these are timed operations.
