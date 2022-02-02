@@ -5,6 +5,7 @@ import threading
 import time
 
 from ..core.drivers import Driver
+from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MM, ViewPort
 from ..device.basedevice import (
@@ -29,8 +30,6 @@ STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
 STATE_COMPACT = 2
-
-MILS_IN_MM = 39.3701
 
 """
 GRBL device.
@@ -152,16 +151,16 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "bedwidth",
                 "object": self,
-                "default": 3.10007e+8,
-                "type": float,
+                "default": "310mm",
+                "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": 2.1001e+8,
-                "type": float,
+                "default": "210mm",
+                "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
@@ -187,9 +186,7 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, 0,0, self.bedwidth, self.bedheight)
-        self.current_x = 0.0
-        self.current_y = 0.0
+        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
         self.settings = dict()
         self.state = 0
 
@@ -200,14 +197,7 @@ class GRBLDevice(Service, ViewPort):
 
         self.driver = GRBLDriver(self)
         self.controller = TCPOutput(self)
-
-        self.spooler.next = self.driver
-        self.driver.prev = self.spooler
-        self.driver.next = self.controller
-        self.driver.spooler = self.spooler
-        self.driver.output = self.controller
-        self.controller.prev = self.driver
-
+        self.driver.out_pipe = self.controller
         self.viewbuffer = ""
 
         _ = self.kernel.translation
@@ -240,17 +230,49 @@ class GRBLDevice(Service, ViewPort):
 
             return "spooler", spooler
 
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known x value.
+        """
+        return float(self.driver.native_x * self.driver.scale) / self.scale_x
 
-class GRBLDriver(Driver):
-    def __init__(self, context):
-        Driver.__init__(self, context=context, name=str(context))
-        self.context.setting(str, "line_end", "\n")
+    @property
+    def current_y(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return float(self.driver.native_y * self.driver.scale) / self.scale_y
+
+    @property
+    def get_native_scale_x(self):
+        return self.scale_x / float(self.driver.scale)
+
+    @property
+    def get_native_scale_y(self):
+        return self.scale_y / float(self.driver.scale)
+
+
+class GRBLDriver(Parameters):
+    def __init__(self, service, **kwargs):
+        super().__init__(**kwargs)
+        self.service = service
+        self.name = str(service)
+        self.hold = False
+        self.paused = False
+
+        self.service.setting(str, "line_end", "\n")
         self.plot = None
         self.scale = UNITS_PER_INCH  # g21 default.
         self.feed_convert = lambda s: s / (self.scale * 60.0)  # G94 default
         self.feed_invert = lambda s: s * (self.scale * 60.0)
         self.power_updated = True
         self.speed_updated = True
+        self.laser = False
+        self.native_x = 0
+        self.native_y = 0
+        self.out_pipe = None
+        self.relative = False
 
     def __repr__(self):
         return "GRBLDriver(%s)" % self.name
@@ -272,26 +294,10 @@ class GRBLDriver(Driver):
         self.feed_invert = lambda s: s * (self.scale * 60.0)
 
     def g90(self):
-        self.set_absolute()
+        self.relative = False
 
     def g91(self):
-        self.set_incremental()
-
-    def set_power(self, power=1000.0):
-        Driver.set_power(self, power)
-        self.power_updated = True
-
-    def set_speed(self, speed=None):
-        Driver.set_speed(self, speed)
-        self.speed_updated = True
-
-    def program_mode(self, *values):
-        self.output.write("M3" + self.context.line_end)
-        Driver.program_mode(self, *values)
-
-    def finished_mode(self, *values):
-        self.output.write("M5" + self.context.line_end)
-        Driver.finished_mode(self, *values)
+        self.relative = True
 
     def move(self, x, y):
         line = []
@@ -310,8 +316,7 @@ class GRBLDriver(Driver):
         if self.speed_updated:
             line.append("F%d" % int(self.feed_convert(self.settings.speed)))
             self.speed_updated = False
-        self.output.write(" ".join(line) + self.context.line_end)
-        Driver.move(self, x, y)
+        self.output.write(" ".join(line) + self.service.line_end)
 
     def plotplanner_process(self):
         """
@@ -362,9 +367,286 @@ class GRBLDriver(Driver):
             self.plot = None
         return False
 
-    @property
-    def type(self):
-        return "grbl"
+    def hold_work(self):
+        """
+        Required.
+
+        Spooler check. to see if the work cycle should be held.
+
+        @return: hold?
+        """
+        return self.hold or self.paused
+
+    def hold_idle(self):
+        """
+        Required.
+
+        Spooler check. Should the idle job be processed or held.
+        @return:
+        """
+        return False
+
+    def move_abs(self, x, y):
+        x = self.service.length(x, 0)
+        y = self.service.length(y, 1)
+        x = int(round(self.service.scale_x * x / self.scale))
+        y = int(round(self.service.scale_y * y / self.scale))
+        self.rapid_mode()
+        self.move_absolute(int(x), int(y))
+
+    def move_rel(self, dx, dy):
+        dx = self.service.length(dx, 0)
+        dy = self.service.length(dy, 1)
+        dx = int(round(self.service.scale_x * dx / self.scale))
+        dy = int(round(self.service.scale_y * dy / self.scale))
+        self.rapid_mode()
+        self.move_relative(dx, dy)
+
+    def dwell(self, time_in_ms):
+        self.program_mode()
+        self.raster_mode()
+        self.wait_finish()
+        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.wait(time_in_ms / 1000.0)
+        self.laser_off()
+
+    def laser_off(self, *values):
+        """
+        Turn laser off in place.
+
+        @param values:
+        @return:
+        """
+        pass
+
+    def laser_on(self, *values):
+        """
+        Turn laser on in place.
+
+        @param values:
+        @return:
+        """
+        pass
+
+    def plot(self, plot):
+        """
+        Gives the driver a bit of cutcode that should be plotted.
+        @param plot:
+        @return:
+        """
+        pass
+
+    def plot_start(self):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+
+    def blob(self, data_type, data):
+        """
+        Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
+        bunch of .rd code, or Lihuiyu device it could be egv code. It's a method of sending pre-chewed data to the
+        device.
+
+        @param type:
+        @param data:
+        @return:
+        """
+
+    def home(self, *values):
+        """
+        Home the laser.
+
+        @param values:
+        @return:
+        """
+
+    def lock_rail(self):
+        """
+        For plotter-style lasers this should prevent the laser bar from moving.
+        @return:
+        """
+
+    def unlock_rail(self):
+        """
+        For plotter-style jobs this should free the laser head to be movable by the user.
+
+        @return:
+        """
+
+    def rapid_mode(self, *values):
+        """
+        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
+        batch of commands.
+
+        @param values:
+        @return:
+        """
+
+    def finished_mode(self, *values):
+        """
+        Finished mode is after a large batch of jobs is done.
+
+        @param values:
+        @return:
+        """
+        self.out_pipe.write("M5" + self.service.line_end)
+        Driver.finished_mode(self, *values)
+
+    def program_mode(self, *values):
+        """
+        Program mode is the state lasers often use to send a large batch of commands.
+        @param values:
+        @return:
+        """
+        self.out_pipe.write("M3" + self.service.line_end)
+        Driver.program_mode(self, *values)
+
+    def raster_mode(self, *values):
+        """
+        Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
+        many lasers have specialty values
+        @param values:
+        @return:
+        """
+
+    def set(self, key, value):
+        """
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
+
+    def set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_ppi(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_pwm(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+        self.power_updated = True
+
+    def set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def set_speed(self, speed=None):
+        self.speed = speed
+        self.speed_updated = True
+
+    def set_position(self, x, y):
+        """
+        This should set an offset position.
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        used in step-repeat.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.native_x = x
+        self.native_y = y
+
+    def wait(self, t):
+        """
+        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
+        called first this should pause the machine without current work acting as a dwell.
+
+        @param t:
+        @return:
+        """
+        time.sleep(float(t))
+
+    def wait_finish(self, *values):
+        """
+        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
+        from being sent with returning True for the until that criteria is met.
+
+        @param values:
+        @return:
+        """
+        self.hold = True
+
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.service.signal(signal, *args)
+
+    def pause(self, *args):
+        """
+        Asks that the laser be paused.
+
+        @param args:
+        @return:
+        """
+        self.paused = True
+
+    def resume(self, *args):
+        """
+        Asks that the laser be resumed.
+
+        To work this command should usually be put into the realtime work queue for the laser.
+
+        @param args:
+        @return:
+        """
+        self.paused = False
+
+    def reset(self, *args):
+        """
+        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+        deleted.
+        Asks that the device resets, and clears all current work.
+
+        @param args:
+        @return:
+        """
+
+    def status(self):
+        """
+        Asks that this device status be updated.
+
+        @return:
+        """
+        parts = list()
+        parts.append("x=%f" % self.native_x)
+        parts.append("y=%f" % self.native_y)
+        parts.append("speed=%f" % self.settings.get("speed", 0.0))
+        parts.append("power=%d" % self.settings.get("power", 0))
+        status = ";".join(parts)
+        self.service.signal("driver;status", status)
 
 
 class TCPOutput:
@@ -485,20 +767,20 @@ def get_command_code(lines):
     home_adjust = None
     flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
     flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
-    scale = MILS_IN_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+    scale = UNITS_PER_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
 
     def g93_feed_convert(s):
-        return (60.0 / s) * scale / MILS_IN_MM
+        return (60.0 / s) * scale / UNITS_PER_MM
 
     def g93_feed_invert(s):
-        return (60.0 / s) * MILS_IN_MM / scale
+        return (60.0 / s) * UNITS_PER_MM / scale
 
     def g94_feed_convert(s):
-        return s / ((scale / MILS_IN_MM) * 60.0)
+        return s / ((scale / UNITS_PER_MM) * 60.0)
 
     def g94_feed_invert(s):
         # units to mm, seconds to minutes.
-        return s * ((scale / MILS_IN_MM) * 60.0)
+        return s * ((scale / UNITS_PER_MM) * 60.0)
 
     feed_convert, feed_invert = (
         g94_feed_convert,
@@ -828,7 +1110,7 @@ class GRBLEmulator(Module):
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
         self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.scale = (
-            MILS_IN_MM  # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+            UNITS_PER_MM  # G20 DEFAULT
         )
         self.feed_convert = None
         self.feed_invert = None
@@ -1283,18 +1565,14 @@ class GRBLEmulator(Module):
 
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / MILS_IN_MM
-        self.feed_invert = lambda s: (60.0 / s) * MILS_IN_MM / self.scale
+        self.feed_convert = lambda s: (60.0 / s) * self.scale / UNITS_PER_MM
+        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / MILS_IN_MM) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / MILS_IN_MM) * 60.0)
+        self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
+        self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
         # units to mm, seconds to minutes.
-
-    @property
-    def type(self):
-        return "grbl"
 
 
 class GcodeBlob(list):
