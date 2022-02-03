@@ -1205,7 +1205,7 @@ class GrblSerialController:
         self.write_buffer_lock = threading.RLock()
         self.buffer = []
         self.sending_thread = None
-        self.recving_thread = None
+        # self.recving_thread = None
         self.buffer_mode = 0  # 1:1 okay, send lines.
         self.line_ok = 0
         self.line_buffer = 0
@@ -1272,37 +1272,35 @@ class GrblSerialController:
                 self._sending,
                 thread_name="sender-%s" % self.com_port.lower(),
                 result=self._stop,
+                daemon=True,
             )
-        if self.recving_thread is None:
-            self.recving_thread = self.service.threaded(
-                self._recving,
-                thread_name="recver-%s" % self.com_port.lower(),
-                result=self._stop,
-            )
+        # if self.recving_thread is None:
+        #     self.recving_thread = self.service.threaded(
+        #         self._recving,
+        #         thread_name="recver-%s" % self.com_port.lower(),
+        #         result=self._stop,
+        #     )
 
     def _stop(self, *args):
         self.sending_thread = None
-        self.recving_thread = None
+        # self.recving_thread = None
         self.close()
 
-    def _recving(self):
-        while self.laser is not None:
-            try:
-                response = self.laser.readline()
-                str_response = str(response, 'utf-8')
-                str_response = str_response.strip()
-                self.service.signal("serial;response", str_response)
-                self.recv(str_response)
-                if str_response == "ok":
-                    self.channel("Response: %s" % str_response)
-                else:
-                    self.channel("Response Not-Ok: %s" % str_response)
-            except TimeoutError:
-                # Loop again.
-                continue
-
-    def wait_ok(self):
-        return True
+    # def _recving(self):
+    #     while self.laser is not None:
+    #         try:
+    #             response = self.laser.readline()
+    #             str_response = str(response, 'utf-8')
+    #             str_response = str_response.strip()
+    #             self.service.signal("serial;response", str_response)
+    #             self.recv(str_response)
+    #             if str_response == "ok":
+    #                 self.channel("Response: %s" % str_response)
+    #             else:
+    #                 self.channel("Response Not-Ok: %s" % str_response)
+    #         except TimeoutError:
+    #             # Loop again.
+    #             continue
 
     def _sending(self):
         tries = 0
@@ -1314,7 +1312,17 @@ class GrblSerialController:
                         self.laser.write(bytes(line, "utf-8"))
                         self.send(line)
                         self.service.signal("serial;buffer", len(self.buffer))
-                        self.wait_ok()
+
+                        response = self.laser.readline()
+                        str_response = str(response, 'utf-8')
+                        str_response = str_response.strip()
+                        self.service.signal("serial;response", str_response)
+                        self.recv(str_response)
+                        if str_response == "ok":
+                            self.channel("Response: %s" % str_response)
+                        else:
+                            self.channel("Response Not-Ok: %s" % str_response)
+
                         self.buffer.pop(0)
                     tries = 0
                 else:
