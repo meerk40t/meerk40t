@@ -389,7 +389,6 @@ class GRBLDriver(Parameters):
         self.home_adjust = None
 
         self.move_mode = 0
-        self.buffer = ""
         self.reply = None
         self.elements = None
 
@@ -1191,13 +1190,15 @@ class GrblController:
 
         self.connection = SerialConnection(com_port, baud_rate, self.channel)
         self.driver = self.service.driver
-
-        self.write_buffer_lock = threading.RLock()
-        self.buffer = []
-        self.send_queue = []
         self.sending_thread = None
-        self.buffer_mode = 0  # 1:1 okay, send lines.
-        self.lines_buffered = 0
+
+        self.lock_sending_queue = threading.RLock()
+        self.sending_queue = []
+
+        self.commands_in_device_buffer = []
+        self.buffer_mode = 1  # 1:1 okay, send lines.
+        self.buffered_characters = 0
+        self.device_buffer_size = 255
         self._start()
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
@@ -1262,9 +1263,9 @@ class GrblController:
 
     def write(self, data):
         self.service.signal("serial;write", data)
-        with self.write_buffer_lock:
-            self.buffer.append(data)
-            self.service.signal("serial;buffer", len(self.buffer))
+        with self.lock_sending_queue:
+            self.sending_queue.append(data)
+            self.service.signal("serial;buffer", len(self.sending_queue))
 
     def _start(self):
         self.open()
@@ -1283,14 +1284,19 @@ class GrblController:
     def _sending(self):
         while self.connection.connected:
             write = 0
-            if len(self.buffer) and len(self.send_queue) <= 1:
-                line = self.buffer[0]
-                self.connection.write(line)
-                self.send(line)
-                self.send_queue.append(line)
-                self.service.signal("serial;buffer", len(self.buffer))
-                self.buffer.pop(0)
-                write += 1
+            if len(self.sending_queue):
+                if len(self.commands_in_device_buffer) <= 1:
+                    line = self.sending_queue[0]
+                    line_length = len(line)
+                    buffer_remaining = self.device_buffer_size - self.buffered_characters
+                    if buffer_remaining > line_length:
+                        self.connection.write(line)
+                        self.send(line)
+                        self.commands_in_device_buffer.append(line)
+                        self.buffered_characters = line_length
+                        self.service.signal("serial;buffer", len(self.sending_queue))
+                        self.sending_queue.pop(0)
+                        write += 1
             read = 0
             while True:
                 response = self.connection.read()
@@ -1299,7 +1305,8 @@ class GrblController:
                 self.service.signal("serial;response", response)
                 self.recv(response)
                 if response == "ok":
-                    self.send_queue.pop(0)
+                    line = self.commands_in_device_buffer.pop(0)
+                    self.buffered_characters -= len(line)
                     self.channel("Response: %s" % response)
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
@@ -1318,7 +1325,7 @@ class GrblController:
         )
 
     def __len__(self):
-        return len(self.buffer)
+        return len(self.sending_queue)
 
 
 class SerialConnection:
