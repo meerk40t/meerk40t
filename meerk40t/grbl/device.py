@@ -290,7 +290,7 @@ class GRBLDevice(Service, ViewPort):
                 for x in ports:
                     channel(x.description)
             else:
-                connection = GrblSerialController(self, com.upper(), baud)
+                connection = GrblController(self, com.upper(), baud)
                 self.channel("grbl").watch(connection.write)
 
         @self.console_command(
@@ -385,42 +385,7 @@ class GRBLDriver(Parameters):
         self.g91_absolute()
 
         self.grbl = self.service.channel("grbl", pure=True)
-        self.grbl_settings = {
-            0: 10,  # step pulse microseconds
-            1: 25,  # step idle delay
-            2: 0,  # step pulse invert
-            3: 0,  # step direction invert
-            4: 0,  # invert step enable pin, boolean
-            5: 0,  # invert limit pins, boolean
-            6: 0,  # invert probe pin
-            10: 255,  # status report options
-            11: 0.010,  # Junction deviation, mm
-            12: 0.002,  # arc tolerance, mm
-            13: 0,  # Report in inches
-            20: 0,  # Soft limits enabled.
-            21: 0,  # hard limits enabled
-            22: 0,  # Homing cycle enable
-            23: 0,  # Homing direction invert
-            24: 25.000,  # Homing locate feed rate, mm/min
-            25: 500.000,  # Homing search seek rate, mm/min
-            26: 250,  # Homing switch debounce delay, ms
-            27: 1.000,  # Homing switch pull-off distance, mm
-            30: 1000,  # Maximum spindle speed, RPM
-            31: 0,  # Minimum spindle speed, RPM
-            32: 1,  # Laser mode enable, boolean
-            100: 250.000,  # X-axis steps per millimeter
-            101: 250.000,  # Y-axis steps per millimeter
-            102: 250.000,  # Z-axis steps per millimeter
-            110: 500.000,  # X-axis max rate mm/min
-            111: 500.000,  # Y-axis max rate mm/min
-            112: 500.000,  # Z-axis max rate mm/min
-            120: 10.000,  # X-axis acceleration, mm/s^2
-            121: 10.000,  # Y-axis acceleration, mm/s^2
-            122: 10.000,  # Z-axis acceleration, mm/s^2
-            130: 200.000,  # X-axis max travel mm.
-            131: 200.000,  # Y-axis max travel mm
-            132: 200.000,  # Z-axis max travel mm.
-        }
+
         self.home_adjust = None
 
         self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
@@ -1218,75 +1183,87 @@ class GRBLDriver(Parameters):
         return 0
 
 
-class GrblSerialController:
+class GrblController:
     def __init__(self, context, com_port, baud_rate):
         self.service = context
-
         self.com_port = com_port
-        self.baud_rate = baud_rate
-        self.driver = self.service.driver
         self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel("send-%s" % com_port.lower())
         self.recv = self.service.channel("recv-%s" % com_port.lower())
-        self.laser = None
+
+        self.connection = SerialConnection(com_port, baud_rate, self.channel)
+        self.driver = self.service.driver
 
         self.write_buffer_lock = threading.RLock()
         self.buffer = []
         self.sending_thread = None
-        # self.recving_thread = None
         self.buffer_mode = 0  # 1:1 okay, send lines.
         self.line_ok = 0
         self.line_buffer = 0
         self._start()
+        self.grbl_settings = {
+            0: 10,  # step pulse microseconds
+            1: 25,  # step idle delay
+            2: 0,  # step pulse invert
+            3: 0,  # step direction invert
+            4: 0,  # invert step enable pin, boolean
+            5: 0,  # invert limit pins, boolean
+            6: 0,  # invert probe pin
+            10: 255,  # status report options
+            11: 0.010,  # Junction deviation, mm
+            12: 0.002,  # arc tolerance, mm
+            13: 0,  # Report in inches
+            20: 0,  # Soft limits enabled.
+            21: 0,  # hard limits enabled
+            22: 0,  # Homing cycle enable
+            23: 0,  # Homing direction invert
+            24: 25.000,  # Homing locate feed rate, mm/min
+            25: 500.000,  # Homing search seek rate, mm/min
+            26: 250,  # Homing switch debounce delay, ms
+            27: 1.000,  # Homing switch pull-off distance, mm
+            30: 1000,  # Maximum spindle speed, RPM
+            31: 0,  # Minimum spindle speed, RPM
+            32: 1,  # Laser mode enable, boolean
+            100: 250.000,  # X-axis steps per millimeter
+            101: 250.000,  # Y-axis steps per millimeter
+            102: 250.000,  # Z-axis steps per millimeter
+            110: 500.000,  # X-axis max rate mm/min
+            111: 500.000,  # Y-axis max rate mm/min
+            112: 500.000,  # Z-axis max rate mm/min
+            120: 10.000,  # X-axis acceleration, mm/s^2
+            121: 10.000,  # Y-axis acceleration, mm/s^2
+            122: 10.000,  # Z-axis acceleration, mm/s^2
+            130: 200.000,  # X-axis max travel mm.
+            131: 200.000,  # Y-axis max travel mm
+            132: 200.000,  # Z-axis max travel mm.
+        }
 
     def open(self):
-        self._connect()
-        if not self.laser:
-            self.channel("Open Failed.")
+        self.connection.connect()
+        if not self.connection.connected:
+            self.channel("Could not connect.")
             return
         self.channel("Connecting to GRBL...")
         while True:
-            response = self.laser.readline()
-            str_response = str(response, 'utf-8')
-            self.channel(str_response.strip())
-            if not str_response:
-                return
-            if str_response.startswith("echo:"):
-                self.service.channel("console")(str_response[:6])
-            if "grbl" in str_response.lower():
+            response = self.connection.read()
+            if response is None:
+                continue
+            print(response)
+            self.channel(response)
+            if not response:
+                time.sleep(0.1)
+            if response.startswith("echo:"):
+                self.service.channel("console")(response[6:])
+            if "grbl" in response.lower():
                 self.channel("GRBL Connection Established.")
                 return
-            if "marlin" in str_response.lower():
+            if "marlin" in response.lower():
                 self.channel("Marlin Connection Established.")
+                return
 
     def close(self):
         if self.laser:
             self._disconnect()
-
-    def _connect(self):
-        if self.laser:
-            self.channel("Already connected")
-            return
-
-        try:
-            self.channel("Attempting to Connect...")
-            self.laser = serial.Serial(
-                self.com_port,
-                self.baud_rate,
-                timeout=0,
-            )
-            self.service.signal("serial;status", "connected")
-            self.channel("Connected")
-        except ConnectionError:
-            self.channel("Connection Failed.")
-        except SerialException:
-            self.channel("Serial connection could not be established.")
-
-    def _disconnect(self):
-        self.channel("Disconnected")
-        self.service.signal("serial;status", "disconnected")
-        if self.laser:
-            self.laser.close()
 
     def write(self, data):
         self.service.signal("serial;write", data)
@@ -1303,63 +1280,37 @@ class GrblSerialController:
                 result=self._stop,
                 daemon=True,
             )
-        # if self.recving_thread is None:
-        #     self.recving_thread = self.service.threaded(
-        #         self._recving,
-        #         thread_name="recver-%s" % self.com_port.lower(),
-        #         result=self._stop,
-        #     )
 
     def _stop(self, *args):
         self.sending_thread = None
-        # self.recving_thread = None
         self.close()
 
-    # def _recving(self):
-    #     while self.laser is not None:
-    #         try:
-    #             response = self.laser.readline()
-    #             str_response = str(response, 'utf-8')
-    #             str_response = str_response.strip()
-    #             self.service.signal("serial;response", str_response)
-    #             self.recv(str_response)
-    #             if str_response == "ok":
-    #                 self.channel("Response: %s" % str_response)
-    #             else:
-    #                 self.channel("Response Not-Ok: %s" % str_response)
-    #         except TimeoutError:
-    #             # Loop again.
-    #             continue
-
     def _sending(self):
-        tries = 0
-        while self.laser is not None:
+        while self.connection.connected:
+            write = 0
             if len(self.buffer):
-                with self.write_buffer_lock:
-                    line = self.buffer[0]
-                    self.laser.write(bytes(line, "utf-8"))
-                    self.send(line)
-                    self.service.signal("serial;buffer", len(self.buffer))
-
-                    response = self.laser.readline()
-                    str_response = str(response, 'utf-8')
-                    str_response = str_response.strip()
-                    self.service.signal("serial;response", str_response)
-                    self.recv(str_response)
-                    if str_response == "ok":
-                        self.channel("Response: %s" % str_response)
-                    else:
-                        self.channel("Response Not-Ok: %s" % str_response)
-
-                    self.buffer.pop(0)
-                tries = 0
-            else:
-                tries += 1
+                line = self.buffer[0]
+                self.connection.write(line)
+                self.send(line)
+                self.service.signal("serial;buffer", len(self.buffer))
+                self.buffer.pop(0)
+                write += 1
+            read = 0
+            while True:
+                response = self.connection.read()
+                if not response:
+                    break
+                self.service.signal("serial;response", response)
+                self.recv(response)
+                if response == "ok":
+                    self.channel("Response: %s" % response)
+                if response.startswith("error"):
+                    self.channel("ERROR: %s" % response)
+                else:
+                    self.channel("Data:: %s" % response)
+                read += 1
+            if read == 0 and write == 0:
                 time.sleep(0.1)
-            # if tries >= 20:
-            #     with self.write_buffer_lock:
-            #         if len(self.buffer) == 0:
-            #             break
 
     def __repr__(self):
         return "GRBLSerial('%s:%s')" % (
@@ -1369,6 +1320,57 @@ class GrblSerialController:
 
     def __len__(self):
         return len(self.buffer)
+
+
+class SerialConnection:
+    def __init__(self, com_port, baud_rate, channel):
+        self.com_port = com_port
+        self.baud_rate = baud_rate
+        self.channel = channel
+        self.laser = None
+        self.read_buffer = bytearray()
+
+    @property
+    def connected(self):
+        return self.laser is not None
+
+    def read(self):
+        if self.laser.in_waiting:
+            self.read_buffer += self.laser.readall()
+        f = self.read_buffer.find(b'\n')
+        if f == -1:
+            return None
+        response = self.read_buffer[:f]
+        self.read_buffer = self.read_buffer[f+1:]
+        str_response = str(response, 'utf-8')
+        str_response = str_response.strip()
+        return str_response
+
+    def write(self, line):
+        self.laser.write(bytes(line, "utf-8"))
+
+    def connect(self):
+        if self.laser:
+            self.channel("Already connected")
+            return
+
+        try:
+            self.channel("Attempting to Connect...")
+            self.laser = serial.Serial(
+                self.com_port,
+                self.baud_rate,
+                timeout=0,
+            )
+            self.channel("Connected")
+        except ConnectionError:
+            self.channel("Connection Failed.")
+        except SerialException:
+            self.channel("Serial connection could not be established.")
+
+    def disconnect(self):
+        self.channel("Disconnected")
+        if self.laser:
+            self.laser.close()
 
 
 class TCPOutput:
