@@ -602,6 +602,28 @@ class Length(object):
             return v
         return Length("%sin" % (Length.str(v)))
 
+    def to_px(
+        self,
+        ppi=UNITS_PER_INCH,
+        relative_length=None,
+        font_size=None,
+        font_height=None,
+        viewbox=None,
+        as_float=False,
+    ):
+        value = self.value(
+            ppi=ppi,
+            relative_length=relative_length,
+            font_size=font_size,
+            font_height=font_height,
+            viewbox=viewbox,
+        )
+        v = (value / ppi) / DEFAULT_PPI
+        if as_float:
+            return v
+        return Length("%sin" % (Length.str(v)))
+
+
     def value(
         self,
         ppi=None,
