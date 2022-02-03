@@ -702,7 +702,6 @@ class MeerK40t(MWindow):
             _pane.Float()
             _pane.Show()
             _pane.Dockable(not always)
-            print(_pane.IsDockable())
             self._mgr.Update()
 
         @context.console_command(

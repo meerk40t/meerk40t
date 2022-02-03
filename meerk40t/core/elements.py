@@ -1225,7 +1225,7 @@ class LaserOperation(Node):
                         settings=settings,
                         passes=passes,
                     )
-                    group.path = Path(subpath)
+                    group.path = sp
                     group.original_op = self._operation
                     for seg in subpath:
                         if isinstance(seg, Move):
@@ -1237,8 +1237,6 @@ class LaserOperation(Node):
                                         seg.start,
                                         seg.end,
                                         settings=settings,
-                                        passes=passes,
-                                        parent=group,
                                     )
                                 )
                         elif isinstance(seg, Line):
@@ -1248,8 +1246,6 @@ class LaserOperation(Node):
                                         seg.start,
                                         seg.end,
                                         settings=settings,
-                                        passes=passes,
-                                        parent=group,
                                     )
                                 )
                         elif isinstance(seg, QuadraticBezier):
@@ -1259,8 +1255,6 @@ class LaserOperation(Node):
                                     seg.control,
                                     seg.end,
                                     settings=settings,
-                                    passes=passes,
-                                    parent=group,
                                 )
                             )
                         elif isinstance(seg, CubicBezier):
@@ -1271,14 +1265,14 @@ class LaserOperation(Node):
                                     seg.control2,
                                     seg.end,
                                     settings=settings,
-                                    passes=passes,
-                                    parent=group,
                                 )
                             )
                     if len(group) > 0:
                         group[0].first = True
                     for i, cut_obj in enumerate(group):
                         cut_obj.closed = closed
+                        cut_obj.passes = passes
+                        cut_obj.parent = group
                         try:
                             cut_obj.next = group[i + 1]
                         except IndexError:
@@ -1287,6 +1281,8 @@ class LaserOperation(Node):
                         cut_obj.previous = group[i - 1]
                     yield group
         elif self._operation == "Raster":
+            # By the time as_cutobject has been called, the elements in raster operations
+            # have already been converted to images.
             step = settings.raster_step
             assert step > 0
             direction = settings.raster_direction
