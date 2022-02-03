@@ -19,6 +19,7 @@ from ..device.lasercommandconstants import (
 from ..kernel import Modifier
 from ..svgelements import Group, Length, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
+from ..tools.rastergrouping import group_overlapped_rasters
 from .elements import LaserOperation
 
 MILS_IN_MM = 39.3701
@@ -637,21 +638,14 @@ class CutPlan:
             self.plan.clear()
             self.plan.extend(p)
 
-    def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "opnode")))
-        reverse = self.context.classify_reverse
-        if reverse:
-            subitems = list(reversed(subitems))
+    def make_image_from_raster(self, nodes, step=1):
         make_raster = self.context.registered.get("render-op/make_raster")
-        objs = [s.object for s in subitems]
+        objs = [n.object for n in nodes]
         bounds = Group.union_bbox(objs, with_stroke=True)
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        step = op.settings.raster_step
-        if step == 0:
-            step = 1
-        image = make_raster(subitems, bounds, step=step)
+        image = make_raster(nodes, bounds, step=step)
         image_element = SVGImage(image=image)
         image_element.transform.post_scale(step, step)
         image_element.transform.post_translate(xmin, ymin)
@@ -661,26 +655,53 @@ class CutPlan:
     def make_image(self):
         for op in self.plan:
             try:
-                if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue
-                    image_element = self.make_image_for_op(op)
-                    if image_element is None:
-                        continue
-                    if (
-                        image_element.image_width == 1
-                        and image_element.image_height == 1
-                    ):
-                        """
-                        TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
-                            time around because the renderer is what sets the size of the text. If the size hasn't
-                            already been set, the initial bounds are wrong.
-                        """
-                        image_element = self.make_image_for_op(op)
-                    op.children.clear()
-                    op.add(image_element, type="opnode")
+                operation = op.operation
             except AttributeError:
                 continue
+            else:
+                if op.operation == "Raster":
+                    nodes = list(op.flat(types=("elem", "opnode")))
+                    reverse = self.context.classify_reverse
+                    if reverse:
+                        nodes = list(reversed(nodes))
+
+                    # Before determining overlapping groups, we need to add a margin
+                    # primarily in the direction of the raster sweep.
+                    # The minimum margin in both directions is the op overscan value.
+                    # If
+                    groups = group_overlapped_rasters(
+                        [(node, node.object.bbox(with_stroke=True)) for node in nodes]
+                    )
+
+                    step = max(1, op.settings.raster_step)
+                    images = []
+                    for g in groups:
+                        g = [x[0] for x in g]
+                        if len(g) == 1 and isinstance(g[0].object, SVGImage):
+                            print("standalone image in raster op appended")
+                            images.append(g[0].object)
+                            continue
+                        # Ensure rasters are in original sequence
+                        g.sort(key=nodes.index)
+                        image = self.make_image_from_raster(g, step=step)
+                        if image is None:
+                            continue
+                        if (
+                            image.image_width == 1
+                            and image.image_height == 1
+                        ):
+                            """
+                            TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
+                                time around because the renderer is what sets the size of the text. If the size hasn't
+                                already been set, the initial bounds are wrong.
+                            """
+                            print("Retrying make_image_from_raster ({w},{h})".format(x=image.image_width, y=image.image_height))
+                            image = self.make_image_from_raster(g, step=step)
+                        images.append(image)
+
+                    op.children.clear()
+                    for image in images:
+                        op.add(image, type="opnode")
 
     def actualize(self):
         for op in self.plan:
@@ -826,14 +847,16 @@ class Planner(Modifier):
         rotary_context.setting(float, "scale_x", 1.0)
         rotary_context.setting(float, "scale_y", 1.0)
 
+        # Following settings are experimental and can only be set from the console
         self.context.setting(bool, "opt_2opt", False)
         self.context.setting(bool, "opt_nearest_neighbor", True)
+        self.context.setting(int, "opt_jog_mode", 0)
 
+        # Following three options seem to be obsolete as there is no meaningful code that uses it
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_start_from_position", False)
-        self.context.setting(int, "opt_jog_mode", 0)
+
 
         @self.context.console_argument(
             "alias", type=str, help=_("plan command name to alias")
