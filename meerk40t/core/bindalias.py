@@ -122,6 +122,8 @@ class BindAlias(Modifier):
         # Keymap/alias values
         self.context.keymap = {}
         self.context.alias = {}
+        self.context.default_keymap = self.default_keymap
+        self.context.default_alias = self.default_alias
 
     def attach(self, *a, **kwargs):
         _ = self.context._
