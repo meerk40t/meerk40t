@@ -1,5 +1,4 @@
-"""
-Common methods for grouping overlapping raster elements.
+"""Common methods for grouping overlapping raster elements.
 
 Currently used:
 
