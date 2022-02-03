@@ -4414,11 +4414,11 @@ class Elemental(Modifier):
             input_type="tree",
             output_type="tree",
         )
-        def emphasized(channel, _, **kwargs):
+        def selected(channel, _, **kwargs):
             """
             Set tree list to selected node
             """
-            return "tree", list(self.flat(emphasized=True))
+            return "tree", list(self.flat(selected=True))
 
         @context.console_command(
             "highlighted",
