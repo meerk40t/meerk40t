@@ -367,7 +367,7 @@ class GRBLDriver(Parameters):
         self.g21_units_mm()
         self.g91_absolute()
 
-        self.grbl = self.service.channel("grbl", line_end='\r\n')
+        self.grbl = self.service.channel("grbl", pure=True, line_end='\r\n')
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
