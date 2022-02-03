@@ -787,7 +787,7 @@ class Settings:
         """
         try:
             parser = ConfigParser()
-            parser.read(self._config_file)
+            parser.read(self._config_file, encoding="utf-8")
             for section in parser.sections():
                 for option in parser.options(section):
                     try:
