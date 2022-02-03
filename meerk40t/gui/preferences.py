@@ -43,7 +43,7 @@ class PreferencesUnitsPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
         # end wxGlade
 
-        self.context.setting(str, "units_name", "mm")
+        self.context.setting(int, "units_index", 0)
         self.radio_units.SetSelection(self.context.units_index)
 
     def on_radio_units(self, event):
