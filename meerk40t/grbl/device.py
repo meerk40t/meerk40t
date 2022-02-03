@@ -5,7 +5,6 @@ import socket
 import threading
 import time
 
-from ..core.drivers import Driver
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -156,7 +155,7 @@ def plugin(kernel, lifecycle=None):
                 emulator.home_adjust = (adjust_x, adjust_y)
 
                 ctx.channel("grbl/recv").watch(emulator.write)
-                emulator.reply = ctx.channel("grbl/send")
+                emulator.recv = ctx.channel("grbl/send")
                 channel(_("TCP Server for GRBL Emulator on port: %d" % port))
             except OSError:
                 channel(_("Server failed on port: %d") % port)
@@ -226,12 +225,13 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
-        self.setting(int, "port", 23)
-        self.setting(str, "address", "localhost")
+        self.setting(int, "connection", 1)
 
         self.setting(str, "com_port", 'COM8')
-        self.setting(int, "serial_baud_rate", 115200)
-        self.setting(int, "serial_timeout", 5)
+        self.setting(int, "baud_rate", 115200)
+
+        self.setting(int, "port", 23)
+        self.setting(str, "address", "localhost")
 
         self.setting(str, "line_end", "\n")
 
@@ -288,9 +288,7 @@ class GRBLDevice(Service, ViewPort):
                 for x in ports:
                     channel(x.description)
             else:
-                self.com_port = com.upper()
-                self.serial_baud_rate = baud
-                connection = SerialConnection(self)
+                connection = GrblSerialController(self, com.upper(), baud)
                 self.channel("grbl").watch(connection.write)
 
         @self.console_command(
@@ -1190,36 +1188,58 @@ class GRBLDriver(Parameters):
         return 0
 
 
-class SerialConnection:
-    def __init__(self, context):
+class GrblSerialController:
+    def __init__(self, context, com_port, baud_rate):
         self.service = context
+
+        self.com_port = com_port
+        self.baud_rate = baud_rate
+        self.driver = self.service.driver
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel("grbl_send")
-        self.reply = self.service.channel("grbl_recv")
+        self.send = self.service.channel("send-%s" % com_port.lower())
+        self.recv = self.service.channel("recv-%s" % com_port.lower())
         self.laser = None
 
-        self.lock = threading.RLock()
+        self.write_buffer_lock = threading.RLock()
         self.buffer = []
-        self.thread = None
+        self.sending_thread = None
+        self.recving_thread = None
+
+    def open(self):
+        self.connect()
+        if not self.laser:
+            self.channel("Open Failed.")
+            return
+        self.channel("Connecting to GRBL...")
+        try:
+            while True:
+                response = self.laser.readline()
+                str_response = str(response, 'utf-8')
+                self.channel(str_response)
+
+                if "grbl" in str_response.lower():
+                    self.channel("GRBL Connection Established.")
+                    return True
+        except TimeoutError:
+            self.close()
+        return False
+
+    def close(self):
+        if self.laser:
+            self.disconnect()
 
     def connect(self):
         try:
+            self.channel("Attempting to Connect...")
             self.laser = serial.Serial(
-                self.service.com_port,
-                self.service.serial_baud_rate,
-                timeout=self.service.serial_timeout,
+                self.com_port,
+                self.baud_rate,
+                timeout=5,
             )
-            self.channel("Connected")
             self.service.signal("serial;status", "connected")
-            response = self.laser.readline()
-            str_response = str(response, 'utf-8')
-            self.channel(str_response)
-            if "grbl" in str_response.lower():
-                self.channel("GRBL Connection Established.")
+            self.channel("Connected")
         except (ConnectionError, TimeoutError):
             self.channel("Connection Failed.")
-            if self.laser:
-                self.disconnect()
 
     def disconnect(self):
         self.channel("Disconnected")
@@ -1229,63 +1249,72 @@ class SerialConnection:
 
     def write(self, data):
         self.service.signal("serial;write", data)
-        with self.lock:
+        with self.write_buffer_lock:
             self.buffer.append(data)
             self.service.signal("serial;buffer", len(self.buffer))
         self._start()
 
     def _start(self):
-        if self.thread is None:
-            self.thread = self.service.threaded(
+        self.open()
+        if self.sending_thread is None:
+            self.sending_thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%d" % self.service.port,
+                thread_name="sender-%s" % self.com_port.lower(),
+                result=self._stop,
+            )
+        if self.recving_thread is None:
+            self.recving_thread = self.service.threaded(
+                self._recving,
+                thread_name="recver-%s" % self.com_port.lower(),
                 result=self._stop,
             )
 
     def _stop(self, *args):
-        self.thread = None
+        self.sending_thread = None
+        self.recving_thread = None
+        self.close()
+
+    def _recving(self):
+        while self.laser is not None:
+            try:
+                response = self.laser.readline()
+                str_response = str(response, 'utf-8')
+                str_response = str_response.strip()
+                self.service.signal("serial;response", str_response)
+                self.recv(str_response)
+                if str_response == "ok":
+                    self.channel("Response: %s" % str_response)
+            except TimeoutError:
+                # Loop again.
+                continue
 
     def _sending(self):
         tries = 0
-        while True:
+        while self.laser is not None:
             try:
                 if len(self.buffer):
-                    if self.laser is None:
-                        self.connect()
-                        if self.laser is None:
-                            return
-                    with self.lock:
+                    with self.write_buffer_lock:
                         line = self.buffer[0]
                         self.laser.write(bytes(line, "utf-8"))
                         self.send(line)
                         self.service.signal("serial;buffer", len(self.buffer))
-                        response = self.laser.readline()
-                        str_response = str(response, 'utf-8')
-                        # TODO: Should check for response as ok, do character counting protocol.
-                        self.service.signal("serial;response", str_response)
-                        self.reply(str_response)
-                        if str_response == "ok":
-                            self.buffer.pop(0)
-                        else:
-                            self.channel("Didn't get expected response: %s" % str_response )
-                            self.buffer.pop(0)
                     tries = 0
                 else:
                     tries += 1
                     time.sleep(0.1)
             except (ConnectionError, OSError):
                 tries += 1
-                self.disconnect()
+                self.close()
                 time.sleep(0.05)
             if tries >= 20:
-                with self.lock:
+                with self.write_buffer_lock:
                     if len(self.buffer) == 0:
                         break
 
     def __repr__(self):
-        return "TCPOutput('%s:%s')" % (
-            self.service.address,
-            self.service.port,
+        return "GRBLSerial('%s:%s')" % (
+            self.service.com_port,
+            str(self.service.serial_baud_rate),
         )
 
     def __len__(self):
