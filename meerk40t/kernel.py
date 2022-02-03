@@ -3944,6 +3944,7 @@ class Channel:
         buffer_size: int = 0,
         line_end: Optional[str] = None,
         timestamp: bool = False,
+        pure: bool = False,
     ):
         self.watchers = []
         self.greet = None
@@ -3952,6 +3953,7 @@ class Channel:
         self.line_end = line_end
         self._ = lambda e: e
         self.timestamp = timestamp
+        self.pure = pure
         if buffer_size == 0:
             self.buffer = None
         else:
@@ -3972,13 +3974,14 @@ class Channel:
         **kwargs,
     ):
         original_msg = message
-        if self.line_end is not None:
-            message = message + self.line_end
-        if indent and not isinstance(message, (bytes, bytearray)):
-            message = "    " + message.replace("\n", "\n    ")
-        if self.timestamp and not isinstance(message, (bytes, bytearray)):
-            ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
-            message = ts + message.replace("\n", "\n%s" % ts)
+        if not self.pure and not isinstance(message, (bytes, bytearray)):
+            if self.line_end is not None:
+                message = message + self.line_end
+            if indent:
+                message = "    " + message.replace("\n", "\n    ")
+            if self.timestamp:
+                ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
+                message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
         for w in self.watchers:
             if (
