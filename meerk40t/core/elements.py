@@ -3265,6 +3265,7 @@ class Elemental(Service):
         def element_path(path_d, data, **kwargs):
             try:
                 path = Path(path_d)
+                path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(_("Not a valid path_d string (try quotes)"))
 
