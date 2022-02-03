@@ -3154,7 +3154,7 @@ class Elemental(Service):
             ry_pos = self.device.length(ry, 1)
             width = self.device.length(width, 0)
             height = self.device.length(height, 1)
-            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
+            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos)
 
             self.add_element(rect)
             if data is None:
