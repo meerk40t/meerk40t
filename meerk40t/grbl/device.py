@@ -1347,8 +1347,12 @@ class GrblController:
                 self.service.signal("serial;response", response)
                 self.recv(response)
                 if response == "ok":
-                    line = self.commands_in_device_buffer.pop(0)
-                    self.buffered_characters -= len(line)
+                    try:
+                        line = self.commands_in_device_buffer.pop(0)
+                        self.buffered_characters -= len(line)
+                    except IndexError:
+                        self.channel("Response: %s, but this was unexpected" % response)
+                        continue
                     self.channel("Response: %s" % response)
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
