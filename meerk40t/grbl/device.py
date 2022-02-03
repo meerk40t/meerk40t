@@ -1211,6 +1211,11 @@ class SerialConnection:
             )
             self.channel("Connected")
             self.service.signal("serial;status", "connected")
+            response = self.laser.readline()
+            str_response = str(response, 'utf-8')
+            self.channel(str_response)
+            if "grbl" in str_response.lower():
+                self.channel("GRBL Connection Established.")
         except (ConnectionError, TimeoutError):
             self.channel("Connection Failed.")
             if self.laser:
@@ -1251,16 +1256,19 @@ class SerialConnection:
                             return
                     with self.lock:
                         line = self.buffer[0]
-                        response = self.laser.readall()
+                        self.laser.write(bytes(line, "utf-8"))
+                        self.send(line)
+                        self.service.signal("serial;buffer", len(self.buffer))
+                        response = self.laser.readline()
                         str_response = str(response, 'utf-8')
                         # TODO: Should check for response as ok, do character counting protocol.
                         self.service.signal("serial;response", str_response)
                         self.reply(str_response)
-
-                        self.laser.write(bytes(line, "utf-8"))
-                        self.send(line)
-                        self.service.signal("serial;buffer", len(self.buffer))
-                        self.buffer.pop(0)
+                        if str_response == "ok":
+                            self.buffer.pop(0)
+                        else:
+                            self.channel("Didn't get expected response: %s" % str_response )
+                            self.buffer.pop(0)
                     tries = 0
                 else:
                     tries += 1
