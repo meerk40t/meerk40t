@@ -6,6 +6,8 @@
 
 import wx
 
+_ = wx.GetTranslation
+
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -65,9 +67,9 @@ class SerialControllerPanel(wx.Panel):
         self, event
     ):  # wxGlade: SerialControllerPanel.<event_handler>
         if self.state == "connected":
-            self.service.controller.disconnect()
+            self.service.controller.stop()
         else:
-            self.service.controller.connect()
+            self.service.controller.start()
 
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         self.service("gcode {code}".format(code=self.gcode_text.GetValue()))

@@ -1316,23 +1316,23 @@ class GrblController:
             self.connection.disconnect()
 
     def write(self, data):
-        self._start()
+        self.start()
         self.service.signal("serial;write", data)
         with self.lock_sending_queue:
             self.sending_queue.append(data)
             self.service.signal("serial;buffer", len(self.sending_queue))
 
-    def _start(self):
+    def start(self):
         self.open()
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
                 thread_name="sender-%s" % self.com_port.lower(),
-                result=self._stop,
+                result=self.stop,
                 daemon=True,
             )
 
-    def _stop(self, *args):
+    def stop(self, *args):
         self.sending_thread = None
         self.close()
 
@@ -1355,7 +1355,7 @@ class GrblController:
                         self.sending_queue.pop(0)
                         write += 1
             read = 0
-            while True:
+            while self.connection.connected:
                 response = self.connection.read()
                 if not response:
                     break
@@ -1430,6 +1430,7 @@ class SerialConnection:
                 timeout=0,
             )
             self.channel("Connected")
+            self.service.signal("serial;status", "connected")
         except ConnectionError:
             self.channel("Connection Failed.")
         except SerialException:
@@ -1439,6 +1440,7 @@ class SerialConnection:
         self.channel("Disconnected")
         if self.laser:
             self.laser.close()
+        self.service.signal("serial;status", "disconnected")
 
 
 class TCPOutput:
