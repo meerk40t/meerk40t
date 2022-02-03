@@ -5,6 +5,8 @@ import socket
 import threading
 import time
 
+from serial import SerialException
+
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -1232,6 +1234,10 @@ class GrblSerialController:
             self.disconnect()
 
     def connect(self):
+        if self.laser:
+            self.channel("Already connected")
+            return
+
         try:
             self.channel("Attempting to Connect...")
             self.laser = serial.Serial(
@@ -1241,8 +1247,10 @@ class GrblSerialController:
             )
             self.service.signal("serial;status", "connected")
             self.channel("Connected")
-        except (ConnectionError, TimeoutError):
+        except ConnectionError:
             self.channel("Connection Failed.")
+        except SerialException:
+            self.channel("Serial connection could not be established.")
 
     def disconnect(self):
         self.channel("Disconnected")
