@@ -387,12 +387,15 @@ class SVGLoader:
                                     except (ValueError, KeyError, AttributeError):
                                         pass
                                 elif type_v == bool:
-                                    setattr(
-                                        op,
-                                        key,
-                                        str(element.values[key]).lower()
-                                        in ("true", "1"),
-                                    )
+                                    try:
+                                        setattr(
+                                            op,
+                                            key,
+                                            str(element.values[key]).lower()
+                                            in ("true", "1"),
+                                        )
+                                    except (ValueError, KeyError, AttributeError):
+                                        pass
                         for key in dir(op.settings):
                             if key.startswith("_") or key.startswith("implicit"):
                                 continue
