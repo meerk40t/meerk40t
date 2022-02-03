@@ -301,7 +301,17 @@ class GRBLDevice(Service, ViewPort):
         def gcode(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.channel("grbl")(remainder + self.line_end)
+                self.channel("grbl")(remainder + '\r\n')
+
+        @self.console_command(
+            "soft_reset",
+            help=_("Send realtime soft reset gcode to the device"),
+            input_type=None,
+        )
+        def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
+            if remainder is not None:
+                channel(remainder)
+                self.channel("grbl")('\x18')
 
     @property
     def current_x(self):
@@ -357,7 +367,7 @@ class GRBLDriver(Parameters):
         self.g21_units_mm()
         self.g91_absolute()
 
-        self.grbl = self.service.channel("grbl", line_end=self.service.line_end)
+        self.grbl = self.service.channel("grbl", line_end='\r\n')
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -1221,6 +1231,7 @@ class GrblSerialController:
             while True:
                 response = self.laser.readline()
                 str_response = str(response, 'utf-8')
+                print(str_response)
                 self.channel(str_response)
 
                 if "grbl" in str_response.lower() or "marlin" in str_response.lower():
