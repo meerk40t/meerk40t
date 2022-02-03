@@ -232,12 +232,12 @@ class BindAlias(Modifier):
         keys.clear_persistent()
         alias.clear_persistent()
 
-        for key, value in self.keymap.items():
+        for key, value in self.context.keymap.items():
             if key is None or len(key) == 0:
                 continue
             keys.write_persistent(key, value)
 
-        for key, value in self.alias.items():
+        for key, value in self.context.alias.items():
             if key is None or len(key) == 0:
                 continue
             alias.write_persistent(key, value)
