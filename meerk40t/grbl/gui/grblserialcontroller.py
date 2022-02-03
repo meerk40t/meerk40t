@@ -56,6 +56,9 @@ class SerialControllerPanel(wx.Panel):
         self.service("gcode {code}".format(code=self.gcode_text.GetValue()))
         self.gcode_text.Clear()
 
+    def update_text(self, text):
+        self.data_exchange.AppendText(text + "\n")
+
     def on_serial_status(self, origin, state):
         self.state = state
         if state == "uninitialized" or state == "disconnected":
@@ -91,3 +94,18 @@ class SerialController(MWindow):
     def on_serial_status(self, origin, state):
         self.serial_panel.on_serial_status(origin, state)
 
+    def window_open(self):
+        self.context.channel(
+            "send-{name}".format(name=self.service.com_port.lower())
+        ).watch(self.serial_panel.update_text)
+        self.context.channel(
+            "recv-{name}".format(name=self.service.com_port.lower())
+        ).watch(self.serial_panel.update_text)
+
+    def window_close(self):
+        self.context.channel("send-{name}".format(name=self.service.com_port.lower())).unwatch(
+            self.serial_panel.update_text
+        )
+        self.context.channel("recv-{name}".format(name=self.service.com_port.lower())).unwatch(
+            self.serial_panel.update_text
+        )

@@ -1,5 +1,3 @@
-import math
-
 import serial
 import os
 import re
