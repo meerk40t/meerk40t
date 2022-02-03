@@ -1,7 +1,12 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_MIL, UNITS_PER_CM
+from meerk40t.core.units import (
+    UNITS_PER_INCH,
+    UNITS_PER_MM,
+    UNITS_PER_MIL,
+    UNITS_PER_CM,
+)
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -565,7 +570,9 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative -{jog} -{jog}\n".format(jog=self.context.jog_amount))
+        self.context(
+            "move_relative -{jog} -{jog}\n".format(jog=self.context.jog_amount)
+        )
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("move_relative 0 -{jog}\n".format(jog=self.context.jog_amount))
@@ -992,7 +999,9 @@ class JogDistancePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.text_jog_amount = wx.TextCtrl(
-            self, wx.ID_ANY, "10mm",
+            self,
+            wx.ID_ANY,
+            "10mm",
         )
         self.text_jog_amount.SetMinSize((80, 23))
         self.text_jog_amount.SetToolTip(_("Set Jog Distance in mm"))
@@ -1013,7 +1022,9 @@ class JogDistancePanel(wx.Panel):
 
     def on_text_jog_amount(self, event):  # wxGlade: Navigation.<event_handler>
         try:
-            jog = self.context.device.length(self.text_jog_amount.GetValue(), new_units=self.context.units_name)
+            jog = self.context.device.length(
+                self.text_jog_amount.GetValue(), new_units=self.context.units_name
+            )
         except ValueError:
             return
         self.context.jog_amount = str(jog)

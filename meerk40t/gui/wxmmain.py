@@ -8,7 +8,16 @@ from ..core.cutcode import CutCode
 from ..core.elements import LaserOperation, ConsoleOperation
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
-from ..svgelements import Color, Length, Matrix, Path, SVGImage, SVGText, Group, SVGElement
+from ..svgelements import (
+    Color,
+    Length,
+    Matrix,
+    Path,
+    SVGImage,
+    SVGText,
+    Group,
+    SVGElement,
+)
 from .icons import (
     icon_meerk40t,
     icons8_emergency_stop_button_50,
@@ -16,7 +25,9 @@ from .icons import (
     icons8_home_filled_50,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50, icons8_mirror_horizontal, icons8_flip_vertical,
+    icons8_save_50,
+    icons8_mirror_horizontal,
+    icons8_flip_vertical,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -136,7 +147,9 @@ class MeerK40t(MWindow):
         if self.context.disable_tool_tips:
             wx.ToolTip.Enable(False)
 
-        self.context.register("function/open_property_window_for_node", self.open_property_window_for_node)
+        self.context.register(
+            "function/open_property_window_for_node", self.open_property_window_for_node
+        )
 
         self.root_context = context.root
         self.DragAcceptFiles(True)
@@ -309,7 +322,9 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 width_in_nm = context.device.width
-                length = Length(dlg.GetValue()).value(ppi=UNITS_PER_INCH, relative_length=width_in_nm)
+                length = Length(dlg.GetValue()).value(
+                    ppi=UNITS_PER_INCH, relative_length=width_in_nm
+                )
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
@@ -386,7 +401,9 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
-        @context.console_argument("message", help=_("Message to display, optional"), default="")
+        @context.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
         @context.console_command("interrupt", hidden=True)
         def interrupt(message="", **kwargs):
             if not message:
@@ -417,7 +434,10 @@ class MeerK40t(MWindow):
         def import_dialog(**kwargs):
             files = context.load_types()
             with wx.FileDialog(
-                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                gui,
+                _("Import"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
@@ -446,7 +466,7 @@ class MeerK40t(MWindow):
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
-                context('.dialog_save_as\n')
+                context(".dialog_save_as\n")
             else:
                 gui.set_file_as_recently_used(gui.working_file)
                 gui.validate_save()
@@ -765,11 +785,7 @@ class MeerK40t(MWindow):
         label = _("Panes")
         index = self.main_menubar.FindMenu(label)
         if index != -1:
-            self.main_menubar.Replace(
-                index,
-                self.panes_menu,
-                label
-            )
+            self.main_menubar.Replace(index, self.panes_menu, label)
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
@@ -841,11 +857,7 @@ class MeerK40t(MWindow):
         self.window_menu = wx.Menu()
         index = self.main_menubar.FindMenu(label)
         if index != -1:
-            self.main_menubar.Replace(
-                index,
-                self.window_menu,
-                label
-            )
+            self.main_menubar.Replace(index, self.window_menu, label)
         else:
             self.main_menubar.Append(self.window_menu, label)
 
@@ -1024,9 +1036,7 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform.system() == "Darwin":
-            self.help_menu.Append(
-                wx.ID_HELP, _("&MeerK40t Help"), ""
-            )
+            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
             self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
@@ -1705,11 +1715,11 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            x_delta = (bbox[2]-bbox[0]) * 0.04
-            y_delta = (bbox[3]-bbox[1]) * 0.04
+            x_delta = (bbox[2] - bbox[0]) * 0.04
+            y_delta = (bbox[3] - bbox[1]) * 0.04
             self.context(
-                "scene focus %f %f %f %f\n" %
-                (
+                "scene focus %f %f %f %f\n"
+                % (
                     bbox[0] - x_delta,
                     bbox[1] - y_delta,
                     bbox[2] + x_delta,

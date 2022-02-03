@@ -1,7 +1,11 @@
 from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
 from meerk40t.grbl.gui.grblserialcontroller import SerialController
-from meerk40t.gui.icons import icons8_connected_50, icons8_computer_support_50, icons8_pause_50, \
-    icons8_emergency_stop_button_50
+from meerk40t.gui.icons import (
+    icons8_connected_50,
+    icons8_computer_support_50,
+    icons8_pause_50,
+    icons8_emergency_stop_button_50,
+)
 
 try:
     import wx

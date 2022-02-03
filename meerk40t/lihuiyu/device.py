@@ -153,7 +153,9 @@ class LihuiyuDevice(Service, ViewPort):
         ]
 
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight)
+        ViewPort.__init__(
+            self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight
+        )
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
         self.setting(int, "opt_jog_minimum", 256)
@@ -323,13 +325,7 @@ class LihuiyuDevice(Service, ViewPort):
             "speed", input_type="lhystudios", help=_("Set current speed of driver.")
         )
         def speed(
-            command,
-            channel,
-            _,
-            data=None,
-            speed=None,
-            difference=False,
-            **kwargs
+            command, channel, _, data=None, speed=None, difference=False, **kwargs
         ):
             spooler, driver, output = data
             if speed is None:
@@ -1178,8 +1174,8 @@ class LhystudiosDriver(Parameters):
                 self.goto_octent(dx, 0, cut)
             if dy != 0:
                 if (
-                        self.service.rapid_override_speed_x
-                        != self.service.rapid_override_speed_y
+                    self.service.rapid_override_speed_x
+                    != self.service.rapid_override_speed_y
                 ):
                     self.rapid_mode()
                     self.set_speed(self.service.rapid_override_speed_y)
@@ -1527,7 +1523,7 @@ class LhystudiosDriver(Parameters):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        step_amount = -set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step
         delta = delta - step_amount
 
         self.data_output(b"N")
@@ -1561,7 +1557,7 @@ class LhystudiosDriver(Parameters):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        step_amount = -set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step
         delta = delta - step_amount
 
         self.data_output(b"N")
@@ -1593,7 +1589,7 @@ class LhystudiosDriver(Parameters):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        step_amount = -set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
@@ -1629,7 +1625,7 @@ class LhystudiosDriver(Parameters):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        step_amount = -set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
@@ -2206,7 +2202,9 @@ class LhystudiosController:
         :return:
         """
 
-        if not self.is_shutdown and (self._thread is None or not self._thread.is_alive()):
+        if not self.is_shutdown and (
+            self._thread is None or not self._thread.is_alive()
+        ):
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name="LhyPipe(%s)" % self.context.path,

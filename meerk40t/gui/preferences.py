@@ -270,7 +270,7 @@ class Preferences(MWindow):
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
             | (wx.RESIZE_BORDER if platform.system() != "Darwin" else 0),
-            **kwds
+            **kwds,
         )
 
         self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)

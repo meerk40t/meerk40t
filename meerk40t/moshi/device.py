@@ -166,7 +166,9 @@ class MoshiDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight)
+        ViewPort.__init__(
+            self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight
+        )
 
         self.settings = dict()
         self.state = 0
@@ -294,7 +296,6 @@ class MoshiDevice(Service, ViewPort):
     @property
     def viewbuffer(self):
         return self.controller.viewbuffer()
-
 
     @property
     def current_x(self):
@@ -962,7 +963,9 @@ class MoshiController:
         self.is_shutdown = False
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 

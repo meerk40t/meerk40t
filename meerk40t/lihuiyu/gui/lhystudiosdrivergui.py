@@ -45,7 +45,9 @@ class ConfigurationUsb(wx.Panel):
         self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
         self.spin_device_version.SetMinSize((40, 23))
         self.spin_device_version.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
+            )
         )
         sizer_chip_version.Add(self.spin_device_version, 0, 0, 0)
 
@@ -61,7 +63,9 @@ class ConfigurationUsb(wx.Panel):
         self.spin_device_index = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=5)
         self.spin_device_index.SetMinSize((40, 23))
         self.spin_device_index.SetToolTip(
-            _("Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value.")
+            _(
+                "Optional: Distinguish between different lasers using the match criteria below.\n-1 match anything. 0+ match exactly that value."
+            )
         )
         sizer_device_index.Add(self.spin_device_index, 0, 0, 0)
 
@@ -79,7 +83,9 @@ class ConfigurationUsb(wx.Panel):
         self.text_serial_number = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_serial_number.SetMinSize((150, 23))
         self.text_serial_number.SetToolTip(
-            _("Board Serial Number to be used to identify a specific laser. If the device fails to match the serial number it will be disconnected.")
+            _(
+                "Board Serial Number to be used to identify a specific laser. If the device fails to match the serial number it will be disconnected."
+            )
         )
         sizer_serial.Add(self.text_serial_number, 0, wx.EXPAND, 0)
 
@@ -88,9 +94,13 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_usb_settings.Add(sizer_buffer, 0, wx.EXPAND, 0)
 
-        self.checkbox_limit_buffer = wx.CheckBox(self, wx.ID_ANY, _("Limit Write Buffer"))
+        self.checkbox_limit_buffer = wx.CheckBox(
+            self, wx.ID_ANY, _("Limit Write Buffer")
+        )
         self.checkbox_limit_buffer.SetToolTip(
-            _("Limit the write buffer to a certain amount. Permits on-the-fly command production.")
+            _(
+                "Limit the write buffer to a certain amount. Permits on-the-fly command production."
+            )
         )
         self.checkbox_limit_buffer.SetValue(1)
         sizer_buffer.Add(self.checkbox_limit_buffer, 0, 0, 0)
@@ -276,7 +286,9 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_27.Add(sizer_home, 0, wx.EXPAND, 0)
 
-        sizer_4 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        sizer_4 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL
+        )
         sizer_home.Add(sizer_4, 2, wx.EXPAND, 0)
 
         self.spin_home_x = wx.SpinCtrlDouble(
@@ -289,7 +301,9 @@ class ConfigurationLaserPanel(wx.Panel):
         label_12 = wx.StaticText(self, wx.ID_ANY, _("steps"))
         sizer_4.Add(label_12, 0, 0, 0)
 
-        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+        sizer_2 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL
+        )
         sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
 
         self.spin_home_y = wx.SpinCtrlDouble(
@@ -319,7 +333,9 @@ class ConfigurationLaserPanel(wx.Panel):
         sizer_bed.Add(sizer_14, 1, 0, 0)
 
         self.text_bedwidth = wx.TextCtrl(
-            self, wx.ID_ANY, "310mm",
+            self,
+            wx.ID_ANY,
+            "310mm",
         )
         self.text_bedwidth.SetMinSize((80, 23))
         self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
@@ -336,9 +352,7 @@ class ConfigurationLaserPanel(wx.Panel):
         label_3 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_15.Add(label_3, 0, 0, 0)
 
-        self.text_bedheight = wx.TextCtrl(
-            self, wx.ID_ANY, "210mm"
-        )
+        self.text_bedheight = wx.TextCtrl(self, wx.ID_ANY, "210mm")
         self.text_bedheight.SetMinSize((80, 23))
         self.text_bedheight.SetToolTip(_("Height of the laser bed."))
         sizer_15.Add(self.text_bedheight, 4, 0, 0)
@@ -351,7 +365,9 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_27.Add(sizer_scale_factors, 0, wx.EXPAND, 0)
 
-        sizer_19 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        sizer_19 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL
+        )
         sizer_scale_factors.Add(sizer_19, 0, wx.EXPAND, 0)
 
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
@@ -360,7 +376,9 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_19.Add(self.text_scale_x, 0, 0, 0)
 
-        sizer_20 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+        sizer_20 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL
+        )
         sizer_scale_factors.Add(sizer_20, 0, wx.EXPAND, 0)
 
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
@@ -507,7 +525,9 @@ class ConfigurationInterfacePanel(wx.Panel):
         sizer_17.Add(self.checkbox_flip_x, 0, 0, 0)
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
-        self.checkbox_home_right.SetToolTip(_("Indicates the device Home is on the right"))
+        self.checkbox_home_right.SetToolTip(
+            _("Indicates the device Home is on the right")
+        )
         sizer_17.Add(self.checkbox_home_right, 0, 0, 0)
 
         label_1 = wx.StaticText(self, wx.ID_ANY, "")
@@ -545,19 +565,25 @@ class ConfigurationInterfacePanel(wx.Panel):
         self.radio_usb = wx.RadioButton(self, wx.ID_ANY, _("USB"), style=wx.RB_GROUP)
         self.radio_usb.SetValue(1)
         self.radio_usb.SetToolTip(
-            _("Select this if you have an m2-nano controller physically connected to this computer using a USB cable.")
+            _(
+                "Select this if you have an m2-nano controller physically connected to this computer using a USB cable."
+            )
         )
         sizer_interface_radio.Add(self.radio_usb, 1, 0, 0)
 
         self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, _("Networked"))
         self.radio_tcp.SetToolTip(
-            _("Select this to connect this instance of Meerk40t to another instance of Meerk40t running as a remote server.")
+            _(
+                "Select this to connect this instance of Meerk40t to another instance of Meerk40t running as a remote server."
+            )
         )
         sizer_interface_radio.Add(self.radio_tcp, 4, 0, 0)
 
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
-            _("Select this only for debugging without a physical laser available. Execute a burn as if there was an m2-nano controller physically connected by USB.")
+            _(
+                "Select this only for debugging without a physical laser available. Execute a burn as if there was an m2-nano controller physically connected by USB."
+            )
         )
         sizer_interface_radio.Add(self.radio_mock, 1, 0, 0)
 
@@ -689,24 +715,38 @@ class ConfigurationSetupPanel(wx.Panel):
 
         self.check_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
         self.check_plot_shift.SetToolTip(
-            "\n".join([
-                _("Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."),
-                "",
-                _("It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."),
-                "",
-                _('As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'),
-                _('Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked.'),
-            ]),
+            "\n".join(
+                [
+                    _(
+                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                    ),
+                    "",
+                    _(
+                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                    ),
+                    "",
+                    _(
+                        'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                    ),
+                    _(
+                        "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
+                    ),
+                ]
+            ),
         )
         sizer_general.Add(self.check_plot_shift, 0, 0, 0)
 
         self.check_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict"))
         self.check_strict.SetToolTip(
-            _("Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed.")
+            _(
+                "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+            )
         )
         sizer_general.Add(self.check_strict, 0, 0, 0)
 
-        self.check_alternative_raster = wx.CheckBox(self, wx.ID_ANY, _("Alt Raster Style"))
+        self.check_alternative_raster = wx.CheckBox(
+            self, wx.ID_ANY, _("Alt Raster Style")
+        )
         sizer_general.Add(self.check_alternative_raster, 0, 0, 0)
 
         self.check_twitchless = wx.CheckBox(self, wx.ID_ANY, _("Twitchless Vectors"))
@@ -746,7 +786,9 @@ class ConfigurationSetupPanel(wx.Panel):
             style=wx.RA_SPECIFY_ROWS,
         )
         self.radio_box_jog_method.SetToolTip(
-            _("Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait.")
+            _(
+                "Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."
+            )
         )
         self.radio_box_jog_method.SetSelection(0)
         sizer_jog.Add(self.radio_box_jog_method, 0, 0, 0)
@@ -795,7 +837,9 @@ class ConfigurationSetupPanel(wx.Panel):
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
         self.check_fix_speeds.SetToolTip(
-            _("Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed")
+            _(
+                "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
+            )
         )
         sizer_32.Add(self.check_fix_speeds, 1, 0, 0)
 
@@ -809,20 +853,26 @@ class ConfigurationSetupPanel(wx.Panel):
 
         self.check_scale_speed = wx.CheckBox(self, wx.ID_ANY, _("Scale Speed"))
         self.check_scale_speed.SetToolTip(
-            _("Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated.")
+            _(
+                "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
+            )
         )
         sizer_29.Add(self.check_scale_speed, 1, 0, 0)
 
         self.text_speed_scale_amount = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_speed_scale_amount.SetToolTip(
-            _("Scales the machine's speed ratio so that rated speeds speeds multiplied by this ratio.")
+            _(
+                "Scales the machine's speed ratio so that rated speeds speeds multiplied by this ratio."
+            )
         )
         sizer_29.Add(self.text_speed_scale_amount, 1, wx.EXPAND, 0)
 
         sizer_30 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_speed.Add(sizer_30, 0, wx.EXPAND, 0)
 
-        self.check_max_speed_vector = wx.CheckBox(self, wx.ID_ANY, _("Max Speed (Vector)"))
+        self.check_max_speed_vector = wx.CheckBox(
+            self, wx.ID_ANY, _("Max Speed (Vector)")
+        )
         self.check_max_speed_vector.SetToolTip(
             _("Limit the maximum vector speed to this value")
         )
@@ -837,7 +887,9 @@ class ConfigurationSetupPanel(wx.Panel):
         sizer_31 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_speed.Add(sizer_31, 0, wx.EXPAND, 0)
 
-        self.check_max_speed_raster = wx.CheckBox(self, wx.ID_ANY, _("Max Speed (Raster)"))
+        self.check_max_speed_raster = wx.CheckBox(
+            self, wx.ID_ANY, _("Max Speed (Raster)")
+        )
         self.check_max_speed_raster.SetToolTip(
             _("Limit the maximum raster speed to this value")
         )

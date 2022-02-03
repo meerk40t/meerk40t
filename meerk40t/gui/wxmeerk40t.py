@@ -172,7 +172,9 @@ def plugin(kernel, lifecycle):
         # Replace the default kernel data prompt for a wx Popup.
 
         def prompt_popup(data_type, prompt):
-            with wx.TextEntryDialog(None, prompt, _("Information Required:"), "") as dlg:
+            with wx.TextEntryDialog(
+                None, prompt, _("Information Required:"), ""
+            ) as dlg:
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()
                 else:
@@ -181,6 +183,7 @@ def plugin(kernel, lifecycle):
                 return data_type(value)
             except ValueError:
                 return None
+
         kernel.prompt = prompt_popup
 
         def interrupt_popup():
@@ -212,9 +215,15 @@ def plugin(kernel, lifecycle):
                     bool, "window/%s/open_on_start" % window, False
                 ):
                     if window_index is not None:
-                        kernel.console("window open -m {index} {window} {index}\n".format(index=window_index, window=window_name))
+                        kernel.console(
+                            "window open -m {index} {window} {index}\n".format(
+                                index=window_index, window=window_name
+                            )
+                        )
                     else:
-                        kernel.console("window open {window}\n".format(window=window_name))
+                        kernel.console(
+                            "window open {window}\n".format(window=window_name)
+                        )
             meerk40tgui.MainLoop()
 
 
@@ -346,15 +355,15 @@ def register_panel_pause(window, context):
 
 
 supported_languages = (
-    ("en", u"English", wx.LANGUAGE_ENGLISH),
-    ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
-    ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
-    ("zh", u"中文", wx.LANGUAGE_CHINESE),
-    ("hu", u"Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt", u"português", wx.LANGUAGE_PORTUGUESE),
-    ("pt-br", u"português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("en", "English", wx.LANGUAGE_ENGLISH),
+    ("it", "italiano", wx.LANGUAGE_ITALIAN),
+    ("fr", "français", wx.LANGUAGE_FRENCH),
+    ("de", "Deutsch", wx.LANGUAGE_GERMAN),
+    ("es", "español", wx.LANGUAGE_SPANISH),
+    ("zh", "中文", wx.LANGUAGE_CHINESE),
+    ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
+    ("pt", "português", wx.LANGUAGE_PORTUGUESE),
+    ("pt-br", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
 )
 
 
@@ -588,7 +597,9 @@ class wxMeerK40t(wx.App, Module):
             input_type="window",
             help=_("open/toggle the supplied window"),
         )
-        def window_open(command, channel, _, data, multi=None, window=None, args=(), **kwargs):
+        def window_open(
+            command, channel, _, data, multi=None, window=None, args=(), **kwargs
+        ):
             path = data
             try:
                 parent = context.gui
@@ -662,7 +673,7 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            for section in list(kernel.derivable('')):
+            for section in list(kernel.derivable("")):
                 if section.startswith("window"):
                     kernel.clear_persistent(section)
                     try:

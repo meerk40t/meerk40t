@@ -42,6 +42,7 @@ class ViewPort:
     """
     The x, y, width and height are of the viewport are stored in nm. These are converted to mk native units
     """
+
     def __init__(self, x, y, width, height):
         self.x = None
         self.y = None
@@ -55,7 +56,15 @@ class ViewPort:
         self.width = Length(width).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self.height = Length(height).value(ppi=UNITS_PER_INCH, unitless=1.0)
 
-    def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False, unitless=UNITS_PER_PIXEL):
+    def length(
+        self,
+        value,
+        axis=None,
+        new_units=None,
+        relative_length=None,
+        as_float=False,
+        unitless=UNITS_PER_PIXEL,
+    ):
         """
         Axis 0 is X
         Axis 1 is Y
@@ -77,15 +86,25 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless)
+            return Length(value).value(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
+            )
         elif new_units == "mm":
-            return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
+            return Length(value).to_mm(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            )
         elif new_units == "inch":
-            return Length(value).to_inch(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
+            return Length(value).to_inch(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            )
         elif new_units == "cm":
-            return Length(value).to_cm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
+            return Length(value).to_cm(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            )
         elif new_units == "px":
-            return Length(value).to_px(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
+            return Length(value).to_px(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            )
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -123,7 +142,6 @@ class ViewPort:
     @property
     def height_as_inch(self):
         return Length(self.height).to_inch(ppi=UNITS_PER_INCH)
-
 
     @property
     def width_as_nm(self):
@@ -237,10 +255,11 @@ class ViewPort:
                     Length.str(scale_y),
                 )
 
-
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).value(ppi=UNITS_PER_INCH)
+        return Length("{amount}{units}".format(units=units, amount=amount)).value(
+            ppi=UNITS_PER_INCH
+        )
 
 
 class Length(object):
@@ -624,7 +643,6 @@ class Length(object):
         if as_float:
             return v
         return Length("%sin" % (Length.str(v)))
-
 
     def value(
         self,

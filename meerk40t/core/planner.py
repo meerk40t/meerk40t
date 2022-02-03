@@ -151,7 +151,7 @@ def plugin(kernel, lifecycle=None):
                     + "The total travel time may therefore be shorter or longer. "
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
-                )
+                ),
             },
             {
                 "attr": "opt_merge_passes",
@@ -546,18 +546,14 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(
-                    self.plan[i], channel=channel
-                )
+                self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
 
     def optimize_cuts(self):
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel
-                    )
+                    self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -571,9 +567,7 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel
-                    )
+                    self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 if last is not None:
                     cur = self.plan[i]
@@ -951,7 +945,8 @@ class Planner(Service):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                depth=1,
             ):
                 try:
                     if not c.output:
@@ -1145,7 +1140,7 @@ class Planner(Service):
             y_distance=None,
             data_type=None,
             data=None,
-            **kwgs
+            **kwgs,
         ):
             if y_distance is None:
                 raise SyntaxError
@@ -1187,7 +1182,7 @@ class Planner(Service):
                     y_distance = "%f%%" % (100.0 / (rows + 1))
             except Exception:
                 pass
-            x_distance = self.device.length(x_distance,1)
+            x_distance = self.device.length(x_distance, 1)
             y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
@@ -1559,16 +1554,16 @@ def inner_first_ident(context: CutGroup, channel=None):
     context.constrained = constrained
 
     # for g in groups:
-        # if g.contains is not None:
-            # for inner in g.contains:
-                # assert inner in groups
-                # assert inner is not g
-                # assert g in inner.inside
-        # if g.inside is not None:
-            # for outer in g.inside:
-                # assert outer in groups
-                # assert outer is not g
-                # assert g in outer.contains
+    # if g.contains is not None:
+    # for inner in g.contains:
+    # assert inner in groups
+    # assert inner is not g
+    # assert g in inner.inside
+    # if g.inside is not None:
+    # for outer in g.inside:
+    # assert outer in groups
+    # assert outer is not g
+    # assert g in outer.contains
 
     if channel:
         end_times = times()
@@ -1584,7 +1579,12 @@ def inner_first_ident(context: CutGroup, channel=None):
     return context
 
 
-def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+def short_travel_cutcode(
+    context: CutCode,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
     optimizing with greedy/brute for shortest distances optimizations.
@@ -1654,16 +1654,14 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
             closest = None
-            for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
+            for cut in context.candidate(
+                complete_path=complete_path, grouped_inner=grouped_inner
+            ):
                 s = cut.start
                 if (
                     abs(s[0] - curr.real) <= distance
                     and abs(s[1] - curr.imag) <= distance
-                    and (
-                        not complete_path
-                        or cut.closed
-                        or cut.first
-                    )
+                    and (not complete_path or cut.closed or cut.first)
                 ):
                     d = abs(complex(s[0], s[1]) - curr)
                     if d < distance:
@@ -1679,11 +1677,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
                 if (
                     abs(e[0] - curr.real) <= distance
                     and abs(e[1] - curr.imag) <= distance
-                    and (
-                        not complete_path
-                        or cut.closed
-                        or cut.last
-                    )
+                    and (not complete_path or cut.closed or cut.last)
                 ):
                     d = abs(complex(e[0], e[1]) - curr)
                     if d < distance:
@@ -1884,7 +1878,9 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode, channel=None, grouped_inner: Optional[bool]=False):
+def inner_selection_cutcode(
+    context: CutCode, channel=None, grouped_inner: Optional[bool] = False
+):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.

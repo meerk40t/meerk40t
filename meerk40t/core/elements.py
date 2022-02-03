@@ -225,8 +225,11 @@ class Node:
                 # Disallow drop of non-image elems onto an Image op.
                 # Disallow drop of image elems onto a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Dots"
                 ):
                     return False
                 # Dragging element onto operation adds that element to the op.
@@ -237,8 +240,10 @@ class Node:
                 # Disallow drop of non-image elems onto an opnode inside an Image op.
                 # Disallow drop of image elems onto an opnode inside a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and op.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
                 ):
                     return False
                 # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
@@ -254,8 +259,11 @@ class Node:
                 # Disallow drop of non-image opnodes onto an Image op.
                 # Disallow drop of image opnodes onto a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Dots"
                 ):
                     return False
                 # Move an opnode to end of op.
@@ -266,8 +274,10 @@ class Node:
                 # Disallow drop of non-image opnodes onto an opnode inside an Image op.
                 # Disallow drop of image opnodes onto an opnode inside a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and op.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
                 ):
                     return False
                 # Move an opnode to after another opnode.
@@ -289,8 +299,10 @@ class Node:
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
-                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                        not isinstance(e.object, SVGImage)
+                        and drop_node.operation == "Image"
+                    ) or (
+                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
                     ):
                         continue
                     # Add element to operation
@@ -312,8 +324,10 @@ class Node:
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
-                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                        not isinstance(e.object, SVGImage)
+                        and drop_node.operation == "Image"
+                    ) or (
+                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
                     ):
                         continue
                     # Add element to operation
@@ -1292,9 +1306,7 @@ class LaserOperation(Node, Parameters):
                 if self.raster_step <= 0:
                     self.raster_step = 1
                 try:
-                    self.raster_direction = int(
-                        svg_image.values["raster_direction"]
-                    )
+                    self.raster_direction = int(svg_image.values["raster_direction"])
                 except KeyError:
                     pass
                 step = self.raster_step
@@ -1718,7 +1730,10 @@ class Elemental(Service):
         # ==========
 
         @self.console_command(
-            "material", help=_("material base operation"), input_type=(None, "ops"), output_type="materials"
+            "material",
+            help=_("material base operation"),
+            input_type=(None, "ops"),
+            output_type="materials",
         )
         def materials(command, channel, _, data=None, remainder=None, **kwargs):
             if data is None:
@@ -1786,7 +1801,11 @@ class Elemental(Service):
                 subsection = self.op_data.derivable(section)
                 for subsect in subsection:
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
-                    channel("{subsection}: {label}".format(section=section, subsection=subsect, label=label))
+                    channel(
+                        "{subsection}: {label}".format(
+                            section=section, subsection=subsect, label=label
+                        )
+                    )
             channel("----------")
 
         # ==========
@@ -2116,7 +2135,7 @@ class Elemental(Service):
             step=None,
             overscan=None,
             passes=None,
-            **kwargs
+            **kwargs,
         ):
             op = LaserOperation()
             if color is not None:
@@ -2182,7 +2201,9 @@ class Elemental(Service):
         @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
-        def op_speed(command, channel, _, speed=None, difference=None, data=None, **kwrgs):
+        def op_speed(
+            command, channel, _, speed=None, difference=None, data=None, **kwrgs
+        ):
             if speed is None:
                 for op in data:
                     old_speed = op.speed
@@ -2212,7 +2233,8 @@ class Elemental(Service):
                     s = new_speed
                 op.speed = s
                 channel(
-                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
+                    _("Speed for '%s' updated %f -> %f")
+                    % (str(op), old_speed, new_speed)
                 )
                 op.notify_update()
             return "ops", data
@@ -3129,9 +3151,7 @@ class Elemental(Service):
             "y_pos", type=str, help=_("y position for top left corner of rectangle.")
         )
         @self.console_argument("width", type=str, help=_("width of the rectangle."))
-        @self.console_argument(
-            "height", type=str, help=_("height of the rectangle.")
-        )
+        @self.console_argument("height", type=str, help=_("height of the rectangle."))
         @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
         @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
         @self.console_command(
@@ -3154,7 +3174,9 @@ class Elemental(Service):
             ry_pos = self.device.length(ry, 1)
             width = self.device.length(width, 0)
             height = self.device.length(height, 1)
-            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos)
+            rect = Rect(
+                x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos
+            )
 
             self.add_element(rect)
             if data is None:
@@ -3289,7 +3311,9 @@ class Elemental(Service):
             ),
             output_type="elements",
         )
-        def element_stroke_width(command, channel, _, stroke_width, data=None, **kwargs):
+        def element_stroke_width(
+            command, channel, _, stroke_width, data=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if stroke_width is None:
@@ -3447,7 +3471,7 @@ class Elemental(Service):
             y_offset=None,
             data=None,
             args=tuple(),
-            **kwargs
+            **kwargs,
         ):
             """
             Draws an outline of the current shape.
@@ -3463,16 +3487,8 @@ class Elemental(Service):
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
 
-            offset_x = (
-                self.device.length(x_offset, 0)
-                if len(args) >= 1
-                else 0
-            )
-            offset_y = (
-                self.device.length(y_offset, 1)
-                if len(args) >= 2
-                else offset_x
-            )
+            offset_x = self.device.length(x_offset, 0) if len(args) >= 1 else 0
+            offset_y = self.device.length(y_offset, 1) if len(args) >= 2 else offset_x
 
             x_pos -= offset_x
             y_pos -= offset_y
@@ -3515,7 +3531,7 @@ class Elemental(Service):
             cy=None,
             absolute=False,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if angle is None:
                 channel("----------")
@@ -3606,7 +3622,7 @@ class Elemental(Service):
             py=None,
             absolute=False,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if scale_x is None:
                 channel("----------")
@@ -3672,7 +3688,9 @@ class Elemental(Service):
                         osy = e.transform.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_x))
+                        m = Matrix(
+                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_x)
+                        )
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
@@ -3800,7 +3818,9 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_resize(command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs):
+        def element_resize(
+            command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs
+        ):
             if height is None:
                 raise SyntaxError
             try:
@@ -3814,7 +3834,7 @@ class Elemental(Service):
                 height = self.device.length(height, 1)
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
-                if w == 0 or h == 0: # dot
+                if w == 0 or h == 0:  # dot
                     channel(_("resize: cannot resize a dot"))
                     return
                 sx = width / w
@@ -4095,7 +4115,9 @@ class Elemental(Service):
             input_type="tree",
             output_type="tree",
         )
-        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwargs):
+        def tree_menu(
+            command, channel, _, data=None, node=None, execute=None, **kwargs
+        ):
             """
             Create menu for a particular node.
             Processes submenus, references, radio_state as needed.
@@ -4519,7 +4541,9 @@ class Elemental(Service):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help="")
+        @self.tree_operation(
+            _("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help=""
+        )
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
@@ -4598,9 +4622,9 @@ class Elemental(Service):
             self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwargs):
-            return (
-                node.passes_custom and passvalue == node.passes
-            ) or (not node.passes_custom and passvalue == 1)
+            return (node.passes_custom and passvalue == node.passes) or (
+                not node.passes_custom and passvalue == 1
+            )
 
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
@@ -4831,18 +4855,12 @@ class Elemental(Service):
 
         def difference_materials_saved():
             secs = self.op_data.section_set()
-            difference = [
-                m
-                for m in materials
-                if m not in secs
-            ]
+            difference = [m for m in materials if m not in secs]
             return difference
 
         @self.tree_submenu(_("Load"))
         @self.tree_values("opname", values=self.op_data.section_set)
-        @self.tree_operation(
-            _("%s") % "{opname}", node_type="branch ops", help=""
-        )
+        @self.tree_operation(_("%s") % "{opname}", node_type="branch ops", help="")
         def load_ops(node, opname, **kwargs):
             self("material load %s\n" % opname)
 
@@ -4902,12 +4920,12 @@ class Elemental(Service):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
-            self.op_branch.add(
-                CommandOperation("Home", "home"), type="cmdop", pos=pos
-            )
+            self.op_branch.add(CommandOperation("Home", "home"), type="cmdop", pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Return to Origin"), node_type="branch ops", help=""
+        )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
                 CommandOperation("Origin", "home", 0, 0), type="cmdop", pos=pos
@@ -4916,15 +4934,15 @@ class Elemental(Service):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
-            self.op_branch.add(
-                CommandOperation("Beep", "beep"), type="cmdop", pos=pos
-            )
+            self.op_branch.add(CommandOperation("Beep", "beep"), type="cmdop", pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Interrupt (console)"), node_type="branch ops", help=""
+        )
         def append_operation_interrupt_console(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("interrupt \"Spooling was interrupted\""),
+                ConsoleOperation('interrupt "Spooling was interrupted"'),
                 type="consoleop",
                 pos=pos,
             )
@@ -4943,7 +4961,9 @@ class Elemental(Service):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Home/Beep/Interrupt"), node_type="branch ops", help=""
+        )
         def append_operation_home_beep_interrupt(node, **kwargs):
             append_operation_home(node, **kwargs)
             append_operation_beep(node, **kwargs)
@@ -5132,7 +5152,9 @@ class Elemental(Service):
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
         def add_operation_interrupt_console(node, **kwargs):
-            append_operation_interrupt_console(node, pos=add_after_index(self), **kwargs)
+            append_operation_interrupt_console(
+                node, pos=add_after_index(self), **kwargs
+            )
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
@@ -5140,10 +5162,10 @@ class Elemental(Service):
             pos = add_after_index(self)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
-                pos +=1
+                pos += 1
             append_operation_beep(node, pos=pos, **kwargs)
             if pos:
-                pos +=1
+                pos += 1
             append_operation_interrupt(node, pos=pos, **kwargs)
 
         @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
@@ -5168,12 +5190,15 @@ class Elemental(Service):
             system = platform.system()
             if system == "Darwin":
                 from os import system as open_in_shell
+
                 open_in_shell("open '{file}'".format(file=normalized))
             elif system == "Windows":
                 from os import startfile as open_in_shell
+
                 open_in_shell('"{file}"'.format(file=normalized))
             else:
                 from os import system as open_in_shell
+
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
@@ -5315,9 +5340,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _(u"Rotate %s°") % ("{angle}"),
-            node_type=("elem", "file", "group"),
-            help=""
+            _("Rotate %s°") % ("{angle}"), node_type=("elem", "file", "group"), help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
@@ -5333,9 +5356,7 @@ class Elemental(Service):
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify User Changes"),
-            node_type=("elem", "file", "group"),
-            help=""
+            _("Reify User Changes"), node_type=("elem", "file", "group"), help=""
         )
         def reify_elem_changes(node, **kwargs):
             self("reify\n")
@@ -5753,11 +5774,13 @@ class Elemental(Service):
     @staticmethod
     def tree_prompt(attr, prompt, data_type=str):
         def decor(func):
-            func.user_prompt.append({
-                "attr": attr,
-                "prompt": prompt,
-                "type": data_type,
-            })
+            func.user_prompt.append(
+                {
+                    "attr": attr,
+                    "prompt": prompt,
+                    "type": data_type,
+                }
+            )
             return func
 
         return decor
@@ -5851,7 +5874,9 @@ class Elemental(Service):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(types=("op", "cmdop", "consoleop"), depth=1, **kwargs):
+        for item in operations.flat(
+            types=("op", "cmdop", "consoleop"), depth=1, **kwargs
+        ):
             yield item
 
     def elems(self, **kwargs):
@@ -6557,12 +6582,14 @@ class Elemental(Service):
                 ):
                     element_vector = False
 
-            elements_to_classify.append((
-                element,
-                element_vector,
-                is_dot,
-                is_straight_line,
-            ))
+            elements_to_classify.append(
+                (
+                    element,
+                    element_vector,
+                    is_dot,
+                    is_straight_line,
+                )
+            )
 
         debug(
             "classify: elements: {e} elements to classify".format(
@@ -6587,7 +6614,7 @@ class Elemental(Service):
                 # White non-transparent fill?
                 and element.fill is not None
                 and element.fill.rgb is not None
-                and element.fill.rgb == 0xffffff
+                and element.fill.rgb == 0xFFFFFF
                 and element.fill.alpha is not None
                 and element.fill.alpha != 0
                 # But not grey stroke?
@@ -6634,28 +6661,26 @@ class Elemental(Service):
                 element_vector
                 and element.stroke is not None
                 and element.stroke.rgb is not None
-                and element.stroke.rgb != 0xffffff
+                and element.stroke.rgb != 0xFFFFFF
             ):
                 bbox = element.bbox()
                 color = element.stroke.rgb
                 # Now check for raster elements in front whose path crosses over this path
-                for e in elements_to_classify[i+1:]:
+                for e in elements_to_classify[i + 1 :]:
                     # Raster?
                     if e[1]:
                         continue
                     # Stroke or fill same colour?
                     if (
-                        (
-                            e[0].stroke is None
-                            or e[0].stroke.rgb is None
-                            or e[0].stroke.rgb != color
-                        ) and (
-                            e[0].fill is None
-                            or e[0].fill.alpha is None
-                            or e[0].fill.alpha == 0
-                            or e[0].fill.rgb is None
-                            or e[0].fill.rgb != color
-                        )
+                        e[0].stroke is None
+                        or e[0].stroke.rgb is None
+                        or e[0].stroke.rgb != color
+                    ) and (
+                        e[0].fill is None
+                        or e[0].fill.alpha is None
+                        or e[0].fill.alpha == 0
+                        or e[0].fill.rgb is None
+                        or e[0].fill.rgb != color
                     ):
                         continue
                     # We have an element with a matching color
@@ -6698,10 +6723,8 @@ class Elemental(Service):
             element_added = False
             if is_dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (
-                        (is_dot and op.operation == "Dots")
-                        or
-                        (isinstance(element, SVGImage) and op.operation == "Image")
+                    if (is_dot and op.operation == "Dots") or (
+                        isinstance(element, SVGImage) and op.operation == "Image"
                     ):
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
@@ -6715,7 +6738,7 @@ class Elemental(Service):
                         and op not in default_raster_ops
                     ):
                         if not rasters_one_pass:
-                                op.add(element, type="opnode", pos=element_pos)
+                            op.add(element, type="opnode", pos=element_pos)
                         elif not element_added:
                             raster_elements.append((element, element.bbox()))
                         element_added = True
@@ -6732,7 +6755,7 @@ class Elemental(Service):
                 if (
                     element.stroke is None
                     or element.stroke.rgb is None
-                    or element.stroke.rgb == 0xffffff
+                    or element.stroke.rgb == 0xFFFFFF
                 ):
                     debug(
                         "classify: not classifying - white element at back: {e}".format(
@@ -6743,10 +6766,7 @@ class Elemental(Service):
 
             elif rasters_one_pass:
                 for op in raster_ops:
-                    if (
-                        op.color is not None
-                        and op.color.rgb == element_color.rgb
-                    ):
+                    if op.color is not None and op.color.rgb == element_color.rgb:
                         op.add(element, type="opnode", pos=element_pos)
                         element_added = True
             else:
@@ -6908,8 +6928,7 @@ class Elemental(Service):
                     )
                     # Create simple list of elements sorted by original element order
                     elements_to_add = sorted(
-                        [e[0] for e in elements_to_add],
-                        key=raster_elements.index
+                        [e[0] for e in elements_to_add], key=raster_elements.index
                     )
                     for element in elements_to_add:
                         op.add(element, type="opnode", pos=element_pos)
@@ -6926,8 +6945,7 @@ class Elemental(Service):
         for g in raster_groups:
             elements_to_add.extend(g)
         elements_to_add = sorted(
-            [e[0] for e in elements_to_add],
-            key=raster_elements.index
+            [e[0] for e in elements_to_add], key=raster_elements.index
         )
 
         debug(
@@ -6967,11 +6985,7 @@ class Elemental(Service):
             )
         else:
             for op in default_raster_ops:
-                debug(
-                    "classify: default raster op selected: {op}".format(
-                        op=str(op)
-                    )
-                )
+                debug("classify: default raster op selected: {op}".format(op=str(op)))
 
         for element in elements_to_add:
             for op in default_raster_ops:
@@ -6990,12 +7004,7 @@ class Elemental(Service):
 
     @staticmethod
     def bbox_overlap(b1, b2):
-        if (
-            b1[0] <= b2[2]
-            and b1[2] >= b2[0]
-            and b1[1] <= b2[3]
-            and b1[3] >= b2[1]
-        ):
+        if b1[0] <= b2[2] and b1[2] >= b2[0] and b1[1] <= b2[3] and b1[3] >= b2[1]:
             return True
         return False
 

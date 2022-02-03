@@ -143,14 +143,10 @@ class LhyAdvancedPanel(wx.Panel):
         if self.operation.acceleration is not None:
             self.slider_accel.SetValue(self.operation.acceleration)
         if self.operation.acceleration_custom is not None:
-            self.checkbox_custom_accel.SetValue(
-                self.operation.acceleration_custom
-            )
+            self.checkbox_custom_accel.SetValue(self.operation.acceleration_custom)
             self.slider_accel.Enable(self.checkbox_custom_accel.GetValue())
         if self.operation.dot_length_custom is not None:
-            self.check_dot_length_custom.SetValue(
-                self.operation.dot_length_custom
-            )
+            self.check_dot_length_custom.SetValue(self.operation.dot_length_custom)
         if self.operation.dot_length is not None:
             self.text_dot_length.SetValue(str(self.operation.dot_length))
         if self.operation.shift_enabled is not None:
@@ -201,8 +197,5 @@ class LhyAdvancedPanel(wx.Panel):
     def on_check_shift_enabled(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.shift_enabled = bool(
-            self.check_shift_enabled.GetValue()
-        )
+        self.operation.shift_enabled = bool(self.check_shift_enabled.GetValue())
         self.context.elements.signal("element_property_reload", self.operation)
-

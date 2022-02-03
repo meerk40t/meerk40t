@@ -143,7 +143,9 @@ class PositionPanel(wx.Panel):
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
             if self.position_units in self.choices:
-                self.combo_box_units.SetSelection(self.choices.index(self.position_units))
+                self.combo_box_units.SetSelection(
+                    self.choices.index(self.position_units)
+                )
             return
         if not self.text_x.IsEnabled():
             self.text_w.Enable(True)
@@ -193,7 +195,9 @@ class PositionPanel(wx.Panel):
             try:
                 w = float(self.text_w.GetValue())
             except ValueError:
-                w = self.context.device.length(self.text_w.GetValue(), 0, new_unit=self.position_units)
+                w = self.context.device.length(
+                    self.text_w.GetValue(), 0, new_unit=self.position_units
+                )
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -229,7 +233,9 @@ class PositionPanel(wx.Panel):
             try:
                 h = float(self.text_h.GetValue())
             except ValueError:
-                h = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
+                h = self.context.device.length(
+                    self.text_h.GetValue(), 1, new_units=self.position_units
+                )
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
@@ -260,7 +266,9 @@ class PositionPanel(wx.Panel):
         try:
             x = float(self.text_x.GetValue())
         except ValueError:
-            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
+            self.position_x = self.context.device.length(
+                self.text_h.GetValue(), 1, new_units=self.position_units
+            )
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -281,7 +289,9 @@ class PositionPanel(wx.Panel):
         try:
             y = float(self.text_y.GetValue())
         except ValueError:
-            self.position_x = self.context.device.length(self.text_h.GetValue(), 1, new_units=self.position_units)
+            self.position_x = self.context.device.length(
+                self.text_h.GetValue(), 1, new_units=self.position_units
+            )
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (

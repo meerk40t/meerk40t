@@ -1778,9 +1778,15 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (UNITS_PER_INCH / dpi[0], UNITS_PER_INCH / dpi[1])
+                    image *= "scale(%f,%f)" % (
+                        UNITS_PER_INCH / dpi[0],
+                        UNITS_PER_INCH / dpi[1],
+                    )
                 else:
-                    image *= "scale(%f,%f)" % (UNITS_PER_PIXEL / dpi[0], UNITS_PER_PIXEL / dpi[1])
+                    image *= "scale(%f,%f)" % (
+                        UNITS_PER_PIXEL / dpi[0],
+                        UNITS_PER_PIXEL / dpi[1],
+                    )
         except (KeyError, IndexError):
             pass
 

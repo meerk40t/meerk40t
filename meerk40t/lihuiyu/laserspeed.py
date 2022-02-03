@@ -141,9 +141,7 @@ def get_speed_from_code(speed_code, board="M2", fix_speeds=False):
         raster_step,
         suffix_c,
     ) = parse_speed_code(speed_code)
-    b, m = get_equation(
-        board, accel=accel, suffix_c=suffix_c, fix_speeds=fix_speeds
-    )
+    b, m = get_equation(board, accel=accel, suffix_c=suffix_c, fix_speeds=fix_speeds)
     return get_speed_from_value(code_value, b, m)
 
 

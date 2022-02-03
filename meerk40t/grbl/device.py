@@ -130,7 +130,7 @@ def plugin(kernel, lifecycle=None):
             silent=False,
             watch=False,
             quit=False,
-            **kwargs
+            **kwargs,
         ):
             ctx = kernel.get_context(path if path is not None else "/")
             if ctx is None:
@@ -321,7 +321,16 @@ class GRBLDevice(Service, ViewPort):
             help=_("link the serial connection"),
             input_type=None,
         )
-        def serial_connection(command, channel, _, data=None, com=None, baud=115200, remainder=None, **kwgs):
+        def serial_connection(
+            command,
+            channel,
+            _,
+            data=None,
+            com=None,
+            baud=115200,
+            remainder=None,
+            **kwgs,
+        ):
             if com is None:
                 import serial.tools.list_ports
 
@@ -339,7 +348,7 @@ class GRBLDevice(Service, ViewPort):
         def gcode(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.channel("grbl")(remainder + '\r')
+                self.channel("grbl")(remainder + "\r")
 
         @self.console_command(
             ("soft_reset", "estop"),
@@ -373,14 +382,18 @@ class GRBLDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return float(self.driver.native_x * self.driver.stepper_step_size) / self.scale_x
+        return (
+            float(self.driver.native_x * self.driver.stepper_step_size) / self.scale_x
+        )
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return float(self.driver.native_y * self.driver.stepper_step_size) / self.scale_y
+        return (
+            float(self.driver.native_y * self.driver.stepper_step_size) / self.scale_y
+        )
 
     @property
     def get_native_scale_x(self):
@@ -565,14 +578,18 @@ class GRBLDriver(Parameters):
             return
         self.feed_mode = 94
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.stepper_step_size / UNITS_PER_MM) / 60.0)
-        self.feed_invert = lambda s: s * ((self.stepper_step_size / UNITS_PER_MM) / 60.0)
+        self.feed_convert = lambda s: s / (
+            (self.stepper_step_size / UNITS_PER_MM) / 60.0
+        )
+        self.feed_invert = lambda s: s * (
+            (self.stepper_step_size / UNITS_PER_MM) / 60.0
+        )
         # units to mm, seconds to minutes.
         self.feedrate_dirty = True
 
     def g20_units_inch(self):
         self.units = 20
-        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size   # g20 is inch mode.
+        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size  # g20 is inch mode.
         self.units_dirty = True
 
     def g21_units_mm(self):
@@ -634,13 +651,13 @@ class GRBLDriver(Parameters):
                     if p_set.power != self.power:
                         self.set("power", p_set.power)
                     if (
-                            p_set.speed != self.speed
-                            or p_set.raster_step != self.raster_step
+                        p_set.speed != self.speed
+                        or p_set.raster_step != self.raster_step
                     ):
                         self.set("speed", p_set.speed)
                     self.settings.update(p_set.settings)
                 elif on & (
-                        PLOT_RAPID | PLOT_JOG
+                    PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
                     self.move_mode = 0
                     self.move(x, y)
@@ -934,9 +951,7 @@ class GRBLDriver(Parameters):
                 self.spooler.job("home")
                 if self.home_adjust is not None:
                     self.spooler.job("rapid_mode")
-                    self.spooler.job(
-                        "move", self.home_adjust[0], self.home_adjust[1]
-                    )
+                    self.spooler.job("move", self.home_adjust[0], self.home_adjust[1])
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             return 3  # GRBL '$' system command was not recognized or supported.
@@ -1328,7 +1343,9 @@ class GrblController:
                 if len(self.commands_in_device_buffer) <= 1:
                     line = self.sending_queue[0]
                     line_length = len(line)
-                    buffer_remaining = self.device_buffer_size - self.buffered_characters
+                    buffer_remaining = (
+                        self.device_buffer_size - self.buffered_characters
+                    )
                     if buffer_remaining > line_length:
                         self.connection.write(line)
                         self.send(line)
@@ -1386,12 +1403,12 @@ class SerialConnection:
     def read(self):
         if self.laser.in_waiting:
             self.read_buffer += self.laser.readall()
-        f = self.read_buffer.find(b'\n')
+        f = self.read_buffer.find(b"\n")
         if f == -1:
             return None
         response = self.read_buffer[:f]
-        self.read_buffer = self.read_buffer[f+1:]
-        str_response = str(response, 'utf-8')
+        self.read_buffer = self.read_buffer[f + 1 :]
+        str_response = str(response, "utf-8")
         str_response = str_response.strip()
         return str_response
 

@@ -672,7 +672,10 @@ class RuidaEmulator(Module):
                     settings=self.cutset,
                 )
             )
-            desc = "Cut Relative (%f nm, %f nm)" % (dx / UNITS_PER_uM, dy / UNITS_PER_uM)
+            desc = "Cut Relative (%f nm, %f nm)" % (
+                dx / UNITS_PER_uM,
+                dy / UNITS_PER_uM,
+            )
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx

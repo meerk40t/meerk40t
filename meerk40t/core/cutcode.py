@@ -39,7 +39,9 @@ class CutObject(Parameters):
     reversed.
     """
 
-    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs):
+    def __init__(
+        self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
+    ):
         super().__init__(settings)
         if start is not None:
             self._start_x = int(round(start[0]))
@@ -95,11 +97,19 @@ class CutObject(Parameters):
 
     @property
     def start(self):
-        return (self._start_x, self._start_y) if self.normal else (self._end_x, self._end_y)
+        return (
+            (self._start_x, self._start_y)
+            if self.normal
+            else (self._end_x, self._end_y)
+        )
 
     @property
     def end(self):
-        return (self._start_x, self._start_y) if not self.normal else (self._end_x, self._end_y)
+        return (
+            (self._start_x, self._start_y)
+            if not self.normal
+            else (self._end_x, self._end_y)
+        )
 
     @start.setter
     def start(self, value):
@@ -112,7 +122,9 @@ class CutObject(Parameters):
         self._end_y = value[1]
 
     def length(self):
-        return Point.distance((self._start_x, self._start_y), (self._end_x, self._end_y))
+        return Point.distance(
+            (self._start_x, self._start_y), (self._end_x, self._end_y)
+        )
 
     def upper(self):
         return min(self._start_y, self._end_y)
@@ -165,7 +177,7 @@ class CutObject(Parameters):
                 if c.burn_started:
                     return True
             elif c.burns_done == c.passes:
-                    return True
+                return True
         return False
 
     def contains_unburned_groups(self):
@@ -194,8 +206,13 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(),
-        settings=None, passes=1, constrained=False, closed=False,
+        self,
+        parent,
+        children=(),
+        settings=None,
+        passes=1,
+        constrained=False,
+        closed=False,
     ):
         list.__init__(self, children)
         CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
@@ -243,7 +260,11 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+    def candidate(
+        self,
+        complete_path: Optional[bool] = False,
+        grouped_inner: Optional[bool] = False,
+    ):
         """
         Candidates are CutObjects:
         1. That do not contain one or more unburned inner constrained cutcode objects.
@@ -289,11 +310,7 @@ class CutGroup(list, CutObject, ABC):
             # if this is not a closed path we should only yield first and last segments
             # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
-            if (
-                complete_path
-                and not grp.closed
-                and isinstance(grp, CutGroup)
-            ):
+            if complete_path and not grp.closed and isinstance(grp, CutGroup):
                 if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
@@ -498,7 +515,14 @@ class CutCode(CutGroup):
 
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         self.raster_step = 0
 
     def generator(self):
@@ -508,8 +532,23 @@ class LineCut(CutObject):
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+    def __init__(
+        self,
+        start_point,
+        control_point,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         self.raster_step = 0
         self._control = control_point
 
@@ -517,9 +556,7 @@ class QuadCut(CutObject):
         return self._control
 
     def length(self):
-        return Point.distance(self.start, self.c()) + Point.distance(
-            self.c(), self.end
-        )
+        return Point.distance(self.start, self.c()) + Point.distance(self.c(), self.end)
 
     def generator(self):
         start = self.start
@@ -536,8 +573,24 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+    def __init__(
+        self,
+        start_point,
+        control1,
+        control2,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -578,7 +631,9 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None):
+    def __init__(
+        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+    ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
@@ -736,7 +791,6 @@ class RawCut(CutObject):
     def end(self, value):
         self._end_x = value[0]
         self._end_y = value[1]
-
 
     def generator(self):
         return self.plot

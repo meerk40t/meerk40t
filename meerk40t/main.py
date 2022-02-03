@@ -126,7 +126,9 @@ def run():
         return
 
     if args.profile is not None:
-        path = "{appname}{profile}".format(appname=APPLICATION_NAME, profile=args.profile)
+        path = "{appname}{profile}".format(
+            appname=APPLICATION_NAME, profile=args.profile
+        )
     else:
         path = APPLICATION_NAME
     kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, path)
@@ -212,7 +214,6 @@ def run():
 
     kernel.add_plugin(pathoptimize.plugin)
 
-
     from .extra import updater
 
     kernel.add_plugin(updater.plugin)
@@ -297,7 +298,9 @@ def run():
                 pass
             except pkg_resources.VersionConflict as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
                 )
                 print(e)
             else:

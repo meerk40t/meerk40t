@@ -22,9 +22,22 @@ class SerialControllerPanel(wx.Panel):
         self.state = None
         self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
-        self.button_device_connect.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 0, "Segoe UI"))
-        self.button_device_connect.SetToolTip("Force connection/disconnection from the device.")
-        self.button_device_connect.SetBitmap(icons8_connected_50.GetBitmap(use_theme=False))
+        self.button_device_connect.SetFont(
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
+        self.button_device_connect.SetToolTip(
+            "Force connection/disconnection from the device."
+        )
+        self.button_device_connect.SetBitmap(
+            icons8_connected_50.GetBitmap(use_theme=False)
+        )
         sizer_1.Add(self.button_device_connect, 0, wx.EXPAND, 0)
 
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
@@ -42,11 +55,15 @@ class SerialControllerPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
+        )
         self.Bind(wx.EVT_TEXT_ENTER, self.on_gcode_enter, self.gcode_text)
         # end wxGlade
 
-    def on_button_start_connection(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
+    def on_button_start_connection(
+        self, event
+    ):  # wxGlade: SerialControllerPanel.<event_handler>
         if self.state == "connected":
             self.service.controller.disconnect()
         else:
@@ -106,9 +123,9 @@ class SerialController(MWindow):
         ).watch(self.serial_panel.update_recv)
 
     def window_close(self):
-        self.context.channel("send-{name}".format(name=self.service.com_port.lower())).unwatch(
-            self.serial_panel.update_sent
-        )
-        self.context.channel("recv-{name}".format(name=self.service.com_port.lower())).unwatch(
-            self.serial_panel.update_recv
-        )
+        self.context.channel(
+            "send-{name}".format(name=self.service.com_port.lower())
+        ).unwatch(self.serial_panel.update_sent)
+        self.context.channel(
+            "recv-{name}".format(name=self.service.com_port.lower())
+        ).unwatch(self.serial_panel.update_recv)

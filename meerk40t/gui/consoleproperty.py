@@ -11,7 +11,8 @@ class ConsoleProperty(MWindow):
         super().__init__(730, 621, *args, **kwds)
 
         self.panel = ConsolePropertiesPanel(
-            self, wx.ID_ANY, context=self.context, node=node)
+            self, wx.ID_ANY, context=self.context, node=node
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
@@ -31,7 +32,7 @@ class ConsolePropertiesPanel(wx.Panel):
             self,
             wx.ID_ANY,
             "Command text",
-            style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP
+            style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP,
         )
 
         self.__do_layout()
@@ -57,8 +58,8 @@ class ConsolePropertiesPanel(wx.Panel):
         # end wxGlade
 
     # def on_change_name(self, event=None):
-        # self.console_operation.set_name(self.command_name.GetValue())
-        # self.context.signal("element_property_update", self.console_operation)
+    # self.console_operation.set_name(self.command_name.GetValue())
+    # self.context.signal("element_property_update", self.console_operation)
 
     def on_change_command(self, event=None):
         raw = self.command_text.GetValue()

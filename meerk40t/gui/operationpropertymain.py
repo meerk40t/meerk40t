@@ -434,17 +434,11 @@ class PanelStartPreference(wx.Panel):
         if self.operation.raster_preference_top is not None:
             self.slider_top.SetValue(self.operation.raster_preference_top + 1)
         if self.operation.raster_preference_left is not None:
-            self.slider_left.SetValue(
-                self.operation.raster_preference_left + 1
-            )
+            self.slider_left.SetValue(self.operation.raster_preference_left + 1)
         if self.operation.raster_preference_right is not None:
-            self.slider_right.SetValue(
-                self.operation.raster_preference_right + 1
-            )
+            self.slider_right.SetValue(self.operation.raster_preference_right + 1)
         if self.operation.raster_preference_bottom is not None:
-            self.slider_bottom.SetValue(
-                self.operation.raster_preference_bottom + 1
-            )
+            self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
 
     def on_display_paint(self, event=None):
         try:
@@ -647,17 +641,13 @@ class PanelStartPreference(wx.Panel):
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_right = (
-            self.slider_right.GetValue() - 1
-        )
+        self.operation.raster_preference_right = self.slider_right.GetValue() - 1
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_slider_bottom(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_bottom = (
-            self.slider_bottom.GetValue() - 1
-        )
+        self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
         self.context.elements.signal("element_property_reload", self.operation)
 
 
@@ -774,13 +764,9 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.overscan is not None:
             self.text_overscan.SetValue(str(self.operation.overscan))
         if self.operation.raster_direction is not None:
-            self.combo_raster_direction.SetSelection(
-                self.operation.raster_direction
-            )
+            self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.raster_swing is not None:
-            self.radio_directional_raster.SetSelection(
-                self.operation.raster_swing
-            )
+            self.radio_directional_raster.SetSelection(self.operation.raster_swing)
 
     def on_text_raster_step(
         self, event=None
@@ -804,18 +790,14 @@ class RasterSettingsPanel(wx.Panel):
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_combo_raster_direction(self, event=None):
-        self.operation.raster_direction = (
-            self.combo_raster_direction.GetSelection()
-        )
+        self.operation.raster_direction = self.combo_raster_direction.GetSelection()
         self.context.raster_direction = self.operation.raster_direction
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_radio_directional(
         self, event=None
     ):  # wxGlade: RasterProperty.<event_handler>
-        self.operation.raster_swing = (
-            self.radio_directional_raster.GetSelection()
-        )
+        self.operation.raster_swing = self.radio_directional_raster.GetSelection()
         self.context.elements.signal("element_property_reload", self.operation)
 
 

@@ -662,9 +662,9 @@ class CamImageWidget(Widget):
 
 class CameraInterface(MWindow):
     def __init__(self, context, path, parent, index=0, **kwds):
-        if isinstance(index,str):
+        if isinstance(index, str):
             try:
-                index=int(index)
+                index = int(index)
             except ValueError:
                 pass
         if index is None:

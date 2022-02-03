@@ -59,7 +59,9 @@ class DevicePanel(wx.Panel):
             wx.EVT_TREE_ITEM_ACTIVATED, self.on_tree_device_activated, self.devices_tree
         )
         self.Bind(
-            wx.EVT_TREE_ITEM_RIGHT_CLICK, self.on_tree_device_right_click, self.devices_tree
+            wx.EVT_TREE_ITEM_RIGHT_CLICK,
+            self.on_tree_device_right_click,
+            self.devices_tree,
         )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_create_device, self.button_create_device
@@ -93,16 +95,16 @@ class DevicePanel(wx.Panel):
         index = event.GetItem()
         data = self.devices_tree.GetItemData(index)
         menu = wx.Menu()
-        convert = menu.Append(
-            wx.ID_ANY, _("Rename"), "", wx.ITEM_NORMAL
-        )
+        convert = menu.Append(wx.ID_ANY, _("Rename"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_rename(data), convert)
         self.PopupMenu(menu)
         menu.Destroy()
 
     def on_tree_popup_rename(self, service):
         def rename(event=None):
-            with wx.TextEntryDialog(None, _("What do you call this device?"), _("Device Label"), "") as dlg:
+            with wx.TextEntryDialog(
+                None, _("What do you call this device?"), _("Device Label"), ""
+            ) as dlg:
                 dlg.SetValue(service.label)
                 if dlg.ShowModal() == wx.ID_OK:
                     service.label = dlg.GetValue()
@@ -132,7 +134,9 @@ class DevicePanel(wx.Panel):
         s = self.devices_tree.GetSelection()
         data = self.devices_tree.GetItemData(s)
         if self.context.device is data:
-            wx.MessageDialog(None, _("Cannot remove the currently active device."), _("Error")).ShowModal()
+            wx.MessageDialog(
+                None, _("Cannot remove the currently active device."), _("Error")
+            ).ShowModal()
             return
         data.destroy()
 

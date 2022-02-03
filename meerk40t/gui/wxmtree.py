@@ -81,7 +81,9 @@ class TreePanel(wx.Panel):
         self.context.signal("rebuild_tree")
 
     def __set_tree(self):
-        self.shadow_tree = ShadowTree(self.context.elements, self.GetParent(), self.wxtree)
+        self.shadow_tree = ShadowTree(
+            self.context.elements, self.GetParent(), self.wxtree
+        )
 
         self.Bind(
             wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree

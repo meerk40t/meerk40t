@@ -723,6 +723,7 @@ class Scene(Module, Job):
         @return:
         """
         import platform
+
         if cursor == "sizing":
             new_cursor = wx.CURSOR_SIZING
         elif cursor in ("size_nw", "size_se"):

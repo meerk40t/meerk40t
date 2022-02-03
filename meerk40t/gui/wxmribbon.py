@@ -64,7 +64,6 @@ class RibbonPanel(wx.Panel):
         self.pipe_state = None
         self._ribbon_dirty = False
 
-
     def set_buttons(self, new_values, button_bar):
         button_bar.ClearButtons()
         buttons = []

@@ -330,11 +330,7 @@ class Context:
         @param key: relative key for the value
         @return: the value associated with the key otherwise None
         """
-        return self._kernel.read_persistent(
-            t,
-            self._path,
-            key
-        )
+        return self._kernel.read_persistent(t, self._path, key)
 
     def read_persistent_attributes(self, obj: Any) -> None:
         """
@@ -347,7 +343,9 @@ class Context:
         """
         self._kernel.read_persistent_attributes(self._path, obj)
 
-    def read_persistent_string_dict(self, dictionary: Optional[Dict] = None, suffix: bool = False) -> Dict:
+    def read_persistent_string_dict(
+        self, dictionary: Optional[Dict] = None, suffix: bool = False
+    ) -> Dict:
         """
         Delegate to kernel to get a local string of dictionary values.
 
@@ -355,7 +353,9 @@ class Context:
         @param suffix:
         @return:
         """
-        return self._kernel.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
+        return self._kernel.read_persistent_string_dict(
+            self._path, dictionary=dictionary, suffix=suffix
+        )
 
     def clear_persistent(self) -> None:
         """
@@ -1044,7 +1044,11 @@ class Kernel(Settings):
         self.version = version
 
         # Persistent Settings
-        Settings.__init__(self, self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        Settings.__init__(
+            self,
+            self.name,
+            "{profile}.cfg".format(name=name, profile=profile, version=version),
+        )
         self.settings = self
 
         # Boot State
@@ -3357,6 +3361,7 @@ class Kernel(Settings):
 
         def beep(channel, _, **kwargs):
             import platform
+
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 try:
@@ -3368,6 +3373,7 @@ class Kernel(Settings):
                     pass
             elif OS_NAME == "Darwin":  # Mac
                 import os
+
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             else:  # Assuming other linux like system
                 print("\a")  # Beep.
@@ -3838,7 +3844,11 @@ class Kernel(Settings):
                 return
             if directory == "&":
                 self.current_directory = os.path.dirname(self._config_file)
-                channel(_("Configuration Directory: {dir}").format(dir=str(self.current_directory)))
+                channel(
+                    _("Configuration Directory: {dir}").format(
+                        dir=str(self.current_directory)
+                    )
+                )
                 return
             if directory == "@":
                 import sys
@@ -3908,6 +3918,7 @@ class Kernel(Settings):
 
     # Prompt should be replaced with higher level versions of this depending on the user interface.
     prompt = _text_prompt
+
 
 # ==========
 # END KERNEL
@@ -3984,11 +3995,7 @@ class Channel:
                 message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
         for w in self.watchers:
-            if (
-                isinstance(w, Channel)
-                and w.name == "console"
-                and print in w.watchers
-            ):
+            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
         for w in self.watchers:
