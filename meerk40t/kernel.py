@@ -1372,8 +1372,6 @@ class Kernel(Settings):
         @param assigned: Should this service be assigned when activated
         @return:
         """
-        kernel_context = self.get_context("kernel")
-        setattr(kernel_context, "activated_{domain}".format(domain=domain), service.path)
         # Deactivate anything on this domain.
         self.deactivate(domain)
 

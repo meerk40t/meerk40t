@@ -17,7 +17,7 @@ PLOT_RIGHT_LOWER = 1024
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
-        last_device = kernel.read_persistent(str, "kernel", "activated_device", None)
+        last_device = kernel.read_persistent(str, "/", "activated_device", None)
         if last_device:
             kernel.activate_service_path("device", last_device)
 
@@ -25,3 +25,5 @@ def plugin(kernel, lifecycle=None):
             preferred_device = kernel.root.setting("preferred_device", "lhystudios")
             # Nothing has yet established a device. Boot this device.
             kernel.root("service device start {preferred_device}\n".format(preferred_device=preferred_device))
+    if lifecycle == "preshutdown":
+        setattr(kernel.root, "activated_device", kernel.device.path)
