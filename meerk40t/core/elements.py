@@ -4414,11 +4414,11 @@ class Elemental(Modifier):
             input_type="tree",
             output_type="tree",
         )
-        def emphasized(channel, _, **kwargs):
+        def selected(channel, _, **kwargs):
             """
             Set tree list to selected node
             """
-            return "tree", list(self.flat(emphasized=True))
+            return "tree", list(self.flat(selected=True))
 
         @context.console_command(
             "highlighted",
@@ -4452,14 +4452,14 @@ class Elemental(Modifier):
         )
         def delete(channel, _, data=None, **kwargs):
             """
-            Delete node. Due to nodes within nodes, only the first node is deleted.
+            Delete nodes.
             Structural nodes such as root, elements, and operations are not able to be deleted
             """
             for n in data:
+                # Cannot delete structure nodes.
                 if n.type not in ("root", "branch elems", "branch ops"):
-                    # Cannot delete structure nodes.
-                    n.remove_node()
-                    break
+                    if n._parent is not None:
+                        n.remove_node()
             return "tree", [self._tree]
 
         @context.console_command(
