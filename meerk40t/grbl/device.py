@@ -1305,33 +1305,28 @@ class GrblSerialController:
     def _sending(self):
         tries = 0
         while self.laser is not None:
-            try:
-                if len(self.buffer):
-                    with self.write_buffer_lock:
-                        line = self.buffer[0]
-                        self.laser.write(bytes(line, "utf-8"))
-                        self.send(line)
-                        self.service.signal("serial;buffer", len(self.buffer))
+            if len(self.buffer):
+                with self.write_buffer_lock:
+                    line = self.buffer[0]
+                    self.laser.write(bytes(line, "utf-8"))
+                    self.send(line)
+                    self.service.signal("serial;buffer", len(self.buffer))
 
-                        response = self.laser.readline()
-                        str_response = str(response, 'utf-8')
-                        str_response = str_response.strip()
-                        self.service.signal("serial;response", str_response)
-                        self.recv(str_response)
-                        if str_response == "ok":
-                            self.channel("Response: %s" % str_response)
-                        else:
-                            self.channel("Response Not-Ok: %s" % str_response)
+                    response = self.laser.readline()
+                    str_response = str(response, 'utf-8')
+                    str_response = str_response.strip()
+                    self.service.signal("serial;response", str_response)
+                    self.recv(str_response)
+                    if str_response == "ok":
+                        self.channel("Response: %s" % str_response)
+                    else:
+                        self.channel("Response Not-Ok: %s" % str_response)
 
-                        self.buffer.pop(0)
-                    tries = 0
-                else:
-                    tries += 1
-                    time.sleep(0.1)
-            except (ConnectionError, OSError):
+                    self.buffer.pop(0)
+                tries = 0
+            else:
                 tries += 1
-                self.close()
-                time.sleep(0.05)
+                time.sleep(0.1)
             if tries >= 20:
                 with self.write_buffer_lock:
                     if len(self.buffer) == 0:
