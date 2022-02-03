@@ -1209,7 +1209,7 @@ class GrblSerialController:
         self.buffer_mode = 0  # 1:1 okay, send lines.
         self.line_ok = 0
         self.line_buffer = 0
-        self.open()
+        self._start()
 
     def open(self):
         self._connect()
@@ -1264,9 +1264,9 @@ class GrblSerialController:
         with self.write_buffer_lock:
             self.buffer.append(data)
             self.service.signal("serial;buffer", len(self.buffer))
-        self._start()
 
     def _start(self):
+        self.open()
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
