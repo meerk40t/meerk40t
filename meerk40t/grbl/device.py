@@ -145,7 +145,7 @@ def plugin(kernel, lifecycle=None):
                     ctx.close("grbl")
                     ctx.close("emulator/grbl")
                     return
-                ctx.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r\n"
+                ctx.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r"
                 channel(_("GRBL Mode."))
                 if not silent:
                     console = kernel.channel("console")
@@ -341,7 +341,7 @@ class GRBLDevice(Service, ViewPort):
         def gcode(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.channel("grbl")(remainder + '\r\n')
+                self.channel("grbl")(remainder + '\r')
 
         @self.console_command(
             ("soft_reset", "estop"),
@@ -477,7 +477,7 @@ class GRBLDriver(Parameters):
         if self.speed_dirty:
             line.append("F%f" % self.feed_convert(self.speed))
             self.speed_dirty = False
-        self.grbl(" ".join(line) + "\r\n")
+        self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
         self.g91_absolute()
@@ -522,23 +522,23 @@ class GRBLDriver(Parameters):
     def clean(self):
         if self.absolute_dirty:
             if self._absolute:
-                self.grbl("G90\r\n")
+                self.grbl("G90\r")
             else:
-                self.grbl("G91\r\n")
+                self.grbl("G91\r")
         self.absolute_dirty = False
 
         if self.feedrate_dirty:
             if self.feed_mode == 94:
-                self.grbl("G94\r\n")
+                self.grbl("G94\r")
             else:
-                self.grbl("G93\r\n")
+                self.grbl("G93\r")
         self.feedrate_dirty = False
 
         if self.units_dirty:
             if self.units == 20:
-                self.grbl("G20\r\n")
+                self.grbl("G20\r")
             else:
-                self.grbl("G21\r\n")
+                self.grbl("G21\r")
         self.units_dirty = False
 
     def g90_relative(self):
@@ -594,7 +594,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r\n")
+        self.grbl("M3\r")
 
     def laser_on(self, *values):
         """
@@ -603,7 +603,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M5\r\n")
+        self.grbl("M5\r")
 
     def plot(self, plot):
         """
@@ -675,7 +675,7 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
-        self.grbl("G28\r\n")
+        self.grbl("G28\r")
 
     def rapid_mode(self, *values):
         """
@@ -693,7 +693,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M5\r\n")
+        self.grbl("M5\r")
 
     def program_mode(self, *values):
         """
@@ -701,7 +701,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r\n")
+        self.grbl("M3\r")
 
     def raster_mode(self, *values):
         """
@@ -746,7 +746,7 @@ class GRBLDriver(Parameters):
         @param t:
         @return:
         """
-        self.grbl("G04 S{time}\r\n".format(time=t))
+        self.grbl("G04 S{time}\r".format(time=t))
 
     def wait_finish(self, *values):
         """
@@ -860,7 +860,7 @@ class GRBLDriver(Parameters):
                 power = 1000
             s = power
             parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r\n" % "|".join(parts))
+            self.grbl_write("<%s>\r" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
             self.context("resume\n")
         elif bytes_to_write == "!":  # Pause.
@@ -895,24 +895,24 @@ class GRBLDriver(Parameters):
             self.buffer = self.buffer[pos + 1 :]
             cmd = self.process_line(command)
             if cmd == 0:  # Execute GCode.
-                self.grbl_write("ok\r\n")
+                self.grbl_write("ok\r")
             else:
-                self.grbl_write("error:%d\r\n" % cmd)
+                self.grbl_write("error:%d\r" % cmd)
 
     def process_line(self, data):
         if data.startswith("$"):
             if data == "$":
                 self.grbl_write(
-                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r"
                 )
                 return 0
             elif data == "$$":
                 for s in self.settings:
                     v = self.settings[s]
                     if isinstance(v, int):
-                        self.grbl_write("$%d=%d\r\n" % (s, v))
+                        self.grbl_write("$%d=%d\r" % (s, v))
                     elif isinstance(v, float):
-                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
+                        self.grbl_write("$%d=%.3f\r" % (s, v))
                 return 0
             if GRBL_SET_RE.match(data):
                 settings = list(GRBL_SET_RE.findall(data))[0]
