@@ -1193,7 +1193,7 @@ class GRBLDriver(Parameters):
 class SerialConnection:
     def __init__(self, context):
         self.service = context
-        self.channel = self.service.channel("grbl_state")
+        self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel("grbl_send")
         self.reply = self.service.channel("grbl_recv")
         self.laser = None
