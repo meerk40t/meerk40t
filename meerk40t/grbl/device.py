@@ -1223,7 +1223,7 @@ class GrblSerialController:
                 str_response = str(response, 'utf-8')
                 self.channel(str_response)
 
-                if "grbl" in str_response.lower():
+                if "grbl" in str_response.lower() or "marlin" in str_response.lower():
                     self.channel("GRBL Connection Established.")
                     return True
         except TimeoutError:
@@ -1327,10 +1327,10 @@ class GrblSerialController:
             else:
                 tries += 1
                 time.sleep(0.1)
-            if tries >= 20:
-                with self.write_buffer_lock:
-                    if len(self.buffer) == 0:
-                        break
+            # if tries >= 20:
+            #     with self.write_buffer_lock:
+            #         if len(self.buffer) == 0:
+            #             break
 
     def __repr__(self):
         return "GRBLSerial('%s:%s')" % (
