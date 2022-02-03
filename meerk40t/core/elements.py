@@ -6836,6 +6836,7 @@ class Elemental(Modifier):
                     except OSError:
                         return False
                     if results:
+                        self.context("scene focus -4% -4% 104% 104%\n")
                         return True
         return False
 
