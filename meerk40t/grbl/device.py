@@ -673,7 +673,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("$H\r\n")
+        self.grbl("G28\r\n")
 
     def rapid_mode(self, *values):
         """
@@ -744,7 +744,7 @@ class GRBLDriver(Parameters):
         @param t:
         @return:
         """
-        self.write("G04 S{time}".format(time=t))
+        self.grbl("G04 S{time}\r\n".format(time=t))
 
     def wait_finish(self, *values):
         """
@@ -1245,27 +1245,19 @@ class GrblSerialController:
             self.channel("Open Failed.")
             return
         self.channel("Connecting to GRBL...")
-        try:
-            while True:
-                response = self.laser.readline()
-                str_response = str(response, 'utf-8')
-                self.channel(str_response)
-
-                if "grbl" in str_response.lower():
-                    self.channel("GRBL Connection Established.")
-                    return True
-                if "marlin" in str_response.lower():
-                    self.channel("Marlin Connection Established.")
-                    while True:
-                        response = self.laser.readline()
-                        str_response = str(response, 'utf-8')
-                        self.channel(str_response)
-                        if not str_response:
-                            return True
-                    continue
-        except TimeoutError:
-            pass
-        return False
+        while True:
+            response = self.laser.readline()
+            str_response = str(response, 'utf-8')
+            self.channel(str_response.strip())
+            if not str_response:
+                return
+            if str_response.startswith("echo:"):
+                self.service.channel("console")(str_response[:6])
+            if "grbl" in str_response.lower():
+                self.channel("GRBL Connection Established.")
+                return
+            if "marlin" in str_response.lower():
+                self.channel("Marlin Connection Established.")
 
     def close(self):
         if self.laser:
@@ -1281,7 +1273,7 @@ class GrblSerialController:
             self.laser = serial.Serial(
                 self.com_port,
                 self.baud_rate,
-                timeout=5,
+                timeout=0,
             )
             self.service.signal("serial;status", "connected")
             self.channel("Connected")
