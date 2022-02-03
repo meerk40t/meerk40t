@@ -270,7 +270,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "number_of_unicorns",
                 "object": self,
-                "default": math.tau,
+                "default": 7.0,
                 "type": float,
                 "label": _("How many unicorns?"),
                 "tip": _("I didn't really have any settings for this."),
