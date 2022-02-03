@@ -55,7 +55,7 @@ class ViewPort:
         self.width = Length(width).value(ppi=UNITS_PER_INCH)
         self.height = Length(height).value(ppi=UNITS_PER_INCH)
 
-    def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False):
+    def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False, unitless=UNITS_PER_PIXEL):
         """
         Axis 0 is X
         Axis 1 is Y
@@ -66,6 +66,8 @@ class ViewPort:
         @param axis:
         @param new_units:
         @param relative_length:
+        @param as_float:
+        @param unitless: factor for units with no units sets.
         @return:
         """
         if axis == 0:
@@ -75,7 +77,8 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
+            v = Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
+            return v * unitless if v is not None else None
         elif new_units == "mm":
             return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
         elif new_units == "inch":
