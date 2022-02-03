@@ -3639,13 +3639,13 @@ class Elemental(Service):
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                center_x = self.device.length(py, 1)
+                center_y = self.device.length(py, 1)
             else:
-                center_x = (bounds[3] + bounds[1]) / 2.0
+                center_y = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_x))
+            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
             try:
                 if not absolute:
                     for e in data:
