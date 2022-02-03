@@ -304,7 +304,7 @@ class GRBLDevice(Service, ViewPort):
                 self.channel("grbl")(remainder + '\r\n')
 
         @self.console_command(
-            ("soft_reset","estop"),
+            ("soft_reset", "estop"),
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
         )
@@ -388,8 +388,6 @@ class GRBLDriver(Parameters):
 
         self.home_adjust = None
 
-        self.flip_x = 1  # Assumes the GCode is flip_x, -1 is flip, 1 is normal
-        self.flip_y = 1  # Assumes the Gcode is flip_y,  -1 is flip, 1 is normal
         self.move_mode = 0
         self.buffer = ""
         self.reply = None
@@ -440,11 +438,9 @@ class GRBLDriver(Parameters):
         if self.speed_dirty:
             line.append("F%f" % self.feed_convert(self.speed))
             self.speed_dirty = False
-        self.grbl(" ".join(line))
-        self.grbl("\r\n")
+        self.grbl(" ".join(line) + "\r\n")
 
     def move_abs(self, x, y):
-        # TODO: Should use $J syntax
         self.g91_absolute()
         self.clean()
         old_current_x = self.service.current_x
@@ -638,6 +634,8 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
+        self.native_x = 0
+        self.native_y = 0
         self.grbl("G28\r\n")
 
     def rapid_mode(self, *values):
@@ -1196,10 +1194,10 @@ class GrblController:
 
         self.write_buffer_lock = threading.RLock()
         self.buffer = []
+        self.send_queue = []
         self.sending_thread = None
         self.buffer_mode = 0  # 1:1 okay, send lines.
-        self.line_ok = 0
-        self.line_buffer = 0
+        self.lines_buffered = 0
         self._start()
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
@@ -1248,12 +1246,9 @@ class GrblController:
             response = self.connection.read()
             if response is None:
                 continue
-            print(response)
             self.channel(response)
             if not response:
                 time.sleep(0.1)
-            if response.startswith("echo:"):
-                self.service.channel("console")(response[6:])
             if "grbl" in response.lower():
                 self.channel("GRBL Connection Established.")
                 return
@@ -1262,8 +1257,8 @@ class GrblController:
                 return
 
     def close(self):
-        if self.laser:
-            self._disconnect()
+        if self.connection.connected:
+            self.connection.disconnect()
 
     def write(self, data):
         self.service.signal("serial;write", data)
@@ -1288,10 +1283,11 @@ class GrblController:
     def _sending(self):
         while self.connection.connected:
             write = 0
-            if len(self.buffer):
+            if len(self.buffer) and len(self.send_queue) <= 1:
                 line = self.buffer[0]
                 self.connection.write(line)
                 self.send(line)
+                self.send_queue.append(line)
                 self.service.signal("serial;buffer", len(self.buffer))
                 self.buffer.pop(0)
                 write += 1
@@ -1303,14 +1299,17 @@ class GrblController:
                 self.service.signal("serial;response", response)
                 self.recv(response)
                 if response == "ok":
+                    self.send_queue.pop(0)
                     self.channel("Response: %s" % response)
+                if response.startswith("echo:"):
+                    self.service.channel("console")(response[5:])
                 if response.startswith("error"):
                     self.channel("ERROR: %s" % response)
                 else:
-                    self.channel("Data:: %s" % response)
+                    self.channel("Data: %s" % response)
                 read += 1
             if read == 0 and write == 0:
-                time.sleep(0.1)
+                time.sleep(0.05)
 
     def __repr__(self):
         return "GRBLSerial('%s:%s')" % (
