@@ -367,7 +367,7 @@ class GRBLDriver(Parameters):
         self.g21_units_mm()
         self.g91_absolute()
 
-        self.grbl = self.service.channel("grbl", pure=True, line_end='\r\n')
+        self.grbl = self.service.channel("grbl", pure=True)
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -459,6 +459,7 @@ class GRBLDriver(Parameters):
             line.append("F%f" % self.feed_convert(self.speed))
             self.speed_dirty = False
         self.grbl(" ".join(line))
+        self.grbl("\r\n")
 
     def move_abs(self, x, y):
         # TODO: Should use $J syntax
@@ -504,23 +505,23 @@ class GRBLDriver(Parameters):
     def clean(self):
         if self.absolute_dirty:
             if self._absolute:
-                self.grbl("G90")
+                self.grbl("G90\r\n")
             else:
-                self.grbl("G91")
+                self.grbl("G91\r\n")
         self.absolute_dirty = False
 
         if self.feedrate_dirty:
             if self.feed_mode == 94:
-                self.grbl("G94")
+                self.grbl("G94\r\n")
             else:
-                self.grbl("G93")
+                self.grbl("G93\r\n")
         self.feedrate_dirty = False
 
         if self.units_dirty:
             if self.units == 20:
-                self.grbl("G20")
+                self.grbl("G20\r\n")
             else:
-                self.grbl("G21")
+                self.grbl("G21\r\n")
         self.units_dirty = False
 
     def g90_relative(self):
@@ -576,7 +577,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3")
+        self.grbl("M3\r\n")
 
     def laser_on(self, *values):
         """
@@ -585,7 +586,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M5")
+        self.grbl("M5\r\n")
 
     def plot(self, plot):
         """
@@ -655,7 +656,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("$H")
+        self.grbl("$H\r\n")
 
     def rapid_mode(self, *values):
         """
@@ -673,7 +674,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M5")
+        self.grbl("M5\r\n")
 
     def program_mode(self, *values):
         """
@@ -681,7 +682,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3")
+        self.grbl("M3\r\n")
 
     def raster_mode(self, *values):
         """
