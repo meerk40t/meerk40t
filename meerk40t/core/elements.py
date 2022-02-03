@@ -4459,7 +4459,6 @@ class Elemental(Modifier):
                 if n.type not in ("root", "branch elems", "branch ops"):
                     # Cannot delete structure nodes.
                     n.remove_node()
-                    break
             return "tree", [self._tree]
 
         @context.console_command(
