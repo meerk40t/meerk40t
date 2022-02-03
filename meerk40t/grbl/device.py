@@ -1,3 +1,5 @@
+import math
+
 import serial
 import os
 import re
@@ -224,20 +226,61 @@ class GRBLDevice(Service, ViewPort):
         ]
         self.register_choices("bed_dim", choices)
         ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
+
         self.settings = dict()
         self.state = 0
 
-        self.setting(int, "connection", 1)
+        choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": "grbl",
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+            },
+            {
+                "attr": "com_port",
+                "object": self,
+                "default": False,
+                "type": str,
+                "label": _("COM Port"),
+                "tip": _("What com port does this device connect to?"),
+            },
+            {
+                "attr": "baud_rate",
+                "object": self,
+                "default": 115200,
+                "type": int,
+                "label": _("Baud Rate"),
+                "tip": _("Baud Rate of the device"),
+            },
+            {
+                "attr": "planning_buffer_size",
+                "object": self,
+                "default": 255,
+                "type": int,
+                "label": _("Planning Buffer Size"),
+                "tip": _("Size of Planning Buffer"),
+            },
+        ]
+        self.register_choices("grbl-connection", choices)
 
-        self.setting(str, "com_port", 'COM8')
-        self.setting(int, "baud_rate", 115200)
-
-        self.setting(int, "port", 23)
-        self.setting(str, "address", "localhost")
-
-        self.setting(str, "line_end", "\n")
+        choices = [
+            {
+                "attr": "number_of_unicorns",
+                "object": self,
+                "default": math.tau,
+                "type": float,
+                "label": _("How many unicorns?"),
+                "tip": _("I didn't really have any settings for this."),
+            },
+        ]
+        self.register_choices("grbl-global", choices)
 
         self.driver = GRBLDriver(self)
+        self.controller = GrblController(self)
+        self.channel("grbl").watch(self.controller.write)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
@@ -289,9 +332,6 @@ class GRBLDevice(Service, ViewPort):
                 channel("Available COM ports")
                 for x in ports:
                     channel(x.description)
-            else:
-                connection = GrblController(self, com.upper(), baud)
-                self.channel("grbl").watch(connection.write)
 
         @self.console_command(
             "gcode",
@@ -1181,14 +1221,14 @@ class GRBLDriver(Parameters):
 
 
 class GrblController:
-    def __init__(self, context, com_port, baud_rate):
+    def __init__(self, context):
         self.service = context
-        self.com_port = com_port
+        self.com_port = self.service.com_port
+        self.baud_rate = self.service.baud_rate
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel("send-%s" % com_port.lower())
-        self.recv = self.service.channel("recv-%s" % com_port.lower())
-
-        self.connection = SerialConnection(com_port, baud_rate, self.channel)
+        self.send = self.service.channel("send-%s" % self.com_port.lower())
+        self.recv = self.service.channel("recv-%s" % self.com_port.lower())
+        self.connection = SerialConnection(self.service)
         self.driver = self.service.driver
         self.sending_thread = None
 
@@ -1198,8 +1238,7 @@ class GrblController:
         self.commands_in_device_buffer = []
         self.buffer_mode = 1  # 1:1 okay, send lines.
         self.buffered_characters = 0
-        self.device_buffer_size = 255
-        self._start()
+        self.device_buffer_size = self.service.planning_buffer_size
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -1238,6 +1277,8 @@ class GrblController:
         }
 
     def open(self):
+        if self.connection.connected:
+            return
         self.connection.connect()
         if not self.connection.connected:
             self.channel("Could not connect.")
@@ -1262,6 +1303,7 @@ class GrblController:
             self.connection.disconnect()
 
     def write(self, data):
+        self._start()
         self.service.signal("serial;write", data)
         with self.lock_sending_queue:
             self.sending_queue.append(data)
@@ -1329,10 +1371,9 @@ class GrblController:
 
 
 class SerialConnection:
-    def __init__(self, com_port, baud_rate, channel):
-        self.com_port = com_port
-        self.baud_rate = baud_rate
-        self.channel = channel
+    def __init__(self, service):
+        self.service = service
+        self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.laser = None
         self.read_buffer = bytearray()
 
@@ -1362,9 +1403,11 @@ class SerialConnection:
 
         try:
             self.channel("Attempting to Connect...")
+            com_port = self.service.com_port
+            baud_rate = self.service.baud_rate
             self.laser = serial.Serial(
-                self.com_port,
-                self.baud_rate,
+                com_port,
+                baud_rate,
                 timeout=0,
             )
             self.channel("Connected")
