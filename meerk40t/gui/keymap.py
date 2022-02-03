@@ -13,7 +13,9 @@ class KeymapPanel(wx.Panel):
         self.context = context
 
         self.list_keymap = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SORT_ASCENDING,
         )
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -71,7 +73,7 @@ class KeymapPanel(wx.Panel):
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
-        convert = menu.Append(wx.ID_ANY, _("Reset Default"), "", wx.ITEM_NORMAL)
+        convert = menu.Append(wx.ID_ANY, _("Reset Keymap to defaults"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
         menu.Destroy()
@@ -79,7 +81,6 @@ class KeymapPanel(wx.Panel):
     def on_tree_popup_clear(self, element):
         def delete(event=None):
             self.context.default_keymap()
-            self.list_keymap.DeleteAllItems()
             self.reload_keymap()
 
         return delete
@@ -96,11 +97,9 @@ class KeymapPanel(wx.Panel):
         return delete
 
     def reload_keymap(self):
-        i = 0
-        for key in self.context.bind.keymap:
-            value = self.context.bind.keymap[key]
-            m = self.list_keymap.InsertItem(i, str(key))
-            i += 1
+        self.list_keymap.DeleteAllItems()
+        for key, value in self.context.bind.items():
+            m = self.list_keymap.InsertItem(0, str(key))
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(value))
 

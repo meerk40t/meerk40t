@@ -1500,6 +1500,7 @@ class RootNode(Node):
     """
 
     def __init__(self, context):
+        _ = context._
         super().__init__(None)
         self._root = self
         self.set_label("Project")
@@ -1517,8 +1518,8 @@ class RootNode(Node):
             "opnode": OpNode,
             "cutcode": CutNode,
         }
-        self.add(type="branch ops", label="Operations")
-        self.add(type="branch elems", label="Elements")
+        self.add(type="branch ops", label=_("Operations"))
+        self.add(type="branch elems", label=_("Elements"))
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
@@ -4200,11 +4201,11 @@ class Elemental(Service):
             input_type="tree",
             output_type="tree",
         )
-        def emphasized(channel, _, **kwargs):
+        def selected(channel, _, **kwargs):
             """
             Set tree list to selected node
             """
-            return "tree", list(self.flat(emphasized=True))
+            return "tree", list(self.flat(selected=True))
 
         @self.console_command(
             "highlighted",
@@ -4238,14 +4239,14 @@ class Elemental(Service):
         )
         def delete(channel, _, data=None, **kwargs):
             """
-            Delete node. Due to nodes within nodes, only the first node is deleted.
+            Delete nodes.
             Structural nodes such as root, elements, and operations are not able to be deleted
             """
             for n in data:
+                # Cannot delete structure nodes.
                 if n.type not in ("root", "branch elems", "branch ops"):
-                    # Cannot delete structure nodes.
-                    n.remove_node()
-                    break
+                    if n._parent is not None:
+                        n.remove_node()
             return "tree", [self._tree]
 
         @self.console_command(
@@ -7034,7 +7035,8 @@ class Elemental(Service):
                     except OSError:
                         return False
                     if results:
-                        self.signal("tree_changed")
+                        self.signal("scene focus -4% -4% 104% 104%\n")
+                        self.signal("tree_changed\n")
                         return True
         return False
 
