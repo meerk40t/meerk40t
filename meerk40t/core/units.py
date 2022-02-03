@@ -50,10 +50,10 @@ class ViewPort:
         self.set_params(x, y, width, height)
 
     def set_params(self, x, y, width, height):
-        self.x = Length(x).value(ppi=UNITS_PER_INCH)
-        self.y = Length(y).value(ppi=UNITS_PER_INCH)
-        self.width = Length(width).value(ppi=UNITS_PER_INCH)
-        self.height = Length(height).value(ppi=UNITS_PER_INCH)
+        self.x = Length(x).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self.y = Length(y).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self.width = Length(width).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self.height = Length(height).value(ppi=UNITS_PER_INCH, unitless=1.0)
 
     def length(self, value, axis=None, new_units=None, relative_length=None, as_float=False, unitless=UNITS_PER_PIXEL):
         """
@@ -637,6 +637,11 @@ class Length(object):
     ):
         if self.amount is None:
             return None
+        if self.units == "":
+            if unitless:
+                return self.amount * unitless
+            else:
+                return self.amount
         if self.units == "%":
             if relative_length is None:
                 return self
@@ -665,7 +670,7 @@ class Length(object):
             if ppi is None:
                 return self
             return self.amount * ppi
-        if self.units == "px" or self.units == "":
+        if self.units == "px":
             return self.amount
         if self.units == "pt":
             return self.amount * 1.3333
@@ -680,7 +685,7 @@ class Length(object):
                 return self
             return self.amount * float(font_height)
         try:
-            return float(self) * unitless
+            return float(self)
         except ValueError:
             return self
 
