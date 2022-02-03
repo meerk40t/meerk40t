@@ -85,10 +85,6 @@ def plugin(kernel, lifecycle=None):
                     path=d, suffix=suffix
                 )
             )
-    if lifecycle == "boot":
-        if not hasattr(kernel, "device"):
-            # Nothing has yet established a device. Boot this device.
-            kernel.root("service device start lhystudios\n")
 
 
 class LihuiyuDevice(Service, ViewPort):

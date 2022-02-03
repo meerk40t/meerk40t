@@ -144,6 +144,10 @@ def run():
 
     kernel.add_plugin(ch341.plugin)
 
+    from .device import basedevice
+
+    kernel.add_plugin(basedevice.plugin)
+
     from .lihuiyu import device as lhystudios_driver
 
     kernel.add_plugin(lhystudios_driver.plugin)
