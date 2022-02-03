@@ -1204,6 +1204,9 @@ class GrblSerialController:
         self.buffer = []
         self.sending_thread = None
         self.recving_thread = None
+        self.buffer_mode = 0  # 1:1 okay, send lines.
+        self.line_ok = 0
+        self.line_buffer = 0
 
     def open(self):
         self.connect()
@@ -1288,6 +1291,9 @@ class GrblSerialController:
                 # Loop again.
                 continue
 
+    def wait_ok(self):
+        return True
+
     def _sending(self):
         tries = 0
         while self.laser is not None:
@@ -1298,6 +1304,8 @@ class GrblSerialController:
                         self.laser.write(bytes(line, "utf-8"))
                         self.send(line)
                         self.service.signal("serial;buffer", len(self.buffer))
+                        self.wait_ok()
+                        self.buffer.pop(0)
                     tries = 0
                 else:
                     tries += 1
