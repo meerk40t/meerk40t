@@ -1227,7 +1227,7 @@ class GrblSerialController:
                     self.channel("GRBL Connection Established.")
                     return True
         except TimeoutError:
-            self.close()
+            pass
         return False
 
     def close(self):
