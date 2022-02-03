@@ -4452,13 +4452,14 @@ class Elemental(Modifier):
         )
         def delete(channel, _, data=None, **kwargs):
             """
-            Delete node. Due to nodes within nodes, only the first node is deleted.
+            Delete nodes.
             Structural nodes such as root, elements, and operations are not able to be deleted
             """
             for n in data:
+                # Cannot delete structure nodes.
                 if n.type not in ("root", "branch elems", "branch ops"):
-                    # Cannot delete structure nodes.
-                    n.remove_node()
+                    if n._parent is not None:
+                        n.remove_node()
             return "tree", [self._tree]
 
         @context.console_command(
