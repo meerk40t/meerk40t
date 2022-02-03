@@ -1287,6 +1287,8 @@ class GrblSerialController:
                 self.recv(str_response)
                 if str_response == "ok":
                     self.channel("Response: %s" % str_response)
+                else:
+                    self.channel("Response Not-Ok: %s" % str_response)
             except TimeoutError:
                 # Loop again.
                 continue
