@@ -97,9 +97,7 @@ class TestCutcode(unittest.TestCase):
         laserop.add(svg_image, type="opnode")
 
         # raster_step is default to 0 and not set.
-        self.assertRaises(AssertionError, CutCode, laserop.as_cutobjects())
-
-        laserop.settings.raster_step = 2
+        laserop.raster_step = 2
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 1)
         rastercut = cutcode[0]

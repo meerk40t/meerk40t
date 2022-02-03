@@ -1281,6 +1281,7 @@ class LaserOperation(Node, Parameters):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
+                settings = dict(self.settings)
                 try:
                     self.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
@@ -1318,7 +1319,7 @@ class LaserOperation(Node, Parameters):
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
-                    settings=self.settings,
+                    settings=settings,
                     passes=passes,
                 )
                 cut.path = path
@@ -1331,7 +1332,7 @@ class LaserOperation(Node, Parameters):
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         crosshatch=True,
-                        settings=self.settings,
+                        settings=settings,
                         passes=passes,
                     )
                     cut.path = path

@@ -356,12 +356,12 @@ class LihuiyuDevice(Service, ViewPort):
             elif percent:
                 s = driver.speed * (s / 100.0)
             self.driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % self.settings.speed)
+            channel(_("Speed set at: %f mm/s") % self.driver.speed)
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command("power", help=_("Set Driver Power"))
         def power(command, channel, _, ppi=None, **kwargs):
-            original_power = self.settings.power
+            original_power = self.driver.power
             if ppi is None:
                 if original_power is None:
                     channel(_("Power is not set."))
