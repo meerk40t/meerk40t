@@ -3203,6 +3203,7 @@ class Elemental(Service):
                 channel(_("No text specified"))
                 return
             svg_text = SVGText(text)
+            svg_text *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             self.add_element(svg_text)
             if data is None:
                 return "elements", [svg_text]
