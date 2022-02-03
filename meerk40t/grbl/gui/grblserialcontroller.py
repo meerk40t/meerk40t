@@ -56,8 +56,11 @@ class SerialControllerPanel(wx.Panel):
         self.service("gcode {code}".format(code=self.gcode_text.GetValue()))
         self.gcode_text.Clear()
 
-    def update_text(self, text):
-        self.data_exchange.AppendText(text + "\n")
+    def update_sent(self, text):
+        self.data_exchange.AppendText("<--" + text + "\n")
+
+    def update_recv(self, text):
+        self.data_exchange.AppendText("-->\t" + text + "\n")
 
     def on_serial_status(self, origin, state):
         self.state = state
@@ -97,15 +100,15 @@ class SerialController(MWindow):
     def window_open(self):
         self.context.channel(
             "send-{name}".format(name=self.service.com_port.lower())
-        ).watch(self.serial_panel.update_text)
+        ).watch(self.serial_panel.update_sent)
         self.context.channel(
             "recv-{name}".format(name=self.service.com_port.lower())
-        ).watch(self.serial_panel.update_text)
+        ).watch(self.serial_panel.update_recv)
 
     def window_close(self):
         self.context.channel("send-{name}".format(name=self.service.com_port.lower())).unwatch(
-            self.serial_panel.update_text
+            self.serial_panel.update_sent
         )
         self.context.channel("recv-{name}".format(name=self.service.com_port.lower())).unwatch(
-            self.serial_panel.update_text
+            self.serial_panel.update_recv
         )
