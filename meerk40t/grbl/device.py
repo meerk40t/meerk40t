@@ -377,7 +377,7 @@ class GRBLDriver(Parameters):
         self.feed_mode = None
         self.feed_convert = None
         self.feed_invert = None
-        self.g94_feedrate()  # G94 DEFAULT, mm mode
+        self.g94_feedrate()  # G93 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
@@ -558,8 +558,8 @@ class GRBLDriver(Parameters):
             return
         self.feed_mode = 93
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.stepper_step_size / UNITS_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.stepper_step_size
+        self.feed_convert = lambda s: (60.0 * s) * self.stepper_step_size / UNITS_PER_MM
+        self.feed_invert = lambda s: (60.0 * s) * UNITS_PER_MM / self.stepper_step_size
         self.feedrate_dirty = True
 
     def g94_feedrate(self):
@@ -567,8 +567,8 @@ class GRBLDriver(Parameters):
             return
         self.feed_mode = 94
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.stepper_step_size / UNITS_PER_MM) * 60.0)
-        self.feed_invert = lambda s: s * ((self.stepper_step_size / UNITS_PER_MM) * 60.0)
+        self.feed_convert = lambda s: s / ((self.stepper_step_size / UNITS_PER_MM) / 60.0)
+        self.feed_invert = lambda s: s * ((self.stepper_step_size / UNITS_PER_MM) / 60.0)
         # units to mm, seconds to minutes.
         self.feedrate_dirty = True
 
@@ -1249,12 +1249,20 @@ class GrblSerialController:
             while True:
                 response = self.laser.readline()
                 str_response = str(response, 'utf-8')
-                print(str_response)
                 self.channel(str_response)
 
-                if "grbl" in str_response.lower() or "marlin" in str_response.lower():
+                if "grbl" in str_response.lower():
                     self.channel("GRBL Connection Established.")
                     return True
+                if "marlin" in str_response.lower():
+                    self.channel("Marlin Connection Established.")
+                    while True:
+                        response = self.laser.readline()
+                        str_response = str(response, 'utf-8')
+                        self.channel(str_response)
+                        if not str_response:
+                            return True
+                    continue
         except TimeoutError:
             pass
         return False
