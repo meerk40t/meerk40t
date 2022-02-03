@@ -251,11 +251,14 @@ class BindAlias(Modifier):
             self.default_keymap()
             return
         for key, values in DEFAULT_KEYMAP.items():
-            if key in context.keymap and context.keymap[key] in values[1:]:
+            if (
+                not key in context.keymap
+                or context.keymap[key] in values[1:]
+            ):
                 value = values[0]
                 if value:
                     context.keymap[key] = value
-                else:
+                elif key in context.keymap:
                     del context.keymap[key]
 
     def boot_alias(self):
@@ -267,11 +270,14 @@ class BindAlias(Modifier):
             self.default_alias()
             return
         for key, values in DEFAULT_ALIAS.items():
-            if key in context.alias and context.alias[key] in values[1:]:
+            if (
+                not key in context.alias
+                or context.alias[key] in values[1:]
+            ):
                 value = values[0]
                 if value:
                     context.alias[key] = value
-                else:
+                elif key in context.alias:
                     del context.alias[key]
 
     def default_keymap(self):
