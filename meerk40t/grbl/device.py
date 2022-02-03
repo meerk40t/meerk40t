@@ -1209,9 +1209,10 @@ class GrblSerialController:
         self.buffer_mode = 0  # 1:1 okay, send lines.
         self.line_ok = 0
         self.line_buffer = 0
+        self.open()
 
     def open(self):
-        self.connect()
+        self._connect()
         if not self.laser:
             self.channel("Open Failed.")
             return
@@ -1231,9 +1232,9 @@ class GrblSerialController:
 
     def close(self):
         if self.laser:
-            self.disconnect()
+            self._disconnect()
 
-    def connect(self):
+    def _connect(self):
         if self.laser:
             self.channel("Already connected")
             return
@@ -1252,7 +1253,7 @@ class GrblSerialController:
         except SerialException:
             self.channel("Serial connection could not be established.")
 
-    def disconnect(self):
+    def _disconnect(self):
         self.channel("Disconnected")
         self.service.signal("serial;status", "disconnected")
         if self.laser:
@@ -1266,7 +1267,6 @@ class GrblSerialController:
         self._start()
 
     def _start(self):
-        self.open()
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
