@@ -86,7 +86,7 @@ class DxfLoader:
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, kernel.device.bedheight
+                elements, dxf, entity, scale, kernel.device.height_as_nm
             )
 
         kernel.setting(bool, "dxf_center", True)
