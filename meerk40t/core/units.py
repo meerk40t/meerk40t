@@ -77,8 +77,7 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            v = Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length)
-            return v * unitless if v is not None else None
+            return Length(value).value(ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless)
         elif new_units == "mm":
             return Length(value).to_mm(ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float)
         elif new_units == "inch":
@@ -633,6 +632,7 @@ class Length(object):
         relative_length=None,
         font_size=None,
         font_height=None,
+        unitless=None,
         **kwargs,
     ):
         if self.amount is None:
@@ -680,7 +680,7 @@ class Length(object):
                 return self
             return self.amount * float(font_height)
         try:
-            return float(self)
+            return float(self) * unitless
         except ValueError:
             return self
 
