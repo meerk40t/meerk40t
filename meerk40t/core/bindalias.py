@@ -39,7 +39,7 @@ DEFAULT_KEYMAP = {
     "control+e": ("circle 500 500 500",),
     "control+d": ("element copy",),
     "control+o": ("outline",),
-    "control+b": ("align bedcenter",)
+    "control+b": ("align bedcenter",),
     "control+shift+o": ("outline 1mm",),
     "control+alt+o": ("outline -1mm",),
     "control+shift+h": ("scale -1 1",),
