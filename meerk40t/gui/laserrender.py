@@ -210,7 +210,7 @@ class LaserRender:
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.settings.line_color
+            c = cut.line_color
             if c is not color:
                 color = c
                 last_point = None
@@ -219,8 +219,8 @@ class LaserRender:
                     del p
                 p = gc.CreatePath()
                 self.set_pen(gc, c, width=7.0, alpha=127)
-            start = cut.start()
-            end = cut.end()
+            start = cut.start
+            end = cut.end
             if p is None:
                 p = gc.CreatePath()
             if last_point != start:
