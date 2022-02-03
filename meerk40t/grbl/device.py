@@ -304,14 +304,31 @@ class GRBLDevice(Service, ViewPort):
                 self.channel("grbl")(remainder + '\r\n')
 
         @self.console_command(
-            "soft_reset",
+            ("soft_reset","estop"),
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
-            if remainder is not None:
-                channel(remainder)
-                self.channel("grbl")('\x18')
+            self.driver.reset()
+
+        @self.console_command(
+            "pause",
+            help=_("Send realtime soft pause/resume gcode to the device"),
+            input_type=None,
+        )
+        def pause(command, channel, _, data=None, remainder=None, **kwgs):
+            if self.driver.paused:
+                self.driver.resume()
+            else:
+                self.driver.pause()
+
+        @self.console_command(
+            "resume",
+            help=_("Send realtime resume gcode to the device"),
+            input_type=None,
+        )
+        def pause(command, channel, _, data=None, remainder=None, **kwgs):
+            self.driver.resume()
 
     @property
     def current_x(self):
