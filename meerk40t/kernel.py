@@ -53,7 +53,7 @@ class Modifier:
             class_name=self.__class__.__name__,
             context=repr(self.context),
             name=self.name,
-            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+            channel='Channel({name})'.format(name=self.channel.name) if hasattr(self, "channel") and self.channel else "None",
         )
 
     def boot(self, *args, **kwargs):
