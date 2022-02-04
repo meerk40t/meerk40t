@@ -2252,7 +2252,7 @@ class Kernel:
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def context(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for name in self._plugins:
                     channel(name.__module__)
@@ -2483,7 +2483,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2501,7 +2501,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2519,7 +2519,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2539,7 +2539,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, filename=None, **kwargs):
+        def channel_save(channel, _, channel_name, filename=None, **kwargs):
             """
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """

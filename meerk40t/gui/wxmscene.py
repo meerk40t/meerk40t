@@ -132,7 +132,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoom_y", type=float, help="zoom amount from current"
         )
         @self.context.console_command("aspect", input_type="scene")
-        def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+        def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
@@ -143,7 +143,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoomfactor", type=float, help="zoom amount from current"
         )
         @self.context.console_command("zoom", input_type="scene")
-        def scene(command, _, channel, data, zoomfactor=1.0, **kwargs):
+        def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoomfactor)
             data.request_refresh()

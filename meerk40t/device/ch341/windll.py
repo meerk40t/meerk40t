@@ -149,14 +149,14 @@ class Handler(CH341Handler):
         CH341Handler.__init__(self, channel=channel, status=status)
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
-        except (NameError, OSError) as e:
-            self.channel(str(e))
-            raise ConnectionRefusedError
         except FileNotFoundError as e:
             self.channel("%s: %s" % (str(type(e)), str(e)))
             raise ImportError(
                 "FileNotFoundError for misconfigured CH341DLL.dll. See Issue #459"
             )
+        except (NameError, OSError) as e:
+            self.channel(str(e))
+            raise ConnectionRefusedError
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""

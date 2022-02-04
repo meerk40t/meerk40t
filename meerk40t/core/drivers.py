@@ -74,7 +74,9 @@ class Driver:
         context._quit = False
 
         self.rapid = self.root_context.opt_rapid_between
-        self.jog = self.root_context.opt_jog_mode
+        # # there is a method called jog and the following line overwrites it
+        # # I can find no other references to self.jog as an int in the code.
+        # self.jog = self.root_context.opt_jog_mode
         self.rapid_override = False
         self.rapid_override_speed_x = 50.0
         self.rapid_override_speed_y = 50.0
@@ -191,7 +193,9 @@ class Driver:
             self.spooled_item = element
         else:
             self.rapid = self.root_context.opt_rapid_between
-            self.jog = self.root_context.opt_jog_mode
+            # # there is a method called jog and the following line overwrites it
+            # # I can find no other references to self.jog as an int in the code.
+            # self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
