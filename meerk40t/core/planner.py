@@ -731,7 +731,6 @@ class CutPlan:
                     for g in groups:
                         g = [x[0] for x in g]
                         if len(g) == 1 and isinstance(g[0].object, SVGImage):
-                            print("standalone image in raster op appended")
                             images.append(g[0].object)
                             continue
                         # Ensure rasters are in original sequence
@@ -1645,8 +1644,7 @@ def inner_first_ident(context: CutGroup, channel=None):
         channel("Executing Inner-First Identification")
 
     groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
-    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
-    context.contains = closed_groups
+    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed and g.original_op == "Cut"]
 
     constrained = False
     for outer in closed_groups:
@@ -1657,6 +1655,12 @@ def inner_first_ident(context: CutGroup, channel=None):
             if inner.contains and outer in inner.contains:
                 continue
             if is_inside(inner, outer):
+                # if inner.bounding_box and outer.bounding_box:
+                    # print(
+                        # outer.__class__.__name__,outer.bounding_box,
+                        # "contains"
+                        # inner.__class__.__name__,inner.bounding_box
+                    # )
                 constrained = True
                 if outer.contains is None:
                     outer.contains = list()
