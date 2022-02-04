@@ -1165,7 +1165,7 @@ class LaserOperation(Node, Parameters):
                     else:
                         path = abs(object_path)
                     path.approximate_arcs_with_cubics()
-                self.line_color = path.stroke
+                settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
                     sp = Path(subpath)
                     if len(sp) == 0:
@@ -1295,21 +1295,20 @@ class LaserOperation(Node, Parameters):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
+                settings = self.derive()
                 try:
-                    self.raster_step = int(svg_image.values["raster_step"])
+                    settings["raster_step"] = int(svg_image.values["raster_step"])
                 except KeyError:
                     # This overwrites any step that may have been defined in settings.
-                    self.raster_step = (
-                        1  # If raster_step is not set image defaults to 1.
-                    )
-                if self.raster_step <= 0:
-                    self.raster_step = 1
+                    settings["raster_step"] = 1  # If raster_step is not set image defaults to 1.
+                if settings["raster_step"] <= 0:
+                    settings["raster_step"] = 1
+
                 try:
-                    self.raster_direction = int(svg_image.values["raster_direction"])
+                    settings["raster_direction"] = int(svg_image.values["raster_direction"])
                 except KeyError:
                     pass
-                settings = self.derive()
-                step = self.raster_step
+                step = settings["raster_step"]
                 matrix = svg_image.transform
                 pil_image = svg_image.image
                 pil_image, matrix = actualize(pil_image, matrix, step)
@@ -1337,8 +1336,7 @@ class LaserOperation(Node, Parameters):
                 cut.path = path
                 cut.original_op = self.operation
                 yield cut
-
-                if self.raster_direction == 4:
+                if settings["raster_direction"] == 4:
                     cut = RasterCut(
                         pil_image,
                         matrix.value_trans_x(),
