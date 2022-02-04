@@ -7,13 +7,6 @@ import sys
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
 
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = pi * 2
-
 """
 Laser software for the Stock-LIHUIYU laserboard.
 
