@@ -24,6 +24,19 @@ from .elements import LaserOperation
 
 MILS_IN_MM = 39.3701
 
+HORIZONTAL_ACCELERATION = [ # In mm/s
+    1, # acceleration 1
+    2, # acceleration 2
+    3, # acceleration 3
+    4, # acceleration 4
+]
+VERTICAL_ACCELERATION = [ # In mm/s
+    1, # acceleration 1
+    2, # acceleration 2
+    3, # acceleration 3
+    4, # acceleration 4
+]
+
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -659,7 +672,7 @@ class CutPlan:
             except AttributeError:
                 continue
             else:
-                if op.operation == "Raster":
+                if operation == "Raster":
                     nodes = list(op.flat(types=("elem", "opnode")))
                     reverse = self.context.classify_reverse
                     if reverse:
@@ -668,9 +681,47 @@ class CutPlan:
                     # Before determining overlapping groups, we need to add a margin
                     # primarily in the direction of the raster sweep.
                     # The minimum margin in both directions is the op overscan value.
-                    # If
+                    # If opt_inners_grouped is set, no extra margins are added
+                    # Otherwise margins = the acceleration/deceleration time * speed
+                    # are added to the sweep direction. Rasters closer than twice this
+                    # distance will be quicker rastered together - rasters further apart
+                    # will be quicker rastered separately.
+                    # The accleration / deceleration time is a function of the op speed
+                    # and acceleration value (1 to 4) which is either manually set or
+                    # a function of the speed.
+                    dx = dy = op.settings.overscan
+                    if not self.context.opt_inners_grouped:
+                        speed = op.settings.speed
+                        if op.settings.acceleration_custom:
+                            accel = op.settings.acceleration - 1
+                        elif 0 < speed <= 25.4:
+                            accel = 0
+                        elif 25.4 < speed <= 127:
+                            accel = 1
+                        elif 127 < speed <= 320:
+                            accel = 2
+                        else:
+                            accel = 3
+                        # T2B=0, B2T=1, R2L=2, L2R=3, X=4
+                        horizontal_sweep = op.settings.raster_direction in (0, 1, 4)
+                        vertical_sweep = op.settings.raster_direction in (2, 3, 4)
+                        # For cross-raster (type 4) it might make sense to group elements differently
+                        # and create different raster images, however this may be confusing,
+                        # could potentially lead to quality issues, and AFAIK cross-raster is rarely used.
+                        if horizontal_sweep:
+                            accel_dist_mils = speed * speed * MILS_IN_MM / HORIZONTAL_ACCELERATION[accel]
+                            dx = max(dx, accel_dist_mils)
+                        if vertical_sweep:
+                            accel_dist_mils = speed * speed * MILS_IN_MM / VERTICAL_ACCELERATION[accel]
+                            dy = max(dy, accel_dist_mils)
+
+                    def adjust_bbox(bbox):
+                        return bbox # debug inner
+                        x1, y1, x2, y2 = bbox
+                        return x1 - dx, y1 - dy, x2 + dx, y2 + dy
+
                     groups = group_overlapped_rasters(
-                        [(node, node.object.bbox(with_stroke=True)) for node in nodes]
+                        [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
                     )
 
                     step = max(1, op.settings.raster_step)
@@ -695,7 +746,7 @@ class CutPlan:
                                 time around because the renderer is what sets the size of the text. If the size hasn't
                                 already been set, the initial bounds are wrong.
                             """
-                            print("Retrying make_image_from_raster ({w},{h})".format(x=image.image_width, y=image.image_height))
+                            print("Retrying make_image_from_raster ({w},{h})".format(w=image.image_width, h=image.image_height))
                             image = self.make_image_from_raster(g, step=step)
                         images.append(image)
 
@@ -770,8 +821,12 @@ class CutPlan:
                 if op.operation == "Raster":
                     if len(op.children) == 0:
                         continue
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue  # make raster not needed since its a single real raster.
+                    for c in op.children:
+                        if not isinstance(c, SVGImage):
+                            break
+                    else:
+                        # make raster not needed since all children are already images
+                        continue
                     make_raster = self.context.registered.get("render-op/make_raster")
 
                     if make_raster is None:
@@ -1571,19 +1626,6 @@ def is_inside(inner, outer):
     return True
 
 
-def correct_empty(context: CutGroup):
-    """
-    Iterates through backwards deleting any entries that empty.
-    """
-    for index in range(len(context) - 1, -1, -1):
-        c = context[index]
-        if not isinstance(c, CutGroup):
-            continue
-        correct_empty(c)
-        if len(c) == 0:
-            del context[index]
-
-
 def inner_first_ident(context: CutGroup, channel=None):
     """
     Identifies closed CutGroups and then identifies any other CutGroups which
@@ -1648,6 +1690,19 @@ def inner_first_ident(context: CutGroup, channel=None):
             )
         )
     return context
+
+
+def correct_empty(context: CutGroup):
+    """
+    Iterates through backwards deleting any entries that empty.
+    """
+    for index in range(len(context) - 1, -1, -1):
+        c = context[index]
+        if not isinstance(c, CutGroup):
+            continue
+        correct_empty(c)
+        if len(c) == 0:
+            del context[index]
 
 
 def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
@@ -1717,7 +1772,6 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
-            closest = None
             for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
                 s = cut.start()
                 if (
