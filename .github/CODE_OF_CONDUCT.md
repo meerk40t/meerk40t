@@ -1,68 +1,40 @@
 # MeerK40t Code of Conduct
 
-This page is provided to set expectations about how all contributors, big or small,
-to the MeerK40t project are expected to behave towards one another and to the project as a whole.
-
-It is based on, and is a simplified version of,
-the [Contributor Covenant Code of Conduct v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+This page is provided to set expectations about how all contributors to the MeerK40t project,
+big or small, are expected to behave towards one another and to the project as a whole.
 
 ## Overview
 
 We want the MeerK40t project to be an open and welcoming environment.
-We expect contributors to make participation a harassment-free experience for everyone,
-regardless of age, body size, visible or invisible disability, ethnicity,
-sex characteristics, gender identity and expression, level of experience,
-education, socio-economic status, nationality, personal appearance,
-race, caste, color, religion, or sexual identity and orientation.
+We expect contributors to make participation a harassment-free experience
+but without limiting people's willingness or ability to engage in lively debate.
 
-## Our Standards
+People are welcome to participate of all ages, body sizes, with or without visible or invisible disability,
+of any ethnicity, sex characteristics, gender/sexual identity/orientation/expression, level of experience,
+education, socio-economic status, nationality, personal appearance, race/caste/color, or religion.
 
-Examples of behaviour that contributes to creating a positive environment
-include:
+These are not important factors. What is important is what you can contribute to the project -
+though, we should stress that the level of your contribution is not a valid excuse for poor behaviour.
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting the majority view or @Tatarize's overarching veto even if you disagree with it
-* Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
-* Using welcoming and inclusive language
-* Focusing on what is best not just for us as individuals, but for the overall community
+In simple terms, you are free to hold contrary opinions and to disagree,
+but equally you need respect other people's right to a viewpoint that is different from yours,
+and to debate the opinion and **not** the person or their character or personality.
+Equally, if you are unable to rationally defend your viewpoint if it is challenged,
+please do not incorrectly claim any of the above without genuine merit purely as an alternative.
 
-Examples of unacceptable behaviour by participants include:
+## What happens if someone does make a complaint?
 
-* The use of sexualized language or imagery and sexual attention or advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or electronic address, without explicit permission
-* Attempting to add malicious or inappropriate code to the codebase
-* Use of unacceptable language in code, online comments, wiki pages etc.
-* Any other conduct which could reasonably be considered inappropriate
+We hope that people will be tolerant of other people's differing views and opinions,
+and that people will view others for what they do deliver to the project and not be
+over-sensitive if the ideals we would like to aspire to are not met 100% -
+after all we are all human and all make mistakes at times.
 
-## Our Responsibilities
-
-@Tatarize and deputised contributors (MeerKittens) may take appropriate and fair corrective action
-in response to any instances of unacceptable behaviour, including removing, editing, or rejecting comments,
-commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct,
-or in the case of extreme or persistent to ban temporarily or permanently any contributor
-for other behaviours that they deem inappropriate, threatening, offensive, or harmful.
-
-In the event of an appeal by the contributor, the ultimate arbiter will be @Tatarize whose decision will be final.
-
-## Scope
-
-This Code of Conduct applies both within project spaces and in public
-spaces when an individual is representing the project or its community.
-Examples of representing a project or community include using an
-official project e-mail address, posting via an official social media account
-or acting as an appointed representative at an online or offline event.
-Representation of a project may be further defined and clarified by @Tatarize.
+If people make complaints over small matters, this can easily create a worse environment
+than the behaviours being complained about - so please try to heal wounds rather than open them wider.
+That said, we do not want to trivialise serious or persistent/frequent inappropriate behaviours,
+complaints about which will always be treated seriously.
 
 ## Flagging concerns
 
 Instances of abusive, harassing or otherwise unacceptable behaviour may be
-reported by contacting @Tatarize via Github, Discord or irc.
-
-## Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][https://www.contributor-covenant.org/], version 2.1,
-available at <https://www.contributor-covenant.org/version/2/1/code-of-conduct.html>
+reported in confidence by contacting @Tatarize via Github, Discord or irc.
