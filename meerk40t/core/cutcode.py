@@ -113,13 +113,21 @@ class CutObject(Parameters):
 
     @start.setter
     def start(self, value):
-        self._start_x = value[0]
-        self._start_y = value[1]
+        if self.normal:
+            self._start_x = value[0]
+            self._start_y = value[1]
+        else:
+            self._end_x = value[0]
+            self._end_y = value[1]
 
     @end.setter
     def end(self, value):
-        self._end_x = value[0]
-        self._end_y = value[1]
+        if self.normal:
+            self._end_x = value[0]
+            self._end_y = value[1]
+        else:
+            self._start_x = value[0]
+            self._start_y = value[1]
 
     def length(self):
         return Point.distance(
@@ -148,16 +156,16 @@ class CutObject(Parameters):
             return 1  # Y-Axis
 
     def x_dir(self):
-        if self._start_x < self._end_x:
-            return 1
+        if self.normal:
+            return 1 if self._start_x < self._end_x else -1
         else:
-            return -1
+            return 1 if self._end_x < self._start_x else -1
 
     def y_dir(self):
-        if self._start_y < self._end_y:
-            return 1
+        if self.normal:
+            return 1 if self._start_y < self._end_y else -1
         else:
-            return -1
+            return 1 if self._end_y < self._start_y else -1
 
     def reverse(self):
         if not self.reversible():
