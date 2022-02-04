@@ -589,6 +589,7 @@ class CutPlan:
 
     def optimize_cuts(self):
         channel = self.context.channel("optimize", timestamp=True)
+        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
@@ -599,12 +600,13 @@ class CutPlan:
                 self.plan[i] = inner_selection_cutcode(
                     c,
                     channel=channel,
-                    grouped_inner=self.context.opt_inners_grouped,
+                    grouped_inner=grouped_inner,
                 )
 
     def optimize_travel(self):
         last = None
         channel = self.context.channel("optimize", timestamp=True)
+        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
@@ -618,7 +620,7 @@ class CutPlan:
                     c,
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
-                    grouped_inner=self.context.opt_inners_grouped,
+                    grouped_inner=grouped_inner,
                 )
                 last = self.plan[i].end()
 
@@ -1823,9 +1825,10 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
             ):
                 closest = closest.next
                 backwards = False
-        else:
+        elif closest.reversible():
             if (
                 closest.previous
+                and closest.previous is not closest
                 and closest.previous.burns_done < closest.burns_done
                 and closest.previous.end() == closest.start()
             ):
