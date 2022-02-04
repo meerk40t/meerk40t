@@ -46,6 +46,17 @@ class Parameters:
             self.settings = dict()
         self.settings.update(kwargs)
 
+    def derive(self):
+        derived_dict = dict(self.settings)
+        for attr in dir(self):
+            if attr.startswith("_"):
+                continue
+            value = getattr(self, attr)
+            if value is None:
+                continue
+            derived_dict[attr] = value
+        return derived_dict
+
     @staticmethod
     def validate(settings: Dict):
         for v in FLOAT_PARAMETERS:

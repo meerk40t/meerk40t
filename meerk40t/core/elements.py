@@ -1143,10 +1143,9 @@ class LaserOperation(Node, Parameters):
                 yield "dwell", self.dwell_time
 
     def as_cutobjects(self, closed_distance=15, passes=1):
-        """
-        Generator of cutobjects for a particular operation.
-        """
+        """Generator of cutobjects for a particular operation."""
         if self.operation in ("Cut", "Engrave"):
+            settings = self.derive()
             for element in self.children:
                 object_path = element.object
                 if isinstance(object_path, SVGImage):
@@ -1178,7 +1177,7 @@ class LaserOperation(Node, Parameters):
                     group = CutGroup(
                         None,
                         closed=closed,
-                        settings=self.settings,
+                        settings=settings,
                         passes=passes,
                     )
                     group.path = Path(subpath)
@@ -1192,7 +1191,7 @@ class LaserOperation(Node, Parameters):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=self.settings,
+                                        settings=settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1203,7 +1202,7 @@ class LaserOperation(Node, Parameters):
                                     LineCut(
                                         seg.start,
                                         seg.end,
-                                        settings=self.settings,
+                                        settings=settings,
                                         passes=passes,
                                         parent=group,
                                     )
@@ -1214,7 +1213,7 @@ class LaserOperation(Node, Parameters):
                                     seg.start,
                                     seg.control,
                                     seg.end,
-                                    settings=self.settings,
+                                    settings=settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1226,7 +1225,7 @@ class LaserOperation(Node, Parameters):
                                     seg.control1,
                                     seg.control2,
                                     seg.end,
-                                    settings=self.settings,
+                                    settings=settings,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -1243,6 +1242,7 @@ class LaserOperation(Node, Parameters):
                         cut_obj.previous = group[i - 1]
                     yield group
         elif self.operation == "Raster":
+            settings = self.derive()
             step = self.raster_step
             assert step > 0
             direction = self.raster_direction
@@ -1272,7 +1272,7 @@ class LaserOperation(Node, Parameters):
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
-                    settings=self.settings,
+                    settings=settings,
                     passes=passes,
                 )
                 cut.path = path
@@ -1284,7 +1284,7 @@ class LaserOperation(Node, Parameters):
                         matrix.value_trans_x(),
                         matrix.value_trans_y(),
                         crosshatch=True,
-                        settings=self.settings,
+                        settings=settings,
                         passes=passes,
                     )
                     cut.path = path
@@ -1295,7 +1295,6 @@ class LaserOperation(Node, Parameters):
                 svg_image = svg_image.object
                 if not isinstance(svg_image, SVGImage):
                     continue
-                settings = dict(self.settings)
                 try:
                     self.raster_step = int(svg_image.values["raster_step"])
                 except KeyError:
@@ -1309,6 +1308,7 @@ class LaserOperation(Node, Parameters):
                     self.raster_direction = int(svg_image.values["raster_direction"])
                 except KeyError:
                     pass
+                settings = self.derive()
                 step = self.raster_step
                 matrix = svg_image.transform
                 pil_image = svg_image.image
