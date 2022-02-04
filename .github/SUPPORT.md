@@ -8,7 +8,7 @@ or make fully formed suggestions for improvements.
 
 If you are not ready to make a formal report, then do please come and discuss it with the MeerK40t team
 using one of the following links:
-* [IRC](http://kiwiirc.com/client/irc.libera.chat/meerk40t)
-* [Discord](https://discord.gg/qvASRhFZGB)
+*   [IRC](http://kiwiirc.com/client/irc.libera.chat/meerk40t)
+*   [Discord](https://discord.gg/qvASRhFZGB)
 
 Please see also the [Contribution Guidelines](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
