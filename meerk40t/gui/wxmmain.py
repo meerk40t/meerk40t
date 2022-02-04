@@ -726,7 +726,7 @@ class MeerK40t(MWindow):
             input_type="panes",
             help=_("unlock the panes"),
         )
-        def lock_pane(command, _, channel, **kwargs):
+        def unlock_pane(command, _, channel, **kwargs):
             self.on_pane_lock(None, lock=False)
 
         @context.console_argument("pane", help=_("pane to create"))
