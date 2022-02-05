@@ -32,5 +32,13 @@ class CommandOperation(Node):
     def __len__(self):
         return 1
 
+    def load(self, settings, section):
+        self.name = settings.read_persistent(str, section, "label")
+        self.command = settings.read_persistent(int, section, "command")
+        settings.read_persistent_attributes(section, self)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+
     def generate(self):
         yield (self.command,) + self.args

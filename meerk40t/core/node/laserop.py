@@ -14,7 +14,7 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage,
+    SVGImage, Color,
 )
 
 MILS_IN_MM = 39.3701
@@ -429,6 +429,20 @@ class CutOpNode(Node, Parameters):
     def __copy__(self):
         return CutOpNode(self)
 
+    def load(self, settings, section):
+        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        Parameters.validate(update_dict)
+        self.settings.update(update_dict)
+        hexa = self.settings.get("hex_color")
+        if hexa is not None:
+            self.color = Color(hexa)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+        settings.write_persistent(section, "hex_color", self.color.hexa)
+        settings.write_persistent_dict(section, self.settings)
+
     def copy_children(self, obj):
         for element in obj.children:
             self.add(element.object, type="refelem")
@@ -604,6 +618,20 @@ class EngraveOpNode(Node, Parameters):
 
     def __copy__(self):
         return EngraveOpNode(self)
+
+    def load(self, settings, section):
+        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        Parameters.validate(update_dict)
+        self.settings.update(update_dict)
+        hexa = self.settings.get("hex_color")
+        if hexa is not None:
+            self.color = Color(hexa)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+        settings.write_persistent(section, "hex_color", self.color.hexa)
+        settings.write_persistent_dict(section, self.settings)
 
     def copy_children(self, obj):
         for element in obj.children:
@@ -794,6 +822,20 @@ class RasterOpNode(Node, Parameters):
     def __copy__(self):
         return RasterOpNode(self)
 
+    def load(self, settings, section):
+        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        Parameters.validate(update_dict)
+        self.settings.update(update_dict)
+        hexa = self.settings.get("hex_color")
+        if hexa is not None:
+            self.color = Color(hexa)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+        settings.write_persistent(section, "hex_color", self.color.hexa)
+        settings.write_persistent_dict(section, self.settings)
+
     def copy_children(self, obj):
         for element in obj.children:
             self.add(element.object, type="refelem")
@@ -938,6 +980,20 @@ class ImageOpNode(Node, Parameters):
 
     def __copy__(self):
         return ImageOpNode(self)
+
+    def load(self, settings, section):
+        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        Parameters.validate(update_dict)
+        self.settings.update(update_dict)
+        hexa = self.settings.get("hex_color")
+        if hexa is not None:
+            self.color = Color(hexa)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+        settings.write_persistent(section, "hex_color", self.color.hexa)
+        settings.write_persistent_dict(section, self.settings)
 
     def copy_children(self, obj):
         for element in obj.children:
@@ -1232,6 +1288,20 @@ class DotsOpNode(Node, Parameters):
 
     def __copy__(self):
         return DotsOpNode(self)
+
+    def load(self, settings, section):
+        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        Parameters.validate(update_dict)
+        self.settings.update(update_dict)
+        hexa = self.settings.get("hex_color")
+        if hexa is not None:
+            self.color = Color(hexa)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+        settings.write_persistent(section, "hex_color", self.color.hexa)
+        settings.write_persistent_dict(section, self.settings)
 
     def copy_children(self, obj):
         for element in obj.children:

@@ -36,6 +36,14 @@ class ConsoleOperation(Node):
     def __len__(self):
         return 1
 
+    def load(self, settings, section):
+        command = settings.read_persistent(int, section, "command")
+        self.command = command
+        settings.read_persistent_attributes(section, self)
+
+    def save(self, settings, section):
+        settings.write_persistent_attributes(section, self)
+
     def generate(self):
         command = self.command
         if not command.endswith("\n"):

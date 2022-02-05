@@ -241,6 +241,12 @@ class Node:
         self._children.reverse()
         self.notify_reorder()
 
+    def load(self, settings, section):
+        pass
+
+    def save(self, settings, section):
+        pass
+
     @property
     def children(self):
         return self._children
