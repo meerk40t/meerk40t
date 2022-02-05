@@ -492,6 +492,11 @@ class CutCode(CutGroup):
                 cutcode.append(cut)
                 x = nx
                 y = ny
+            elif cmd == "dwell":
+                time = code[1]
+                cut = DwellCut(x, y, time)
+                cutcode.append(cut)
+
         return cutcode
 
     def reordered(self, order):
@@ -800,3 +805,34 @@ class RawCut(CutObject):
 
     def generator(self):
         return self.plot
+
+
+class DwellCut(CutObject):
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        if self.operation == "Dots":
+            yield "rapid_mode"
+            start = self.start
+            yield "move_abs", start[0], start[1]
+            yield "dwell", self.dwell_time
+
+    def generator(self):
+        start = self.start
+        end = self.end
+        return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
