@@ -4,7 +4,7 @@ import unittest
 from PIL import Image, ImageDraw
 
 from meerk40t.core.cutcode import Parameters, LineCut, CutCode, QuadCut, RasterCut
-from meerk40t.core.elements import LaserOperation
+from meerk40t.core.node.laserop import LaserOperation
 from meerk40t.svgelements import Point, Path, SVGImage
 
 

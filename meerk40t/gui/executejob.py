@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from ..core.elements import LaserOperation
+from ..core.node.laserop import LaserOperation
 from ..kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
