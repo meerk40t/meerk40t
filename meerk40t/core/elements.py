@@ -495,7 +495,7 @@ class Elemental(Service):
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
-                            operand.append(e.operation.lower())
+                            operand.append(e.type.remove("op").strip())
                         elif value == "len":
                             operand.append(len(e.children))
                         else:
@@ -627,7 +627,7 @@ class Elemental(Service):
             if step_size is None:
                 found = False
                 for op in data:
-                    if op.operation in ("Raster", "Image"):
+                    if op.type in ("op raster", "op image"):
                         step = op.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
@@ -635,7 +635,7 @@ class Elemental(Service):
                     channel(_("No raster operations selected."))
                 return
             for op in data:
-                if op.operation in ("Raster", "Image"):
+                if op.type in ("op raster", "op image"):
                     op.raster_step = step_size
                     op.notify_update()
             return "ops", data
@@ -2708,10 +2708,8 @@ class Elemental(Service):
             """
             Delegate to either ops or elements depending on the current node emphasis
             """
-            for item in self.flat(
-                types=("op", "elem", "file", "group"), emphasized=True
-            ):
-                if item.type == "op":
+            for item in self.flat(emphasized=True):
+                if item.type.startswith("op"):
                     return "ops", list(self.ops(emphasized=True))
                 if item.type in ("elem", "file", "group"):
                     return "elements", list(self.elems(emphasized=True))
@@ -2918,7 +2916,7 @@ class Elemental(Service):
         # --------------------------- TREE OPERATIONS ---------------------------
 
         non_structural_nodes = (
-            "op",
+            "op cut", "op raster", "op image", "op engrave", "op dots",
             "refelem",
             "cmdop",
             "consoleop",
@@ -2929,10 +2927,12 @@ class Elemental(Service):
             "file",
             "group",
         )
+        operate_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
+        op_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(_("Operation properties"), node_type="op", help="")
+        @self.tree_operation(_("Operation properties"), node_type=operate_nodes, help="")
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -2992,54 +2992,54 @@ class Elemental(Service):
                 group_node.append_child(node)
 
         @self.tree_operation(
-            _("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help=""
+            _("Enable/Disable ops"), node_type=op_nodes, help=""
         )
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
                 n.notify_update()
 
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Image"), node_type="op", help="")
-        def convert_operation_image(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Image"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Raster"), node_type="op", help="")
-        def convert_operation_raster(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Raster"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type="op", help="")
-        def convert_operation_engrave(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Engrave"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Cut"), node_type="op", help="")
-        def convert_operation_cut(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Cut"
+        #TODO: Restore convert node type ability
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        # def convert_operation_image(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Image"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        # def convert_operation_raster(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Raster"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        # def convert_operation_engrave(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Engrave"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        # def convert_operation_cut(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Cut"
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
 
-        @self.tree_conditional(lambda node: node.type in ("op raster", "op image"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op raster", "op image"), help="")
         def set_speed_raster(node, speed=150, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
 
-        @self.tree_conditional(lambda node: node.type in ("op cut", "op engrave"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help="")
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
@@ -3050,7 +3050,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
-        @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
+        @self.tree_operation(_("%sppi") % "{power}", node_type=("op cut", "op raster", "op image", "op engrave"), help="")
         def set_power(node, power=1000, **kwargs):
             node.power = float(power)
             self.signal("element_property_reload", node)
@@ -3058,13 +3058,12 @@ class Elemental(Service):
         def radio_match(node, i=1, **kwargs):
             return node.raster_step == i
 
-        @self.tree_conditional(lambda node: node.type == "op raster")
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(
             _("Step %s") % "{i}",
-            node_type="op",
+            node_type="op raster",
             help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
@@ -3079,7 +3078,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
+        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type=operate_nodes, help="")
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
             node.passes_custom = passvalue != 1
@@ -3088,7 +3087,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Execute operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
@@ -3099,7 +3098,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Simulate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
@@ -3186,7 +3185,7 @@ class Elemental(Service):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
             help="",
         )
         def remove_n_ops(node, **kwargs):
@@ -3264,7 +3263,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
             _("Reverse subitems order"),
-            node_type=("op", "group", "branch elems", "file", "branch ops"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "group", "branch elems", "file", "branch ops"),
             help=_("Reverse the items within this subitem"),
         )
         def reverse_layer_order(node, **kwargs):
@@ -3444,7 +3443,7 @@ class Elemental(Service):
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("duplicate operation element nodes"),
         )
         def duplicate_operation(node, **kwargs):
@@ -3547,54 +3546,54 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type="op", help="")
+        @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type="op", help="")
+        @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type="op", help="")
+        @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type="op", help="")
+        @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home"), node_type="op", help="")
+        @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
             append_operation_home(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Return to Origin"), node_type="op", help="")
+        @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
             append_operation_origin(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Beep"), node_type="op", help="")
+        @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt (console)"), node_type=op_nodes, help="")
         def add_operation_interrupt_console(node, **kwargs):
             append_operation_interrupt_console(
                 node, pos=add_after_index(self), **kwargs
             )
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self)
             append_operation_home(node, pos=pos, **kwargs)
@@ -3956,7 +3955,7 @@ class Elemental(Service):
         @self.tree_separator_before()
         @self.tree_operation(
             _("Expand all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
             help="Expand all children of this given node.",
         )
         def expand_all_children(node, **kwargs):
@@ -3965,7 +3964,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_operation(
             _("Collapse all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
             help="Collapse all children of this given node.",
         )
         def collapse_all_children(node, **kwargs):
@@ -4362,6 +4361,7 @@ class Elemental(Service):
         :param classify: Should this element be automatically classified.
         :return:
         """
+        #TODO: This needs to work.
         operation_branch = self._tree.get(type="branch ops")
         op.set_label(str(op))
         operation_branch.add(op, type="op", pos=pos)
