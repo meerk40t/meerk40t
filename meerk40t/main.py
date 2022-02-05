@@ -1,7 +1,7 @@
 import argparse
-import sys
 import os.path
 import platform
+import sys
 
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
@@ -126,7 +126,9 @@ def run():
         return
 
     if args.profile is not None:
-        path = "{appname}{profile}".format(appname=APPLICATION_NAME, profile=args.profile)
+        path = "{appname}{profile}".format(
+            appname=APPLICATION_NAME, profile=args.profile
+        )
     else:
         path = APPLICATION_NAME
     kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, path)
@@ -143,6 +145,10 @@ def run():
     from .device.ch341 import ch341
 
     kernel.add_plugin(ch341.plugin)
+
+    from .device import basedevice
+
+    kernel.add_plugin(basedevice.plugin)
 
     from .lihuiyu import device as lhystudios_driver
 
@@ -250,14 +256,13 @@ def run():
 
     if not args.gui_suppress:
         try:
+            from .camera.gui import gui as cameragui
+            from .grbl.gui import gui as grblgui
             from .gui import wxmeerk40t
             from .gui.scene import scene
-
-            from .camera.gui import gui as cameragui
-            from .rotary.gui import gui as rotarygui
-            from .grbl.gui import gui as grblgui
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
+            from .rotary.gui import gui as rotarygui
             from .ruida.gui import gui as ruidagui
 
             from balormk.gui import gui as balorgui
@@ -300,7 +305,9 @@ def run():
                 pass
             except pkg_resources.VersionConflict as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
                 )
                 print(e)
             else:

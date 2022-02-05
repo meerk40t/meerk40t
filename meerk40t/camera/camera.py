@@ -49,7 +49,7 @@ def plugin(kernel, lifecycle=None):
             height=None,
             contrast=None,
             nocontrast=None,
-            **kwargs
+            **kwargs,
         ):
             if len(command) > 6:
                 current_camera = command[6:]

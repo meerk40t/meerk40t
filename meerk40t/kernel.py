@@ -6,10 +6,10 @@ import re
 import threading
 import time
 from collections import deque
-from pathlib import Path
 from configparser import ConfigParser, NoSectionError
+from pathlib import Path
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union, Set
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 KERNEL_VERSION = "0.0.1"
 
@@ -188,6 +188,8 @@ class Context:
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
+        if len(data) and data[-1] != "\n":
+            data += "\n"
         return self._kernel.console(data)
 
     # ==========
@@ -328,11 +330,7 @@ class Context:
         @param key: relative key for the value
         @return: the value associated with the key otherwise None
         """
-        return self._kernel.read_persistent(
-            t,
-            self._path,
-            key
-        )
+        return self._kernel.read_persistent(t, self._path, key)
 
     def read_persistent_attributes(self, obj: Any) -> None:
         """
@@ -345,7 +343,9 @@ class Context:
         """
         self._kernel.read_persistent_attributes(self._path, obj)
 
-    def read_persistent_string_dict(self, dictionary: Optional[Dict] = None, suffix: bool = False) -> Dict:
+    def read_persistent_string_dict(
+        self, dictionary: Optional[Dict] = None, suffix: bool = False
+    ) -> Dict:
         """
         Delegate to kernel to get a local string of dictionary values.
 
@@ -353,7 +353,9 @@ class Context:
         @param suffix:
         @return:
         """
-        return self._kernel.read_persistent_string_dict(self._path, dictionary=dictionary, suffix=suffix)
+        return self._kernel.read_persistent_string_dict(
+            self._path, dictionary=dictionary, suffix=suffix
+        )
 
     def clear_persistent(self) -> None:
         """
@@ -785,7 +787,7 @@ class Settings:
         """
         try:
             parser = ConfigParser()
-            parser.read(self._config_file)
+            parser.read(self._config_file, encoding="utf-8")
             for section in parser.sections():
                 for option in parser.options(section):
                     try:
@@ -913,6 +915,21 @@ class Settings:
         if isinstance(value, (str, int, float, bool)):
             config_section[str(key)] = str(value)
 
+    def write_persistent_dict(self, section, write_dict):
+        """
+        Write all valid attribute values of this object to the section provided.
+
+        @param section: section to write to
+        @param obj: object whose attributes should be written
+        @return:
+        """
+        for key in write_dict:
+            value = write_dict[key]
+            if value is None:
+                continue
+            if isinstance(value, (int, bool, str, float)):
+                self.write_persistent(section, key, value)
+
     def write_persistent_attributes(self, section, obj):
         """
         Write all valid attribute values of this object to the section provided.
@@ -1027,7 +1044,11 @@ class Kernel(Settings):
         self.version = version
 
         # Persistent Settings
-        Settings.__init__(self, self.name, "{profile}.cfg".format(name=name, profile=profile, version=version))
+        Settings.__init__(
+            self,
+            self.name,
+            "{profile}.cfg".format(name=name, profile=profile, version=version),
+        )
         self.settings = self
 
         # Boot State
@@ -3340,6 +3361,7 @@ class Kernel(Settings):
 
         def beep(channel, _, **kwargs):
             import platform
+
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 try:
@@ -3351,6 +3373,7 @@ class Kernel(Settings):
                     pass
             elif OS_NAME == "Darwin":  # Mac
                 import os
+
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             else:  # Assuming other linux like system
                 print("\a")  # Beep.
@@ -3821,7 +3844,11 @@ class Kernel(Settings):
                 return
             if directory == "&":
                 self.current_directory = os.path.dirname(self._config_file)
-                channel(_("Configuration Directory: {dir}").format(dir=str(self.current_directory)))
+                channel(
+                    _("Configuration Directory: {dir}").format(
+                        dir=str(self.current_directory)
+                    )
+                )
                 return
             if directory == "@":
                 import sys
@@ -3892,6 +3919,7 @@ class Kernel(Settings):
     # Prompt should be replaced with higher level versions of this depending on the user interface.
     prompt = _text_prompt
 
+
 # ==========
 # END KERNEL
 # ==========
@@ -3927,6 +3955,7 @@ class Channel:
         buffer_size: int = 0,
         line_end: Optional[str] = None,
         timestamp: bool = False,
+        pure: bool = False,
     ):
         self.watchers = []
         self.greet = None
@@ -3935,6 +3964,7 @@ class Channel:
         self.line_end = line_end
         self._ = lambda e: e
         self.timestamp = timestamp
+        self.pure = pure
         if buffer_size == 0:
             self.buffer = None
         else:
@@ -3955,20 +3985,17 @@ class Channel:
         **kwargs,
     ):
         original_msg = message
-        if self.line_end is not None:
-            message = message + self.line_end
-        if indent and not isinstance(message, (bytes, bytearray)):
-            message = "    " + message.replace("\n", "\n    ")
-        if self.timestamp and not isinstance(message, (bytes, bytearray)):
-            ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
-            message = ts + message.replace("\n", "\n%s" % ts)
+        if not self.pure and not isinstance(message, (bytes, bytearray)):
+            if self.line_end is not None:
+                message = message + self.line_end
+            if indent:
+                message = "    " + message.replace("\n", "\n    ")
+            if self.timestamp:
+                ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
+                message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
         for w in self.watchers:
-            if (
-                isinstance(w, Channel)
-                and w.name == "console"
-                and print in w.watchers
-            ):
+            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
         for w in self.watchers:
@@ -4012,7 +4039,7 @@ class Channel:
         if self.greet is not None:
             monitor_function(self.greet)
         if self.buffer is not None:
-            for line in self.buffer:
+            for line in list(self.buffer):
                 monitor_function(line)
 
     def unwatch(self, monitor_function: Callable):

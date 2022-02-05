@@ -1,6 +1,7 @@
 from abc import ABC
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
+from typing import Optional
 
+from ..svgelements import Color, Path, Point
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -12,9 +13,7 @@ from ..tools.rasterplotter import (
     RasterPlotter,
 )
 from ..tools.zinglplotter import ZinglPlotter
-
-
-from ..svgelements import Color, Path, Point
+from .parameters import Parameters
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -23,7 +22,7 @@ should be toggled and move by anything executing these in the planning process. 
 be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
 to LaserCode.
 
-All CutObjects have a .start() .end() and .generator() functions. They also have a settings object that contains all
+All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
@@ -31,117 +30,17 @@ are references to settings which may be shared by all CutObjects created by a La
 MILS_IN_MM = 39.3701
 
 
-class LaserSettings:
-    def __init__(self, *args, **kwargs):
-        self.line_color = None
-
-        self.laser_enabled = True
-        self.speed = None
-        self.power = None
-        self.dratio_custom = False
-        self.dratio = 0.261
-        self.acceleration_custom = False
-        self.acceleration = 1
-
-        self.raster_step = 0
-        self.raster_direction = 1  # Bottom To Top - Default.
-        self.raster_swing = False  # False = bidirectional, True = Unidirectional
-        self.raster_preference_top = 0
-        self.raster_preference_right = 0
-        self.raster_preference_left = 0
-        self.raster_preference_bottom = 0
-        self.overscan = 20
-
-        self.advanced = False
-
-        self.ppi_enabled = True
-
-        self.dot_length_custom = False
-        self.dot_length = 1
-
-        self.shift_enabled = False
-
-        self.passes_custom = False
-        self.passes = 1
-
-        self.jog_distance = 255
-        self.jog_enable = True
-
-        for k in kwargs:
-            value = kwargs[k]
-            if hasattr(self, k):
-                q = getattr(self, k)
-                if q is None:
-                    setattr(self, k, value)
-                else:
-                    t = type(q)
-                    setattr(self, k, t(value))
-        if len(args) == 1:
-            obj = args[0]
-            try:
-                obj = obj.settings
-            except AttributeError:
-                pass
-            if isinstance(obj, LaserSettings):
-                self.set_values(obj)
-
-    def set_values(self, obj):
-        for q in dir(obj):
-            if q.startswith("_") or q.startswith("implicit"):
-                continue
-            obj_type = type(obj)
-            if hasattr(obj_type, q) and isinstance(getattr(obj_type, q), property):
-                # Do not set property values
-                continue
-
-            value = getattr(obj, q)
-            if isinstance(value, (int, float, bool, str)):
-                setattr(self, q, value)
-
-    @property
-    def horizontal_raster(self):
-        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
-
-    @property
-    def implicit_accel(self):
-        if not self.acceleration_custom:
-            return None
-        return self.acceleration
-
-    @property
-    def implicit_d_ratio(self):
-        if not self.dratio_custom:
-            return None
-        return self.dratio
-
-    @property
-    def implicit_dotlength(self):
-        if not self.dot_length_custom:
-            return 1
-        return self.dot_length
-
-    @property
-    def implicit_passes(self):
-        if not self.passes_custom:
-            return 1
-        return self.passes
-
-
-class CutObject:
+class CutObject(Parameters):
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
 
-    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1):
-        if settings is None:
-            settings = LaserSettings()
-        self.settings = settings
+    def __init__(
+        self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
+    ):
+        super().__init__(settings)
         if start is not None:
             self._start_x = int(round(start[0]))
             self._start_y = int(round(start[1]))
@@ -159,7 +58,7 @@ class CutObject:
         self.next = None
         self.previous = None
         self.passes = passes
-        self.burns_done = 0
+        self._burns_done = 0
 
         self.mode = None
         self.inside = None
@@ -167,21 +66,71 @@ class CutObject:
         self.first = False
         self.last = False
         self.closed = False
-        self.path = None
         self.original_op = None
         self.pass_index = -1
+
+    @property
+    def burns_done(self):
+        return self._burns_done
+
+    @burns_done.setter
+    def burns_done(self, burns):
+        """
+        Maintain parent burns_done
+        """
+        self._burns_done = burns
+        if self.parent is not None:
+            # If we are resetting then we are going to be resetting all
+            # so don't bother looping
+            if burns == 0:
+                self.parent._burns_done = 0
+                return
+            for o in self.parent:
+                burns = min(burns, o._burns_done)
+            self.parent.burn_started = True
+            self.parent._burns_done = burns
 
     def reversible(self):
         return True
 
+    @property
     def start(self):
-        return (self._start_x, self._start_y) if self.normal else (self._end_x, self._end_y)
+        return (
+            (self._start_x, self._start_y)
+            if self.normal
+            else (self._end_x, self._end_y)
+        )
 
+    @property
     def end(self):
-        return (self._start_x, self._start_y) if not self.normal else (self._end_x, self._end_y)
+        return (
+            (self._start_x, self._start_y)
+            if not self.normal
+            else (self._end_x, self._end_y)
+        )
+
+    @start.setter
+    def start(self, value):
+        if self.normal:
+            self._start_x = value[0]
+            self._start_y = value[1]
+        else:
+            self._end_x = value[0]
+            self._end_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        if self.normal:
+            self._end_x = value[0]
+            self._end_y = value[1]
+        else:
+            self._start_x = value[0]
+            self._start_y = value[1]
 
     def length(self):
-        return Point.distance((self._start_x, self._start_y), (self._end_x, self._end_y))
+        return Point.distance(
+            (self._start_x, self._start_y), (self._end_x, self._end_y)
+        )
 
     def upper(self):
         return min(self._start_y, self._end_y)
@@ -205,16 +154,16 @@ class CutObject:
             return 1  # Y-Axis
 
     def x_dir(self):
-        if self._start_x < self._end_x:
-            return 1
+        if self.normal:
+            return 1 if self._start_x < self._end_x else -1
         else:
-            return -1
+            return 1 if self._end_x < self._start_x else -1
 
     def y_dir(self):
-        if self._start_y < self._end_y:
-            return 1
+        if self.normal:
+            return 1 if self._start_y < self._end_y else -1
         else:
-            return -1
+            return 1 if self._end_y < self._start_y else -1
 
     def reverse(self):
         if not self.reversible():
@@ -230,18 +179,19 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done > 0:
+            if isinstance(c, CutGroup):
+                if c.burn_started:
                     return True
+            elif c.burns_done == c.passes:
+                return True
         return False
 
     def contains_unburned_groups(self):
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done < pp.passes:
-                    return True
+            if c.burns_done < c.passes:
+                return True
         return False
 
     def flat(self):
@@ -262,12 +212,19 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(), settings=None, constrained=False, closed=False
+        self,
+        parent,
+        children=(),
+        settings=None,
+        passes=1,
+        constrained=False,
+        closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings)
+        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
         self.closed = closed
         self.constrained = constrained
+        self.burn_started = False
 
     def __copy__(self):
         return CutGroup(self.parent, self)
@@ -284,17 +241,19 @@ class CutGroup(list, CutObject, ABC):
     def reverse(self):
         pass
 
+    @property
     def start(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[0].start() if self.normal else self[-1].end()
+        return self[0].start if self.normal else self[-1].end
 
+    @property
     def end(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[-1].end() if self.normal else self[0].start()
+        return self[-1].end if self.normal else self[0].start
 
     def flat(self):
         """
@@ -307,13 +266,11 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def is_burned(self):
-        for c in self:
-            if c.burns_done != c.passes:
-                return False
-        return True
-
-    def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+    def candidate(
+        self,
+        complete_path: Optional[bool] = False,
+        grouped_inner: Optional[bool] = False,
+    ):
         """
         Candidates are CutObjects:
         1. That do not contain one or more unburned inner constrained cutcode objects.
@@ -357,12 +314,9 @@ class CutGroup(list, CutObject, ABC):
                 continue
             # If we are only burning complete subpaths then
             # if this is not a closed path we should only yield first and last segments
-            # Planner will need to determine which end of the subpath is yoielded
+            # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
-            if (
-                complete_path
-                and not grp.closed
-            ):
+            if complete_path and not grp.closed and isinstance(grp, CutGroup):
                 if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
@@ -386,8 +340,6 @@ class CutCode(CutGroup):
         self.operation = "CutCode"
 
         self.travel_speed = 20.0
-        self.start_x = None
-        self.start_y = None
         self.mode = None
 
     def __str__(self):
@@ -403,16 +355,15 @@ class CutCode(CutGroup):
         path = None
         previous_settings = None
         for e in self.flat():
-            start = e.start()
-            end = e.end()
-            settings = e.settings
+            start = e.start
+            end = e.end
             if path is None:
                 path = Path()
-                c = settings.line_color if settings.line_color is not None else "blue"
+                c = e.line_color if e.line_color is not None else "blue"
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
-                path.move(e.start())
+                path.move(e.start)
             if isinstance(e, LineCut):
                 path.line(end)
             elif isinstance(e, QuadCut):
@@ -425,11 +376,11 @@ class CutCode(CutGroup):
                         path.line(x, y)
                     else:
                         path.move(x, y)
-            if previous_settings is not settings and previous_settings is not None:
+            if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
                     path = None
-            previous_settings = settings
+            previous_settings = e.settings
             last = end
         if path is not None and len(path) != 0:
             yield path
@@ -460,13 +411,13 @@ class CutCode(CutGroup):
         distance = 0
         if include_start:
             if self.start is not None:
-                distance += abs(complex(self.start) - complex(cutcode[0].start()))
+                distance += abs(complex(self.start) - complex(cutcode[0].start))
             else:
-                distance += abs(0 - complex(cutcode[0].start()))
+                distance += abs(0 - complex(cutcode[0].start))
         for i in range(1, len(cutcode)):
             prev = cutcode[i - 1]
             curr = cutcode[i]
-            delta = Point.distance(prev.end(), curr.start())
+            delta = Point.distance(prev.end, curr.start)
             distance += delta
         return distance
 
@@ -491,8 +442,8 @@ class CutCode(CutGroup):
         distance = 0
         for i in range(0, len(cutcode)):
             curr = cutcode[i]
-            if curr.settings.speed:
-                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.speed != 0:
+                distance += (curr.length() / MILS_IN_MM) / curr.speed
         return distance
 
     @classmethod
@@ -500,7 +451,7 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = LaserSettings()
+        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
@@ -569,38 +520,54 @@ class CutCode(CutGroup):
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1):
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
         CutObject.__init__(
-            self, start_point, end_point, settings=settings, passes=passes
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
 
     def generator(self):
-        start = self.start()
-        end = self.end()
+        start = self.start
+        end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
+    def __init__(
+        self,
+        start_point,
+        control_point,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
         CutObject.__init__(
-            self, start_point, end_point, settings=settings, passes=passes
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control = control_point
 
     def c(self):
         return self._control
 
     def length(self):
-        return Point.distance(self.start(), self.c()) + Point.distance(
-            self.c(), self.end()
-        )
+        return Point.distance(self.start, self.c()) + Point.distance(self.c(), self.end)
 
     def generator(self):
-        start = self.start()
+        start = self.start
         c = self.c()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_quad_bezier(
             start[0],
             start[1],
@@ -613,12 +580,24 @@ class QuadCut(CutObject):
 
 class CubicCut(CutObject):
     def __init__(
-        self, start_point, control1, control2, end_point, settings=None, passes=1
+        self,
+        start_point,
+        control1,
+        control2,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
     ):
         CutObject.__init__(
-            self, start_point, end_point, settings=settings, passes=passes
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
 
@@ -630,16 +609,16 @@ class CubicCut(CutObject):
 
     def length(self):
         return (
-            Point.distance(self.start(), self.c1())
+            Point.distance(self.start, self.c1())
             + Point.distance(self.c1(), self.c2())
-            + Point.distance(self.c2(), self.end())
+            + Point.distance(self.c2(), self.end)
         )
 
     def generator(self):
-        start = self.start()
+        start = self.start
         c1 = self.c1()
         c2 = self.c2()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_cubic_bezier(
             start[0],
             start[1],
@@ -658,19 +637,21 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
-        CutObject.__init__(self, settings=settings, passes=passes)
+    def __init__(
+        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+    ):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
-
+        self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.tx = tx
         self.ty = ty
 
-        step = self.settings.raster_step
+        step = self.raster_step
         self.step = step
         assert step > 0
 
-        direction = self.settings.raster_direction
+        direction = self.raster_direction
         traverse = 0
         if direction == 0 or direction == 4 and not crosshatch:
             traverse |= X_AXIS
@@ -684,7 +665,7 @@ class RasterCut(CutObject):
         elif direction == 3:
             traverse |= Y_AXIS
             traverse |= LEFT
-        if self.settings.raster_swing:
+        if self.raster_swing:
             traverse |= UNIDIRECTIONAL
         width, height = image.size
         self.width = width
@@ -693,7 +674,7 @@ class RasterCut(CutObject):
         def image_filter(pixel):
             return (255 - pixel) / 255.0
 
-        overscan = self.settings.overscan
+        overscan = self.overscan
         if overscan is None:
             overscan = 20
         else:
@@ -721,11 +702,13 @@ class RasterCut(CutObject):
     def reverse(self):
         pass
 
+    @property
     def start(self):
-        return Point(self.plot.initial_position_in_scene())
+        return self.plot.initial_position_in_scene()
 
+    @property
     def end(self):
-        return Point(self.plot.final_position_in_scene())
+        return self.plot.final_position_in_scene()
 
     def lower(self):
         return self.plot.offset_y + self.height
@@ -767,8 +750,8 @@ class RawCut(CutObject):
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
 
     def __len__(self):
@@ -791,17 +774,29 @@ class RawCut(CutObject):
     def reverse(self):
         self.plot = list(reversed(self.plot))
 
+    @property
     def start(self):
         try:
-            return Point(self.plot[0][:2])
+            return self.plot[0][:2]
         except IndexError:
             return None
 
+    @property
     def end(self):
         try:
-            return Point(self.plot[-1][:2])
+            return self.plot[-1][:2]
         except IndexError:
             return None
+
+    @start.setter
+    def start(self, value):
+        self._start_x = value[0]
+        self._start_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        self._end_x = value[0]
+        self._end_y = value[1]
 
     def generator(self):
         return self.plot

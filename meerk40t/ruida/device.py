@@ -2,9 +2,10 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ..core.cutcode import CutCode, LaserSettings, LineCut
+from ..core.cutcode import CutCode, LineCut
+from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_uM
+from ..core.units import UNITS_PER_uM, ViewPort
 from ..kernel import Module, Service
 from ..svgelements import Color, Point
 
@@ -164,7 +165,7 @@ def plugin(kernel, lifecycle=None):
             )
 
 
-class RuidaDevice(Service):
+class RuidaDevice(Service, ViewPort):
     """
     RuidaDevice is driver for the Ruida Controllers
     """
@@ -214,10 +215,9 @@ class RuidaDevice(Service):
             },
         ]
         self.register_choices("bed_dim", choices)
-
+        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
         self.current_x = 0.0
         self.current_y = 0.0
-        self.settings = LaserSettings()
         self.state = 0
 
         self.spooler = Spooler(self)
@@ -255,9 +255,10 @@ class RuidaDevice(Service):
             return "spooler", spooler
 
 
-class RuidaEmulator(Module):
+class RuidaEmulator(Module, Parameters):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        Parameters.__init__(self)
         self.design = False
         self.control = False
         self.saving = False
@@ -267,8 +268,6 @@ class RuidaEmulator(Module):
 
         self.cutcode = CutCode()
 
-        # self.layer_settings = []
-        self.settings = LaserSettings()
         self._use_set = None
         self.spooler = None
         self.device = None
@@ -313,11 +312,9 @@ class RuidaEmulator(Module):
             yield "plot", cutobject
         yield "plot_start"
 
-    @property
     def cutset(self):
-        # self.settings.jog_enable = False
         if self._use_set is None:
-            self._use_set = LaserSettings(self.settings)
+            self._use_set = self.derive()
         return self._use_set
 
     @staticmethod
@@ -654,7 +651,7 @@ class RuidaEmulator(Module):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Absolute (%f nm, %f nm)" % (
@@ -670,10 +667,13 @@ class RuidaEmulator(Module):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
-            desc = "Cut Relative (%f nm, %f nm)" % (dx / UNITS_PER_uM, dy / UNITS_PER_uM)
+            desc = "Cut Relative (%f nm, %f nm)" % (
+                dx / UNITS_PER_uM,
+                dy / UNITS_PER_uM,
+            )
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
@@ -681,7 +681,7 @@ class RuidaEmulator(Module):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Horizontal Relative (%f nm)" % (dx / UNITS_PER_uM)
@@ -692,7 +692,7 @@ class RuidaEmulator(Module):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Vertical Relative (%f nm)" % (dy / UNITS_PER_uM)
@@ -725,13 +725,13 @@ class RuidaEmulator(Module):
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 min=%f" % power
                 self.power1_min = power
-                self.settings.power = self.power1_max * 10.0  # 1000 / 100
+                self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x02:
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 max=%f" % power
                 self.power1_max = power
-                self.settings.power = self.power1_max * 10.0  # 1000 / 100
+                self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
@@ -824,7 +824,7 @@ class RuidaEmulator(Module):
             if array[1] == 0x02:
                 speed = self.parse_speed(array[2:7])
                 desc = "Speed Laser 1 %fmm/s" % speed
-                self.settings.speed = speed
+                self.speed = speed
                 self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
@@ -832,7 +832,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x04:
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
-                self.settings.speed = speed
+                self.speed = speed
                 self._use_set = None
                 desc = "%d, Speed %fmm/s" % (part, speed)
             elif array[1] == 0x05:
@@ -886,7 +886,7 @@ class RuidaEmulator(Module):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                self.settings.line_color = c
+                self.line_color = c
                 self._use_set = None
                 desc = "Layer Color %s" % str(self.color)
             elif array[1] == 0x06:

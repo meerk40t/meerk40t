@@ -1,7 +1,5 @@
 import time
 
-from ..core.cutcode import LaserSettings
-
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
 DRIVER_STATE_PROGRAM = 2
@@ -27,7 +25,7 @@ class Driver:
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.settings = LaserSettings()
+        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -52,6 +50,32 @@ class Driver:
         @return:
         """
         return False
+
+    def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y
+
+        @param x:
+        @param y:
+        @return:
+        """
+
+    def move_rel(self, dx, dy):
+        """
+        Requests laser move relative position dx, dy
+
+        @param dx:
+        @param dy:
+        @return:
+        """
+
+    def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period.
+
+        @param time_in_ms:
+        @return:
+        """
 
     def laser_off(self, *values):
         """
@@ -235,14 +259,9 @@ class Driver:
         """
         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
         deleted.
+        Asks that the device resets, and clears all current work.
 
         @param args:
-        @return:
-        """
-
-    def reset(self):
-        """
-        Asks that the device resets, and clears all current work.
         @return:
         """
 
@@ -255,7 +274,7 @@ class Driver:
         parts = list()
         parts.append("x=%f" % self.native_x)
         parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("speed=%f" % self.settings.get("speed", 0.0))
+        parts.append("power=%d" % self.settings.get("power", 0))
         status = ";".join(parts)
         self.context.signal("driver;status", status)

@@ -78,6 +78,9 @@ class MWindow(wx.Frame, Module):
     def window_preserve(self):
         return True
 
+    def window_menu(self):
+        return True
+
     def module_open(self, *args, **kwargs):
         self.context.close(self.name)
         if self.window_save:

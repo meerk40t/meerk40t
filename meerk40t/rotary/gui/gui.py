@@ -23,9 +23,7 @@ def plugin(kernel, lifecycle):
                 "label": _("Rotary"),
                 "icon": icons8_roll_50,
                 "tip": _("Opens Rotary Window"),
-                "action": lambda v: kernel.console(
-                    "window toggle Rotary\n"
-                ),
+                "action": lambda v: kernel.console("window toggle Rotary\n"),
             },
         )
 
@@ -37,11 +35,16 @@ def plugin(kernel, lifecycle):
             global ROTARY_VIEW
             rotary = kernel.rotary
             if ROTARY_VIEW:
-                rotary("scene aspect {x} {y}\n".format(x=rotary.scale_x, y=rotary.scale_y))
+                rotary(
+                    "scene aspect {x} {y}\n".format(x=rotary.scale_x, y=rotary.scale_y)
+                )
             else:
                 try:
-                    rotary("scene aspect {ix} {iy}\n".format(ix=1.0/rotary.scale_x, iy=1.0/rotary.scale_y))
+                    rotary(
+                        "scene aspect {ix} {iy}\n".format(
+                            ix=1.0 / rotary.scale_x, iy=1.0 / rotary.scale_y
+                        )
+                    )
                 except ZeroDivisionError:
                     pass
             ROTARY_VIEW = not ROTARY_VIEW
-

@@ -397,9 +397,9 @@ class SimulationTravelWidget(Widget):
         prev = None
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
-                if prev.end() != curr.start():
-                    start = wx.Point2D(*prev.end())
-                    end = wx.Point2D(*curr.start())
+                if prev.end != curr.start:
+                    start = wx.Point2D(*prev.end)
+                    end = wx.Point2D(*curr.start)
                     self.starts.append(start)
                     self.ends.append(end)
                     s = complex(start[0], start[1])
@@ -460,9 +460,9 @@ class SimReticleWidget(Widget):
             and len(self.sim.cutcode)
         ):
             if self.sim.progress != self.sim.max:
-                pos = self.sim.cutcode[self.sim.progress - 1].start()
+                pos = self.sim.cutcode[self.sim.progress - 1].start
             else:
-                pos = self.sim.cutcode[self.sim.progress - 2].end()
+                pos = self.sim.cutcode[self.sim.progress - 2].end
             x = pos[0]
             y = pos[1]
 

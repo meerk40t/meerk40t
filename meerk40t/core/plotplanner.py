@@ -11,6 +11,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
+from .parameters import Parameters
 
 """
 
@@ -37,9 +38,9 @@ of zero will remain zero.
 """
 
 
-class PlotPlanner:
-    def __init__(self, settings):
-        self.settings = settings
+class PlotPlanner(Parameters):
+    def __init__(self, settings, **kwargs):
+        super().__init__(settings, **kwargs)
         self.debug = False
 
         self.abort = False
@@ -87,7 +88,9 @@ class PlotPlanner:
         * Send all X, Y points for cut.
 
         If the next position is too far away and jogging is allowed we jog to the position. This
-        jog is sent after the previous data is planner is
+        jog is sent after the previous data is flushed out of the planner.
+
+        cut.settings can be the same object between different cut.
 
         :return:
         """
@@ -95,9 +98,7 @@ class PlotPlanner:
         self.pos_y = None
         while len(self.queue):
             cut = self.queue.pop(0)
-            cut_set = cut.settings
-            cur_set = self.settings
-            start = cut.start()
+            start = cut.start
             new_start_x = start[0]
             new_start_y = start[1]
             assert isinstance(new_start_x, int)
@@ -107,18 +108,18 @@ class PlotPlanner:
             if self.pos_x != new_start_x or self.pos_y != new_start_y:
                 # This location is disjointed. We must flush and jog.
                 # Jog is executed in current settings.
-                if self.pos_x is None or cur_set.raster_step != 0:
+                if self.pos_x is None or self.raster_step != 0:
                     # First movement or raster_step exists we must rapid_jog.
                     # Request rapid move new location
                     flush = True
                     jog |= PLOT_RAPID
                 else:
                     # Slow Jog to position.
-                    distance = cur_set.jog_distance
+                    distance = self.jog_distance
                     if (
                         abs(self.pos_x - new_start_x) < distance
                         and abs(self.pos_y - new_start_y) < distance
-                    ) or not cur_set.jog_enable:
+                    ) or not self.jog_enable:
                         # Jog distance smaller than threshold. Or jog isn't allowed
                         def walk():
                             for event in ZinglPlotter.plot_line(
@@ -133,7 +134,7 @@ class PlotPlanner:
                         jog |= PLOT_JOG
 
             # Laser Setting has changed, we must flush the buffer.
-            if cut_set is not cur_set:
+            if cut.settings is not self.settings:
                 flush = True
 
             # Flush executed in current settings.
@@ -147,11 +148,11 @@ class PlotPlanner:
                 yield new_start_x, new_start_y, jog
                 self.warp(new_start_x, new_start_y)
 
-            self.settings = cut.settings
-            if cut_set is not cur_set:
+            if cut.settings is not self.settings:
+                self.settings = cut.settings
                 yield None, None, PLOT_SETTING
 
-            if jog or cut_set.raster_step != 0:
+            if jog or self.raster_step != 0:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
@@ -373,7 +374,7 @@ class PPI(PlotManipulation):
             px = x
             py = y
             # PPI is always on.
-            self.ppi_total += self.planner.settings.power * on
+            self.ppi_total += self.planner.power * on
             if on and self.dot_left > 0:
                 # Process remaining dot_length, must be on or partially on.
                 self.dot_left -= 1
@@ -383,8 +384,8 @@ class PPI(PlotManipulation):
                 if self.ppi_total >= 1000.0:
                     # PPI >= 1000: triggers on.
                     on = 1
-                    self.ppi_total -= 1000.0 * self.planner.settings.dot_length
-                    self.dot_left = self.planner.settings.dot_length - 1
+                    self.ppi_total -= 1000.0 * self.planner.dot_length
+                    self.dot_left = self.planner.dot_length - 1
                 else:
                     # PPI < 1000: triggers off.
                     on = 0
@@ -415,7 +416,7 @@ class Shift(PlotManipulation):
         """
         for x, y, on in plot:
             if (x is None or y is None) or (
-                not self.planner.force_shift and not self.planner.settings.shift_enabled
+                not self.planner.force_shift and not self.planner.shift_enabled
             ):
                 # If we have an established buffer, flush the buffer.
                 yield from self.flush()

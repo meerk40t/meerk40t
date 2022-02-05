@@ -3,8 +3,8 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut, RasterCut
-from meerk40t.core.elements import LaserOperation
+from meerk40t.core.cutcode import Parameters, LineCut, CutCode, QuadCut, RasterCut
+from meerk40t.core.node.laserop import LaserOperation
 from meerk40t.svgelements import Point, Path, SVGImage
 
 
@@ -16,7 +16,7 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         cutcode = CutCode()
-        settings = LaserSettings()
+        settings = dict()
         cutcode.append(LineCut(Point(0, 0), Point(100, 100), settings=settings))
         cutcode.append(LineCut(Point(100, 100), Point(0, 0), settings=settings))
         cutcode.append(LineCut(Point(50, -50), Point(100, -100), settings=settings))
@@ -97,9 +97,7 @@ class TestCutcode(unittest.TestCase):
         laserop.add(svg_image, type="opnode")
 
         # raster_step is default to 0 and not set.
-        self.assertRaises(AssertionError, CutCode, laserop.as_cutobjects())
-
-        laserop.settings.raster_step = 2
+        laserop.raster_step = 2
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 1)
         rastercut = cutcode[0]
@@ -374,7 +372,7 @@ class TestCutcode(unittest.TestCase):
                 rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            laserop.settings.raster_step = (
+            laserop.raster_step = (
                 i  # Raster_Step should be ignored, set for next loop
             )
 
@@ -414,38 +412,3 @@ class TestCutcode(unittest.TestCase):
             else:
                 self.assertNotEqual(x_dir, rx_dir)
 
-    def test_cutcode_direction_flags(self):
-        """
-        Test the direction flags for different cutcode objects when flagged normal vs. reversed.
-
-        @return:
-        """
-        path = Path("M0,0")
-        for i in range(1000):
-            v = random.randint(0,5)
-            if v == 0:
-                path.line(path.current_point.x, random.randint(0, 5000))
-            if v == 1:
-                path.line(random.randint(0, 5000), path.current_point.y)
-            if v == 2:
-                path.line(path.current_point.x, path.current_point.y)
-            else:
-                path.line((random.randint(0, 5000), random.randint(0, 5000)))
-        laserop = LaserOperation()
-        laserop.operation = "Cut"
-        laserop.add(path, type="opnode")
-        cutcode = CutCode(laserop.as_cutobjects())
-        for cut in cutcode.flat():
-            major = cut.major_axis()
-            x_dir = cut.x_dir()
-            y_dir = cut.y_dir()
-            cut.reverse()
-            cut.reverse()
-            cut.reverse()
-            ry_dir = cut.y_dir()
-            rx_dir = cut.x_dir()
-            self.assertEqual(major, cut.major_axis())
-            if major == 1:
-                self.assertNotEqual(y_dir, ry_dir)
-            else:
-                self.assertNotEqual(x_dir, rx_dir)

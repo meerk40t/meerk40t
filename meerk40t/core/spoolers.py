@@ -345,7 +345,8 @@ class Spooler:
         @param program: line to be executed.
         @return:
         """
-
+        if self._shutdown:
+            return
         # TUPLE[str, Any,...]
         if isinstance(program, tuple):
             attr = program[0]
@@ -369,13 +370,11 @@ class Spooler:
             program = getattr(program, "generate")
 
         # GENERATOR
-        try:
-            for p in program():
-                self._execute_program(p)
-            return
-        except TypeError:
-            pass
-        print("Unspoolable object: {s}".format(s=str(program)))
+        for p in program():
+            if self._shutdown:
+                return
+            self._execute_program(p)
+        # print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):
         while True:

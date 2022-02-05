@@ -69,9 +69,7 @@ class Rotary(Service):
             )
             return "rotary", None
 
-        @self.console_command(
-            "rotaryscale", help=_("Rotary Scale selected elements")
-        )
+        @self.console_command("rotaryscale", help=_("Rotary Scale selected elements"))
         def apply_rotary_scale(*args, **kwargs):
             sx = self.scale_x
             sy = self.scale_y

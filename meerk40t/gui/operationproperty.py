@@ -1,4 +1,5 @@
 import wx
+
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
 
@@ -57,4 +58,7 @@ class OperationProperty(MWindow):
             p.pane_hide()
 
     def window_preserve(self):
+        return False
+
+    def window_menu(self):
         return False

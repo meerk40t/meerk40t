@@ -4,7 +4,7 @@ import wx
 import wx.ribbon as RB
 from wx import aui
 
-from ..kernel import lookup_listener
+from ..kernel import Job, lookup_listener
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
 
@@ -37,6 +37,13 @@ class RibbonPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._job = Job(
+            process=self._perform_realization,
+            job_name="realize_ribbon_bar",
+            interval=0.1,
+            times=1,
+            run_main=True,
+        )
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
@@ -55,6 +62,7 @@ class RibbonPanel(wx.Panel):
         self.Layout()
         # self._ribbon
         self.pipe_state = None
+        self._ribbon_dirty = False
 
     def set_buttons(self, new_values, button_bar):
         button_bar.ClearButtons()
@@ -101,7 +109,7 @@ class RibbonPanel(wx.Panel):
                     button["tip"],
                 )
             button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button["action"], id=new_id)
-        self._ribbon.Realize()
+        self.ensure_realize()
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
@@ -122,6 +130,14 @@ class RibbonPanel(wx.Panel):
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+
+    def ensure_realize(self):
+        self._ribbon_dirty = True
+        self.context.schedule(self._job)
+
+    def _perform_realization(self, *args):
+        self._ribbon_dirty = False
+        self._ribbon.Realize()
 
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
@@ -182,7 +198,7 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.modify_panel)
         self.modify_button_bar = button_bar
 
-        self._ribbon.Realize()
+        self.ensure_realize()
 
     def pane_show(self):
         pass

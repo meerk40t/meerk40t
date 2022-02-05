@@ -102,7 +102,9 @@ class PropertiesPanel(wx.Panel):
 
                     return text
 
-                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type))
+                control.Bind(
+                    wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
+                )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 control_sizer = wx.StaticBoxSizer(

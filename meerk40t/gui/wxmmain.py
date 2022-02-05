@@ -5,18 +5,30 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation
+from ..core.node.consoleop import ConsoleOperation
+from ..core.node.laserop import LaserOperation
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
-from ..svgelements import Color, Length, Matrix, Path, SVGImage, SVGText, Group, SVGElement
+from ..svgelements import (
+    Color,
+    Group,
+    Length,
+    Matrix,
+    Path,
+    SVGElement,
+    SVGImage,
+    SVGText,
+)
 from .icons import (
     icon_meerk40t,
     icons8_emergency_stop_button_50,
+    icons8_flip_vertical,
     icons8_gas_industry_50,
     icons8_home_filled_50,
+    icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50, icons8_mirror_horizontal, icons8_flip_vertical,
+    icons8_save_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -136,7 +148,9 @@ class MeerK40t(MWindow):
         if self.context.disable_tool_tips:
             wx.ToolTip.Enable(False)
 
-        self.context.register("function/open_property_window_for_node", self.open_property_window_for_node)
+        self.context.register(
+            "function/open_property_window_for_node", self.open_property_window_for_node
+        )
 
         self.root_context = context.root
         self.DragAcceptFiles(True)
@@ -191,6 +205,8 @@ class MeerK40t(MWindow):
         if isinstance(node, LaserOperation):
             root.open("window/OperationProperty", gui, node=node)
             return
+        if isinstance(node, ConsoleOperation):
+            root.open("window/ConsoleProperty", gui, node=node)
         if node is None:
             return
         obj = node.object
@@ -307,7 +323,9 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 width_in_nm = context.device.width
-                length = Length(dlg.GetValue()).value(ppi=UNITS_PER_INCH, relative_length=width_in_nm)
+                length = Length(dlg.GetValue()).value(
+                    ppi=UNITS_PER_INCH, relative_length=width_in_nm
+                )
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
@@ -384,6 +402,23 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
+        @context.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
+        @context.console_command("interrupt", hidden=True)
+        def interrupt(message="", **kwargs):
+            if not message:
+                message = _("Spooling Interrupted.")
+
+            dlg = wx.MessageDialog(
+                None,
+                message + "\n\n" + _("Press OK to Continue."),
+                _("Interrupt"),
+                wx.OK,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
             # This code should load just specific project files rather than all importable formats.
@@ -394,9 +429,23 @@ class MeerK40t(MWindow):
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
                 pathname = fileDialog.GetPath()
+                gui.clear_and_open(pathname)
+
+        @context.console_command("dialog_import", hidden=True)
+        def import_dialog(**kwargs):
+            files = context.load_types()
+            with wx.FileDialog(
+                gui,
+                _("Import"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+            ) as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return  # the user changed their mind
+                pathname = fileDialog.GetPath()
                 gui.load(pathname)
 
-        @context.console_command("dialog_save", hidden=True)
+        @context.console_command("dialog_save_as", hidden=True)
         def save_dialog(**kwargs):
             files = context.elements.save_types()
             with wx.FileDialog(
@@ -414,6 +463,15 @@ class MeerK40t(MWindow):
                 gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)
+
+        @context.console_command("dialog_save", hidden=True)
+        def save_or_save_as(**kwargs):
+            if gui.working_file is None:
+                context(".dialog_save_as\n")
+            else:
+                gui.set_file_as_recently_used(gui.working_file)
+                gui.validate_save()
+                context.save(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def egv_in_dialog(**kwargs):
@@ -724,9 +782,13 @@ class MeerK40t(MWindow):
 
             return toggle
 
-        for i in range(self.panes_menu.MenuItemCount):
-            self.panes_menu.Remove(self.panes_menu.FindItemByPosition(0))
-
+        self.panes_menu = wx.Menu()
+        label = _("Panes")
+        index = self.main_menubar.FindMenu(label)
+        if index != -1:
+            self.main_menubar.Replace(index, self.panes_menu, label)
+        else:
+            self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
@@ -792,11 +854,18 @@ class MeerK40t(MWindow):
 
             return toggle
 
-        for i in range(self.window_menu.MenuItemCount):
-            self.window_menu.Remove(self.window_menu.FindItemByPosition(0))
+        label = _("Tools")
+        self.window_menu = wx.Menu()
+        index = self.main_menubar.FindMenu(label)
+        if index != -1:
+            self.main_menubar.Replace(index, self.window_menu, label)
+        else:
+            self.main_menubar.Append(self.window_menu, label)
 
         submenus = {}
         for window, _path, suffix_path in self.context.find("window/.*"):
+            if not window.window_menu(None):
+                continue
             submenu = None
             try:
                 submenu_name = window.submenu
@@ -837,139 +906,6 @@ class MeerK40t(MWindow):
             lambda v: self.context("window reset *\n"),
             id=ID_MENU_WINDOW_RESET,
         )
-
-        #
-        # self.window_menu.executejob = self.window_menu.Append(
-        #     ID_MENU_JOB, _("E&xecute Job"), ""
-        # )
-        # self.window_menu.simulate = self.window_menu.Append(
-        #     ID_MENU_SIMULATE, _("&Simulate"), ""
-        # )
-        # self.window_menu.rasterwizard = self.window_menu.Append(
-        #     ID_MENU_RASTER_WIZARD, _("&RasterWizard"), ""
-        # )
-        # self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("&Notes"), "")
-        # self.window_menu.console = self.window_menu.Append(
-        #     ID_MENU_CONSOLE, _("&Console"), ""
-        # )
-        #
-        # self.window_menu.navigation = self.window_menu.Append(
-        #     ID_MENU_NAVIGATION, _("N&avigation"), ""
-        # )
-        # if self.context.has_feature("modifier/Camera"):
-        #     self.window_menu.camera = self.window_menu.Append(
-        #         ID_MENU_CAMERA, _("C&amera"), ""
-        #     )
-        # self.window_menu.jobspooler = self.window_menu.Append(
-        #     ID_MENU_SPOOLER, _("S&pooler"), ""
-        # )
-        #
-        # self.window_menu.controller = self.window_menu.Append(
-        #     ID_MENU_CONTROLLER, _("C&ontroller"), ""
-        # )
-        # self.window_menu.devices = self.window_menu.Append(
-        #     ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
-        # )
-        # self.window_menu.config = self.window_menu.Append(
-        #     ID_MENU_CONFIG, _("Confi&g"), ""
-        # )
-        # self.window_menu.preferences = self.window_menu.Append(
-        #     wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
-        # )
-        #
-        # self.window_menu.keymap = self.window_menu.Append(
-        #     ID_MENU_KEYMAP, _("&Keymap"), ""
-        # )
-        # self.window_menu.rotary = self.window_menu.Append(
-        #     ID_MENU_ROTARY, _("Rotar&y"), ""
-        # )
-        # self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("&USB"), "")
-
-        #
-
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Console\n"),
-        #     id=ID_MENU_CONSOLE,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle DeviceManager\n"),
-        #     id=ID_MENU_DEVICE_MANAGER,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Keymap\n"),
-        #     id=ID_MENU_KEYMAP,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Preferences\n"),
-        #     id=wx.ID_PREFERENCES,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Notes\n"),
-        #     id=ID_MENU_NOTES,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Navigation\n"),
-        #     id=ID_MENU_NAVIGATION,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle ExecuteJob 0\n"),
-        #     id=ID_MENU_JOB,
-        # )
-        # if self.context.has_feature("modifier/Camera"):
-        #     self.Bind(
-        #         wx.EVT_MENU,
-        #         lambda v: self.context("window toggle CameraInterface\n"),
-        #         id=ID_MENU_CAMERA,
-        #     )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Configuration\n"),
-        #     id=ID_MENU_CONFIG,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window -p rotary/1 open Rotary\n"),
-        #     id=ID_MENU_ROTARY,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle Controller\n"),
-        #     id=ID_MENU_CONTROLLER,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle UsbConnect\n"),
-        #     id=ID_MENU_USB,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle JobSpooler\n"),
-        #     id=ID_MENU_SPOOLER,
-        # )
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     lambda v: self.context("window toggle RasterWizard\n"),
-        #     id=ID_MENU_RASTER_WIZARD,
-        # )
-        #
-        # def open_simulator(v=None):
-        #     with wx.BusyInfo(_("Preparing simulation...")):
-        #         self.context(
-        #             "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-        #         ),
-        #
-        # self.Bind(
-        #     wx.EVT_MENU,
-        #     open_simulator,
-        #     id=ID_MENU_SIMULATE,
-        # )
 
     def __set_menubar(self):
         self.file_menu = wx.Menu()
@@ -1053,18 +989,12 @@ class MeerK40t(MWindow):
         # ==========
         # PANE MENU
         # ==========
-
-        self.panes_menu = wx.Menu()
         self.dynamic_fill_pane_menu()
-        self.main_menubar.Append(self.panes_menu, _("Panes"))
-
         # ==========
         # TOOL MENU
         # ==========
 
-        self.window_menu = wx.Menu()
         self.dynamic_fill_window_menu()
-        self.main_menubar.Append(self.window_menu, _("Tools"))
 
         # ==========
         # OSX-ONLY WINDOW MENU
@@ -1107,9 +1037,7 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform.system() == "Darwin":
-            self.help_menu.Append(
-                wx.ID_HELP, _("&MeerK40t Help"), ""
-            )
+            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
             self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
@@ -1141,7 +1069,7 @@ class MeerK40t(MWindow):
         # ==========
         self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=ID_MENU_IMPORT)
+        self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
         self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
 
@@ -1654,6 +1582,25 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
+    def clear_project(self):
+        context = self.context
+        self.working_file = None
+        self.validate_save()
+        context.elements.clear_all()
+        self.context(".laserpath_clear\n")
+
+    def clear_and_open(self, pathname):
+        self.clear_project()
+        if self.load(pathname):
+            try:
+                if self.context.uniform_svg and pathname.lower().endswith("svg"):
+                    # or (len(elements) > 0 and "meerK40t" in elements[0].values):
+                    # TODO: Disabled uniform_svg, no longer detecting namespace.
+                    self.working_file = pathname
+                    self.validate_save()
+            except AttributeError:
+                pass
+
     def load(self, pathname):
         with wx.BusyInfo(_("Loading File...")):
             n = self.context.elements.note
@@ -1677,16 +1624,6 @@ class MeerK40t(MWindow):
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
-                try:
-                    if self.context.elements.uniform_svg and pathname.lower().endswith(
-                        "svg"
-                    ):
-                        # or (len(elements) > 0 and "meerK40t" in elements[0].values):
-                        # TODO: Disabled uniform_svg, no longer detecting namespace.
-                        self.working_file = pathname
-                        self.validate_save()
-                except AttributeError:
-                    pass
                 return True
             return False
 
@@ -1724,13 +1661,13 @@ class MeerK40t(MWindow):
         # event.Skip()
 
     def on_click_new(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.working_file = None
-        self.validate_save()
-        self.context.elements.clear_all()
-        self.context(".laserpath_clear\n")
+        self.clear_project()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         self.context("dialog_load\n")
+
+    def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
+        self.context("dialog_import\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -1739,15 +1676,10 @@ class MeerK40t(MWindow):
         self.context("pause\n")
 
     def on_click_save(self, event):
-        if self.working_file is None:
-            self.on_click_save_as(event)
-        else:
-            self.set_file_as_recently_used(self.working_file)
-            self.validate_save()
-            self.context.elements.save(self.working_file)
+        self.context("dialog_save\n")
 
     def on_click_save_as(self, event=None):
-        self.context("dialog_save\n")
+        self.context("dialog_save_as\n")
 
     def on_click_close(self, event=None):
         try:
@@ -1784,11 +1716,11 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            x_delta = (bbox[2]-bbox[0]) * 0.04
-            y_delta = (bbox[3]-bbox[1]) * 0.04
+            x_delta = (bbox[2] - bbox[0]) * 0.04
+            y_delta = (bbox[3] - bbox[1]) * 0.04
             self.context(
-                "scene focus %f %f %f %f\n" %
-                (
+                "scene focus %f %f %f %f\n"
+                % (
                     bbox[0] - x_delta,
                     bbox[1] - y_delta,
                     bbox[2] + x_delta,

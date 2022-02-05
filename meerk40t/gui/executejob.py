@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from ..core.elements import LaserOperation
+from ..core.node.laserop import LaserOperation
 from ..kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
@@ -174,7 +174,9 @@ class PlannerPanel(wx.Panel):
         dlg.SetValue(str(width))
         if dlg.ShowModal() == wx.ID_OK:
             try:
-                x_distance = self.context.device.length(dlg.GetValue(), 0, relative_length=width)
+                x_distance = self.context.device.length(
+                    dlg.GetValue(), 0, relative_length=width
+                )
             except ValueError:
                 dlg.Destroy()
                 return
@@ -201,7 +203,9 @@ class PlannerPanel(wx.Panel):
         dlg.SetValue(str(height))
         if dlg.ShowModal() == wx.ID_OK:
             try:
-                y_distance = self.context.device.length(dlg.GetValue(), 1, relative_length=height)
+                y_distance = self.context.device.length(
+                    dlg.GetValue(), 1, relative_length=height
+                )
             except ValueError:
                 dlg.Destroy()
                 return

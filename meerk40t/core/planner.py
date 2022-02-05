@@ -1,13 +1,13 @@
 from copy import copy
 from os import times
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 from time import time
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from ..core.cutcode import CutCode, CutGroup, CutObject
+from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
-from .elements import LaserOperation
+from .node.laserop import LaserOperation
 
 
 def plugin(kernel, lifecycle=None):
@@ -151,7 +151,7 @@ def plugin(kernel, lifecycle=None):
                     + "The total travel time may therefore be shorter or longer. "
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
-                )
+                ),
             },
             {
                 "attr": "opt_merge_passes",
@@ -424,7 +424,7 @@ class CutPlan:
                         if pass_idx == 1:
                             blob_plan.append(op)
                         continue
-                    copies = op.settings.implicit_passes
+                    copies = op.implicit_passes
                     if passes_first:
                         if pass_idx > copies - 1:
                             continue
@@ -458,8 +458,8 @@ class CutPlan:
         self.plan.clear()
         for blob in blob_plan:
             try:
-                blob.settings.jog_distance = context.opt_jog_minimum
-                blob.settings.jog_enable = context.opt_rapid_between
+                blob.jog_distance = context.opt_jog_minimum
+                blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
             # We can only merge and check for other criteria if we have the right objects
@@ -546,18 +546,14 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
-                self.plan[i] = short_travel_cutcode_2opt(
-                    self.plan[i], channel=channel
-                )
+                self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
 
     def optimize_cuts(self):
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel
-                    )
+                    self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -571,19 +567,18 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(
-                        c, channel=channel
-                    )
+                    self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 if last is not None:
-                    self.plan[i].start = last
+                    cur = self.plan[i]
+                    cur._start_x, cur._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,
                     complete_path=self.context.opt_complete_subpaths,
                     grouped_inner=self.context.opt_inners_grouped,
                 )
-                last = self.plan[i].end()
+                last = self.plan[i].end
 
     def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
@@ -615,7 +610,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "opnode")))
+        subitems = list(op.flat(types=("elem", "refelem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -625,7 +620,7 @@ class CutPlan:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        step = op.settings.raster_step
+        step = op.raster_step
         if step == 0:
             step = 1
         image = make_raster(subitems, bounds, step=step)
@@ -653,7 +648,7 @@ class CutPlan:
                         #  been set, the initial bounds are wrong.
                         image_element = self.make_image_for_op(op)
                     op.children.clear()
-                    op.add(image_element, type="opnode")
+                    op.add(image_element, type="refelem")
             except AttributeError:
                 continue
 
@@ -663,8 +658,8 @@ class CutPlan:
                 if op.operation == "Raster":
                     for elem in op.children:
                         elem = elem.object
-                        if needs_actualization(elem, op.settings.raster_step):
-                            make_actual(elem, op.settings.raster_step)
+                        if needs_actualization(elem, op.raster_step):
+                            make_actual(elem, op.raster_step)
                 if op.operation == "Image":
                     for elem in op.children:
                         elem = elem.object
@@ -741,7 +736,7 @@ class CutPlan:
                 if op.operation == "Raster":
                     for elem in op.children:
                         elem = elem.object
-                        if needs_actualization(elem, op.settings.raster_step):
+                        if needs_actualization(elem, op.raster_step):
                             self.commands.append(self.actualize)
                             return
                 if op.operation == "Image":
@@ -950,7 +945,8 @@ class Planner(Service):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                depth=1,
             ):
                 try:
                     if not c.output:
@@ -1144,7 +1140,7 @@ class Planner(Service):
             y_distance=None,
             data_type=None,
             data=None,
-            **kwgs
+            **kwgs,
         ):
             if y_distance is None:
                 raise SyntaxError
@@ -1186,7 +1182,7 @@ class Planner(Service):
                     y_distance = "%f%%" % (100.0 / (rows + 1))
             except Exception:
                 pass
-            x_distance = self.device.length(x_distance,1)
+            x_distance = self.device.length(x_distance, 1)
             y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
@@ -1434,50 +1430,72 @@ def bounding_box(elements):
     return xmin, ymin, xmax, ymax
 
 
-def is_inside(inner_path, outer_path):
+def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
     :param inner_path: inner path
     :param outer_path: outer path
     :return: whether path1 is wholly inside path2.
     """
-    if hasattr(inner_path, "path") and inner_path.path is not None:
-        inner_path = inner_path.path
-    if hasattr(outer_path, "path") and outer_path.path is not None:
-        outer_path = outer_path.path
-    if not hasattr(inner_path, "bounding_box"):
-        inner_path.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer_path, "bounding_box"):
-        outer_path.bounding_box = Group.union_bbox([outer_path])
-    if outer_path.bounding_box is None:
+    inner_path = inner
+    outer_path = outer
+    if hasattr(inner, "path") and inner.path is not None:
+        inner_path = inner.path
+    if hasattr(outer, "path") and outer.path is not None:
+        outer_path = outer.path
+    if not hasattr(inner, "bounding_box"):
+        inner.bounding_box = Group.union_bbox([inner_path])
+    if not hasattr(outer, "bounding_box"):
+        outer.bounding_box = Group.union_bbox([outer_path])
+    if outer.bounding_box is None:
         return False
-    if inner_path.bounding_box is None:
+    if inner.bounding_box is None:
         return False
-    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+    # Raster is inner if the bboxes overlap anywhere
+    if isinstance(inner, RasterCut):
+        return (
+            inner.bounding_box[0] <= outer.bounding_box[2]
+            and inner.bounding_box[1] <= outer.bounding_box[3]
+            and inner.bounding_box[2] >= outer.bounding_box[0]
+            and inner.bounding_box[3] >= outer.bounding_box[1]
+        )
+    if outer.bounding_box[0] > inner.bounding_box[0]:
         # outer minx > inner minx (is not contained)
         return False
-    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+    if outer.bounding_box[1] > inner.bounding_box[1]:
         # outer miny > inner miny (is not contained)
         return False
-    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+    if outer.bounding_box[2] < inner.bounding_box[2]:
         # outer maxx < inner maxx (is not contained)
         return False
-    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+    if outer.bounding_box[3] < inner.bounding_box[3]:
         # outer maxy < inner maxy (is not contained)
         return False
-    if outer_path.bounding_box == inner_path.bounding_box:
-        if outer_path == inner_path:  # This is the same object.
+    if outer.bounding_box == inner.bounding_box:
+        if outer == inner:  # This is the same object.
             return False
-    if not hasattr(outer_path, "vm"):
+
+    # Inner bbox is entirely inside outer bbox,
+    # however that does not mean that inner is actually inside outer
+    # i.e. inner could be small and between outer and the bbox corner,
+    # or small and  contained in a concave indentation.
+    #
+    # VectorMontonizer can determine whether a point is inside a polygon.
+    # The code below uses a brute force approach by considering a fixed number of points,
+    # however we should consider a future enhancement whereby we create
+    # a polygon more intelligently based on size and curvature
+    # i.e. larger bboxes need more points and
+    # tighter curves need more points (i.e. compare vector directions)
+    if not hasattr(outer, "vm"):
         outer_path = Polygon(
-            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
         vm.add_cluster(outer_path)
-        outer_path.vm = vm
+        outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
-        if not outer_path.vm.is_point_inside(p.x, p.y):
+        if not outer.vm.is_point_inside(p.x, p.y):
             return False
     return True
 
@@ -1511,8 +1529,8 @@ def inner_first_ident(context: CutGroup, channel=None):
         start_times = times()
         channel("Executing Inner-First Identification")
 
-    groups = [cut for cut in context if isinstance(cut, CutGroup)]
-    closed_groups = [g for g in groups if g.closed]
+    groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
+    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
 
     constrained = False
@@ -1536,16 +1554,16 @@ def inner_first_ident(context: CutGroup, channel=None):
     context.constrained = constrained
 
     # for g in groups:
-        # if g.contains is not None:
-            # for inner in g.contains:
-                # assert inner in groups
-                # assert inner is not g
-                # assert g in inner.inside
-        # if g.inside is not None:
-            # for outer in g.inside:
-                # assert outer in groups
-                # assert outer is not g
-                # assert g in outer.contains
+    # if g.contains is not None:
+    # for inner in g.contains:
+    # assert inner in groups
+    # assert inner is not g
+    # assert g in inner.inside
+    # if g.inside is not None:
+    # for outer in g.inside:
+    # assert outer in groups
+    # assert outer is not g
+    # assert g in outer.contains
 
     if channel:
         end_times = times()
@@ -1561,7 +1579,12 @@ def inner_first_ident(context: CutGroup, channel=None):
     return context
 
 
-def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+def short_travel_cutcode(
+    context: CutCode,
+    channel=None,
+    complete_path: Optional[bool] = False,
+    grouped_inner: Optional[bool] = False,
+):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
     optimizing with greedy/brute for shortest distances optimizations.
@@ -1606,14 +1629,16 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
                 if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
-                    distance = abs(complex(closest.start()) - curr)
+                    start = closest.start
+                    distance = abs(complex(start[0], start[1]) - curr)
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
                 if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
-                    distance = abs(complex(closest.end()) - curr)
+                    end = closest.end
+                    distance = abs(complex(end[0], end[1]) - curr)
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
@@ -1629,18 +1654,16 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
             closest = None
-            for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
-                s = cut.start()
+            for cut in context.candidate(
+                complete_path=complete_path, grouped_inner=grouped_inner
+            ):
+                s = cut.start
                 if (
-                    abs(s.x - curr.real) <= distance
-                    and abs(s.y - curr.imag) <= distance
-                    and (
-                        not complete_path
-                        or cut.closed
-                        or cut.first
-                    )
+                    abs(s[0] - curr.real) <= distance
+                    and abs(s[1] - curr.imag) <= distance
+                    and (not complete_path or cut.closed or cut.first)
                 ):
-                    d = abs(complex(s) - curr)
+                    d = abs(complex(s[0], s[1]) - curr)
                     if d < distance:
                         closest = cut
                         backwards = False
@@ -1650,17 +1673,13 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
 
                 if not cut.reversible():
                     continue
-                e = cut.end()
+                e = cut.end
                 if (
-                    abs(e.x - curr.real) <= distance
-                    and abs(e.y - curr.imag) <= distance
-                    and (
-                        not complete_path
-                        or cut.closed
-                        or cut.last
-                    )
+                    abs(e[0] - curr.real) <= distance
+                    and abs(e[1] - curr.imag) <= distance
+                    and (not complete_path or cut.closed or cut.last)
                 ):
-                    d = abs(complex(e) - curr)
+                    d = abs(complex(e[0], e[1]) - curr)
                     if d < distance:
                         closest = cut
                         backwards = True
@@ -1676,7 +1695,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
             if (
                 closest.next
                 and closest.next.burns_done <= closest.burns_done
-                and closest.next.start() == closest.end()
+                and closest.next.start == closest.end
             ):
                 closest = closest.next
                 backwards = False
@@ -1684,7 +1703,7 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
             if (
                 closest.previous
                 and closest.previous.burns_done < closest.burns_done
-                and closest.previous.end() == closest.start()
+                and closest.previous.end == closest.start
             ):
                 closest = closest.previous
                 backwards = True
@@ -1693,11 +1712,11 @@ def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional
         c = copy(closest)
         if backwards:
             c.reverse()
-        end = c.end()
-        curr = complex(end)
+        end = c.end
+        curr = complex(end[0], end[1])
         ordered.append(c)
 
-    ordered.start = context.start
+    ordered._start_x, ordered._start_y = context.start
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
@@ -1762,7 +1781,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     endpoints = np.zeros((length, 4), dtype="complex")
     # start, index, reverse-index, end
     for i in range(length):
-        endpoints[i] = complex(ordered[i].start()), i, ~i, complex(ordered[i].end())
+        endpoints[i] = complex(ordered[i].start), i, ~i, complex(ordered[i].end)
     indexes0 = np.arange(0, length - 1)
     indexes1 = indexes0 + 1
 
@@ -1859,7 +1878,9 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode, channel=None, grouped_inner: Optional[bool]=False):
+def inner_selection_cutcode(
+    context: CutCode, channel=None, grouped_inner: Optional[bool] = False
+):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.

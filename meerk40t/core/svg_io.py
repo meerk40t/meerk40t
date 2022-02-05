@@ -4,7 +4,6 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -43,7 +42,8 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .elements import LaserOperation
+from .node.laserop import LaserOperation
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):
@@ -384,15 +384,18 @@ class SVGLoader:
                                 if type_v in (str, int, float, Color):
                                     try:
                                         setattr(op, key, type_v(element.values[key]))
-                                    except (ValueError, KeyError):
+                                    except (ValueError, KeyError, AttributeError):
                                         pass
                                 elif type_v == bool:
-                                    setattr(
-                                        op,
-                                        key,
-                                        str(element.values[key]).lower()
-                                        in ("true", "1"),
-                                    )
+                                    try:
+                                        setattr(
+                                            op,
+                                            key,
+                                            str(element.values[key]).lower()
+                                            in ("true", "1"),
+                                        )
+                                    except (ValueError, KeyError, AttributeError):
+                                        pass
                         for key in dir(op.settings):
                             if key.startswith("_") or key.startswith("implicit"):
                                 continue

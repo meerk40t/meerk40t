@@ -128,6 +128,7 @@ class ToolbarManager:
                 short_help_string=button["tip"],
             )
             if "alt-action" in button:
+
                 def on_click(action):
                     def specific(event=None):
                         print(event)
@@ -142,11 +143,14 @@ class ToolbarManager:
                             for act_label, act_func in b["alt-action"]:
                                 opt_id = wx.NewId()
                                 menu.Append(opt_id, act_label)
-                                button_bar.Bind(wx.EVT_MENU, on_click(act_func), id=opt_id)
+                                button_bar.Bind(
+                                    wx.EVT_MENU, on_click(act_func), id=opt_id
+                                )
                             gui.PopupMenu(menu)
                         else:
                             b["action"]()
                         button_bar.SetToolSticky(event.GetId(), False)
+
                     return specific
 
                 button_bar.SetToolDropDown(new_id, True)

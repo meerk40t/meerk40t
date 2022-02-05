@@ -93,9 +93,9 @@ def create_choices_for_node(node, elements) -> List[dict]:
         choices.append(choice)
         choice["action"] = func
         choice["type"] = "action"
-        choice['submenu'] = func.submenu
-        choice['kwargs'] = dict()
-        choice['args'] = tuple()
+        choice["submenu"] = func.submenu
+        choice["kwargs"] = dict()
+        choice["args"] = tuple()
         choice["separate_before"] = func.separate_before
         choice["separate_after"] = func.separate_after
         choice["label"] = func.name
@@ -138,7 +138,9 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
         def specific(event=None):
             prompts = f.user_prompt
             for prompt in prompts:
-                func_dict[prompt["attr"]] = elements.kernel.prompt(prompt["type"], prompt["prompt"])
+                func_dict[prompt["attr"]] = elements.kernel.prompt(
+                    prompt["type"], prompt["prompt"]
+                )
             f(node, **func_dict)
 
         return specific

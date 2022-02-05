@@ -1,11 +1,9 @@
 import threading
 import time
 
-from ..core.cutcode import LaserSettings
-from ..core.drivers import Driver
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..core.units import ViewPort, UNITS_PER_INCH, UNITS_PER_MIL
+from ..core.units import UNITS_PER_MIL, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -168,9 +166,11 @@ class MoshiDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight)
+        ViewPort.__init__(
+            self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight
+        )
 
-        self.settings = LaserSettings()
+        self.settings = dict()
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -297,7 +297,6 @@ class MoshiDevice(Service, ViewPort):
     def viewbuffer(self):
         return self.controller.viewbuffer()
 
-
     @property
     def current_x(self):
         """
@@ -334,7 +333,7 @@ class MoshiDriver:
         self.name = str(self.service)
         self.state = 0
 
-        self.settings = LaserSettings()
+        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -713,6 +712,12 @@ class MoshiDriver:
         """
         function()
 
+    def beep(self):
+        self.service("beep\n")
+
+    def console(self, value):
+        self.service(value)
+
     def signal(self, signal, *args):
         """
         This asks that this signal be broadcast.
@@ -958,7 +963,9 @@ class MoshiController:
         self.is_shutdown = False
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 

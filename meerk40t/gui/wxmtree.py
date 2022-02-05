@@ -1,8 +1,8 @@
 import wx
 from wx import aui
 
-from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot
+from ..core.node.laserop import LaserOperation
+from ..core.node.node import isDot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -81,7 +81,9 @@ class TreePanel(wx.Panel):
         self.context.signal("rebuild_tree")
 
     def __set_tree(self):
-        self.shadow_tree = ShadowTree(self.context.elements, self.GetParent(), self.wxtree)
+        self.shadow_tree = ShadowTree(
+            self.context.elements, self.GetParent(), self.wxtree
+        )
 
         self.Bind(
             wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
@@ -824,6 +826,10 @@ class ShadowTree:
             activate = self.context.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(first_element.node)
+        # TODO: Activate ConsoleOperation
+        # if isinstance(node, ConsoleOperation):
+        #     self.context.open("window/ConsoleProperty", self.gui, node=node)
+        #     return
 
     def on_item_selection_changed(self, event):
         """
@@ -844,10 +850,10 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "opnode":
+            if node.type == "refelem":
                 emphasized[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=("opnode",), cascade=False):
+                for n in node.flat(types=("refelem",), cascade=False):
                     try:
                         emphasized.append(n.object.node)
                     except Exception:
