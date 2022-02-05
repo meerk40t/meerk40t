@@ -42,7 +42,6 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .node.laserop import LaserOperation
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 
 

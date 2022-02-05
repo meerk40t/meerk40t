@@ -7,7 +7,6 @@ from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
-from .node.laserop import LaserOperation
 
 
 def plugin(kernel, lifecycle=None):

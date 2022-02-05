@@ -6,7 +6,7 @@ from wx import aui
 
 from ..core.cutcode import CutCode
 from ..core.node.consoleop import ConsoleOperation
-from ..core.node.laserop import LaserOperation
+from ..core.node.laserop import RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import (
@@ -202,7 +202,7 @@ class MeerK40t(MWindow):
         """
         gui = self
         root = self.context.root
-        if isinstance(node, LaserOperation):
+        if isinstance(node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)):
             root.open("window/OperationProperty", gui, node=node)
             return
         if isinstance(node, ConsoleOperation):

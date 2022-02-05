@@ -526,7 +526,11 @@ class Node:
                 # except AttributeError:
                 #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
             node = node_class(data_object)
-            node.set_label(label)
+            try:
+                node.set_label(label)
+            except TypeError:
+                node.set_label("Unknown")
+
             if self._root is not None:
                 self._root.notify_created(node)
         node.type = type
