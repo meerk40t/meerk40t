@@ -850,10 +850,10 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "opnode":
+            if node.type == "refelem":
                 emphasized[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=("opnode",), cascade=False):
+                for n in node.flat(types=("refelem",), cascade=False):
                     try:
                         emphasized.append(n.object.node)
                     except Exception:

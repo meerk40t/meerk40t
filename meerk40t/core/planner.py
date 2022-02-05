@@ -610,7 +610,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "opnode")))
+        subitems = list(op.flat(types=("elem", "refelem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -648,7 +648,7 @@ class CutPlan:
                         #  been set, the initial bounds are wrong.
                         image_element = self.make_image_for_op(op)
                     op.children.clear()
-                    op.add(image_element, type="opnode")
+                    op.add(image_element, type="refelem")
             except AttributeError:
                 continue
 

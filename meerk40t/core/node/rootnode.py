@@ -32,7 +32,7 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem": ElemNode,
-            "opnode": OpNode,
+            "refelem": OpNode,
             "cutcode": CutNode,
         }
         self.add(type="branch ops", label=_("Operations"))

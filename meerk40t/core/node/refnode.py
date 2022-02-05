@@ -3,7 +3,7 @@ from meerk40t.core.node.node import Node
 
 class OpNode(Node):
     """
-    OpNode is the bootstrapped node type for the opnode type.
+    OpNode is the bootstrapped node type for the refelem type.
 
     OpNodes track referenced copies of vector element data.
     """

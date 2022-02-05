@@ -25,7 +25,7 @@ class LaserOperation(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="opnode")
+                self.add(obj, type="refelem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -95,7 +95,7 @@ class LaserOperation(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="opnode")
+            self.add(element.object, type="refelem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
