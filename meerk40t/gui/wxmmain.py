@@ -1721,7 +1721,6 @@ class MeerK40t(MWindow):
                 self.Bind(
                     wx.EVT_MENU,
                     partial(lambda f, event: self.load_or_open(f), file),
-                    # (lambda f: lambda: self.load_or_open(f))(file),
                     id=id,
                 )
 
