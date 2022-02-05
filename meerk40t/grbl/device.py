@@ -1,16 +1,16 @@
-import serial
 import os
 import re
 import socket
 import threading
 import time
 
+import serial
 from serial import SerialException
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MM, ViewPort, UNITS_PER_MIL
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,

@@ -2,10 +2,10 @@ import wx
 from wx import aui
 
 from meerk40t.core.units import (
-    UNITS_PER_INCH,
-    UNITS_PER_MM,
-    UNITS_PER_MIL,
     UNITS_PER_CM,
+    UNITS_PER_INCH,
+    UNITS_PER_MIL,
+    UNITS_PER_MM,
 )
 from meerk40t.gui.icons import (
     icon_corner1,

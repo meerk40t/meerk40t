@@ -1,8 +1,6 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import Job, signal_listener
-from meerk40t.svgelements import Color
 from meerk40t.gui.icons import (
     icons8_camera_50,
     icons8_connected_50,
@@ -18,6 +16,8 @@ from meerk40t.gui.scene.scene import (
     ScenePanel,
     Widget,
 )
+from meerk40t.kernel import Job, signal_listener
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 

@@ -4,8 +4,6 @@ from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
-from .node.laserop import LaserOperation
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -44,6 +42,8 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
+from .node.laserop import LaserOperation
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):

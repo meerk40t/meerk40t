@@ -3,7 +3,7 @@ import time
 
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
-from ..core.units import ViewPort, UNITS_PER_MIL
+from ..core.units import UNITS_PER_MIL, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
