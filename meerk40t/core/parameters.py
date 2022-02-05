@@ -75,6 +75,7 @@ class Parameters:
     @property
     def color(self):
         color = self.settings.get("color")
+        #TODO: Default parameters when op.type is not given.
         if color is None:
             if self.operation == "Cut":
                 return Color("red")

@@ -16,7 +16,6 @@ class LaserCodeNode(Node):
             self.name = "LaserCode"
         self.commands = commands
         self.output = True
-        self.operation = "LaserCode"
 
     def __repr__(self):
         return "LaserCode('%s', '%s')" % (self.name, str(self.commands))

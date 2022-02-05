@@ -36,7 +36,7 @@ image_simplify_re = re.compile(
     re.IGNORECASE,
 )
 
-OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
 
 from meerk40t.svgelements import (
     SVG_STRUCT_ATTRIB,
@@ -120,17 +120,18 @@ class Node:
         return self.type not in ("branch elems", "branch ops", "root")
 
     def drop(self, drag_node):
+        #TODO: Parse this code off to the individual nodes themselves.
         drop_node = self
         if drag_node.type == "elem":
-            if drop_node.type == "op":
+            if drop_node.type.startswith("op"):
                 # Disallow drop of non-image elems onto an Image op.
                 # Disallow drop of image elems onto a Dot op.
                 if (
                     not isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Image"
+                    and drop_node.type == "op image"
                 ) or (
                     isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Dots"
+                    and drop_node.type == "op dots"
                 ):
                     return False
                 # Dragging element onto operation adds that element to the op.
@@ -142,9 +143,9 @@ class Node:
                 # Disallow drop of image elems onto an refelem inside a Dot op.
                 if (
                     not isinstance(drag_node.object, SVGImage)
-                    and op.operation == "Image"
+                    and op.type == "op image"
                 ) or (
-                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
+                    isinstance(drag_node.object, SVGImage) and op.type == "op dots"
                 ):
                     return False
                 # Dragging element onto existing refelem in operation adds that element to the op after the refelem.
@@ -156,15 +157,15 @@ class Node:
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type == "refelem":
-            if drop_node.type == "op":
+            if drop_node.type.startswith("op"):
                 # Disallow drop of non-image refelems onto an Image op.
                 # Disallow drop of image refelems onto a Dot op.
                 if (
                     not isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Image"
+                    and drop_node.type == "op image"
                 ) or (
                     isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Dots"
+                    and drop_node.type == "op dots"
                 ):
                     return False
                 # Move an refelem to end of op.
@@ -176,16 +177,16 @@ class Node:
                 # Disallow drop of image refelems onto an refelem inside a Dot op.
                 if (
                     not isinstance(drag_node.object, SVGImage)
-                    and op.operation == "Image"
+                    and op.type == "op image"
                 ) or (
-                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
+                    isinstance(drag_node.object, SVGImage) and op.type == "op dots"
                 ):
                     return False
                 # Move an refelem to after another refelem.
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type in ("op", "cmdop", "consoleop"):
-            if drop_node.type in ("op", "cmdop", "consoleop"):
+        elif drag_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
+            if drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
                 # Move operation to a different position.
                 drop_node.insert_sibling(drag_node)
                 return True
@@ -194,16 +195,16 @@ class Node:
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type in "file":
-            if drop_node.type == "op":
+            if drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
                 some_nodes = False
                 for e in drag_node.flat("elem"):
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
                         not isinstance(e.object, SVGImage)
-                        and drop_node.operation == "Image"
+                        and drop_node.type == "op image"
                     ) or (
-                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
+                        isinstance(e.object, SVGImage) and drop_node.type == "op dots"
                     ):
                         continue
                     # Add element to operation
@@ -219,16 +220,16 @@ class Node:
                 # Move a group
                 drop_node.append_child(drag_node)
                 return True
-            elif drop_node.type == "op":
+            elif drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots"):
                 some_nodes = False
                 for e in drag_node.flat("elem"):
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
                         not isinstance(e.object, SVGImage)
-                        and drop_node.operation == "Image"
+                        and drop_node.type == "op image"
                     ) or (
-                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
+                        isinstance(e.object, SVGImage) and drop_node.type == "op dots"
                     ):
                         continue
                     # Add element to operation

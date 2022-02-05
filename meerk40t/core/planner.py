@@ -447,10 +447,10 @@ class CutPlan:
                         if len(cutcode) == 0:
                             break
                         cutcode.constrained = (
-                            op.operation == "Cut" and context.opt_inner_first
+                            op.type == "op cut" and context.opt_inner_first
                         )
                         cutcode.pass_index = pass_idx if passes_first else p
-                        cutcode.original_op = op.operation
+                        cutcode.original_op = op.type
                         blob_plan.append(cutcode)
 
         self.plan.clear()
@@ -511,7 +511,7 @@ class CutPlan:
         has_cutcode = False
         for op in self.plan:
             try:
-                if op.operation == "CutCode":
+                if isinstance(op, CutCode):
                     has_cutcode = True
                     break
             except AttributeError:
@@ -582,7 +582,7 @@ class CutPlan:
         for k in range(len(self.plan) - 1, -1, -1):
             op = self.plan[k]
             try:
-                if op.operation in ("Cut", "Engrave"):
+                if op.type in ("op cut", "op engrave"):
                     for i, e in enumerate(list(op.children)):
                         if isinstance(e.object, SVGText):
                             e.remove_node()
@@ -594,14 +594,11 @@ class CutPlan:
     def strip_rasters(self):
         stripped = False
         for k, op in enumerate(self.plan):
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(op[0], SVGImage):
-                        continue
-                    self.plan[k] = None
-                    stripped = True
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                    continue
+                self.plan[k] = None
+                stripped = True
         if stripped:
             p = [q for q in self.plan if q is not None]
             self.plan.clear()
@@ -630,41 +627,35 @@ class CutPlan:
 
     def make_image(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue
+            if op.type == "op raster":
+                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                    continue
+                image_element = self.make_image_for_op(op)
+                if image_element is None:
+                    continue
+                if (
+                    image_element.image_width == 1
+                    and image_element.image_height == 1
+                ):
+                    # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
+                    #  around because the renderer is what sets the size of the text. If the size hasn't already
+                    #  been set, the initial bounds are wrong.
                     image_element = self.make_image_for_op(op)
-                    if image_element is None:
-                        continue
-                    if (
-                        image_element.image_width == 1
-                        and image_element.image_height == 1
-                    ):
-                        # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                        #  around because the renderer is what sets the size of the text. If the size hasn't already
-                        #  been set, the initial bounds are wrong.
-                        image_element = self.make_image_for_op(op)
-                    op.children.clear()
-                    op.add(image_element, type="refelem")
-            except AttributeError:
-                continue
+                op.children.clear()
+                op.add(image_element, type="refelem")
 
     def actualize(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, op.raster_step):
-                            make_actual(elem, op.raster_step)
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, None):
-                            make_actual(elem, None)
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, op.raster_step):
+                        make_actual(elem, op.raster_step)
+            if op.type == "op image":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, None):
+                        make_actual(elem, None)
 
     def scale_to_device_native(self):
         # rotary = self.context.rotary
@@ -698,53 +689,44 @@ class CutPlan:
 
     def conditional_jobadd_strip_text(self):
         for op in self.plan:
-            try:
-                if op.operation in ("Cut", "Engrave"):
-                    for e in op.children:
-                        if not isinstance(e.object, SVGText):
-                            continue  # make raster not needed since its a single real raster.
-                        self.commands.append(self.strip_text)
-                        return True
-            except AttributeError:
-                pass
+            if op.type in ("op cut", "op engrave"):
+                for e in op.children:
+                    if not isinstance(e.object, SVGText):
+                        continue  # make raster not needed since its a single real raster.
+                    self.commands.append(self.strip_text)
+                    return True
         return False
 
     def conditional_jobadd_make_raster(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 0:
-                        continue
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue  # make raster not needed since its a single real raster.
-                    make_raster = self.context.lookup("render-op/make_raster")
+            if op.type == "op raster":
+                if len(op.children) == 0:
+                    continue
+                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                    continue  # make raster not needed since its a single real raster.
+                make_raster = self.context.lookup("render-op/make_raster")
 
-                    if make_raster is None:
-                        self.commands.append(self.strip_rasters)
-                    else:
-                        self.commands.append(self.make_image)
-                    return True
-            except AttributeError:
-                pass
+                if make_raster is None:
+                    self.commands.append(self.strip_rasters)
+                else:
+                    self.commands.append(self.make_image)
+                return True
         return False
 
     def conditional_jobadd_actualize_image(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, op.raster_step):
-                            self.commands.append(self.actualize)
-                            return
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, None):
-                            self.commands.append(self.actualize)
-                            return
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, op.raster_step):
+                        self.commands.append(self.actualize)
+                        return
+            if op.type == "op image":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, None):
+                        self.commands.append(self.actualize)
+                        return
 
     def conditional_jobadd_scale(self):
         self.commands.append(self.scale_to_device_native)

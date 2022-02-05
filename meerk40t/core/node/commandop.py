@@ -14,7 +14,6 @@ class CommandOperation(Node):
         self.command = command
         self.args = args
         self.output = True
-        self.operation = "Command"
 
     def __repr__(self):
         return "CommandOperation('%s', '%s')" % (self.label, str(self.command))

@@ -14,7 +14,6 @@ class ConsoleOperation(Node):
         super().__init__(type="consoleop")
         self.command = command
         self.output = True
-        self.operation = "Console"
 
     def set_command(self, command):
         self.command = command

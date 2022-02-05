@@ -4647,7 +4647,7 @@ class Elemental(Service):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
-                if op.operation == "Raster" and not op.default:
+                if op.type == "op raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
                         op.add(element, type="refelem")
                         was_classified = True
@@ -4661,18 +4661,18 @@ class Elemental(Service):
                         op.add(element, type="refelem")
                         was_classified = True
                 elif (
-                    op.operation in ("Engrave", "Cut")
+                    op.type in ("op engrave", "op cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                     and not op.default
                 ):
                     op.add(element, type="refelem")
                     was_classified = True
-                elif op.operation == "Image" and isinstance(element, SVGImage):
+                elif op.type == "op image" and isinstance(element, SVGImage):
                     op.add(element, type="refelem")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif op.operation == "Dots" and isDot(element):
+                elif op.type == "op dots" and isDot(element):
                     op.add(element, type="refelem")
                     was_classified = True
                     break  # May only classify in Dots.
@@ -4726,18 +4726,18 @@ class Elemental(Service):
         """
         operations = self._tree.get(type="branch ops").children
         for pos, old_op in reversed_enumerate(operations):
-            if op.operation == old_op.operation:
+            if op.type == old_op.type:
                 return self.add_op(op, pos=pos + 1)
 
         # No operation of same type found. So we will look for last operation of a lower priority and add after it.
         try:
-            priority = OP_PRIORITIES.index(op.operation)
+            priority = OP_PRIORITIES.index(op.type)
         except ValueError:
             return self.add_op(op)
 
         for pos, old_op in reversed_enumerate(operations):
             try:
-                if OP_PRIORITIES.index(old_op.operation) < priority:
+                if OP_PRIORITIES.index(old_op.type) < priority:
                     return self.add_op(op, pos=pos + 1)
             except ValueError:
                 pass
@@ -5133,8 +5133,8 @@ class Elemental(Service):
             element_added = False
             if is_dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (is_dot and op.operation == "Dots") or (
-                        isinstance(element, SVGImage) and op.operation == "Image"
+                    if (is_dot and op.type == "op dots") or (
+                        isinstance(element, SVGImage) and op.type == "op image"
                     ):
                         op.add(element, type="refelem", pos=element_pos)
                         element_added = True

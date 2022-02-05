@@ -172,7 +172,7 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         pass
                     try:
-                        self.list_job_spool.SetItem(m, 3, e.operation)
+                        self.list_job_spool.SetItem(m, 3, str(e))
                     except AttributeError:
                         pass
                     try:

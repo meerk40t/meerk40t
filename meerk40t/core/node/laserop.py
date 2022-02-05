@@ -510,7 +510,7 @@ class CutOpNode(Node, Parameters):
                     passes=passes,
                 )
                 group.path = Path(subpath)
-                group.original_op = self.operation
+                group.original_op = self.type
                 for seg in subpath:
                     if isinstance(seg, Move):
                         pass  # Move operations are ignored.
@@ -700,7 +700,7 @@ class EngraveOpNode(Node, Parameters):
                     passes=passes,
                 )
                 group.path = Path(subpath)
-                group.original_op = self.operation
+                group.original_op = self.type
                 for seg in subpath:
                     if isinstance(seg, Move):
                         pass  # Move operations are ignored.
@@ -904,7 +904,7 @@ class RasterOpNode(Node, Parameters):
                 passes=passes,
             )
             cut.path = path
-            cut.original_op = self.operation
+            cut.original_op = self.type
             yield cut
             if direction == 4:
                 cut = RasterCut(
@@ -916,7 +916,7 @@ class RasterOpNode(Node, Parameters):
                     passes=passes,
                 )
                 cut.path = path
-                cut.original_op = self.operation
+                cut.original_op = self.type
                 yield cut
 
 
@@ -1026,230 +1026,69 @@ class ImageOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def generate(self):
-        if self.operation == "Dots":
-            yield "rapid_mode"
-            for path_node in self.children:
-                try:
-                    obj = abs(path_node.object)
-                    first = obj.first_point
-                except (IndexError, AttributeError):
-                    continue
-                if first is None:
-                    continue
-                yield "move_abs", first[0], first[1]
-                yield "dwell", self.dwell_time
-
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        if self.operation in ("Cut", "Engrave"):
+        for svg_image in self.children:
+            svg_image = svg_image.object
+            if not isinstance(svg_image, SVGImage):
+                continue
             settings = self.derive()
-            for element in self.children:
-                object_path = element.object
-                if isinstance(object_path, SVGImage):
-                    box = object_path.bbox()
-                    path = Path(
-                        Polygon(
-                            (box[0], box[1]),
-                            (box[0], box[3]),
-                            (box[2], box[3]),
-                            (box[2], box[1]),
-                        )
-                    )
-                else:
-                    # Is a shape or path.
-                    if not isinstance(object_path, Path):
-                        path = abs(Path(object_path))
-                    else:
-                        path = abs(object_path)
-                    path.approximate_arcs_with_cubics()
-                settings["line_color"] = path.stroke
-                for subpath in path.as_subpaths():
-                    sp = Path(subpath)
-                    if len(sp) == 0:
-                        continue
-                    closed = (
-                        isinstance(sp[-1], Close)
-                        or abs(sp.z_point - sp.current_point) <= closed_distance
-                    )
-                    group = CutGroup(
-                        None,
-                        closed=closed,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    group.path = Path(subpath)
-                    group.original_op = self.operation
-                    for seg in subpath:
-                        if isinstance(seg, Move):
-                            pass  # Move operations are ignored.
-                        elif isinstance(seg, Close):
-                            if seg.start != seg.end:
-                                group.append(
-                                    LineCut(
-                                        seg.start,
-                                        seg.end,
-                                        settings=settings,
-                                        passes=passes,
-                                        parent=group,
-                                    )
-                                )
-                        elif isinstance(seg, Line):
-                            if seg.start != seg.end:
-                                group.append(
-                                    LineCut(
-                                        seg.start,
-                                        seg.end,
-                                        settings=settings,
-                                        passes=passes,
-                                        parent=group,
-                                    )
-                                )
-                        elif isinstance(seg, QuadraticBezier):
-                            group.append(
-                                QuadCut(
-                                    seg.start,
-                                    seg.control,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                        elif isinstance(seg, CubicBezier):
-                            group.append(
-                                CubicCut(
-                                    seg.start,
-                                    seg.control1,
-                                    seg.control2,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                    if len(group) > 0:
-                        group[0].first = True
-                    for i, cut_obj in enumerate(group):
-                        cut_obj.closed = closed
-                        try:
-                            cut_obj.next = group[i + 1]
-                        except IndexError:
-                            cut_obj.last = True
-                            cut_obj.next = group[0]
-                        cut_obj.previous = group[i - 1]
-                    yield group
-        elif self.operation == "Raster":
-            settings = self.derive()
-            step = self.raster_step
-            assert step > 0
-            direction = self.raster_direction
-            for element in self.children:
-                svg_image = element.object
-                if not isinstance(svg_image, SVGImage):
-                    continue
+            try:
+                settings["raster_step"] = int(svg_image.values["raster_step"])
+            except KeyError:
+                # This overwrites any step that may have been defined in settings.
+                settings[
+                    "raster_step"
+                ] = 1  # If raster_step is not set image defaults to 1.
+            if settings["raster_step"] <= 0:
+                settings["raster_step"] = 1
 
-                matrix = svg_image.transform
-                pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix, step)
-                box = (
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step,
+            try:
+                settings["raster_direction"] = int(
+                    svg_image.values["raster_direction"]
                 )
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
-                    )
+            except KeyError:
+                pass
+            step = settings["raster_step"]
+            matrix = svg_image.transform
+            pil_image = svg_image.image
+            pil_image, matrix = actualize(pil_image, matrix, step)
+            box = (
+                matrix.value_trans_x(),
+                matrix.value_trans_y(),
+                matrix.value_trans_x() + pil_image.width * step,
+                matrix.value_trans_y() + pil_image.height * step,
+            )
+            path = Path(
+                Polygon(
+                    (box[0], box[1]),
+                    (box[0], box[3]),
+                    (box[2], box[3]),
+                    (box[2], box[1]),
                 )
+            )
+            cut = RasterCut(
+                pil_image,
+                matrix.value_trans_x(),
+                matrix.value_trans_y(),
+                settings=settings,
+                passes=passes,
+            )
+            cut.path = path
+            cut.original_op = self.type
+            yield cut
+            if settings["raster_direction"] == 4:
                 cut = RasterCut(
                     pil_image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
+                    crosshatch=True,
                     settings=settings,
                     passes=passes,
                 )
                 cut.path = path
-                cut.original_op = self.operation
+                cut.original_op = self.type
                 yield cut
-                if direction == 4:
-                    cut = RasterCut(
-                        pil_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        crosshatch=True,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    cut.path = path
-                    cut.original_op = self.operation
-                    yield cut
-        elif self.operation == "Image":
-            for svg_image in self.children:
-                svg_image = svg_image.object
-                if not isinstance(svg_image, SVGImage):
-                    continue
-                settings = self.derive()
-                try:
-                    settings["raster_step"] = int(svg_image.values["raster_step"])
-                except KeyError:
-                    # This overwrites any step that may have been defined in settings.
-                    settings[
-                        "raster_step"
-                    ] = 1  # If raster_step is not set image defaults to 1.
-                if settings["raster_step"] <= 0:
-                    settings["raster_step"] = 1
-
-                try:
-                    settings["raster_direction"] = int(
-                        svg_image.values["raster_direction"]
-                    )
-                except KeyError:
-                    pass
-                step = settings["raster_step"]
-                matrix = svg_image.transform
-                pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix, step)
-                box = (
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step,
-                )
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
-                    )
-                )
-                cut = RasterCut(
-                    pil_image,
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    settings=settings,
-                    passes=passes,
-                )
-                cut.path = path
-                cut.original_op = self.operation
-                yield cut
-                if settings["raster_direction"] == 4:
-                    cut = RasterCut(
-                        pil_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        crosshatch=True,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    cut.path = path
-                    cut.original_op = self.operation
-                    yield cut
 
 
 class DotsOpNode(Node, Parameters):
@@ -1324,20 +1163,6 @@ class DotsOpNode(Node, Parameters):
             str(int(minutes)).zfill(2),
             str(int(seconds)).zfill(2),
         )
-
-    def generate(self):
-        if self.operation == "Dots":
-            yield "rapid_mode"
-            for path_node in self.children:
-                try:
-                    obj = abs(path_node.object)
-                    first = obj.first_point
-                except (IndexError, AttributeError):
-                    continue
-                if first is None:
-                    continue
-                yield "move_abs", first[0], first[1]
-                yield "dwell", self.dwell_time
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
