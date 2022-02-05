@@ -1,3 +1,5 @@
+from meerk40t.core.node.node import Node
+
 
 class LaserCodeNode(Node):
     """

@@ -255,9 +255,10 @@ class RuidaDevice(Service, ViewPort):
             return "spooler", spooler
 
 
-class RuidaEmulator(Module):
+class RuidaEmulator(Module, Parameters):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
+        Parameters.__init__(self)
         self.design = False
         self.control = False
         self.saving = False
@@ -267,7 +268,6 @@ class RuidaEmulator(Module):
 
         self.cutcode = CutCode()
 
-        self.settings = dict()
         self._use_set = None
         self.spooler = None
         self.device = None
@@ -314,7 +314,6 @@ class RuidaEmulator(Module):
 
     @property
     def cutset(self):
-        # self.settings.jog_enable = False
         if self._use_set is None:
             self._use_set = Parameters(self.settings)
         return self._use_set
@@ -727,13 +726,13 @@ class RuidaEmulator(Module):
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 min=%f" % power
                 self.power1_min = power
-                self.settings.power = self.power1_max * 10.0  # 1000 / 100
+                self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x02:
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 max=%f" % power
                 self.power1_max = power
-                self.settings.power = self.power1_max * 10.0  # 1000 / 100
+                self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
@@ -826,7 +825,7 @@ class RuidaEmulator(Module):
             if array[1] == 0x02:
                 speed = self.parse_speed(array[2:7])
                 desc = "Speed Laser 1 %fmm/s" % speed
-                self.settings.speed = speed
+                self.speed = speed
                 self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
@@ -834,7 +833,7 @@ class RuidaEmulator(Module):
             elif array[1] == 0x04:
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
-                self.settings.speed = speed
+                self.speed = speed
                 self._use_set = None
                 desc = "%d, Speed %fmm/s" % (part, speed)
             elif array[1] == 0x05:
@@ -888,7 +887,7 @@ class RuidaEmulator(Module):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                self.settings.line_color = c
+                self.line_color = c
                 self._use_set = None
                 desc = "Layer Color %s" % str(self.color)
             elif array[1] == 0x06:

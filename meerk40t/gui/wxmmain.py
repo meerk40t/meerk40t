@@ -5,7 +5,8 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, ConsoleOperation
+from ..core.node.consoleop import ConsoleOperation
+from ..core.node.laserop import LaserOperation
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import (

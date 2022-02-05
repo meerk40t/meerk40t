@@ -1,3 +1,4 @@
+from meerk40t.core.node.node import Node
 
 class CutNode(Node):
     """

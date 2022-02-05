@@ -1,8 +1,8 @@
 import wx
 from wx import aui
 
-from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot, ConsoleOperation
+from ..core.node.laserop import LaserOperation
+from ..core.node.node import isDot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,

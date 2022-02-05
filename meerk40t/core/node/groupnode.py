@@ -1,3 +1,7 @@
+from svgelements import Group
+
+from meerk40t.core.node.node import Node
+
 
 class GroupNode(Node):
     """

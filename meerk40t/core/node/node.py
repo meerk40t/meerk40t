@@ -19,6 +19,58 @@ rasternode: theoretical: would store all the opnodes to be rastered. Such that w
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
 
+# Regex expressions
+import re
+
+label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
+group_simplify_re = re.compile(
+    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
+)
+subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
+# Ideally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
+# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
+element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
+# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
+image_simplify_re = re.compile(
+    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
+    re.IGNORECASE,
+)
+
+OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
+
+from meerk40t.svgelements import Path, SVGImage, SVG_STRUCT_ATTRIB, Shape, Move, Close, Line
+
+
+def isDot(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Close):
+            return True
+        if isinstance(path[1], Line) and path[1].length() == 0:
+            return True
+    return False
+
+
+def isStraightLine(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Line) and path[1].length() > 0:
+            return True
+    return False
+
+
 class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
