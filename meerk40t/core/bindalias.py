@@ -343,8 +343,8 @@ class Alias(Service):
         self.aliases["-up"] = "end up 1mm"
         self.aliases["-down"] = "end down 1mm"
         self.aliases["reset_bind_alias"] = "bind default;alias default"
-        self.context.alias.clear()
+        self.aliases.clear()
         for key, values in DEFAULT_ALIAS.items():
             value = values[0]
             if value:
-                self.context.alias[key] = value
+                self.aliases[key] = value
