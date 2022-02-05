@@ -46,6 +46,7 @@ from ..kernel import CommandMatchRejected, Modifier
 #     e.g. File/Open calls an alias FileOpen which is mapped to dialog_open
 #     user can change the alias to something else so that Ctrol-O does something else
 #     and map e.g. control-shift-o to dialog_open
+#   SHOULD WE SWITCH TO "ctrl" rather than "control" in order to be consistent with menus?
 
 
 # Current English menu keys
