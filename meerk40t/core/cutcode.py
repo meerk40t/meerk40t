@@ -337,7 +337,6 @@ class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
-        self.operation = "CutCode"
 
         self.travel_speed = 20.0
         self.mode = None
@@ -826,11 +825,10 @@ class DwellCut(CutObject):
         pass
 
     def generate(self):
-        if self.operation == "Dots":
-            yield "rapid_mode"
-            start = self.start
-            yield "move_abs", start[0], start[1]
-            yield "dwell", self.dwell_time
+        yield "rapid_mode"
+        start = self.start
+        yield "move_abs", start[0], start[1]
+        yield "dwell", self.dwell_time
 
     def generator(self):
         start = self.start
