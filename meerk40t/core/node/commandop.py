@@ -8,7 +8,7 @@ class CommandOperation(Node):
     Node type "cmdop"
     """
 
-    def __init__(self, name, command, *args, **kwargs):
+    def __init__(self, name=None, command=None, *args, **kwargs):
         super().__init__(type="cmdop")
         self.label = self.name = name
         self.command = command

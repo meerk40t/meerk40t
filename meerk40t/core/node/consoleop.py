@@ -10,7 +10,7 @@ class ConsoleOperation(Node):
     Node type "consoleop"
     """
 
-    def __init__(self, command, **kwargs):
+    def __init__(self, command=None, **kwargs):
         super().__init__(type="consoleop")
         self.command = command
         self.output = True
