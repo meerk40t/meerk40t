@@ -3,6 +3,7 @@ from os import times
 from time import time
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+from .node.laserop import RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
@@ -398,9 +399,7 @@ class CutPlan:
         grouped_plan = list()
         group = [self.plan[0]]
         for c in self.plan[1:]:
-            if (
-                type(group[-1]) == LaserOperation or type(c) == LaserOperation
-            ) and type(group[-1]) != type(c):
+            if group[-1].type.startswith("op") != c.type.startswith("op"):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
@@ -416,10 +415,10 @@ class CutPlan:
                 burning = False
                 pass_idx += 1
                 for op in plan:
-                    if not isinstance(op, LaserOperation):
+                    if not op.type.startswith("op"):
                         blob_plan.append(op)
                         continue
-                    if op.operation == "Dots":
+                    if op.type == "op dots":
                         if pass_idx == 1:
                             blob_plan.append(op)
                         continue
@@ -679,7 +678,7 @@ class CutPlan:
             device.get_native_scale_y,
         )
         for o in self.plan:
-            if isinstance(o, LaserOperation):
+            if o.type.startswith("op"):
                 for node in o.children:
                     e = node.object
                     try:
@@ -1221,7 +1220,7 @@ class Planner(Service):
             for c in data.plan:
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
-                if isinstance(c, LaserOperation):
+                if isinstance(c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
