@@ -4011,7 +4011,7 @@ class Elemental(Service):
         operation_branch = self._tree.get(type="branch ops")
         for section in subitems:
             op_type = settings.read_persistent(str, section, "type")
-            if op_type == "op":
+            if op_type in ("op", "refelem"):
                 continue
             op = operation_branch.add(None, type=op_type)
             op.load(settings, section)
@@ -4363,10 +4363,9 @@ class Elemental(Service):
         :param classify: Should this element be automatically classified.
         :return:
         """
-        #TODO: This needs to work.
         operation_branch = self._tree.get(type="branch ops")
         op.set_label(str(op))
-        operation_branch.add(op, type="op", pos=pos)
+        operation_branch.add(op, type=op.type, pos=pos)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")

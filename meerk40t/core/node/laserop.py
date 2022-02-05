@@ -390,7 +390,8 @@ class CutOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        Node.__init__(self, *args, type="op cut", **kwargs)
+        Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
@@ -580,7 +581,8 @@ class EngraveOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        Node.__init__(self, *args, type="op engrave", **kwargs)
+        Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
@@ -770,7 +772,8 @@ class RasterOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        Node.__init__(self, *args, type="op raster", **kwargs)
+        Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
@@ -928,7 +931,8 @@ class ImageOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        Node.__init__(self, *args, type="op image", **kwargs)
+        Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
@@ -1095,11 +1099,12 @@ class DotsOpNode(Node, Parameters):
     """
     Default object defining any operation done on the laser.
 
-    This is a Node of type "op".
+    This is a Node of type "op dots".
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        Node.__init__(self, *args, type="op dots", **kwargs)
+        Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
