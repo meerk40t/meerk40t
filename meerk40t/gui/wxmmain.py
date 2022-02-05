@@ -697,7 +697,6 @@ class MeerK40t(MWindow):
             _pane.Float()
             _pane.Show()
             _pane.Dockable(not always)
-            print(_pane.IsDockable())
             self._mgr.Update()
 
         @context.console_command(
@@ -1665,7 +1664,6 @@ class MeerK40t(MWindow):
         """
         Loads recent file name given. If the filename cannot be opened attempts open dialog at last known location.
         """
-        print(filename)
         if os.path.exists(filename):
             try:
                 self.load(filename)
