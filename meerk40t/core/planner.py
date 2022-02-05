@@ -313,12 +313,9 @@ class CutPlan:
             parts.append("#%d" % len(self.plan))
             for p in self.plan:
                 try:
-                    parts.append(p.operation)
+                    parts.append(p.__name__)
                 except AttributeError:
-                    try:
-                        parts.append(p.__name__)
-                    except AttributeError:
-                        parts.append(p.__class__.__name__)
+                    parts.append(p.__class__.__name__)
         else:
             parts.append("-- Empty --")
         return " ".join(parts)
@@ -485,7 +482,7 @@ class CutPlan:
             if (
                 merge
                 and not context.opt_inner_first
-                and self.plan[-1].original_op == "Cut"
+                and self.plan[-1].original_op == "op cut"
             ):
                 merge = False
 
