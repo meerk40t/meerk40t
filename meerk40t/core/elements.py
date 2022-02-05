@@ -4288,6 +4288,8 @@ class Elemental(Service):
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
         for item in operations.flat(depth=1, **kwargs):
+            if item.type.startswith("branch"):
+                continue
             yield item
 
     def elems(self, **kwargs):
