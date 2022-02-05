@@ -6,10 +6,10 @@ import re
 import threading
 import time
 from collections import deque
-from pathlib import Path
 from configparser import ConfigParser, NoSectionError
+from pathlib import Path
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union, Set
+from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 KERNEL_VERSION = "0.0.1"
 

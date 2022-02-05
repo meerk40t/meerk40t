@@ -38,7 +38,15 @@ image_simplify_re = re.compile(
 
 OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
 
-from meerk40t.svgelements import Path, SVGImage, SVG_STRUCT_ATTRIB, Shape, Move, Close, Line
+from meerk40t.svgelements import (
+    SVG_STRUCT_ATTRIB,
+    Close,
+    Line,
+    Move,
+    Path,
+    Shape,
+    SVGImage,
+)
 
 
 def isDot(element):

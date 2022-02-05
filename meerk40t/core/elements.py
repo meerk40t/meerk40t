@@ -3,13 +3,6 @@ import os.path
 import re
 from copy import copy
 
-from .node.commandop import CommandOperation
-from .node.consoleop import ConsoleOperation
-from .node.laserop import LaserOperation
-from .node.node import isDot, isStraightLine, label_truncate_re, OP_PRIORITIES
-from .node.rootnode import RootNode
-from .parameters import Parameters
-from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -37,14 +30,14 @@ from ..svgelements import (
     SVGText,
     Viewbox,
 )
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LineCut,
-    QuadCut,
-    RasterCut,
-)
+from .cutcode import CubicCut, CutCode, CutGroup, LineCut, QuadCut, RasterCut
+from .node.commandop import CommandOperation
+from .node.consoleop import ConsoleOperation
+from .node.laserop import LaserOperation
+from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
+from .node.rootnode import RootNode
+from .parameters import Parameters
+from .units import UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):

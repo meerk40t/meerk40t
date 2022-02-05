@@ -1,7 +1,7 @@
 from abc import ABC
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
+from typing import Optional
 
-from .parameters import Parameters
+from ..svgelements import Color, Path, Point
 from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
@@ -13,9 +13,7 @@ from ..tools.rasterplotter import (
     RasterPlotter,
 )
 from ..tools.zinglplotter import ZinglPlotter
-
-
-from ..svgelements import Color, Path, Point
+from .parameters import Parameters
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be

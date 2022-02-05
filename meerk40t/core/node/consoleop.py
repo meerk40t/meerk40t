@@ -41,4 +41,3 @@ class ConsoleOperation(Node):
         if not command.endswith("\n"):
             command += "\n"
         yield "console", command
-
