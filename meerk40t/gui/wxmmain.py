@@ -11,24 +11,24 @@ from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import (
     Color,
+    Group,
     Length,
     Matrix,
     Path,
+    SVGElement,
     SVGImage,
     SVGText,
-    Group,
-    SVGElement,
 )
 from .icons import (
     icon_meerk40t,
     icons8_emergency_stop_button_50,
+    icons8_flip_vertical,
     icons8_gas_industry_50,
     icons8_home_filled_50,
+    icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_pause_50,
     icons8_save_50,
-    icons8_mirror_horizontal,
-    icons8_flip_vertical,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,

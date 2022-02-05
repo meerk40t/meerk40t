@@ -312,10 +312,9 @@ class RuidaEmulator(Module, Parameters):
             yield "plot", cutobject
         yield "plot_start"
 
-    @property
     def cutset(self):
         if self._use_set is None:
-            self._use_set = Parameters(self.settings)
+            self._use_set = self.derive()
         return self._use_set
 
     @staticmethod
@@ -652,7 +651,7 @@ class RuidaEmulator(Module, Parameters):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Absolute (%f nm, %f nm)" % (
@@ -668,7 +667,7 @@ class RuidaEmulator(Module, Parameters):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Relative (%f nm, %f nm)" % (
@@ -682,7 +681,7 @@ class RuidaEmulator(Module, Parameters):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Horizontal Relative (%f nm)" % (dx / UNITS_PER_uM)
@@ -693,7 +692,7 @@ class RuidaEmulator(Module, Parameters):
                 LineCut(
                     Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
                     Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset,
+                    settings=self.cutset(),
                 )
             )
             desc = "Cut Vertical Relative (%f nm)" % (dy / UNITS_PER_uM)

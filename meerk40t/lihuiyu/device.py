@@ -6,11 +6,11 @@ from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from ..core.parameters import Parameters
 
 from ..core.cutcode import CutCode, RawCut
-from ..core.plotplanner import grouped, PlotPlanner
-from ..core.units import ViewPort, UNITS_PER_INCH, UNITS_PER_MIL
+from ..core.parameters import Parameters
+from ..core.plotplanner import PlotPlanner, grouped
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,

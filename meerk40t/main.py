@@ -1,7 +1,7 @@
 import argparse
-import sys
 import os.path
 import platform
+import sys
 
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
@@ -253,14 +253,13 @@ def run():
 
     if not args.gui_suppress:
         try:
+            from .camera.gui import gui as cameragui
+            from .grbl.gui import gui as grblgui
             from .gui import wxmeerk40t
             from .gui.scene import scene
-
-            from .camera.gui import gui as cameragui
-            from .rotary.gui import gui as rotarygui
-            from .grbl.gui import gui as grblgui
             from .lihuiyu.gui import gui as lhygui
             from .moshi.gui import gui as moshigui
+            from .rotary.gui import gui as rotarygui
             from .ruida.gui import gui as ruidagui
         except Mk40tImportAbort as e:
             args.no_gui = True

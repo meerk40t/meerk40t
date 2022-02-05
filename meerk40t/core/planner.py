@@ -1,13 +1,13 @@
 from copy import copy
 from os import times
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 from time import time
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from .node.laserop import LaserOperation
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
+from .node.laserop import LaserOperation
 
 
 def plugin(kernel, lifecycle=None):
@@ -610,7 +610,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "opnode")))
+        subitems = list(op.flat(types=("elem", "refelem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -648,7 +648,7 @@ class CutPlan:
                         #  been set, the initial bounds are wrong.
                         image_element = self.make_image_for_op(op)
                     op.children.clear()
-                    op.add(image_element, type="opnode")
+                    op.add(image_element, type="refelem")
             except AttributeError:
                 continue
 

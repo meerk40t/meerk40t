@@ -1,11 +1,21 @@
 from copy import copy
 
-from meerk40t.core.cutcode import CutGroup, LineCut, QuadCut, CubicCut, RasterCut
+from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut, RasterCut
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import SVGElement, Shape, Path, SVGImage, Polygon, Close, Move, Line, QuadraticBezier, \
-    CubicBezier
+from meerk40t.svgelements import (
+    Close,
+    CubicBezier,
+    Line,
+    Move,
+    Path,
+    Polygon,
+    QuadraticBezier,
+    Shape,
+    SVGElement,
+    SVGImage,
+)
 
 MILS_IN_MM = 39.3701
 
@@ -25,7 +35,7 @@ class LaserOperation(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="opnode")
+                self.add(obj, type="refelem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -95,7 +105,7 @@ class LaserOperation(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="opnode")
+            self.add(element.object, type="refelem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
@@ -318,12 +328,16 @@ class LaserOperation(Node, Parameters):
                     settings["raster_step"] = int(svg_image.values["raster_step"])
                 except KeyError:
                     # This overwrites any step that may have been defined in settings.
-                    settings["raster_step"] = 1  # If raster_step is not set image defaults to 1.
+                    settings[
+                        "raster_step"
+                    ] = 1  # If raster_step is not set image defaults to 1.
                 if settings["raster_step"] <= 0:
                     settings["raster_step"] = 1
 
                 try:
-                    settings["raster_direction"] = int(svg_image.values["raster_direction"])
+                    settings["raster_direction"] = int(
+                        svg_image.values["raster_direction"]
+                    )
                 except KeyError:
                     pass
                 step = settings["raster_step"]

@@ -8,10 +8,11 @@ import traceback
 from wx import aui
 
 from meerk40t.gui.wxmscene import SceneWindow
+
 from .devicepanel import DeviceManager
 from .icons import (
-    icons8_gas_industry_50,
     icons8_emergency_stop_button_50,
+    icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
@@ -24,22 +25,22 @@ except ImportError as e:
 
     raise Mk40tImportAbort("wxpython")
 
-from ..kernel import Module, ConsoleFunction
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
+
+from ..kernel import ConsoleFunction, Module
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
+from .consoleproperty import ConsoleProperty
 from .executejob import ExecuteJob
 from .groupproperties import GroupProperty
 from .imageproperty import ImageProperty
 from .keymap import Keymap
 from .laserrender import LaserRender
 from .notes import Notes
-from .consoleproperty import ConsoleProperty
 from .operationproperty import OperationProperty
-
-from meerk40t.gui.consolepanel import Console
-from meerk40t.gui.navigationpanels import Navigation
-from meerk40t.gui.spoolerpanel import JobSpooler
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard

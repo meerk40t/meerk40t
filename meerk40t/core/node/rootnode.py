@@ -6,7 +6,7 @@ from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
 from meerk40t.core.node.laserop import LaserOperation
 from meerk40t.core.node.node import Node
-from meerk40t.core.node.refnode import OpNode
+from meerk40t.core.node.refnode import RefElemNode
 
 
 class RootNode(Node):
@@ -32,7 +32,7 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem": ElemNode,
-            "opnode": OpNode,
+            "refelem": RefElemNode,
             "cutcode": CutNode,
         }
         self.add(type="branch ops", label=_("Operations"))

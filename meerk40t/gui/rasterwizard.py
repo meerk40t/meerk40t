@@ -10,13 +10,13 @@ from math import ceil
 import wx
 
 from ..core.units import (
+    UNITS_CM,
     UNITS_INCH,
     UNITS_MM,
-    UNITS_PERCENT,
-    UNITS_CM,
+    UNITS_PER_CM,
     UNITS_PER_INCH,
     UNITS_PER_MM,
-    UNITS_PER_CM,
+    UNITS_PERCENT,
 )
 from ..image.imagetools import RasterScripts
 from ..kernel import signal_listener
