@@ -135,9 +135,9 @@ class Node:
                 ):
                     return False
                 # Dragging element onto operation adds that element to the op.
-                drop_node.add(drag_node.object, type="refelem", pos=0)
+                drop_node.add(drag_node.object, type="ref elem", pos=0)
                 return True
-            elif drop_node.type == "refelem":
+            elif drop_node.type == "ref elem":
                 op = drop_node.parent
                 # Disallow drop of non-image elems onto an refelem inside an Image op.
                 # Disallow drop of image elems onto an refelem inside a Dot op.
@@ -150,13 +150,13 @@ class Node:
                     return False
                 # Dragging element onto existing refelem in operation adds that element to the op after the refelem.
                 drop_index = op.children.index(drop_node)
-                op.add(drag_node.object, type="refelem", pos=drop_index)
+                op.add(drag_node.object, type="ref elem", pos=drop_index)
                 return True
             elif drop_node.type == "group":
                 # Dragging element onto a group moves it to the group node.
                 drop_node.append_child(drag_node)
                 return True
-        elif drag_node.type == "refelem":
+        elif drag_node.type == "ref elem":
             if drop_node.type.startswith("op"):
                 # Disallow drop of non-image refelems onto an Image op.
                 # Disallow drop of image refelems onto a Dot op.
@@ -171,7 +171,7 @@ class Node:
                 # Move an refelem to end of op.
                 drop_node.append_child(drag_node)
                 return True
-            if drop_node.type == "refelem":
+            if drop_node.type == "ref elem":
                 op = drop_node.parent
                 # Disallow drop of non-image refelems onto an refelem inside an Image op.
                 # Disallow drop of image refelems onto an refelem inside a Dot op.
@@ -208,7 +208,7 @@ class Node:
                     ):
                         continue
                     # Add element to operation
-                    drop_node.add(e.object, type="refelem")
+                    drop_node.add(e.object, type="ref elem")
                     some_nodes = True
                 return some_nodes
         elif drag_node.type == "group":
@@ -233,7 +233,7 @@ class Node:
                     ):
                         continue
                     # Add element to operation
-                    drop_node.add(e.object, type="refelem")
+                    drop_node.add(e.object, type="ref elem")
                     some_nodes = True
                 return some_nodes
         return False

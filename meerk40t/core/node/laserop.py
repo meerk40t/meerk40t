@@ -35,7 +35,7 @@ MILS_IN_MM = 39.3701
 #         if len(args) == 1:
 #             obj = args[0]
 #             if isinstance(obj, SVGElement):
-#                 self.add(obj, type="refelem")
+#                 self.add(obj, type="ref elem")
 #             elif hasattr(obj, "settings"):
 #                 self.settings = dict(obj.settings)
 #
@@ -105,7 +105,7 @@ MILS_IN_MM = 39.3701
 #
 #     def copy_children(self, obj):
 #         for element in obj.children:
-#             self.add(element.object, type="refelem")
+#             self.add(element.object, type="ref elem")
 #
 #     def deep_copy_children(self, obj):
 #         for element in obj.children:
@@ -398,7 +398,7 @@ class CutOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="refelem")
+                self.add(obj, type="ref elem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -446,7 +446,7 @@ class CutOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="refelem")
+            self.add(element.object, type="ref elem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
@@ -589,7 +589,7 @@ class EngraveOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="refelem")
+                self.add(obj, type="ref elem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -637,7 +637,7 @@ class EngraveOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="refelem")
+            self.add(element.object, type="ref elem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
@@ -780,7 +780,7 @@ class RasterOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="refelem")
+                self.add(obj, type="ref elem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -841,7 +841,7 @@ class RasterOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="refelem")
+            self.add(element.object, type="ref elem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
@@ -939,7 +939,7 @@ class ImageOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="refelem")
+                self.add(obj, type="ref elem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -1001,7 +1001,7 @@ class ImageOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="refelem")
+            self.add(element.object, type="ref elem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:
@@ -1111,7 +1111,7 @@ class DotsOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, SVGElement):
-                self.add(obj, type="refelem")
+                self.add(obj, type="ref elem")
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
 
@@ -1149,7 +1149,7 @@ class DotsOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="refelem")
+            self.add(element.object, type="ref elem")
 
     def deep_copy_children(self, obj):
         for element in obj.children:

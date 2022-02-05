@@ -602,7 +602,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "refelem")))
+        subitems = list(op.flat(types=("elem", "ref elem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -639,7 +639,7 @@ class CutPlan:
                     #  been set, the initial bounds are wrong.
                     image_element = self.make_image_for_op(op)
                 op.children.clear()
-                op.add(image_element, type="refelem")
+                op.add(image_element, type="ref elem")
 
     def actualize(self):
         for op in self.plan:
