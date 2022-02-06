@@ -285,6 +285,13 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        if not keyvalue:
+            event.Skip()
+            return
+        key = keyvalue.rsplit("+", 1)[1] if "+" in keyvalue else keyvalue
+        if key == "menu":
+            self.scene.on_right_mouse_down(event)
+            return
         keymap = self.context.keymap
         if keyvalue in keymap:
             if keyvalue not in self.triggered_keys:
@@ -296,6 +303,13 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
+        if not keyvalue:
+            event.Skip()
+            return
+        key = keyvalue.rsplit("+", 1)[1] if "+" in keyvalue else keyvalue
+        if key == "menu":
+            self.scene.on_right_mouse_up(event)
+            return
         keymap = self.context.keymap
         if keyvalue in keymap:
             if keyvalue in self.triggered_keys:

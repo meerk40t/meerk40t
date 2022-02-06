@@ -174,7 +174,6 @@ WX_METAKEYS = [
     wx.WXK_START,
     wx.WXK_WINDOWS_LEFT,
     wx.WXK_WINDOWS_RIGHT,
-    wx.WXK_WINDOWS_MENU,
 ]
 
 WX_SPECIALKEYS = {
@@ -271,6 +270,7 @@ WX_SPECIALKEYS = {
     wx.WXK_SPECIAL19: "special19",
     wx.WXK_SPECIAL20: "special20",
     wx.WXK_CLEAR: "clear",
+    wx.WXK_WINDOWS_MENU: "menu",
 }
 
 
@@ -285,6 +285,7 @@ def get_key_name(event, return_modifier=False):
         keyvalue += "shift+"
     if event.MetaDown() or key in WX_METAKEYS:
         keyvalue += "meta+"
+    # if return_modifier and keyvalue: print("key", key, keyvalue)
     if key == wx.WXK_CONTROL:
         return keyvalue if return_modifier else None
     if key == wx.WXK_ALT:
@@ -297,4 +298,5 @@ def get_key_name(event, return_modifier=False):
         keyvalue += WX_SPECIALKEYS[key]
     else:
         keyvalue += chr(key)
+    # print("key", key, keyvalue)
     return keyvalue.lower()
