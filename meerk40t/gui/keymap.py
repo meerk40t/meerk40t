@@ -41,9 +41,9 @@ class KeymapPanel(wx.Panel):
 
     def __set_properties(self):
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
-        self.list_keymap.AppendColumn(_("Key"), format=wx.LIST_FORMAT_LEFT, width=114)
+        self.list_keymap.AppendColumn(_("Key"), format=wx.LIST_FORMAT_LEFT, width=140)
         self.list_keymap.AppendColumn(
-            _("Command"), format=wx.LIST_FORMAT_LEFT, width=348
+            _("Command"), format=wx.LIST_FORMAT_LEFT, width=322
         )
         self.button_add.SetToolTip(_("Add a new hotkey"))
         # end wxGlade
