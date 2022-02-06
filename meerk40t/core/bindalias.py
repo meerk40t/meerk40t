@@ -101,6 +101,7 @@ DEFAULT_KEYMAP = {
     "ctrl+f": ("", "dialog_fill", "control Fill",),
     "ctrl+i": ("element* select^",),
     "ctrl+d": ("element copy",),
+    "ctrl+g": ("planz clear copy preprocess validate blob preopt optimize spool0",),
     "ctrl+o": ("", "outline",),
     "ctrl+r": ("rect 0 0 1000 1000",),
     "ctrl+s": ("", "dialog_stroke", "control Stroke",),
