@@ -1,3 +1,4 @@
+from functools import partial
 import platform
 import os
 import time
@@ -201,160 +202,149 @@ class Driver:
                     # This could be a text element, some unrecognized type.
                     return
 
+
     def command(self, command, *values):
         """Commands are middle language LaserCommandConstants there values are given."""
         if isinstance(command, tuple):
             values = command[1:]
             command = command[0]
-        if not isinstance(command, int):
-            return False  # Command type is not recognized.
 
-        try:
-            if command == COMMAND_LASER_OFF:
-                self.laser_off()
-            elif command == COMMAND_LASER_ON:
-                self.laser_on()
-            elif command == COMMAND_LASER_DISABLE:
-                self.laser_disable()
-            elif command == COMMAND_LASER_ENABLE:
-                self.laser_enable()
-            elif command == COMMAND_CUT:
-                x, y = values
-                self.cut(x, y)
-            elif command == COMMAND_MOVE:
-                x, y = values
-                self.move(x, y)
-            elif command == COMMAND_JOG:
-                x, y = values
-                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_SWITCH:
-                x, y = values
-                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_FINISH:
-                x, y = values
-                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_HOME:
-                self.home(*values)
-            elif command == COMMAND_LOCK:
-                self.lock_rail()
-            elif command == COMMAND_UNLOCK:
-                self.unlock_rail()
-            elif command == COMMAND_PLOT:
-                self.plot_plot(values[0])
-            elif command == COMMAND_BLOB:
-                self.send_blob(values[0], values[1])
-            elif command == COMMAND_PLOT_START:
-                self.plot_start()
-            elif command == COMMAND_SET_SPEED:
-                self.set_speed(values[0])
-            elif command == COMMAND_SET_POWER:
-                self.set_power(values[0])
-            elif command == COMMAND_SET_PPI:
-                self.set_ppi(values[0])
-            elif command == COMMAND_SET_PWM:
-                self.set_pwm(values[0])
-            elif command == COMMAND_SET_STEP:
-                self.set_step(values[0])
-            elif command == COMMAND_SET_OVERSCAN:
-                self.set_overscan(values[0])
-            elif command == COMMAND_SET_ACCELERATION:
-                self.set_acceleration(values[0])
-            elif command == COMMAND_SET_D_RATIO:
-                self.set_d_ratio(values[0])
-            elif command == COMMAND_SET_DIRECTION:
-                self.set_directions(values[0], values[1], values[2], values[3])
-            elif command == COMMAND_SET_INCREMENTAL:
-                self.set_incremental()
-            elif command == COMMAND_SET_ABSOLUTE:
-                self.set_absolute()
-            elif command == COMMAND_SET_POSITION:
-                self.set_position(values[0], values[1])
-            elif command == COMMAND_MODE_RAPID:
-                self.ensure_rapid_mode(*values)
-            elif command == COMMAND_MODE_PROGRAM:
-                self.ensure_program_mode(*values)
-            elif command == COMMAND_MODE_RASTER:
-                self.ensure_raster_mode(*values)
-            elif command == COMMAND_MODE_FINISHED:
-                self.ensure_finished_mode(*values)
-            elif command == COMMAND_WAIT:
-                self.wait(values[0])
-            elif command == COMMAND_WAIT_FINISH:
-                self.wait_finish()
-            elif command == COMMAND_BEEP:
-                OS_NAME = platform.system()
-                if OS_NAME == "Windows":
-                    try:
-                        import winsound
+        DRIVER_COMMANDS = {
+            COMMAND_LASER_OFF:      (0, self.laser_off),
+            COMMAND_LASER_ON:       (0, self.laser_on),
+            COMMAND_LASER_DISABLE:  (0, self.laser_disable),
+            COMMAND_LASER_ENABLE:   (0, self.laser_enable),
+            COMMAND_CUT:            (2, self.cut),
+            COMMAND_MOVE:           (2, self.move),
+            COMMAND_HOME:           ("*", self.home),
+            COMMAND_LOCK:           (0, self.lock_rail),
+            COMMAND_UNLOCK:         (0, self.unlock_rail),
+            COMMAND_PLOT:           (1, self.plot_plot),
+            COMMAND_BLOB:           (2, self.send_blob),
+            COMMAND_PLOT_START:     (0, self.plot_start),
+            COMMAND_SET_SPEED:      (1, self.set_speed),
+            COMMAND_SET_POWER:      (1, self.set_power),
+            COMMAND_SET_PPI:        (1, self.set_ppi),
+            COMMAND_SET_PWM:        (1, self.set_pwm),
+            COMMAND_SET_STEP:       (1, self.set_step),
+            COMMAND_SET_OVERSCAN:   (1, self.set_overscan),
+            COMMAND_SET_ACCELERATION:   (1, self.set_acceleration),
+            COMMAND_SET_D_RATIO:    (1, self.set_d_ratio),
+            COMMAND_SET_INCREMENTAL:    (0, self.set_incremental),
+            COMMAND_SET_ABSOLUTE:   (0, self.set_absolute),
+            COMMAND_SET_POSITION:   (2, self.set_position),
+            COMMAND_MODE_RAPID:     ("*", self.ensure_rapid_mode),
+            COMMAND_MODE_PROGRAM:   ("*", self.ensure_program_mode),
+            COMMAND_MODE_RASTER:    ("*", self.ensure_raster_mode),
+            COMMAND_MODE_FINISHED:  ("*", self.ensure_finished_mode),
+            COMMAND_WAIT:           (1, self.wait),
+            COMMAND_WAIT_FINISH:    (0, self.wait_finish),
+            COMMAND_BEEP:           (0, self.beep),
+            COMMAND_FUNCTION:       ("*", self.func_exec),
+            COMMAND_CONSOLE:        (1, self.console_exec),
+            COMMAND_SIGNAL:         ("*", self.signal_exec),
 
-                        for x in range(5):
-                            winsound.Beep(2000, 100)
-                    except Exception:
-                        pass
-                elif OS_NAME == "Darwin": # Mac
-                    os.system('afplay /System/Library/Sounds/Ping.aiff')
-                else: # Assuming other linux like system
-                    print("\a")  # Beep.
-            elif command == COMMAND_FUNCTION:
-                if len(values) >= 1:
-                    t = values[0]
-                    if callable(t):
-                        t()
-            elif command == COMMAND_CONSOLE:
-                if len(values) == 1:
-                    fn = self.context.console_function(values[0])
-                    fn()
-            elif command == COMMAND_SIGNAL:
-                if isinstance(values, str):
-                    self.context.signal(values, None)
-                elif len(values) >= 2:
-                    self.context.signal(values[0], *values[1:])
-        except AttributeError:
-            pass
+            # The following codes have been commented out because they refer to methods or opt variables
+            # that do not actually exist.
+            # In the old code, that would not be a problem if the lines were not executed.
+            # In this version, all methods / options needs to exist - and they should exist!
+
+            # COMMAND_SET_DIRECTION:  (4, self.set_directions),
+            # COMMAND_JOG:            (2, partial(self.jog, mode=0, min_jog=self.context.opt_jog_minimum)),
+            # COMMAND_JOG_SWITCH:     (2, partial(self.jog, mode=1, min_jog=self.context.opt_jog_minimum)),
+            # COMMAND_JOG_FINISH:     (2, partial(self.jog, mode=2, min_jog=self.context.opt_jog_minimum)),
+
+            # However even with these lines commented out, the code still creates error messages to the console
+            # that were previously just ignored.
+
+            # I simply do not understand this code enough to debug it, so I am leaving this as a proof of concept.
+        }
+
+        if command in DRIVER_COMMANDS:
+            n, fn = DRIVER_COMMANDS[command]
+        else:
+            self.context.channel("console")(
+                "drivers.py: unknown command: {c}, args {v}".format(c=command, v=values),
+            )
+            return False
+        if n != "*" and len(values) != n:
+            self.context.channel("console")(
+                "drivers.py: command {c} for {name} requires {n} args called with {l}: {v}".format(
+                    c=command, name=fn.__name__, n=n, l=len(values), v=values,
+                ),
+            )
+        fn(*values)
+
         return True
+
+    def beep(self):
+        OS_NAME = platform.system()
+        if OS_NAME == "Windows":
+            try:
+                import winsound
+
+                for x in range(5):
+                    winsound.Beep(2000, 100)
+            except Exception:
+                pass
+        elif OS_NAME == "Darwin": # Mac
+            os.system('afplay /System/Library/Sounds/Ping.aiff')
+        else: # Assuming other linux like system
+            print("\a")  # Beep.
+
+    def func_exec(self, t, *args):
+        t(*args)
+
+    def console_exec(self, fn, *args):
+        fn = self.context.console_function(fn)
+        fn(*args)
+
+    def signal_exec(self, name, *args):
+        if not args:
+            args = None
+        self.context.signal(name, *args)
 
     def realtime_command(self, command, *values):
         """Asks for the execution of a realtime command. Unlike the spooled commands these
         return False if rejected and something else if able to be performed. These will not
         be queued. If rejected. They must be performed in realtime or cancelled.
         """
-        try:
-            if command == REALTIME_PAUSE:
-                self.pause()
-            elif command == REALTIME_RESUME:
-                self.resume()
-            elif command == REALTIME_RESET:
-                self.reset()
-            elif command == REALTIME_STATUS:
-                self.status()
-            elif command == REALTIME_SAFETY_DOOR:
-                self.safety_door()
-            elif command == REALTIME_JOG_CANCEL:
-                self.jog_cancel(*values)
-            elif command == REALTIME_SPEED_PERCENT:
-                self.realtime_speed_percent(*values)
-            elif command == REALTIME_SPEED:
-                self.realtime_speed(*values)
-            elif command == REALTIME_RAPID_PERCENT:
-                self.realtime_rapid_percent(*values)
-            elif command == REALTIME_RAPID:
-                self.realtime_rapid(*values)
-            elif command == REALTIME_POWER_PERCENT:
-                self.realtime_power_percent(*values)
-            elif command == REALTIME_POWER:
-                self.realtime_power(*values)
-            elif command == REALTIME_OVERSCAN:
-                self.realtime_overscan(*values)
-            elif command == REALTIME_LASER_DISABLE:
-                self.realtime_laser_disable(*values)
-            elif command == REALTIME_LASER_ENABLE:
-                self.realtime_laser_enable(*values)
-            elif command == REALTIME_FLOOD_COOLANT:
-                self.realtime_flood_coolant(*values)
-            elif command == REALTIME_MIST_COOLANT:
-                self.realtime_mist_coolant(*values)
-        except AttributeError:
-            pass  # Method doesn't exist.
+        DRIVER_REALTIME = {
+            REALTIME_PAUSE:         (0, self.pause),
+            REALTIME_RESUME:        (0, self.resume),
+            REALTIME_RESET:         (0, self.reset),
+            REALTIME_STATUS:        (0, self.status),
+            REALTIME_SAFETY_DOOR:   (0, self.safety_door),
+            REALTIME_JOG_CANCEL:    ("*", self.jog_cancel),
+            REALTIME_SPEED_PERCENT: ("*", self.realtime_speed_percent),
+            REALTIME_SPEED:         ("*", self.realtime_speed),
+            REALTIME_RAPID_PERCENT: ("*", self.realtime_rapid_percent),
+            REALTIME_RAPID:         ("*", self.realtime_rapid),
+            REALTIME_POWER_PERCENT: ("*", self.realtime_power_percent),
+            REALTIME_POWER:         ("*", self.realtime_power),
+            REALTIME_OVERSCAN:      ("*", self.realtime_overscan),
+            REALTIME_LASER_DISABLE: ("*", self.realtime_laser_disable),
+            REALTIME_LASER_ENABLE:  ("*", self.realtime_laser_enable),
+            REALTIME_FLOOD_COOLANT: ("*", self.realtime_flood_coolant),
+            REALTIME_MIST_COOLANT:  ("*", self.realtime_mist_coolant),
+        }
+
+        if command in DRIVER_REALTIME:
+            n, fn = DRIVER_REALTIME[command]
+        else:
+            self.context.channel("console")(
+                "drivers.py: unknown realtime: {c}, args {v}".format(c=command, v=values),
+            )
+            return False
+        if n != "*" and len(values) != n:
+            self.context.channel("console")(
+                "drivers.py: realtime {c} for {name} requires {n} args called with {l}: {v}".format(
+                    c=command, name=fn.__name__, n=n, l=len(values), v=values,
+                ),
+            )
+        fn(*values)
+
+        return True
 
     def data_output(self, e):
         self.output.write(e)
