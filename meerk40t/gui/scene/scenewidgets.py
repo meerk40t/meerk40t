@@ -1,8 +1,8 @@
-from meerk40t.gui.scene.scene import Widget
-from meerk40t.gui.wxutils import create_menu
-
 import math
 import wx
+
+from meerk40t.gui.scene.scene import Widget
+from meerk40t.gui.wxutils import create_menu
 
 from meerk40t.gui.laserrender import (
     DRAW_MODE_BACKGROUND,
