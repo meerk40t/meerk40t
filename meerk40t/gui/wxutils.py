@@ -173,7 +173,7 @@ def create_menu(gui, node, elements):
 def get_key_name(event):
     keyvalue = ""
     if event.ControlDown():
-        keyvalue += "control+"
+        keyvalue += "ctrl+"
     if event.AltDown():
         keyvalue += "alt+"
     if event.ShiftDown():
