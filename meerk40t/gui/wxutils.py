@@ -170,23 +170,32 @@ def create_menu(gui, node, elements):
         menu.Destroy()
 
 
-def get_key_name(event):
+WX_METAKEYS = [
+    wx.WXK_START,
+    wx.WXK_WINDOWS_LEFT,
+    wx.WXK_WINDOWS_RIGHT,
+    wx.WXK_WINDOWS_MENU,
+]
+
+def get_key_name(event, return_modifier=False):
+    key = event.GetKeyCode()
     keyvalue = ""
     if event.ControlDown():
         keyvalue += "ctrl+"
-    if event.AltDown():
+    if event.AltDown() or key == wx.WXK_ALT:
         keyvalue += "alt+"
     if event.ShiftDown():
         keyvalue += "shift+"
-    if event.MetaDown():
+    if event.MetaDown() or key in WX_METAKEYS:
         keyvalue += "meta+"
-    key = event.GetKeyCode()
     if key == wx.WXK_CONTROL:
-        return
+        return keyvalue if return_modifier else None
     if key == wx.WXK_ALT:
-        return
+        return keyvalue if return_modifier else None
     if key == wx.WXK_SHIFT:
-        return
+        return keyvalue if return_modifier else None
+    if key in WX_METAKEYS:
+        return keyvalue if return_modifier else None
     if key == wx.WXK_F1:
         keyvalue += "f1"
     elif key == wx.WXK_F2:
@@ -219,6 +228,26 @@ def get_key_name(event):
         keyvalue += "f15"
     elif key == wx.WXK_F16:
         keyvalue += "f16"
+    elif key == wx.WXK_F16:
+        keyvalue += "f17"
+    elif key == wx.WXK_F16:
+        keyvalue += "f16"
+    elif key == wx.WXK_F17:
+        keyvalue += "f17"
+    elif key == wx.WXK_F18:
+        keyvalue += "f18"
+    elif key == wx.WXK_F19:
+        keyvalue += "f19"
+    elif key == wx.WXK_F20:
+        keyvalue += "f20"
+    elif key == wx.WXK_F21:
+        keyvalue += "f21"
+    elif key == wx.WXK_F22:
+        keyvalue += "f22"
+    elif key == wx.WXK_F23:
+        keyvalue += "f23"
+    elif key == wx.WXK_F24:
+        keyvalue += "f24"
     elif key == wx.WXK_ADD:
         keyvalue += "+"
     elif key == wx.WXK_END:
@@ -271,10 +300,14 @@ def get_key_name(event):
         keyvalue += "numpad_pgup"
     elif key == wx.WXK_NUMPAD_PAGEDOWN:
         keyvalue += "numpad_pgdn"
+    elif key == wx.WXK_NUMPAD_HOME:
+        keyvalue += "numpad_home"
+    elif key == wx.WXK_NUMPAD_END:
+        keyvalue += "numpad_end"
     elif key == wx.WXK_NUMLOCK:
-        keyvalue += "numlock"
+        keyvalue += "num_lock"
     elif key == wx.WXK_SCROLL:
-        keyvalue += "scroll"
+        keyvalue += "scroll_lock"
     elif key == wx.WXK_HOME:
         keyvalue += "home"
     elif key == wx.WXK_DOWN:
@@ -307,6 +340,49 @@ def get_key_name(event):
         keyvalue += "delete"
     elif key == wx.WXK_INSERT:
         keyvalue += "insert"
+    elif key == wx.WXK_SPECIAL1:
+        keyvalue += "special1"
+    elif key == wx.WXK_SPECIAL2:
+        keyvalue += "special2"
+    elif key == wx.WXK_SPECIAL3:
+        keyvalue += "special3"
+    elif key == wx.WXK_SPECIAL4:
+        keyvalue += "special4"
+    elif key == wx.WXK_SPECIAL5:
+        keyvalue += "special5"
+    elif key == wx.WXK_SPECIAL6:
+        keyvalue += "special6"
+    elif key == wx.WXK_SPECIAL7:
+        keyvalue += "special7"
+    elif key == wx.WXK_SPECIAL8:
+        keyvalue += "special8"
+    elif key == wx.WXK_SPECIAL9:
+        keyvalue += "special9"
+    elif key == wx.WXK_SPECIAL10:
+        keyvalue += "special10"
+    elif key == wx.WXK_SPECIAL11:
+        keyvalue += "special11"
+    elif key == wx.WXK_SPECIAL12:
+        keyvalue += "special12"
+    elif key == wx.WXK_SPECIAL13:
+        keyvalue += "special13"
+    elif key == wx.WXK_SPECIAL14:
+        keyvalue += "special14"
+    elif key == wx.WXK_SPECIAL15:
+        keyvalue += "special15"
+    elif key == wx.WXK_SPECIAL16:
+        keyvalue += "special16"
+    elif key == wx.WXK_SPECIAL17:
+        keyvalue += "special17"
+    elif key == wx.WXK_SPECIAL18:
+        keyvalue += "special18"
+    elif key == wx.WXK_SPECIAL19:
+        keyvalue += "special19"
+    elif key == wx.WXK_SPECIAL20:
+        keyvalue += "special20"
+    elif key == wx.WXK_CLEAR:
+        keyvalue += "clear"
     else:
         keyvalue += chr(key)
+        # keyvalue += chr(event.GetUnicodeKey())
     return keyvalue.lower()
