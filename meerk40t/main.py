@@ -107,7 +107,7 @@ def run():
     if args.version:
         print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return
-    python_version_required = (3, 5)
+    python_version_required = (3, 6)
     if sys.version_info < python_version_required:
         print(
             "%s %s requires Python %d.%d or greater."
