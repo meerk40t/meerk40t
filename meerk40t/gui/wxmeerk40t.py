@@ -504,23 +504,17 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.position import register_panel
 
         kernel.register("wxpane/Position", register_panel)
+        #
+        # if kernel.root.setting(bool, "developer_mode", False):
+        from meerk40t.gui.auitoolbars import register_toolbars
 
-        if kernel.root.setting(bool, "developer_mode", False):
-            from meerk40t.gui.auitoolbars import register_toolbars
+        kernel.register("wxpane/Toolbars", register_toolbars)
 
-            kernel.register("wxpane/Toolbars", register_toolbars)
-            #
-            # from meerk40t.gui.toolbarmodify import register_modify_tools
-            #
-            # kernel.register("wxpane/Tool-Modify", register_modify_tools)
-            #
-            # from meerk40t.gui.toolbaralign import register_align_tools
-            #
-            # kernel.register("wxpane/Tool-Align", register_align_tools)
-            #
-            # from meerk40t.gui.toolbarshapes import register_shapes_tools
-            #
-            # kernel.register("wxpane/Tool-Shape", register_shapes_tools)
+        from meerk40t.gui.toolbaralign import register_align_tools
+        kernel.register("wxpane/Tool-Align", register_align_tools)
+
+        from meerk40t.gui.toolbarshapes import register_shapes_tools
+        kernel.register("wxpane/Tool-Shape", register_shapes_tools)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
