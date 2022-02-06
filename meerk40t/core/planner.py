@@ -922,7 +922,7 @@ class Planner(Service):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                types=("op cut", "op raster", "op image", "op engrave", "op dots", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
                 depth=1,
             ):
                 try:
