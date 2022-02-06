@@ -3,6 +3,7 @@ import os.path
 import re
 from copy import copy
 
+from .node.laserop import DotsOpNode, ImageOpNode, CutOpNode, EngraveOpNode, RasterOpNode
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -33,7 +34,6 @@ from ..svgelements import (
 from .cutcode import CubicCut, CutCode, CutGroup, LineCut, QuadCut, RasterCut
 from .node.commandop import CommandOperation
 from .node.consoleop import ConsoleOperation
-from .node.laserop import LaserOperation
 from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
 from .node.rootnode import RootNode
 from .parameters import Parameters
@@ -495,7 +495,7 @@ class Elemental(Service):
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
-                            operand.append(e.operation.lower())
+                            operand.append(e.type.remove("op").strip())
                         elif value == "len":
                             operand.append(len(e.children))
                         else:
@@ -585,7 +585,19 @@ class Elemental(Service):
             passes=None,
             **kwargs,
         ):
-            op = LaserOperation()
+            if command == "cut":
+                op = CutOpNode()
+            elif command == "engrave":
+                op = EngraveOpNode()
+            elif command == "raster":
+                op = RasterOpNode()
+            elif command == "imageop":
+                op = ImageOpNode()
+            elif command == "dots":
+                op = DotsOpNode()
+            else:
+                return
+
             if color is not None:
                 op.color = color
             if default is not None:
@@ -601,20 +613,10 @@ class Elemental(Service):
                 op.raster_step = step
             if overscan is not None:
                 op.overscan = self.device.length(overscan, -1)
-            if command == "cut":
-                op.operation = "Cut"
-            elif command == "engrave":
-                op.operation = "Engrave"
-            elif command == "raster":
-                op.operation = "Raster"
-            elif command == "imageop":
-                op.operation = "Image"
-            elif command == "dots":
-                op.operation = "Dots"
             self.add_op(op)
             if data is not None:
                 for item in data:
-                    op.add(item, type="refelem")
+                    op.add(item, type="ref elem")
             return "ops", [op]
 
         @self.console_argument("step_size", type=int, help=_("raster step size"))
@@ -625,7 +627,7 @@ class Elemental(Service):
             if step_size is None:
                 found = False
                 for op in data:
-                    if op.operation in ("Raster", "Image"):
+                    if op.type in ("op raster", "op image"):
                         step = op.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
@@ -633,7 +635,7 @@ class Elemental(Service):
                     channel(_("No raster operations selected."))
                 return
             for op in data:
-                if op.operation in ("Raster", "Image"):
+                if op.type in ("op raster", "op image"):
                     op.raster_step = step_size
                     op.notify_update()
             return "ops", data
@@ -2706,10 +2708,8 @@ class Elemental(Service):
             """
             Delegate to either ops or elements depending on the current node emphasis
             """
-            for item in self.flat(
-                types=("op", "elem", "file", "group"), emphasized=True
-            ):
-                if item.type == "op":
+            for item in self.flat(emphasized=True):
+                if item.type.startswith("op"):
                     return "ops", list(self.ops(emphasized=True))
                 if item.type in ("elem", "file", "group"):
                     return "elements", list(self.elems(emphasized=True))
@@ -2916,8 +2916,8 @@ class Elemental(Service):
         # --------------------------- TREE OPERATIONS ---------------------------
 
         non_structural_nodes = (
-            "op",
-            "refelem",
+            "op cut", "op raster", "op image", "op engrave", "op dots",
+            "ref elem",
             "cmdop",
             "consoleop",
             "lasercode",
@@ -2927,10 +2927,12 @@ class Elemental(Service):
             "file",
             "group",
         )
+        operate_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
+        op_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(_("Operation properties"), node_type="op", help="")
+        @self.tree_operation(_("Operation properties"), node_type=operate_nodes, help="")
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -2990,54 +2992,54 @@ class Elemental(Service):
                 group_node.append_child(node)
 
         @self.tree_operation(
-            _("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help=""
+            _("Enable/Disable ops"), node_type=op_nodes, help=""
         )
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
                 n.notify_update()
 
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Image"), node_type="op", help="")
-        def convert_operation_image(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Image"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Raster"), node_type="op", help="")
-        def convert_operation_raster(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Raster"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type="op", help="")
-        def convert_operation_engrave(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Engrave"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Cut"), node_type="op", help="")
-        def convert_operation_cut(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Cut"
+        #TODO: Restore convert node type ability
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        # def convert_operation_image(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Image"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        # def convert_operation_raster(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Raster"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        # def convert_operation_engrave(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Engrave"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        # def convert_operation_cut(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Cut"
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
 
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op raster", "op image"), help="")
         def set_speed_raster(node, speed=150, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
 
-        @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help="")
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
@@ -3048,7 +3050,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
-        @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
+        @self.tree_operation(_("%sppi") % "{power}", node_type=("op cut", "op raster", "op image", "op engrave"), help="")
         def set_power(node, power=1000, **kwargs):
             node.power = float(power)
             self.signal("element_property_reload", node)
@@ -3056,13 +3058,12 @@ class Elemental(Service):
         def radio_match(node, i=1, **kwargs):
             return node.raster_step == i
 
-        @self.tree_conditional(lambda node: node.operation == "Raster")
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(
             _("Step %s") % "{i}",
-            node_type="op",
+            node_type="op raster",
             help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
@@ -3077,7 +3078,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
+        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type=operate_nodes, help="")
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
             node.passes_custom = passvalue != 1
@@ -3086,7 +3087,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Execute operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
@@ -3097,7 +3098,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Simulate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
@@ -3184,7 +3185,7 @@ class Elemental(Service):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
             help="",
         )
         def remove_n_ops(node, **kwargs):
@@ -3243,26 +3244,26 @@ class Elemental(Service):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="refelem", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type="ref elem", help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="refelem", help=""
+            _("Make %s copies") % "{copies}", node_type="ref elem", help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
             index = node.parent.children.index(node)
             for i in range(copies):
-                node.parent.add(node.object, type="refelem", pos=index)
+                node.parent.add(node.object, type="ref elem", pos=index)
             node.modified()
             self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
             _("Reverse subitems order"),
-            node_type=("op", "group", "branch elems", "file", "branch ops"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "group", "branch elems", "file", "branch ops"),
             help=_("Reverse the items within this subitem"),
         )
         def reverse_layer_order(node, **kwargs):
@@ -3348,22 +3349,22 @@ class Elemental(Service):
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Image"), node_type="branch ops", help="")
         def append_operation_image(node, pos=None, **kwargs):
-            self.add_op(LaserOperation(operation="Image"), pos=pos)
+            self.add_op(ImageOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Raster"), node_type="branch ops", help="")
         def append_operation_raster(node, pos=None, **kwargs):
-            self.add_op(LaserOperation(operation="Raster"), pos=pos)
+            self.add_op(RasterOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Engrave"), node_type="branch ops", help="")
         def append_operation_engrave(node, pos=None, **kwargs):
-            self.add_op(LaserOperation(operation="Engrave"), pos=pos)
+            self.add_op(EngraveOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Cut"), node_type="branch ops", help="")
         def append_operation_cut(node, pos=None, **kwargs):
-            self.add_op(LaserOperation(operation="Cut"), pos=pos)
+            self.add_op(CutOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
@@ -3442,7 +3443,7 @@ class Elemental(Service):
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("duplicate operation element nodes"),
         )
         def duplicate_operation(node, **kwargs):
@@ -3452,30 +3453,24 @@ class Elemental(Service):
                     pos = operations.index(op) + 1
                 except ValueError:
                     pos = None
-                copy_op = LaserOperation(op)
+                copy_op = copy(op)
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
                     try:
-                        copy_op.add(child.object, type="refelem")
+                        copy_op.add(child.object, type="ref elem")
                     except AttributeError:
                         pass
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Passes"))
-        @self.tree_operation(_("Add 1 pass"), node_type="op", help="")
+        @self.tree_operation(_("Add 1 pass"), node_type=("op image", "op engrave", "op cut") , help="")
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Add %s passes") % "{copies}", node_type="op", help="")
+        @self.tree_operation(_("Add %s passes") % "{copies}", node_type=("op image", "op engrave", "op cut"), help="")
         def add_n_passes(node, copies=1, **kwargs):
             add_elements = [
                 child.object for child in node.children if child.object is not None
@@ -3489,43 +3484,36 @@ class Elemental(Service):
             if removed:
                 add_elements = [c for c in add_elements if c is not None]
             add_elements *= copies
-            node.add_all(add_elements, type="refelem")
+            node.add_all(add_elements, type="ref elem")
             self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
+        @self.tree_operation(_("Duplicate elements 1 time"), node_type=("op image", "op engrave", "op cut"), help="")
         def dup_1_copy(node, **kwargs):
             dup_n_copies(node, copies=1, **kwargs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}", node_type="op", help=""
+            _("Duplicate elements %s times") % "{copies}", node_type=("op image", "op engrave", "op cut"), help=""
         )
         def dup_n_copies(node, copies=1, **kwargs):
             add_elements = [
                 child.object for child in node.children if child.object is not None
             ]
             add_elements *= copies
-            node.add_all(add_elements, type="refelem")
+            node.add_all(add_elements, type="ref elem")
             self.signal("rebuild_tree")
 
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
             _("Make raster image"),
-            node_type="op",
+            node_type=("op image", "op raster"),
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            subitems = list(node.flat(types=("elem", "refelem")))
+            subitems = list(node.flat(types=("elem", "ref elem")))
             reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
@@ -3558,54 +3546,54 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type="op", help="")
+        @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type="op", help="")
+        @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type="op", help="")
+        @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type="op", help="")
+        @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home"), node_type="op", help="")
+        @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
             append_operation_home(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Return to Origin"), node_type="op", help="")
+        @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
             append_operation_origin(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Beep"), node_type="op", help="")
+        @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt (console)"), node_type=op_nodes, help="")
         def add_operation_interrupt_console(node, **kwargs):
             append_operation_interrupt_console(
                 node, pos=add_after_index(self), **kwargs
             )
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self)
             append_operation_home(node, pos=pos, **kwargs)
@@ -3967,7 +3955,7 @@ class Elemental(Service):
         @self.tree_separator_before()
         @self.tree_operation(
             _("Expand all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
             help="Expand all children of this given node.",
         )
         def expand_all_children(node, **kwargs):
@@ -3976,14 +3964,14 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_operation(
             _("Collapse all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
             help="Collapse all children of this given node.",
         )
         def collapse_all_children(node, **kwargs):
             node.notify_collapse()
 
         @self.tree_reference(lambda node: node.object.node)
-        @self.tree_operation(_("Element"), node_type="refelem", help="")
+        @self.tree_operation(_("Element"), node_type="ref elem", help="")
         def reference_refelem(node, **kwargs):
             pass
 
@@ -4004,12 +3992,9 @@ class Elemental(Service):
         settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             section = "%s %06i" % (name, i)
-            if isinstance(op, LaserOperation):
-                op.settings["type"] = "op"
-                op.settings["hex_color"] = op.color.hexa
-                settings.write_persistent_dict(section, op.settings)
-            elif isinstance(op, (CommandOperation, ConsoleOperation)):
-                settings.write_persistent_attributes(section, op)
+            settings.write_persistent(section,"type", op.type)
+            op.save(settings, section)
+
         settings.write_configuration()
 
     def clear_persistent_operations(self, name):
@@ -4023,31 +4008,13 @@ class Elemental(Service):
         self.clear_operations()
         settings = self.op_data
         subitems = list(settings.derivable(name))
-        ops = list()
+        operation_branch = self._tree.get(type="branch ops")
         for section in subitems:
             op_type = settings.read_persistent(str, section, "type")
-            if op_type in ("op", "", None):
-                op = LaserOperation()
-                settings.read_persistent_attributes(section, op)
-                update_dict = settings.read_persistent_string_dict(section, suffix=True)
-                Parameters.validate(update_dict)
-                op.settings.update(update_dict)
-                hexa = op.settings.get("hex_color")
-                if hexa is not None:
-                    op.color = Color(hexa)
-            elif op_type == "cmdop":
-                name = settings.read_persistent(str, section, "label")
-                command = settings.read_persistent(int, section, "command")
-                op = CommandOperation(name, command)
-                settings.read_persistent_attributes(section, op)
-            elif op_type == "consoleop":
-                command = settings.read_persistent(int, section, "command")
-                op = ConsoleOperation(command)
-                settings.read_persistent_attributes(section, op)
-            else:
+            if op_type in ("op", "ref elem"):
                 continue
-            ops.append(op)
-        self.add_ops(ops)
+            op = operation_branch.add(None, type=op_type)
+            op.load(settings, section)
         self.classify(list(self.elems()))
 
     def emphasized(self, *args):
@@ -4085,37 +4052,35 @@ class Elemental(Service):
     def load_default(self):
         self.clear_operations()
         self.add_op(
-            LaserOperation(
-                operation="Image",
+            ImageOpNode(
                 color="black",
                 speed=140.0,
                 power=1000.0,
                 raster_step=3,
             )
         )
-        self.add_op(LaserOperation(operation="Raster"))
-        self.add_op(LaserOperation(operation="Engrave"))
-        self.add_op(LaserOperation(operation="Cut"))
+        self.add_op(RasterOpNode())
+        self.add_op(EngraveOpNode())
+        self.add_op(CutOpNode())
         self.classify(list(self.elems()))
 
     def load_default2(self):
         self.clear_operations()
         self.add_op(
-            LaserOperation(
-                operation="Image",
+            ImageOpNode(
                 color="black",
                 speed=140.0,
                 power=1000.0,
                 raster_step=3,
             )
         )
-        self.add_op(LaserOperation(operation="Raster"))
-        self.add_op(LaserOperation(operation="Engrave", color="blue"))
-        self.add_op(LaserOperation(operation="Engrave", color="green"))
-        self.add_op(LaserOperation(operation="Engrave", color="magenta"))
-        self.add_op(LaserOperation(operation="Engrave", color="cyan"))
-        self.add_op(LaserOperation(operation="Engrave", color="yellow"))
-        self.add_op(LaserOperation(operation="Cut"))
+        self.add_op(RasterOpNode())
+        self.add_op(EngraveOpNode(color="blue"))
+        self.add_op(EngraveOpNode(color="green"))
+        self.add_op(EngraveOpNode(color="magenta"))
+        self.add_op(EngraveOpNode(color="cyan"))
+        self.add_op(EngraveOpNode(color="yellow"))
+        self.add_op(CutOpNode())
         self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
@@ -4322,9 +4287,9 @@ class Elemental(Service):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(
-            types=("op", "cmdop", "consoleop"), depth=1, **kwargs
-        ):
+        for item in operations.flat(depth=1, **kwargs):
+            if item.type.startswith("branch"):
+                continue
             yield item
 
     def elems(self, **kwargs):
@@ -4400,7 +4365,7 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         op.set_label(str(op))
-        operation_branch.add(op, type="op", pos=pos)
+        operation_branch.add(op, type=op.type, pos=pos)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
@@ -4683,33 +4648,33 @@ class Elemental(Service):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
-                if op.operation == "Raster" and not op.default:
+                if op.type == "op raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add(element, type="refelem")
+                        op.add(element, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.add(element, type="refelem")
+                        op.add(element, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGText):
                         op.add(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.argb is not None:
-                        op.add(element, type="refelem")
+                        op.add(element, type="ref elem")
                         was_classified = True
                 elif (
-                    op.operation in ("Engrave", "Cut")
+                    op.type in ("op engrave", "op cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                     and not op.default
                 ):
-                    op.add(element, type="refelem")
+                    op.add(element, type="ref elem")
                     was_classified = True
-                elif op.operation == "Image" and isinstance(element, SVGImage):
-                    op.add(element, type="refelem")
+                elif op.type == "op image" and isinstance(element, SVGImage):
+                    op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif op.operation == "Dots" and isDot(element):
-                    op.add(element, type="refelem")
+                elif op.type == "op dots" and isDot(element):
+                    op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in Dots.
 
@@ -4720,9 +4685,9 @@ class Elemental(Service):
                 # it is not guaranteed to classify all elements as this is not explicitly checked.
                 op = None
                 if isinstance(element, SVGImage):
-                    op = LaserOperation(operation="Image", output=False)
+                    op = ImageOpNode(output=False)
                 elif isDot(element):
-                    op = LaserOperation(operation="Dots", output=False)
+                    op = DotsOpNode(output=False)
                 elif (
                     # test for Shape or SVGText instance is probably unnecessary,
                     # but we should probably not test for stroke without ensuring
@@ -4731,13 +4696,11 @@ class Elemental(Service):
                     and element.stroke is not None
                     and element.stroke.value is not None
                 ):
-                    op = LaserOperation(
-                        operation="Engrave", color=element.stroke, speed=35.0
-                    )
+                    op = EngraveOpNode(color=element.stroke, speed=35.0)
                 # This code is separated out to avoid duplication
                 if op is not None:
                     add_op_function(op)
-                    op.add(element, type="refelem")
+                    op.add(element, type="ref elem")
                     operations.append(op)
 
                 # Seperate code for Raster ops because we might add a Raster op
@@ -4748,9 +4711,9 @@ class Elemental(Service):
                     and element.fill.argb is not None
                     and not isDot(element)
                 ):
-                    op = LaserOperation(operation="Raster", color=0, output=False)
+                    op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add(element, type="refelem")
+                    op.add(element, type="ref elem")
                     operations.append(op)
 
     def add_classify_op(self, op):
@@ -4764,18 +4727,18 @@ class Elemental(Service):
         """
         operations = self._tree.get(type="branch ops").children
         for pos, old_op in reversed_enumerate(operations):
-            if op.operation == old_op.operation:
+            if op.type == old_op.type:
                 return self.add_op(op, pos=pos + 1)
 
         # No operation of same type found. So we will look for last operation of a lower priority and add after it.
         try:
-            priority = OP_PRIORITIES.index(op.operation)
+            priority = OP_PRIORITIES.index(op.type)
         except ValueError:
             return self.add_op(op)
 
         for pos, old_op in reversed_enumerate(operations):
             try:
-                if OP_PRIORITIES.index(old_op.operation) < priority:
+                if OP_PRIORITIES.index(old_op.type) < priority:
                     return self.add_op(op, pos=pos + 1)
             except ValueError:
                 pass
@@ -4956,18 +4919,18 @@ class Elemental(Service):
         rasters_one_pass = None
 
         for op in operations:
-            if not isinstance(op, LaserOperation):
+            if not op.type.startswith("op "):
                 continue
             if op.default:
-                if op.operation == "Cut":
+                if op.type == "op cut":
                     default_cut_ops.append(op)
-                if op.operation == "Engrave":
+                if op.type == "op engrave":
                     default_engrave_ops.append(op)
-                if op.operation == "Raster":
+                if op.type == "op raster":
                     default_raster_ops.append(op)
-            if op.operation in ("Cut", "Engrave"):
+            if op.type in ("op cut", "op engrave"):
                 vector_ops.append(op)
-            elif op.operation == "Raster":
+            elif op.type == "op raster":
                 raster_ops.append(op)
                 op_color = op.color.rgb if not op.default else "default"
                 if rasters_one_pass is not False:
@@ -5171,10 +5134,10 @@ class Elemental(Service):
             element_added = False
             if is_dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (is_dot and op.operation == "Dots") or (
-                        isinstance(element, SVGImage) and op.operation == "Image"
+                    if (is_dot and op.type == "op dots") or (
+                        isinstance(element, SVGImage) and op.type == "op image"
                     ):
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
                         break  # May only classify in one Dots or Image operation and indeed in one operation
             elif element_vector:
@@ -5186,7 +5149,7 @@ class Elemental(Service):
                         and op not in default_raster_ops
                     ):
                         if not rasters_one_pass:
-                            op.add(element, type="refelem", pos=element_pos)
+                            op.add(element, type="ref elem", pos=element_pos)
                         elif not element_added:
                             raster_elements.append((element, element.bbox()))
                         element_added = True
@@ -5198,7 +5161,7 @@ class Elemental(Service):
                         and op not in default_cut_ops
                         and op not in default_engrave_ops
                     ):
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
                 if (
                     element.stroke is None
@@ -5215,7 +5178,7 @@ class Elemental(Service):
             elif rasters_one_pass:
                 for op in raster_ops:
                     if op.color is not None and op.color.rgb == element_color.rgb:
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
             else:
                 raster_elements.append((element, element.bbox()))
@@ -5228,11 +5191,11 @@ class Elemental(Service):
                 is_cut = Color.distance_sq("red", element_color) <= 18825
                 if is_cut:
                     for op in default_cut_ops:
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
                 else:
                     for op in default_engrave_ops:
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
             elif (
                 rasters_one_pass
@@ -5241,7 +5204,7 @@ class Elemental(Service):
                 and raster_ops
             ):
                 for op in raster_ops:
-                    op.add(element, type="refelem", pos=element_pos)
+                    op.add(element, type="ref elem", pos=element_pos)
                 element_added = True
 
             if element_added:
@@ -5250,35 +5213,33 @@ class Elemental(Service):
             # Need to add a new operation to classify into
             op = None
             if is_dot:
-                op = LaserOperation(operation="Dots", default=True)
+                op = DotsOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, SVGImage):
-                op = LaserOperation(operation="Image", default=True)
+                op = ImageOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, (Shape, SVGText)):
                 if element_vector:
                     if (
                         is_cut
                     ):  # This will be initialised because criteria are same as above
-                        op = LaserOperation(operation="Cut", color=abs(element_color))
+                        op = CutOpNode(color=abs(element_color))
                     else:
-                        op = LaserOperation(
+                        op = EngraveOpNode(
                             operation="Engrave", color=abs(element_color)
                         )
                         if element_color == Color("white"):
                             op.output = False
                     vector_ops.append(op)
                 elif rasters_one_pass:
-                    op = LaserOperation(
-                        operation="Raster", color="Transparent", default=True
-                    )
+                    op = RasterOpNode(color="Transparent", default=True)
                     default_raster_ops.append(op)
                     raster_ops.append(op)
             if op is not None:
                 new_ops.append(op)
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise refelem is not created.
-                op.add(element, type="refelem", pos=element_pos)
+                op.add(element, type="ref elem", pos=element_pos)
                 debug(
                     "classify: added op: {op}".format(
                         op=str(op),
@@ -5379,7 +5340,7 @@ class Elemental(Service):
                         [e[0] for e in elements_to_add], key=raster_elements.index
                     )
                     for element in elements_to_add:
-                        op.add(element, type="refelem", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
 
         # Now remove groups added to at least one op
         for group in groups_added:
@@ -5423,7 +5384,7 @@ class Elemental(Service):
                     default_raster_ops = []
                     break
         if not default_raster_ops:
-            op = LaserOperation(operation="Raster", color="Transparent", default=True)
+            op = RasterOpNode(color="Transparent", default=True)
             default_raster_ops.append(op)
             add_op_function(op)
             debug(
@@ -5437,7 +5398,7 @@ class Elemental(Service):
 
         for element in elements_to_add:
             for op in default_raster_ops:
-                op.add(element, type="refelem", pos=element_pos)
+                op.add(element, type="ref elem", pos=element_pos)
 
     @staticmethod
     def element_label_id(element, short=True):

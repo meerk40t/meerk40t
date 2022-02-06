@@ -3133,7 +3133,6 @@ class EGVBlob:
     def __init__(self, data: bytearray, name=None):
         self.name = name
         self.data = data
-        self.operation = "blob"
         self._cutcode = None
         self._cut = None
 

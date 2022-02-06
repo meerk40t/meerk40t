@@ -1,7 +1,6 @@
 import wx
 from wx import aui
 
-from ..core.node.laserop import LaserOperation
 from ..core.node.node import isDot
 from ..svgelements import (
     SVG_ATTR_STROKE,
@@ -667,24 +666,35 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-            elif isinstance(node, LaserOperation):
-                try:
-                    op = node.operation
-                except AttributeError:
-                    op = None
+
+            if node.type in ("op raster", "op image"):
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                if op in ("Raster", "Image"):
-                    self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
-                elif op in ("Engrave", "Cut"):
-                    self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
-                elif op == "Dots":
-                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-                else:
-                    self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
+                self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
+            elif node.type in ("op engrave", "op cut"):
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
+            elif node.type == "op dots":
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+            elif node.type == "op":
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
             elif node.type == "file":
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
@@ -850,10 +860,10 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "refelem":
+            if node.type == "ref elem":
                 emphasized[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=("refelem",), cascade=False):
+                for n in node.flat(types=("ref elem",), cascade=False):
                     try:
                         emphasized.append(n.object.node)
                     except Exception:

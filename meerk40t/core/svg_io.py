@@ -42,7 +42,6 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .node.laserop import LaserOperation
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
@@ -370,58 +369,59 @@ class SVGLoader:
                 except KeyError:
                     pass
                 try:
-                    if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
-                        if not operations_cleared:
-                            elements_modifier.clear_operations()
-                            operations_cleared = True
-                        op = LaserOperation()
-                        for key in dir(op):
-                            if key.startswith("_") or key.startswith("implicit"):
-                                continue
-                            v = getattr(op, key)
-                            if key in element.values:
-                                type_v = type(v)
-                                if type_v in (str, int, float, Color):
-                                    try:
-                                        setattr(op, key, type_v(element.values[key]))
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                                elif type_v == bool:
-                                    try:
-                                        setattr(
-                                            op,
-                                            key,
-                                            str(element.values[key]).lower()
-                                            in ("true", "1"),
-                                        )
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                        for key in dir(op.settings):
-                            if key.startswith("_") or key.startswith("implicit"):
-                                continue
-                            v = getattr(op.settings, key)
-                            if key in element.values:
-                                type_v = type(v)
-                                if type_v in (str, int, float, Color):
-                                    try:
-                                        setattr(
-                                            op.settings,
-                                            key,
-                                            type_v(element.values[key]),
-                                        )
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                                elif type_v == bool:
-                                    try:
-                                        setattr(
-                                            op.settings,
-                                            key,
-                                            str(element.values[key]).lower()
-                                            in ("true", "1"),
-                                        )
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                        elements_modifier.add_op(op)
+                    pass
+                    # if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
+                    #     if not operations_cleared:
+                    #         elements_modifier.clear_operations()
+                    #         operations_cleared = True
+                    #     op = LaserOperation()
+                    #     for key in dir(op):
+                    #         if key.startswith("_") or key.startswith("implicit"):
+                    #             continue
+                    #         v = getattr(op, key)
+                    #         if key in element.values:
+                    #             type_v = type(v)
+                    #             if type_v in (str, int, float, Color):
+                    #                 try:
+                    #                     setattr(op, key, type_v(element.values[key]))
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #             elif type_v == bool:
+                    #                 try:
+                    #                     setattr(
+                    #                         op,
+                    #                         key,
+                    #                         str(element.values[key]).lower()
+                    #                         in ("true", "1"),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #     for key in dir(op.settings):
+                    #         if key.startswith("_") or key.startswith("implicit"):
+                    #             continue
+                    #         v = getattr(op.settings, key)
+                    #         if key in element.values:
+                    #             type_v = type(v)
+                    #             if type_v in (str, int, float, Color):
+                    #                 try:
+                    #                     setattr(
+                    #                         op.settings,
+                    #                         key,
+                    #                         type_v(element.values[key]),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #             elif type_v == bool:
+                    #                 try:
+                    #                     setattr(
+                    #                         op.settings,
+                    #                         key,
+                    #                         str(element.values[key]).lower()
+                    #                         in ("true", "1"),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #     elements_modifier.add_op(op)
                 except KeyError:
                     pass
 

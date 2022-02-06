@@ -3,11 +3,11 @@ from os import times
 from time import time
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+from .node.laserop import RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
-from .node.laserop import LaserOperation
 
 
 def plugin(kernel, lifecycle=None):
@@ -313,12 +313,9 @@ class CutPlan:
             parts.append("#%d" % len(self.plan))
             for p in self.plan:
                 try:
-                    parts.append(p.operation)
+                    parts.append(p.__name__)
                 except AttributeError:
-                    try:
-                        parts.append(p.__name__)
-                    except AttributeError:
-                        parts.append(p.__class__.__name__)
+                    parts.append(p.__class__.__name__)
         else:
             parts.append("-- Empty --")
         return " ".join(parts)
@@ -399,9 +396,7 @@ class CutPlan:
         grouped_plan = list()
         group = [self.plan[0]]
         for c in self.plan[1:]:
-            if (
-                type(group[-1]) == LaserOperation or type(c) == LaserOperation
-            ) and type(group[-1]) != type(c):
+            if group[-1].type.startswith("op") != c.type.startswith("op"):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
@@ -417,10 +412,10 @@ class CutPlan:
                 burning = False
                 pass_idx += 1
                 for op in plan:
-                    if not isinstance(op, LaserOperation):
+                    if not op.type.startswith("op"):
                         blob_plan.append(op)
                         continue
-                    if op.operation == "Dots":
+                    if op.type == "op dots":
                         if pass_idx == 1:
                             blob_plan.append(op)
                         continue
@@ -449,10 +444,10 @@ class CutPlan:
                         if len(cutcode) == 0:
                             break
                         cutcode.constrained = (
-                            op.operation == "Cut" and context.opt_inner_first
+                            op.type == "op cut" and context.opt_inner_first
                         )
                         cutcode.pass_index = pass_idx if passes_first else p
-                        cutcode.original_op = op.operation
+                        cutcode.original_op = op.type
                         blob_plan.append(cutcode)
 
         self.plan.clear()
@@ -487,7 +482,7 @@ class CutPlan:
             if (
                 merge
                 and not context.opt_inner_first
-                and self.plan[-1].original_op == "Cut"
+                and self.plan[-1].original_op == "op cut"
             ):
                 merge = False
 
@@ -513,7 +508,7 @@ class CutPlan:
         has_cutcode = False
         for op in self.plan:
             try:
-                if op.operation == "CutCode":
+                if isinstance(op, CutCode):
                     has_cutcode = True
                     break
             except AttributeError:
@@ -584,7 +579,7 @@ class CutPlan:
         for k in range(len(self.plan) - 1, -1, -1):
             op = self.plan[k]
             try:
-                if op.operation in ("Cut", "Engrave"):
+                if op.type in ("op cut", "op engrave"):
                     for i, e in enumerate(list(op.children)):
                         if isinstance(e.object, SVGText):
                             e.remove_node()
@@ -596,21 +591,18 @@ class CutPlan:
     def strip_rasters(self):
         stripped = False
         for k, op in enumerate(self.plan):
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(op[0], SVGImage):
-                        continue
-                    self.plan[k] = None
-                    stripped = True
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                    continue
+                self.plan[k] = None
+                stripped = True
         if stripped:
             p = [q for q in self.plan if q is not None]
             self.plan.clear()
             self.plan.extend(p)
 
     def make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "refelem")))
+        subitems = list(op.flat(types=("elem", "ref elem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -632,41 +624,35 @@ class CutPlan:
 
     def make_image(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue
+            if op.type == "op raster":
+                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                    continue
+                image_element = self.make_image_for_op(op)
+                if image_element is None:
+                    continue
+                if (
+                    image_element.image_width == 1
+                    and image_element.image_height == 1
+                ):
+                    # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
+                    #  around because the renderer is what sets the size of the text. If the size hasn't already
+                    #  been set, the initial bounds are wrong.
                     image_element = self.make_image_for_op(op)
-                    if image_element is None:
-                        continue
-                    if (
-                        image_element.image_width == 1
-                        and image_element.image_height == 1
-                    ):
-                        # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                        #  around because the renderer is what sets the size of the text. If the size hasn't already
-                        #  been set, the initial bounds are wrong.
-                        image_element = self.make_image_for_op(op)
-                    op.children.clear()
-                    op.add(image_element, type="refelem")
-            except AttributeError:
-                continue
+                op.children.clear()
+                op.add(image_element, type="ref elem")
 
     def actualize(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, op.raster_step):
-                            make_actual(elem, op.raster_step)
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, None):
-                            make_actual(elem, None)
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, op.raster_step):
+                        make_actual(elem, op.raster_step)
+            if op.type == "op image":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, None):
+                        make_actual(elem, None)
 
     def scale_to_device_native(self):
         # rotary = self.context.rotary
@@ -680,7 +666,7 @@ class CutPlan:
             device.get_native_scale_y,
         )
         for o in self.plan:
-            if isinstance(o, LaserOperation):
+            if o.type.startswith("op"):
                 for node in o.children:
                     e = node.object
                     try:
@@ -700,53 +686,44 @@ class CutPlan:
 
     def conditional_jobadd_strip_text(self):
         for op in self.plan:
-            try:
-                if op.operation in ("Cut", "Engrave"):
-                    for e in op.children:
-                        if not isinstance(e.object, SVGText):
-                            continue  # make raster not needed since its a single real raster.
-                        self.commands.append(self.strip_text)
-                        return True
-            except AttributeError:
-                pass
+            if op.type in ("op cut", "op engrave"):
+                for e in op.children:
+                    if not isinstance(e.object, SVGText):
+                        continue  # make raster not needed since its a single real raster.
+                    self.commands.append(self.strip_text)
+                    return True
         return False
 
     def conditional_jobadd_make_raster(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    if len(op.children) == 0:
-                        continue
-                    if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                        continue  # make raster not needed since its a single real raster.
-                    make_raster = self.context.lookup("render-op/make_raster")
+            if op.type == "op raster":
+                if len(op.children) == 0:
+                    continue
+                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                    continue  # make raster not needed since its a single real raster.
+                make_raster = self.context.lookup("render-op/make_raster")
 
-                    if make_raster is None:
-                        self.commands.append(self.strip_rasters)
-                    else:
-                        self.commands.append(self.make_image)
-                    return True
-            except AttributeError:
-                pass
+                if make_raster is None:
+                    self.commands.append(self.strip_rasters)
+                else:
+                    self.commands.append(self.make_image)
+                return True
         return False
 
     def conditional_jobadd_actualize_image(self):
         for op in self.plan:
-            try:
-                if op.operation == "Raster":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, op.raster_step):
-                            self.commands.append(self.actualize)
-                            return
-                if op.operation == "Image":
-                    for elem in op.children:
-                        elem = elem.object
-                        if needs_actualization(elem, None):
-                            self.commands.append(self.actualize)
-                            return
-            except AttributeError:
-                pass
+            if op.type == "op raster":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, op.raster_step):
+                        self.commands.append(self.actualize)
+                        return
+            if op.type == "op image":
+                for elem in op.children:
+                    elem = elem.object
+                    if needs_actualization(elem, None):
+                        self.commands.append(self.actualize)
+                        return
 
     def conditional_jobadd_scale(self):
         self.commands.append(self.scale_to_device_native)
@@ -945,7 +922,7 @@ class Planner(Service):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                types=("op cut", "op raster", "op image", "op engrave", "op dots", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
                 depth=1,
             ):
                 try:
@@ -1222,7 +1199,7 @@ class Planner(Service):
             for c in data.plan:
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
-                if isinstance(c, LaserOperation):
+                if isinstance(c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))

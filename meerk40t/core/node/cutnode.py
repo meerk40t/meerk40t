@@ -11,7 +11,6 @@ class CutNode(Node):
     def __init__(self, data_object, **kwargs):
         super().__init__(data_object, type="cutcode", **kwargs)
         self.output = True
-        self.operation = "Cutcode"
 
     def __repr__(self):
         return "CutNode('%s', %s, %s)" % (
