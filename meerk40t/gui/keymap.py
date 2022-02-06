@@ -197,11 +197,7 @@ class KeymapPanel(wx.Panel):
             return -1
         if len(item2[1]) <= 3 and len(item2[1]) < len(item1[1]):
             return 1
-        if item1 < item2:
-            return -1
-        if item2 < item1:
-            return 1
-        return 0
+        return -1 if item1 < item2 else 1 if item2 < item1 else 0
 
 class Keymap(MWindow):
     def __init__(self, *args, **kwds):
