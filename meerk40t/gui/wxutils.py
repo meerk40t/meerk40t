@@ -177,6 +177,103 @@ WX_METAKEYS = [
     wx.WXK_WINDOWS_MENU,
 ]
 
+WX_SPECIALKEYS = {
+    wx.WXK_F1: "f1",
+    wx.WXK_F2: "f2",
+    wx.WXK_F3: "f3",
+    wx.WXK_F4: "f4",
+    wx.WXK_F5: "f5",
+    wx.WXK_F6: "f6",
+    wx.WXK_F7: "f7",
+    wx.WXK_F8: "f8",
+    wx.WXK_F9: "f9",
+    wx.WXK_F10: "f10",
+    wx.WXK_F11: "f11",
+    wx.WXK_F12: "f12",
+    wx.WXK_F13: "f13",
+    wx.WXK_F14: "f14",
+    wx.WXK_F15: "f15",
+    wx.WXK_F16: "f16",
+    wx.WXK_F16: "f17",
+    wx.WXK_F16: "f16",
+    wx.WXK_F17: "f17",
+    wx.WXK_F18: "f18",
+    wx.WXK_F19: "f19",
+    wx.WXK_F20: "f20",
+    wx.WXK_F21: "f21",
+    wx.WXK_F22: "f22",
+    wx.WXK_F23: "f23",
+    wx.WXK_F24: "f24",
+    wx.WXK_ADD: "+",
+    wx.WXK_END: "end",
+    wx.WXK_NUMPAD0: "numpad0",
+    wx.WXK_NUMPAD1: "numpad1",
+    wx.WXK_NUMPAD2: "numpad2",
+    wx.WXK_NUMPAD3: "numpad3",
+    wx.WXK_NUMPAD4: "numpad4",
+    wx.WXK_NUMPAD5: "numpad5",
+    wx.WXK_NUMPAD6: "numpad6",
+    wx.WXK_NUMPAD7: "numpad7",
+    wx.WXK_NUMPAD8: "numpad8",
+    wx.WXK_NUMPAD9: "numpad9",
+    wx.WXK_NUMPAD_ADD: "numpad_add",
+    wx.WXK_NUMPAD_SUBTRACT: "numpad_subtract",
+    wx.WXK_NUMPAD_MULTIPLY: "numpad_multiply",
+    wx.WXK_NUMPAD_DIVIDE: "numpad_divide",
+    wx.WXK_NUMPAD_DECIMAL: "numpad.",
+    wx.WXK_NUMPAD_ENTER: "numpad_enter",
+    wx.WXK_NUMPAD_RIGHT: "numpad_right",
+    wx.WXK_NUMPAD_LEFT: "numpad_left",
+    wx.WXK_NUMPAD_UP: "numpad_up",
+    wx.WXK_NUMPAD_DOWN: "numpad_down",
+    wx.WXK_NUMPAD_DELETE: "numpad_delete",
+    wx.WXK_NUMPAD_INSERT: "numpad_insert",
+    wx.WXK_NUMPAD_PAGEUP: "numpad_pgup",
+    wx.WXK_NUMPAD_PAGEDOWN: "numpad_pgdn",
+    wx.WXK_NUMPAD_HOME: "numpad_home",
+    wx.WXK_NUMPAD_END: "numpad_end",
+    wx.WXK_NUMLOCK: "num_lock",
+    wx.WXK_SCROLL: "scroll_lock",
+    wx.WXK_HOME: "home",
+    wx.WXK_DOWN: "down",
+    wx.WXK_UP: "up",
+    wx.WXK_RIGHT: "right",
+    wx.WXK_LEFT: "left",
+    wx.WXK_ESCAPE: "escape",
+    wx.WXK_BACK: "back",
+    wx.WXK_PAUSE: "pause",
+    wx.WXK_PAGEDOWN: "pagedown",
+    wx.WXK_PAGEUP: "pageup",
+    wx.WXK_PRINT: "print",
+    wx.WXK_RETURN: "return",
+    wx.WXK_SPACE: "space",
+    wx.WXK_TAB: "tab",
+    wx.WXK_DELETE: "delete",
+    wx.WXK_INSERT: "insert",
+    wx.WXK_SPECIAL1: "special1",
+    wx.WXK_SPECIAL2: "special2",
+    wx.WXK_SPECIAL3: "special3",
+    wx.WXK_SPECIAL4: "special4",
+    wx.WXK_SPECIAL5: "special5",
+    wx.WXK_SPECIAL6: "special6",
+    wx.WXK_SPECIAL7: "special7",
+    wx.WXK_SPECIAL8: "special8",
+    wx.WXK_SPECIAL9: "special9",
+    wx.WXK_SPECIAL10: "special10",
+    wx.WXK_SPECIAL11: "special11",
+    wx.WXK_SPECIAL12: "special12",
+    wx.WXK_SPECIAL13: "special13",
+    wx.WXK_SPECIAL14: "special14",
+    wx.WXK_SPECIAL15: "special15",
+    wx.WXK_SPECIAL16: "special16",
+    wx.WXK_SPECIAL17: "special17",
+    wx.WXK_SPECIAL18: "special18",
+    wx.WXK_SPECIAL19: "special19",
+    wx.WXK_SPECIAL20: "special20",
+    wx.WXK_CLEAR: "clear",
+}
+
+
 def get_key_name(event, return_modifier=False):
     key = event.GetKeyCode()
     keyvalue = ""
@@ -196,193 +293,8 @@ def get_key_name(event, return_modifier=False):
         return keyvalue if return_modifier else None
     if key in WX_METAKEYS:
         return keyvalue if return_modifier else None
-    if key == wx.WXK_F1:
-        keyvalue += "f1"
-    elif key == wx.WXK_F2:
-        keyvalue += "f2"
-    elif key == wx.WXK_F3:
-        keyvalue += "f3"
-    elif key == wx.WXK_F4:
-        keyvalue += "f4"
-    elif key == wx.WXK_F5:
-        keyvalue += "f5"
-    elif key == wx.WXK_F6:
-        keyvalue += "f6"
-    elif key == wx.WXK_F7:
-        keyvalue += "f7"
-    elif key == wx.WXK_F8:
-        keyvalue += "f8"
-    elif key == wx.WXK_F9:
-        keyvalue += "f9"
-    elif key == wx.WXK_F10:
-        keyvalue += "f10"
-    elif key == wx.WXK_F11:
-        keyvalue += "f11"
-    elif key == wx.WXK_F12:
-        keyvalue += "f12"
-    elif key == wx.WXK_F13:
-        keyvalue += "f13"
-    elif key == wx.WXK_F14:
-        keyvalue += "f14"
-    elif key == wx.WXK_F15:
-        keyvalue += "f15"
-    elif key == wx.WXK_F16:
-        keyvalue += "f16"
-    elif key == wx.WXK_F16:
-        keyvalue += "f17"
-    elif key == wx.WXK_F16:
-        keyvalue += "f16"
-    elif key == wx.WXK_F17:
-        keyvalue += "f17"
-    elif key == wx.WXK_F18:
-        keyvalue += "f18"
-    elif key == wx.WXK_F19:
-        keyvalue += "f19"
-    elif key == wx.WXK_F20:
-        keyvalue += "f20"
-    elif key == wx.WXK_F21:
-        keyvalue += "f21"
-    elif key == wx.WXK_F22:
-        keyvalue += "f22"
-    elif key == wx.WXK_F23:
-        keyvalue += "f23"
-    elif key == wx.WXK_F24:
-        keyvalue += "f24"
-    elif key == wx.WXK_ADD:
-        keyvalue += "+"
-    elif key == wx.WXK_END:
-        keyvalue += "end"
-    elif key == wx.WXK_NUMPAD0:
-        keyvalue += "numpad0"
-    elif key == wx.WXK_NUMPAD1:
-        keyvalue += "numpad1"
-    elif key == wx.WXK_NUMPAD2:
-        keyvalue += "numpad2"
-    elif key == wx.WXK_NUMPAD3:
-        keyvalue += "numpad3"
-    elif key == wx.WXK_NUMPAD4:
-        keyvalue += "numpad4"
-    elif key == wx.WXK_NUMPAD5:
-        keyvalue += "numpad5"
-    elif key == wx.WXK_NUMPAD6:
-        keyvalue += "numpad6"
-    elif key == wx.WXK_NUMPAD7:
-        keyvalue += "numpad7"
-    elif key == wx.WXK_NUMPAD8:
-        keyvalue += "numpad8"
-    elif key == wx.WXK_NUMPAD9:
-        keyvalue += "numpad9"
-    elif key == wx.WXK_NUMPAD_ADD:
-        keyvalue += "numpad_add"
-    elif key == wx.WXK_NUMPAD_SUBTRACT:
-        keyvalue += "numpad_subtract"
-    elif key == wx.WXK_NUMPAD_MULTIPLY:
-        keyvalue += "numpad_multiply"
-    elif key == wx.WXK_NUMPAD_DIVIDE:
-        keyvalue += "numpad_divide"
-    elif key == wx.WXK_NUMPAD_DECIMAL:
-        keyvalue += "numpad."
-    elif key == wx.WXK_NUMPAD_ENTER:
-        keyvalue += "numpad_enter"
-    elif key == wx.WXK_NUMPAD_RIGHT:
-        keyvalue += "numpad_right"
-    elif key == wx.WXK_NUMPAD_LEFT:
-        keyvalue += "numpad_left"
-    elif key == wx.WXK_NUMPAD_UP:
-        keyvalue += "numpad_up"
-    elif key == wx.WXK_NUMPAD_DOWN:
-        keyvalue += "numpad_down"
-    elif key == wx.WXK_NUMPAD_DELETE:
-        keyvalue += "numpad_delete"
-    elif key == wx.WXK_NUMPAD_INSERT:
-        keyvalue += "numpad_insert"
-    elif key == wx.WXK_NUMPAD_PAGEUP:
-        keyvalue += "numpad_pgup"
-    elif key == wx.WXK_NUMPAD_PAGEDOWN:
-        keyvalue += "numpad_pgdn"
-    elif key == wx.WXK_NUMPAD_HOME:
-        keyvalue += "numpad_home"
-    elif key == wx.WXK_NUMPAD_END:
-        keyvalue += "numpad_end"
-    elif key == wx.WXK_NUMLOCK:
-        keyvalue += "num_lock"
-    elif key == wx.WXK_SCROLL:
-        keyvalue += "scroll_lock"
-    elif key == wx.WXK_HOME:
-        keyvalue += "home"
-    elif key == wx.WXK_DOWN:
-        keyvalue += "down"
-    elif key == wx.WXK_UP:
-        keyvalue += "up"
-    elif key == wx.WXK_RIGHT:
-        keyvalue += "right"
-    elif key == wx.WXK_LEFT:
-        keyvalue += "left"
-    elif key == wx.WXK_ESCAPE:
-        keyvalue += "escape"
-    elif key == wx.WXK_BACK:
-        keyvalue += "back"
-    elif key == wx.WXK_PAUSE:
-        keyvalue += "pause"
-    elif key == wx.WXK_PAGEDOWN:
-        keyvalue += "pagedown"
-    elif key == wx.WXK_PAGEUP:
-        keyvalue += "pageup"
-    elif key == wx.WXK_PRINT:
-        keyvalue += "print"
-    elif key == wx.WXK_RETURN:
-        keyvalue += "return"
-    elif key == wx.WXK_SPACE:
-        keyvalue += "space"
-    elif key == wx.WXK_TAB:
-        keyvalue += "tab"
-    elif key == wx.WXK_DELETE:
-        keyvalue += "delete"
-    elif key == wx.WXK_INSERT:
-        keyvalue += "insert"
-    elif key == wx.WXK_SPECIAL1:
-        keyvalue += "special1"
-    elif key == wx.WXK_SPECIAL2:
-        keyvalue += "special2"
-    elif key == wx.WXK_SPECIAL3:
-        keyvalue += "special3"
-    elif key == wx.WXK_SPECIAL4:
-        keyvalue += "special4"
-    elif key == wx.WXK_SPECIAL5:
-        keyvalue += "special5"
-    elif key == wx.WXK_SPECIAL6:
-        keyvalue += "special6"
-    elif key == wx.WXK_SPECIAL7:
-        keyvalue += "special7"
-    elif key == wx.WXK_SPECIAL8:
-        keyvalue += "special8"
-    elif key == wx.WXK_SPECIAL9:
-        keyvalue += "special9"
-    elif key == wx.WXK_SPECIAL10:
-        keyvalue += "special10"
-    elif key == wx.WXK_SPECIAL11:
-        keyvalue += "special11"
-    elif key == wx.WXK_SPECIAL12:
-        keyvalue += "special12"
-    elif key == wx.WXK_SPECIAL13:
-        keyvalue += "special13"
-    elif key == wx.WXK_SPECIAL14:
-        keyvalue += "special14"
-    elif key == wx.WXK_SPECIAL15:
-        keyvalue += "special15"
-    elif key == wx.WXK_SPECIAL16:
-        keyvalue += "special16"
-    elif key == wx.WXK_SPECIAL17:
-        keyvalue += "special17"
-    elif key == wx.WXK_SPECIAL18:
-        keyvalue += "special18"
-    elif key == wx.WXK_SPECIAL19:
-        keyvalue += "special19"
-    elif key == wx.WXK_SPECIAL20:
-        keyvalue += "special20"
-    elif key == wx.WXK_CLEAR:
-        keyvalue += "clear"
+    if key in WX_SPECIALKEYS:
+        keyvalue += WX_SPECIALKEYS[key]
     else:
         keyvalue += chr(key)
-        # keyvalue += chr(event.GetUnicodeKey())
     return keyvalue.lower()
