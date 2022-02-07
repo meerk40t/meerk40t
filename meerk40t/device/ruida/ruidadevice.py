@@ -447,6 +447,7 @@ class RuidaEmulator(Module):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
             desc = "Move Absolute (%f mil, %f mil)" % (
                 self.x / UM_PER_MIL,
                 self.y / UM_PER_MIL,
@@ -457,6 +458,7 @@ class RuidaEmulator(Module):
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
+                self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
                 desc = "Move Relative (%f mil, %f mil)" % (
                     dx / UM_PER_MIL,
                     dy / UM_PER_MIL,
@@ -466,10 +468,12 @@ class RuidaEmulator(Module):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
             desc = "Move Horizontal Relative (%f mil)" % (dx / UM_PER_MIL)
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
             desc = "Move Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
