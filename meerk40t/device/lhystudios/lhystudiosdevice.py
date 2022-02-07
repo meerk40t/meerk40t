@@ -681,21 +681,6 @@ def onewire_crc_lookup(line):
     return crc
 
 
-STATE_X_FORWARD_LEFT = (
-    0b0000000000000001  # Direction is flagged left rather than right.
-)
-STATE_Y_FORWARD_TOP = 0b0000000000000010  # Direction is flagged top rather than bottom.
-STATE_X_STEPPER_ENABLE = 0b0000000000000100  # X-stepper motor is engaged.
-STATE_Y_STEPPER_ENABLE = 0b0000000000001000  # Y-stepper motor is engaged.
-STATE_HORIZONTAL_MAJOR = 0b0000000000010000
-REQUEST_X = 0b0000000000100000
-REQUEST_X_FORWARD_LEFT = 0b0000000001000000  # Requested direction towards the left.
-REQUEST_Y = 0b0000000010000000
-REQUEST_Y_FORWARD_TOP = 0b0000000100000000  # Requested direction towards the top.
-REQUEST_AXIS = 0b0000001000000000
-REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
-
-
 class LhystudiosDriver(Driver):
     """
     LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
