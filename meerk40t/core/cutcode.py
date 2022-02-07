@@ -767,6 +767,8 @@ class PlotCut(CutObject):
 
         @return: whether the plot can travel
         """
+        self.settings.raster_alt = False
+        self.settings.raster_step = 0
         if not self.travels_left and not self.travels_right and not self.travels_bottom and not self.travels_top:
             return False
         if 0 < self.max_dx <= 15:
