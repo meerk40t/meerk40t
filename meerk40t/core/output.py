@@ -308,7 +308,7 @@ class Outputs(Modifier):
             output, output_name = data
             channel(_("----------"))
             channel(_("Output:"))
-            for i, pname in enumerate(self._outputs):
+            for i, pname in enumerate(data):
                 channel("%d: %s" % (i, pname))
             channel(_("----------"))
             channel(_("Output %s: %s" % (output_name, str(output))))

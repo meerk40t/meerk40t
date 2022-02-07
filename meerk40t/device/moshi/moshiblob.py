@@ -316,9 +316,9 @@ class MoshiBlob:
     the Moshicontroller.
     """
 
-    def __init__(self):
+    def __init__(self, channel=None):
         self.data = bytearray()  # Queued additional commands programs.
-        self.channel = None
+        self.channel = channel
 
         self.last_x = 0
         self.last_y = 0

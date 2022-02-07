@@ -796,7 +796,7 @@ class GRBLEmulator(Module):
         if data.startswith("cat"):
             return 2
         commands = {}
-        for c in self._tokenize_code(data):
+        for c in _tokenize_code(data):
             g = c[0]
             if g not in commands:
                 commands[g] = []

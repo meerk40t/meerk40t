@@ -136,7 +136,7 @@ def plugin(kernel, lifecycle=None):
             input_type="device",
             output_type="device",
         )
-        def device(channel, _, index, **kwargs):
+        def device_activate(channel, _, index, **kwargs):
             spools = [str(i) for i in kernel.root.match("device", suffix=True)]
             root.active = spools[index]
             root.signal("active", index)
