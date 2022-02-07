@@ -1,12 +1,5 @@
 from .scene import Scene, Widget
 
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = 2 * pi
-
 import wx
 
 from meerk40t.svgelements import Path, Point, Rect
