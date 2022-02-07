@@ -171,6 +171,18 @@ class PreferencesPanel(wx.Panel):
                 "disable_tool_tips",
                 False,
             ),
+            (
+                _("Enable Laser Arm"),
+                "\n".join(
+                    (
+                        _(
+                            "Enable Laser Panel Arm/Disarm feature."
+                        ),
+                    )
+                ),
+                "laserpane_arm",
+                False,
+            ),
         ]
         self.text_scale_x = wx.TextCtrl(self, wx.ID_ANY, "1.000")
         self.text_scale_y = wx.TextCtrl(self, wx.ID_ANY, "1.000")
@@ -188,6 +200,7 @@ class PreferencesPanel(wx.Panel):
                 def check(event=None):
                     v = checkbox.GetValue()
                     setattr(self.context, param, v)
+                    self.context.signal(param, v)
 
                 return check
 
