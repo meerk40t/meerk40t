@@ -53,6 +53,7 @@ class LaserSettings:
         self.acceleration_custom = False
         self.acceleration = 1
 
+        self.force_twitchless = False
         self.raster_alt = False
         self.raster_step = 0
         self.raster_direction = 1  # Bottom To Top - Default.
@@ -860,6 +861,7 @@ class PlotCut(CutObject):
         """
         self.settings.raster_alt = False
         self.settings.raster_step = 0
+        self.settings.force_twitchless = True
         if not self.travels_left and not self.travels_right and not self.travels_bottom and not self.travels_top:
             return False
         if 0 < self.max_dx <= 15:

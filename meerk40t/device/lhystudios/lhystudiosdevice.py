@@ -1204,6 +1204,12 @@ class LhystudiosDriver(Driver):
         self.step_value_set = self.step
         return self.step_value_set
 
+    def instance_use_suffix_c(self):
+        if (self.context.twitchless or self.settings.force_twitchless) and not self.step:
+            return True
+        else:
+            return None
+
     def mode_shift_on_the_fly(self, dx=0, dy=0):
         """
         Mode shift on the fly changes the current modes while in programmed or raster mode
@@ -1227,7 +1233,7 @@ class LhystudiosDriver(Driver):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=True if self.context.twitchless and not self.step else None,
+            suffix_c=self.instance_use_suffix_c(),
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
@@ -1315,7 +1321,7 @@ class LhystudiosDriver(Driver):
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=True if self.context.twitchless else None,
+            suffix_c=self.instance_use_suffix_c(),
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=True,
         ).speedcode
