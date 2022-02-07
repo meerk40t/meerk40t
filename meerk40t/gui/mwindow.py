@@ -43,7 +43,15 @@ class MWindow(wx.Frame, Module):
         else:
             self.SetSize(width, height)
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
+
+    def on_mouse_left_down(self, event):
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_menu_request(event)
+        else:
+            event.Skip()
 
     def on_menu_request(self, event):
         menu = wx.Menu()

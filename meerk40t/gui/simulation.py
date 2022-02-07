@@ -129,6 +129,7 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
@@ -223,6 +224,13 @@ class SimulationPanel(wx.Panel, Job):
         self.SetSizer(sizer_1)
         self.Layout()
         # end wxGlade
+
+    def on_mouse_left_down(self, event):
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_mouse_right_down(event)
+        else:
+            event.Skip()
 
     def on_mouse_right_down(self, event=None):
         gui = self
