@@ -1389,7 +1389,8 @@ class LhystudiosDriver(Driver):
             self.current_y += delta
         self.data_output(b"SE")
         self.current_y += step_amount
-        self.toggle_prop(STATE_X_FORWARD_LEFT)
+
+        self._leftward = not self._leftward
         self.laser = False
         self.step_index += 1
 
@@ -1427,7 +1428,7 @@ class LhystudiosDriver(Driver):
             self.current_x += delta
         self.data_output(b"SE")
         self.current_x += step_amount
-        self.toggle_prop(STATE_Y_FORWARD_TOP)
+        self._topward = not self._topward
         self.laser = False
         self.step_index += 1
 
