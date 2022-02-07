@@ -707,7 +707,17 @@ class LhystudiosDriver(Driver):
     def __init__(self, context, name, *args, **kwargs):
         context = context.get_context("lhystudios/driver/%s" % name)
         Driver.__init__(self, context=context, name=name)
-
+        self._topward = False
+        self._leftward = False
+        self._x_engaged = False
+        self._y_engaged = False
+        self._horizontal_major = False
+        self._request_x_engaged = False
+        self._request_y_engaged = False
+        self._request_leftward = False
+        self._request_topward = False
+        self._request_horizontal_major = False
+        self._request_axis = False
         kernel = context._kernel
         _ = kernel.translation
         root_context = context.root
@@ -837,22 +847,22 @@ class LhystudiosDriver(Driver):
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.set_values(p_set)
                 elif on & PLOT_AXIS:  # Major Axis.
-                    self.set_prop(REQUEST_AXIS)
+                    self._request_axis = True
                     if x == 0:  # X Major / Horizontal.
-                        self.set_prop(REQUEST_HORIZONTAL_MAJOR)
+                        self._request_horizontal_major = True
                     else:  # Y Major / Vertical
-                        self.unset_prop(REQUEST_HORIZONTAL_MAJOR)
+                        self._request_horizontal_major = False
                 elif on & PLOT_DIRECTION:
-                    self.set_prop(REQUEST_X)
-                    self.set_prop(REQUEST_Y)
+                    self._request_x_engaged = True
+                    self._request_y_engaged = True
                     if x == 1:  # Moving Right. +x
-                        self.unset_prop(REQUEST_X_FORWARD_LEFT)
+                        self._request_leftward = False
                     else:  # Moving Left -x
-                        self.set_prop(REQUEST_X_FORWARD_LEFT)
+                        self._request_leftward = True
                     if y == 1:  # Moving Bottom +y
-                        self.unset_prop(REQUEST_Y_FORWARD_TOP)
+                        self._request_topward = False
                     else:  # Moving Top. -y
-                        self.set_prop(REQUEST_Y_FORWARD_TOP)
+                        self._request_topward = True
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
@@ -874,17 +884,19 @@ class LhystudiosDriver(Driver):
             else:
                 # program mode
                 self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
-                if self.is_prop(STATE_X_STEPPER_ENABLE):
-                    if dy != 0:
-                        if self.context.nse_raster or self.settings.raster_alt:
+                if self._x_engaged:
+                    if self.context.nse_raster or self.settings.raster_alt:
+                        if (dx > 0 and self._leftward) or (dx < 0 and not self._leftward):
                             self.h_switch(dy)
-                        else:
+                    else:
+                        if dy != 0:
                             self.h_switch_g(dy)
-                elif self.is_prop(STATE_Y_STEPPER_ENABLE):
-                    if dx != 0:
-                        if self.context.nse_raster or self.settings.raster_alt:
+                elif self._y_engaged:
+                    if self.context.nse_raster or self.settings.raster_alt:
+                        if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
                             self.v_switch(dx)
-                        else:
+                    else:
+                        if dx != 0:
                             self.v_switch_g(dx)
             self.goto_octent_abs(x, y, on & 1)
             if self.hold():
@@ -960,7 +972,7 @@ class LhystudiosDriver(Driver):
         original_state = self.state
         self.state = DRIVER_STATE_RAPID
         self.laser = False
-        if self.is_prop(STATE_HORIZONTAL_MAJOR):
+        if self._horizontal_major:
             if not self.is_left and dx >= 0:
                 self.data_output(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
@@ -1358,18 +1370,18 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        step_amount = (-set_step if self._topward else set_step)
         delta = delta - step_amount
 
         # We force reenforce directional move.
-        if self.is_prop(STATE_X_FORWARD_LEFT):
+        if self._leftward:
             self.data_output(self.CODE_LEFT)
         else:
             self.data_output(self.CODE_RIGHT)
 
         self.data_output(b"N")
         if delta != 0:
-            if self.is_prop(STATE_Y_FORWARD_TOP):
+            if self._topward:
                 self.data_output(self.CODE_TOP)
             else:
                 self.data_output(self.CODE_BOTTOM)
@@ -1398,16 +1410,16 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        step_amount = (-set_step if self._leftward else set_step)
         delta = delta - step_amount
 
-        if self.is_prop(STATE_Y_FORWARD_TOP):
+        if self._topward:
             self.data_output(self.CODE_TOP)
         else:
             self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
         if delta != 0:
-            if self.is_prop(STATE_X_FORWARD_LEFT):
+            if self._leftward:
                 self.data_output(self.CODE_LEFT)
             else:
                 self.data_output(self.CODE_RIGHT)
@@ -1434,23 +1446,23 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_Y_FORWARD_TOP) else set_step)
+        step_amount = (-set_step if self._topward else set_step)
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.ensure_finished_mode()
             self.move_relative(0, delta)
-            self.set_prop(STATE_X_STEPPER_ENABLE)
-            self.unset_prop(STATE_Y_STEPPER_ENABLE)
+            self._x_engaged = True
+            self._y_engaged = False
             self.ensure_raster_mode(raster_horizontal=True)
 
         # We reverse direction and step.
-        if self.is_prop(STATE_X_FORWARD_LEFT):
+        if self._leftward:
             self.data_output(self.CODE_RIGHT)
-            self.unset_prop(STATE_X_FORWARD_LEFT)
+            self._leftward = False
         else:
             self.data_output(self.CODE_LEFT)
-            self.set_prop(STATE_X_FORWARD_LEFT)
+            self._leftward = True
         self.current_y += step_amount
         self.laser = False
         self.step_index += 1
@@ -1470,23 +1482,23 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self.is_prop(STATE_X_FORWARD_LEFT) else set_step)
+        step_amount = (-set_step if self._leftward else set_step)
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.ensure_finished_mode()
             self.move_relative(delta, 0)
-            self.set_prop(STATE_Y_STEPPER_ENABLE)
-            self.unset_prop(STATE_X_STEPPER_ENABLE)
+            self._y_engaged = True
+            self._x_engaged = False
             self.ensure_raster_mode(raster_horizontal=False)
 
         # We reverse direction and step.
-        if self.is_prop(STATE_Y_FORWARD_TOP):
+        if self._topward:
             self.data_output(self.CODE_BOTTOM)
-            self.unset_prop(STATE_Y_FORWARD_TOP)
+            self._topward = False
         else:
             self.data_output(self.CODE_TOP)
-            self.set_prop(STATE_Y_FORWARD_TOP)
+            self._topward = True
         self.current_x += step_amount
         self.laser = False
         self.step_index += 1
@@ -1571,24 +1583,24 @@ class LhystudiosDriver(Driver):
     def goto_angle(self, dx, dy):
         if abs(dx) != abs(dy):
             raise ValueError("abs(dx) must equal abs(dy)")
-        self.set_prop(STATE_X_STEPPER_ENABLE)  # Set both on
-        self.set_prop(STATE_Y_STEPPER_ENABLE)
+        self._x_engaged = True  # Set both on
+        self._y_engaged = True
         if dx > 0:  # Moving right
-            if self.is_prop(STATE_X_FORWARD_LEFT):
+            if self._leftward:
                 self.data_output(self.CODE_RIGHT)
-                self.unset_prop(STATE_X_FORWARD_LEFT)
+                self._leftward = False
         else:  # Moving left
-            if not self.is_prop(STATE_X_FORWARD_LEFT):
+            if not self._leftward:
                 self.data_output(self.CODE_LEFT)
-                self.set_prop(STATE_X_FORWARD_LEFT)
+                self._leftward = True
         if dy > 0:  # Moving bottom
-            if self.is_prop(STATE_Y_FORWARD_TOP):
+            if self._topward:
                 self.data_output(self.CODE_BOTTOM)
-                self.unset_prop(STATE_Y_FORWARD_TOP)
+                self._topward = False
         else:  # Moving top
-            if not self.is_prop(STATE_Y_FORWARD_TOP):
+            if not self._topward:
                 self.data_output(self.CODE_TOP)
-                self.set_prop(STATE_Y_FORWARD_TOP)
+                self._topward = True
         self.current_x += dx
         self.current_y += dy
         self.check_bounds()
@@ -1596,28 +1608,28 @@ class LhystudiosDriver(Driver):
 
     def set_requested_directions(self):
         if self.context.strict:
-            self.unset_prop(STATE_X_FORWARD_LEFT)
-            self.unset_prop(STATE_Y_FORWARD_TOP)
-            self.unset_prop(STATE_HORIZONTAL_MAJOR)
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
         else:
-            if self.is_prop(REQUEST_X):
-                if self.is_prop(REQUEST_X_FORWARD_LEFT):
-                    self.set_prop(STATE_X_FORWARD_LEFT)
+            if self._request_x_engaged:
+                if self._request_leftward:
+                    self._leftward = True
                 else:
-                    self.unset_prop(STATE_X_FORWARD_LEFT)
-                self.unset_prop(REQUEST_X)
-            if self.is_prop(REQUEST_Y):
-                if self.is_prop(REQUEST_Y_FORWARD_TOP):
-                    self.set_prop(STATE_Y_FORWARD_TOP)
+                    self._leftward = False
+                self._request_x_engaged = False
+            if self._request_y_engaged:
+                if self._request_topward:
+                    self._topward = True
                 else:
-                    self.unset_prop(STATE_Y_FORWARD_TOP)
-                self.unset_prop(REQUEST_Y)
-            if self.is_prop(REQUEST_AXIS):
-                if self.is_prop(REQUEST_HORIZONTAL_MAJOR):
-                    self.set_prop(STATE_HORIZONTAL_MAJOR)
+                    self._topward = False
+                self._request_y_engaged = False
+            if self._request_axis:
+                if self._request_horizontal_major:
+                    self._horizontal_major = True
                 else:
-                    self.unset_prop(STATE_HORIZONTAL_MAJOR)
-                self.unset_prop(REQUEST_AXIS)
+                    self._horizontal_major = False
+                self._request_axis = False
 
     def declare_directions(self):
         """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
@@ -1626,75 +1638,73 @@ class LhystudiosDriver(Driver):
 
     def code_declare_directions(self):
         x_dir = (
-            self.CODE_LEFT if self.is_prop(STATE_X_FORWARD_LEFT) else self.CODE_RIGHT
+            self.CODE_LEFT if self._leftward else self.CODE_RIGHT
         )
-        y_dir = self.CODE_TOP if self.is_prop(STATE_Y_FORWARD_TOP) else self.CODE_BOTTOM
-        if self.is_prop(STATE_HORIZONTAL_MAJOR):
-            self.set_prop(STATE_X_STEPPER_ENABLE)
-            self.unset_prop(STATE_Y_STEPPER_ENABLE)
+        y_dir = self.CODE_TOP if self._topward else self.CODE_BOTTOM
+        if self._horizontal_major:
+            self._x_engaged = True
+            self._y_engaged = False
             return y_dir + x_dir
         else:
-            self.unset_prop(STATE_X_STEPPER_ENABLE)
-            self.set_prop(STATE_Y_STEPPER_ENABLE)
+            self._x_engaged = False
+            self._y_engaged = True
             return x_dir + y_dir
 
     @property
     def is_left(self):
         return (
-            self.is_prop(STATE_X_STEPPER_ENABLE)
-            and not self.is_prop(STATE_Y_STEPPER_ENABLE)
-            and self.is_prop(STATE_X_FORWARD_LEFT)
+            self._x_engaged
+            and not self._y_engaged
+            and self._leftward
         )
 
     @property
     def is_right(self):
         return (
-            self.is_prop(STATE_X_STEPPER_ENABLE)
-            and not self.is_prop(STATE_Y_STEPPER_ENABLE)
-            and not self.is_prop(STATE_X_FORWARD_LEFT)
+            self._x_engaged
+            and not self._y_engaged
+            and not self._leftward
         )
 
     @property
     def is_top(self):
         return (
-            not self.is_prop(STATE_X_STEPPER_ENABLE)
-            and self.is_prop(STATE_Y_STEPPER_ENABLE)
-            and self.is_prop(STATE_Y_FORWARD_TOP)
+            not self._x_engaged
+            and self._y_engaged
+            and self._topward
         )
 
     @property
     def is_bottom(self):
         return (
-            not self.is_prop(STATE_X_STEPPER_ENABLE)
-            and self.is_prop(STATE_Y_STEPPER_ENABLE)
-            and not self.is_prop(STATE_Y_FORWARD_TOP)
+            not self._x_engaged
+            and self._y_engaged
+            and not self._topward
         )
 
     @property
     def is_angle(self):
-        return self.is_prop(STATE_Y_STEPPER_ENABLE) and self.is_prop(
-            STATE_X_STEPPER_ENABLE
-        )
+        return self._y_engaged and self._x_engaged
 
     def set_left(self):
-        self.set_prop(STATE_X_STEPPER_ENABLE)
-        self.unset_prop(STATE_Y_STEPPER_ENABLE)
-        self.set_prop(STATE_X_FORWARD_LEFT)
+        self._x_engaged = True
+        self._y_engaged = False
+        self._leftward = True
 
     def set_right(self):
-        self.set_prop(STATE_X_STEPPER_ENABLE)
-        self.unset_prop(STATE_Y_STEPPER_ENABLE)
-        self.unset_prop(STATE_X_FORWARD_LEFT)
+        self._x_engaged = True
+        self._y_engaged = False
+        self._leftward = False
 
     def set_top(self):
-        self.unset_prop(STATE_X_STEPPER_ENABLE)
-        self.set_prop(STATE_Y_STEPPER_ENABLE)
-        self.set_prop(STATE_Y_FORWARD_TOP)
+        self._x_engaged = False
+        self._y_engaged = True
+        self._topward = True
 
     def set_bottom(self):
-        self.unset_prop(STATE_X_STEPPER_ENABLE)
-        self.set_prop(STATE_Y_STEPPER_ENABLE)
-        self.unset_prop(STATE_Y_FORWARD_TOP)
+        self._x_engaged = False
+        self._y_engaged = True
+        self._topward = False
 
     def move_right(self, dx=0):
         self.current_x += dx
