@@ -1,5 +1,3 @@
-
-
 # Core
 
 Core modules are classes that define Meerk40t specific ecosystem requirements within the kernel.

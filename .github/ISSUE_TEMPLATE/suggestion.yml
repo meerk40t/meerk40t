@@ -1,0 +1,97 @@
+name: Suggestion
+description: Suggest an enhancement
+title: "[Suggestion]: "
+labels: ["Type: Enhancement"]
+assignees: tatarize
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to make a suggestion for an enhancement to MeerK40t!
+
+        This form should only be used when your idea is fully formed.
+        Please discuss your ideas in one of our chat rooms before submitting it if you are
+        unsure.
+
+        Please check that this is not going to be a duplicate before submitting it.
+        If there is a similar suggestion already logged, please make any further
+        suggestions as a comment on the existing issue rather than creating a new one.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: e.g. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary Description
+      description: Please explain in general terms what your suggestion is.
+      placeholder: Summary paragraph
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current functionality
+      description: |
+        Please explain what functionality is available in the latest version of MeerK40t
+        and / or  why the current version cannot achieve what you want to do.
+
+        Please drag and drop any pictures or videos that might help us understand the difficulties.
+        You can also zip any e.g. SVG files that would help and drop these here too.
+      placeholder: Current functionality
+    validations:
+      required: false
+  - type: textarea
+    id: future
+    attributes:
+      label: Future functionality
+      description: |
+        Please explain what functionality you would like to see in a future version of MeerK40t.
+      placeholder: Future functionality
+    validations:
+      required: false
+  - type: input
+    id: meerk40t_version
+    attributes:
+      label: MeerK40t Version
+      description: What version of MeerK40t are you running?
+    validations:
+      required: true
+  - type: dropdown
+    id: meerk40t_type
+    attributes:
+      label: MeerK40t Type
+      description: How are you running Meerk40t?
+      options:
+        - Executable
+        - PIP3/Pypi Package
+        - Source (zip/tar file from Github)
+        - Git
+    validations:
+      required: true
+  - type: dropdown
+    id: operating_system
+    attributes:
+      label: Your Operating System
+      description: What operating system are you running under?
+      options:
+        - Windows
+        - Linux
+        - Mac (before M1/Bigsur)
+        - Mac (M1/Bigsur)
+        - Raspberry Pi
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](/meerk40t/meerk40t/.github/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

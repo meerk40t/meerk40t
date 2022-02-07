@@ -304,7 +304,7 @@ MOSHI_FREEMOTOR = 1
 MOSHI_ESTOP = 1
 MOSHI_EPILOGUE = 2
 MOSHI_PROLOGUE = 6
-# 6 also seen at laster startup.
+# 6 also seen at laser startup.
 MOSHI_LASER = 7
 MOSHI_READ = 14
 # 14 is also sometimes done as a keepalive each 3.4 seconds.
@@ -316,9 +316,9 @@ class MoshiBlob:
     the Moshicontroller.
     """
 
-    def __init__(self):
+    def __init__(self, channel=None):
         self.data = bytearray()  # Queued additional commands programs.
-        self.channel = None
+        self.channel = channel
 
         self.last_x = 0
         self.last_y = 0
@@ -428,7 +428,7 @@ class MoshiBlob:
 
         :return:
         """
-        assert self._stage == 3
+        # assert self._stage == 3
         self._stage = 4
         if self.channel:
             self.channel("Termination.")

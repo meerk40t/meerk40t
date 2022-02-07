@@ -1,8 +1,9 @@
 from copy import copy
 from time import time
 from os import times
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from ..core.cutcode import CutCode, CutGroup, CutObject
+from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -153,7 +154,7 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
-                "default": False,
+                "default": True,
                 "type": bool,
                 "label": _("Reduce Travel Time"),
                 "tip": _(
@@ -172,6 +173,31 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
+                )
+            },
+            {
+                "attr": "opt_complete_subpaths",
+                "object": context,
+                # Default is false for backwards compatibility.
+                # Initial tests suggest that in most cases this actually results in shorter burn times.
+                "default": True,
+                "type": bool,
+                "label": _("Burn Complete Subpaths"),
+                "tip": _(
+                    "By default Reduce Travel Time optimises using SVG individual path segments, "
+                    + "which means that non-closed subpaths can be burned in several shorter separate burns "
+                    + "rather than one continuous burn from start to end. "
+                )
+                + "\n\n"
+                + _(
+                    "This option only affects non-closed paths. "
+                    + "When this option is checked, non-closed subpaths are always burned in one continuous burn "
+                    + "from start to end rather than having burns start in the middle. "
+                    + "Whilst this may create a longer travel move to the end of the subpath,"
+                    + "it also avoids later travel moves to or from the intermediate point. "
+                    + "The total travel time may therefore be shorter or longer. "
+                    + "It may also avoid minor differences in total burn depth "
+                    + "at the point the burns join. "
                 )
             },
             {
@@ -225,9 +251,9 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_inner_first",
                 "object": context,
-                "default": False,
+                "default": True,
                 "type": bool,
-                "label": _("Cut Inner First"),
+                "label": _("Burn Inner First"),
                 "tip": _(
                     "Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
                     + "a cut-out piece are done before the cut piece shifts or drops out of the material."
@@ -242,6 +268,32 @@ def plugin(kernel, lifecycle=None):
                 ),
             },
             {
+                "attr": "opt_inners_grouped",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Group Inner Burns"),
+                "tip": _(
+                    "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
+                    + "This option only does something if Burn Inner First is also selected. "
+                    + "If your design has multiple separate pieces on it, "
+                    + "this should mostly cause each piece to be burned in entirety "
+                    + "before moving on to burn another piece. "
+                    + "This can reduce the risk of e.g. a shift ruining an entire piece of material "
+                    + "by trying to ensure that one piece is finished before starting on another."
+                )
+                + "\n\n"
+                + _(
+                    "This optimization works best with Merge Operations also checked though this is not a requirement. "
+                )
+                + "\n\n"
+                + _(
+                    "Because this optimisation is done once rasters have been turned into images, "
+                    + "inner elements may span multiple design pieces, "
+                    + "in which case they may be optimised together."
+                ),
+            },
+            {
                 "attr": "opt_closed_distance",
                 "object": context,
                 "default": 15,
@@ -249,16 +301,6 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Closed Distance"),
                 "tip": _(
                     "How close (mils) do endpoints need to be to count as closed?"
-                ),
-            },
-            {
-                "attr": "opt_rapid_between",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "label": _("Rapid Moves Between Objects"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
                 ),
             },
             {
@@ -524,37 +566,47 @@ class CutPlan:
             pass
 
     def optimize_travel_2opt(self):
+        channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 self.plan[i] = short_travel_cutcode_2opt(
-                    self.plan[i], channel=self.context.channel("optimize")
+                    self.plan[i], channel=channel
                 )
 
     def optimize_cuts(self):
+        channel = self.context.channel("optimize", timestamp=True)
+        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=self.context.channel("optimize")
+                        c, channel=channel
                     )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
-                    c, channel=self.context.channel("optimize")
+                    c,
+                    channel=channel,
+                    grouped_inner=grouped_inner,
                 )
 
     def optimize_travel(self):
         last = None
+        channel = self.context.channel("optimize", timestamp=True)
+        grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
-                        c, channel=self.context.channel("optimize")
+                        c, channel=channel
                     )
                     c = self.plan[i]
                 if last is not None:
                     self.plan[i].start = last
                 self.plan[i] = short_travel_cutcode(
-                    c, channel=self.context.channel("optimize")
+                    c,
+                    channel=channel,
+                    complete_path=self.context.opt_complete_subpaths,
+                    grouped_inner=grouped_inner,
                 )
                 last = self.plan[i].end()
 
@@ -933,7 +985,7 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"), depth=1
             ):
                 try:
                     if not c.output:
@@ -1428,50 +1480,72 @@ def bounding_box(elements):
     return xmin, ymin, xmax, ymax
 
 
-def is_inside(inner_path, outer_path):
+def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
     :param inner_path: inner path
     :param outer_path: outer path
     :return: whether path1 is wholly inside path2.
     """
-    if hasattr(inner_path, "path") and inner_path.path is not None:
-        inner_path = inner_path.path
-    if hasattr(outer_path, "path") and outer_path.path is not None:
-        outer_path = outer_path.path
-    if not hasattr(inner_path, "bounding_box"):
-        inner_path.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer_path, "bounding_box"):
-        outer_path.bounding_box = Group.union_bbox([outer_path])
-    if outer_path.bounding_box is None:
+    inner_path = inner
+    outer_path = outer
+    if hasattr(inner, "path") and inner.path is not None:
+        inner_path = inner.path
+    if hasattr(outer, "path") and outer.path is not None:
+        outer_path = outer.path
+    if not hasattr(inner, "bounding_box"):
+        inner.bounding_box = Group.union_bbox([inner_path])
+    if not hasattr(outer, "bounding_box"):
+        outer.bounding_box = Group.union_bbox([outer_path])
+    if outer.bounding_box is None:
         return False
-    if inner_path.bounding_box is None:
+    if inner.bounding_box is None:
         return False
-    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
+    # Raster is inner if the bboxes overlap anywhere
+    if isinstance(inner, RasterCut):
+        return (
+            inner.bounding_box[0] <= outer.bounding_box[2]
+            and inner.bounding_box[1] <= outer.bounding_box[3]
+            and inner.bounding_box[2] >= outer.bounding_box[0]
+            and inner.bounding_box[3] >= outer.bounding_box[1]
+        )
+    if outer.bounding_box[0] > inner.bounding_box[0]:
         # outer minx > inner minx (is not contained)
         return False
-    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
+    if outer.bounding_box[1] > inner.bounding_box[1]:
         # outer miny > inner miny (is not contained)
         return False
-    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
+    if outer.bounding_box[2] < inner.bounding_box[2]:
         # outer maxx < inner maxx (is not contained)
         return False
-    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
+    if outer.bounding_box[3] < inner.bounding_box[3]:
         # outer maxy < inner maxy (is not contained)
         return False
-    if outer_path.bounding_box == inner_path.bounding_box:
-        if outer_path == inner_path:  # This is the same object.
+    if outer.bounding_box == inner.bounding_box:
+        if outer == inner:  # This is the same object.
             return False
-    if not hasattr(outer_path, "vm"):
+
+    # Inner bbox is entirely inside outer bbox,
+    # however that does not mean that inner is actually inside outer
+    # i.e. inner could be small and between outer and the bbox corner,
+    # or small and  contained in a concave indentation.
+    #
+    # VectorMontonizer can determine whether a point is inside a polygon.
+    # The code below uses a brute force approach by considering a fixed number of points,
+    # however we should consider a future enhancement whereby we create
+    # a polygon more intelligently based on size and curvature
+    # i.e. larger bboxes need more points and
+    # tighter curves need more points (i.e. compare vector directions)
+    if not hasattr(outer, "vm"):
         outer_path = Polygon(
-            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
+            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
         vm.add_cluster(outer_path)
-        outer_path.vm = vm
+        outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
-        if not outer_path.vm.is_point_inside(p.x, p.y):
+        if not outer.vm.is_point_inside(p.x, p.y):
             return False
     return True
 
@@ -1505,8 +1579,8 @@ def inner_first_ident(context: CutGroup, channel=None):
         start_times = times()
         channel("Executing Inner-First Identification")
 
-    groups = [cut for cut in context if isinstance(cut, CutGroup)]
-    closed_groups = [g for g in groups if g.closed]
+    groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
+    closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed]
     context.contains = closed_groups
 
     constrained = False
@@ -1523,9 +1597,9 @@ def inner_first_ident(context: CutGroup, channel=None):
                     outer.contains = list()
                 outer.contains.append(inner)
 
-                # if inner.inside is None:
-                    # inner.inside = list()
-                # inner.inside.append(outer)
+                if inner.inside is None:
+                    inner.inside = list()
+                inner.inside.append(outer)
 
     context.constrained = constrained
 
@@ -1555,7 +1629,7 @@ def inner_first_ident(context: CutGroup, channel=None):
     return context
 
 
-def short_travel_cutcode(context: CutCode, channel=None):
+def short_travel_cutcode(context: CutCode, channel=None, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
     """
     Selects cutcode from candidate cutcode (burns_done < passes in this CutCode),
     optimizing with greedy/brute for shortest distances optimizations.
@@ -1609,20 +1683,29 @@ def short_travel_cutcode(context: CutCode, channel=None):
                     backwards = True
                     distance = abs(complex(closest.end()) - curr)
             # Gap or continuing on path not permitted, try reversing
-            if distance > 50 and last_segment.burns_done < last_segment.passes:
-                # last_segment is a copy so we cannot use it to increment burns_done
+            if (
+                distance > 50
+                and last_segment.burns_done < last_segment.passes
+                and last_segment.reversible()
+            ):
+                # last_segment is a copy so we need to get original
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning
 
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
-        # Travel only if path is complete or gap > 1/20"
+        # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
-            for cut in context.candidate():
+            for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
                 s = cut.start()
                 if (
                     abs(s.x - curr.real) <= distance
                     and abs(s.y - curr.imag) <= distance
+                    and (
+                        not complete_path
+                        or cut.closed
+                        or cut.first
+                    )
                 ):
                     d = abs(complex(s) - curr)
                     if d < distance:
@@ -1638,6 +1721,11 @@ def short_travel_cutcode(context: CutCode, channel=None):
                 if (
                     abs(e.x - curr.real) <= distance
                     and abs(e.y - curr.imag) <= distance
+                    and (
+                        not complete_path
+                        or cut.closed
+                        or cut.last
+                    )
                 ):
                     d = abs(complex(e) - curr)
                     if d < distance:
@@ -1659,9 +1747,10 @@ def short_travel_cutcode(context: CutCode, channel=None):
             ):
                 closest = closest.next
                 backwards = False
-        else:
+        elif closest.reversible():
             if (
                 closest.previous
+                and closest.previous is not closest
                 and closest.previous.burns_done < closest.burns_done
                 and closest.previous.end() == closest.start()
             ):
@@ -1838,7 +1927,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
     return ordered
 
 
-def inner_selection_cutcode(context: CutCode, channel=None):
+def inner_selection_cutcode(context: CutCode, channel=None, grouped_inner: Optional[bool]=False):
     """
     Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
     finding a valid solution.
@@ -1858,12 +1947,12 @@ def inner_selection_cutcode(context: CutCode, channel=None):
     ordered = CutCode()
     iterations = 0
     while True:
-        c = list(context.candidate())
+        c = list(context.candidate(grouped_inner=grouped_inner))
         if len(c) == 0:
             break
         for o in c:
             o.burns_done += 1
-        ordered.extend(c)
+        ordered.extend(copy(c))
         iterations += 1
 
     if channel:

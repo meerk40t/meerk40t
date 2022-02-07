@@ -53,7 +53,7 @@ class Modifier:
             class_name=self.__class__.__name__,
             context=repr(self.context),
             name=self.name,
-            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+            channel='Channel({name})'.format(name=self.channel.name) if hasattr(self, "channel") and self.channel else "None",
         )
 
     def boot(self, *args, **kwargs):
@@ -149,6 +149,8 @@ class Context:
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
+        if len(data) and data[-1] != "\n":
+            data += "\n"
         return self._kernel.console(data)
 
     def boot(self, channel: "Channel" = None):
@@ -779,7 +781,6 @@ class Kernel:
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console", timestamp=True)
-        self._console_channel.timestamp = True
         self.console_channel_file = None
 
         if config is not None:
@@ -1501,6 +1502,8 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
+    read_persistent_string_dict = load_persistent_string_dict
+
     def keylist(self, path: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
@@ -1861,6 +1864,8 @@ class Kernel:
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
             self.channels[channel] = chan
+        elif "timestamp" in kwargs and isinstance(kwargs["timestamp"], bool):
+            self.channels[channel].timestamp = kwargs["timestamp"]
 
         return self.channels[channel]
 
@@ -2247,7 +2252,7 @@ class Kernel:
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def context(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for name in self._plugins:
                     channel(name.__module__)
@@ -2478,7 +2483,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2496,7 +2501,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2514,7 +2519,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2534,7 +2539,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, filename=None, **kwargs):
+        def channel_save(channel, _, channel_name, filename=None, **kwargs):
             """
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
@@ -2708,7 +2713,20 @@ class Channel:
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
+        console_open_print = False
         for w in self.watchers:
+            if (
+                isinstance(w, Channel)
+                and w.name == "console"
+                and print in w.watchers
+            ):
+                console_open_print = True
+                break
+        for w in self.watchers:
+            # Avoid double printing if this channel is watched and printed
+            # and console is also printed
+            if w is print and console_open_print:
+                continue
             # Avoid double timestamp and indent
             if isinstance(w, Channel):
                 w(original_msg, indent=indent)

@@ -57,7 +57,7 @@ class PlannerPanel(wx.Panel):
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        choices = self.context.registered["choices/optimize"][:5]
+        choices = self.context.registered["choices/optimize"][:7]
         self.panel_optimize = PropertiesPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )
@@ -349,7 +349,9 @@ class PlannerPanel(wx.Panel):
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
+        self.context.setting(bool, "opt_complete_subpaths", False)
         self.context.setting(bool, "opt_inner_first", True)
+        self.context.setting(bool, "opt_inners_grouped", False)
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_rapid_between", True)

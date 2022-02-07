@@ -1,6 +1,7 @@
 from abc import ABC
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from meerk40t.tools.rasterplotter import (
+from ..tools.rasterplotter import (
     BOTTOM,
     LEFT,
     RIGHT,
@@ -10,7 +11,7 @@ from meerk40t.tools.rasterplotter import (
     Y_AXIS,
     RasterPlotter,
 )
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from ..tools.zinglplotter import ZinglPlotter
 
 from ..device.lasercommandconstants import (
     COMMAND_CUT,
@@ -159,14 +160,38 @@ class CutObject:
         self.next = None
         self.previous = None
         self.passes = passes
-        self.burns_done = 0
+        self._burns_done = 0
 
         self.mode = None
         self.inside = None
         self.contains = None
-        self.path = None
+        self.first = False
+        self.last = False
+        self.closed = False
         self.original_op = None
         self.pass_index = -1
+
+    @property
+    def burns_done(self):
+        return self._burns_done
+
+    @burns_done.setter
+    def burns_done(self, burns):
+        """
+        Maintain parent burns_done
+        """
+        self._burns_done = burns
+        if self.parent is not None:
+            # If we are resetting then we are going to be resetting all
+            # so don't bother looping
+            if burns == 0:
+                self.parent._burns_done = 0
+                self.parent.burn_started = False
+                return
+            for o in self.parent:
+                burns = min(burns, o._burns_done)
+            self.parent.burn_started = True
+            self.parent._burns_done = burns
 
     def reversible(self):
         return True
@@ -229,13 +254,23 @@ class CutObject:
     def generator(self):
         raise NotImplementedError
 
-    def contains_uncut_objects(self):
+    def contains_burned_groups(self):
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done < pp.passes:
+            if isinstance(c, CutGroup):
+                if c.burn_started:
                     return True
+            elif c.burns_done == c.passes:
+                    return True
+        return False
+
+    def contains_unburned_groups(self):
+        if self.contains is None:
+            return False
+        for c in self.contains:
+            if c.burns_done < c.passes:
+                return True
         return False
 
     def flat(self):
@@ -244,6 +279,9 @@ class CutObject:
     def candidate(self):
         if self.burns_done < self.passes:
             yield self
+
+    def is_burned(self):
+        return self.burns_done == self.passes
 
 
 class CutGroup(list, CutObject, ABC):
@@ -254,12 +292,13 @@ class CutGroup(list, CutObject, ABC):
 
     def __init__(
         self, parent, children=(),
-        settings=None, constrained=False, closed=False
+        settings=None, passes=1, constrained=False, closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings)
+        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
         self.closed = closed
         self.constrained = constrained
+        self.burn_started = False
 
     def __copy__(self):
         return CutGroup(self.parent, self)
@@ -299,20 +338,72 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self):
+    def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
         """
-        Candidates are cutobjects with burns done < passes that do not contain
-        another constrained cutcode object. Which is to say that the
-        inner-most non-containing cutcode are the only candidates for cutting.
+        Candidates are CutObjects:
+        1. That do not contain one or more unburned inner constrained cutcode objects.
+        2. With Group Inner Burns, containing object is a candidate only if:
+            a. It already has one containing object already burned; or
+            b. There are no containing objects with at least one inner element burned.
+        3. With burns done < passes (> 1 only if merge passes)
+        4. With Burn Complete Paths on and non-closed subpath, only first and last segments of the subpath else all segments
         """
-        for c in self:
-            if c.contains_uncut_objects():
-                continue
-            for s in c.flat():
-                if s is None:
+        candidates = list(self)
+        if grouped_inner:
+            # Create list of exactly those groups which are:
+            #   a.  Unburned; and either
+            #   b1. Inside an outer which has at least one inner burned; or
+            #   b2. An outer which has all inner burned.
+            # by removing from the list:
+            #   1. Candidates already burned
+            #   2. Candidates which are neither inner or outer
+            #   3. Candidates which are outer and have at least one inner not yet burned
+            #   4. Candidates which are inner and all outers have no inners burned
+            # If the resulting list is empty then normal rules apply instead.
+            for grp in self:
+                if (
+                    grp.is_burned()
+                    or (grp.contains is None and grp.inside is None)
+                    or (grp.contains is not None and grp.contains_unburned_groups())
+                ):
+                    candidates.remove(grp)
                     continue
-                if s.burns_done < s.passes:
-                    yield s
+                if grp.inside is not None:
+                    for outer in grp.inside:
+                        if outer.contains_burned_groups():
+                            break
+                    else:
+                        candidates.remove(grp)
+            if len(candidates) == 0:
+                candidates = list(self)
+
+        for grp in candidates:
+            # Do not burn this CutGroup if it contains unburned groups
+            # Contains is only set when Cut Inner First is set, so this
+            # so when not set this does nothing.
+            if grp.contains_unburned_groups():
+                continue
+            # If we are only burning complete subpaths then
+            # if this is not a closed path we should only yield first and last segments
+            # Planner will need to determine which end of the subpath is yielded
+            # and only consider the direction starting from the end
+            if (
+                complete_path
+                and not grp.closed
+                and isinstance(grp, CutGroup)
+            ):
+                if grp[0].burns_done < grp[0].passes:
+                    yield grp[0]
+                # Do not yield same segment a 2nd time if only one segment
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
+                    yield grp[-1]
+                continue
+            # If we are either burning any path segment
+            # or this is a closed path
+            # then we should yield all segments.
+            for seg in grp.flat():
+                if seg is not None and seg.burns_done < seg.passes:
+                    yield seg
 
 
 class CutCode(CutGroup):
@@ -504,8 +595,8 @@ class CutCode(CutGroup):
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
 
     def generator(self):
@@ -515,8 +606,8 @@ class LineCut(CutObject):
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
         self._control = control_point
 
@@ -543,8 +634,8 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -585,10 +676,10 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
-        CutObject.__init__(self, settings=settings, passes=passes)
+    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
-
+        self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.tx = tx
         self.ty = ty
@@ -694,8 +785,8 @@ class RawCut(CutObject):
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
 
     def __len__(self):

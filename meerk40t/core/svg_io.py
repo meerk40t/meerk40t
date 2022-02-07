@@ -404,15 +404,18 @@ class SVGLoader:
                                             key,
                                             type_v(element.values[key]),
                                         )
-                                    except (ValueError, KeyError):
+                                    except (ValueError, KeyError, AttributeError):
                                         pass
                                 elif type_v == bool:
-                                    setattr(
-                                        op.settings,
-                                        key,
-                                        str(element.values[key]).lower()
-                                        in ("true", "1"),
-                                    )
+                                    try:
+                                        setattr(
+                                            op.settings,
+                                            key,
+                                            str(element.values[key]).lower()
+                                            in ("true", "1"),
+                                        )
+                                    except (ValueError, KeyError, AttributeError):
+                                        pass
                         elements_modifier.add_op(op)
                 except KeyError:
                     pass

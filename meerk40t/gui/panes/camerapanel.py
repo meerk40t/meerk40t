@@ -52,8 +52,6 @@ class CameraPanel(wx.Panel, Job):
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        if index is None:
-            index = 0
         self.gui = gui
         self.context = context
         self.index = index
@@ -179,7 +177,8 @@ class CameraPanel(wx.Panel, Job):
             self.check_fisheye.SetValue(self.setting.correction_fisheye)
             self.check_perspective.SetValue(self.setting.correction_perspective)
             self.slider_fps.SetValue(self.setting.fps)
-            self.on_slider_fps()
+
+        self.on_fps_change(None)
 
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
@@ -211,6 +210,8 @@ class CameraPanel(wx.Panel, Job):
         self.context.schedule(self)
         self.context.listen("refresh_scene", self.on_refresh_scene)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
+        self.context.listen("camera;fps", self.on_fps_change)
+        self.context.listen("camera;stopped", self.on_camera_stop)
 
     def finalize(self, *args):
         self.context("camera%d stop\n" % self.index)
@@ -219,6 +220,22 @@ class CameraPanel(wx.Panel, Job):
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
+        self.context.unlisten("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;stopped", self.on_camera_stop)
+        self.context.signal("camera;stopped", self.index)
+
+    def on_camera_stop(self, origin, index):
+        if index == self.index:
+            self.context("camera%d start\n" % self.index)
+
+    def on_fps_change(self, origin, *args):
+        # Set the camera fps.
+        fps = self.setting.fps
+        if fps == 0:
+            tick = 5
+        else:
+            tick = 1.0 / fps
+        self.interval = tick
 
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
@@ -331,13 +348,8 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        fps = self.slider_fps.GetValue()
-        if fps == 0:
-            tick = 5
-        else:
-            tick = 1.0 / fps
-        self.setting.fps = fps
-        self.interval = tick
+        self.setting.fps = self.slider_fps.GetValue()
+        self.context.signal("camera;fps", self.setting.fps)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -669,8 +681,15 @@ class CamImageWidget(Widget):
 
 
 class CameraInterface(MWindow):
-    def __init__(self, *args, index=0, **kwds):
-        super().__init__(640, 480, *args, **kwds)
+    def __init__(self, context, path, parent, index=0, **kwds):
+        if isinstance(index,str):
+            try:
+                index=int(index)
+            except ValueError:
+                pass
+        if index is None:
+            index = 0
+        super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
 
         # ==========
@@ -737,7 +756,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window open CameraInterface %d\n" % index)
+            kernel.console("window open -m {v} CameraInterface {v}\n".format(v=index))
 
 
 class CameraURIPanel(wx.Panel):
