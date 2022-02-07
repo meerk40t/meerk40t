@@ -22,7 +22,7 @@ from meerk40t.svgelements import Angle, Length
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_scene(window, context):
     # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
     # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
     # self.notebook.AddPage(self.scene, "scene")

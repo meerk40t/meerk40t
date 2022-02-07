@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 
+from PIL import Image
 import wx
 from wx import aui
 
@@ -155,6 +156,7 @@ class MeerK40t(MWindow):
         self._mgr.SetManagedWindow(self)
 
         self.__set_panes()
+        self.__set_commands()
         self.__set_dialogs()
 
         # Menu Bar
@@ -175,7 +177,7 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
-    def __set_dialogs(self):
+    def __set_commands(self):
         context = self.context
         gui = self
 
@@ -414,6 +416,8 @@ class MeerK40t(MWindow):
                 context("egv_export %s\n" % pathname)
                 return
 
+    def __set_dialogs(self):
+        context = self.context
         context.register("control/Transform", lambda: context("dialog_transform\n"))
         context.register("control/Flip", lambda: context("dialog_flip\n"))
         context.register("control/Path", lambda: context("dialog_path\n"))
@@ -427,27 +431,27 @@ class MeerK40t(MWindow):
         context.register("control/egv import", lambda: context("dialog_export_egv\n"))
 
     def __import_main_panes(self):
-        from meerk40t.gui.wxmscene import register_panel
-        register_panel(self, self.context)
+        from .wxmscene import register_panel_scene
+        register_panel_scene(self, self.context)
 
-        from .panes.navigationpanels import register_panel
-        register_panel(self, self.context)
+        from .panes.navigationpanels import register_panel_navigation
+        register_panel_navigation(self, self.context)
 
         # Define Tree
-        from .wxmtree import register_panel
-        register_panel(self, self.context)
+        from .wxmtree import register_panel_tree
+        register_panel_tree(self, self.context)
 
         # Define Laser.
-        from .panes.laserpanel import register_panel
-        register_panel(self, self.context)
+        from .panes.laserpanel import register_panel_laser
+        register_panel_laser(self, self.context)
 
         # Define Position
-        from .panes.position import register_panel
-        register_panel(self, self.context)
+        from .panes.position import register_panel_position
+        register_panel_position(self, self.context)
 
         # Define Ribbon
-        from .wxmribbon import register_panel
-        register_panel(self, self.context)
+        from .wxmribbon import register_panel_ribbon
+        register_panel_ribbon(self, self.context)
 
         # Define Toolbars
         from .panes.toolbarproject import register_project_tools
@@ -472,25 +476,25 @@ class MeerK40t(MWindow):
 
     def __import_other_panes(self):
         # Define Notes.
-        from .panes.notespanel import register_panel
-        register_panel(self, self.context)
+        from .panes.notespanel import register_panel_notes
+        register_panel_notes(self, self.context)
 
         # Define Spooler.
-        from .panes.spoolerpanel import register_panel
-        register_panel(self, self.context)
+        from .panes.spoolerpanel import register_panel_spooler
+        register_panel_spooler(self, self.context)
 
         # Define Console.
-        from .panes.consolepanel import register_panel
-        register_panel(self, self.context)
+        from .panes.consolepanel import register_panel_console
+        register_panel_console(self, self.context)
 
         # Define Devices.
-        from .panes.devicespanel import register_panel
-        register_panel(self, self.context)
+        from .panes.devicespanel import register_panel_devices
+        register_panel_devices(self, self.context)
 
         # Define Camera
         if self.context.has_feature("modifier/Camera"):
-            from .panes.camerapanel import register_panel
-            register_panel(self, self.context)
+            from .panes.camerapanel import register_panel_camera
+            register_panel_camera(self, self.context)
 
     def __define_button_go(self):
         # Define Go
@@ -1179,6 +1183,13 @@ class MeerK40t(MWindow):
         self.SetMenuBar(self.main_menubar)
 
     def __set_menu_binds(self):
+        self.__set_file_menu_binds()
+        self.__set_view_menu_binds()
+        self.__set_panes_menu_binds()
+        self.__set_tools_menu_binds()
+        self.__set_help_menu_binds()
+
+    def __set_file_menu_binds(self):
         # ==========
         # BINDS
         # ==========
@@ -1191,6 +1202,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_close, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
 
+    def __set_view_menu_binds(self):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
@@ -1281,105 +1293,7 @@ class MeerK40t(MWindow):
             id=ID_MENU_SCREEN_FLIPXY,
         )
 
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle About\n"),
-            id=wx.ID_ABOUT,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_MENU_CONSOLE,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle DeviceManager\n"),
-            id=ID_MENU_DEVICE_MANAGER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Keymap\n"),
-            id=ID_MENU_KEYMAP,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Preferences\n"),
-            id=wx.ID_PREFERENCES,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_MENU_NOTES,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle Navigation\n"),
-            id=ID_MENU_NAVIGATION,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_MENU_JOB,
-        )
-        if self.context.has_feature("modifier/Camera"):
-
-            def launch_camera(event=None):
-                v = self.context.setting(int, "camera_default", 0)
-                self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
-
-            self.Bind(
-                wx.EVT_MENU,
-                launch_camera,
-                id=ID_MENU_CAMERA,
-            )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle -d Configuration\n"),
-            id=ID_MENU_CONFIG,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window -p rotary/1 open Rotary\n"),
-            id=ID_MENU_ROTARY,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle -o Controller\n"),
-            id=ID_MENU_CONTROLLER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle UsbConnect\n"),
-            id=ID_MENU_USB,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle JobSpooler\n"),
-            id=ID_MENU_SPOOLER,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_MENU_RASTER_WIZARD,
-        )
-
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
-        self.Bind(
-            wx.EVT_MENU,
-            open_simulator,
-            id=ID_MENU_SIMULATE,
-        )
-
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window reset *\n"),
-            id=ID_MENU_WINDOW_RESET,
-        )
+    def __set_panes_menu_binds(self):
         self.Bind(
             wx.EVT_MENU,
             self.on_pane_reset,
@@ -1391,6 +1305,103 @@ class MeerK40t(MWindow):
             id=ID_MENU_PANE_LOCK,
         )
 
+    def __set_tools_menu_binds(self):
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle ExecuteJob 0\n"),
+            id=ID_MENU_JOB,
+        )
+
+        def open_simulator(v=None):
+            with wx.BusyInfo(_("Preparing simulation...")):
+                self.context(
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+                ),
+        self.Bind(
+            wx.EVT_MENU,
+            open_simulator,
+            id=ID_MENU_SIMULATE,
+        )
+
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle RasterWizard\n"),
+            id=ID_MENU_RASTER_WIZARD,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle Notes\n"),
+            id=ID_MENU_NOTES,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle Console\n"),
+            id=ID_MENU_CONSOLE,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle Navigation\n"),
+            id=ID_MENU_NAVIGATION,
+        )
+
+        if self.context.has_feature("modifier/Camera"):
+            def launch_camera(event=None):
+                v = self.context.setting(int, "camera_default", 0)
+                self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
+
+            self.Bind(
+                wx.EVT_MENU,
+                launch_camera,
+                id=ID_MENU_CAMERA,
+            )
+
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle JobSpooler\n"),
+            id=ID_MENU_SPOOLER,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle -o Controller\n"),
+            id=ID_MENU_CONTROLLER,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle DeviceManager\n"),
+            id=ID_MENU_DEVICE_MANAGER,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle -d Configuration\n"),
+            id=ID_MENU_CONFIG,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle Preferences\n"),
+            id=wx.ID_PREFERENCES,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle Keymap\n"),
+            id=ID_MENU_KEYMAP,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window -p rotary/1 open Rotary\n"),
+            id=ID_MENU_ROTARY,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle UsbConnect\n"),
+            id=ID_MENU_USB,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window reset *\n"),
+            id=ID_MENU_WINDOW_RESET,
+        )
+
+    def __set_help_menu_binds(self):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),
@@ -1425,6 +1436,11 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda e: self.context("webhelp irc\n"),
             id=ID_IRC,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle About\n"),
+            id=wx.ID_ABOUT,
         )
 
     def __set_draw_modes(self):
@@ -1615,8 +1631,6 @@ class MeerK40t(MWindow):
         image_width, image_height, frame = frame
         if frame is not None:
             elements = self.context.elements
-            from PIL import Image
-
             img = Image.fromarray(frame)
             obj = SVGImage()
             obj.image = img
@@ -1698,9 +1712,6 @@ class MeerK40t(MWindow):
         if not hasattr(self, "recent_file_menu"):
             return  # No menu, cannot populate.
 
-        for i in range(self.recent_file_menu.MenuItemCount):
-            self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
-
         context = self.context
         recents = [
             (context.file0, ID_MENU_FILE0, "&1 "),
@@ -1714,6 +1725,12 @@ class MeerK40t(MWindow):
             (context.file8, ID_MENU_FILE8, "&9 "),
             (context.file9, ID_MENU_FILE9, "1&0"),
         ]
+
+        # for i in range(self.recent_file_menu.MenuItemCount):
+            # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+
+        for item in self.recent_file_menu.GetMenuItems():
+            self.recent_file_menu.Remove(item)
 
         for file, id, shortcode in recents:
             if file is not None and file:
