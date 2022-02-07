@@ -996,9 +996,9 @@ class PlotCut(CutObject):
         last_yy = None
         ix = 0
         iy = 0
+        last_dx = None
+        last_dy = None
         for x, y, on in self.plot:
-            dx = x - last_x
-            dy = y - last_y
             idx = int(round(x - ix))
             idy = int(round(y - iy))
             ix += idx
@@ -1007,10 +1007,26 @@ class PlotCut(CutObject):
                 if self.horizontal_raster:
                     # Horizontal raster, step horizontal then vertical
                     if idx:
-                        for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                            yield zx, zy, on
-                    if idy:
-                        for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                        if idx > 0 > last_dx or idx < 0 < last_dx:
+                            # If this idx is a different as the last one, we do this after the idy
+                            if idy:
+                                # step y
+                                for zx, zy in ZinglPlotter.plot_line(last_x, last_y, last_x, iy):
+                                    yield zx, zy, on
+                            # step x
+                            for zx, zy in ZinglPlotter.plot_line(last_x, iy, ix, iy):
+                                yield zx, zy, on
+                        else:
+                            # If this idx is the same direction as the last one, we do this before the idy
+                            # step x
+                            for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                                yield zx, zy, on
+                            if idy:
+                                #step y
+                                for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                                    yield zx, zy, on
+                    else:
+                        for zx, zy in ZinglPlotter.plot_line(last_x, last_y, ix, iy):
                             yield zx, zy, on
                 elif self.vertical_raster:
                     # Vertical raster, step vertical then horizontal
@@ -1029,5 +1045,7 @@ class PlotCut(CutObject):
             last_y = y
             last_xx = ix
             last_yy = iy
+            last_dx = idx
+            last_dy = idy
 
         return self.plot
