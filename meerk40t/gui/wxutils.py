@@ -176,6 +176,16 @@ WX_METAKEYS = [
     wx.WXK_WINDOWS_RIGHT,
 ]
 
+WX_MODIFIERS = [
+    wx.WXK_CONTROL,
+    wx.WXK_RAW_CONTROL,
+    wx.WXK_ALT,
+    wx.WXK_SHIFT,
+    wx.WXK_START,
+    wx.WXK_WINDOWS_LEFT,
+    wx.WXK_WINDOWS_RIGHT,
+]
+
 WX_SPECIALKEYS = {
     wx.WXK_F1: "f1",
     wx.WXK_F2: "f2",
@@ -233,6 +243,7 @@ WX_SPECIALKEYS = {
     wx.WXK_NUMPAD_END: "numpad_end",
     wx.WXK_NUMLOCK: "num_lock",
     wx.WXK_SCROLL: "scroll_lock",
+    wx.WXK_CAPITAL: "caps_lock",
     wx.WXK_HOME: "home",
     wx.WXK_DOWN: "down",
     wx.WXK_UP: "up",
@@ -277,7 +288,9 @@ WX_SPECIALKEYS = {
 def get_key_name(event, return_modifier=False):
     key = event.GetKeyCode()
     keyvalue = ""
-    if event.ControlDown():
+    if event.RawControlDown() and not event.ControlDown():
+        keyvalue += "macctrl+"
+    elif event.ControlDown():
         keyvalue += "ctrl+"
     if event.AltDown() or key == wx.WXK_ALT:
         keyvalue += "alt+"
@@ -286,13 +299,7 @@ def get_key_name(event, return_modifier=False):
     if event.MetaDown() or key in WX_METAKEYS:
         keyvalue += "meta+"
     # if return_modifier and keyvalue: print("key", key, keyvalue)
-    if key == wx.WXK_CONTROL:
-        return keyvalue if return_modifier else None
-    if key == wx.WXK_ALT:
-        return keyvalue if return_modifier else None
-    if key == wx.WXK_SHIFT:
-        return keyvalue if return_modifier else None
-    if key in WX_METAKEYS:
+    if key in WX_MODIFIERS:
         return keyvalue if return_modifier else None
     if key in WX_SPECIALKEYS:
         keyvalue += WX_SPECIALKEYS[key]
