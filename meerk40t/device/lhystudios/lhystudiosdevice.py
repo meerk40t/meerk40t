@@ -869,8 +869,10 @@ class LhystudiosDriver(Driver):
             dy = y - sy
             step = self.settings.raster_step
             if step == 0:
+                # vector mode
                 self.ensure_program_mode()
             else:
+                # program mode
                 self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
                 if self.is_prop(STATE_X_STEPPER_ENABLE):
                     if dy != 0:
