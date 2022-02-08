@@ -1502,8 +1502,6 @@ class LhystudiosDriver(Driver):
         else:
             self.laser_off()
         if abs(dx) == abs(dy):
-            if abs(dx) != abs(dy):
-                raise ValueError("abs(dx) must equal abs(dy)")
             self._x_engaged = True  # Set both on
             self._y_engaged = True
             if dx > 0:  # Moving right
