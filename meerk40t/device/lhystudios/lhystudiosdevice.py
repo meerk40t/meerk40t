@@ -1281,22 +1281,13 @@ class LhystudiosDriver(Driver):
             self._horizontal_major = False
         else:
             if self._request_x_engaged:
-                if self._request_leftward:
-                    self._leftward = True
-                else:
-                    self._leftward = False
+                self._leftward = self._request_leftward
                 self._request_x_engaged = False
             if self._request_y_engaged:
-                if self._request_topward:
-                    self._topward = True
-                else:
-                    self._topward = False
+                self._topward = self._request_topward
                 self._request_y_engaged = False
             if self._request_axis:
-                if self._request_horizontal_major:
-                    self._horizontal_major = True
-                else:
-                    self._horizontal_major = False
+                self._horizontal_major = self._request_horizontal_major
                 self._request_axis = False
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
