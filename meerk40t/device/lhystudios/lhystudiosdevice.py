@@ -954,10 +954,7 @@ class LhystudiosDriver(Driver):
             if not self.is_bottom and dy <= 0:
                 self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
-        if dy != 0:
-            self.goto_y(dy)
-        if dx != 0:
-            self.goto_x(dx)
+        self.goto_xy(dx, dy)
         self.data_output(b"SE")
         self.data_output(self.code_declare_directions())
         self.state = original_state
@@ -1030,10 +1027,7 @@ class LhystudiosDriver(Driver):
                 self.ensure_rapid_mode()
             else:
                 self.data_output(b"I")
-                if dx != 0:
-                    self.goto_x(dx)
-                if dy != 0:
-                    self.goto_y(dy)
+                self.goto_xy(dx, dy)
                 self.data_output(b"S1P\n")
                 if not self.context.autolock:
                     self.data_output(b"IS2P\n")
@@ -1051,10 +1045,7 @@ class LhystudiosDriver(Driver):
                 mx = x
                 my = y
         elif self.state == DRIVER_STATE_FINISH:
-            if dx != 0:
-                self.goto_x(dx)
-            if dy != 0:
-                self.goto_y(dy)
+            self.goto_xy(dx, dy)
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
@@ -1068,6 +1059,12 @@ class LhystudiosDriver(Driver):
         dx = x - self.current_x
         dy = y - self.current_y
         self.goto_octent(dx, dy, on)
+
+    def goto_xy(self, dx, dy):
+        if dx != 0:
+            self.goto_x(dx)
+        if dy != 0:
+            self.goto_y(dy)
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
@@ -1276,10 +1273,7 @@ class LhystudiosDriver(Driver):
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self.data_output(speed_code)
-        if dx != 0:
-            self.goto_x(dx)
-        if dy != 0:
-            self.goto_y(dy)
+        self.goto_xy(dx, dy)
         self.data_output(b"N")
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
