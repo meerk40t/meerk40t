@@ -1508,7 +1508,8 @@ class LhystudiosDriver(Driver):
                     self._topward = True
             self.current_x += dx
             self.current_y += dy
-            self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
+            self.data_output(self.CODE_ANGLE)
+            self.data_output(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
         self.context.signal(
