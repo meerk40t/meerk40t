@@ -1073,20 +1073,8 @@ class LhystudiosDriver(Driver):
         if abs(dx) == abs(dy):
             if dx != 0:
                 self.goto_angle(dx, dy)
-        elif dx != 0:
-            self.goto_x(dx)
-            if dy != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
         else:
-            self.goto_y(dy)
-            if dx != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
+            self.goto_xy(dx, dy)
         self.context.signal(
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
