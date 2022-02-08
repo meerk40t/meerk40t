@@ -1466,9 +1466,47 @@ class LhystudiosDriver(Driver):
 
     def goto_xy(self, dx, dy):
         if dx != 0:
-            self.goto_x(dx)
+            self.current_x += dx
+            if dx > 0:
+                if not self.is_right or self.state not in (
+                        DRIVER_STATE_PROGRAM,
+                        DRIVER_STATE_RASTER,
+                ):
+                    self.data_output(self.CODE_RIGHT)
+                    self._leftward = False
+            else:
+                if not self.is_left or self.state not in (
+                        DRIVER_STATE_PROGRAM,
+                        DRIVER_STATE_RASTER,
+                ):
+                    self.data_output(self.CODE_LEFT)
+                    self._leftward = True
+            self._x_engaged = True
+            self._y_engaged = False
+            if dx != 0:
+                self.data_output(lhymicro_distance(abs(dx)))
+                self.check_bounds()
         if dy != 0:
-            self.goto_y(dy)
+            self.current_y += dy
+            if dy > 0:
+                if not self.is_bottom or self.state not in (
+                        DRIVER_STATE_PROGRAM,
+                        DRIVER_STATE_RASTER,
+                ):
+                    self.data_output(self.CODE_BOTTOM)
+                    self._topward = False
+            else:
+                if not self.is_top or self.state not in (
+                        DRIVER_STATE_PROGRAM,
+                        DRIVER_STATE_RASTER,
+                ):
+                    self.data_output(self.CODE_TOP)
+                    self._topward = True
+            self._x_engaged = False
+            self._y_engaged = True
+            if dy != 0:
+                self.data_output(lhymicro_distance(abs(dy)))
+                self.check_bounds()
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
@@ -1478,83 +1516,36 @@ class LhystudiosDriver(Driver):
         else:
             self.laser_off()
         if abs(dx) == abs(dy):
-            self.goto_angle(dx, dy)
+            if abs(dx) != abs(dy):
+                raise ValueError("abs(dx) must equal abs(dy)")
+            self._x_engaged = True  # Set both on
+            self._y_engaged = True
+            if dx > 0:  # Moving right
+                if self._leftward:
+                    self.data_output(self.CODE_RIGHT)
+                    self._leftward = False
+            else:  # Moving left
+                if not self._leftward:
+                    self.data_output(self.CODE_LEFT)
+                    self._leftward = True
+            if dy > 0:  # Moving bottom
+                if self._topward:
+                    self.data_output(self.CODE_BOTTOM)
+                    self._topward = False
+            else:  # Moving top
+                if not self._topward:
+                    self.data_output(self.CODE_TOP)
+                    self._topward = True
+            self.current_x += dx
+            self.current_y += dy
+            self.check_bounds()
+            self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
         self.context.signal(
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
         )
-
-    def goto_x(self, dx):
-        self.current_x += dx
-        if dx > 0:
-            if not self.is_right or self.state not in (
-                    DRIVER_STATE_PROGRAM,
-                    DRIVER_STATE_RASTER,
-            ):
-                self.data_output(self.CODE_RIGHT)
-                self._leftward = False
-        else:
-            if not self.is_left or self.state not in (
-                    DRIVER_STATE_PROGRAM,
-                    DRIVER_STATE_RASTER,
-            ):
-                self.data_output(self.CODE_LEFT)
-                self._leftward = True
-        self._x_engaged = True
-        self._y_engaged = False
-        if dx != 0:
-            self.data_output(lhymicro_distance(abs(dx)))
-            self.check_bounds()
-
-    def goto_y(self, dy):
-        self.current_y += dy
-        if dy > 0:
-            if not self.is_bottom or self.state not in (
-                    DRIVER_STATE_PROGRAM,
-                    DRIVER_STATE_RASTER,
-            ):
-                self.data_output(self.CODE_BOTTOM)
-                self._topward = False
-        else:
-            if not self.is_top or self.state not in (
-                    DRIVER_STATE_PROGRAM,
-                    DRIVER_STATE_RASTER,
-            ):
-                self.data_output(self.CODE_TOP)
-                self._topward = True
-        self._x_engaged = False
-        self._y_engaged = True
-        if dy != 0:
-            self.data_output(lhymicro_distance(abs(dy)))
-            self.check_bounds()
-
-    def goto_angle(self, dx, dy):
-        if abs(dx) != abs(dy):
-            raise ValueError("abs(dx) must equal abs(dy)")
-        self._x_engaged = True  # Set both on
-        self._y_engaged = True
-        if dx > 0:  # Moving right
-            if self._leftward:
-                self.data_output(self.CODE_RIGHT)
-                self._leftward = False
-        else:  # Moving left
-            if not self._leftward:
-                self.data_output(self.CODE_LEFT)
-                self._leftward = True
-        if dy > 0:  # Moving bottom
-            if self._topward:
-                self.data_output(self.CODE_BOTTOM)
-                self._topward = False
-        else:  # Moving top
-            if not self._topward:
-                self.data_output(self.CODE_TOP)
-                self._topward = True
-        self.current_x += dx
-        self.current_y += dy
-        self.check_bounds()
-        self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
 
     def code_declare_directions(self):
         x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
