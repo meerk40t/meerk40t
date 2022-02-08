@@ -743,10 +743,6 @@ class LhystudiosDriver(Driver):
         self.holds.append(primary_hold)
 
         self.update_codes()
-        self.max_x = self.current_x
-        self.max_y = self.current_y
-        self.min_x = self.current_x
-        self.min_y = self.current_y
 
         # Step amount expected of the current operation
         self.step = 0
@@ -1447,12 +1443,6 @@ class LhystudiosDriver(Driver):
     def abort(self):
         self.data_output(b"I\n")
 
-    def check_bounds(self):
-        self.min_x = min(self.min_x, self.current_x)
-        self.min_y = min(self.min_y, self.current_y)
-        self.max_x = max(self.max_x, self.current_x)
-        self.max_y = max(self.max_y, self.current_y)
-
     def reset_modes(self):
         self.laser = False
         self._request_leftward = None
@@ -1479,7 +1469,6 @@ class LhystudiosDriver(Driver):
             self._x_engaged = True
             self._y_engaged = False
             self.data_output(lhymicro_distance(abs(dx)))
-            self.check_bounds()
         if dy != 0:
             self.current_y += dy
             if dy > 0:  # Moving bottom
@@ -1493,7 +1482,6 @@ class LhystudiosDriver(Driver):
             self._x_engaged = False
             self._y_engaged = True
             self.data_output(lhymicro_distance(abs(dy)))
-            self.check_bounds()
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
@@ -1523,7 +1511,6 @@ class LhystudiosDriver(Driver):
                     self._topward = True
             self.current_x += dx
             self.current_y += dy
-            self.check_bounds()
             self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
