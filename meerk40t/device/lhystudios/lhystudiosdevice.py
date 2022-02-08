@@ -903,12 +903,6 @@ class LhystudiosDriver(Driver):
     def cut(self, x, y):
         self.goto(x, y, True)
 
-    def cut_absolute(self, x, y):
-        self.goto_absolute(x, y, True)
-
-    def cut_relative(self, x, y):
-        self.goto_relative(x, y, True)
-
     def jog(self, x, y, **kwargs):
         if self.is_relative:
             self.jog_relative(x, y, **kwargs)
