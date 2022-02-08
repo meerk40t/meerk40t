@@ -968,7 +968,7 @@ class LhystudiosDriver(Driver):
         if dx != 0:
             self.goto_x(dx)
         self.data_output(b"SE")
-        self.declare_directions()
+        self.data_output(self.code_declare_directions())
         self.state = original_state
 
     def move(self, x, y):
@@ -1182,30 +1182,6 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
 
-    def instance_step(self):
-        """
-        Sets and returns the step values, setting step to the raster_step
-
-        @return:
-        """
-        self.step_index = 0
-        self.step = self.settings.raster_step
-        self.step_value_set = 0
-        if self.settings.raster_alt:
-            return 0
-        if self.context.nse_raster and not self.context.nse_stepraster:
-            return 0
-        self.step_value_set = self.step
-        return self.step_value_set
-
-    def instance_use_suffix_c(self):
-        if (
-            self.context.twitchless or self.settings.force_twitchless
-        ) and not self.step:
-            return True
-        else:
-            return None
-
     def mode_shift_on_the_fly(self, dx=0, dy=0):
         """
         Mode shift on the fly changes the current modes while in programmed or raster mode
@@ -1262,15 +1238,33 @@ class LhystudiosDriver(Driver):
             return
         self.ensure_finished_mode()
 
+        instance_step = 0
+        self.step_index = 0
+        self.step = self.settings.raster_step
+        self.step_value_set = 0
+        if self.settings.raster_alt:
+            pass
+        elif self.context.nse_raster and not self.context.nse_stepraster:
+            pass
+        else:
+            self.step_value_set = self.step
+            instance_step = self.step_value_set
+
+        suffix_c = None
+        if (
+            self.context.twitchless or self.settings.force_twitchless
+        ) and not self.step:
+            suffix_c = True
+
         speed_code = LaserSpeed(
             self.context.board,
             self.settings.speed,
-            self.instance_step(),
+            instance_step,
             d_ratio=self.settings.implicit_d_ratio,
             acceleration=self.settings.implicit_accel,
             fix_limit=True,
             fix_lows=True,
-            suffix_c=self.instance_use_suffix_c(),
+            suffix_c=suffix_c,
             fix_speeds=self.context.fix_speeds,
             raster_horizontal=raster_horizontal,
         ).speedcode
@@ -1281,8 +1275,30 @@ class LhystudiosDriver(Driver):
         if dy != 0:
             self.goto_y(dy)
         self.data_output(b"N")
-        self.set_requested_directions()
-        self.declare_directions()
+        if self.context.strict:
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
+        else:
+            if self._request_x_engaged:
+                if self._request_leftward:
+                    self._leftward = True
+                else:
+                    self._leftward = False
+                self._request_x_engaged = False
+            if self._request_y_engaged:
+                if self._request_topward:
+                    self._topward = True
+                else:
+                    self._topward = False
+                self._request_y_engaged = False
+            if self._request_axis:
+                if self._request_horizontal_major:
+                    self._horizontal_major = True
+                else:
+                    self._horizontal_major = False
+                self._request_axis = False
+        self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
         if self.step:
             self.state = DRIVER_STATE_RASTER
@@ -1555,36 +1571,6 @@ class LhystudiosDriver(Driver):
         self.current_y += dy
         self.check_bounds()
         self.data_output(self.CODE_ANGLE + lhymicro_distance(abs(dy)))
-
-    def set_requested_directions(self):
-        if self.context.strict:
-            self._leftward = False
-            self._topward = False
-            self._horizontal_major = False
-        else:
-            if self._request_x_engaged:
-                if self._request_leftward:
-                    self._leftward = True
-                else:
-                    self._leftward = False
-                self._request_x_engaged = False
-            if self._request_y_engaged:
-                if self._request_topward:
-                    self._topward = True
-                else:
-                    self._topward = False
-                self._request_y_engaged = False
-            if self._request_axis:
-                if self._request_horizontal_major:
-                    self._horizontal_major = True
-                else:
-                    self._horizontal_major = False
-                self._request_axis = False
-
-    def declare_directions(self):
-        """Declare direction declares raster directions of left, top, with the primary momentum direction going last.
-        You cannot declare a diagonal direction."""
-        self.data_output(self.code_declare_directions())
 
     def code_declare_directions(self):
         x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
