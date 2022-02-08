@@ -1516,15 +1516,53 @@ class LhystudiosDriver(Driver):
 
     def goto_x(self, dx):
         if dx > 0:
-            self.move_right(dx)
+            self.current_x += dx
+            if not self.is_right or self.state not in (
+                    DRIVER_STATE_PROGRAM,
+                    DRIVER_STATE_RASTER,
+            ):
+                self.data_output(self.CODE_RIGHT)
+                self._x_engaged = True
+                self._y_engaged = False
+                self._leftward = False
         else:
-            self.move_left(dx)
+            self.current_x -= abs(dx)
+            if not self.is_left or self.state not in (
+                    DRIVER_STATE_PROGRAM,
+                    DRIVER_STATE_RASTER,
+            ):
+                self.data_output(self.CODE_LEFT)
+                self._x_engaged = True
+                self._y_engaged = False
+                self._leftward = True
+        if dx != 0:
+            self.data_output(lhymicro_distance(abs(dx)))
+            self.check_bounds()
 
     def goto_y(self, dy):
         if dy > 0:
-            self.move_bottom(dy)
+            self.current_y += dy
+            if not self.is_bottom or self.state not in (
+                    DRIVER_STATE_PROGRAM,
+                    DRIVER_STATE_RASTER,
+            ):
+                self.data_output(self.CODE_BOTTOM)
+                self._x_engaged = False
+                self._y_engaged = True
+                self._topward = False
         else:
-            self.move_top(dy)
+            self.current_y -= abs(dy)
+            if not self.is_top or self.state not in (
+                    DRIVER_STATE_PROGRAM,
+                    DRIVER_STATE_RASTER,
+            ):
+                self.data_output(self.CODE_TOP)
+                self._x_engaged = False
+                self._y_engaged = True
+                self._topward = True
+        if dy != 0:
+            self.data_output(lhymicro_distance(abs(dy)))
+            self.check_bounds()
 
     def goto_angle(self, dx, dy):
         if abs(dx) != abs(dy):
@@ -1583,74 +1621,6 @@ class LhystudiosDriver(Driver):
     @property
     def is_angle(self):
         return self._y_engaged and self._x_engaged
-
-    def set_left(self):
-        self._x_engaged = True
-        self._y_engaged = False
-        self._leftward = True
-
-    def set_right(self):
-        self._x_engaged = True
-        self._y_engaged = False
-        self._leftward = False
-
-    def set_top(self):
-        self._x_engaged = False
-        self._y_engaged = True
-        self._topward = True
-
-    def set_bottom(self):
-        self._x_engaged = False
-        self._y_engaged = True
-        self._topward = False
-
-    def move_right(self, dx=0):
-        self.current_x += dx
-        if not self.is_right or self.state not in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-        ):
-            self.data_output(self.CODE_RIGHT)
-            self.set_right()
-        if dx != 0:
-            self.data_output(lhymicro_distance(abs(dx)))
-            self.check_bounds()
-
-    def move_left(self, dx=0):
-        self.current_x -= abs(dx)
-        if not self.is_left or self.state not in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-        ):
-            self.data_output(self.CODE_LEFT)
-            self.set_left()
-        if dx != 0:
-            self.data_output(lhymicro_distance(abs(dx)))
-            self.check_bounds()
-
-    def move_bottom(self, dy=0):
-        self.current_y += dy
-        if not self.is_bottom or self.state not in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-        ):
-            self.data_output(self.CODE_BOTTOM)
-            self.set_bottom()
-        if dy != 0:
-            self.data_output(lhymicro_distance(abs(dy)))
-            self.check_bounds()
-
-    def move_top(self, dy=0):
-        self.current_y -= abs(dy)
-        if not self.is_top or self.state not in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-        ):
-            self.data_output(self.CODE_TOP)
-            self.set_top()
-        if dy != 0:
-            self.data_output(lhymicro_distance(abs(dy)))
-            self.check_bounds()
 
     @property
     def type(self):
