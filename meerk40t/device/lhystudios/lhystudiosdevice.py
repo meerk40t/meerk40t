@@ -132,13 +132,7 @@ def plugin(kernel, lifecycle=None):
             "speed", input_type="lhystudios", help=_("Set current speed of driver.")
         )
         def speed(
-            command,
-            channel,
-            _,
-            data=None,
-            speed=None,
-            difference=False,
-            **kwargs
+            command, channel, _, data=None, speed=None, difference=False, **kwargs
         ):
             spooler, driver, output = data
             if speed is None:
@@ -476,11 +470,7 @@ def plugin(kernel, lifecycle=None):
                     )
                     return
                 if output.type != "lhystudios":
-                    channel(
-                        _(
-                            "Lhyserver cannot attach to non-Lhystudios controllers."
-                        )
-                    )
+                    channel(_("Lhyserver cannot attach to non-Lhystudios controllers."))
                     return
                 server = root.open_as("module/TCPServer", "lhyserver", port=port)
                 if quit:
@@ -805,6 +795,8 @@ class LhystudiosDriver(Driver):
             return False
         if self.hold():
             return True
+        last_dx = 0
+        last_dy = 0
         for x, y, on in self.plot:
             sx = self.current_x
             sy = self.current_y
@@ -868,10 +860,14 @@ class LhystudiosDriver(Driver):
                 self.ensure_program_mode()
             else:
                 # program mode
-                self.ensure_raster_mode(raster_horizontal=self.settings.horizontal_raster)
+                self.ensure_raster_mode(
+                    raster_horizontal=self.settings.horizontal_raster
+                )
                 if self._x_engaged:
                     if self.context.nse_raster or self.settings.raster_alt:
-                        if (dx > 0 and self._leftward) or (dx < 0 and not self._leftward):
+                        if (dx > 0 and self._leftward) or (
+                            dx < 0 and not self._leftward
+                        ):
                             self.h_switch(dy)
                     else:
                         if dy != 0:
@@ -901,8 +897,7 @@ class LhystudiosDriver(Driver):
         Driver.reset(self)
         self.context.signal("pipe;buffer", 0)
         self.data_output(b"~I*\n~")
-        self.laser = False
-        self.properties = 0
+        self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.context.signal("driver;mode", self.state)
         self.is_paused = False
@@ -1204,7 +1199,9 @@ class LhystudiosDriver(Driver):
         return self.step_value_set
 
     def instance_use_suffix_c(self):
-        if (self.context.twitchless or self.settings.force_twitchless) and not self.step:
+        if (
+            self.context.twitchless or self.settings.force_twitchless
+        ) and not self.step:
             return True
         else:
             return None
@@ -1355,7 +1352,7 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self._topward else set_step)
+        step_amount = -set_step if self._topward else set_step
         delta = delta - step_amount
 
         # We force reenforce directional move.
@@ -1396,7 +1393,7 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self._leftward else set_step)
+        step_amount = -set_step if self._leftward else set_step
         delta = delta - step_amount
 
         if self._topward:
@@ -1432,7 +1429,7 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self._topward else set_step)
+        step_amount = -set_step if self._topward else set_step
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
@@ -1468,7 +1465,7 @@ class LhystudiosDriver(Driver):
         delta = math.trunc(self.step_total)
         self.step_total -= delta
 
-        step_amount = (-set_step if self._leftward else set_step)
+        step_amount = -set_step if self._leftward else set_step
         delta = delta - step_amount
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
@@ -1552,7 +1549,17 @@ class LhystudiosDriver(Driver):
 
     def reset_modes(self):
         self.laser = False
-        self.properties = 0
+        self._request_axis = False
+        self._request_leftward = False
+        self._request_topward = False
+        self._request_x_engaged = False
+        self._request_y_engaged = False
+        self._request_horizontal_major = False
+        self._topward = False
+        self._leftward = False
+        self._x_engaged = False
+        self._y_engaged = False
+        self._horizontal_major = False
 
     def goto_x(self, dx):
         if dx > 0:
@@ -1623,9 +1630,7 @@ class LhystudiosDriver(Driver):
         self.data_output(self.code_declare_directions())
 
     def code_declare_directions(self):
-        x_dir = (
-            self.CODE_LEFT if self._leftward else self.CODE_RIGHT
-        )
+        x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
         y_dir = self.CODE_TOP if self._topward else self.CODE_BOTTOM
         if self._horizontal_major:
             self._x_engaged = True
@@ -1638,35 +1643,19 @@ class LhystudiosDriver(Driver):
 
     @property
     def is_left(self):
-        return (
-            self._x_engaged
-            and not self._y_engaged
-            and self._leftward
-        )
+        return self._x_engaged and not self._y_engaged and self._leftward
 
     @property
     def is_right(self):
-        return (
-            self._x_engaged
-            and not self._y_engaged
-            and not self._leftward
-        )
+        return self._x_engaged and not self._y_engaged and not self._leftward
 
     @property
     def is_top(self):
-        return (
-            not self._x_engaged
-            and self._y_engaged
-            and self._topward
-        )
+        return not self._x_engaged and self._y_engaged and self._topward
 
     @property
     def is_bottom(self):
-        return (
-            not self._x_engaged
-            and self._y_engaged
-            and not self._topward
-        )
+        return not self._x_engaged and self._y_engaged and not self._topward
 
     @property
     def is_angle(self):
