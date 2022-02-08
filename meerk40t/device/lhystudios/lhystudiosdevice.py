@@ -727,6 +727,7 @@ class LhystudiosDriver(Driver):
         self.CODE_ANGLE = b"M"
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
+        self.update_codes()
 
         self.is_paused = False
         self.context._buffer_size = 0
@@ -742,7 +743,6 @@ class LhystudiosDriver(Driver):
 
         self.holds.append(primary_hold)
 
-        self.update_codes()
 
         # Step amount expected of the current operation
         self.step = 0
