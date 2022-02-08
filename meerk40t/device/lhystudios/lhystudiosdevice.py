@@ -823,19 +823,16 @@ class LhystudiosDriver(Driver):
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.set_values(p_set)
                 elif on & PLOT_AXIS:  # Major Axis.
-                    if x == 0:  # X Major / Horizontal.
-                        self._request_horizontal_major = True
-                    else:  # Y Major / Vertical
-                        self._request_horizontal_major = False
+                    # 0 means X Major / Horizontal.
+                    # 1 means Y Major / Vertical
+                    self._request_horizontal_major = bool(x == 0)
                 elif on & PLOT_DIRECTION:
-                    if x == 1:  # Moving Right. +x
-                        self._request_leftward = False
-                    else:  # Moving Left -x
-                        self._request_leftward = True
-                    if y == 1:  # Moving Bottom +y
-                        self._request_topward = False
-                    else:  # Moving Top. -y
-                        self._request_topward = True
+                    # 0: Moving Left -x
+                    # 1: Moving Right. +x
+                    self._request_leftward = bool(x != 1)
+                    # 0: Moving Bottom +y
+                    # 1: Moving Top. -y
+                    self._request_topward = bool(y != 1)
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
