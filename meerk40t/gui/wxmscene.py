@@ -22,7 +22,7 @@ from meerk40t.svgelements import Angle, Length
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_scene(window, context):
     # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
     # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
     # self.notebook.AddPage(self.scene, "scene")
@@ -132,7 +132,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoom_y", type=float, help="zoom amount from current"
         )
         @self.context.console_command("aspect", input_type="scene")
-        def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+        def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
@@ -143,7 +143,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoomfactor", type=float, help="zoom amount from current"
         )
         @self.context.console_command("zoom", input_type="scene")
-        def scene(command, _, channel, data, zoomfactor=1.0, **kwargs):
+        def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoomfactor)
             data.request_refresh()
@@ -157,7 +157,7 @@ class MeerK40tScenePanel(wx.Panel):
             "pan_y", type=float, default=0, help="pan from current position y"
         )
         @self.context.console_command("pan", input_type="scene")
-        def scene(command, _, channel, data, pan_x, pan_y, **kwargs):
+        def scene_pan(command, _, channel, data, pan_x, pan_y, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_translate(pan_x, pan_y)
             data.request_refresh()
@@ -168,7 +168,7 @@ class MeerK40tScenePanel(wx.Panel):
             "angle", type=Angle.parse, default=0, help="Rotate scene"
         )
         @self.context.console_command("rotate", input_type="scene")
-        def scene(command, _, channel, data, angle, **kwargs):
+        def scene_rotate(command, _, channel, data, angle, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_rotate(angle)
             data.request_refresh()
@@ -176,7 +176,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @self.context.console_command("reset", input_type="scene")
-        def scene(command, _, channel, data, **kwargs):
+        def scene_reset(command, _, channel, data, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.reset()
             data.request_refresh()
@@ -188,7 +188,7 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("width", type=Length, help="width of view")
         @self.context.console_argument("height", type=Length, help="height of view")
         @self.context.console_command("focus", input_type="scene")
-        def scene(command, _, channel, data, x, y, width, height, **kwargs):
+        def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
             bed_dim = self.context.root
             x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
             y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)

@@ -43,7 +43,7 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-def register_panel(window, context):
+def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()

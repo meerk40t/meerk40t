@@ -193,8 +193,6 @@ class MoshiDriver(Driver):
         self.plot_planner = PlotPlanner(self.settings)
         self.plot = None
 
-        self.program = MoshiBlob()
-
         self.is_paused = False
         self.context._buffer_size = 0
         self.thread = None
@@ -222,6 +220,7 @@ class MoshiDriver(Driver):
         context.setting(int, "rapid_speed", 40)
 
         self.pipe_channel = context.channel("%s/events" % name)
+        self.program = MoshiBlob(channel=self.pipe_channel)
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
@@ -230,9 +229,7 @@ class MoshiDriver(Driver):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
             self.output.push_program(self.program)
-
-            self.program = MoshiBlob()
-            self.program.channel = self.pipe_channel
+            self.program = MoshiBlob(channel=self.pipe_channel)
 
     def ensure_program_mode(self, *values):
         """

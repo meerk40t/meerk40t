@@ -1,14 +1,8 @@
+import math
+import wx
+
 from meerk40t.gui.scene.scene import Widget
 from meerk40t.gui.wxutils import create_menu
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = 2 * pi
-
-import wx
 
 from meerk40t.gui.laserrender import (
     DRAW_MODE_BACKGROUND,
@@ -987,7 +981,7 @@ class GuideWidget(Widget):
                     ends.append((x, h - length - edge_gap))
 
                     # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-                    gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
+                    gc.DrawText("%g" % mark_point, x, edge_gap, - math.tau / 4)
             x += points
 
         y = offset_y

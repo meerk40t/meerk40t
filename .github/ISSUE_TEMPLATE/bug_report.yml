@@ -1,0 +1,91 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["Type: Bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug!
+
+        This form should only be used to report genuine bugs inside MeerK40t,
+        and not as a means of requesting help on how to use MeerK40t.
+
+        Please check that this is not going to be a duplicate before submitting it.
+        If there is a similar bug already logged, please add your additions
+        as a comment on the existing issue rather than creating a new one.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Details
+      description: How can we get in touch with you if we need more info?
+      placeholder: e.g. email@example.com
+    validations:
+      required: false
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary Description
+      description: Please explain in general terms in a single paragraph what the bug is.
+      placeholder: Summary paragraph
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional Details
+      description: |
+        Please provide any further fine details that might help us to locate this bug.
+
+        For example, details of what you expected to happen and what actually happened.
+        Please also zip any relevant SVG etc. files and drop them onto this field.
+      placeholder: Additional details
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Crash logs
+      description: Please copy and paste any relevant log output. This will not be formatted into paragraphs.
+      render: shell
+  - type: input
+    id: meerk40t_version
+    attributes:
+      label: MeerK40t Version
+      description: What version of MeerK40t are you running?
+    validations:
+      required: true
+  - type: dropdown
+    id: meerk40t_type
+    attributes:
+      label: MeerK40t Type
+      description: How are you running Meerk40t?
+      options:
+        - Executable
+        - PIP3/Pypi Package
+        - Source (zip/tar file from Github)
+        - Git
+    validations:
+      required: true
+  - type: dropdown
+    id: operating_system
+    attributes:
+      label: Your Operating System
+      description: What operating system are you running under?
+      options:
+        - Windows
+        - Linux
+        - Mac (before M1/Bigsur)
+        - Mac (M1/Bigsur)
+        - Raspberry Pi
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](/meerk40t/meerk40t/.github/CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

@@ -73,8 +73,6 @@ class Driver:
         self.root_context.setting(int, "opt_jog_minimum", 127)
         context._quit = False
 
-        self.rapid = self.root_context.opt_rapid_between
-        self.jog = self.root_context.opt_jog_mode
         self.rapid_override = False
         self.rapid_override_speed_x = 50.0
         self.rapid_override_speed_y = 50.0
@@ -190,8 +188,6 @@ class Driver:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
-            self.rapid = self.root_context.opt_rapid_between
-            self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
