@@ -687,12 +687,11 @@ class LhystudiosDriver(Driver):
         self._x_engaged = False
         self._y_engaged = False
         self._horizontal_major = False
-        self._request_x_engaged = False
-        self._request_y_engaged = False
-        self._request_leftward = False
-        self._request_topward = False
-        self._request_horizontal_major = False
-        self._request_axis = False
+
+        self._request_leftward = None
+        self._request_topward = None
+        self._request_horizontal_major = None
+
         kernel = context._kernel
         _ = kernel.translation
         root_context = context.root
@@ -824,14 +823,11 @@ class LhystudiosDriver(Driver):
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.set_values(p_set)
                 elif on & PLOT_AXIS:  # Major Axis.
-                    self._request_axis = True
                     if x == 0:  # X Major / Horizontal.
                         self._request_horizontal_major = True
                     else:  # Y Major / Vertical
                         self._request_horizontal_major = False
                 elif on & PLOT_DIRECTION:
-                    self._request_x_engaged = True
-                    self._request_y_engaged = True
                     if x == 1:  # Moving Right. +x
                         self._request_leftward = False
                     else:  # Moving Left -x
@@ -1280,15 +1276,15 @@ class LhystudiosDriver(Driver):
             self._topward = False
             self._horizontal_major = False
         else:
-            if self._request_x_engaged:
+            if self._request_leftward is not None:
                 self._leftward = self._request_leftward
-                self._request_x_engaged = False
-            if self._request_y_engaged:
+                self._request_leftward = None
+            if self._request_topward is not None:
                 self._topward = self._request_topward
-                self._request_y_engaged = False
-            if self._request_axis:
+                self._request_topward = None
+            if self._request_horizontal_major is not None:
                 self._horizontal_major = self._request_horizontal_major
-                self._request_axis = False
+                self._request_horizontal_major = None
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
         if self.step:
@@ -1513,12 +1509,9 @@ class LhystudiosDriver(Driver):
 
     def reset_modes(self):
         self.laser = False
-        self._request_axis = False
-        self._request_leftward = False
-        self._request_topward = False
-        self._request_x_engaged = False
-        self._request_y_engaged = False
-        self._request_horizontal_major = False
+        self._request_leftward = None
+        self._request_topward = None
+        self._request_horizontal_major = None
         self._topward = False
         self._leftward = False
         self._x_engaged = False
