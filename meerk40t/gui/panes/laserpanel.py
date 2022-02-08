@@ -15,7 +15,7 @@ from meerk40t.gui.propertiespanel import PropertiesPanel
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
     optimize_panel = PropertiesPanel(
         window, wx.ID_ANY, context=context, choices="optimize"

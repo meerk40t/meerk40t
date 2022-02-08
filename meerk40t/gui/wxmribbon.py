@@ -52,7 +52,7 @@ ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
 
 
-def register_panel(window, context):
+def register_panel_ribbon(window, context):
     ribbon = RibbonPanel(window, wx.ID_ANY, context=context)
 
     pane = (
