@@ -2,9 +2,9 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ...core.cutcode import CutCode, LaserSettings, LineCut, PlotCut
+from ...core.cutcode import CutCode, LaserSettings, PlotCut
 from ...kernel import Module
-from ...svgelements import Color, Point
+from ...svgelements import Color
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
 STATE_ABORT = -1
