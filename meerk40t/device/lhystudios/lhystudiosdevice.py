@@ -827,10 +827,10 @@ class LhystudiosDriver(Driver):
                     # 1 means Y Major / Vertical
                     self._request_horizontal_major = bool(x == 0)
                 elif on & PLOT_DIRECTION:
-                    # 0: Moving Left -x
+                    # -1: Moving Left -x
                     # 1: Moving Right. +x
                     self._request_leftward = bool(x != 1)
-                    # 0: Moving Bottom +y
+                    # -1: Moving Bottom +y
                     # 1: Moving Top. -y
                     self._request_topward = bool(y != 1)
                 elif on & (
