@@ -847,22 +847,26 @@ class LhystudiosDriver(Driver):
             else:
                 # program mode
                 self.ensure_raster_mode()
-                if self._x_engaged:
+                if self._horizontal_major:
+                    # Horizontal Rastering.
                     if self.context.nse_raster or self.settings.raster_alt:
-                        if (dx > 0 and self._leftward) or (
-                            dx < 0 and not self._leftward
-                        ):
+                        # Alt-Style Raster
+                        if (dx > 0 and self._leftward) or (dx < 0 and not self._leftward):
                             self.h_switch(dy)
                     else:
+                        # Default Raster
                         if dy != 0:
                             self.h_switch_g(dy)
-                elif self._y_engaged:
+                else:
+                    # Vertical Rastering.
                     if self.context.nse_raster or self.settings.raster_alt:
+                        # Alt-Style Raster
                         if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
                             self.v_switch(dx)
                     else:
+                        # Default Raster
                         if dx != 0:
-                            self.v_switch_g(dx)
+                            self.h_switch_g(dy)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.current_x
                 dy = y - self.current_y
