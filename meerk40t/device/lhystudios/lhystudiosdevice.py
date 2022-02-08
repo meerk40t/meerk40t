@@ -1509,51 +1509,45 @@ class LhystudiosDriver(Driver):
         self._horizontal_major = False
 
     def goto_x(self, dx):
+        self.current_x += dx
         if dx > 0:
-            self.current_x += dx
             if not self.is_right or self.state not in (
                     DRIVER_STATE_PROGRAM,
                     DRIVER_STATE_RASTER,
             ):
                 self.data_output(self.CODE_RIGHT)
-                self._x_engaged = True
-                self._y_engaged = False
                 self._leftward = False
         else:
-            self.current_x -= abs(dx)
             if not self.is_left or self.state not in (
                     DRIVER_STATE_PROGRAM,
                     DRIVER_STATE_RASTER,
             ):
                 self.data_output(self.CODE_LEFT)
-                self._x_engaged = True
-                self._y_engaged = False
                 self._leftward = True
+        self._x_engaged = True
+        self._y_engaged = False
         if dx != 0:
             self.data_output(lhymicro_distance(abs(dx)))
             self.check_bounds()
 
     def goto_y(self, dy):
+        self.current_y += dy
         if dy > 0:
-            self.current_y += dy
             if not self.is_bottom or self.state not in (
                     DRIVER_STATE_PROGRAM,
                     DRIVER_STATE_RASTER,
             ):
                 self.data_output(self.CODE_BOTTOM)
-                self._x_engaged = False
-                self._y_engaged = True
                 self._topward = False
         else:
-            self.current_y -= abs(dy)
             if not self.is_top or self.state not in (
                     DRIVER_STATE_PROGRAM,
                     DRIVER_STATE_RASTER,
             ):
                 self.data_output(self.CODE_TOP)
-                self._x_engaged = False
-                self._y_engaged = True
                 self._topward = True
+        self._x_engaged = False
+        self._y_engaged = True
         if dy != 0:
             self.data_output(lhymicro_distance(abs(dy)))
             self.check_bounds()
