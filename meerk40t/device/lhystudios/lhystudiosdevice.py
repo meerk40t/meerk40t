@@ -1479,6 +1479,7 @@ class LhystudiosDriver(Driver):
             self._x_engaged = True
             self._y_engaged = False
             self.data_output(lhymicro_distance(abs(dx)))
+            self.check_bounds()
         if dy != 0:
             self.current_y += dy
             if dy > 0:  # Moving bottom
@@ -1492,7 +1493,7 @@ class LhystudiosDriver(Driver):
             self._x_engaged = False
             self._y_engaged = True
             self.data_output(lhymicro_distance(abs(dy)))
-        self.check_bounds()
+            self.check_bounds()
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
