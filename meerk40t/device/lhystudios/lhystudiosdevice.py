@@ -1465,20 +1465,15 @@ class LhystudiosDriver(Driver):
         self._horizontal_major = False
 
     def goto_xy(self, dx, dy):
+        rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
             self.current_x += dx
-            if dx > 0:
-                if not self.is_right or self.state not in (
-                        DRIVER_STATE_PROGRAM,
-                        DRIVER_STATE_RASTER,
-                ):
+            if dx > 0:  # Moving right
+                if not self.is_right or rapid:
                     self.data_output(self.CODE_RIGHT)
                     self._leftward = False
-            else:
-                if not self.is_left or self.state not in (
-                        DRIVER_STATE_PROGRAM,
-                        DRIVER_STATE_RASTER,
-                ):
+            else:  # Moving left
+                if not self.is_left or rapid:
                     self.data_output(self.CODE_LEFT)
                     self._leftward = True
             self._x_engaged = True
@@ -1486,18 +1481,12 @@ class LhystudiosDriver(Driver):
             self.data_output(lhymicro_distance(abs(dx)))
         if dy != 0:
             self.current_y += dy
-            if dy > 0:
-                if not self.is_bottom or self.state not in (
-                        DRIVER_STATE_PROGRAM,
-                        DRIVER_STATE_RASTER,
-                ):
+            if dy > 0:  # Moving bottom
+                if not self.is_bottom or rapid:
                     self.data_output(self.CODE_BOTTOM)
                     self._topward = False
-            else:
-                if not self.is_top or self.state not in (
-                        DRIVER_STATE_PROGRAM,
-                        DRIVER_STATE_RASTER,
-                ):
+            else:    # Moving top
+                if not self.is_top or rapid:
                     self.data_output(self.CODE_TOP)
                     self._topward = True
             self._x_engaged = False
