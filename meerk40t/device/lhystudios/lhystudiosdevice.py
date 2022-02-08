@@ -1049,7 +1049,6 @@ class LhystudiosDriver(Driver):
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
-        self.check_bounds()
         self.context.signal(
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
