@@ -1057,29 +1057,6 @@ class LhystudiosDriver(Driver):
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
         )
 
-    def goto_xy(self, dx, dy):
-        if dx != 0:
-            self.goto_x(dx)
-        if dy != 0:
-            self.goto_y(dy)
-
-    def goto_octent(self, dx, dy, on):
-        if dx == 0 and dy == 0:
-            return
-        if on:
-            self.laser_on()
-        else:
-            self.laser_off()
-        if abs(dx) == abs(dy):
-            if dx != 0:
-                self.goto_angle(dx, dy)
-        else:
-            self.goto_xy(dx, dy)
-        self.context.signal(
-            "driver;position",
-            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
-        )
-
     def set_speed(self, speed=None):
         if self.settings.speed != speed:
             self.settings.speed = speed
@@ -1492,6 +1469,29 @@ class LhystudiosDriver(Driver):
         self._x_engaged = False
         self._y_engaged = False
         self._horizontal_major = False
+
+    def goto_xy(self, dx, dy):
+        if dx != 0:
+            self.goto_x(dx)
+        if dy != 0:
+            self.goto_y(dy)
+
+    def goto_octent(self, dx, dy, on):
+        if dx == 0 and dy == 0:
+            return
+        if on:
+            self.laser_on()
+        else:
+            self.laser_off()
+        if abs(dx) == abs(dy):
+            if dx != 0:
+                self.goto_angle(dx, dy)
+        else:
+            self.goto_xy(dx, dy)
+        self.context.signal(
+            "driver;position",
+            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+        )
 
     def goto_x(self, dx):
         self.current_x += dx
