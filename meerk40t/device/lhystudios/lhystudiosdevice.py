@@ -1221,32 +1221,7 @@ class LhystudiosDriver(Driver):
         dy = int(round(dy))
         self.data_output(b"@NSE")
         self.state = DRIVER_STATE_RAPID
-        speed_code = LaserSpeed(
-            self.context.board,
-            self.settings.speed,
-            self.instance_step(),
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            suffix_c=self.instance_use_suffix_c(),
-            fix_speeds=self.context.fix_speeds,
-            raster_horizontal=True,
-        ).speedcode
-        speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
-        if dx != 0:
-            self.goto_x(dx)
-        if dy != 0:
-            self.goto_y(dy)
-        self.data_output(b"N")
-        self.set_requested_directions()
-        self.data_output(self.code_declare_directions())
-        self.data_output(b"S1E")
-        if self.step:
-            self.state = DRIVER_STATE_RASTER
-        else:
-            self.state = DRIVER_STATE_PROGRAM
+        self.ensure_program_mode(dx, dy)
 
     def ensure_finished_mode(self, *values):
         if self.state == DRIVER_STATE_FINISH:
@@ -1274,31 +1249,9 @@ class LhystudiosDriver(Driver):
         if self.state == DRIVER_STATE_RASTER:
             return
         self.ensure_finished_mode()
+        self.ensure_program_mode(raster_horizontal=True)
 
-        speed_code = LaserSpeed(
-            self.context.board,
-            self.settings.speed,
-            self.instance_step(),
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            fix_speeds=self.context.fix_speeds,
-            raster_horizontal=raster_horizontal,
-        ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
-        self.data_output(b"N")
-        self.set_requested_directions()
-        self.declare_directions()
-        self.data_output(b"S1E")
-        self.state = DRIVER_STATE_RASTER
-        self.context.signal("driver;mode", self.state)
-
-    def ensure_program_mode(self, *values):
+    def ensure_program_mode(self, *values, raster_horizontal=True, dx=0, dy=0):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
 
@@ -1319,18 +1272,22 @@ class LhystudiosDriver(Driver):
             fix_lows=True,
             suffix_c=self.instance_use_suffix_c(),
             fix_speeds=self.context.fix_speeds,
-            raster_horizontal=True,
+            raster_horizontal=raster_horizontal,
         ).speedcode
-        try:
-            speed_code = bytes(speed_code)
-        except TypeError:
-            speed_code = bytes(speed_code, "utf8")
+        speed_code = bytes(speed_code, "utf8")
         self.data_output(speed_code)
+        if dx != 0:
+            self.goto_x(dx)
+        if dy != 0:
+            self.goto_y(dy)
         self.data_output(b"N")
         self.set_requested_directions()
         self.declare_directions()
         self.data_output(b"S1E")
-        self.state = DRIVER_STATE_PROGRAM
+        if self.step:
+            self.state = DRIVER_STATE_RASTER
+        else:
+            self.state = DRIVER_STATE_PROGRAM
         self.context.signal("driver;mode", self.state)
 
     def h_switch(self, dy: float):
