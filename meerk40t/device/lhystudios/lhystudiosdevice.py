@@ -743,7 +743,6 @@ class LhystudiosDriver(Driver):
 
         self.holds.append(primary_hold)
 
-
         # Step amount expected of the current operation
         self.step = 0
 
@@ -790,8 +789,6 @@ class LhystudiosDriver(Driver):
             return False
         if self.hold():
             return True
-        last_dx = 0
-        last_dy = 0
         for x, y, on in self.plot:
             sx = self.current_x
             sy = self.current_y
