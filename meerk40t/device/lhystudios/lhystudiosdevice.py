@@ -1484,8 +1484,7 @@ class LhystudiosDriver(Driver):
         else:
             self.laser_off()
         if abs(dx) == abs(dy):
-            if dx != 0:
-                self.goto_angle(dx, dy)
+            self.goto_angle(dx, dy)
         else:
             self.goto_xy(dx, dy)
         self.context.signal(
