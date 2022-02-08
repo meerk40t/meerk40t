@@ -870,7 +870,10 @@ class LhystudiosDriver(Driver):
                     else:
                         if dx != 0:
                             self.v_switch_g(dx)
-            self.goto_octent_abs(x, y, on & 1)
+                # Update dx, dy (if changed by switches)
+                dx = x - self.current_x
+                dy = y - self.current_y
+            self.goto_octent(dx, dy, on & 1)
             if self.hold():
                 return True
         self.plot = None
@@ -1053,11 +1056,6 @@ class LhystudiosDriver(Driver):
             "driver;position",
             (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
         )
-
-    def goto_octent_abs(self, x, y, on):
-        dx = x - self.current_x
-        dy = y - self.current_y
-        self.goto_octent(dx, dy, on)
 
     def goto_xy(self, dx, dy):
         if dx != 0:
