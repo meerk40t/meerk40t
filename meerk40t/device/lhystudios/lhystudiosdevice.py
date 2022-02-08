@@ -853,9 +853,7 @@ class LhystudiosDriver(Driver):
                 self.ensure_program_mode()
             else:
                 # program mode
-                self.ensure_raster_mode(
-                    raster_horizontal=self.settings.horizontal_raster
-                )
+                self.ensure_raster_mode()
                 if self._x_engaged:
                     if self.context.nse_raster or self.settings.raster_alt:
                         if (dx > 0 and self._leftward) or (
@@ -1189,6 +1187,7 @@ class LhystudiosDriver(Driver):
         dx = int(round(dx))
         dy = int(round(dy))
         self.data_output(b"@NSE")
+        self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.ensure_program_mode(dx, dy)
 
@@ -1207,7 +1206,7 @@ class LhystudiosDriver(Driver):
         self.state = DRIVER_STATE_FINISH
         self.context.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self, raster_horizontal=True, *values):
+    def ensure_raster_mode(self, *values):
         """
         Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
@@ -1218,9 +1217,9 @@ class LhystudiosDriver(Driver):
         if self.state == DRIVER_STATE_RASTER:
             return
         self.ensure_finished_mode()
-        self.ensure_program_mode(raster_horizontal=True)
+        self.ensure_program_mode()
 
-    def ensure_program_mode(self, *values, raster_horizontal=True, dx=0, dy=0):
+    def ensure_program_mode(self, *values, dx=0, dy=0):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
 
@@ -1248,6 +1247,20 @@ class LhystudiosDriver(Driver):
             self.context.twitchless or self.settings.force_twitchless
         ) and not self.step:
             suffix_c = True
+        if self._request_leftward is not None:
+            self._leftward = self._request_leftward
+            self._request_leftward = None
+        if self._request_topward is not None:
+            self._topward = self._request_topward
+            self._request_topward = None
+        if self._request_horizontal_major is not None:
+            self._horizontal_major = self._request_horizontal_major
+            self._request_horizontal_major = None
+        if self.context.strict:
+            # Override requested or current values only use core initial values.
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
 
         speed_code = LaserSpeed(
             self.context.board,
@@ -1259,7 +1272,7 @@ class LhystudiosDriver(Driver):
             fix_lows=True,
             suffix_c=suffix_c,
             fix_speeds=self.context.fix_speeds,
-            raster_horizontal=raster_horizontal,
+            raster_horizontal=self._horizontal_major,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self.data_output(speed_code)
@@ -1268,20 +1281,6 @@ class LhystudiosDriver(Driver):
         if dy != 0:
             self.goto_y(dy)
         self.data_output(b"N")
-        if self.context.strict:
-            self._leftward = False
-            self._topward = False
-            self._horizontal_major = False
-        else:
-            if self._request_leftward is not None:
-                self._leftward = self._request_leftward
-                self._request_leftward = None
-            if self._request_topward is not None:
-                self._topward = self._request_topward
-                self._request_topward = None
-            if self._request_horizontal_major is not None:
-                self._horizontal_major = self._request_horizontal_major
-                self._request_horizontal_major = None
         self.data_output(self.code_declare_directions())
         self.data_output(b"S1E")
         if self.step:
@@ -1394,7 +1393,7 @@ class LhystudiosDriver(Driver):
             self.move_relative(0, delta)
             self._x_engaged = True
             self._y_engaged = False
-            self.ensure_raster_mode(raster_horizontal=True)
+            self.ensure_raster_mode()
 
         # We reverse direction and step.
         if self._leftward:
@@ -1430,7 +1429,7 @@ class LhystudiosDriver(Driver):
             self.move_relative(delta, 0)
             self._y_engaged = True
             self._x_engaged = False
-            self.ensure_raster_mode(raster_horizontal=False)
+            self.ensure_raster_mode()
 
         # We reverse direction and step.
         if self._topward:
