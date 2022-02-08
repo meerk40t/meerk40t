@@ -1483,9 +1483,8 @@ class LhystudiosDriver(Driver):
                     self._leftward = True
             self._x_engaged = True
             self._y_engaged = False
-            if dx != 0:
-                self.data_output(lhymicro_distance(abs(dx)))
-                self.check_bounds()
+            self.data_output(lhymicro_distance(abs(dx)))
+            self.check_bounds()
         if dy != 0:
             self.current_y += dy
             if dy > 0:
@@ -1504,9 +1503,8 @@ class LhystudiosDriver(Driver):
                     self._topward = True
             self._x_engaged = False
             self._y_engaged = True
-            if dy != 0:
-                self.data_output(lhymicro_distance(abs(dy)))
-                self.check_bounds()
+            self.data_output(lhymicro_distance(abs(dy)))
+            self.check_bounds()
 
     def goto_octent(self, dx, dy, on):
         if dx == 0 and dy == 0:
