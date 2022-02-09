@@ -3,11 +3,17 @@ from os import times
 from time import time
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from .node.laserop import RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
+from .node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -632,10 +638,7 @@ class CutPlan:
                 image_element = self.make_image_for_op(op)
                 if image_element is None:
                     continue
-                if (
-                    image_element.image_width == 1
-                    and image_element.image_height == 1
-                ):
+                if image_element.image_width == 1 and image_element.image_height == 1:
                     # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
                     #  around because the renderer is what sets the size of the text. If the size hasn't already
                     #  been set, the initial bounds are wrong.
@@ -924,7 +927,18 @@ class Planner(Service):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op cut", "op raster", "op image", "op engrave", "op dots", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                types=(
+                    "op cut",
+                    "op raster",
+                    "op image",
+                    "op engrave",
+                    "op dots",
+                    "cutcode",
+                    "cmdop",
+                    "consoleop",
+                    "lasercode",
+                    "blob",
+                ),
                 depth=1,
             ):
                 try:
@@ -1201,7 +1215,9 @@ class Planner(Service):
             for c in data.plan:
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
-                if isinstance(c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)):
+                if isinstance(
+                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+                ):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
@@ -1632,7 +1648,9 @@ def short_travel_cutcode(
         # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
         # Travel only if path is completely burned or gap > 1/20"
         if distance > 50:
-            for cut in context.candidate(complete_path=complete_path, grouped_inner=grouped_inner):
+            for cut in context.candidate(
+                complete_path=complete_path, grouped_inner=grouped_inner
+            ):
                 s = cut.start()
                 if (
                     abs(s[0] - curr.real) <= distance

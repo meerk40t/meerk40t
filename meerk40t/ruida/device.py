@@ -544,7 +544,9 @@ class RuidaEmulator(Module, Parameters):
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
-                self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
+                self.plotcut.plot_append(
+                    self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0
+                )
                 desc = "Move Relative (%f nm, %f nm)" % (
                     dx / UNITS_PER_uM,
                     dy / UNITS_PER_uM,

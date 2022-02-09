@@ -837,6 +837,7 @@ class DwellCut(CutObject):
         end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
+
 class PlotCut(CutObject):
     """
     Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
@@ -873,7 +874,12 @@ class PlotCut(CutObject):
         self.settings.raster_alt = False
         self.settings.raster_step = 0
         self.settings.force_twitchless = True
-        if not self.travels_left and not self.travels_right and not self.travels_bottom and not self.travels_top:
+        if (
+            not self.travels_left
+            and not self.travels_right
+            and not self.travels_bottom
+            and not self.travels_top
+        ):
             return False
         if 0 < self.max_dx <= 15:
             self.vertical_raster = True
@@ -980,7 +986,7 @@ class PlotCut(CutObject):
         last_y = None
         for x, y, on in self.plot:
             if last_x is not None:
-                length += Point.distance((x,y), (last_x, last_y))
+                length += Point.distance((x, y), (last_x, last_y))
             last_x = 0
             last_y = 0
         return length

@@ -13,7 +13,7 @@ from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
-#TODO: Check need.
+# TODO: Check need.
 try:
     from math import tau
 except ImportError:

@@ -22,7 +22,9 @@ def plugin(kernel, lifecycle=None):
             kernel.activate_service_path("device", last_device)
 
         if not hasattr(kernel, "device"):
-            preferred_device = kernel.root.setting(str, "preferred_device", "lhystudios")
+            preferred_device = kernel.root.setting(
+                str, "preferred_device", "lhystudios"
+            )
             # Nothing has yet established a device. Boot this device.
             kernel.root(
                 "service device start {preferred_device}\n".format(

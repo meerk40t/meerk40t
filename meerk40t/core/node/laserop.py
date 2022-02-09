@@ -1,11 +1,19 @@
 from copy import copy
 
-from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut, RasterCut, DwellCut
+from meerk40t.core.cutcode import (
+    CubicCut,
+    CutGroup,
+    DwellCut,
+    LineCut,
+    QuadCut,
+    RasterCut,
+)
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
     Close,
+    Color,
     CubicBezier,
     Line,
     Move,
@@ -14,7 +22,7 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage, Color,
+    SVGImage,
 )
 
 MILS_IN_MM = 39.3701
@@ -1048,9 +1056,7 @@ class ImageOpNode(Node, Parameters):
                 settings["raster_step"] = 1
 
             try:
-                settings["raster_direction"] = int(
-                    svg_image.values["raster_direction"]
-                )
+                settings["raster_direction"] = int(svg_image.values["raster_direction"])
             except KeyError:
                 pass
             step = settings["raster_step"]

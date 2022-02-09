@@ -3,7 +3,6 @@ import os.path
 import re
 from copy import copy
 
-from .node.laserop import DotsOpNode, ImageOpNode, CutOpNode, EngraveOpNode, RasterOpNode
 from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
@@ -34,6 +33,13 @@ from ..svgelements import (
 from .cutcode import CubicCut, CutCode, CutGroup, LineCut, QuadCut, RasterCut
 from .node.commandop import CommandOperation
 from .node.consoleop import ConsoleOperation
+from .node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
 from .node.rootnode import RootNode
 from .parameters import Parameters
@@ -2916,7 +2922,11 @@ class Elemental(Service):
         # --------------------------- TREE OPERATIONS ---------------------------
 
         non_structural_nodes = (
-            "op cut", "op raster", "op image", "op engrave", "op dots",
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
             "ref elem",
             "cmdop",
             "consoleop",
@@ -2927,12 +2937,30 @@ class Elemental(Service):
             "file",
             "group",
         )
-        operate_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
-        op_nodes = ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop")
+        operate_nodes = (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "cmdop",
+            "consoleop",
+        )
+        op_nodes = (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "cmdop",
+            "consoleop",
+        )
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(_("Operation properties"), node_type=operate_nodes, help="")
+        @self.tree_operation(
+            _("Operation properties"), node_type=operate_nodes, help=""
+        )
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -2991,15 +3019,13 @@ class Elemental(Service):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(
-            _("Enable/Disable ops"), node_type=op_nodes, help=""
-        )
+        @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
                 n.notify_update()
 
-        #TODO: Restore convert node type ability
+        # TODO: Restore convert node type ability
         #
         # @self.tree_submenu(_("Convert operation"))
         # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
@@ -3031,7 +3057,9 @@ class Elemental(Service):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op raster", "op image"), help="")
+        @self.tree_operation(
+            _("%smm/s") % "{speed}", node_type=("op raster", "op image"), help=""
+        )
         def set_speed_raster(node, speed=150, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
@@ -3039,7 +3067,9 @@ class Elemental(Service):
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help="")
+        @self.tree_operation(
+            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help=""
+        )
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
             self.signal("element_property_reload", node)
@@ -3050,7 +3080,11 @@ class Elemental(Service):
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
-        @self.tree_operation(_("%sppi") % "{power}", node_type=("op cut", "op raster", "op image", "op engrave"), help="")
+        @self.tree_operation(
+            _("%sppi") % "{power}",
+            node_type=("op cut", "op raster", "op image", "op engrave"),
+            help="",
+        )
         def set_power(node, power=1000, **kwargs):
             node.power = float(power)
             self.signal("element_property_reload", node)
@@ -3078,7 +3112,9 @@ class Elemental(Service):
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type=operate_nodes, help="")
+        @self.tree_operation(
+            _("Passes %s") % "{passvalue}", node_type=operate_nodes, help=""
+        )
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
             node.passes_custom = passvalue != 1
@@ -3185,7 +3221,18 @@ class Elemental(Service):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "cmdop",
+                "consoleop",
+                "lasercode",
+                "cutcode",
+                "blob",
+            ),
             help="",
         )
         def remove_n_ops(node, **kwargs):
@@ -3263,7 +3310,17 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
             _("Reverse subitems order"),
-            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "group", "branch elems", "file", "branch ops"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "group",
+                "branch elems",
+                "file",
+                "branch ops",
+            ),
             help=_("Reverse the items within this subitem"),
         )
         def reverse_layer_order(node, **kwargs):
@@ -3463,14 +3520,20 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
-        @self.tree_operation(_("Add 1 pass"), node_type=("op image", "op engrave", "op cut") , help="")
+        @self.tree_operation(
+            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut"), help=""
+        )
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Add %s passes") % "{copies}", node_type=("op image", "op engrave", "op cut"), help="")
+        @self.tree_operation(
+            _("Add %s passes") % "{copies}",
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
+        )
         def add_n_passes(node, copies=1, **kwargs):
             add_elements = [
                 child.object for child in node.children if child.object is not None
@@ -3489,7 +3552,11 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Duplicate elements 1 time"), node_type=("op image", "op engrave", "op cut"), help="")
+        @self.tree_operation(
+            _("Duplicate elements 1 time"),
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
+        )
         def dup_1_copy(node, **kwargs):
             dup_n_copies(node, copies=1, **kwargs)
 
@@ -3497,7 +3564,9 @@ class Elemental(Service):
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}", node_type=("op image", "op engrave", "op cut"), help=""
+            _("Duplicate elements %s times") % "{copies}",
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
         )
         def dup_n_copies(node, copies=1, **kwargs):
             add_elements = [
@@ -3955,7 +4024,18 @@ class Elemental(Service):
         @self.tree_separator_before()
         @self.tree_operation(
             _("Expand all children"),
-            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "branch elems",
+                "branch ops",
+                "group",
+                "file",
+                "root",
+            ),
             help="Expand all children of this given node.",
         )
         def expand_all_children(node, **kwargs):
@@ -3964,7 +4044,18 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_operation(
             _("Collapse all children"),
-            node_type=("op cut", "op raster", "op image", "op engrave", "op dots", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "branch elems",
+                "branch ops",
+                "group",
+                "file",
+                "root",
+            ),
             help="Collapse all children of this given node.",
         )
         def collapse_all_children(node, **kwargs):
@@ -3992,7 +4083,7 @@ class Elemental(Service):
         settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             section = "%s %06i" % (name, i)
-            settings.write_persistent(section,"type", op.type)
+            settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
 
         settings.write_configuration()

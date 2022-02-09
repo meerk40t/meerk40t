@@ -120,7 +120,7 @@ class Node:
         return self.type not in ("branch elems", "branch ops", "root")
 
     def drop(self, drag_node):
-        #TODO: Parse this code off to the individual nodes themselves.
+        # TODO: Parse this code off to the individual nodes themselves.
         drop_node = self
         if drag_node.type == "elem":
             if drop_node.type.startswith("op"):
@@ -142,11 +142,8 @@ class Node:
                 # Disallow drop of non-image elems onto an refelem inside an Image op.
                 # Disallow drop of image elems onto an refelem inside a Dot op.
                 if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and op.type == "op image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage) and op.type == "op dots"
-                ):
+                    not isinstance(drag_node.object, SVGImage) and op.type == "op image"
+                ) or (isinstance(drag_node.object, SVGImage) and op.type == "op dots"):
                     return False
                 # Dragging element onto existing refelem in operation adds that element to the op after the refelem.
                 drop_index = op.children.index(drop_node)
@@ -176,17 +173,30 @@ class Node:
                 # Disallow drop of non-image refelems onto an refelem inside an Image op.
                 # Disallow drop of image refelems onto an refelem inside a Dot op.
                 if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and op.type == "op image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage) and op.type == "op dots"
-                ):
+                    not isinstance(drag_node.object, SVGImage) and op.type == "op image"
+                ) or (isinstance(drag_node.object, SVGImage) and op.type == "op dots"):
                     return False
                 # Move an refelem to after another refelem.
                 drop_node.insert_sibling(drag_node)
                 return True
-        elif drag_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
-            if drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
+        elif drag_node.type in (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "cmdop",
+            "consoleop",
+        ):
+            if drop_node.type in (
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "cmdop",
+                "consoleop",
+            ):
                 # Move operation to a different position.
                 drop_node.insert_sibling(drag_node)
                 return True
@@ -195,7 +205,15 @@ class Node:
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type in "file":
-            if drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots", "cmdop", "consoleop"):
+            if drop_node.type in (
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "cmdop",
+                "consoleop",
+            ):
                 some_nodes = False
                 for e in drag_node.flat("elem"):
                     # Disallow drop of non-image elems onto an Image op.
@@ -220,7 +238,13 @@ class Node:
                 # Move a group
                 drop_node.append_child(drag_node)
                 return True
-            elif drop_node.type in ("op cut", "op raster", "op image", "op engrave", "op dots"):
+            elif drop_node.type in (
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+            ):
                 some_nodes = False
                 for e in drag_node.flat("elem"):
                     # Disallow drop of non-image elems onto an Image op.

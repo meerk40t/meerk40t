@@ -511,9 +511,11 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Toolbars", register_toolbars)
 
         from meerk40t.gui.toolbaralign import register_align_tools
+
         kernel.register("wxpane/Tool-Align", register_align_tools)
 
         from meerk40t.gui.toolbarshapes import register_shapes_tools
+
         kernel.register("wxpane/Tool-Shape", register_shapes_tools)
 
         kernel.register("wxpane/Go", register_panel_go)

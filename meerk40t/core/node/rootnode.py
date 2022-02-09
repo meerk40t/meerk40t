@@ -4,7 +4,13 @@ from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elemnode import ElemNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
-from meerk40t.core.node.laserop import CutOpNode, EngraveOpNode, RasterOpNode, ImageOpNode, DotsOpNode
+from meerk40t.core.node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.refnode import RefElemNode
 

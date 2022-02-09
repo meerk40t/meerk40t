@@ -1,15 +1,21 @@
-from functools import partial
 import os
 import platform
 import sys
+from functools import partial
 
-from PIL import Image
 import wx
+from PIL import Image
 from wx import aui
 
 from ..core.cutcode import CutCode
 from ..core.node.consoleop import ConsoleOperation
-from ..core.node.laserop import RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode
+from ..core.node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import (
@@ -203,7 +209,9 @@ class MeerK40t(MWindow):
         """
         gui = self
         root = self.context.root
-        if isinstance(node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)):
+        if isinstance(
+            node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+        ):
             root.open("window/OperationProperty", gui, node=node)
             return
         if isinstance(node, ConsoleOperation):
@@ -1520,7 +1528,7 @@ class MeerK40t(MWindow):
         ]
 
         # for i in range(self.recent_file_menu.MenuItemCount):
-            # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
 
         for item in self.recent_file_menu.GetMenuItems():
             self.recent_file_menu.Remove(item)
