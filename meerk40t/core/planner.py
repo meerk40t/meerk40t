@@ -1,10 +1,9 @@
 from copy import copy
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from .cutcode import CutCode, CutGroup, RasterCut
 from .cutplan import CutPlan
 from .elements import LaserOperation
-from ..svgelements import Length, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Length
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,

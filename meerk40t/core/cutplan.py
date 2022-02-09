@@ -19,7 +19,7 @@ from math import ceil
 from os import times
 from time import time
 
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, List
 
 from PIL import Image
 
@@ -393,8 +393,15 @@ class CutPlan:
             5. Actual raster speed (adjusted if necessary from Op speed)
         """
 
+        # Determine raster direction(s)
+        # T2B=0, B2T=1, R2L=2, L2R=3, X=4
+        direction = op_settings.raster_direction
+        h_sweep = direction in (0, 1, 4)
+        v_sweep = direction in (2, 3, 4)
+
         # set minimum margins
-        dx = dy = op_settings.overscan
+        dx = op_settings.overscan if h_sweep else 0
+        dy = op_settings.overscan if v_sweep else 0
 
         # if cut inner first and group inner, minimise size so as to group correctly
         context = self.context
@@ -423,12 +430,6 @@ class CutPlan:
             v_accel = LaserSpeed.get_acceleration_for_speed(
                 speed, raster=True, raster_horizontal=False,
             )
-
-        # Determine raster direction(s)
-        # T2B=0, B2T=1, R2L=2, L2R=3, X=4
-        direction = op_settings.raster_direction
-        h_sweep = direction in (0, 1, 4)
-        v_sweep = direction in (2, 3, 4)
 
         # For cross-raster (type 4) it might make sense to group elements differently
         # and create different raster images, however this may be confusing,
@@ -747,7 +748,7 @@ class CutPlan:
                     or
                     (g1[0][0].inside is not None and g2[0][0].inside is None)
                 ):
-                   continue
+                    continue
 
                 if g1[0][0].inside:
                     if len(g1[0][0].inside) != len(g2[0][0].inside):
@@ -1104,7 +1105,7 @@ class CutPlan:
                         endpoints[mid : mid + index + 1], (0, 1)
                     )
                     improved = True
-                    if channel:
+                    if self.channel:
                         log_progress(mid)
 
             last = endpoints[-1, -1]
