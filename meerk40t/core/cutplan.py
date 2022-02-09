@@ -1119,7 +1119,7 @@ class CutPlan:
                     endpoints[index + 1 :], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
-                if channel:
+                if self.channel:
                     log_progress(length)
             if current_pass >= passes:
                 break
