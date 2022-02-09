@@ -24,7 +24,7 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-def register_panel(window, context):
+def register_panel_camera(window, context):
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True

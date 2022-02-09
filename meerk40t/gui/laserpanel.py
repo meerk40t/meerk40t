@@ -18,7 +18,7 @@ from meerk40t.kernel import lookup_listener, signal_listener
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
     optimize_panel = PropertiesPanel(
         window, wx.ID_ANY, context=context, choices="optimize"
@@ -113,6 +113,12 @@ class LaserPanel(wx.Panel):
         sizer_control_misc = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_misc, 0, wx.EXPAND, 0)
 
+        self.arm_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Arm"))
+        self.arm_toggle.SetToolTip(_("Arm the job for execution"))
+        sizer_control_misc.Add(self.arm_toggle, 1, wx.ALIGN_CENTER, 0)
+
+        self.check_laser_arm()
+
         self.button_outline = wx.Button(self, wx.ID_ANY, _("Outline"))
         self.button_outline.SetToolTip(_("Trace the outline the job"))
         self.button_outline.SetBitmap(icons8_pentagon_50.GetBitmap(resize=25))
@@ -178,6 +184,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
         # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
@@ -218,6 +226,53 @@ class LaserPanel(wx.Panel):
             else:
                 self.text_plan.SetValue("%s: %s" % (str(stage), str(plan)))
 
+    @lookup_listener("laserpane_arm")
+    def check_laser_arm(self, *args):
+        self.context.setting(bool, "laserpane_arm", True)
+        if self.context.laserpane_arm:
+            if not self.arm_toggle.Shown:
+                self.arm_toggle.Show(True)
+                self.Layout()
+            if self.arm_toggle.GetValue():
+                self.arm_toggle.SetBackgroundColour(wx.RED)
+                self.button_start.Enable(True)
+            else:
+                self.arm_toggle.SetBackgroundColour(wx.GREEN)
+                self.button_start.Enable(False)
+        else:
+            if self.arm_toggle.Shown:
+                self.arm_toggle.Show(False)
+                self.Layout()
+            self.button_start.Enable(True)
+
+    def on_check_arm(self, event):
+        self.check_laser_arm()
+
+    def on_menu_arm_enable(self, event):
+        self.context.laserpane_arm = True
+        self.check_laser_arm()
+
+    def on_menu_arm_disable(self, event):
+        self.context.laserpane_arm = False
+        self.check_laser_arm()
+
+    def on_menu_arm(self, event):
+        menu = wx.Menu()
+        if not self.context.laserpane_arm:
+            self.Bind(
+                wx.EVT_MENU,
+                self.on_menu_arm_enable,
+                menu.Append(wx.ID_ANY, _("Enable Arm Requirement"), _("Enable Arm")),
+            )
+        else:
+            self.Bind(
+                wx.EVT_MENU,
+                self.on_menu_arm_disable,
+                menu.Append(wx.ID_ANY, _("Disable Arm Requirement"), _("Disable Arm")),
+            )
+        self.PopupMenu(menu)
+        menu.Destroy()
+
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         plan = self.context.planner.get_or_make_plan("z")
         if plan.plan and self.context.laserpane_hold:
@@ -229,6 +284,8 @@ class LaserPanel(wx.Panel):
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool\n")
+        self.arm_toggle.SetValue(False)
+        self.check_laser_arm()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")

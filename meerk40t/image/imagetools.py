@@ -113,7 +113,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="elements",
     )
-    def image(data, **kwargs):
+    def image_path(data, **kwargs):
         elements = context.elements
         paths = []
         for element in data:
@@ -137,7 +137,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="elements",
     )
-    def image(command, channel, _, data, script, **kwargs):
+    def image_wizard(command, channel, _, data, script, **kwargs):
         if script is None:
             try:
                 for script_name in context.match("raster_script", suffix=True):
@@ -171,7 +171,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_unlock(command, channel, _, data, **kwargs):
         channel(_("Unlocking Elements..."))
         for element in data:
             try:
@@ -189,7 +189,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image(data, threshold_max=None, threshold_min=None, **kwargs):
+    def image_threshold(data, threshold_max=None, threshold_min=None, **kwargs):
         if threshold_min is None:
             raise SyntaxError
         divide = (threshold_max - threshold_min) / 255.0
@@ -220,7 +220,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "resample", help=_("Resample image"), input_type="image", output_type="image"
     )
-    def image(data, **kwargs):
+    def image_resample(data, **kwargs):
         for element in data:
             make_actual(element)
             if hasattr(element, "node"):
@@ -231,7 +231,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "dither", help=_("Dither to 1-bit"), input_type="image", output_type="image"
     )
-    def image(data, method="Floyd-Steinberg", **kwargs):
+    def image_dither(data, method="Floyd-Steinberg", **kwargs):
         for element in data:
             img = element.image
             if img.mode == "RGBA":
@@ -267,7 +267,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(data, color, distance=1, **kwargs):
+    def image_remove(data, color, distance=1, **kwargs):
         if color is None:
             raise SyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
@@ -297,7 +297,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument("color", type=Color, help=_("Color to be added"))
     @context.console_command("add", help="", input_type="image", output_type="image")
-    def image(command, channel, _, data, color, **kwargs):
+    def image_add(command, channel, _, data, color, **kwargs):
         if color is None:
             channel(_("Must specify a color, to add."))
             return
@@ -322,7 +322,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "dewhite", help="", input_type="image", output_type="image"
     )
-    def image(channel, _, data, **kwargs):
+    def image_dewhite(channel, _, data, **kwargs):
         for element in data:
             img = element.image
             if img.mode not in ("1", "L"):
@@ -339,7 +339,7 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
-    def image(data, **kwargs):
+    def image_rgba(data, **kwargs):
         for element in data:
             img = element.image
             if img.mode != "RGBA":
@@ -356,7 +356,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
-    def image(data, left, upper, right, lower, **kwargs):
+    def image_crop(data, left, upper, right, lower, **kwargs):
         for element in data:
             img = element.image
             try:
@@ -386,7 +386,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, factor, **kwargs):
+    def image_contrast(command, channel, _, data, factor, **kwargs):
         from PIL import ImageEnhance
 
         for element in data:
@@ -407,7 +407,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "brightness", help=_("brighten image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, factor, args=tuple(), **kwargs):
+    def image_brightness(command, channel, _, data, factor, args=tuple(), **kwargs):
         from PIL import ImageEnhance
 
         for element in data:
@@ -429,7 +429,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "color", help=_("color enhance"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, factor, **kwargs):
+    def image_color(command, channel, _, data, factor, **kwargs):
         from PIL import ImageEnhance
 
         for element in data:
@@ -450,7 +450,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "sharpness", help=_("shapen image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, factor, **kwargs):
+    def image_sharpness(command, channel, _, data, factor, **kwargs):
         from PIL import ImageEnhance
 
         for element in data:
@@ -468,7 +468,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "blur", help=_("blur image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_blur(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -484,7 +484,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "sharpen", help=_("sharpen image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_sharpen(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -500,7 +500,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "edge_enhance", help=_("enhance edges"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_edge_enhance(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -516,7 +516,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "find_edges", help=_("find edges"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_find_edges(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -532,7 +532,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "emboss", help=_("emboss image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_emboss(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -548,7 +548,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "smooth", help=_("smooth image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_smooth(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -564,7 +564,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "contour", help=_("contour image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_contour(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -580,7 +580,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "detail", help=_("detail image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_detail(command, channel, _, data, **kwargs):
         from PIL import ImageFilter
 
         for element in data:
@@ -602,7 +602,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, colors, **kwargs):
+    def image_quantize(command, channel, _, data, colors, **kwargs):
         for element in data:
             try:
                 img = element.image
@@ -620,7 +620,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "solarize", help="", input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, threshold, **kwargs):
+    def image_solarize(command, channel, _, data, threshold, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -637,7 +637,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_invert(command, channel, _, data, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -659,7 +659,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "flip", help=_("flip image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_flip(command, channel, _, data, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -673,7 +673,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "mirror", help=_("mirror image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_mirror(command, channel, _, data, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -687,7 +687,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "ccw", help=_("rotate image ccw"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_ccw(command, channel, _, data, **kwargs):
         from PIL import Image
 
         for element in data:
@@ -705,7 +705,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "cw", help=_("rotate image cw"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_cw(command, channel, _, data, **kwargs):
         from PIL import Image
 
         for element in data:
@@ -729,7 +729,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, cutoff, **kwargs):
+    def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -752,12 +752,12 @@ def plugin(kernel, lifecycle=None):
         help=_("Method of grayscale conversion: red, green, blue, alpha"),
     )
     @context.console_command(
-        ("grayscale", "grayscale"),
+        ("grayscale", "greyscale"),
         help=_("convert image to grayscale"),
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, method=None, **kwargs):
+    def image_grayscale(command, channel, _, data, method=None, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -789,7 +789,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "equalize", help=_("equalize image"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, **kwargs):
+    def image_equalize(command, channel, _, data, **kwargs):
         from PIL import ImageOps
 
         for element in data:
@@ -811,7 +811,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, x, **kwargs):
+    def image_slice(command, channel, _, data, x, **kwargs):
         for element in data:
             img = element.image
             image_left = img.crop((0, 0, x, element.image_height))
@@ -851,7 +851,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(command, channel, _, data, y, **kwargs):
+    def image_slash(command, channel, _, data, y, **kwargs):
         for element in data:
             img = element.image
             image_top = img.crop((0, 0, element.image_width, y))
@@ -897,7 +897,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image(
+    def image_pop(
         command, channel, _, data, left, upper, right, lower, remain=False, **kwargs
     ):
         from PIL import Image
@@ -944,7 +944,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "save", help=_("save image to disk"), input_type="image", output_type="image"
     )
-    def image(command, channel, _, data, filename, **kwargs):
+    def image_save(command, channel, _, data, filename, **kwargs):
         for element in data:
             try:
                 img = element.image
@@ -961,7 +961,7 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "flatrotary", help=_("apply flatrotary bilinear mesh"), input_type="image"
     )
-    def image(command, channel, _, data, args=tuple(), **kwargs):
+    def image_flatrotary(command, channel, _, data, args=tuple(), **kwargs):
         """
         Flat rotary stretches an image according to the rotary settings. Providing a series of points it applies a
         bilinear mesh to stretch the image across the x axis creating an image that can be interpreted as flat on a
@@ -1010,7 +1010,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def halftone(
+    def image_halftone(
         data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
     ):
         """

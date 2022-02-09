@@ -1,5 +1,3 @@
-
-
 # Tools
 
 Tools are stand-alone utilities that help with various processes and may be shared among different functions. These are unrelated to the functionality of the kernel ecosystem.
@@ -8,7 +6,6 @@ These can largely be removed and used whole-cloth without requiring any addition
 
 ## Pathtools
 Contains some graph creating code, vector monotone code that can determine the insideness of various shapes.
-
 
 ### VectorMonotonizer
 
@@ -28,5 +25,5 @@ Rasterplotter deals with the conversion of pixels into discrete laser commands, 
 
 ## ZinglPlotter
 
-ZinglPlotter deals with the plotting of vector shapes and their conversion into pixel perfect laser movements. Based on the Zingl-Bresenham Algorithms. 
+ZinglPlotter deals with the plotting of vector shapes and their conversion into pixel perfect laser movements. Based on the Zingl-Bresenham Algorithms.
 See: http://members.chello.at/easyfilter/bresenham.html

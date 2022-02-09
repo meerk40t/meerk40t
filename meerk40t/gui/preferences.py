@@ -132,6 +132,20 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
+        # TODO
+        # (
+        #     _("Enable Laser Arm"),
+        #     "\n".join(
+        #         (
+        #             _(
+        #                 "Enable Laser Panel Arm/Disarm feature."
+        #             ),
+        #         )
+        #     ),
+        #     "laserpane_arm",
+        #     False,
+        # ),
+
         sizer_3 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL
         )

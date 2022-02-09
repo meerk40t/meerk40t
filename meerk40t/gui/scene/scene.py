@@ -13,12 +13,15 @@ from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
+#TODO: Check need.
 try:
     from math import tau
 except ImportError:
     from math import pi
 
     tau = 2 * pi
+
+MILS_IN_MM = 39.3701
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1

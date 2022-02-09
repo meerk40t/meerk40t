@@ -11,7 +11,7 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_ribbon(window, context):
     ribbon = RibbonPanel(window, wx.ID_ANY, context=context)
 
     pane = (

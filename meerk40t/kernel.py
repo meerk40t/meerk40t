@@ -3407,7 +3407,7 @@ class Kernel(Settings):
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def plugins(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 plugins = self._kernel_plugins
                 channel(_("Kernel Plugins:"))

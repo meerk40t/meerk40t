@@ -84,6 +84,7 @@ class CutObject(Parameters):
             # so don't bother looping
             if burns == 0:
                 self.parent._burns_done = 0
+                self.parent.burn_started = False
                 return
             for o in self.parent:
                 burns = min(burns, o._burns_done)
@@ -310,6 +311,9 @@ class CutGroup(list, CutObject, ABC):
                 candidates = list(self)
 
         for grp in candidates:
+            # Do not burn this CutGroup if it contains unburned groups
+            # Contains is only set when Cut Inner First is set, so this
+            # so when not set this does nothing.
             if grp.contains_unburned_groups():
                 continue
             # If we are only burning complete subpaths then
@@ -327,9 +331,7 @@ class CutGroup(list, CutObject, ABC):
             # or this is a closed path
             # then we should yield all segments.
             for seg in grp.flat():
-                if seg is None:
-                    continue
-                if seg.burns_done < seg.passes:
+                if seg is not None and seg.burns_done < seg.passes:
                     yield seg
 
 
