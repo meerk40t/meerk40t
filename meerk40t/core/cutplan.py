@@ -152,12 +152,10 @@ class CutPlan:
 
         if not self.plan:
             return
-        context = self.context
 
         grouped_plan = self.blob_group_plans()
         blob_plan = self.blob_planner(grouped_plan)
         self.blob_merges(blob_plan)
-
 
     def blob_group_plans(self) -> List:
         """Group consecutive LaserOperations split by special operations"""
@@ -240,7 +238,7 @@ class CutPlan:
                 pass
             # We can only merge and check for other criteria if we have the right objects
             merge = (
-                len(self.plan)
+                self.plan
                 and isinstance(self.plan[-1], CutCode)
                 and isinstance(blob, CutObject)
             )
@@ -999,6 +997,8 @@ class CutPlan:
                     if d <= 0.1:  # Distance in px is zero, we cannot improve.
                         break
                     distance = d
+
+        return closest
 
 
     def short_travel_cutcode_2opt(self, context: CutCode, passes: int = 50):
