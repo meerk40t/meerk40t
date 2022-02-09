@@ -1,13 +1,30 @@
+"""
+CutPlan contains code to process LaserOperations into CutCode objects which are spooled.
+
+CutPlan handles the various complicated algorithms to optimising the sequence of CutObjects to:
+*   Sort burns so that travel time is minimised
+*   Do burns with multiple passes all at the same time (Merge Passes)
+*   Sort burns for all operations at the same time rather than operation by operation
+*   Ensure that elements inside closed cut paths are burned before the outside path
+*   Group these inner burns so that one component on a sheet is completed before the next one is started
+*   Ensure that non-closed paths are started from one of the ends and burned in one continuous burn
+    rather than being burned in 2 or more separate parts
+*   Split raster images in to self-contained areas to avoid sweeping over large empty areas
+    including splitting into individual small areas if burn inner first is set and then recombining
+    those inside the same curves so that raster burns are fully optimised.
+"""
+
 from copy import copy
-from math import ceil, floor
+from math import ceil
 from os import times
-from PIL import Image
 from time import time
 
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
+from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
+
+from PIL import Image
 
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
-from ..svgelements import Group, Path, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Path, Polygon, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from ..tools.rastergrouping import group_overlapped_rasters, group_elements_overlap
 from .elements import LaserOperation
@@ -17,7 +34,7 @@ from ..image.actualize import actualize
 
 class CutPlan:
     """
-    Cut Plan is a centralized class to modify plans with specific methods.
+    Process LaserOperations into CutCode objects which are spooled
     """
 
     def __init__(self, name, context):
@@ -31,7 +48,7 @@ class CutPlan:
     def __str__(self):
         parts = []
         parts.append(self.name)
-        if len(self.plan):
+        if self.plan:
             parts.append("#%d" % len(self.plan))
             for p in self.plan:
                 try:
@@ -56,11 +73,18 @@ class CutPlan:
             cmd()
 
     def preprocess(self):
+        """Add before, after and conditional auto-operations"""
+        self.preprocess_before()
+        self.preprocess_after()
+        self.preprocess_conditional()
+
+    def preprocess_before(self):
         context = self.context
         _ = context._
         rotary_context = context.get_context("rotary/1")
+
         # ==========
-        # before
+        # Before
         # ==========
         if context.prephysicalhome:
             if not rotary_context.rotary:
@@ -72,6 +96,12 @@ class CutPlan:
                 self.plan.insert(0, context.registered["plan/home"])
             else:
                 self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
+
+    def preprocess_after(self):
+        context = self.context
+        _ = context._
+        rotary_context = context.get_context("rotary/1")
+
         # ==========
         # After
         # ==========
@@ -93,6 +123,10 @@ class CutPlan:
             self.plan.append(context.registered["plan/beep"])
         if context.autointerrupt:
             self.plan.append(context.registered["plan/interrupt"])
+
+    def preprocess_after(self):
+        context = self.context
+        rotary_context = context.get_context("rotary/1")
 
         # ==========
         # Conditional Ops
@@ -120,25 +154,35 @@ class CutPlan:
             return
         context = self.context
 
+        grouped_plan = self.blob_group_plans()
+        blob_plan = self.blob_planner(grouped_plan)
+        self.blob_merges(blob_plan)
+
+
+    def blob_group_plans(self) -> List:
+        """Group consecutive LaserOperations split by special operations"""
         grouped_plan = []
         group = [self.plan[0]]
         for c in self.plan[1:]:
             if (
-                (type(group[-1]) == LaserOperation or type(c) == LaserOperation)
+                (isinstance(group[-1], LaserOperation) or isinstance(c, LaserOperation))
                 and type(group[-1]) != type(c)
             ):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
         grouped_plan.append(group)
+        return grouped_plan
 
+    def blob_planner(self, grouped_plan: List) -> List:
+        """ Create CutCode objects from LaserOperations"""
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
         blob_plan = []
         for plan in grouped_plan:
             burning = True
             pass_idx = -1
-            while (burning):
+            while burning:
                 burning = False
                 pass_idx += 1
                 for op in plan:
@@ -178,6 +222,10 @@ class CutPlan:
                         cutcode.original_op = op.operation
                         blob_plan.append(cutcode)
 
+        return blob_plan
+
+    def blob_merges(self, blob_plan: List) -> List:
+        """Create the final cut plan by merging blobs where appropriate"""
         self.plan.clear()
         for blob in blob_plan:
             try:
@@ -279,7 +327,7 @@ class CutPlan:
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
                 if self.grouped_inner():
-                    c = self.plan[i] = self.inner_first_image_combine(c)
+                    c = self.plan[i] = self.inner_first_image_optimize(c)
                 self.plan[i] = self.inner_selection_cutcode(c)
 
     def optimize_travel(self):
@@ -289,7 +337,7 @@ class CutPlan:
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
                 if self.grouped_inner():
-                    c = self.plan[i] = self.inner_first_image_combine(c)
+                    c = self.plan[i] = self.inner_first_image_optimize(c)
                 if last is not None:
                     self.plan[i].start = last
                 self.plan[i] = self.short_travel_cutcode(c)
@@ -400,55 +448,53 @@ class CutPlan:
 
     def make_image(self):
         for op in self.plan:
-            try:
-                operation = op.operation
-            except AttributeError:
+            if isinstance(op, LaserOperation) and op.operation == "Raster":
+                self.make_image_raster_op(op)
+
+    def make_image_raster_op(self, op: LaserOperation):
+        nodes = list(op.flat(types=("elem", "opnode")))
+        reverse = self.context.classify_reverse
+        if reverse:
+            nodes = list(reversed(nodes))
+
+        dx, dy = self.get_raster_margins(op.settings)
+
+        def adjust_bbox(bbox):
+            x1, y1, x2, y2 = bbox
+            return x1 - dx, y1 - dy, x2 + dx, y2 + dy
+
+        groups = group_overlapped_rasters(
+            [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
+        )
+
+        step = max(1, op.settings.raster_step)
+        images = []
+        for g in groups:
+            g = [x[0] for x in g]
+            if len(g) == 1 and isinstance(g[0].object, SVGImage):
+                images.append(g[0].object)
                 continue
-            else:
-                if operation == "Raster":
-                    nodes = list(op.flat(types=("elem", "opnode")))
-                    reverse = self.context.classify_reverse
-                    if reverse:
-                        nodes = list(reversed(nodes))
+            # Ensure rasters are in original sequence
+            g.sort(key=nodes.index)
+            image = self.make_image_from_raster(g, step=step)
+            if image is None:
+                continue
+            if (
+                image.image_width == 1
+                and image.image_height == 1
+            ):
+                """
+                TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
+                    time around because the renderer is what sets the size of the text. If the size hasn't
+                    already been set, the initial bounds are wrong.
+                """
+                print("Retrying make_image_from_raster ({w},{h})".format(w=image.image_width, h=image.image_height))
+                image = self.make_image_from_raster(g, step=step)
+            images.append(image)
 
-                    dx, dy = self.get_raster_margins(op.settings)
-
-                    def adjust_bbox(bbox):
-                        x1, y1, x2, y2 = bbox
-                        return x1 - dx, y1 - dy, x2 + dx, y2 + dy
-
-                    groups = group_overlapped_rasters(
-                        [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
-                    )
-
-                    step = max(1, op.settings.raster_step)
-                    images = []
-                    for g in groups:
-                        g = [x[0] for x in g]
-                        if len(g) == 1 and isinstance(g[0].object, SVGImage):
-                            images.append(g[0].object)
-                            continue
-                        # Ensure rasters are in original sequence
-                        g.sort(key=nodes.index)
-                        image = self.make_image_from_raster(g, step=step)
-                        if image is None:
-                            continue
-                        if (
-                            image.image_width == 1
-                            and image.image_height == 1
-                        ):
-                            """
-                            TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
-                                time around because the renderer is what sets the size of the text. If the size hasn't
-                                already been set, the initial bounds are wrong.
-                            """
-                            print("Retrying make_image_from_raster ({w},{h})".format(w=image.image_width, h=image.image_height))
-                            image = self.make_image_from_raster(g, step=step)
-                        images.append(image)
-
-                    op.children.clear()
-                    for image in images:
-                        op.add(image, type="opnode")
+        op.children.clear()
+        for image in images:
+            op.add(image, type="opnode")
 
     def actualize(self):
         for op in self.plan:
@@ -658,12 +704,13 @@ class CutPlan:
 
         return context
 
-    def inner_first_image_combine(self, context: CutGroup, channel=None):
+    def inner_first_image_optimize(self, context: CutGroup, channel=None):
         """
         If we have opt_inner_first and opt_inner_grouped, we have split rasters into
         smallest overlapping groups in order to best associate images with outer cuts.
 
-        Now we combine images back together where they will be faster done together.
+        Now we need to combine images back together where they are not in different outers
+        and they are close enough together to raster faster as one image.
 
         To be mergeable they need to have margins that overlap, and the same op setting object.
         """
@@ -714,59 +761,8 @@ class CutPlan:
         for grp in groups:
             if len(grp) == 1:
                 continue
-
             images = [g[0] for g in grp]
-            images.sort(key=context.index)
-
-            xmin = min([i.tx for i in images])
-            ymin = min([i.ty for i in images])
-            xmax = max([i.tx + i.width for i in images])
-            ymax = max([i.ty + i.height for i in images])
-            width = ceil(xmax - xmin)
-            height = ceil(ymax - ymin)
-
-            image = Image.new("L", (width, height), "white")
-            for i in images:
-                image.paste(i.image, (int((i.tx - xmin) / i.step), int((i.ty - ymin) / i.step)))
-
-            cut = RasterCut(
-                image,
-                xmin,
-                ymin,
-                settings=images[0].settings,
-                passes=images[0].passes,
-            )
-            cut.path = Path(
-                Polygon(
-                    (xmin, ymin),
-                    (xmin, ymax),
-                    (xmax, ymax),
-                    (xmax, ymin),
-                )
-            )
-
-            # Replace first image in context with new one
-            # aligning
-            cut.original_op = images[0].original_op
-            cut.inside = images[0].inside
-            if cut.inside:
-                for o in cut.inside:
-                    if not o.contains:
-                        o.contains = []
-                    o.contains.append(cut)
-                    if images[0] in o.contains:
-                        o.contains.remove(images[0])
-
-            context[context.index(images[0])] = cut
-            del images[0]
-            for i in images:
-                # First delete reference in inside groups contains list
-                if i.inside:
-                    for outer in i.inside:
-                        if outer.contains and i in outer.contains:
-                            outer.contains.remove(i)
-                if i in context:
-                    context.remove(i)
+            self.inner_first_image_merge(context, images)
 
         if self.channel:
             end_images = len(groups)
@@ -785,6 +781,60 @@ class CutPlan:
             )
 
         return context
+
+    def inner_first_image_merge(self, context: CutGroup, images: List) -> None:
+        """Combine raster images with same outer cuts and operations"""
+        images.sort(key=context.index)
+
+        xmin = min([i.tx for i in images])
+        ymin = min([i.ty for i in images])
+        xmax = max([i.tx + i.width for i in images])
+        ymax = max([i.ty + i.height for i in images])
+        width = ceil(xmax - xmin)
+        height = ceil(ymax - ymin)
+
+        image = Image.new("L", (width, height), "white")
+        for i in images:
+            image.paste(i.image, (int((i.tx - xmin) / i.step), int((i.ty - ymin) / i.step)))
+
+        cut = RasterCut(
+            image,
+            xmin,
+            ymin,
+            settings=images[0].settings,
+            passes=images[0].passes,
+        )
+        cut.path = Path(
+            Polygon(
+                (xmin, ymin),
+                (xmin, ymax),
+                (xmax, ymax),
+                (xmax, ymin),
+            )
+        )
+
+        # Replace first image in context with new one
+        # aligning
+        cut.original_op = images[0].original_op
+        cut.inside = images[0].inside
+        if cut.inside:
+            for o in cut.inside:
+                if not o.contains:
+                    o.contains = []
+                o.contains.append(cut)
+                if images[0] in o.contains:
+                    o.contains.remove(images[0])
+
+        context[context.index(images[0])] = cut
+        del images[0]
+        for i in images:
+            # First delete reference in inside groups contains list
+            if i.inside:
+                for outer in i.inside:
+                    if outer.contains and i in outer.contains:
+                        outer.contains.remove(i)
+            if i in context:
+                context.remove(i)
 
     def short_travel_cutcode(self, context: CutCode):
         """
@@ -854,44 +904,7 @@ class CutPlan:
             # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
-                for cut in context.candidate(complete_path=complete_path, grouped_inner=self.grouped_inner()):
-                    s = cut.start()
-                    if (
-                        abs(s.x - curr.real) <= distance
-                        and abs(s.y - curr.imag) <= distance
-                        and (
-                            not complete_path
-                            or cut.closed
-                            or cut.first
-                        )
-                    ):
-                        d = abs(complex(s) - curr)
-                        if d < distance:
-                            closest = cut
-                            backwards = False
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                break
-                            distance = d
-
-                    if not cut.reversible():
-                        continue
-                    e = cut.end()
-                    if (
-                        abs(e.x - curr.real) <= distance
-                        and abs(e.y - curr.imag) <= distance
-                        and (
-                            not complete_path
-                            or cut.closed
-                            or cut.last
-                        )
-                    ):
-                        d = abs(complex(e) - curr)
-                        if d < distance:
-                            closest = cut
-                            backwards = True
-                            if d <= 0.1:  # Distance in px is zero, we cannot improve.
-                                break
-                            distance = d
+                closest = self.short_travel_cutcode_candidate(context, closest)
 
             if closest is None:
                 break
@@ -941,6 +954,46 @@ class CutPlan:
                 )
             )
         return ordered
+
+    def short_travel_cutcode_candidate(self, context: CutCode, closest: Any) -> Any:
+        for cut in context.candidate(complete_path=complete_path, grouped_inner=self.grouped_inner()):
+            s = cut.start()
+            if (
+                abs(s.x - curr.real) <= distance
+                and abs(s.y - curr.imag) <= distance
+                and (
+                    not complete_path
+                    or cut.closed
+                    or cut.first
+                )
+            ):
+                d = abs(complex(s) - curr)
+                if d < distance:
+                    closest = cut
+                    backwards = False
+                    if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                        break
+                    distance = d
+
+            if not cut.reversible():
+                continue
+            e = cut.end()
+            if (
+                abs(e.x - curr.real) <= distance
+                and abs(e.y - curr.imag) <= distance
+                and (
+                    not complete_path
+                    or cut.closed
+                    or cut.last
+                )
+            ):
+                d = abs(complex(e) - curr)
+                if d < distance:
+                    closest = cut
+                    backwards = True
+                    if d <= 0.1:  # Distance in px is zero, we cannot improve.
+                        break
+                    distance = d
 
 
     def short_travel_cutcode_2opt(self, context: CutCode, passes: int = 50):
@@ -1025,7 +1078,7 @@ class CutPlan:
                     endpoints[: index + 1], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
-                if channel:
+                if self.channel:
                     log_progress(1)
             for mid in range(1, length - 1):
                 idxs = np.arange(mid, length - 1)
@@ -1251,4 +1304,3 @@ def make_actual(image_element, step_level=None):
         image_element.image_height,
     )
     image_element.cache = None
-

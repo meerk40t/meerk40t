@@ -223,7 +223,6 @@ class RuidaEmulator(Module):
 
     @property
     def cutset(self):
-        # self.settings.jog_enable = False
         if self._use_set is None:
             self._use_set = LaserSettings(self.settings)
         return self._use_set

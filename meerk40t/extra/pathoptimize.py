@@ -1,4 +1,4 @@
-from ..svgelements import Group, Move, Path, Point, Polygon, Shape
+from ..svgelements import Move, Path, Point, Polygon, Shape
 from ..core.cutplan import is_inside
 
 
