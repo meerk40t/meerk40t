@@ -142,7 +142,11 @@ def plugin(kernel, lifecycle=None):
         ):
             spooler, driver, output = data
             if speed is None:
-                channel(_("Speed set at: %f mm/s") % driver.speed)
+                current_speed = driver.settings.speed
+                if current_speed is None:
+                    channel(_("Speed is unset."))
+                else:
+                    channel(_("Speed set at: %f mm/s") % driver.settings.speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -155,13 +159,13 @@ def plugin(kernel, lifecycle=None):
                 channel(_("Not a valid speed or percent."))
                 return
             if percent and difference:
-                s = driver.speed + driver.speed * (s / 100.0)
+                s = driver.settings.speed + driver.settings.speed * (s / 100.0)
             elif difference:
-                s += driver.speed
+                s += driver.settings.speed
             elif percent:
-                s = driver.speed * (s / 100.0)
+                s = driver.settings.speed * (s / 100.0)
             driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % driver.speed)
+            channel(_("Speed set at: %f mm/s") % driver.settings.speed)
 
         @context.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @context.console_command(
