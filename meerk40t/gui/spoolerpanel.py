@@ -234,7 +234,7 @@ class JobSpooler(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("wxpane/JobSpooler", register_panel)
+        kernel.register("wxpane/JobSpooler", register_panel_spooler)
         kernel.register(
             "button/control/Spooler",
             {

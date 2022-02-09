@@ -175,7 +175,6 @@ class MeerK40t(MWindow):
 
         self.__set_panes()
         self.__set_commands()
-        self.__set_dialogs()
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
@@ -1083,7 +1082,6 @@ class MeerK40t(MWindow):
         self.__set_file_menu_binds()
         self.__set_view_menu_binds()
         self.__set_panes_menu_binds()
-        self.__set_tools_menu_binds()
         self.__set_help_menu_binds()
 
     def __set_file_menu_binds(self):

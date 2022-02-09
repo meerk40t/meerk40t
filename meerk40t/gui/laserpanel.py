@@ -49,6 +49,19 @@ def register_panel_laser(window, context):
 
     window.on_pane_add(pane)
     window.context.register("pane/laser", pane)
+    choices = [
+        {
+            "attr": "laserpane_arm",
+            "object": context.kernel.elements,
+            "default": False,
+            "type": bool,
+            "label": _("Enable Laser Arm"),
+            "tip": _(
+                "Enable Laser Panel Arm/Disarm feature."
+            ),
+        },
+    ]
+    context.kernel.register_choices("preferences", choices)
 
 
 class LaserPanel(wx.Panel):

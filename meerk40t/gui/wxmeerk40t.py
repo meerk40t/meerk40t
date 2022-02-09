@@ -485,25 +485,25 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
 
-        from meerk40t.gui.wxmribbon import register_panel
+        from meerk40t.gui.wxmribbon import register_panel_ribbon
 
-        kernel.register("wxpane/Ribbon", register_panel)
+        kernel.register("wxpane/Ribbon", register_panel_ribbon)
 
-        from meerk40t.gui.wxmscene import register_panel
+        from meerk40t.gui.wxmscene import register_panel_scene
 
-        kernel.register("wxpane/ScenePane", register_panel)
+        kernel.register("wxpane/ScenePane", register_panel_scene)
 
-        from meerk40t.gui.wxmtree import register_panel
+        from meerk40t.gui.wxmtree import register_panel_tree
 
-        kernel.register("wxpane/Tree", register_panel)
+        kernel.register("wxpane/Tree", register_panel_tree)
 
-        from meerk40t.gui.laserpanel import register_panel
+        from meerk40t.gui.laserpanel import register_panel_laser
 
-        kernel.register("wxpane/LaserPanel", register_panel)
+        kernel.register("wxpane/LaserPanel", register_panel_laser)
 
-        from meerk40t.gui.position import register_panel
+        from meerk40t.gui.position import register_panel_position
 
-        kernel.register("wxpane/Position", register_panel)
+        kernel.register("wxpane/Position", register_panel_position)
         #
         # if kernel.root.setting(bool, "developer_mode", False):
         from meerk40t.gui.auitoolbars import register_toolbars

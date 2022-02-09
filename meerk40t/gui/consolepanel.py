@@ -158,7 +158,7 @@ class Console(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("wxpane/Console", register_panel)
+        kernel.register("wxpane/Console", register_panel_console)
         kernel.register(
             "button/project/Console",
             {
