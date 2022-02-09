@@ -43,7 +43,6 @@ from ..kernel import (
 )
 from ..svgelements import Length
 from .laserspeed import LaserSpeed
-from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -1178,10 +1177,7 @@ class LhystudiosDriver(Parameters):
             self.rapid_mode()
         else:
             self.data_output(b"I")
-            if dx != 0:
-                self.goto_x(dx)
-            if dy != 0:
-                self.goto_y(dy)
+            self.goto_xy(dx, dy)
             self.data_output(b"S1P\n")
             if not self.service.autolock:
                 self.data_output(b"IS2P\n")
@@ -1204,7 +1200,6 @@ class LhystudiosDriver(Parameters):
         self.data_output(speed_code)
         self.data_output(b"SE")
         self.laser = False
-
 
     def goto_relative(self, dx, dy, cut):
         """
@@ -1237,160 +1232,10 @@ class LhystudiosDriver(Parameters):
                 mx = x
                 my = y
         elif self.state == DRIVER_STATE_FINISH:
-            if dx != 0:
-                self.goto_x(dx)
-            if dy != 0:
-                self.goto_y(dy)
-            self.data_output(b"N")
-        elif self.state == DRIVER_STATE_MODECHANGE:
-            # TODO: Consider replace with ensure_rapid and move_in_rapid_mode
-            self.mode_shift_on_the_fly(dx, dy)
-        self.check_bounds()
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
-        self.service.signal(
-            "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
-        )
-
-    def goto_octent_abs(self, x, y, on):
-        dx = x - self.native_x
-        dy = y - self.native_y
-        self.goto_octent(dx, dy, on)
-
-    def goto_octent(self, dx, dy, on):
-        if dx == 0 and dy == 0:
-            return
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
-        if on:
-            self.laser_on()
-        else:
-            self.laser_off()
-        if abs(dx) == abs(dy):
-            if dx != 0:
-                self.goto_angle(dx, dy)
-        elif dx != 0:
-            self.goto_x(dx)
-            if dy != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
-        else:
-            self.goto_y(dy)
-            if dx != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
-
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
-        self.service.signal(
-            "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
-        )
-
-    def goto_relative(self, dx, dy, cut):
-        """
-        Goto relative dx, dy. With cut set or not set.
-
-        :param dx:
-        :param dy:
-        :param cut:
-        :return:
-        """
-        if abs(dx) == 0 and abs(dy) == 0:
-            return
-        dx = int(round(dx))
-        dy = int(round(dy))
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
-        if self.state == DRIVER_STATE_RAPID:
-            if self.rapid_override and (dx != 0 or dy != 0):
-                # Rapid movement override. Should make programmed jogs.
-                self.set_acceleration(None)
-                self.set_step(0)
-                if dx != 0:
-                    self.ensure_rapid_mode()
-                    self.set_speed(self.rapid_override_speed_x)
-                    self.ensure_program_mode()
-                    self.goto_octent(dx, 0, cut)
-                if dy != 0:
-                    if self.rapid_override_speed_x != self.rapid_override_speed_y:
-                        self.ensure_rapid_mode()
-                        self.set_speed(self.rapid_override_speed_y)
-                        self.ensure_program_mode()
-                    self.goto_octent(0, dy, cut)
-                self.ensure_rapid_mode()
-            else:
-                self.data_output(b"I")
-                if dx != 0:
-                    self.goto_x(dx)
-                if dy != 0:
-                    self.goto_y(dy)
-                self.data_output(b"S1P\n")
-                if not self.context.autolock:
-                    self.data_output(b"IS2P\n")
-        elif self.state == DRIVER_STATE_RASTER:
-            # goto in raster, switches to program to recall this function.
-            self.program_mode()
-            self.goto_relative(dx, dy, cut)
-            return
-        elif self.state == DRIVER_STATE_PROGRAM:
-            mx = 0
-            my = 0
-            line = list(grouped(ZinglPlotter.plot_line(0, 0, dx, dy)))
-            for x, y in line:
-                self.goto_octent(x - mx, y - my, cut)
-                mx = x
-                my = y
-        elif self.state == DRIVER_STATE_FINISH:
             self.goto_xy(dx, dy)
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
-            # TODO: Consider replace with ensure_rapid and move_in_rapid_mode
             self.mode_shift_on_the_fly(dx, dy)
-            new_current_x = self.service.current_x
-            new_current_y = self.service.current_y
-        self.context.signal(
-            "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
-        )
-
-    def goto_octent_abs(self, x, y, on):
-        dx = x - self.native_x
-        dy = y - self.native_y
-        self.goto_octent(dx, dy, on)
-
-    def goto_octent(self, dx, dy, on):
-        if dx == 0 and dy == 0:
-            return
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
-        if on:
-            self.laser_on()
-        else:
-            self.laser_off()
-        if abs(dx) == abs(dy):
-            if dx != 0:
-                self.goto_angle(dx, dy)
-        elif dx != 0:
-            self.goto_x(dx)
-            if dy != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
-        else:
-            self.goto_y(dy)
-            if dx != 0:
-                raise ValueError(
-                    "Not a valid diagonal or orthogonal movement. (dx=%s, dy=%s)"
-                    % (str(dx), str(dy))
-                )
-
         new_current_x = self.service.current_x
         new_current_y = self.service.current_y
         self.service.signal(
@@ -1506,7 +1351,7 @@ class LhystudiosDriver(Parameters):
         self.state = DRIVER_STATE_FINISH
         self.service.signal("driver;mode", self.state)
 
-    def ensure_raster_mode(self, *values):
+    def raster_mode(self, *values):
         """
         Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
@@ -1536,7 +1381,7 @@ class LhystudiosDriver(Parameters):
         self.step_value_set = 0
         if self.settings.raster_alt:
             pass
-        elif self.context.nse_raster and not self.context.nse_stepraster:
+        elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
         else:
             self.step_value_set = self.step
@@ -1544,7 +1389,7 @@ class LhystudiosDriver(Parameters):
 
         suffix_c = None
         if (
-            self.context.twitchless or self.settings.force_twitchless
+            self.service.twitchless or self.settings.force_twitchless
         ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
@@ -1556,14 +1401,14 @@ class LhystudiosDriver(Parameters):
         if self._request_horizontal_major is not None:
             self._horizontal_major = self._request_horizontal_major
             self._request_horizontal_major = None
-        if self.context.strict:
+        if self.service.strict:
             # Override requested or current values only use core initial values.
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
 
         speed_code = LaserSpeed(
-            self.context.board,
+            self.service.board,
             self.settings.speed,
             instance_step,
             d_ratio=self.settings.implicit_d_ratio,
@@ -1571,7 +1416,7 @@ class LhystudiosDriver(Parameters):
             fix_limit=True,
             fix_lows=True,
             suffix_c=suffix_c,
-            fix_speeds=self.context.fix_speeds,
+            fix_speeds=self.service.fix_speeds,
             raster_horizontal=self._horizontal_major,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
@@ -1584,7 +1429,7 @@ class LhystudiosDriver(Parameters):
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+        self.service.signal("driver;mode", self.state)
 
     def h_switch(self, dy: float):
         """
@@ -1808,7 +1653,7 @@ class LhystudiosDriver(Parameters):
     def goto_xy(self, dx, dy):
         rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
-            self.current_x += dx
+            self.native_x += dx
             if dx > 0:  # Moving right
                 if not self.is_right or rapid:
                     self.data_output(self.CODE_RIGHT)
@@ -1821,7 +1666,7 @@ class LhystudiosDriver(Parameters):
             self._y_engaged = False
             self.data_output(lhymicro_distance(abs(dx)))
         if dy != 0:
-            self.current_y += dy
+            self.native_y += dy
             if dy > 0:  # Moving bottom
                 if not self.is_bottom or rapid:
                     self.data_output(self.CODE_BOTTOM)
@@ -1860,15 +1705,15 @@ class LhystudiosDriver(Parameters):
                 if not self._topward:
                     self.data_output(self.CODE_TOP)
                     self._topward = True
-            self.current_x += dx
-            self.current_y += dy
+            self.native_x += dx
+            self.native_y += dy
             self.data_output(self.CODE_ANGLE)
             self.data_output(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
-        self.context.signal(
+        self.service.signal(
             "driver;position",
-            (self.current_x - dx, self.current_y - dy, self.current_x, self.current_y),
+            (self.native_x - dx, self.native_y - dy, self.native_x, self.native_y),
         )
 
     def code_declare_directions(self):
