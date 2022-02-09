@@ -374,6 +374,11 @@ class LaserSpeed:
         return "%03d%03d" % (b1, b0)
 
     @staticmethod
+    def get_actual_speed(op_speed, fix_speeds=False):
+        """Get the actual speed for a specified operation speed."""
+        return op_speed / 0.919493599053179 if fix_speeds else op_speed
+
+    @staticmethod
     def get_acceleration_for_speed(
         mm_per_second, raster=False, raster_horizontal=True, fix_speeds=False
     ):
@@ -390,9 +395,8 @@ class LaserSpeed:
         :param fix_speeds: is fixed speed mode on?
         :return: 1-4: Value for the accel factor.
         """
-        if fix_speeds:
-            # when speeds are fixed the values from the software were determined based on the flawed codes empirically
-            mm_per_second /= 0.919493599053179
+        mm_per_second = LaserSpeed.get_actual_speed(mm_per_second, fix_speeds)
+
         if mm_per_second <= 25.4:
             return 1
         if 25.4 < mm_per_second <= 60:
@@ -400,7 +404,7 @@ class LaserSpeed:
         if raster and raster_horizontal:
             if 60 < mm_per_second < 127:
                 return 2
-            if 127 <= mm_per_second <= 320:
+            if 127 <= mm_per_second < 320:
                 return 3
             if 320 <= mm_per_second:
                 return 4
@@ -409,6 +413,31 @@ class LaserSpeed:
                 return 3
             if 127 <= mm_per_second:
                 return 4
+
+    # With the m2 nano, raster acceleration is defined by the distance allowed and the speed
+    # To determine how to optimally split rasters which are far apart into separate images
+    # or to combine these separate images back into larger images where that makes sense
+    # we need this information to estimate when one option is more optimal than another
+    #
+    # We have only measured horizontal acceleration distances,
+    # but IMO from what we know about m2 nano simplicity,
+    # it is likely that vertical accel distances are likely the same
+    #
+    # However because these values are only used to determine
+    # raster groups and not for the burns themselves,
+    # if these are incorrect we will just get sub-optimal grouping
+    # and not quality issues
+    ACCELERATION_DISTANCES = [ # In mm
+        3.2512, # acceleration 1 distance 128mil
+        3.2512, # acceleration 2 distance 128mil
+        4.8768, # acceleration 3 distance 192mil
+        6.5024, # acceleration 4 distance 256mil
+    ]
+
+    @staticmethod
+    def get_acceleration_time(speed, accel):
+        """Calculate 1/2 sweep distance for speed / accel as raster margin"""
+        return 375.0 * (LaserSpeed.ACCELERATION_DISTANCES[accel - 1] ** 1.36) / (speed ** 0.75)
 
     @staticmethod
     def get_suffix_c(board, mm_per_second=None):
