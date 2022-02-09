@@ -329,7 +329,11 @@ class LihuiyuDevice(Service, ViewPort):
         ):
             spooler, driver, output = data
             if speed is None:
-                channel(_("Speed set at: %f mm/s") % driver.speed)
+                current_speed = driver.speed
+                if current_speed is None:
+                    channel(_("Speed is unset."))
+                else:
+                    channel(_("Speed set at: %f mm/s") % driver.settings.speed)
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -347,8 +351,8 @@ class LihuiyuDevice(Service, ViewPort):
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
-            self.driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % self.driver.speed)
+            driver.set_speed(s)
+            channel(_("Speed set at: %f mm/s") % driver.speed)
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command("power", help=_("Set Driver Power"))
