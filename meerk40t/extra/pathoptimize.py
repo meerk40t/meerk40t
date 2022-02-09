@@ -1,5 +1,5 @@
-from meerk40t.svgelements import Group, Move, Path, Point, Polygon, Shape
-from meerk40t.tools.pathtools import VectorMontonizer
+from ..svgelements import Group, Move, Path, Point, Polygon, Shape
+from ..core.cutplan import is_inside
 
 
 def plugin(kernel, lifecycle):
@@ -54,46 +54,6 @@ def plugin(kernel, lifecycle):
             else:
                 channel(_("Optimization not found."))
                 return
-
-
-def is_inside(inner_path, outer_path):
-    """
-    Test that path1 is inside path2.
-    :param inner_path: inner path
-    :param outer_path: outer path
-    :return: whether path1 is wholely inside path2.
-    """
-    if not hasattr(inner_path, "bounding_box"):
-        inner_path.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer_path, "bounding_box"):
-        outer_path.bounding_box = Group.union_bbox([outer_path])
-    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
-        # outer minx > inner minx (is not contained)
-        return False
-    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
-        # outer miny > inner miny (is not contained)
-        return False
-    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
-        # outer maxx < inner maxx (is not contained)
-        return False
-    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
-        # outer maxy < inner maxy (is not contained)
-        return False
-    if outer_path.bounding_box == inner_path.bounding_box:
-        if outer_path == inner_path:  # This is the same object.
-            return False
-    if not hasattr(outer_path, "vm"):
-        outer_path = Polygon(
-            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
-        )
-        vm = VectorMontonizer()
-        vm.add_cluster(outer_path)
-        outer_path.vm = vm
-    for i in range(101):
-        p = inner_path.point(i / 100.0, error=1e4)
-        if not outer_path.vm.is_point_inside(p.x, p.y):
-            return False
-    return True
 
 
 def optimize_cut_inside(paths):
