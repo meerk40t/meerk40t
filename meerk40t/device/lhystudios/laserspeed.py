@@ -404,9 +404,9 @@ class LaserSpeed:
         if raster and raster_horizontal:
             if 60 < mm_per_second < 127:
                 return 2
-            if 127 <= mm_per_second < 320:
+            if 127 <= mm_per_second <= 320:
                 return 3
-            if 320 <= mm_per_second:
+            if 320 < mm_per_second:
                 return 4
         else:
             if 60 < mm_per_second < 127:
