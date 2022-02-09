@@ -18,6 +18,7 @@ from ...kernel import (
     STATE_UNKNOWN,
     STATE_WAIT,
 )
+from ...svgelements import Length
 from ..basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -37,7 +38,6 @@ from ..basedevice import (
 from ..lasercommandconstants import *
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
-from ...svgelements import Length
 
 MILS_IN_MM = 39.3701
 
@@ -851,7 +851,9 @@ class LhystudiosDriver(Driver):
                     # Horizontal Rastering.
                     if self.context.nse_raster or self.settings.raster_alt:
                         # Alt-Style Raster
-                        if (dx > 0 and self._leftward) or (dx < 0 and not self._leftward):
+                        if (dx > 0 and self._leftward) or (
+                            dx < 0 and not self._leftward
+                        ):
                             self.h_switch(dy)
                     else:
                         # Default Raster
@@ -1476,7 +1478,7 @@ class LhystudiosDriver(Driver):
                 if not self.is_bottom or rapid:
                     self.data_output(self.CODE_BOTTOM)
                     self._topward = False
-            else:    # Moving top
+            else:  # Moving top
                 if not self.is_top or rapid:
                     self.data_output(self.CODE_TOP)
                     self._topward = True

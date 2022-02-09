@@ -982,8 +982,8 @@ class PlotCut(CutObject):
         last_yy = None
         ix = 0
         iy = 0
-        last_dx = None
-        last_dy = None
+        # last_dx = None
+        # last_dy = None
         for x, y, on in self.plot:
             idx = int(round(x - ix))
             idy = int(round(y - iy))
@@ -1034,7 +1034,7 @@ class PlotCut(CutObject):
                     yield zx, zy, on
             last_xx = ix
             last_yy = iy
-            last_dx = idx
-            last_dy = idy
+            # last_dx = idx
+            # last_dy = idy
 
         return self.plot
