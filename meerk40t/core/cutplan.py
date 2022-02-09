@@ -19,7 +19,7 @@ from math import ceil
 from os import times
 from time import time
 
-from typing import Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -124,7 +124,7 @@ class CutPlan:
         if context.autointerrupt:
             self.plan.append(context.registered["plan/interrupt"])
 
-    def preprocess_after(self):
+    def preprocess_conditional(self):
         context = self.context
         rotary_context = context.get_context("rotary/1")
 
@@ -176,6 +176,8 @@ class CutPlan:
 
     def blob_planner(self, grouped_plan: List) -> List:
         """ Create CutCode objects from LaserOperations"""
+        context = self.context
+
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
         blob_plan = []
@@ -226,7 +228,10 @@ class CutPlan:
 
     def blob_merges(self, blob_plan: List) -> List:
         """Create the final cut plan by merging blobs where appropriate"""
+        context = self.context
+
         self.plan.clear()
+
         for blob in blob_plan:
             try:
                 blob.settings.jog_distance = context.opt_jog_minimum
@@ -855,7 +860,6 @@ class CutPlan:
             self.channel("Executing Greedy Short-Travel optimization")
             self.channel("Length at start: {length:.0f} mils".format(length=start_length))
 
-        complete_path = self.context.opt_complete_subpaths
         curr = context.start
         if curr is None:
             curr = 0
@@ -904,7 +908,7 @@ class CutPlan:
             # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
-                closest = self.short_travel_cutcode_candidate(context, closest)
+                closest = self.short_travel_cutcode_candidate(context, closest, curr, distance)
 
             if closest is None:
                 break
@@ -955,7 +959,8 @@ class CutPlan:
             )
         return ordered
 
-    def short_travel_cutcode_candidate(self, context: CutCode, closest: Any) -> Any:
+    def short_travel_cutcode_candidate(self, context: CutCode, closest: Any, curr: complex, distance: float) -> Any:
+        complete_path = self.context.opt_complete_subpaths
         for cut in context.candidate(complete_path=complete_path, grouped_inner=self.grouped_inner()):
             s = cut.start()
             if (
