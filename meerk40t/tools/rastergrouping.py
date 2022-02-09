@@ -9,10 +9,10 @@ Currently used:
     and optimise raster time by avoiding sweeping large empty areas.
 """
 
-from typing import Any, Sequence, Tuple
+from typing import Any, Sequence, Tuple, Union
 
-from meerk40t.svgelements import SVGElement
-
+from ..svgelements import SVGElement
+from ..core.cutcode import RasterCut
 
 def group_overlapped_rasters(
         group: Sequence[Tuple[Any, Tuple]],
@@ -50,7 +50,10 @@ def group_overlapped_rasters(
                 # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
     return groups
 
-def group_elements_overlap(g1: Tuple[SVGElement, Tuple], g2: Tuple[SVGElement, Tuple]) -> bool:
+def group_elements_overlap(
+        g1: Tuple[Union[SVGElement, RasterCut], Tuple],
+        g2: Tuple[Union[SVGElement, RasterCut], Tuple],
+    ) -> bool:
     for e1 in g1:
         e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
         for e2 in g2:
