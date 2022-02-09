@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from ..core.cutcode import CutCode, LineCut
+from ..core.cutcode import CutCode, LineCut, PlotCut
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
@@ -267,6 +267,7 @@ class RuidaEmulator(Module, Parameters):
         self.filestream = None
 
         self.cutcode = CutCode()
+        self.plotcut = PlotCut()
 
         self._use_set = None
         self.spooler = None
@@ -535,16 +536,15 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            desc = "Move Absolute (%f nm, %f nm)" % (
-                self.x / UNITS_PER_uM,
-                self.y / UNITS_PER_uM,
-            )
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
+
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 dx = self.relcoord(array[1:3])
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
+                self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
                 desc = "Move Relative (%f nm, %f nm)" % (
                     dx / UNITS_PER_uM,
                     dy / UNITS_PER_uM,
@@ -554,10 +554,12 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
             desc = "Move Horizontal Relative (%f nm)" % (dx / UNITS_PER_uM)
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
             desc = "Move Vertical Relative (%f nm)" % (dy / UNITS_PER_uM)
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
@@ -647,13 +649,7 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
-                    Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset(),
-                )
-            )
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
             desc = "Cut Absolute (%f nm, %f nm)" % (
                 self.x / UNITS_PER_uM,
                 self.y / UNITS_PER_uM,
@@ -663,39 +659,18 @@ class RuidaEmulator(Module, Parameters):
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
-                    Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset(),
-                )
-            )
-            desc = "Cut Relative (%f nm, %f nm)" % (
-                dx / UNITS_PER_uM,
-                dy / UNITS_PER_uM,
-            )
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            desc = "Cut Relative (%f nm, %fnm)" % (dx / UNITS_PER_uM, dy / UNITS_PER_uM)
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
-                    Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset(),
-                )
-            )
-            desc = "Cut Horizontal Relative (%f nm)" % (dx / UNITS_PER_uM)
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
+            desc = "Cut Horizontal Relative (%f mil)" % (dx / UM_PER_MIL)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.cutcode.append(
-                LineCut(
-                    Point(start_x / UNITS_PER_uM, start_y / UNITS_PER_uM),
-                    Point(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM),
-                    settings=self.cutset(),
-                )
-            )
-            desc = "Cut Vertical Relative (%f nm)" % (dy / UNITS_PER_uM)
+            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
+            desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])
             desc = "Imd Power 1 (%f)" % v0
@@ -931,6 +906,7 @@ class RuidaEmulator(Module, Parameters):
                 if self.design and self.elements is not None:
                     self.elements.op_branch.add(self.cutcode, type="cutcode")
             self.cutcode = CutCode()
+            self.plotcut = PlotCut()
             self.saving = False
             self.filename = None
             if self.filestream is not None:
@@ -1225,6 +1201,11 @@ class RuidaEmulator(Module, Parameters):
                 # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
             if array[1] == 0x00:
+                if len(self.plotcut):
+                    self.plotcut.settings = self.cutset
+                    self.plotcut.check_if_rasterable()
+                    self.cutcode.append(self.plotcut)
+                    self.plotcut = PlotCut()
                 desc = "Block End"
             elif array[1] == 0x01:
                 self.filename = ""
