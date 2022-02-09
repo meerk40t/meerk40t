@@ -378,11 +378,11 @@ msgstr "Füge automatisch ein 'Hartes-Home'-Kommando am Ende eines Jobs hinzu"
 
 #: meerk40t/gui/executejob.py:87
 msgid "Return to Origin"
-msgstr "Zurück zum Ursprung"
+msgstr "Zurück zum Startpunkt"
 
 #: meerk40t/gui/executejob.py:88
 msgid "Automatically return to origin after a job"
-msgstr "Kehre automatisch zu den Start-Koordinaten am Ende eines Jobs zurück"
+msgstr "Kehre am Ende eines Jobs automatisch zu den Start-Koordinaten  zurück"
 
 #: meerk40t/gui/executejob.py:98
 msgid "Unlock"
@@ -403,11 +403,11 @@ msgstr "Spiele einen Ton nach jedem Job ab"
 #: meerk40t/gui/executejob.py:120 meerk40t/gui/executejob.py:164
 #: meerk40t/gui/wxmeerk40t.py:1074
 msgid "Interrupt"
-msgstr "Unterbrechen"
+msgstr "Anhalten"
 
 #: meerk40t/gui/executejob.py:121
 msgid "Automatically add an interrupt after all jobs"
-msgstr "Füge eine 'Unterbrechung' am Ende jedes Jobs an"
+msgstr "Füge ein 'Anhalten' am Ende jedes Jobs an"
 
 #: meerk40t/gui/executejob.py:130
 msgid "After"
@@ -439,7 +439,7 @@ msgstr "Füge Signalton hinzu"
 
 #: meerk40t/gui/executejob.py:164
 msgid "Add an interrupt"
-msgstr "Füge 'Unterbrechung' hinzu"
+msgstr "Füge 'Anhalten' hinzu"
 
 #: meerk40t/gui/executejob.py:172
 msgid "Add"
@@ -626,11 +626,11 @@ msgstr "Führe Kommandos aus, damit die Arbeitsgänge gültig werden."
 
 #: meerk40t/gui/executejob.py:766
 msgid "Blob"
-msgstr ""
+msgstr "Erzeuge Cutcode"
 
 #: meerk40t/gui/executejob.py:768
 msgid "Turn this set of operations into Cutcode"
-msgstr "Wandle diese Arbeitsgänge in Schnitt-Befehle um"
+msgstr "Wandle die Arbeitsgänge in Cutcode um"
 
 #: meerk40t/gui/executejob.py:770
 msgid "Preprocess Optimizations"
@@ -2419,7 +2419,7 @@ msgstr "Drehachse - Skaliere selektiere Elemente"
 
 #: meerk40t/gui/wxmeerk40t.py:1073
 msgid "Spooling Interrupted. Press OK to Continue."
-msgstr "Spooling unterbrochen. Drücken Sie OK, um fortzufahren."
+msgstr "Vorgang angehalten. Drücken Sie OK, um fortzufahren."
 
 #: meerk40t/gui/wxmeerk40t.py:1095
 msgid "tool to use."
@@ -2461,7 +2461,7 @@ msgstr "Steuerung"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:97 meerk40t/gui/wxmeerk40t.py:1315
 msgid "Preferences"
-msgstr "Setup"
+msgstr "Einstellungen"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:39 meerk40t/gui/wxmeerk40t.py:1333
 msgid "Config"
@@ -2645,11 +2645,11 @@ msgstr "&Geräte"
 
 #: meerk40t/gui/wxmeerk40t.py:1875
 msgid "Confi&g"
-msgstr "Konfi&gurieren"
+msgstr "Konfi&guration"
 
 #: meerk40t/gui/wxmeerk40t.py:1878
-msgid "Se&ttings"
-msgstr "Eins&tellungen"
+msgid "Pr&eferences...\tCtrl-,"
+msgstr "S&etup\tCtrl-,"
 
 #: meerk40t/gui/wxmeerk40t.py:1882
 msgid "&Keymap"
@@ -3379,19 +3379,30 @@ msgid "Leave rail locked after burn"
 msgstr "Achsen nach Ende des Jobs automatisch verriegeln"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:107
-msgid "Lhystudios-Prefererences"
-msgstr "Lhystudios-Einstellungen"
+msgid "Lhystudios-Configuration"
+msgstr "Hardware-Einstellungen (Lhystudios)"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:109
 msgid "Select the board to use. This has an effects the speedcodes used."
 msgstr "Wählt das zu verwendende Controller-Board aus. Dies hat einen Einfluss auf die verwendeten Speedcodes."
 
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:42
+msgid "Strict Programmed Speed Mode"
+msgstr "Erzwinge Geschwindigkeitsmodus"
+
+#: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:42
+msgid "Forces the device to enter and exit programmed speed mode from the same direction. "
+"This may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+msgstr "Zwingt das Gerät den programmierten Geschwindigkeitsmodus aus der gleichen Richtung zu starten bzw. zu verlassen. "
+"Das kann Probleme auf Boards wie dem M2-V4 und älteren beheben. Wird normalerweise nicht benötigt."
+
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:113
 #, python-format
 msgid ""
-"Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated "
-"speed."
-msgstr "Korrigiere Geschwindigkeits-Abweichung. Bei Lhystudio sind das 92% der korrekt angebebenen Geschwindigkeit."
+"Lhystudios speeds are approximately 92% of the speed requested. "
+"This option applies a correcting factor so that actual burn speeds are the same as in the Operation. "
+msgstr "Die Geschwindigkeit der Lhystudio-Boards ist etwa 92% der angeforderten Geschwindigkeit. "
+"Diese Option wendet einen Korrekturfaktor an, damit die reale Brenngeschwindigkeit mit der in den Arbeitsabläufen angegebenen übereinstimmt. "
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:118
 msgid "Flip the Right and Left commands sent to the controller"
@@ -3643,7 +3654,7 @@ msgstr "Öffnet Hardware-Konfiguration"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:54
 msgid "Opens Settings Window"
-msgstr "Öffnet Einstellungen"
+msgstr "Öffnet allgemeine Einstellungen"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:55
 msgid "Opens Preferences Window"
@@ -5479,16 +5490,16 @@ msgid "Add Beep"
 msgstr "Füge Signalton hinzu"
 
 #: meerk40t/core/elements.py:4630
-msgid "Add Move Origin"
-msgstr "Füge 'Bewegung zum Ursprung' hinzu"
+msgid "Add Return to Origin"
+msgstr "Füge 'Zurück zum Startpunkt' hinzu"
 
 #: meerk40t/core/elements.py:4637
 msgid "Add Interrupt"
-msgstr "Füge Unterbrechung hinzu"
+msgstr "Füge 'Anhalten' hinzu"
 
 #: meerk40t/core/elements.py:4649
 msgid "Add Shutdown"
-msgstr "Fügre 'Shutdown' hinzu"
+msgstr "Füge 'Shutdown' hinzu"
 
 #: meerk40t/core/elements.py:4661
 msgid "Reclassify operations"
@@ -5765,11 +5776,11 @@ msgstr ""
 
 #: meerk40t/core/planner.py:412
 msgid "Define a spoolable console command"
-msgstr ""
+msgstr "Definiere ein Konsolen-Kommando als spoolbar"
 
 #: meerk40t/core/planner.py:430
 msgid "You may not overwrite an already used alias."
-msgstr ""
+msgstr "Bereits verwendete Bezeichnungen können nicht überschrieben werden."
 
 #: meerk40t/core/planner.py:441
 msgid "plan<?> <command>"
@@ -5777,17 +5788,17 @@ msgstr ""
 
 #: meerk40t/core/planner.py:475 meerk40t/core/planner.py:497
 msgid "Plan:"
-msgstr ""
+msgstr "Plan:"
 
 #: meerk40t/core/planner.py:479 meerk40t/core/planner.py:501
 #, python-format
 msgid "Plan %s:"
-msgstr ""
+msgstr "Plan %s:"
 
 #: meerk40t/core/planner.py:482 meerk40t/core/planner.py:504
 #, python-format
 msgid "Commands %s:"
-msgstr ""
+msgstr "Befehle %s:"
 
 #: meerk40t/core/planner.py:491
 msgid "plan<?> list"
@@ -7300,3 +7311,276 @@ msgstr ""
 #: meerk40t/gui/wxmmain.py:1170
 msgid "&About MeerK40t"
 msgstr "Ü&ber MeerK40t"
+
+#: meerk40t/gui/panes/laserpanel.py:130
+msgid "Arm"
+msgstr "Scharfschalten"
+
+#: meerk40t/gui/panes/laserpanel.py:130
+msgid "Arm the job for execution"
+msgstr "Schaltet den Job zur Ausführung scharf"
+
+#: meerk40t/gui/panes/laserpanel.py:136
+msgid "Outline"
+msgstr "Umriss abfahren"
+
+#: meerk40t/gui/panes/laserpanel.py:137
+msgid "Trace the outline the job"
+msgstr "Fährt den Umriss des Jobs ab"
+
+#: meerk40t/gui/panes/laserpanel.py:142
+msgid "Simulate the Design"
+msgstr "Simuliere den aktuellen Laser-Job"
+
+#: meerk40t/gui/panes/laserpanel.py:164
+msgid "Clear locally defined plan"
+msgstr "Lösche den hier definierten Ablaufplan"
+
+#: meerk40t/gui/panes/laserpanel.py:169
+msgid "Update the Plan"
+msgstr "Aktualisere den hier definierten Ablaufplan"
+
+#: meerk40t/gui/wxmmain.py:1500
+msgid "The device is actively sending data. Really quit?"
+msgstr "Das Gerät ist noch am Arbeiten. Wirklich beenden?"
+
+#: meerk40t/gui/wxmmain.py:1502
+msgid "Currently Sending Data..."
+msgstr "Verarbeitung im Gange"
+
+#: meerk40t/gui/wxmmain.py:1507
+msgid "Save changes to project before closing?\n\n"
+"Your changes will be lost if you do not save them."
+msgstr "Änderungen am Projekt sichern?\n\n"
+"Die gemachten Änderungen gehen verloren, wenn diese nicht gespeichert werden."
+
+#: meerk40t/gui/wxmmain.py:1510
+msgid "Save Project..."
+msgstr "Projekt sichern..."
+
+#: meerk40t/core/planner.py:161
+msgid ""
+"Using this option can significantly reduce the time spent "
+"moving between elements with the laser off "
+"by optimizing the sequence that elements are burned. "
+msgstr "Das Nutzen dieser Option kann deutlich die Zeiten reduzieren, "
+"bei denen der Laser ausgeschaltet zwischen Elementen bewegt wird, "
+"da die Reihenfolge der zu brennenden Elemente optimiert wird. "
+
+#: meerk40t/core/planner.py:167
+msgid ""
+"When this option is NOT checked, elements are burned strictly "
+"in the order they appear in the Operation tree, "
+"and the Merge options will have no effect on the burn time. "
+msgstr "Wenn diese Option AUSGESCHALTET ist, werden Elemente streng in der Reihenfolge gebrannt, "
+"in der sie im Arbeitsgangs-Bereich erscheinen, und die Option 'Verbinde Arbeitsgänge' "
+"hat dann keine Auswirkungen auf die Brenndauer. "
+
+#: meerk40t/core/planner.py:173
+msgid ""
+"When this option IS checked, Meerk40t will burn each subpath "
+"and then move to the nearest remaining subpath instead, "
+"reducing the time taken moving between burn items."
+msgstr "Wenn diese Option hingegen EINGESCHALTET ist, wird Meerk40t nach Brennen eines Unterpfades mit dem "
+"Unterpfad fortfahren, der die geringste Entfernung zum vorherigen hat und noch nicht abgearbeitet wurde, "
+"und somit die Zeit für die Bewegung zwischen Elementen reduzieren."
+
+#: meerk40t/core/planner.py:185
+msgid "Burn Complete Subpaths"
+msgstr "Brenne komplette Unterpfade"
+
+#: meerk40t/core/planner.py:187
+msgid ""
+"By default Reduce Travel Time optimises using SVG individual path segments, "
+"which means that non-closed subpaths can be burned in several shorter separate burns "
+"rather than one continuous burn from start to end. "
+msgstr ""
+"Die Option 'Verringere Bewegungen' optimiert standardmäßig einzelne Pfad-Segemente, "
+"was dazu führen kann, dass nicht geschlossene Unterpfade in mehreren kürzeren Abschnitten"
+"gelasert werden, statt in einem einzigen, durchgängigen Abschnitt von Anfang bis Ende. "
+
+#: meerk40t/core/planner.py:193
+msgid ""
+"This option only affects non-closed paths. "
+"When this option is checked, non-closed subpaths are always burned in one continuous burn "
+"from start to end rather than having burns start in the middle. "
+"Whilst this may create a longer travel move to the end of the subpath,"
+"it also avoids later travel moves to or from the intermediate point. "
+"The total travel time may therefore be shorter or longer. "
+"It may also avoid minor differences in total burn depth "
+"at the point the burns join. "
+msgstr ""
+"Diese Option betrifft lediglich nicht-geschlossene Pfade. "
+"Bei aktiver Option werden solche Pfade immer in einem einzigen durchgängigen Vorgang "
+"von Anfang bis Ende gebrannt, anstatt in einem Vorgang, der in der Mitte beginnt. "
+"Zwar können dadurch längere Kopfbewegungen zum Ende des Unterpfades entstehen, "
+"aber es werden spätere Bewegungen zum Verbindungspunkt der einzelnen Segmente vermieden."
+"Die gesamte Bewegungsdauer kann fallweise verkürzt oder verlängert werden. Zudem hilft "
+"diese Option kleinere Abweichungen in der Brenntiefe an den Verbindungspunkten der "
+"einzelnen Segmente zu vermeiden."
+
+#: meerk40t/core/planner.py:210
+msgid ""
+"Combine multiple passes into the same optimization. "
+"This will typically result in each subpath being burned multiple times in succession, "
+"burning closed paths round-and-round "
+"and non-closed paths back-and-forth, "
+"before Meerk40t moves to the next path. "
+msgstr "Vereinige mehrere Durchläufe in der gleichen Optimierung. "
+"Das führt normalerweise dazu, dass jeder Unterpfad mehrere male hintereinander gebrannt wird, "
+"geschlossene Pfade umlaufend, und nicht-geschlossene Pfader vor und zurück, "
+"bevor Meerk40t mit dem nächsten Pfad fortfährt. "
+
+#: meerk40t/core/planner.py:218
+msgid ""
+"If you have a complex design with many paths and are burning with multiple passes, "
+"using this option can significantly REDUCE the optimisation time. "
+msgstr "Sollte das Design komplex, mit vielen Pfaden sein und in mehreren Durchläufen gebrannt werden sollen, "
+"so kann das Nutzen dieser Option die Optimierungszeit deutlich verkürzen. "
+
+#: meerk40t/core/planner.py:223
+msgid ""
+"NOTE: Where you burn very short paths multiple times in quick succession, "
+"this does not allow time for the material to cool down between burns, "
+"and this can result in greater charring "
+"or even an increased risk of the material catching fire."
+msgstr "Achtung: wo sehr kurze Pfade kurz aufeinanderfolgend gebrannt werden, "
+"hat das Material an diesen Stellen nicht genügend Zeit, zwischen den Brennvorgängen abzukühlen. "
+"Dies kann zu stärkerer Verkohlung führen oder gar das Risiko erhöhen, dass das Material Feuer fängt."
+
+#: meerk40t/core/planner.py:236
+msgid ""
+"Combine multiple consecutive burn operations and optimise across them globally. "
+"Operations of different types will be optimised together to reduce travel time, "
+"so vector and raster burns will be mixed. "
+msgstr "Fügt mehrere aufeinanderfolgende Brennvorgänge zusammen und wendet die Optimierung auf die Gesamtheit aller Vorgänge an. "
+"Arbeitsgänge unterschiedlicher Typen werden zusammen optimiert, um Laser-Bewegung zu verringern, "
+"was bedeutet, dass Vektor- und Raster-Brennvorgänge gemischt werden."
+
+#: meerk40t/core/planner.py:242
+msgid ""
+"If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
+"If Merge Passes is also checked, then all burns will be optimised globally."
+msgstr "Falls 'Verbinde Durchläufe' nicht aktiv ist, so werden bei Arbeitsgängen "
+"mit mehr als 1 Durchlauf nur Durchgänge der gleichen Durchlaufnummer optimiert. \n"
+"Falls 'Verbinde Durchläufe' ebenfalls aktiv ist so wird die Optimierung auf die "
+"Gesamtheit aller Vorgänge über alle Durchläufe hinweg angewendet."
+
+#: meerk40t/core/planner.py:247
+msgid ""
+"If you have a complex design with many paths across multiple consecutive burn operations, "
+"using this option can significantly INCREASE the optimisation time. "
+msgstr "Sollte das Design sehr komplex sein, und viele Pfade über mehrere aufeinanderfolgende Brennvorgänge besitzen, "
+"so kann das Nutzen dieser Option die Dauer des Optimierungsvorgangs deutlich verlängern. "
+
+#: meerk40t/core/planner.py:256
+msgid "Burn Inner First"
+msgstr "Brenne Innenliegendes zuerst"
+
+#: meerk40t/core/planner.py:258
+msgid ""
+"Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
+"a cut-out piece are done before the cut piece shifts or drops out of the material."
+msgstr "Sorge dafür, dass innenliegende Brennvorgängen erledigt werden, bevor außenliegende Schnitte vorgenommen werden, "
+"um so zu verhindern, dass ausgeschnittene Teile sich verschieben oder aus dem Material herausfallen."
+
+#: meerk40t/core/planner.py:258
+msgid ""
+"If you find that using this option significantly increases the optimisation time, "
+"alternatives are: \n"
+"* Deselecting Cut Inner First if you are not cutting fully through your material \n"
+"* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
+"* If you are using multiple passes, check Merge Passes"
+msgstr "Sollte diese Option die für die Optimerung benötigte Zeit drastisch verlängern, "
+"so wären Alternativen: \n"
+"* Die Option 'Brenne Innenliegendes zuerst' abwählen, falls nicht vollständig durch das Material geschnitten werden soll \n"
+"* Verlegen der innenliegende Pfade in einen eigenen frühen Arbeitsgang und Abwahl der Optionen 'Verbinde Arbeitsgänge' und 'Brenne Innenliegendes zuerst' \n"
+"* Falls mehrere Durchgänge genutzt werden, wähle 'Verbinde Durchläufe' aus"
+                    
+
+#: meerk40t/core/planner.py:275
+msgid "Group Inner Burns"
+msgstr "Fasse Innere Brennvorgänge zusammen"
+
+#: meerk40t/core/planner.py:277
+msgid ""
+"Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
+"This option only does something if Burn Inner First is also selected. "
+"If your design has multiple separate pieces on it, "
+"this should mostly cause each piece to be burned in entirety "
+"before moving on to burn another piece. "
+"This can reduce the risk of e.g. a shift ruining an entire piece of material "
+"by trying to ensure that one piece is finished before starting on another."
+msgstr "Versucht innere Bennvorgänge und damit verbundene äußere Schnitte abzuarbeiten, "
+" bevor mit weiteren Elementen fortgefahren wird. "
+"Diese Option wirkt nur, wenn zusätzlich 'Brenne Innenliegendes zuerst' aktiviert wurde. "
+"Falls das zu brennende Design mehrere getrennte Teilstücke enthält, "
+"sollte mit dieser Option dafür gesorgt werden, dass zunächst ein einzelnes Stück abgearbeitet wird, "
+"bevor mit dem nächsten fortgefahren wird. "
+"Diese Option kann das Risiko verringern, dass vorzeitig herausgelöste Stücke den Brennvorgang ruinieren."
+
+#: meerk40t/core/planner.py:287
+msgid "This optimization works best with Merge Operations also checked though this is not a requirement. "
+msgstr "Diese Optimierung funktioniert am besten, wenn sie mit 'Verbinde Durchläufe' kombiniert wird,"
+"obwohl dies keine Bedingung darstellt. "
+
+#: meerk40t/core/planner.py:291
+msgid ""
+"Because this optimisation is done once rasters have been turned into images, "
+"inner elements may span multiple design pieces, "
+"in which case they may be optimised together."
+msgstr "Da diese Optimierung angewandt wird, nachdem Raster in Bilder umgewandelt wurden, "
+"können innere Element mehrere Design-Teilstücke überspannen, "
+"womit sie gemeinsam optimiert werden."
+
+#: meerk40t/core/planner.py:301
+msgid "Closed Distance"
+msgstr "Maximal-Abstand"
+
+#: meerk40t/core/planner.py:303
+msgid "How close (mils) do endpoints need to be to count as closed?"
+msgstr "Wie nahe beieinander (in mils) müssen Endpunkte sein, damit sie als 'closed' gelten?"
+
+#: meerk40t/core/planner.py:311
+msgid "Minimum Jog Distance"
+msgstr "Mindest-Abstand für schnelles Fahren"
+
+#: meerk40t/core/planner.py:313
+msgid "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
+msgstr "Abstand (in mils), ab dem der Laser eine Lücke beschleunigt überbrückt anstatt mit der normalen Brenn-Geschwindigkeit weiterzufahren."
+
+#: meerk40t/gui/toolbarpreferences.py:97
+msgid "Configuration"
+msgstr "Einstellungen"
+
+#: meerk40t/gui/simulation.py:116
+msgid "Send to Laser"
+msgstr "An Laser senden"
+
+#: meerk40t/gui/panes/laserpanel.py:114
+msgid "Pause/Resume the laser"
+msgstr "Laservorgang anhalten/fortsetzen"
+
+#: meerk40t/gui/panes/laserpanel.py:122
+msgid "Stop the laser"
+msgstr "Laservorgang abbrechen"
+
+#: meerk40t/gui/panes/laserpanel.py:182
+msgid "Hold"
+msgstr "Beibehalten"
+
+#: meerk40t/gui/panes/laserpanel.py:182
+msgid "Preserve the job between running, rerunning, and execution"
+msgstr "Behalte die Job-Definition während der Vorbereitung und Ausführung bei"
+
+#: meerk40t/gui/panes/laserpanel.py:177 meerk40t/gui/panes/laserpanel.py:283
+msgid "--- Empty ---"
+msgstr "--- Leer ---"
+
+#: meerk40t/gui/preferences.py:151
+msgid "Check for beta version updates"
+msgstr "Prüfe auf Vorabversionen"
+
+#: meerk40t/gui/preferences.py:153
+msgid "Check for beta releases in addition to full releases."
+msgstr "Prüft neben Standard-Versionen auch das Vorhandensein von Vorabversionen (beta)"
