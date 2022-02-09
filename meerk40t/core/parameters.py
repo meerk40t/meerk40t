@@ -36,6 +36,8 @@ BOOL_PARAMETERS = (
     "shift_enabled",
     "raster_swing",
     "advanced",
+    "raster_alt",
+    "force_twitchless",
 )
 
 
@@ -375,3 +377,20 @@ class Parameters:
         return self.raster_step and (
             self.raster_direction == 2 or self.raster_direction == 3
         )
+
+    @property
+    def raster_alt(self):
+        return self.settings.get("raster_alt", False)
+
+    @raster_alt.setter
+    def raster_alt(self, value):
+        self.settings["raster_alt"] = value
+
+    @property
+    def force_twitchless(self):
+        return self.settings.get("force_twitchless", False)
+
+    @force_twitchless.setter
+    def force_twitchless(self, value):
+        self.settings["force_twitchless"] = value
+

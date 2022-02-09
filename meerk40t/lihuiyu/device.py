@@ -987,7 +987,7 @@ class LhystudiosDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    if self.context.nse_raster or self.settings.raster_alt:
+                    if self.service.nse_raster or self.raster_alt:
                         # Alt-Style Raster
                         if (dx > 0 and self._leftward) or (
                             dx < 0 and not self._leftward
@@ -999,7 +999,7 @@ class LhystudiosDriver(Parameters):
                             self.h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    if self.context.nse_raster or self.settings.raster_alt:
+                    if self.service.nse_raster or self.raster_alt:
                         # Alt-Style Raster
                         if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
                             self.v_switch(dx)
@@ -1377,9 +1377,9 @@ class LhystudiosDriver(Parameters):
 
         instance_step = 0
         self.step_index = 0
-        self.step = self.settings.raster_step
+        self.step = self.raster_step
         self.step_value_set = 0
-        if self.settings.raster_alt:
+        if self.raster_alt:
             pass
         elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
@@ -1389,7 +1389,7 @@ class LhystudiosDriver(Parameters):
 
         suffix_c = None
         if (
-            self.service.twitchless or self.settings.force_twitchless
+            self.service.twitchless or self.force_twitchless
         ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
@@ -1409,10 +1409,10 @@ class LhystudiosDriver(Parameters):
 
         speed_code = LaserSpeed(
             self.service.board,
-            self.settings.speed,
+            self.speed,
             instance_step,
-            d_ratio=self.settings.implicit_d_ratio,
-            acceleration=self.settings.implicit_accel,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
             fix_limit=True,
             fix_lows=True,
             suffix_c=suffix_c,

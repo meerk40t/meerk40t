@@ -1,8 +1,8 @@
-from .scene import Scene, Widget
-
 import wx
 
 from meerk40t.svgelements import Path, Point, Rect
+
+from .scene import Scene, Widget
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1

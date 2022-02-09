@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from ..core.node.laserop import RasterOpNode, CutOpNode, EngraveOpNode, ImageOpNode
+from ..core.node.laserop import CutOpNode, EngraveOpNode, ImageOpNode, RasterOpNode
 from ..kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52

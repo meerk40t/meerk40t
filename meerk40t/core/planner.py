@@ -1651,7 +1651,7 @@ def short_travel_cutcode(
             for cut in context.candidate(
                 complete_path=complete_path, grouped_inner=grouped_inner
             ):
-                s = cut.start()
+                s = cut.start
                 if (
                     abs(s[0] - curr.real) <= distance
                     and abs(s[1] - curr.imag) <= distance
