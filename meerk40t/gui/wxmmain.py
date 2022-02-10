@@ -938,8 +938,8 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), "")
+        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), "")
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
