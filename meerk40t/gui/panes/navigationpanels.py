@@ -255,6 +255,9 @@ class Drag(wx.Panel):
         self.button_align_corner_top_left.SetSize(
             self.button_align_corner_top_left.GetBestSize()
         )
+        self.button_align_drag_up.SetToolTip(
+            _("Move the selection and laser position upwards")
+        )
         self.button_align_drag_up.SetSize(self.button_align_drag_up.GetBestSize())
         self.button_align_corner_top_right.SetToolTip(
             _("Align laser with the upper right corner of the selection")
@@ -262,17 +265,26 @@ class Drag(wx.Panel):
         self.button_align_corner_top_right.SetSize(
             self.button_align_corner_top_right.GetBestSize()
         )
+        self.button_align_drag_left.SetToolTip(
+            _("Move the selection and laser position leftwards")
+        )
         self.button_align_drag_left.SetSize(self.button_align_drag_left.GetBestSize())
         self.button_align_center.SetToolTip(
             _("Align laser with the center of the selection")
         )
         self.button_align_center.SetSize(self.button_align_center.GetBestSize())
+        self.button_align_drag_right.SetToolTip(
+            _("Move the selection and laser position rightwards")
+        )
         self.button_align_drag_right.SetSize(self.button_align_drag_right.GetBestSize())
         self.button_align_corner_bottom_left.SetToolTip(
             _("Align laser with the lower left corner of the selection")
         )
         self.button_align_corner_bottom_left.SetSize(
             self.button_align_corner_bottom_left.GetBestSize()
+        )
+        self.button_align_drag_down.SetToolTip(
+            _("Move the selection and laser position downwards")
         )
         self.button_align_drag_down.SetSize(self.button_align_drag_down.GetBestSize())
         self.button_align_corner_bottom_right.SetToolTip(
