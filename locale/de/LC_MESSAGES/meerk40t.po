@@ -1431,20 +1431,21 @@ msgstr ""
 msgid ""
 "Pulse Grouping is an alternative means of reducing the incidence of stuttering, "
 "allowing you potentially to burn at higher speeds."
-msgstr ""
+msgstr "Puls-Gruppierung ist eine weitere Alternative zur Verringerung von Stotter-Effekten, was potentiell höhere Brenn-Geschwindigkeiten erlaubt."
 
 #: meerk40t/gui/operationproperty.py:482
 msgid ""
 "This setting is an operation-by-operation equivalent to the Pulse Grouping "
 "option in Device Config."
-msgstr ""
+msgstr "Diese Einstellung ist das Arbeitsgang-spezifische-Äquivalent zur Puls-Gruppierung-Option in den Geräte-Einstellungen."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:153
 #: meerk40t/gui/operationproperty.py:485
 msgid ""
 "It works by swapping adjacent on or off bits to group on and off together and "
 "reduce the number of switches."
-msgstr ""
+msgstr "Das Prinzip beruht darauf, angrenzende Ein- bzw. Aus-Bits zu tauschen, um so längere Ein- bzw. Aus-Gruppen zu bilden. "
+"Somit wird die Anzahl der Umschaltvorgänge verringert."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:156
 #: meerk40t/gui/operationproperty.py:488
@@ -1454,7 +1455,7 @@ msgid ""
 "difference should not be visible even under magnification."
 msgstr ""
 "So wird z.B. statt 1010 dann 1100 gebrannt werden - da der Laserstrahl "
-"sich überlappt. und weil bei einem Bit lediglich max. 1/1000\" "
+"sich überlappt und weil bei einem Bit der Kopf lediglich max. 1/1000\" "
 "weiterbewegt wird, sollte der Unterschied selbst bei Vergrößerung nicht "
 "sichtbar sein."
 
@@ -1722,7 +1723,7 @@ msgstr "Pixel/Zoll"
 #: meerk40t/gui/rasterwizard.py:821
 #, python-format
 msgid "%d x %d pixels"
-msgstr ""
+msgstr "%d x %d Pixel"
 
 #: meerk40t/gui/rasterwizard.py:969
 msgid "Enable Gamma Shift"
@@ -1750,7 +1751,7 @@ msgstr "Gammafaktor"
 
 #: meerk40t/gui/rasterwizard.py:1038 meerk40t/gui/wxmeerk40t.py:1762
 msgid "Invert"
-msgstr "Umkehren"
+msgstr "Invertieren"
 
 #: meerk40t/gui/rasterwizard.py:1096
 msgid "Enable Grayscale Convert"
@@ -3451,21 +3452,31 @@ msgstr "Home-Position basierend auf aktueller Position einstellen"
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:150
 msgid ""
-"This setting is a global equivalent to the Pulse Grouping option in Operation "
-"Properties."
-msgstr ""
+"Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds. "
+"This setting is a global equivalent to the Pulse Grouping option in Operation Properties."
+msgstr "Puls-Gruppierung ist eine weitere Alternative zur Verringerung von Stotter-Effekten, was potentiell höhere Brenn-Geschwindigkeiten erlaubt. "
+"Diese Option ist das übergreifende Äquivalent zur Puls-Gruppen-Option in den Eigenschaften eines Arbeitsganges."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:159
 msgid ""
-"Whilst the Pulse Grouping option in Operations are set for that operation before "
-"the job is spooled, and cannot be changed on the fly,"
-msgstr "Während die Puls-Gruppen-Option in den Arbeitsabläufen vor dem Job-Ablauf eingestellt wird, und nicht on-the-fly verändert werden kann,"
+"It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches "
+"e.g. instead of 1010 it will burn 1100. "
+"Because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", "
+"the difference should not be visible even under magnification."
+msgstr "Das Prinzip beruht darauf, angrenzende Ein- bzw. Aus-Bits zu tauschen, um so längere Ein- bzw. Aus-Gruppen zu bilden. "
+"Somit wird die Anzahl der Umschaltvorgänge verringert: aus '1010' wird dann '1100'. "
+"Da der Laserstrahl sich überlappt und weil bei einem Bit der Kopf lediglich max. 1/1000\" "
+"weiterbewegt wird, sollte der Unterschied selbst bei Vergrößerung nicht sichtbar sein."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:163
 msgid ""
-"this global Pulse Grouping option is checked as instructions are sent to the "
-"laser and can turned on and off during the burn process."
-msgstr "wird diese globale Plus-Gruppen-Option beim Senden zum Laser geprüft, und kann somit während des Brennvorgangs verändert werden."
+"The Pulse Grouping option in Operations are set for that operation before the job is spooled "
+"and cannot be changed during the burn, "
+"however this global Pulse Grouping option is checked as instructions are sent to the laser "
+"and can turned on and off during the burn process if needed."
+msgstr "Während die Puls-Gruppen-Option in den Arbeitsabläufen vor dem Job-Ablauf eingestellt wird, "
+"und nicht on-the-fly verändert werden kann, wird diese globale Plus-Gruppen-Option beim Senden zum Laser geprüft, "
+"und kann somit während des Brennvorgangs verändert werden."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:166
 msgid ""
@@ -3482,9 +3493,8 @@ msgstr ""
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:177
 msgid ""
-"Limit the write buffer to a certain amount. Permits on-the-fly command "
-"production."
-msgstr ""
+"Limit the write buffer to a certain amount. Permits on-the-fly command production."
+msgstr "Begrenzt die Größe des Schreibpuffers, womit es ermöglicht wird ad-hoc-Kommandos abzusetzen."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:183
 #: meerk40t/gui/tcp/tcpcontroller.py:63 meerk40t/gui/tcp/tcpcontroller.py:67
@@ -3496,8 +3506,10 @@ msgid "Current maximum write buffer limit."
 msgstr "Aktuelle maximale Schreibpuffergrenze."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:186
-msgid "Lock rail after operations are finished."
-msgstr "Achsen bleiben nach Job-Abschluss verriegelt."
+msgid ""
+"Leave the steppers energised and the rail locked after the burn has finished. "
+"By default, if this option is not selected, the rail is unlocked at the end of the burn."
+msgstr "Achsen bleiben nach Job-Abschluss verriegelt. Wenn die Option abgewählt ist, werden die Achsen am Ende des Jobs entriegelt."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:194
 msgid "General Options:"
@@ -7229,7 +7241,12 @@ msgstr "Standbild exportieren"
 
 #: meerk40t/gui/rasterwizard.py:1101
 msgid "Green component control"
-msgstr "Steuere Grün-Anteil"
+msgstr "Aussteuerung Grün-Anteil"
+
+#: meerk40t/gui/rasterwizard.py:1103
+msgid "Lightness control"
+msgstr "Aussteuerung Helligkeit"
+
 
 #: meerk40t/core/elements.py:2253
 msgid "Deleting…"
