@@ -344,7 +344,7 @@ class Drag(wx.Panel):
             elements.validate_selected_area()
             bbox = elements.selected_area()
         else:
-            bbox = Group.union_bbox([x for x in elements.elems()])
+            bbox = Group.union_bbox(elements.elems())
         return bbox
 
     def on_button_align_center(self, event=None):  # wxGlade: Navigation.<event_handler>
