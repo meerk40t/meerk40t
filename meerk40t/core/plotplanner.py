@@ -1,3 +1,5 @@
+from collections import deque
+
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.basedevice import (
@@ -392,7 +394,7 @@ class PPI(PlotManipulation):
 class Shift(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
-        self.shift_buffer = []
+        self.shift_buffer = deque([], 6)
         self.shift_pixels = 0
 
     def __str__(self):
@@ -401,6 +403,23 @@ class Shift(PlotManipulation):
             str(self.shift_buffer),
             bin(self.shift_pixels),
         )
+
+    # Notes:
+    #   As output pattern is shifted to the left and new bits added it will not match any of
+    #   the input patterns until all shifted bits have moved to at least the first position
+    #   i.e. shifted bits will not be shifted again.
+    PIX_SHIFT = {
+        0b010010:   0b001100,
+        0b010100:   0b001100,
+        0b010101:   0b001101,
+        0b010110:   0b001110,
+        0b010111:   0b001111,
+        0b101000:   0b110000,
+        0b101001:   0b110001,
+        0b101010:   0b110010,
+        0b101011:   0b110011,
+        0b101101:   0b110011,
+    }
 
     def process(self, plot):
         """
@@ -425,31 +444,27 @@ class Shift(PlotManipulation):
             self.shift_pixels <<= 1
             if on:
                 self.shift_pixels |= 1
-            self.shift_pixels &= 0b1111
+            self.shift_pixels &= 0b111111
 
             self.shift_buffer.insert(0, (x, y))
-            if self.shift_pixels == 0b0101:
-                self.shift_pixels = 0b0011
-            elif self.shift_pixels == 0b1010:
-                self.shift_pixels = 0b1100
-
-            if len(self.shift_buffer) >= 4:
+            if self.shift_pixels in self.PIX_SHIFT:
+                self.shift_pixels = self.PIX_SHIFT[self.shift_pixels]
+            if len(self.shift_buffer) >= 6:
                 # When buffer is full start popping off values.
                 bx, by = self.shift_buffer.pop()
-                bon = (self.shift_pixels >> 3) & 1
+                bon = (self.shift_pixels >> 5) & 1
                 yield bx, by, bon
-        # There are no more plots.
 
     def flush(self):
-        while len(self.shift_buffer) > 0:
+        while self.shift_buffer:
             self.shift_pixels <<= 1
             bx, by = self.shift_buffer.pop()
-            bon = (self.shift_pixels >> 3) & 1
+            bon = (self.shift_pixels >> 5) & 1
             yield bx, by, bon
         self.clear()
 
     def flushed(self):
-        return not len(self.shift_buffer)
+        return not self.shift_buffer
 
     def warp(self, x, y):
         self.clear()
