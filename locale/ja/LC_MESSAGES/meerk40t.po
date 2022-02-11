@@ -4987,7 +4987,7 @@ msgstr "ウィンドウ"
 #: meerk40t/gui/wxmmain.py:1098
 #, python-format
 msgid "Offline help file (\"%s\") was not found."
-msgstr "オフラインのヘルプファイル（"%s\"）が見つかりませんでした。"
+msgstr "オフラインのヘルプファイル（\"%s\"）が見つかりませんでした。"
 
 #: meerk40t/gui/wxmmain.py:1099
 msgid "File Not Found"

@@ -11,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 22-02-11 21:48UTC\n"
 "PO-Revision-Date: 22-02-11 21:48UTC\n"
 "Last-Translator: DeepL / Google\n"
-"Language: pt\n"
+"Language: pt-pt\n"
 "Language-Team: European Portuguese\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
@@ -107,7 +107,7 @@ msgstr "Não é necessário parar os fios."
 #: meerk40t/kernel.py:1062
 #, python-format
 msgid "WARNING: Listener '%s' still registered to %s."
-msgstr "ADVERTÊNCIA: Ouvinte "%s" ainda registado a %s."
+msgstr "ADVERTÊNCIA: Ouvinte '%s' ainda registado a %s."
 
 #: meerk40t/kernel.py:1072
 msgid "Shutdown."
@@ -924,7 +924,7 @@ msgstr "potência <ppi>"
 #: meerk40t/core/elements.py:2250
 #, python-format
 msgid "Power for '%s' is currently: %d"
-msgstr "A potência para "%s" é actualmente: %d"
+msgstr "A potência para '%s' é actualmente: %d"
 
 #: meerk40t/core/elements.py:2256
 #, python-format
@@ -942,7 +942,7 @@ msgstr "passes <passes>"
 #: meerk40t/core/elements.py:2270
 #, python-format
 msgid "Passes for '%s' is currently: %d"
-msgstr "Passes para "%s" é actualmente: %d"
+msgstr "Passes para '%s' é actualmente: %d"
 
 #: meerk40t/core/elements.py:2279
 #, python-format
@@ -3426,7 +3426,7 @@ msgid ""
 "In a raster engrave, the step size is the distance between raster lines "
 "in 1/1000\" and also the number of raster dots that get combined "
 "together."
-msgstr "Numa gravação raster, o tamanho do degrau é a distância entre linhas raster em 1/1000" e também o número de pontos raster que se juntam."
+msgstr "Numa gravação raster, o tamanho do degrau é a distância entre linhas raster em 1/1000\" e também o número de pontos raster que se juntam."
 
 #: meerk40t/gui/operationproperty.py:342
 msgid ""
@@ -3713,7 +3713,7 @@ msgstr "Nenhum"
 #: meerk40t/gui/pathproperty.py:92 meerk40t/gui/pathproperty.py:107
 #: meerk40t/gui/textproperty.py:113 meerk40t/gui/textproperty.py:128
 msgid "\"none\" defined value"
-msgstr ""nenhum" valor definido"
+msgstr "\"nenhum\" valor definido"
 
 #: meerk40t/gui/pathproperty.py:94 meerk40t/gui/pathproperty.py:109
 #: meerk40t/gui/textproperty.py:115 meerk40t/gui/textproperty.py:130
@@ -6015,7 +6015,7 @@ msgstr "Deve especificar um tempo de pulso em milissegundos."
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:77
 #, python-format
 msgid "\"%s\" exceeds 1 second limit to fire a standing laser."
-msgstr ""%s" excede o limite de 1 segundo para disparar um laser de pé."
+msgstr "\"%s\" excede o limite de 1 segundo para disparar um laser de pé."
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:92
 #, python-format

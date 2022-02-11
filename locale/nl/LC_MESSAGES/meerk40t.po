@@ -3415,21 +3415,21 @@ msgstr "1000 is altijd aan, 500 is half vermogen (brand om de andere stap)."
 msgid ""
 "Values of 100 or have pulses > 1/10\" and are generally used only for "
 "dotted or perforated lines."
-msgstr "Waarden van 100 of hebben pulsen > 1/10" en worden over het algemeen alleen gebruikt voor gestippelde of geperforeerde lijnen."
+msgstr "Waarden van 100 of hebben pulsen > 1/10\" en worden over het algemeen alleen gebruikt voor gestippelde of geperforeerde lijnen."
 
 #: meerk40t/gui/operationproperty.py:339
 msgid ""
 "In a raster engrave, the step size is the distance between raster lines "
 "in 1/1000\" and also the number of raster dots that get combined "
 "together."
-msgstr "Bij een rastergravure is de stapgrootte de afstand tussen rasterlijnen in 1/1000" en tevens het aantal rasterpunten dat samengevoegd wordt."
+msgstr "Bij een rastergravure is de stapgrootte de afstand tussen rasterlijnen in 1/1000\" en tevens het aantal rasterpunten dat samengevoegd wordt."
 
 #: meerk40t/gui/operationproperty.py:342
 msgid ""
 "Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster "
 "lines overlap a lot, and consequently  you can raster with steps > 1 "
 "without leaving gaps between the lines."
-msgstr "Omdat de laser dot >> 1/1000" in diameter is, overlappen bij stap 1 de rasterlijnen elkaar veel, en bijgevolg kunt u rasteren met stappen > 1 zonder gaten tussen de lijnen te laten."
+msgstr "Omdat de laser dot >> 1/1000\" in diameter is, overlappen bij stap 1 de rasterlijnen elkaar veel, en bijgevolg kunt u rasteren met stappen > 1 zonder gaten tussen de lijnen te laten."
 
 #: meerk40t/gui/operationproperty.py:345
 msgid ""
@@ -3598,13 +3598,13 @@ msgstr "Als dit is ingesteld, wordt de PPI effectief de verhouding tussen streep
 msgid ""
 "If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" "
 "dashes and 1/2\" gaps."
-msgstr "Als u Dotlengte instelt op 500 = 1/2", resulteert een PPI van 500 in 1/2" streepjes en 1/2" tussenruimtes."
+msgstr "Als u Dotlengte instelt op 500 = 1/2\", resulteert een PPI van 500 in 1/2\" streepjes en 1/2\" tussenruimtes."
 
 #: meerk40t/gui/operationproperty.py:454
 msgid ""
 "If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" "
 "dashes and 3/4\" gaps."
-msgstr "Als puntlengte is ingesteld op 250 = 1/4", resulteert een PPI van 250 in 1/4" streepjes en 3/4" tussenruimtes."
+msgstr "Als puntlengte is ingesteld op 250 = 1/4\", resulteert een PPI van 250 in 1/4\" streepjes en 3/4\" tussenruimtes."
 
 #: meerk40t/gui/lhystudios/lhystudiosdrivergui.py:145
 #: meerk40t/gui/operationproperty.py:463
@@ -3632,7 +3632,7 @@ msgid ""
 "As an example, instead of 1010 it will burn 1100 - because the laser beam"
 " is overlapping, and because a bit is only moved at most 1/1000\", the "
 "difference should not be visible even under magnification."
-msgstr "Als voorbeeld, in plaats van 1010 wordt 1100 gebrand - omdat de laserstraal overlapt, en omdat een bit hooguit 1/1000" wordt verplaatst, zou het verschil zelfs onder vergroting niet zichtbaar moeten zijn."
+msgstr "Als voorbeeld, in plaats van 1010 wordt 1100 gebrand - omdat de laserstraal overlapt, en omdat een bit hooguit 1/1000\" wordt verplaatst, zou het verschil zelfs onder vergroting niet zichtbaar moeten zijn."
 
 #: meerk40t/gui/operationproperty.py:478
 msgid "Enable Operation Passes"
@@ -3709,7 +3709,7 @@ msgstr "Geen"
 #: meerk40t/gui/pathproperty.py:92 meerk40t/gui/pathproperty.py:107
 #: meerk40t/gui/textproperty.py:113 meerk40t/gui/textproperty.py:128
 msgid "\"none\" defined value"
-msgstr ""geen" gedefinieerde waarde"
+msgstr "\"geen\" gedefinieerde waarde"
 
 #: meerk40t/gui/pathproperty.py:94 meerk40t/gui/pathproperty.py:109
 #: meerk40t/gui/textproperty.py:115 meerk40t/gui/textproperty.py:130
