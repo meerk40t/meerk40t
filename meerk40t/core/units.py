@@ -48,6 +48,15 @@ class ViewPort:
         self.y = None
         self.width = None
         self.height = None
+        self.user_scale_x = 1.0
+        self.user_scale_y = 1.0
+        self.native_scale_x = 1.0
+        self.native_scale_y = 1.0
+        self.flip_x = False
+        self.flip_y = False
+        self.swap_xy = False
+        self.origin_x = 0.0
+        self.origin_y = 0.0
         self.set_params(x, y, width, height)
 
     def set_params(self, x, y, width, height):
@@ -55,6 +64,22 @@ class ViewPort:
         self.y = Length(y).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self.width = Length(width).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self.height = Length(height).value(ppi=UNITS_PER_INCH, unitless=1.0)
+
+    def position(self, x, y, relative_length=None, as_float=False, unitless=UNITS_PER_PIXEL):
+        if relative_length is None:
+            nm_x = Length(x).value(ppi=UNITS_PER_INCH, relative_length=self.width, unitless=unitless)
+            nm_y = Length(x).value(ppi=UNITS_PER_INCH, relative_length=self.height, unitless=unitless)
+        else:
+            nm_x = Length(x).value(ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless)
+            nm_y = Length(y).value(ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless)
+        if self.flip_x:
+            nm_x = (self.width * self.origin_x) - nm_x
+        if self.flip_y:
+            nm_y = (self.height * self.origin_y) - nm_y
+        if self.swap_xy:
+            nm_x, nm_y = nm_x, nm_y
+        return nm_x * self.user_scale_x * self.native_scale_x, nm_y * self.user_scale_x * self.native_scale_y
+
 
     def length(
         self,
