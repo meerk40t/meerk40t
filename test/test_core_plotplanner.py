@@ -114,9 +114,9 @@ class TestPlotplanner(unittest.TestCase):
         results = test_group(test)
         print("Test", test)
         print("Grpd", results)
-        print()
         self.assertEqual(expected, results)
 
+        print()
         test       = "100100010010100011011011000110001100011101110111000111000111011100011101110011100111011000110110110001100010101000100010"
         expected   = "011000001100100011100111000110001100011101110111000111000111011100011101110011100111011000111001110001100001110000100010"
         results = test_group(test)
