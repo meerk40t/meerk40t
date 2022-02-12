@@ -618,7 +618,7 @@ class RectSelectWidget(Widget):
                 sy = self.start_location[1]
                 ex = self.end_location[0]
                 ey = self.end_location[1]
-                right_drag = sx <= ex and sy <= ey
+                right_drag = sx <= ex # and sy <= ey
                 sx = min(self.start_location[0], self.end_location[0])
                 sy = min(self.start_location[1], self.end_location[1])
                 ex = max(self.start_location[0], self.end_location[0])
@@ -668,7 +668,7 @@ class RectSelectWidget(Widget):
             x1 = self.end_location[0]
             y1 = self.end_location[1]
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
-            if x1 >= x0 and y1 >= y0:
+            if x1 >= x0:
                 self.selection_pen.SetColour(wx.BLUE)
             else:
                 self.selection_pen.SetColour(wx.GREEN)
