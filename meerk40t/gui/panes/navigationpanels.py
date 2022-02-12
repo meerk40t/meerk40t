@@ -796,12 +796,12 @@ class Transform(wx.Panel):
         self.button_rotate_cw = wx.BitmapButton(
             self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
         )
-        self.text_a = wx.TextCtrl(self, wx.ID_ANY, "1.000000")
-        self.text_c = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_e = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_b = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_d = wx.TextCtrl(self, wx.ID_ANY, "1.000000")
-        self.text_f = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
+        self.text_a = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000")
+        self.text_c = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
+        self.text_e = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
+        self.text_b = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
+        self.text_d = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000")
+        self.text_f = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
 
         self.__set_properties()
         self.__do_layout()
@@ -815,12 +815,22 @@ class Transform(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_rotate_ccw, self.button_rotate_ccw)
         self.Bind(wx.EVT_BUTTON, self.on_translate_down, self.button_translate_down)
         self.Bind(wx.EVT_BUTTON, self.on_rotate_cw, self.button_rotate_cw)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_a)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_c)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_e)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_b)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_d)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_f)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_a)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_c)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_e)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_b)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_d)
+        #self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_f)
+        self.text_a.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_b.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_c.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_d.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_e.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_f.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.button_rotate_ccw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_ccw_90)
+        self.button_rotate_cw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_cw_90)
+        self.button_scale_down.Bind(wx.EVT_RIGHT_DOWN, self.on_scale_down_more)
+        self.button_scale_up.Bind(wx.EVT_RIGHT_DOWN, self.on_scale_up_more)
         # end wxGlade
         self.select_ready(False)
 
@@ -842,9 +852,9 @@ class Transform(wx.Panel):
         self.button_translate_left.SetToolTip(_("Translate Left"))
         self.button_reset.SetToolTip(_("Reset Matrix"))
         self.button_translate_right.SetToolTip(_("Translate Right"))
-        self.button_rotate_ccw.SetToolTip(_("Rotate Counterclockwise"))
+        self.button_rotate_ccw.SetToolTip(_("Rotate Counterclockwise by 5° / by 90° on left / right click"))
         self.button_translate_down.SetToolTip(_("Translate Bottom"))
-        self.button_rotate_cw.SetToolTip(_("Rotate Clockwise"))
+        self.button_rotate_cw.SetToolTip(_("Rotate Clockwise by 5° / by 90° on left / right click"))
         self.text_a.SetMinSize((58, 23))
         self.text_a.SetToolTip(_("Transform: Scale X"))
         self.text_c.SetMinSize((58, 23))
@@ -862,7 +872,7 @@ class Transform(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: Transform.__do_layout
         matrix_sizer = wx.BoxSizer(wx.VERTICAL)
-        grid_sizer_2 = wx.FlexGridSizer(5, 3, 0, 0)
+        grid_sizer_2 = wx.FlexGridSizer(6, 3, 0, 0)
         grid_sizer_2.Add(self.button_scale_down, 0, 0, 0)
         grid_sizer_2.Add(self.button_translate_up, 0, 0, 0)
         grid_sizer_2.Add(self.button_scale_up, 0, 0, 0)
@@ -872,12 +882,19 @@ class Transform(wx.Panel):
         grid_sizer_2.Add(self.button_rotate_ccw, 0, 0, 0)
         grid_sizer_2.Add(self.button_translate_down, 0, 0, 0)
         grid_sizer_2.Add(self.button_rotate_cw, 0, 0, 0)
+        # Add some labels to make textboxes clearer to understand
+        grid_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
+        grid_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
+        grid_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
+        # First X
         grid_sizer_2.Add(self.text_a, 0, 0, 0)
-        grid_sizer_2.Add(self.text_c, 0, 0, 0)
-        grid_sizer_2.Add(self.text_e, 0, 0, 0)
         grid_sizer_2.Add(self.text_b, 0, 0, 0)
+        grid_sizer_2.Add(self.text_e, 0, 0, 0)
+        # Then Y
         grid_sizer_2.Add(self.text_d, 0, 0, 0)
+        grid_sizer_2.Add(self.text_c, 0, 0, 0)
         grid_sizer_2.Add(self.text_f, 0, 0, 0)
+        
         matrix_sizer.Add(grid_sizer_2, 0, wx.EXPAND, 0)
         self.SetSizer(matrix_sizer)
         matrix_sizer.Fit(self)
@@ -932,9 +949,8 @@ class Transform(wx.Panel):
     def matrix_updated(self):
         self.context.signal("refresh_scene")
         self.update_matrix_text()
-
-    def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
-        scale = 19.0 / 20.0
+    
+    def scaleit(self, scale):
         spooler, input_driver, output = self.context.registered[
             "device/%s" % self.context.root.active
         ]
@@ -950,24 +966,31 @@ class Transform(wx.Panel):
             )
         )
         self.matrix_updated()
+        
+    def rotateit(self, angle):
+        spooler, input_driver, output = self.context.registered[
+            "device/%s" % self.context.root.active
+        ]
+        x = input_driver.current_x if input_driver is not None else 0
+        y = input_driver.current_y if input_driver is not None else 0
+        self.context("rotate %fdeg %f %f\n" % (angle, x, y))
+        self.matrix_updated()
+        
+    def on_scale_down_more(self, event=None):  # wxGlade: Navigation.<event_handler>
+        scale = 2.0 / 3.0 # 66.6% - inverse of 150% 
+        self.scaleit(scale)
+
+    def on_scale_up_more(self, event=None):  # wxGlade: Navigation.<event_handler>
+        scale = 3.0 / 2.0 # 150%
+        self.scaleit(scale)
+        
+    def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
+        scale = 19.0 / 20.0
+        self.scaleit(scale)
 
     def on_scale_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "scale %f %f %f %f\n"
-            % (
-                scale,
-                scale,
-                x,
-                y,
-            )
-        )
-        self.matrix_updated()
+        self.scaleit(scale)
 
     def on_translate_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
@@ -998,34 +1021,32 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def on_rotate_ccw(self, event=None):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context("rotate %fdeg %f %f\n" % (-5, x, y))
-        self.matrix_updated()
+        angle = -5.0
+        self.rotateit(angle)
 
     def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context("rotate %fdeg %f %f\n" % (5, x, y))
-        self.matrix_updated()
+        angle = 5.0
+        self.rotateit(angle)
+
+    def on_rotate_ccw_90(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = -90.0
+        self.rotateit(angle)
+
+    def on_rotate_cw_90(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = 90.0
+        self.rotateit(angle)
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             self.context(
                 "matrix %f %f %f %f %s %s\n"
                 % (
-                    float(self.text_a.GetValue()),
-                    float(self.text_b.GetValue()),
-                    float(self.text_c.GetValue()),
-                    float(self.text_d.GetValue()),
-                    self.text_e.GetValue(),
-                    self.text_f.GetValue(),
+                    float(self.text_a.GetValue()), # Scale X
+                    float(self.text_b.GetValue()), # Skew X
+                    float(self.text_d.GetValue()), # Scale Y
+                    float(self.text_c.GetValue()), # Skew Y
+                    self.text_e.GetValue(), # Translate X
+                    self.text_f.GetValue(), # Translate Y
                 )
             )
         except ValueError:
