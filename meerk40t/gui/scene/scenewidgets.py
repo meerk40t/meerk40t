@@ -627,7 +627,7 @@ class RectSelectWidget(Widget):
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-                if right_drag:
+                if right_drag: # Object needs to be fully enclosed by selection rectangle
                     if (
                         sx <= xmin <= ex
                         and sy <= ymin <= ey
@@ -637,10 +637,9 @@ class RectSelectWidget(Widget):
                         obj.node.emphasized = True
                     else:
                         obj.node.emphasized = False
-                else:
-                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (
-                        sy <= ymin <= ey or sy <= ymax <= ey
-                    ):
+                else: 
+                    # Let's see whether there is an intersection
+                    if (sx < xmax and ex > xmin and sy < ymax and ey > ymin):
                         obj.node.emphasized = True
                     else:
                         obj.node.emphasized = False
