@@ -1,11 +1,11 @@
-
 import unittest
+from random import randint
 
 from PIL import Image, ImageDraw
 
 from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode
 from meerk40t.core.elements import LaserOperation
-from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.core.plotplanner import PlotPlanner, Shift
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
 from meerk40t.svgelements import Point, SVGImage, Path, Circle
 
@@ -89,3 +89,37 @@ class TestPlotplanner(unittest.TestCase):
                     setting_changed = True
                 else:
                     setting_changed = False
+
+    def test_plotplanner_shift(self):
+        plan = PlotPlanner(LaserSettings(power=1000))
+        shft = Shift(plan)
+
+        def test_group(s):
+            r = ""
+            for i, c in enumerate(s):
+                shft.process_add(i, i, 1 if c == "1" else 0)
+                if i >= 5:
+                    x, y, on = shft.process_pop()
+                    r += "1" if on else "0"
+            while shft.shift_buffer:
+                x, y, on = shft.process_pop()
+                r += "1" if on else "0"
+            return r
+
+        print()
+        print("Group Pulse Test")
+        print("================")
+        test       = "0111011010101001100110010011100111000110001000110001110001110001110001000111000111000110011100110011001001110110110111010111"
+        expected   = "0111100111001001100110010011100111000110001000110001110001110001110001000111000111000110011100110011001001111001110111100111"
+        results = test_group(test)
+        print("Test", test)
+        print("Grpd", results)
+        print()
+        self.assertEqual(expected, results)
+
+        test       = "100100010010100011011011000110001100011101110111000111000111011100011101110011100111011000110110110001100010101000100010"
+        expected   = "011000001100100011100111000110001100011101110111000111000111011100011101110011100111011000111001110001100001110000100010"
+        results = test_group(test)
+        print("Test", test)
+        print("Grpd", results)
+        self.assertEqual(expected, results)

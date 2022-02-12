@@ -440,27 +440,30 @@ class Shift(PlotManipulation):
                 yield x, y, on
                 continue
 
-            # Shift() is on.
-            self.shift_pixels <<= 1
-            if on:
-                self.shift_pixels |= 1
-            self.shift_pixels &= 0b111111
+            self.process_add(x, y, on)
 
-            self.shift_buffer.insert(0, (x, y))
-            if self.shift_pixels in self.PIX_SHIFT:
-                self.shift_pixels = self.PIX_SHIFT[self.shift_pixels]
-            if len(self.shift_buffer) >= 6:
-                # When buffer is full start popping off values.
-                bx, by = self.shift_buffer.pop()
-                bon = (self.shift_pixels >> 5) & 1
-                yield bx, by, bon
+            # When buffer is full start popping off values.
+            if len(self.shift_pixels) >= 6:
+                yield self.process_pop()
+
+    def process_add(self, x, y, on):
+        self.shift_buffer.insert(0, (x, y))
+        self.shift_pixels <<= 1
+        self.shift_pixels &= (1 << len(self.shift_buffer)) - 1
+        if on:
+            self.shift_pixels |= 1
+        assert self.shift_pixels <= 63
+        if self.shift_pixels in self.PIX_SHIFT:
+            self.shift_pixels = self.PIX_SHIFT[self.shift_pixels]
+
+    def process_pop(self):
+        x, y = self.shift_buffer.pop()
+        on = (self.shift_pixels >> len(self.shift_buffer)) & 1
+        return x, y, on
 
     def flush(self):
         while self.shift_buffer:
-            self.shift_pixels <<= 1
-            bx, by = self.shift_buffer.pop()
-            bon = (self.shift_pixels >> 5) & 1
-            yield bx, by, bon
+            yield self.process_pop()
         self.clear()
 
     def flushed(self):
