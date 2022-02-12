@@ -109,6 +109,14 @@ class TestPlotplanner(unittest.TestCase):
         print()
         print("Group Pulse Test")
         print("================")
+        test       = "0001010000110110110001110101111001001001111"
+        expected   = "0000110000111001110001111001111000110001111"
+        results = test_group(test)
+        print("Test", test)
+        print("Grpd", results)
+        self.assertEqual(expected, results)
+
+        print()
         test       = "0111011010101001100110010011100111000110001000110001110001110001110001000111000111000110011100110011001001110110110111010111"
         expected   = "0111100111001001100110010011100111000110001000110001110001110001110001000111000111000110011100110011001001111001110111100111"
         results = test_group(test)
