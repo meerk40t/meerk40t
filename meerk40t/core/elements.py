@@ -4102,8 +4102,8 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if ty:
-                raise SyntaxError
+            # if ty:
+            #    raise SyntaxError
             try:
                 m = Matrix(
                     sx,
