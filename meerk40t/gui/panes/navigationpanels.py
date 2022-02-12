@@ -1038,6 +1038,7 @@ class Transform(wx.Panel):
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
+            # Not yet working as kernel reports a syntax error...
             self.context(
                 "matrix %f %f %f %f %s %s\n"
                 % (
