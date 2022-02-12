@@ -668,6 +668,12 @@ class RectSelectWidget(Widget):
             y0 = self.start_location[1]
             x1 = self.end_location[0]
             y1 = self.end_location[1]
+            # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
+            if x1 >= x0 and y1 >= y0:
+                self.selection_pen.SetColour(wx.BLUE)
+            else:
+                self.selection_pen.SetColour(wx.GREEN)
+                
             linewidth = 2.0 / matrix.value_scale_x()
             if linewidth < 1:
                 linewidth = 1
