@@ -4085,7 +4085,7 @@ class Elemental(Modifier):
         def element_matrix(
             command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwargs
         ):
-            if tx is None:
+            if ty is None:
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
@@ -4102,14 +4102,15 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            # if ty:
-            #    raise SyntaxError
             try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
                 m = Matrix(
                     sx,
                     kx,
-                    sy,
                     ky,
+                    sy,
                     tx.value(
                         ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                     ),
