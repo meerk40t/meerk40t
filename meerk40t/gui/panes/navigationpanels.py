@@ -36,6 +36,10 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Length, Group
+from math import (
+    pi,
+    tan,
+)
 
 _ = wx.GetTranslation
 
@@ -796,12 +800,24 @@ class Transform(wx.Panel):
         self.button_rotate_cw = wx.BitmapButton(
             self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
         )
-        self.text_a = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000")
-        self.text_c = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
-        self.text_e = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0")
-        self.text_b = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000")
-        self.text_d = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000")
-        self.text_f = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0")
+        self.text_a = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        )
+        self.text_d = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        )
+        self.text_c = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        )
+        self.text_b = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        )
+        self.text_e = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        )
+        self.text_f = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -821,12 +837,12 @@ class Transform(wx.Panel):
         self.text_d.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
         self.text_e.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
         self.text_f.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        
+
         self.button_translate_up.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_up_10)
         self.button_translate_down.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_down_10)
         self.button_translate_left.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_left_10)
         self.button_translate_right.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_right_10)
-      
+
         self.button_rotate_ccw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_ccw_90)
         self.button_rotate_cw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_cw_90)
         self.button_scale_down.Bind(wx.EVT_RIGHT_DOWN, self.on_scale_down_50)
@@ -846,37 +862,73 @@ class Transform(wx.Panel):
         self.button_translate_down.SetSize(self.button_translate_down.GetBestSize())
         self.button_rotate_cw.SetSize(self.button_rotate_cw.GetBestSize())
 
-        self.button_scale_down.SetToolTip(_("Scale Down by 5% / 50% on left / right click"))
-        self.button_translate_up.SetToolTip(_("Translate Up by 1x / 10x Jog-Distance on left / right click"))
+        self.button_scale_down.SetToolTip(
+            _("Scale Down by 5% / 50% on left / right click")
+        )
+        self.button_translate_up.SetToolTip(
+            _("Translate Up by 1x / 10x Jog-Distance on left / right click")
+        )
         self.button_scale_up.SetToolTip(_("Scale Up by 5% / 50% on left / right click"))
-        self.button_translate_left.SetToolTip(_("Translate Left by 1x / 10x Jog-Distance on left / right click"))
+        self.button_translate_left.SetToolTip(
+            _("Translate Left by 1x / 10x Jog-Distance on left / right click")
+        )
         self.button_reset.SetToolTip(_("Reset Matrix"))
-        self.button_translate_right.SetToolTip(_("Translate Right by 1x / 10x Jog-Distance on left / right click"))
-        self.button_rotate_ccw.SetToolTip(_("Rotate Counterclockwise by 5° / by 90° on left / right click"))
-        self.button_translate_down.SetToolTip(_("Translate Down by 1x / 10x Jog-Distance on left / right click"))
-        self.button_rotate_cw.SetToolTip(_("Rotate Clockwise by 5° / by 90° on left / right click"))
-        self.text_a.SetMinSize((58, 23))
-        self.text_a.SetToolTip(_("Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"))
-        self.text_d.SetMinSize((58, 23))
-        self.text_d.SetToolTip(_("Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"))
-        self.text_c.SetMinSize((58, 23))
-        self.text_c.SetToolTip(_("Skew X - to skew the element in X-direction by a° you need to provide tan(a), i.e. \n"
-                                 "15° = 0.2679 \n"
-                                 "30° = 0.5774 \n"
-                                 "45° = 1.0 \n"
-                                 "60° = 1.7321"))
-        self.text_b.SetMinSize((58, 23))
-        self.text_b.SetToolTip(_("Skew Y - to skew the element in Y-direction by a° you need to provide tan(a), i.e. \n"
-                                 "15° = 0.2679 \n"
-                                 "30° = 0.5774 \n"
-                                 "45° = 1.0 \n"
-                                 "60° = 1.7321"))
-        self.text_e.SetMinSize((58, 23))
-        self.text_e.SetToolTip(_("Translate X - moves the element by this amount of mils in the X-direction; "  
-                                 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"))
-        self.text_f.SetMinSize((58, 23))
-        self.text_f.SetToolTip(_("Translate Y - moves the element by this amount of mils in the Y-direction; " 
-                                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"))
+        self.button_translate_right.SetToolTip(
+            _("Translate Right by 1x / 10x Jog-Distance on left / right click")
+        )
+        self.button_rotate_ccw.SetToolTip(
+            _("Rotate Counterclockwise by 5° / by 90° on left / right click")
+        )
+        self.button_translate_down.SetToolTip(
+            _("Translate Down by 1x / 10x Jog-Distance on left / right click")
+        )
+        self.button_rotate_cw.SetToolTip(
+            _("Rotate Clockwise by 5° / by 90° on left / right click")
+        )
+        self.text_a.SetMinSize((55, 23))
+        self.text_a.SetToolTip(
+            _(
+                "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"
+            )
+        )
+        self.text_d.SetMinSize((55, 23))
+        self.text_d.SetToolTip(
+            _(
+                "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
+            )
+        )
+        self.text_c.SetMinSize((55, 23))
+        self.text_c.SetToolTip(
+            _(
+                "Skew X - to skew the element in X-direction by alpha° you need either \n"
+                "- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+                "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+                "In any case this value will then be represented as tan(alpha)"
+            )
+        )
+        self.text_b.SetMinSize((55, 23))
+        self.text_b.SetToolTip(
+            _(
+                "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
+                "- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+                "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+                "In any case this value will then be represented as tan(alpha)"
+            )
+        )
+        self.text_e.SetMinSize((55, 23))
+        self.text_e.SetToolTip(
+            _(
+                "Translate X - moves the element by this amount of mils in the X-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+        )
+        self.text_f.SetMinSize((55, 23))
+        self.text_f.SetToolTip(
+            _(
+                "Translate Y - moves the element by this amount of mils in the Y-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+        )
         # end wxGlade
 
     def __do_layout(self):
@@ -892,7 +944,7 @@ class Transform(wx.Panel):
         grid_sizer_2.Add(self.button_rotate_ccw, 0, 0, 0)
         grid_sizer_2.Add(self.button_translate_down, 0, 0, 0)
         grid_sizer_2.Add(self.button_rotate_cw, 0, 0, 0)
-        
+
         grid_sizer_3 = wx.FlexGridSizer(3, 4, 0, 0)
         # Add some labels to make textboxes clearer to understand
         grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
@@ -901,17 +953,17 @@ class Transform(wx.Panel):
         grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
         # First X
         grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
-        grid_sizer_3.Add(self.text_a, 0, 0, 0) # Scale X
-        grid_sizer_3.Add(self.text_c, 0, 0, 0) # Skew X
-        grid_sizer_3.Add(self.text_e, 0, 0, 0) # Translate X
+        grid_sizer_3.Add(self.text_a, 0, 0, 0)  # Scale X
+        grid_sizer_3.Add(self.text_c, 0, 0, 0)  # Skew X
+        grid_sizer_3.Add(self.text_e, 0, 0, 0)  # Translate X
         # Then Y
         grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
-        grid_sizer_3.Add(self.text_d, 0, 0, 0) # Scale Y
-        grid_sizer_3.Add(self.text_b, 0, 0, 0) # Skew Y
-        grid_sizer_3.Add(self.text_f, 0, 0, 0) # Translate Y
-        
+        grid_sizer_3.Add(self.text_d, 0, 0, 0)  # Scale Y
+        grid_sizer_3.Add(self.text_b, 0, 0, 0)  # Skew Y
+        grid_sizer_3.Add(self.text_f, 0, 0, 0)  # Translate Y
+
         matrix_sizer.Add(grid_sizer_2, 0, wx.EXPAND, 0)
-        matrix_sizer.AddSpacer(3) # Make some room...
+        matrix_sizer.AddSpacer(3)  # Make some room...
         matrix_sizer.Add(grid_sizer_3, 0, wx.EXPAND, 0)
         self.SetSizer(matrix_sizer)
         matrix_sizer.Fit(self)
@@ -948,12 +1000,14 @@ class Transform(wx.Panel):
             # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
-            self.text_a.SetValue('%.6f' % matrix.a) # Scale X
-            self.text_b.SetValue('%.6f' % matrix.b) # Skew Y
-            self.text_c.SetValue('%.6f' % matrix.c) # Skew X
-            self.text_d.SetValue('%.6f' % matrix.d) # Scale Y
-            self.text_e.SetValue('%.1f' % matrix.e) # Translate X, thats in mils, so about 0.25 mm...
-            self.text_f.SetValue('%.1f' % matrix.f) # Translate Y, thats in mils...
+            self.text_a.SetValue("%.6f" % matrix.a)  # Scale X
+            self.text_b.SetValue("%.6f" % matrix.b)  # Skew Y
+            self.text_c.SetValue("%.6f" % matrix.c)  # Skew X
+            self.text_d.SetValue("%.6f" % matrix.d)  # Scale Y
+            self.text_e.SetValue(
+                "%.1f" % matrix.e
+            )  # Translate X, thats in mils, so about 0.025 mm, so 1 digit should be more than enough...
+            self.text_f.SetValue("%.1f" % matrix.f)  # Translate Y, thats in mils...
 
     def select_ready(self, v):
         """
@@ -974,44 +1028,27 @@ class Transform(wx.Panel):
     def matrix_updated(self):
         self.context.signal("refresh_scene")
         self.update_matrix_text()
-    
+
     def scaleit(self, scale):
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "scale %f %f \n"
-            % (
-                scale,
-                scale
-            )
-        )
+        self.context("scale %f %f \n" % (scale, scale))
         self.matrix_updated()
-        
+
     def rotateit(self, angle):
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
         self.context("rotate %fdeg \n" % (angle))
         self.matrix_updated()
-        
+
     def translateit(self, dx, dy):
         self.context("translate %f %f\n" % (dx, dy))
         self.matrix_updated()
 
-        
     def on_scale_down_50(self, event=None):  # wxGlade: Navigation.<event_handler>
-        scale = 2.0 / 3.0 # 66.6% - inverse of 150% 
+        scale = 2.0 / 3.0  # 66.6% - inverse of 150%
         self.scaleit(scale)
 
     def on_scale_up_50(self, event=None):  # wxGlade: Navigation.<event_handler>
-        scale = 3.0 / 2.0 # 150%
+        scale = 3.0 / 2.0  # 150%
         self.scaleit(scale)
-        
+
     def on_scale_down_5(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
         self.scaleit(scale)
@@ -1080,13 +1117,40 @@ class Transform(wx.Panel):
         angle = 90.0
         self.rotateit(angle)
 
+    def skewed_value(self, stxt):
+        tau = pi * 2
+        try:
+            stxt = stxt.lower()
+            if stxt.endswith("deg"):
+                angle = tau * float(stxt[:-3]) / 360.0
+                valu = tan(angle)
+            elif stxt.endswith("grad"):
+                angle = tau * float(stxt[:-4]) / 400.0
+                valu = tan(angle)
+            elif stxt.endswith(
+                "rad"
+            ):  # Must be after 'grad' since 'grad' ends with 'rad' too.
+                angle = float(stxt[:-3])
+                valu = tan(angle)
+            elif stxt.endswith("turn"):
+                angle = tau * float(stxt[:-4])
+                valu = tan(angle)
+            elif stxt.endswith("%"):
+                angle = tau * (float(stxt[:-1]) / 100.0)
+                valu = tan(angle)
+            else:
+                valu = float(stxt)
+        except:
+            valu = 0.0
+        return valu
+
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             # Save values before the reset-command is executed
             sc_x = float(self.text_a.GetValue())
-            sk_x = float(self.text_c.GetValue())
+            sk_x = self.skewed_value(self.text_c.GetValue())
             sc_y = float(self.text_d.GetValue())
-            sk_y = float(self.text_b.GetValue())
+            sk_y = self.skewed_value(self.text_b.GetValue())
             tl_x = self.text_e.GetValue()
             tl_y = self.text_f.GetValue()
             # SVG defines the transformation Matrix as  - Matrix parameters are
@@ -1095,12 +1159,12 @@ class Transform(wx.Panel):
             self.context(
                 "matrix %f %f %f %f %s %s\n"
                 % (
-                    sc_x, # Scale X
-                    sk_y, # Skew Y
-                    sk_x, # Skew X
-                    sc_y, # Scale Y
-                    tl_x, # Translate X
-                    tl_y  # Translate Y
+                    sc_x,  # Scale X
+                    sk_y,  # Skew Y
+                    sk_x,  # Skew X
+                    sc_y,  # Scale Y
+                    tl_x,  # Translate X
+                    tl_y,  # Translate Y
                 )
             )
         except ValueError:

@@ -957,36 +957,32 @@ msgstr "Skaliert das Element um diesen Faktor in X-Richtung, so bedeutet etwa 2.
 
 #: meerk40t/gui/panes/navigationpanels.py:875
 msgid ""
-"Skew X - to skew the element in X-direction by a° you need to provide tan(a), i.e. \n"
-"15° = 0.2679 \n"
-"30° = 0.5774 \n"
-"45° = 1.0 \n"
-"60° = 1.7321"
-msgstr "Verzerren in X - um das Element um a° zu verzerren, muss der Wert als tan(a) angegeben werden, also: \n"
-"15° = 0.2679 \n"
-"30° = 0.5774 \n"
-"45° = 1.0 \n"
-"60° = 1.7321"
+"Skew X - to skew the element in X-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr "Verzerren in X - um das Element um alpha° zu verzerren, muss der Wert entweder \n"
+"- direkt als tan(alpha) angegeben werden, also: 15° = 0.2679, 30° = 0.5774, 45° = 1.0 usw.\n"
+"- oder als Winkel wie 15deg, 0.25turn, usw. angegeben werden\n"
+"In jedem Fall wird der Wert dann als tan(alpha) dargestellt."
 
 #: meerk40t/gui/panes/navigationpanels.py:875
 msgid ""
-"Translate X - moves the element by this amount of mils in the X-direction; "  
+"Translate X - moves the element by this amount of mils in the X-direction; "
 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr "Verschieben des Elements um den Wert in mils (1/1000 Zoll) in X-Richtung; "
 "es können auch 'reale' Entfernungen wie 3cm, 50mm, 2in verwendet werden"
 
 #: meerk40t/gui/panes/navigationpanels.py:875
 msgid ""
-"Skew Y - to skew the element in Y-direction by a° you need to provide tan(a), i.e. \n"
-"15° = 0.2679 \n"
-"30° = 0.5774 \n"
-"45° = 1.0 \n"
-"60° = 1.7321"
-msgstr "Verzerren in Y - um das Element um a° zu verzerren, muss der Wert als tan(a) angegeben werden, also: \n"
-"15° = 0.2679 \n"
-"30° = 0.5774 \n"
-"45° = 1.0 \n"
-"60° = 1.7321"
+"Skew Y - to skew the element in Y-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr "Verzerren in Y - um das Element um alpha° zu verzerren, muss der Wert entweder \n"
+"- direkt als tan(alpha) angegeben werden, also: 15° = 0.2679, 30° = 0.5774, 45° = 1.0 usw.\n"
+"- oder als Winkel wie 15deg, 0.25turn, usw. angegeben werden\n"
+"In jedem Fall wird der Wert dann als tan(alpha) dargestellt."
 
 #: meerk40t/gui/navigation.py:421 meerk40t/gui/panes/transformpanel.py:110
 msgid "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
@@ -994,7 +990,7 @@ msgstr "Skaliert das Element um diesen Faktor in Y-Richtung, so bedeutet etwa 2.
 
 #: meerk40t/gui/navigation.py:423 meerk40t/gui/panes/transformpanel.py:112
 msgid ""
-"Translate Y - moves the element by this amount of mils in the Y-direction; "  
+"Translate Y - moves the element by this amount of mils in the Y-direction; "
 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr "Verschieben des Elements um den Wert in mils (1/1000 Zoll) in Y-Richtung; "
 "es können auch 'reale' Entfernungen wie 3cm, 50mm, 2in verwendet werden"
@@ -7546,7 +7542,7 @@ msgstr "Sollte diese Option die für die Optimerung benötigte Zeit drastisch ve
 "* Die Option 'Brenne Innenliegendes zuerst' abwählen, falls nicht vollständig durch das Material geschnitten werden soll \n"
 "* Verlegen der innenliegende Pfade in einen eigenen frühen Arbeitsgang und Abwahl der Optionen 'Verbinde Arbeitsgänge' und 'Brenne Innenliegendes zuerst' \n"
 "* Falls mehrere Durchgänge genutzt werden, wähle 'Verbinde Durchläufe' aus"
-                    
+
 
 #: meerk40t/core/planner.py:275
 msgid "Group Inner Burns"
