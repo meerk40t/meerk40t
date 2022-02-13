@@ -4072,20 +4072,20 @@ class Elemental(Modifier):
 
         @context.console_argument("sx", type=float, help=_("scale_x value"))
         @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("ky", type=float, help=_("skew_y value"))
+        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("tx", type=Length, help=_("translate_x value"))
         @context.console_argument("ty", type=Length, help=_("translate_y value"))
         @context.console_command(
             "matrix",
-            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
+            help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
         def element_matrix(
-            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwargs
+            command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
         ):
-            if tx is None:
+            if ty is None:
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
@@ -4102,14 +4102,15 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if ty:
-                raise SyntaxError
             try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
                 m = Matrix(
                     sx,
                     kx,
-                    sy,
                     ky,
+                    sy,
                     tx.value(
                         ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                     ),
