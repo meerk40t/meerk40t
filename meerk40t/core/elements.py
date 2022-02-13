@@ -4072,18 +4072,18 @@ class Elemental(Modifier):
 
         @context.console_argument("sx", type=float, help=_("scale_x value"))
         @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("ky", type=float, help=_("skew_y value"))
+        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("tx", type=Length, help=_("translate_x value"))
         @context.console_argument("ty", type=Length, help=_("translate_y value"))
         @context.console_command(
             "matrix",
-            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
+            help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
         def element_matrix(
-            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwargs
+            command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
         ):
             if ty is None:
                 channel("----------")
