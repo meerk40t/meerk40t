@@ -844,7 +844,6 @@ class Kernel:
 
         :return:
         """
-        import datetime
         import types
 
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
