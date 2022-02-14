@@ -25,17 +25,19 @@ def on_usb_running(origin, value):
     """
     running = SLEEP_DISABLED[1]
     running[origin] = value
-    any = False
+    any_origin_running = False
     for v in running:
         q = running[v]
         if q:
-            any = True
+            any_origin_running = True
             break
-    if any != SLEEP_DISABLED[2]:
-        SLEEP_DISABLED[2] = any
-        if any:
+    if any_origin_running != SLEEP_DISABLED[2]:
+        SLEEP_DISABLED[2] = any_origin_running
+        if any_origin_running:
+            # pylint: disable=E1102
             SLEEP_DISABLED[0](".sleepmode_disable\n")
         else:
+            # pylint: disable=E1102
             SLEEP_DISABLED[0](".sleepmode_enable\n")
 
 
