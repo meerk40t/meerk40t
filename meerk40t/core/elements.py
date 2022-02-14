@@ -3660,16 +3660,12 @@ class Elemental(Modifier):
             y_pos = bounds[1]
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            offset_x = (
-                y_offset.value(ppi=1000.0, relative_length=width)
-                if len(args) >= 1
-                else 0
-            )
-            offset_y = (
-                x_offset.value(ppi=1000.0, relative_length=height)
-                if len(args) >= 2
-                else offset_x
-            )
+            
+            offset_x = x_offset.value(ppi=1000.0, relative_length=width)
+            if y_offset is None:
+                offset_y = offset_x
+            else:
+                offset_y = y_offset.value(ppi=1000.0, relative_length=height)
 
             x_pos -= offset_x
             y_pos -= offset_y
