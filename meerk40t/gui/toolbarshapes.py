@@ -15,7 +15,8 @@ from meerk40t.gui.icons import (
 )
 
 ID_TOOL_MOUSE = wx.NewId()
-ID_TOOL_POSITION = wx.NewId()
+ID_TOOL_RELOCATE = wx.NewId()
+ID_TOOL_DRAW = wx.NewId()
 ID_TOOL_OVAL = wx.NewId()
 ID_TOOL_CIRCLE = wx.NewId()
 ID_TOOL_POLYGON = wx.NewId()
@@ -36,34 +37,34 @@ def register_shapes_tools(gui, context):
         lambda e: context("tool none\n"),
         id=ID_TOOL_MOUSE,
     )
-    if context.has_feature("tool/position"):
+    if context.has_feature("tool/relocate"):
         toolbar.AddTool(
-            ID_TOOL_POSITION, _("Set Position"), icons8_place_marker_50.GetBitmap()
+            ID_TOOL_RELOCATE, _("Set Position"), icons8_place_marker_50.GetBitmap()
         )
         toolbar.Bind(
             wx.EVT_TOOL,
-            lambda e: context("tool position\n"),
-            id=ID_TOOL_POSITION,
+            lambda e: context("tool relocate\n"),
+            id=ID_TOOL_RELOCATE,
         )
     if context.has_feature("tool/draw"):
         toolbar.AddTool(
-            ID_TOOL_POSITION, _("Draw"), icons8_pencil_drawing_50.GetBitmap()
+            ID_TOOL_DRAW, _("Draw"), icons8_pencil_drawing_50.GetBitmap()
         )
         toolbar.Bind(
             wx.EVT_TOOL,
             lambda e: context("tool draw\n"),
-            id=ID_TOOL_POSITION,
+            id=ID_TOOL_DRAW,
         )
-    if context.has_feature("tool/oval"):
+    if context.has_feature("tool/ellipse"):
         toolbar.AddTool(
             ID_TOOL_OVAL,
-            _("Oval"),
+            _("Ellipse"),
             icons8_oval_50.GetBitmap(),
         )
 
         toolbar.Bind(
             wx.EVT_TOOL,
-            lambda e: context("tool oval\n"),
+            lambda e: context("tool ellipse\n"),
             id=ID_TOOL_OVAL,
         )
     if context.has_feature("tool/circle"):
