@@ -253,7 +253,7 @@ class CutObject:
                 if c.burn_started:
                     return True
             elif c.burns_done == c.passes:
-                    return True
+                return True
         return False
 
     def contains_unburned_groups(self):
