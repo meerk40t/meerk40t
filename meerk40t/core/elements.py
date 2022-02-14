@@ -3384,7 +3384,6 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
-
         @context.console_option("size", "s", type=float, help=_("font size to for object"))
         @context.console_argument("text", type=str, help=_("quoted string of text"))
         @context.console_command(
