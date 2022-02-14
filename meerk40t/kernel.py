@@ -2623,6 +2623,7 @@ class Kernel:
                 import sys
 
                 if hasattr(sys, "_MEIPASS"):
+                    # pylint: disable=no-member
                     self._current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
                     return
