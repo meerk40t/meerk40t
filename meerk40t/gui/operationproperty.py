@@ -16,6 +16,7 @@ class OperationPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._Buffer = None
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_layer_color = wx.Button(self.main_panel, wx.ID_ANY, "")
