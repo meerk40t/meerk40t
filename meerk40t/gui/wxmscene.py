@@ -16,7 +16,7 @@ from meerk40t.gui.scene.scenewidgets import (
     SelectionWidget,
 )
 from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer, EllipseTool, RelocateTool, CircleTool, \
-    PolylineTool
+    PolylineTool, PolygonTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
@@ -92,6 +92,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
         context.register("tool/polyline", PolylineTool)
+        context.register("tool/polygon", PolygonTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
