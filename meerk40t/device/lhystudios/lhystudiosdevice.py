@@ -1056,9 +1056,9 @@ class LhystudiosDriver(Driver):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def set_d_ratio(self, dratio=None):
-        if self.settings.dratio != dratio:
-            self.settings.dratio = dratio
+    def set_d_ratio(self, d_ratio=None):
+        if self.settings.dratio != d_ratio:
+            self.settings.dratio = d_ratio
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
