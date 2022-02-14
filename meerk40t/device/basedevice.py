@@ -148,7 +148,7 @@ def plugin(kernel, lifecycle=None):
             help=_("device"),
             output_type="device",
         )
-        def device(channel, _, remainder=None, **kwargs):
+        def device_command(channel, _, remainder=None, **kwargs):
             device_context = kernel.get_context("devices")
             if remainder is None:
                 channel(_("----------"))
