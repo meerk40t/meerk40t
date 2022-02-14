@@ -972,13 +972,7 @@ class Widget(list):
         """
         if dx == 0 and dy == 0:
             return
-        if isnan(dx):
-            return
-        if isnan(dy):
-            return
-        if isinf(dx):
-            return
-        if isinf(dy):
+        if isnan(dx) or isnan(dy) or isinf(dx) or isinf(dy):
             return
         self.translate_loop(dx, dy)
 
