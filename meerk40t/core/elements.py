@@ -1048,6 +1048,14 @@ class LaserOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
+        if (
+            (self._operation in ("Raster", "Image") and self.settings.speed > 500)
+            or
+            (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
+            or
+            self.settings.power <= 100
+        ):
+            parts.append("❌")
         if self.default:
             parts.append("✓")
         if self.settings.passes_custom and self.settings.passes != 1:
