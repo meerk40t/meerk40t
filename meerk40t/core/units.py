@@ -80,7 +80,6 @@ class ViewPort:
             nm_x, nm_y = nm_x, nm_y
         return nm_x * self.user_scale_x * self.native_scale_x, nm_y * self.user_scale_x * self.native_scale_y
 
-
     def length(
         self,
         value,
