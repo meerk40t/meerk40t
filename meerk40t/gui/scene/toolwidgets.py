@@ -1,9 +1,9 @@
 import wx
 
-from meerk40t.svgelements import Path, Point, Rect, Ellipse, Circle, Polyline, Polygon
+from meerk40t.svgelements import Path, Point, Rect, Ellipse, Circle, Polyline, Polygon, SVGText
 
 from .scene import Scene, Widget
-from ...core.units import UNITS_PER_MM
+from ...core.units import UNITS_PER_MM, UNITS_PER_PIXEL
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1
@@ -419,3 +419,43 @@ class RelocateTool(ToolWidget):
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
             self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+
+
+class TextTool(ToolWidget):
+    """
+    Text Drawing Tool
+
+    Adds Text at set location.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.x = None
+        self.y = None
+        self.text = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.text is not None:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            gc.DrawText(self.text.text, self.x, self.y)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.p1 = complex(space_pos[0], space_pos[1])
+            _ = self.scene.context._
+            self.text = SVGText("")
+            x = space_pos[0]
+            y = space_pos[1]
+            self.x = x
+            self.y = y
+            self.text *= "translate({x}, {y}) scale({scale})".format(x=x, y=y, scale=UNITS_PER_PIXEL)
+            dlg = wx.TextEntryDialog(self.scene.gui, _("What text message"), _("Text"), "")
+            dlg.SetValue("")
+            if dlg.ShowModal() == wx.ID_OK:
+                self.text.text = dlg.GetValue()
+                self.scene.context.elements.add_elem(self.text, classify=True)
+                self.text = None
+            dlg.Destroy()
+            self.scene.context.signal("refresh_scene", self.scene.name)
