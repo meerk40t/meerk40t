@@ -1,5 +1,5 @@
 import unittest
-from math import floor, ceil
+from math import ceil
 
 from PIL import Image, ImageDraw
 
