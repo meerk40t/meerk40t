@@ -38,7 +38,7 @@ class Modifier:
     A modifier alters a context with additional functionality set during attachment and detachment.
 
     These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
+    to be undone. Rather detach should kill any secondary processes the modifier may possess.
 
     A modifiers can only be called once at any particular context.
     """
@@ -49,6 +49,7 @@ class Modifier:
         self.state = STATE_INITIALIZE
 
     def __repr__(self):
+        # pylint: disable=no-member
         return '{class_name}({context}, name="{name}", channel={channel})'.format(
             class_name=self.__class__.__name__,
             context=repr(self.context),
