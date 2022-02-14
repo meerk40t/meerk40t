@@ -12,6 +12,7 @@ the ctypes windll kernel32 threadstate to be ES_SYSTEM_REQUIRED which disables s
 in windows.
 """
 
+
 SLEEP_DISABLED = [None, dict(), False]
 
 
@@ -30,7 +31,6 @@ def on_usb_running(origin, value):
         if q:
             any = True
             break
-
     if any != SLEEP_DISABLED[2]:
         SLEEP_DISABLED[2] = any
         if any:
