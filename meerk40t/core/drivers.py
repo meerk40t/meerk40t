@@ -65,7 +65,6 @@ class Driver:
         self.plot = None
 
         self.state = DRIVER_STATE_RAPID
-        self.properties = 0
         self.is_relative = False
         self.laser = False
         self.root_context.setting(bool, "opt_rapid_between", True)
@@ -511,21 +510,6 @@ class Driver:
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
         self.context.signal("driver;status", status)
-
-    def set_prop(self, mask):
-        self.properties |= mask
-
-    def unset_prop(self, mask):
-        self.properties &= ~mask
-
-    def is_prop(self, mask):
-        return bool(self.properties & mask)
-
-    def toggle_prop(self, mask):
-        if self.is_prop(mask):
-            self.unset_prop(mask)
-        else:
-            self.set_prop(mask)
 
 
 class Drivers(Modifier):

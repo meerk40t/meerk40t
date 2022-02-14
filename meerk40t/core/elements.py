@@ -1048,6 +1048,14 @@ class LaserOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
+        if (
+            (self._operation in ("Raster", "Image") and self.settings.speed > 500)
+            or
+            (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
+            or
+            self.settings.power <= 100
+        ):
+            parts.append("❌")
         if self.default:
             parts.append("✓")
         if self.settings.passes_custom and self.settings.passes != 1:
@@ -1864,7 +1872,7 @@ class Elemental(Modifier):
 
         return decor
 
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+    def tree_operation(self, name, node_type=None, help="", **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
@@ -4470,11 +4478,11 @@ class Elemental(Modifier):
             Delegate to either ops or elements depending on the current node emphasis
             """
             for item in self.flat(
-                types=("op", "elem", "file", "group"), emphasized=True
+                types=("op", "elem", "group", "file"), emphasized=True
             ):
                 if item.type == "op":
                     return "ops", list(self.ops(emphasized=True))
-                if item.type in ("elem", "file", "group"):
+                if item.type in ("elem", "group", "file"):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
@@ -5402,34 +5410,6 @@ class Elemental(Modifier):
                 from os import system as open_in_shell
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
-        def duplicate_element_1(node, **kwargs):
-            duplicate_element_n(node, copies=1, **kwargs)
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="elem", help=""
-        )
-        def duplicate_element_n(node, copies, **kwargs):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
-        )
-        def reset_user_changes(node, copies=1, **kwargs):
-            self.context("reset\n")
-
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
             and not isinstance(node.object, Path)
@@ -5444,7 +5424,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Horizontally"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Mirror Horizontally"),
         )
         def mirror_elem(node, **kwargs):
@@ -5461,7 +5441,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Vertically"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Flip Vertically"),
         )
         def flip_elem(node, **kwargs):
@@ -5481,7 +5461,7 @@ class Elemental(Modifier):
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
             _("Scale %s%%") % "{scale_percent}",
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwargs):
@@ -5544,7 +5524,7 @@ class Elemental(Modifier):
         )
         @self.tree_operation(
             _(u"Rotate %s°") % ("{angle}"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
@@ -5558,11 +5538,37 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
-        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_operation(
+            _("Make 1 copy"),
+            node_type="elem",
+            help=""
+        )
+        def duplicate_element_1(node, **kwargs):
+            duplicate_element_n(node, copies=1, **kwargs)
+
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}",
+            node_type="elem",
+            help=""
+        )
+        # TODO Make this duplicate elements in the group hierarchy
+        def duplicate_element_n(node, copies, **kwargs):
+            context = self.context
+            elements = context.elements
+            adding_elements = [
+                copy(e) for e in list(self.elems(emphasized=True)) * copies
+            ]
+            elements.add_elems(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_emphasis(None)
+
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify User Changes"),
-            node_type=("elem", "file", "group"),
+            _("Reify user changes"),
+            node_type=("elem", "group", "file"),
             help=""
         )
         def reify_elem_changes(node, **kwargs):
@@ -5573,6 +5579,16 @@ class Elemental(Modifier):
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
             self.context("element subpath\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Reset user changes"),
+            node_type=("branch elem", "elem", "group", "file"),
+            help=""
+        )
+        def reset_user_changes(node, copies=1, **kwargs):
+            self.context("reset\n")
 
         @self.tree_operation(
             _("Merge items"),
@@ -5829,7 +5845,6 @@ class Elemental(Modifier):
                 op = CommandOperation(name, command)
                 op_setting_context.load_persistent_object(op)
             elif op_type == "consoleop":
-                # name = op_setting_context.get_persistent_value(str, "label")
                 command = op_setting_context.get_persistent_value(str, "command")
                 op = ConsoleOperation(command)
                 op_setting_context.load_persistent_object(op)
@@ -5932,7 +5947,7 @@ class Elemental(Modifier):
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
         for item in elements.flat(
-            types=("elem", "file", "group"), depth=depth, **kwargs
+            types=("elem", "group", "file"), depth=depth, **kwargs
         ):
             yield item
 
