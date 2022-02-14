@@ -12,8 +12,9 @@ the ctypes windll kernel32 threadstate to be ES_SYSTEM_REQUIRED which disables s
 in windows.
 """
 
-
-SLEEP_DISABLED = [None, dict(), False]
+SLEEP_CONTEXT = None
+SLEEP_ORIGIN_RUNNING = dict()
+SLEEP_VALUE = False
 
 
 def on_usb_running(origin, value):
@@ -23,7 +24,10 @@ def on_usb_running(origin, value):
     On_usb_running listens for pipe;running signals and if any origin value is true
     This calls sleepmode_disable.
     """
-    running = SLEEP_DISABLED[1]
+    global SLEEP_ORIGIN_RUNNING
+    global SLEEP_VALUE
+    global SLEEP_CONTEXT
+    running = SLEEP_ORIGIN_RUNNING
     running[origin] = value
     any = False
     for v in running:
@@ -31,15 +35,18 @@ def on_usb_running(origin, value):
         if q:
             any = True
             break
-    if any != SLEEP_DISABLED[2]:
-        SLEEP_DISABLED[2] = any
+
+    if any != SLEEP_VALUE:
+        SLEEP_VALUE = any
         if any:
-            SLEEP_DISABLED[0](".sleepmode_disable\n")
+            SLEEP_CONTEXT(".sleepmode_disable\n")
         else:
-            SLEEP_DISABLED[0](".sleepmode_enable\n")
+            SLEEP_CONTEXT(".sleepmode_enable\n")
 
 
 def plugin(kernel, lifecycle):
+    global SLEEP_CONTEXT
+
     if platform.system() != "Windows":
         # Plugin only matters for MSW platform
         return
@@ -49,8 +56,7 @@ def plugin(kernel, lifecycle):
         context.listen("pipe;running", on_usb_running)
     elif lifecycle == "register":
         context = kernel.root
-
-        SLEEP_DISABLED[0] = context
+        SLEEP_CONTEXT = context
         _ = kernel.translation
 
         @context.console_command(
