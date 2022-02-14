@@ -1,3 +1,8 @@
+from math import (
+    pi,
+    tan,
+)
+
 import wx
 from wx import aui
 
@@ -36,10 +41,6 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Length, Group
-from math import (
-    pi,
-    tan,
-)
 
 _ = wx.GetTranslation
 
@@ -639,14 +640,24 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
         default_pos = "0{units}".format(units=context.root.units_name)
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
+        self.text_position_x = wx.TextCtrl(
+            self, wx.ID_ANY, value=default_pos, style=wx.TE_PROCESS_ENTER
+        )
+        self.text_position_y = wx.TextCtrl(
+            self, wx.ID_ANY, value=default_pos, style=wx.TE_PROCESS_ENTER
+        )
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to
+        )
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_x
+        )
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
         # end wxGlade
         self.bed_dim = context.root
@@ -720,7 +731,9 @@ class PulsePanel(wx.Panel):
         self.button_navigate_pulse = wx.BitmapButton(
             self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap()
         )
-        self.spin_pulse_duration = wx.SpinCtrl(self, wx.ID_ANY, "50", min=1, max=1000)
+        self.spin_pulse_duration = wx.SpinCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
+        )
         self.__set_properties()
         self.__do_layout()
 
@@ -731,7 +744,7 @@ class PulsePanel(wx.Panel):
             wx.EVT_SPINCTRL, self.on_spin_pulse_duration, self.spin_pulse_duration
         )
         self.Bind(
-            wx.EVT_TEXT_ENTER, self.on_spin_pulse_duration, self.spin_pulse_duration
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_pulse, self.spin_pulse_duration
         )
         # end wxGlade
 
@@ -888,13 +901,15 @@ class Transform(wx.Panel):
         self.text_a.SetMinSize((55, 23))
         self.text_a.SetToolTip(
             _(
-                "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"
+                "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
+                "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
         self.text_d.SetMinSize((55, 23))
         self.text_d.SetToolTip(
             _(
-                "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
+                "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
+                "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
         self.text_c.SetMinSize((55, 23))
@@ -1117,39 +1132,44 @@ class Transform(wx.Panel):
         angle = 90.0
         self.rotateit(angle)
 
-    def skewed_value(self, stxt):
+    @staticmethod
+    def skewed_value(stxt):
         tau = pi * 2
-        try:
-            stxt = stxt.lower()
-            if stxt.endswith("deg"):
-                angle = tau * float(stxt[:-3]) / 360.0
-                valu = tan(angle)
-            elif stxt.endswith("grad"):
-                angle = tau * float(stxt[:-4]) / 400.0
-                valu = tan(angle)
-            elif stxt.endswith(
-                "rad"
-            ):  # Must be after 'grad' since 'grad' ends with 'rad' too.
-                angle = float(stxt[:-3])
-                valu = tan(angle)
-            elif stxt.endswith("turn"):
-                angle = tau * float(stxt[:-4])
-                valu = tan(angle)
-            elif stxt.endswith("%"):
-                angle = tau * (float(stxt[:-1]) / 100.0)
-                valu = tan(angle)
-            else:
-                valu = float(stxt)
-        except:
-            valu = 0.0
+        stxt = stxt.lower()
+        if stxt.endswith("deg"):
+            angle = tau * float(stxt[:-3]) / 360.0
+            valu = tan(angle)
+        elif stxt.endswith("grad"):
+            angle = tau * float(stxt[:-4]) / 400.0
+            valu = tan(angle)
+        elif stxt.endswith(
+            "rad"
+        ):  # Must be after 'grad' since 'grad' ends with 'rad' too.
+            angle = float(stxt[:-3])
+            valu = tan(angle)
+        elif stxt.endswith("turn"):
+            angle = tau * float(stxt[:-4])
+            valu = tan(angle)
+        elif stxt.endswith("%"):
+            angle = tau * (float(stxt[:-1]) / 100.0)
+            valu = tan(angle)
+        else:
+            valu = float(stxt)
+        return valu
+
+    @staticmethod
+    def scaled_value(stxt):
+        if stxt.endswith("%"):
+            valu = float(stxt[:-1]) / 100.0
+        else:
+            valu = float(stxt)
         return valu
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
-            # Save values before the reset-command is executed
-            sc_x = float(self.text_a.GetValue())
+            sc_x = self.scaled_value(self.text_a.GetValue())
             sk_x = self.skewed_value(self.text_c.GetValue())
-            sc_y = float(self.text_d.GetValue())
+            sc_y = self.scaled_value(self.text_d.GetValue())
             sk_y = self.skewed_value(self.text_b.GetValue())
             tl_x = self.text_e.GetValue()
             tl_y = self.text_f.GetValue()
@@ -1169,6 +1189,7 @@ class Transform(wx.Panel):
             )
         except ValueError:
             self.update_matrix_text()
+
         self.context.signal("refresh_scene")
         self.update_matrix_text()
 
@@ -1180,15 +1201,22 @@ class JogDistancePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.spin_jog_mils = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "100.0", min=0.0, max=10000.0
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="100.0",
+            min=0.0,
+            max=10000.0,
         )
         self.spin_jog_inch = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "0.394", min=0.0, max=10.0
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.394", min=0.0, max=10.0
         )
         self.spin_jog_mm = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "10.0", min=0.0, max=254.0
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="10.0", min=0.0, max=254.0
         )
-        self.spin_jog_cm = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=25.4)
+        self.spin_jog_cm = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.0", min=0.0, max=25.4
+        )
 
         # begin wxGlade: JogDistancePanel.__set_properties
         self.spin_jog_mils.SetMinSize((80, 23))

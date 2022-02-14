@@ -952,8 +952,11 @@ msgid "Rotate Clockwise by 5° / by 90° on left / right click"
 msgstr "Im Uhrzeigersinn um 5° / 90° drehen mit linker / rechter Maustaste"
 
 #: meerk40t/gui/panes/navigationpanels.py:875
-msgid "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"
-msgstr "Skaliert das Element um diesen Faktor in X-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%"
+msgid ""
+"Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"
+"You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+msgstr "Skaliert das Element um diesen Faktor in X-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%."
+"Die Änderung kann entweder direkt als Zahl, alternativ auch als %-Wert angegeben werden, 0.5 oder 50% haben den gleichen Effekt."
 
 #: meerk40t/gui/panes/navigationpanels.py:875
 msgid ""
@@ -985,8 +988,11 @@ msgstr "Verzerren in Y - um das Element um alpha° zu verzerren, muss der Wert e
 "In jedem Fall wird der Wert dann als tan(alpha) dargestellt."
 
 #: meerk40t/gui/navigation.py:421 meerk40t/gui/panes/transformpanel.py:110
-msgid "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
-msgstr "Skaliert das Element um diesen Faktor in Y-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%"
+msgid ""
+"Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
+"You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+msgstr "Skaliert das Element um diesen Faktor in Y-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%. "
+"Die Änderung kann entweder direkt als Zahl, alternativ auch als %-Wert angegeben werden, 0.5 oder 50% haben den gleichen Effekt."
 
 #: meerk40t/gui/navigation.py:423 meerk40t/gui/panes/transformpanel.py:112
 msgid ""
@@ -1002,7 +1008,6 @@ msgstr "Verzerren"
 #: meerk40t/gui/panes/navigationpanels.py:902
 msgid "Translate"
 msgstr "Verschieben"
-
 
 #: meerk40t/gui/navigation.py:425 meerk40t/gui/panes/pulsepanel.py:36
 msgid "Fire a short laser pulse"
