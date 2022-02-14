@@ -510,6 +510,7 @@ class wxMeerK40t(wx.App, Module):
         kernel = context.kernel
 
         try:  # pyinstaller internal location
+            # pylint: disable=no-member
             _resource_path = os.path.join(sys._MEIPASS, "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:
