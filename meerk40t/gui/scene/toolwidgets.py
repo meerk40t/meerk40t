@@ -3,7 +3,6 @@ import wx
 from meerk40t.svgelements import Path, Point, Rect, Ellipse, Circle, Polyline, Polygon
 
 from .scene import Scene, Widget
-from ..laserrender import LaserRender
 from ...core.units import UNITS_PER_MM
 
 HITCHAIN_HIT = 0
