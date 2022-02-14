@@ -583,12 +583,33 @@ class RectSelectWidget(Widget):
     Rectangle Selection Widget, draws the selection rectangle if left-clicked and dragged
     """
 
+    # selection_method = 1 = hit, 2 = cross, 3 = entail
+    # Color for selection rectangle (hit, cross, entail)
+    selection_colors = [
+        wx.RED,
+        wx.GREEN,
+        wx.BLUE,
+    ]
+    # Visual help for selection rectangle (to help those with visual challenges i.e colorblindness)
+    selection_line = [wx.PENSTYLE_DOT_DASH, wx.PENSTYLE_DOT, wx.PENSTYLE_SHORT_DASH]
+    selection_text = [
+        "Select all elements that the selection rectangle touches",
+        "Select all elements that the selection rectangle crosses in at least one dimension",
+        "Select all elements that the selection rectangle fully encloses",
+    ]
+
+    # 3 | 0        Define Selection method per sector
+    # - + -
+    # 2 | 1
+    #
+    selection_method = [3, 3, 2, 1]  # The 'old method was 3 3
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetColour(self.selection_colors[0])
         self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.selection_pen.SetStyle(self.selection_line[0])
         self.start_location = None
         self.end_location = None
 
@@ -618,7 +639,17 @@ class RectSelectWidget(Widget):
                 sy = self.start_location[1]
                 ex = self.end_location[0]
                 ey = self.end_location[1]
-                right_drag = sx <= ex # and sy <= ey
+                if sx <= ex:
+                    if sy <= ey:
+                        sector = 0
+                    else:
+                        sector = 1
+                else:
+                    if sy <= ey:
+                        sector = 3
+                    else:
+                        sector = 2
+
                 sx = min(self.start_location[0], self.end_location[0])
                 sy = min(self.start_location[1], self.end_location[1])
                 ex = max(self.start_location[0], self.end_location[0])
@@ -627,22 +658,27 @@ class RectSelectWidget(Widget):
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-                if right_drag: # Object needs to be fully enclosed by selection rectangle
-                    if (
-                        sx <= xmin <= ex
-                        and sy <= ymin <= ey
-                        and sx <= xmax <= ex
-                        and sy <= ymax <= ey
-                    ):
-                        obj.node.emphasized = True
-                    else:
-                        obj.node.emphasized = False
-                else: 
-                    # Let's see whether there is an intersection
-                    if (sx < xmax and ex > xmin and sy < ymax and ey > ymin):
-                        obj.node.emphasized = True
-                    else:
-                        obj.node.emphasized = False
+
+                # no hit
+                cover = 0
+                # Check Hit
+                # The rectangles don't overlap if
+                # one rectangle's minimum in some dimension
+                # is greater than the other's maximum in
+                # that dimension.
+                if not (sx > xmax or xmin > ex or sy > ymax or ymin > ey):
+                    cover = 1
+                # Check Cross
+                if (sx <= xmin and xmax <= ex) or (sy <= ymin and ymax <= ey):
+                    cover = 2
+                # Check entail
+                if (sx <= xmin and xmax <= ex) and (sy <= ymin and ymax <= ey):
+                    cover = 3
+
+                if cover >= self.selection_method[sector]:
+                    obj.node.emphasized = True
+                else:
+                    obj.node.emphasized = False
             self.scene.request_refresh()
             self.start_location = None
             self.end_location = None
@@ -667,12 +703,26 @@ class RectSelectWidget(Widget):
             y0 = self.start_location[1]
             x1 = self.end_location[0]
             y1 = self.end_location[1]
-            # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
-            if x1 >= x0:
-                self.selection_pen.SetColour(wx.BLUE)
+            if x0 <= x1:
+                if y0 <= y1:
+                    sector = 0
+                else:
+                    sector = 1
             else:
-                self.selection_pen.SetColour(wx.GREEN)
-                
+                if y0 <= y1:
+                    sector = 3
+                else:
+                    sector = 2
+
+            # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
+
+            self.selection_pen.SetColour(
+                self.selection_colors[self.selection_method[sector] - 1]
+            )
+            self.selection_pen.SetStyle(
+                self.selection_line[self.selection_method[sector] - 1]
+            )
+
             linewidth = 2.0 / matrix.value_scale_x()
             if linewidth < 1:
                 linewidth = 1
@@ -986,7 +1036,7 @@ class GuideWidget(Widget):
                     ends.append((x, h - length - edge_gap))
 
                     # gc.DrawText("%g %s" % (mark_point, p.units_name), x, 0, -tau / 4)
-                    gc.DrawText("%g" % mark_point, x, edge_gap, - math.tau / 4)
+                    gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
             x += points
 
         y = offset_y
