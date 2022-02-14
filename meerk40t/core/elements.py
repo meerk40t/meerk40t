@@ -1669,6 +1669,7 @@ class Elemental(Service):
                 data.append(simple_line)
                 return "elements", data
 
+        @self.console_option("size", "s", type=float, help=_("font size to for object"))
         @self.console_argument("text", type=str, help=_("quoted string of text"))
         @self.console_command(
             "text",
@@ -1676,11 +1677,13 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, **kwargs):
+        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
             if text is None:
                 channel(_("No text specified"))
                 return
             svg_text = SVGText(text)
+            if size is not None:
+                svg_text.font_size = size
             svg_text *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             self.add_element(svg_text)
             if data is None:
