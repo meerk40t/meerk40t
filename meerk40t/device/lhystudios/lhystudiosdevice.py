@@ -211,7 +211,7 @@ def plugin(kernel, lifecycle=None):
             input_type="lhystudios",
             help=_("update movement codes for the drivers"),
         )
-        def realtime_pause(data=None, **kwargs):
+        def code_update(data=None, **kwargs):
             spooler, driver, output = data
             driver.update_codes()
 
@@ -220,7 +220,7 @@ def plugin(kernel, lifecycle=None):
             input_type="lhystudios",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(channel, _, data=None, **kwargs):
+        def realtime_status(channel, _, data=None, **kwargs):
             spooler, driver, output = data
             try:
                 output.update_status()
@@ -232,7 +232,7 @@ def plugin(kernel, lifecycle=None):
             input_type="lhystudios",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(data=None, **kwargs):
+        def realtime_continue(data=None, **kwargs):
             spooler, driver, output = data
             output.abort_waiting = True
 
