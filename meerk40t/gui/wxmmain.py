@@ -128,6 +128,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
+
         self.context.gui = self
         self.usb_running = False
         context = self.context
@@ -163,7 +164,17 @@ class MeerK40t(MWindow):
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
 
-        self.main_statusbar = self.CreateStatusBar(3)
+        self.main_statusbar = self.CreateStatusBar(4)
+        self.main_statusbar.SetStatusStyles([wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount())
+        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        self.SetStatusBarPane(0)
+        self.main_statusbar.SetStatusText(_("Status..."), 0)
+        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
+        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
+        self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
+        self.DoGiveHelp_called = False
+        self.menus_open = 0
+        self.top_menu = None  # Needed because event.GetMenu is None for submenu titles
 
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
 
@@ -1611,7 +1622,10 @@ class MeerK40t(MWindow):
         self.usb_running = value
 
     def on_usb_state_text(self, origin, value):
-        self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
+        self.main_statusbar.SetStatusText(
+            _("Usb: %s") % value,
+            1,
+        )
 
     def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
@@ -1619,12 +1633,14 @@ class MeerK40t(MWindow):
         self.pipe_state = state
 
         self.main_statusbar.SetStatusText(
-            _("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1
+            _("Controller: %s") % self.context.kernel.get_text_thread_state(state),
+            2,
         )
 
     def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value), 2
+            _("Spooler: %s") % self.context.get_text_thread_state(value),
+            3,
         )
 
     def on_export_signal(self, origin, frame):
@@ -1665,14 +1681,9 @@ class MeerK40t(MWindow):
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
         self.__set_titlebar()
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
-        # statusbar fields
-        main_statusbar_fields = ["Status"]
-        for i, field in enumerate(main_statusbar_fields):
-            self.main_statusbar.SetStatusText(field, i)
 
     def load_or_open(self, filename):
         """
@@ -1953,3 +1964,68 @@ class MeerK40t(MWindow):
                 element.node.modified()
             except AttributeError:
                 pass
+
+    def update_statusbar(self, text):
+        self.main_statusbar.SetStatusText(text, self.GetStatusBarPane())
+
+    def status_update(self):
+        # ToDo Get spool status and make the status dynamic
+        self.update_statusbar(_("Idle..."))
+
+    # The standard wx.Frame version of DoGiveHelp is not passed the help text in Windows
+    # (no idea about other platforms - wxWidgets code for each platform is different)
+    # and has no way of knowing the menuitem and getting the text itself.
+
+    # So we override the standard wx.Frame version and make it do nothing
+    # and capture the EVT_MENU_HIGHLIGHT ourselves to process it.
+    def DoGiveHelp(self, text, show):
+        """Override wx default DoGiveHelp method
+
+        Because we do not call event.Skip() on EVT_MENU_HIGHLIGHT, this should not be called.
+        """
+        if self.DoGiveHelp_called:
+            return
+        if text:
+            print("DoGiveHelp called with help text:", text)
+        else:
+            print("DoGiveHelp called but still no help text")
+        self.DoGiveHelp_called = True
+
+    def on_menu_open(self, event):
+        self.menus_open += 1
+        menu = event.GetMenu()
+        if menu:
+            title = menu.GetTitle()
+            if title:
+                self.update_statusbar(title + "...")
+
+    def on_menu_close(self, event):
+        self.menus_open -= 1
+        if self.menus_open <= 0:
+            self.top_menu = None
+        self.status_update()
+
+    def on_menu_highlight(self, event):
+        menuid = event.GetId()
+        menu = event.GetMenu()
+        if menuid == wx.ID_SEPARATOR:
+            self.update_statusbar("...")
+            return
+        if not self.top_menu and not menu:
+            self.status_update()
+            return
+        if menu and not self.top_menu:
+            self.top_menu = menu
+        if self.top_menu and not menu:
+            menu = self.top_menu
+        menuitem, submenu = menu.FindItem(menuid)
+        if not menuitem:
+            self.update_statusbar("...")
+            return
+        helptext = menuitem.GetHelp()
+        if not helptext:
+            helptext = "{m} ({s})".format(
+                m=menuitem.GetItemLabelText(),
+                s=_("No help text"),
+            )
+        self.update_statusbar(helptext)
