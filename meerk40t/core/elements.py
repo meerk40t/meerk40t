@@ -1900,9 +1900,6 @@ class Elemental(Modifier):
             inner.values = [0]
             registered_name = inner.__name__
 
-            if help: # DEBUGGING
-                print(name,registered_name,help)
-
             for _in in ins:
                 p = "tree/%s/%s" % (_in, registered_name)
                 if p in kernel.registered:
