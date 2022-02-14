@@ -2604,8 +2604,6 @@ class Kernel:
 
         @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
-            import os
-
             for f in os.listdir(self._current_directory):
                 channel(str(f))
 
