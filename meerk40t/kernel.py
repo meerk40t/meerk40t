@@ -990,7 +990,8 @@ class Kernel:
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        self.signal = signal  # redefine signal function.
+        # pylint: disable=method-hidden
+        self.signal = signal  # redefine signal function, hidden by design
 
         def console(code):
             if channel:
@@ -998,7 +999,8 @@ class Kernel:
                     if c:
                         channel(_("Suspended Command: %s" % c))
 
-        self.console = console  # redefine console signal
+        # pylint: disable=method-hidden
+        self.console = console  # redefine console signal, hidden by design
 
         self.process_queue()  # Process last events.
 
