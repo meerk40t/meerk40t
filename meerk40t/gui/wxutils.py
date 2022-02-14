@@ -115,8 +115,6 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
                 menu.AppendSeparator()
             if submenu_name is not None:
                 submenu = wx.Menu()
-                if func.help:
-                    print("menu", submenu_name, func.help)
                 menu.AppendSubMenu(submenu, submenu_name, func.help)
                 submenus[submenu_name] = submenu
 
@@ -127,8 +125,6 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
                 func.real_name,
             )
             continue
-        if func.help:
-            print("item",func.real_name, func.help)
         if func.radio_state is not None:
             item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO)
             gui.Bind(
