@@ -1187,6 +1187,8 @@ class Planner(Modifier):
             data=None,
             **kwgs
         ):
+            # pylint: disable=no-member
+            # No member calls are for dynamically attributed values.
             if y_distance is None:
                 raise SyntaxError
             # Following must be in same order as added in preprocess()
