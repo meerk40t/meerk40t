@@ -1328,7 +1328,7 @@ class MeerK40t(MWindow):
             with wx.BusyInfo(_("Preparing simulation...")):
                 self.context(
                     "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
+                )
         self.Bind(
             wx.EVT_MENU,
             open_simulator,
