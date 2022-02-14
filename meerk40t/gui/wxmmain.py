@@ -169,7 +169,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText(_("Status..."), 0)
-        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open) # ToDo DELETE - only for testing
+        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
         self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
         self.DoGiveHelp_called = False
