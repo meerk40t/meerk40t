@@ -67,6 +67,7 @@ GUI_START = True
 
 
 def plugin(kernel, lifecycle):
+    # pylint: disable=global-statement
     global GUI_START
     kernel_root = kernel.root
     if lifecycle == "console":
