@@ -2155,3 +2155,13 @@ icons8_union_50 = PyEmbeddedImage(
     b'ErXNNfNlHOqJpFCL3NmZpNIEzR1IvTATyZjHIp1cjpzEFF/8DyCZbWBlVy1MQ667ovwVox9J'
     b'EhNzsQaVeI1xwGpkNnLAVKQa/AS8Qo767wB/I0c+kU7Mf+JHwWe4FSVqVTt3cAAAAABJRU5E'
     b'rkJggg==')
+
+icons8_grid = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAB'
+    b'AUlEQVRoge2WOQ7CMBBFn2gjsdwEOrYTstwuULLcgQYaKDJRLCumQBQf9J9kWRl/FxmNrAfG'
+    b'mE+YAHvgCjyAC7ADxqLZXkbAAXj2rEOcK2WL7OLCEZgDFbCI7yewFcsWqSO8yurrqNdi2SK3'
+    b'CFdZvYr6TSwLwKDnRy6xT7P6LPazWLbIlm4+lzRdWNLN50YsW2REN6P5qoGhWPYtY5qunIE7'
+    b'cKLpQt+zp5A1P4OCdlhRWhS0w4qSoqAdVpQUBe2wouQoaIcV5S9R0A4rSouCdlhRUhS0w4qS'
+    b'oqAdVpQcBe2wovwlCtphRWlR0A4rSoqCdlhRUhS0w4qSo6AdVhRjvsgL9TqhhyhVQOwAAAAA'
+    b'SUVORK5CYII=')
+
