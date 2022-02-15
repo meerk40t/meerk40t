@@ -602,7 +602,7 @@ class RectSelectWidget(Widget):
     # - + -
     # 2 | 1
     #
-    selection_method = [3, 3, 2, 1]  # The 'old method was 3 3
+    selection_method = [3, 3, 2, 1]  # Recommended: 3 3 1 1 
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -616,7 +616,7 @@ class RectSelectWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+ def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.start_location = space_pos
@@ -628,6 +628,26 @@ class RectSelectWidget(Widget):
             return RESPONSE_DROP
         elif event_type == "leftup":
             elements.validate_selected_area()
+            sx = self.start_location[0]
+            sy = self.start_location[1]
+            ex = self.end_location[0]
+            ey = self.end_location[1]
+            if sx <= ex:
+                if sy <= ey:
+                    sector = 0
+                else:
+                    sector = 1
+            else:
+                if sy <= ey:
+                    sector = 3
+                else:
+                    sector = 2
+
+            sx = min(self.start_location[0], self.end_location[0])
+            sy = min(self.start_location[1], self.end_location[1])
+            ex = max(self.start_location[0], self.end_location[0])
+            ey = max(self.start_location[1], self.end_location[1])
+            
             for obj in elements.elems():
                 try:
                     q = obj.bbox(True)
@@ -635,30 +655,10 @@ class RectSelectWidget(Widget):
                     continue  # This element has no bounds.
                 if q is None:
                     continue
-                sx = self.start_location[0]
-                sy = self.start_location[1]
-                ex = self.end_location[0]
-                ey = self.end_location[1]
-                if sx <= ex:
-                    if sy <= ey:
-                        sector = 0
-                    else:
-                        sector = 1
-                else:
-                    if sy <= ey:
-                        sector = 3
-                    else:
-                        sector = 2
-
-                sx = min(self.start_location[0], self.end_location[0])
-                sy = min(self.start_location[1], self.end_location[1])
-                ex = max(self.start_location[0], self.end_location[0])
-                ey = max(self.start_location[1], self.end_location[1])
                 xmin = q[0]
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-
                 # no hit
                 cover = 0
                 # Check Hit
@@ -666,13 +666,16 @@ class RectSelectWidget(Widget):
                 # one rectangle's minimum in some dimension
                 # is greater than the other's maximum in
                 # that dimension.
-                if not (sx > xmax or xmin > ex or sy > ymax or ymin > ey):
+                if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
                     cover = 1
                 # Check Cross
-                if (sx <= xmin and xmax <= ex) or (sy <= ymin and ymax <= ey):
+                if ( 
+                     ( (sx <= xmin) and (xmax <= ex) ) and not ( (sy>ymax) or (ey<ymin) )  or  
+                     ( (sy <= ymin) and (ymax <= ey) ) and not ( (sx>xmax) or (ex<xmin) ) 
+                     ):
                     cover = 2
-                # Check entail
-                if (sx <= xmin and xmax <= ex) and (sy <= ymin and ymax <= ey):
+                # Check contain
+                if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
                     cover = 3
 
                 if cover >= self.selection_method[sector]:
@@ -692,6 +695,7 @@ class RectSelectWidget(Widget):
             self.end_location = None
             return RESPONSE_CONSUME
         return RESPONSE_DROP
+
 
     def process_draw(self, gc):
         """
