@@ -483,8 +483,10 @@ class VectorTool(ToolWidget):
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             path = Path(self.path)
             if self.mouse_position is not None:
-                path.line(self.mouse_position)
-            print(path)
+                if self.c0:
+                    path.smooth_cubic(self.c0, self.mouse_position)
+                else:
+                    path.line(self.mouse_position)
             gpath = self.render.make_path(gc, path)
             gc.DrawPath(gpath)
             del gpath
@@ -506,9 +508,14 @@ class VectorTool(ToolWidget):
             self.c0 = (space_pos[0], space_pos[1])
         elif event_type == "move":
             self.c0 = (space_pos[0], space_pos[1])
+            if self.path:
+                self.scene.context.signal("refresh_scene", self.scene.name)
         elif event_type == "leftup":
-            print(self.c0)
+            if self.c0 is not None and self.path:
+                self.path.smooth_cubic(self.c0, self.mouse_position)
+                self.scene.context.signal("refresh_scene", self.scene.name)
             self.c0 = None
+            self.mouse_position = None
         elif event_type == "hover":
             self.mouse_position = space_pos[0], space_pos[1]
             if self.path:
