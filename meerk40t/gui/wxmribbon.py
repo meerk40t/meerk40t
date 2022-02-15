@@ -335,7 +335,7 @@ class RibbonPanel(wx.Panel):
             ID_CONFIGURATION,
             _("Config"),
             icons8_computer_support_50.GetBitmap(),
-            "",
+            _("Opens Configuration Window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,

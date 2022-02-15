@@ -1100,6 +1100,8 @@ class GrayscalePanel(wx.Panel):
         self.text_grayscale_green.SetToolTip(_("Green Factor"))
         self.slider_grayscale_blue.SetToolTip(_("Blue component control"))
         self.text_grayscale_blue.SetToolTip(_("Blue Factor"))
+        self.slider_grayscale_lightness.SetToolTip(_("Lightness control"))
+        self.text_grayscale_lightness.SetToolTip(_("Lightness"))
         # end wxGlade
 
     def __do_layout(self):
