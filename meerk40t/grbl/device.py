@@ -240,7 +240,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "com_port",
                 "object": self,
-                "default": False,
+                "default": "com1",
                 "type": str,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
