@@ -20,8 +20,8 @@ def register_panel_ribbon(window, context):
         .Top()
         .RightDockable(False)
         .LeftDockable(False)
-        .MinSize(300, 120)
-        .FloatingSize(640, 120)
+        .MinSize(300, 150)
+        .FloatingSize(640, 150)
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
     )
@@ -199,8 +199,16 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
 
+
+        tool = RB.RibbonPage(
+            self._ribbon,
+            wx.ID_ANY,
+            _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+        )
+
         self.modify_panel = RB.RibbonPanel(
-            home,
+            tool,
             wx.ID_ANY,
             "" if self.is_dark else _("Modification"),
             icons8_opened_folder_50.GetBitmap(),
@@ -210,7 +218,7 @@ class RibbonPanel(wx.Panel):
         self.modify_button_bar = button_bar
 
         self.tool_panel = RB.RibbonPanel(
-            home,
+            tool,
             wx.ID_ANY,
             "" if self.is_dark else _("Tools"),
             icons8_opened_folder_50.GetBitmap(),
@@ -220,7 +228,7 @@ class RibbonPanel(wx.Panel):
         self.tool_button_bar = button_bar
 
         self.geometry_panel = RB.RibbonPanel(
-            home,
+            tool,
             wx.ID_ANY,
             "" if self.is_dark else _("Geometry"),
             icons8_opened_folder_50.GetBitmap(),
