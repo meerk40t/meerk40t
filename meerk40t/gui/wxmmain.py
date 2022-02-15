@@ -37,7 +37,7 @@ from .icons import (
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50,
+    icons8_save_50, icons8_union_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -272,6 +272,42 @@ class MeerK40t(MWindow):
                 "icon": icons8_mirror_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
                 "action": lambda v: kernel.elements("scale -1 1\n"),
+            },
+        )
+        kernel.register(
+            "button/modify/Union",
+            {
+                "label": _("Union"),
+                "icon": icons8_union_50,
+                "tip": _("Create a union of the selected elements"),
+                "action": lambda v: kernel.elements("element union\n"),
+            },
+        )
+        kernel.register(
+            "button/modify/Difference",
+            {
+                "label": _("Difference"),
+                "icon": icons8_union_50,
+                "tip": _("Create a difference of the selected elements"),
+                "action": lambda v: kernel.elements("element difference\n"),
+            },
+        )
+        kernel.register(
+            "button/modify/Xor",
+            {
+                "label": _("Xor"),
+                "icon": icons8_union_50,
+                "tip": _("Create a xor of the selected elements"),
+                "action": lambda v: kernel.elements("element xor\n"),
+            },
+        )
+        kernel.register(
+            "button/modify/Intersection",
+            {
+                "label": _("Intersection"),
+                "icon": icons8_union_50,
+                "tip": _("Create a intersection of the selected elements"),
+                "action": lambda v: kernel.elements("element intersection\n"),
             },
         )
 
