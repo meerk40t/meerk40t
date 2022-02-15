@@ -54,6 +54,8 @@ class ToolbarManager:
             "control": (aui.AuiToolBar(self.gui), _("Control")),
             "configuration": (aui.AuiToolBar(self.gui), _("Configuration")),
             "modify": (aui.AuiToolBar(self.gui), _("Modification")),
+            "tools": (aui.AuiToolBar(self.gui), _("Tools")),
+            "geometry": (aui.AuiToolBar(self.gui), _("Geometry")),
         }
 
     def module_open(self):
@@ -61,6 +63,8 @@ class ToolbarManager:
         self.set_control(self.context.find("button/control"))
         self.set_config(self.context.find("button/config"))
         self.set_modify(self.context.find("button/modify"))
+        self.set_tools(self.context.find("button/tools"))
+        self.set_geometry(self.context.find("button/geometry"))
 
     @lookup_listener("button/control")
     def set_control(self, new_values, old_values=None):
@@ -98,6 +102,28 @@ class ToolbarManager:
     @lookup_listener("button/modify")
     def set_modify(self, new_values, old_values=None):
         toolbar, caption = self.toolbars["modify"]
+        ToolbarManager.set_buttons(new_values, self.gui, toolbar)
+        width = toolbar.ToolCount * 58
+        toolbar.pane.BestSize((width, -1))
+        toolbar.pane.MinSize((width, -1))
+        toolbar.pane.MaxSize((width, -1))
+        toolbar.Realize()
+        self.gui._mgr.Update()
+
+    @lookup_listener("button/tools")
+    def set_tools(self, new_values, old_values=None):
+        toolbar, caption = self.toolbars["tools"]
+        ToolbarManager.set_buttons(new_values, self.gui, toolbar)
+        width = toolbar.ToolCount * 58
+        toolbar.pane.BestSize((width, -1))
+        toolbar.pane.MinSize((width, -1))
+        toolbar.pane.MaxSize((width, -1))
+        toolbar.Realize()
+        self.gui._mgr.Update()
+
+    @lookup_listener("button/geometry")
+    def set_geometry(self, new_values, old_values=None):
+        toolbar, caption = self.toolbars["geometry"]
         ToolbarManager.set_buttons(new_values, self.gui, toolbar)
         width = toolbar.ToolCount * 58
         toolbar.pane.BestSize((width, -1))

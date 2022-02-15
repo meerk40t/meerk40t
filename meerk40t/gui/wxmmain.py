@@ -37,7 +37,9 @@ from .icons import (
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50, icons8_union_50,
+    icons8_save_50, icons8_union_50, icons8_cursor_50, icons8_place_marker_50, icons8_pencil_drawing_50,
+    icons8_circle_50, icons8_polygon_50, icons8_polyline_50, icons8_rectangular_50, icons8_vector_50, icons8_type_50,
+    icons8_oval_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -274,8 +276,108 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("scale -1 1\n"),
             },
         )
+
         kernel.register(
-            "button/modify/Union",
+            "button/tools/Scene",
+            {
+                "label": _("Regular Scene"),
+                "icon": icons8_cursor_50,
+                "tip": _("Regular selection tool"),
+                "action": lambda v: kernel.elements("tool none\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Relocate",
+            {
+                "label": _("Set Position"),
+                "icon": icons8_place_marker_50,
+                "tip": _("Set position to given location"),
+                "action": lambda v: kernel.elements("tool relocate\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Draw",
+            {
+                "label": _("Draw"),
+                "icon": icons8_pencil_drawing_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool draw\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/ellipse",
+            {
+                "label": _("Ellipse"),
+                "icon": icons8_oval_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool ellipse\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/circle",
+            {
+                "label": _("Circle"),
+                "icon": icons8_circle_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool circle\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Polygon",
+            {
+                "label": _("Polygon"),
+                "icon": icons8_polygon_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool polygon\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Polyline",
+            {
+                "label": _("Polyline"),
+                "icon": icons8_polyline_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool polyline\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Rectangle",
+            {
+                "label": _("Rectangle"),
+                "icon": icons8_rectangular_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool rect\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Vector",
+            {
+                "label": _("Vector"),
+                "icon": icons8_vector_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool vector\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Text",
+            {
+                "label": _("Text"),
+                "icon": icons8_type_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool text\n"),
+            },
+        )
+        kernel.register(
+            "button/geometry/Union",
             {
                 "label": _("Union"),
                 "icon": icons8_union_50,
@@ -284,7 +386,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/modify/Difference",
+            "button/geometry/Difference",
             {
                 "label": _("Difference"),
                 "icon": icons8_union_50,
@@ -293,7 +395,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/modify/Xor",
+            "button/geometry/Xor",
             {
                 "label": _("Xor"),
                 "icon": icons8_union_50,
@@ -302,7 +404,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/modify/Intersection",
+            "button/geometry/Intersection",
             {
                 "label": _("Intersection"),
                 "icon": icons8_union_50,
