@@ -616,7 +616,7 @@ class RectSelectWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
- def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.start_location = space_pos
