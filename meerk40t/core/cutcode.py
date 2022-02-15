@@ -855,8 +855,8 @@ class PlotCut(CutObject):
         self.min_y = None
         self.max_x = None
         self.max_y = None
-        self.vertical_raster = False
-        self.horizontal_raster = False
+        self.v_raster = False
+        self.h_raster = False
         self.travels_top = False
         self.travels_bottom = False
         self.travels_right = False
@@ -882,9 +882,9 @@ class PlotCut(CutObject):
         ):
             return False
         if 0 < self.max_dx <= 15:
-            self.vertical_raster = True
+            self.v_raster = True
         elif 0 < self.max_dy <= 15:
-            self.horizontal_raster = True
+            self.h_raster = True
         else:
             return False
         self.settings.raster_step = min(self.max_dx, self.max_dy)
@@ -924,9 +924,9 @@ class PlotCut(CutObject):
             self.max_y = y
 
     def major_axis(self):
-        if self.horizontal_raster:
+        if self.h_raster:
             return 0
-        if self.vertical_raster:
+        if self.v_raster:
             return 1
 
         if len(self.plot) < 2:
