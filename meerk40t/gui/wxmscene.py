@@ -16,7 +16,7 @@ from meerk40t.gui.scene.scenewidgets import (
     SelectionWidget,
 )
 from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer, EllipseTool, RelocateTool, CircleTool, \
-    PolylineTool, PolygonTool, TextTool
+    PolylineTool, PolygonTool, TextTool, VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
@@ -97,6 +97,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
         context.register("tool/text", TextTool)
+        context.register("tool/vector", VectorTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
