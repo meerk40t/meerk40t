@@ -81,7 +81,7 @@ class Parameters:
             try:
                 type = self.type
             except AttributeError:
-                pass
+                type = None
             if type == "op cut":
                 return Color("red")
             elif type == "op engrave":
