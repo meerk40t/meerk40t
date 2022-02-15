@@ -244,6 +244,16 @@ def run():
     else:
         kernel.add_plugin(dxf_io.plugin)
 
+    try:
+        from .extra import cag
+    except Mk40tImportAbort as e:
+        print(
+            "Cannot install meerk40t 'cag' plugin - prerequisite '%s' needs to be installed"
+            % e
+        )
+    else:
+        kernel.add_plugin(cag.plugin)
+
     if not args.gui_suppress:
         try:
             from .camera.gui import gui as cameragui
