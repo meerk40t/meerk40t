@@ -1929,7 +1929,6 @@ class Elemental(Service):
             x_offset=None,
             y_offset=None,
             data=None,
-            args=tuple(),
             **kwargs,
         ):
             """
@@ -1946,8 +1945,8 @@ class Elemental(Service):
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
 
-            offset_x = self.device.length(x_offset, 0) if len(args) >= 1 else 0
-            offset_y = self.device.length(y_offset, 1) if len(args) >= 2 else offset_x
+            offset_x = self.device.length(x_offset, 0) if x_offset is not None else 0
+            offset_y = self.device.length(y_offset, 1) if y_offset is not None else offset_x
 
             x_pos -= offset_x
             y_pos -= offset_y
@@ -2326,20 +2325,20 @@ class Elemental(Service):
 
         @self.console_argument("sx", type=float, help=_("scale_x value"))
         @self.console_argument("kx", type=float, help=_("skew_x value"))
-        @self.console_argument("sy", type=float, help=_("scale_y value"))
         @self.console_argument("ky", type=float, help=_("skew_y value"))
+        @self.console_argument("sy", type=float, help=_("scale_y value"))
         @self.console_argument("tx", type=str, help=_("translate_x value"))
         @self.console_argument("ty", type=str, help=_("translate_y value"))
         @self.console_command(
             "matrix",
-            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
+            help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
         def element_matrix(
-            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwargs
+            command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
         ):
-            if tx is None:
+            if ty is None:
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
@@ -2356,14 +2355,15 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if ty:
-                raise SyntaxError
             try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
                 m = Matrix(
                     sx,
                     kx,
-                    sy,
                     ky,
+                    sy,
                     self.device.length(tx, 0),
                     self.device.length(ty, 1),
                 )
@@ -2720,7 +2720,7 @@ class Elemental(Service):
             for item in self.flat(emphasized=True):
                 if item.type.startswith("op"):
                     return "ops", list(self.ops(emphasized=True))
-                if item.type in ("elem", "file", "group"):
+                if item.type in ("elem", "group", "file"):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
@@ -3749,7 +3749,7 @@ class Elemental(Service):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Horizontally"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Mirror Horizontally"),
         )
         def mirror_elem(node, **kwargs):
@@ -3766,7 +3766,7 @@ class Elemental(Service):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Vertically"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Flip Vertically"),
         )
         def flip_elem(node, **kwargs):
@@ -3786,7 +3786,7 @@ class Elemental(Service):
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
             _("Scale %s%%") % "{scale_percent}",
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwargs):
@@ -3848,7 +3848,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _("Rotate %s°") % ("{angle}"), node_type=("elem", "file", "group"), help=""
+            _("Rotate %s°") % ("{angle}"), node_type=("elem", "group", "file"), help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
@@ -3861,10 +3861,12 @@ class Elemental(Service):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
+        # Duplicate here.
+
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify User Changes"), node_type=("elem", "file", "group"), help=""
+            _("Reify User Changes"), node_type=("elem", "group", "file"), help=""
         )
         def reify_elem_changes(node, **kwargs):
             self("reify\n")
@@ -3874,6 +3876,8 @@ class Elemental(Service):
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
             self("element subpath\n")
+
+        # TODO: Reset user changes here.
 
         @self.tree_operation(
             _("Merge items"),
@@ -4394,7 +4398,7 @@ class Elemental(Service):
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
         for item in elements.flat(
-            types=("elem", "file", "group"), depth=depth, **kwargs
+            types=("elem", "group", "file"), depth=depth, **kwargs
         ):
             yield item
 

@@ -356,15 +356,17 @@ def register_panel_pause(window, context):
 
 
 supported_languages = (
-    ("en", "English", wx.LANGUAGE_ENGLISH),
-    ("it", "italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", "français", wx.LANGUAGE_FRENCH),
-    ("de", "Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", "español", wx.LANGUAGE_SPANISH),
-    ("zh", "中文", wx.LANGUAGE_CHINESE),
-    ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt", "português", wx.LANGUAGE_PORTUGUESE),
-    ("pt-br", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("en", u"English", wx.LANGUAGE_ENGLISH),
+    ("it", u"italiano", wx.LANGUAGE_ITALIAN),
+    ("fr", u"français", wx.LANGUAGE_FRENCH),
+    ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
+    ("es", u"español", wx.LANGUAGE_SPANISH),
+    ("zh", u"中文", wx.LANGUAGE_CHINESE),
+    ("hu", u"Magyar", wx.LANGUAGE_HUNGARIAN),
+    ("pt_PT", u"português", wx.LANGUAGE_PORTUGUESE),
+    ("pt_BR", u"português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("ja", u"日本", wx.LANGUAGE_JAPANESE),
+    ("nl", u"Nederlands", wx.LANGUAGE_DUTCH),
 )
 
 

@@ -3030,6 +3030,10 @@ class Kernel(Settings):
                     break
                 except SyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
+
+                    # ToDo
+                    # Don't use command help, which is or should be descriptive - use command syntax instead
+                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg

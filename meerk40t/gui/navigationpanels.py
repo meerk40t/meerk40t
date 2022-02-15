@@ -41,7 +41,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Length
+from meerk40t.svgelements import Length, Group
 
 _ = wx.GetTranslation
 
@@ -261,6 +261,9 @@ class Drag(wx.Panel):
         self.button_align_corner_top_left.SetSize(
             self.button_align_corner_top_left.GetBestSize()
         )
+        self.button_align_drag_up.SetToolTip(
+            _("Move the selection and laser position upwards")
+        )
         self.button_align_drag_up.SetSize(self.button_align_drag_up.GetBestSize())
         self.button_align_corner_top_right.SetToolTip(
             _("Align laser with the upper right corner of the selection")
@@ -268,17 +271,26 @@ class Drag(wx.Panel):
         self.button_align_corner_top_right.SetSize(
             self.button_align_corner_top_right.GetBestSize()
         )
+        self.button_align_drag_left.SetToolTip(
+            _("Move the selection and laser position leftwards")
+        )
         self.button_align_drag_left.SetSize(self.button_align_drag_left.GetBestSize())
         self.button_align_center.SetToolTip(
             _("Align laser with the center of the selection")
         )
         self.button_align_center.SetSize(self.button_align_center.GetBestSize())
+        self.button_align_drag_right.SetToolTip(
+            _("Move the selection and laser position rightwards")
+        )
         self.button_align_drag_right.SetSize(self.button_align_drag_right.GetBestSize())
         self.button_align_corner_bottom_left.SetToolTip(
             _("Align laser with the lower left corner of the selection")
         )
         self.button_align_corner_bottom_left.SetSize(
             self.button_align_corner_bottom_left.GetBestSize()
+        )
+        self.button_align_drag_down.SetToolTip(
+            _("Move the selection and laser position downwards")
         )
         self.button_align_drag_down.SetSize(self.button_align_drag_down.GetBestSize())
         self.button_align_corner_bottom_right.SetToolTip(
@@ -332,10 +344,17 @@ class Drag(wx.Panel):
         self.button_align_drag_right.Enable(v)
         self.button_align_drag_left.Enable(v)
 
-    def on_button_align_center(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def get_bbox(self):
         elements = self.context.elements
-        elements.validate_selected_area()
-        bbox = elements.selected_area()
+        if elements.has_emphasis():
+            elements.validate_selected_area()
+            bbox = elements.selected_area()
+        else:
+            bbox = Group.union_bbox(elements.elems())
+        return bbox
+
+    def on_button_align_center(self, event=None):  # wxGlade: Navigation.<event_handler>
+        bbox = self.get_bbox()
         if bbox is None:
             return
         px = (bbox[0] + bbox[2]) / 2.0
@@ -346,9 +365,7 @@ class Drag(wx.Panel):
     def on_button_align_corner_tl(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.elements
-        elements.validate_selected_area()
-        bbox = elements.selected_area()
+        bbox = self.get_bbox()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
@@ -357,9 +374,7 @@ class Drag(wx.Panel):
     def on_button_align_corner_tr(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.elements
-        elements.validate_selected_area()
-        bbox = elements.selected_area()
+        bbox = self.get_bbox()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
@@ -368,9 +383,7 @@ class Drag(wx.Panel):
     def on_button_align_corner_bl(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.elements
-        elements.validate_selected_area()
-        bbox = elements.selected_area()
+        bbox = self.get_bbox()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
@@ -379,9 +392,7 @@ class Drag(wx.Panel):
     def on_button_align_corner_br(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        elements = self.context.elements
-        elements.validate_selected_area()
-        bbox = elements.selected_area()
+        bbox = self.get_bbox()
         if bbox is None:
             return
         self.context("move_absolute %f %f\n" % (bbox[2], bbox[3]))

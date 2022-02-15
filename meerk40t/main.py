@@ -1,4 +1,14 @@
+"""
+Laser software for the Stock-LIHUIYU laserboard.
+
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
+open-source laser cutting software. See https://github.com/meerk40t/meerk40t
+for full details.
+"""
+
 import argparse
+import asyncio
+import os
 import os.path
 import platform
 import sys
@@ -6,14 +16,6 @@ import sys
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
 
-"""
-Laser software for the Stock-LIHUIYU laserboard.
-
-MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
-open-source laser cutting software. See https://github.com/meerk40t/meerk40t
-for full details.
-
-"""
 APPLICATION_NAME = "MeerK40t"
 APPLICATION_VERSION = "0.8.0-beta1"
 
