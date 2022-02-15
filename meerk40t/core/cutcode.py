@@ -13,6 +13,8 @@ from ..device.lasercommandconstants import (
     COMMAND_SET_INCREMENTAL,
 )
 from ..svgelements import Color, Path, Point
+from ..tools.rasterplotter import X_AXIS, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL, TOP, RasterPlotter
+from ..tools.zinglplotter import ZinglPlotter
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
