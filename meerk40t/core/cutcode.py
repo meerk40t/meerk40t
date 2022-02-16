@@ -843,6 +843,15 @@ class PlotCut(CutObject):
     def __len__(self):
         return len(self.plot)
 
+    def __str__(self):
+        parts = list()
+        parts.append("{points} points".format(points=len(self.plot)))
+        parts.append("xmin: {v}".format(v=self.min_x))
+        parts.append("ymin: {v}".format(v=self.min_y))
+        parts.append("xmax: {v}".format(v=self.max_x))
+        parts.append("ymax: {v}".format(v=self.max_y))
+        return "PlotCut(%s)" % ", ".join(parts)
+
     def check_if_rasterable(self):
         """
         Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
