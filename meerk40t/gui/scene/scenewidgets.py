@@ -142,6 +142,7 @@ class SelectionWidget(Widget):
     key_shift_pressed = False
     key_control_pressed = False
     key_alt_pressed = False
+    was_lb_raised = False
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
 
@@ -253,31 +254,37 @@ class SelectionWidget(Widget):
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
-            if self.key_alt_pressed:
-                return RESPONSE_CHAIN
-            else:
-                self.save_width = self.width
-                self.save_height = self.height
-                self.uniform = True
-                self.tool(space_pos, dx, dy, -1)
-                return RESPONSE_CONSUME
+            # We are no longer listening directly to the leftdown event but to the delayed one instead
+            return RESPONSE_CHAIN
+        elif event_type == "leftdowndelayed":
+            self.was_lb_raised = True
+            self.save_width = self.width
+            self.save_height = self.height
+            self.uniform = True
+            self.tool(space_pos, dx, dy, -1)
+            return RESPONSE_CONSUME
         elif event_type == "middledown":
+            self.was_lb_raised = False
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = False
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
         elif event_type == "leftup":
-            if not self.key_alt_pressed:
-                self.tool(space_pos, dx, dy, 1)
-                self.elements.ensure_positive_bounds()
+            self.tool(space_pos, dx, dy, 1)
+            self.elements.ensure_positive_bounds()
+            if self.was_lb_raised:
+                self.was_lb_raised = False
                 return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
         elif event_type in ("middleup", "lost"):
+            self.was_lb_raised = False
             self.tool(space_pos, dx, dy, 1)
             self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         elif event_type == "move":
-            if not self.key_alt_pressed:
+            if self.was_lb_raised:
                 if not elements.has_emphasis():
                     return RESPONSE_CONSUME
                 if self.save_width is None or self.save_height is None:

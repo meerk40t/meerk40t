@@ -255,6 +255,30 @@ class ScenePanel(wx.Panel):
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "middleup")
 
+    t = None
+    lb_start = [0, 0]
+
+    def stop_the_timer(self):
+        if not self.t is None:
+            self.t.cancel()
+
+    def start_the_timer(self, position):
+        self.stop_the_timer()
+        self.lb_start = position
+        self.t = threading.Timer(0.3, self.timer_callback)
+        self.t.start()
+
+    def timer_callback(self):
+        self.t.cancel()
+        if self.scene.last_position is None:
+            self.scene.last_position = self.lb_start
+        matrix = self.scene.matrix
+        a = self.scene.convert_scene_to_window(self.lb_start)
+        b = self.scene.convert_scene_to_window(self.scene.last_position)
+        # print("Timer (%f,%f) - (%f,%f)" % (a[0], a[1], b[0], b[1]))
+        if (abs(a[0] - b[0]) <= 2) and (abs(a[1] - b[1]) <= 2):
+            self.scene.event(self.lb_start, "leftdowndelayed")
+
     def on_left_mouse_down(self, event):
         """
         Scene Panel left click event for down.
@@ -263,11 +287,15 @@ class ScenePanel(wx.Panel):
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
+        # Add a timer for 0.3 seconds to see if the user has held the mouse (relatively)
+        # still but pressed, this will then create "leftdowndelayed" event
+        self.start_the_timer(event.GetPosition())
 
     def on_left_mouse_up(self, event):
         """
         Scene Panel left click event for up.
         """
+        self.stop_the_timer()
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "leftup")
