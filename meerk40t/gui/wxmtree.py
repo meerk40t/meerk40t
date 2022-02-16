@@ -715,6 +715,10 @@ class ShadowTree:
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
                 self.set_icon(node, icons8_group_objects_20.GetBitmap())
+            elif node.type == "branch elems":
+                self.set_icon(node, icons8_vector_20.GetBitmap())
+            elif node.type == "branch ops":
+                self.set_icon(node, icons8_laser_beam_20.GetBitmap())
         else:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)

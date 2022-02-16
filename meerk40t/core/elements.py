@@ -182,7 +182,7 @@ class Node:
         return other is self
 
     def is_movable(self):
-        return self.type not in ("branch elems", "branch ops", "root")
+        return self.type != "root"
 
     def drop(self, drag_node):
         drop_node = self
@@ -286,6 +286,10 @@ class Node:
                     drop_node.add(e.object, type="opnode")
                     some_nodes = True
                 return some_nodes
+        elif drag_node.type == "branch elems" and drop_node.type == "branch ops":
+            drop_node.insert_sibling(drag_node)
+        elif drag_node.type == "branch ops" and drop_node.type == "branch elems":
+            drop_node.insert_sibling(drag_node)
         return False
 
     def reverse(self):
