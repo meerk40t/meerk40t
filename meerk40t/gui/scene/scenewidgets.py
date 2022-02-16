@@ -598,11 +598,22 @@ class RectSelectWidget(Widget):
         "Select all elements that the selection rectangle fully encloses",
     ]
 
-    # 3 | 0        Define Selection method per sector
+    # 2 | 1        Define Selection method per sector, movement of mouse from point of origin into that sector...
     # - + -
-    # 2 | 1
+    # 3 | 0
     #
-    selection_method = [3, 3, 2, 1]  # Recommended: 3 3 1 1 
+    selection_method = [
+        1,
+        3,
+        3,
+        1,
+    ]  # Selection rectangle to the top: enclose, to the bottom: touch
+    erase_previous = [
+        True,
+        True,
+        True,
+        False,
+    ]  # Testing: True will erase the previous selection, False will add to it
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -627,6 +638,7 @@ class RectSelectWidget(Widget):
             self.end_location = None
             return RESPONSE_DROP
         elif event_type == "leftup":
+
             elements.validate_selected_area()
             sx = self.start_location[0]
             sy = self.start_location[1]
@@ -647,7 +659,7 @@ class RectSelectWidget(Widget):
             sy = min(self.start_location[1], self.end_location[1])
             ex = max(self.start_location[0], self.end_location[0])
             ey = max(self.start_location[1], self.end_location[1])
-            
+
             for obj in elements.elems():
                 try:
                     q = obj.bbox(True)
@@ -669,10 +681,12 @@ class RectSelectWidget(Widget):
                 if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
                     cover = 1
                 # Check Cross
-                if ( 
-                     ( (sx <= xmin) and (xmax <= ex) ) and not ( (sy>ymax) or (ey<ymin) )  or  
-                     ( (sy <= ymin) and (ymax <= ey) ) and not ( (sx>xmax) or (ex<xmin) ) 
-                     ):
+                if (
+                    ((sx <= xmin) and (xmax <= ex))
+                    and not ((sy > ymax) or (ey < ymin))
+                    or ((sy <= ymin) and (ymax <= ey))
+                    and not ((sx > xmax) or (ex < xmin))
+                ):
                     cover = 2
                 # Check contain
                 if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
@@ -681,7 +695,8 @@ class RectSelectWidget(Widget):
                 if cover >= self.selection_method[sector]:
                     obj.node.emphasized = True
                 else:
-                    obj.node.emphasized = False
+                    if self.erase_previous[sector]:
+                        obj.node.emphasized = False
             self.scene.request_refresh()
             self.start_location = None
             self.end_location = None
@@ -695,7 +710,6 @@ class RectSelectWidget(Widget):
             self.end_location = None
             return RESPONSE_CONSUME
         return RESPONSE_DROP
-
 
     def process_draw(self, gc):
         """
