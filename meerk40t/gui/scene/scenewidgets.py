@@ -583,8 +583,8 @@ class RectSelectWidget(Widget):
     Rectangle Selection Widget, draws the selection rectangle if left-clicked and dragged
     """
 
-    # selection_method = 1 = hit, 2 = cross, 3 = entail
-    # Color for selection rectangle (hit, cross, entail)
+    # selection_method = 1 = hit, 2 = cross, 3 = enclose
+    # Color for selection rectangle (hit, cross, enclose)
     selection_colors = [
         wx.RED,
         wx.GREEN,
@@ -597,23 +597,17 @@ class RectSelectWidget(Widget):
         "Select all elements that the selection rectangle crosses in at least one dimension",
         "Select all elements that the selection rectangle fully encloses",
     ]
-
+    selection_criteria = [1, 2, 3]
     # 2 | 1        Define Selection method per sector, movement of mouse from point of origin into that sector...
     # - + -
     # 3 | 0
     #
     selection_method = [
-        1,
         3,
         3,
         1,
-    ]  # Selection rectangle to the top: enclose, to the bottom: touch
-    erase_previous = [
-        True,
-        True,
-        True,
-        False,
-    ]  # Testing: True will erase the previous selection, False will add to it
+        1,
+    ]  # Selection rectangle to the right: enclose, to the left: touch
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -695,7 +689,7 @@ class RectSelectWidget(Widget):
                 if cover >= self.selection_method[sector]:
                     obj.node.emphasized = True
                 else:
-                    if self.erase_previous[sector]:
+                    if not self.scene.isShiftPressed:
                         obj.node.emphasized = False
             self.scene.request_refresh()
             self.start_location = None
@@ -753,6 +747,10 @@ class RectSelectWidget(Widget):
             gc.StrokeLine(x1, y0, x1, y1)
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
+            if self.scene.isShiftPressed:
+                # Draw very ugly indicator...
+                gc.StrokeLine(x0, y0, x1, y1)
+                gc.StrokeLine(x1, y0, x0, y1)
 
 
 class ReticleWidget(Widget):

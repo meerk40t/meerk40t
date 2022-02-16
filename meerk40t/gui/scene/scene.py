@@ -114,6 +114,9 @@ class ScenePanel(wx.Panel):
 
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
 
+        self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
             self.scene_panel.Bind(wx.EVT_GESTURE_PAN, self.on_gesture)
@@ -140,6 +143,20 @@ class ScenePanel(wx.Panel):
         within the scene.
         """
         self.scene._signal_widget(self.scene.widget_root, *args, **kwargs)
+
+    def on_key_down(self, evt):
+        keycode = evt.GetKeyCode()
+        if keycode == wx.WXK_SHIFT:
+            self.scene.isShiftPressed = True
+        if keycode == wx.WXK_CONTROL:
+            self.scene.isCtrlPressed = True
+
+    def on_key_up(self, evt):
+        keycode = evt.GetKeyCode()
+        if keycode == wx.WXK_SHIFT:
+            self.scene.isShiftPressed = False
+        if keycode == wx.WXK_CONTROL:
+            self.scene.isCtrlPressed = False
 
     def on_size(self, event=None):
         if self.context is None:
@@ -386,6 +403,10 @@ class Scene(Module, Job):
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
         self.commit()
+
+    # Indicator for Keyboard-Modifier
+    isShiftPressed = False
+    isCtrlPressed = False
 
     def on_update_position(self, origin, pos):
         self.request_refresh_for_animation()
@@ -1435,7 +1456,7 @@ class SceneSpaceWidget(Widget):
             )
             p /= 250.0
             if self._previous_zoom is not None:
-                zoom_factor = e ** p
+                zoom_factor = e**p
                 zoom_change = zoom_factor / self._previous_zoom
                 self._previous_zoom = zoom_factor
                 self.scene_widget.matrix.post_scale(
