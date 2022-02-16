@@ -139,9 +139,40 @@ class SelectionWidget(Widget):
             self.clear()
             return HITCHAIN_DELEGATE
 
+    key_shift_pressed = False
+    key_control_pressed = False
+    key_alt_pressed = False
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
+
         elements = self.elements
-        if event_type == "hover_start":
+        # print("Selection-Event: %s" % event_type)
+
+        if event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_release":
+            if self.key_control_pressed:
+                self.key_control_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_press":
+            if not self.key_control_pressed:
+                self.key_control_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_release":
+            if self.key_alt_pressed:
+                self.key_alt_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_press":
+            if not self.key_alt_pressed:
+                self.key_alt_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "hover_start":
             self.scene.cursor("sizing")
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
@@ -222,29 +253,38 @@ class SelectionWidget(Widget):
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.save_width = self.width
-            self.save_height = self.height
-            self.uniform = True
-            self.tool(space_pos, dx, dy, -1)
-            return RESPONSE_CONSUME
+            if self.key_alt_pressed:
+                return RESPONSE_CHAIN
+            else:
+                self.save_width = self.width
+                self.save_height = self.height
+                self.uniform = True
+                self.tool(space_pos, dx, dy, -1)
+                return RESPONSE_CONSUME
         elif event_type == "middledown":
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = False
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
-        elif event_type in ("middleup", "leftup", "lost"):
+        elif event_type == "leftup":
+            if not self.key_alt_pressed:
+                self.tool(space_pos, dx, dy, 1)
+                self.elements.ensure_positive_bounds()
+                return RESPONSE_CONSUME
+        elif event_type in ("middleup", "lost"):
             self.tool(space_pos, dx, dy, 1)
             self.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
         elif event_type == "move":
-            if not elements.has_emphasis():
+            if not self.key_alt_pressed:
+                if not elements.has_emphasis():
+                    return RESPONSE_CONSUME
+                if self.save_width is None or self.save_height is None:
+                    self.save_width = self.width
+                    self.save_height = self.height
+                self.tool(space_pos, dx, dy, 0)
                 return RESPONSE_CONSUME
-            if self.save_width is None or self.save_height is None:
-                self.save_width = self.width
-                self.save_height = self.height
-            self.tool(space_pos, dx, dy, 0)
-            return RESPONSE_CONSUME
         return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy, event=0):
