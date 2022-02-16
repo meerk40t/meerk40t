@@ -96,6 +96,9 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_PAINT, self.on_paint)
         self.scene_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
 
+        self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+
         self.scene_panel.Bind(wx.EVT_MOTION, self.on_mouse_move)
 
         self.scene_panel.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -113,9 +116,6 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_mouse_capture_lost)
 
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
-
-        self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
-        self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -144,19 +144,43 @@ class ScenePanel(wx.Panel):
         """
         self.scene._signal_widget(self.scene.widget_root, *args, **kwargs)
 
+    # Indicator for Keyboard-Modifier
+    isShiftPressed = False
+    isCtrlPressed = False
+    isAltPressed = False
+
     def on_key_down(self, evt):
         keycode = evt.GetKeyCode()
+        # print("Key-Down: %f" % keycode)
         if keycode == wx.WXK_SHIFT:
-            self.scene.isShiftPressed = True
-        if keycode == wx.WXK_CONTROL:
-            self.scene.isCtrlPressed = True
+            if not self.isShiftPressed:  # ignore multiple calls
+                self.isShiftPressed = True
+                self.scene.event(self.scene.last_position, "kb_shift_press")
+        elif keycode == wx.WXK_CONTROL:
+            if not self.isCtrlPressed:  # ignore multiple calls
+                self.isCtrlPressed = True
+                self.scene.event(self.scene.last_position, "kb_ctrl_press")
+        elif keycode == wx.WXK_ALT:
+            if not self.isAltPressed:  # ignore multiple calls
+                self.isAltPressed = True
+                self.scene.event(self.scene.last_position, "kb_alt_press")
+                # self.scene.event(self.scene.last_position, "kb_alt_press")
 
     def on_key_up(self, evt):
         keycode = evt.GetKeyCode()
+        # print("Key-Up: %f" % keycode)
         if keycode == wx.WXK_SHIFT:
-            self.scene.isShiftPressed = False
-        if keycode == wx.WXK_CONTROL:
-            self.scene.isCtrlPressed = False
+            if self.isShiftPressed:  # ignore multiple calls
+                self.isShiftPressed = False
+                self.scene.event(self.scene.last_position, "kb_shift_release")
+        elif keycode == wx.WXK_CONTROL:
+            if self.isCtrlPressed:  # ignore multiple calls
+                self.isCtrlPressed = False
+                self.scene.event(self.scene.last_position, "kb_ctrl_release")
+        elif keycode == wx.WXK_ALT:
+            if self.isAltPressed:  # ignore multiple calls
+                self.isAltPressed = False
+                self.scene.event(self.scene.last_position, "kb_alt_release")
 
     def on_size(self, event=None):
         if self.context is None:
@@ -255,6 +279,8 @@ class ScenePanel(wx.Panel):
         if self.scene_panel.HasCapture():
             return
         self.scene.event(event.GetPosition(), "doubleclick")
+
+    last_mode = None
 
     def on_mouse_move(self, event: wx.MouseEvent):
         """
@@ -403,10 +429,6 @@ class Scene(Module, Job):
             context.fps = 60
         self.interval = 1.0 / float(context.fps)
         self.commit()
-
-    # Indicator for Keyboard-Modifier
-    isShiftPressed = False
-    isCtrlPressed = False
 
     def on_update_position(self, origin, pos):
         self.request_refresh_for_animation()
@@ -696,6 +718,7 @@ class Scene(Module, Job):
         """
         if self.log_events:
             self.log_events("%s: %s" % (event_type, str(window_pos)))
+
         if window_pos is None:
             # Capture Lost
             for i, hit in enumerate(self.hit_chain):
@@ -721,7 +744,31 @@ class Scene(Module, Job):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
+
         if event_type in (
+            "kb_shift_release",
+            "kb_shift_press",
+            "kb_ctrl_release",
+            "kb_ctrl_press",
+            "kb_alt_release",
+            "kb_alt_press",
+        ):
+            # print("Keyboard-Event raised: %s" % event_type)
+            self.rebuild_hittable_chain()
+            self.find_hit_chain(window_pos)
+            for i, hit in enumerate(self.hit_chain):
+                if hit is None:
+                    continue  # Element was dropped.
+                current_widget, current_matrix = hit
+                if current_widget is None:
+                    continue
+                space_pos = window_pos
+                try:
+                    response = current_widget.event(window_pos, space_pos, event_type)
+                except AttributeError:
+                    pass
+
+        elif event_type in (
             "leftdown",
             "middledown",
             "rightdown",
@@ -1349,6 +1396,7 @@ class SceneSpaceWidget(Widget):
 
         If nothing was otherwise hit by the event, we process the scene manipulation events
         """
+
         if event_type == "hover":
             return RESPONSE_CHAIN
         if self.aspect:

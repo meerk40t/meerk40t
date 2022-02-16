@@ -593,10 +593,13 @@ class RectSelectWidget(Widget):
     # Visual help for selection rectangle (to help those with visual challenges i.e colorblindness)
     selection_line = [wx.PENSTYLE_DOT_DASH, wx.PENSTYLE_DOT, wx.PENSTYLE_SHORT_DASH]
     selection_text = [
-        "Select all elements that the selection rectangle touches",
-        "Select all elements that the selection rectangle crosses in at least one dimension",
-        "Select all elements that the selection rectangle fully encloses",
+        "Select all elements the selection rectangle touches.",
+        "Select all elements the selection rectangle crosses.",
+        "Select all elements the selection rectangle encloses.",
     ]
+    selection_text_shift = " Previously selected remain selected!"
+    selection_text_control = " Invert selection state of elements!"
+
     selection_criteria = [1, 2, 3]
     # 2 | 1        Define Selection method per sector, movement of mouse from point of origin into that sector...
     # - + -
@@ -608,6 +611,10 @@ class RectSelectWidget(Widget):
         1,
         1,
     ]  # Selection rectangle to the right: enclose, to the left: touch
+    last_status_text = ""
+    key_shift_pressed = False
+    key_control_pressed = False
+    key_alt_pressed = False
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -622,6 +629,7 @@ class RectSelectWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        # print("Selection event: %s" % event_type)
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.start_location = space_pos
@@ -631,7 +639,71 @@ class RectSelectWidget(Widget):
             self.start_location = None
             self.end_location = None
             return RESPONSE_DROP
+        elif event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_release":
+            if self.key_control_pressed:
+                self.key_control_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_press":
+            if not self.key_control_pressed:
+                self.key_control_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_alt_release":
+            if self.key_alt_pressed:
+                self.key_alt_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_alt_press":
+            if not self.key_alt_pressed:
+                self.key_alt_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+
         elif event_type == "leftup":
+
+            # SetStatusText(self.last_status_text, 0)
+            self.last_status_text = ""
 
             elements.validate_selected_area()
             sx = self.start_location[0]
@@ -653,7 +725,10 @@ class RectSelectWidget(Widget):
             sy = min(self.start_location[1], self.end_location[1])
             ex = max(self.start_location[0], self.end_location[0])
             ey = max(self.start_location[1], self.end_location[1])
-
+            # print(
+            #    "Selection_box: (%f,%f)-(%f,%f) - Method=%f"
+            #    % (sx, sy, ex, ey, self.selection_method[sector])
+            # )
             for obj in elements.elems():
                 try:
                     q = obj.bbox(True)
@@ -674,6 +749,10 @@ class RectSelectWidget(Widget):
                 # that dimension.
                 if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
                     cover = 1
+                    # If selection rect is fullly inside an object then ignore
+                    if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
+                        cover = 0
+
                 # Check Cross
                 if (
                     ((sx <= xmin) and (xmax <= ex))
@@ -686,14 +765,25 @@ class RectSelectWidget(Widget):
                 if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
                     cover = 3
 
-                if cover >= self.selection_method[sector]:
-                    obj.node.emphasized = True
+                if self.key_shift_pressed:
+                    # Add Selection
+                    if cover >= self.selection_method[sector]:
+                        obj.node.emphasized = True
+                elif self.key_control_pressed:
+                    # Invert Selection
+                    if cover >= self.selection_method[sector]:
+                        obj.node.emphasized = not obj.node.emphasized
                 else:
-                    if not self.scene.isShiftPressed:
+                    # Replace Selection
+                    if cover >= self.selection_method[sector]:
+                        obj.node.emphasized = True
+                    else:
                         obj.node.emphasized = False
+
             self.scene.request_refresh()
             self.start_location = None
             self.end_location = None
+
             return RESPONSE_CONSUME
         elif event_type == "move":
             self.scene.request_refresh()
@@ -726,6 +816,18 @@ class RectSelectWidget(Widget):
                 else:
                     sector = 2
 
+            _ = self.scene.context._
+            if self.last_status_text == "":
+                # Retrieve last status msg
+                self.last_status_text = _("Idle...")
+            statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
+            if self.key_shift_pressed:
+                statusmsg += _(self.selection_text_shift)
+            elif self.key_control_pressed:
+                statusmsg += _(self.selection_text_control)
+            # Anyone having an idea how to set the statusbar msg?
+            # SetStatusText(statusmsg, 0)
+
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
 
             self.selection_pen.SetColour(
@@ -747,10 +849,51 @@ class RectSelectWidget(Widget):
             gc.StrokeLine(x1, y0, x1, y1)
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
-            if self.scene.isShiftPressed:
-                # Draw very ugly indicator...
-                gc.StrokeLine(x0, y0, x1, y1)
-                gc.StrokeLine(x1, y0, x0, y1)
+            matrix = self.parent.matrix
+            delta_X = 15.0 / matrix.value_scale_x()
+            delta_Y = 15.0 / matrix.value_scale_y()
+            # Draw very ugly indicator...
+            if self.key_shift_pressed:
+                if (
+                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
+                ):  # Don't draw if too tiny
+                    # Draw tiny + in Corner
+                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+                    ax1 = x1 - x_signum
+                    ay1 = y1 - y_signum
+
+                    self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.StrokeLine(ax1, y1, ax1, ay1)
+                    gc.StrokeLine(ax1, ay1, x1, ay1)
+                    gc.StrokeLine(
+                        x1 - 0.75 * x_signum,
+                        (y1 + ay1) / 2,
+                        x1 - 0.25 * x_signum,
+                        (y1 + ay1) / 2,
+                    )
+                    gc.StrokeLine(
+                        (ax1 + x1) / 2,
+                        y1 - 0.75 * y_signum,
+                        (ax1 + x1) / 2,
+                        y1 - 0.25 * y_signum,
+                    )
+
+            elif self.key_control_pressed:
+                # Draw tiny - in Corner
+                x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+                y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+                ax1 = x1 - x_signum
+                ay1 = y1 - y_signum
+                self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                gc.StrokeLine(ax1, y1, ax1, ay1)
+                gc.StrokeLine(ax1, ay1, x1, ay1)
+                gc.StrokeLine(
+                    x1 - 0.75 * x_signum,
+                    (y1 + ay1) / 2,
+                    x1 - 0.25 * x_signum,
+                    (y1 + ay1) / 2,
+                )
 
 
 class ReticleWidget(Widget):
