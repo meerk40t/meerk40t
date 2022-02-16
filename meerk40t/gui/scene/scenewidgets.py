@@ -668,6 +668,13 @@ class RectSelectWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
+    store_last_msg = ""
+
+    def update_statusmsg(self, value):
+        if value != self.store_last_msg:
+            self.store_last_msg = value
+            self.scene.context.signal("statusmsg", value)
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         # print("Selection event: %s" % event_type)
         elements = self.scene.context.elements
@@ -742,7 +749,7 @@ class RectSelectWidget(Widget):
 
         elif event_type == "leftup":
 
-            # SetStatusText(self.last_status_text, 0)
+            self.update_statusmsg(self.last_status_text)
             self.last_status_text = ""
 
             elements.validate_selected_area()
@@ -859,14 +866,14 @@ class RectSelectWidget(Widget):
             _ = self.scene.context._
             if self.last_status_text == "":
                 # Retrieve last status msg
-                self.last_status_text = _("Idle...")
+                self.last_status_text = _("Status...")
             statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
             if self.key_shift_pressed:
                 statusmsg += _(self.selection_text_shift)
             elif self.key_control_pressed:
                 statusmsg += _(self.selection_text_control)
-            # Anyone having an idea how to set the statusbar msg?
-            # SetStatusText(statusmsg, 0)
+
+            self.update_statusmsg(statusmsg)
 
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
 
