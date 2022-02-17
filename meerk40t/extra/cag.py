@@ -15,15 +15,21 @@ def plugin(kernel, lifecycle):
         _ = kernel.translation
         context = kernel.root
 
-        @context.console_command(("intersection", "xor", "union", "difference"), input_type="elements", output_type="elements", help=_("Constructive Additive Geometry: Add"))
+        @context.console_command(
+            ("intersection", "xor", "union", "difference"),
+            input_type="elements",
+            output_type="elements",
+            help=_("Constructive Additive Geometry: Add"),
+        )
         def cag(command, channel, _, data=None, **kwargs):
             import numpy as np
+
             if len(data) >= 2:
                 e0 = data[0]
                 subject_polygons = []
                 for subpath in e0.as_subpaths():
                     subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
-                    subj.reshape((2,1000))
+                    subj.reshape((2, 1000))
                     s = list(map(Point, subj))
                     subject_polygons.append(s)
 
@@ -47,7 +53,9 @@ def plugin(kernel, lifecycle):
                     ct = ClipType.Union
                 else:  # difference
                     ct = ClipType.Difference
-                result = pc.Execute(ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd)
+                result = pc.Execute(
+                    ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd
+                )
                 solution_path = None
                 for se in solution:
                     r = Polygon(*se, stroke="blue")

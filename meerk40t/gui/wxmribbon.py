@@ -135,8 +135,6 @@ class RibbonPanel(wx.Panel):
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
 
-
-
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
@@ -198,7 +196,6 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
-
 
         tool = RB.RibbonPage(
             self._ribbon,

@@ -1,6 +1,15 @@
 import wx
 
-from meerk40t.svgelements import Path, Point, Rect, Ellipse, Circle, Polyline, Polygon, SVGText
+from meerk40t.svgelements import (
+    Path,
+    Point,
+    Rect,
+    Ellipse,
+    Circle,
+    Polyline,
+    Polygon,
+    SVGText,
+)
 
 from .scene import Scene, Widget
 from ..laserrender import LaserRender
@@ -217,7 +226,9 @@ class CircleTool(ToolWidget):
             y1 = max(self.p1.imag, self.p2.imag)
             gc.SetPen(wx.BLUE_PEN)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            ellipse = Circle((x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2)
+            ellipse = Circle(
+                (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
+            )
             t = Path(ellipse)
             bbox = t.bbox()
             gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
@@ -237,7 +248,12 @@ class CircleTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                ellipse = Circle((x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2)/2, stroke="blue")
+                ellipse = Circle(
+                    (x1 + x0) / 2.0,
+                    (y1 + y0) / 2.0,
+                    abs(self.p1 - self.p2) / 2,
+                    stroke="blue",
+                )
                 t = Path(ellipse)
                 if len(t) != 0:
                     self.scene.context.elements.add_elem(t, classify=True)
@@ -285,7 +301,13 @@ class EllipseTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                ellipse = Ellipse((x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(x0-x1)/2, abs(y0-y1)/2, stroke="blue")
+                ellipse = Ellipse(
+                    (x1 + x0) / 2.0,
+                    (y1 + y0) / 2.0,
+                    abs(x0 - x1) / 2,
+                    abs(y0 - y1) / 2,
+                    stroke="blue",
+                )
                 t = Path(ellipse)
                 if len(t) != 0:
                     self.scene.context.elements.add_elem(t, classify=True)
@@ -451,8 +473,12 @@ class TextTool(ToolWidget):
             y = space_pos[1]
             self.x = x
             self.y = y
-            self.text *= "translate({x}, {y}) scale({scale})".format(x=x, y=y, scale=UNITS_PER_PIXEL)
-            dlg = wx.TextEntryDialog(self.scene.gui, _("What text message"), _("Text"), "")
+            self.text *= "translate({x}, {y}) scale({scale})".format(
+                x=x, y=y, scale=UNITS_PER_PIXEL
+            )
+            dlg = wx.TextEntryDialog(
+                self.scene.gui, _("What text message"), _("Text"), ""
+            )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.GetValue()

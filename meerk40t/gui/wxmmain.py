@@ -37,8 +37,17 @@ from .icons import (
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_pause_50,
-    icons8_save_50, icons8_union_50, icons8_cursor_50, icons8_place_marker_50, icons8_pencil_drawing_50,
-    icons8_circle_50, icons8_polygon_50, icons8_polyline_50, icons8_rectangular_50, icons8_vector_50, icons8_type_50,
+    icons8_save_50,
+    icons8_union_50,
+    icons8_cursor_50,
+    icons8_place_marker_50,
+    icons8_pencil_drawing_50,
+    icons8_circle_50,
+    icons8_polygon_50,
+    icons8_polyline_50,
+    icons8_rectangular_50,
+    icons8_vector_50,
+    icons8_type_50,
     icons8_oval_50,
 )
 from .laserrender import (
@@ -190,7 +199,9 @@ class MeerK40t(MWindow):
         self.__set_menubars()
 
         self.main_statusbar = self.CreateStatusBar(4)
-        self.main_statusbar.SetStatusStyles([wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount())
+        self.main_statusbar.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
+        )
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText(_("Status..."), 0)
@@ -1105,7 +1116,9 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), "")
+        self.view_menu.Append(
+            ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), ""
+        )
         self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), "")
         self.view_menu.AppendSeparator()
 

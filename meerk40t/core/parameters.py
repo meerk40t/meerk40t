@@ -393,4 +393,3 @@ class Parameters:
     @force_twitchless.setter
     def force_twitchless(self, value):
         self.settings["force_twitchless"] = value
-

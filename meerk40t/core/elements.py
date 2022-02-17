@@ -1677,7 +1677,9 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
+        def element_text(
+            command, channel, _, data=None, text=None, size=None, **kwargs
+        ):
             if text is None:
                 channel(_("No text specified"))
                 return
@@ -1946,7 +1948,9 @@ class Elemental(Service):
             height = bounds[3] - bounds[1]
 
             offset_x = self.device.length(x_offset, 0) if x_offset is not None else 0
-            offset_y = self.device.length(y_offset, 1) if y_offset is not None else offset_x
+            offset_y = (
+                self.device.length(y_offset, 1) if y_offset is not None else offset_x
+            )
 
             x_pos -= offset_x
             y_pos -= offset_y
