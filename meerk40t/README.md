@@ -30,7 +30,6 @@ Device modules are specific to laser cutting and the lower level interactions wi
 
 DXF modules deal with Digital Exchange Format files.
 
-
 ## Extra
 
 Extra modules provide non-core functionality.

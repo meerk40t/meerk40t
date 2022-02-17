@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
+from typing import Optional
 
 from ..device.lasercommandconstants import (
     COMMAND_CUT,
@@ -13,7 +13,16 @@ from ..device.lasercommandconstants import (
     COMMAND_SET_INCREMENTAL,
 )
 from ..svgelements import Color, Path, Point
-from ..tools.rasterplotter import X_AXIS, BOTTOM, Y_AXIS, RIGHT, LEFT, UNIDIRECTIONAL, TOP, RasterPlotter
+from ..tools.rasterplotter import (
+    BOTTOM,
+    LEFT,
+    RIGHT,
+    TOP,
+    UNIDIRECTIONAL,
+    X_AXIS,
+    Y_AXIS,
+    RasterPlotter,
+)
 from ..tools.zinglplotter import ZinglPlotter
 
 """
@@ -102,11 +111,15 @@ class LaserSettings:
 
     @property
     def horizontal_raster(self):
-        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
+        return self.raster_step and (
+            self.raster_direction == 0 or self.raster_direction == 1
+        )
 
     @property
     def vertical_raster(self):
-        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
+        return self.raster_step and (
+            self.raster_direction == 2 or self.raster_direction == 3
+        )
 
     @property
     def implicit_accel(self):
@@ -253,7 +266,7 @@ class CutObject:
                 if c.burn_started:
                     return True
             elif c.burns_done == c.passes:
-                    return True
+                return True
         return False
 
     def contains_unburned_groups(self):
@@ -282,8 +295,13 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(),
-        settings=None, passes=1, constrained=False, closed=False,
+        self,
+        parent,
+        children=(),
+        settings=None,
+        passes=1,
+        constrained=False,
+        closed=False,
     ):
         list.__init__(self, children)
         CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
@@ -329,7 +347,11 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self, complete_path: Optional[bool]=False, grouped_inner: Optional[bool]=False):
+    def candidate(
+        self,
+        complete_path: Optional[bool] = False,
+        grouped_inner: Optional[bool] = False,
+    ):
         """
         Candidates are CutObjects:
         1. That do not contain one or more unburned inner constrained cutcode objects.
@@ -378,11 +400,7 @@ class CutGroup(list, CutObject, ABC):
             # if this is not a closed path we should only yield first and last segments
             # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
-            if (
-                complete_path
-                and not grp.closed
-                and isinstance(grp, CutGroup)
-            ):
+            if complete_path and not grp.closed and isinstance(grp, CutGroup):
                 if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
@@ -587,18 +605,41 @@ class CutCode(CutGroup):
 
 class LineCut(CutObject):
     def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start()
         end = self.end()
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+    def __init__(
+        self,
+        start_point,
+        control_point,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
         self._control = control_point
 
@@ -611,6 +652,7 @@ class QuadCut(CutObject):
         )
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start()
         c = self.c()
         end = self.end()
@@ -625,8 +667,24 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes, parent=parent)
+    def __init__(
+        self,
+        start_point,
+        control1,
+        control2,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -667,7 +725,9 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None):
+    def __init__(
+        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+    ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
@@ -861,7 +921,12 @@ class PlotCut(CutObject):
         self.settings.raster_alt = False
         self.settings.raster_step = 0
         self.settings.force_twitchless = True
-        if not self.travels_left and not self.travels_right and not self.travels_bottom and not self.travels_top:
+        if (
+            not self.travels_left
+            and not self.travels_right
+            and not self.travels_bottom
+            and not self.travels_top
+        ):
             return False
         if 0 < self.max_dx <= 15:
             self.vertical_raster = True
@@ -968,7 +1033,7 @@ class PlotCut(CutObject):
         last_y = None
         for x, y, on in self.plot:
             if last_x is not None:
-                length += Point.distance((x,y), (last_x, last_y))
+                length += Point.distance((x, y), (last_x, last_y))
             last_x = 0
             last_y = 0
         return length

@@ -84,7 +84,7 @@ class Inputs(Modifier):
             data_type=None,
             new=None,
             remainder=None,
-            **kwgs
+            **kwgs,
         ):
             if len(command) > 6:
                 self._default_input = command[6:]
