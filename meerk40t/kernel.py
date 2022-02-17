@@ -5,6 +5,7 @@ import os
 import re
 import threading
 import time
+from collections import deque
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
@@ -37,7 +38,7 @@ class Modifier:
     A modifier alters a context with additional functionality set during attachment and detachment.
 
     These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
+    to be undone. Rather detach should kill any secondary processes the modifier may possess.
 
     A modifiers can only be called once at any particular context.
     """
@@ -46,6 +47,17 @@ class Modifier:
         self.context = context
         self.name = name
         self.state = STATE_INITIALIZE
+
+    def __repr__(self):
+        # pylint: disable=no-member
+        return '{class_name}({context}, name="{name}", channel={channel})'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+            channel="Channel({name})".format(name=self.channel.name)
+            if hasattr(self, "channel") and self.channel
+            else "None",
+        )
 
     def boot(self, *args, **kwargs):
         """
@@ -91,6 +103,13 @@ class Module:
         self.name = name
         self.state = STATE_INITIALIZE
 
+    def __repr__(self):
+        return '{class_name}({context}, name="{name}")'.format(
+            class_name=self.__class__.__name__,
+            context=repr(self.context),
+            name=self.name,
+        )
+
     def initialize(self, *args, **kwargs):
         """Initialize() is called after open() to setup the module and allow it to register various hooks into the
         kernelspace."""
@@ -129,10 +148,12 @@ class Context:
         self.opened = {}
         self.attached = {}
 
-    def __str__(self):
+    def __repr__(self):
         return "Context('%s')" % self._path
 
     def __call__(self, data: str, **kwargs):
+        if len(data) and data[-1] != "\n":
+            data += "\n"
         return self._kernel.console(data)
 
     def boot(self, channel: "Channel" = None):
@@ -275,6 +296,21 @@ class Context:
             if isinstance(value, (int, bool, str, float, Color)):
                 self._kernel.write_persistent(self.abs_path(attr), value)
 
+    def get_persistent_value(self, t: type, key: str) -> Any:
+        """
+        Gets a specific value of the persistent attributes.
+
+        The attribute type of the value depends on the provided object value default values.
+
+        :param t: type of value
+        :param key: relative key for the value
+        :return: the value associated with the key otherwise None
+        """
+        return self._kernel.read_persistent(
+            t,
+            self.abs_path(key),
+        )
+
     def load_persistent_object(self, obj: Any) -> None:
         """
         Loads values of the persistent attributes, at this context and assigns them to the provided object.
@@ -294,9 +330,12 @@ class Context:
 
             if not isinstance(obj_value, (int, float, str, bool, Color)):
                 continue
-            load_value = self._kernel.read_persistent(
-                type(obj_value), self.abs_path(attr)
+
+            load_value = self.get_persistent_value(
+                type(obj_value),
+                attr,
             )
+
             try:
                 setattr(obj, attr, load_value)
                 setattr(self, attr, load_value)
@@ -436,6 +475,7 @@ class Context:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -449,7 +489,11 @@ class Context:
         The result function will be called with any returned result func.
         """
         return self._kernel.threaded(
-            func, thread_name=thread_name, result=result, daemon=daemon
+            func,
+            *args,
+            thread_name=thread_name,
+            result=result,
+            daemon=daemon,
         )
 
     # ==========
@@ -707,7 +751,7 @@ class Kernel:
         # All registered locations within the kernel.
         self.registered = {}
 
-        # The translation object to be overridden by any valid transition functions
+        # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
@@ -740,7 +784,6 @@ class Kernel:
         self._console_buffer = ""
         self.queue = []
         self._console_channel = self.channel("console", timestamp=True)
-        self._console_channel.timestamp = True
         self.console_channel_file = None
 
         if config is not None:
@@ -803,8 +846,6 @@ class Kernel:
 
         :return:
         """
-        import datetime
-        import functools
         import types
 
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
@@ -879,6 +920,15 @@ class Kernel:
 
         :param lifecycle:
         :return:
+
+        Meerk40t bootstrap sequence:
+        * console / gui
+        * preregister
+        * register
+        * configure
+        * boot
+        * ready
+        * finished
         """
         if self.lifecycle == "shutdown":
             return  # No backsies.
@@ -895,7 +945,7 @@ class Kernel:
         """
 
         self.command_boot()
-        self.scheduler_thread = self.threaded(self.run, "Scheduler")
+        self.scheduler_thread = self.threaded(self.run, thread_name="Scheduler")
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
@@ -941,7 +991,8 @@ class Kernel:
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        self.signal = signal  # redefine signal function.
+        # pylint: disable=method-hidden
+        self.signal = signal  # redefine signal function, hidden by design
 
         def console(code):
             if channel:
@@ -949,7 +1000,8 @@ class Kernel:
                     if c:
                         channel(_("Suspended Command: %s" % c))
 
-        self.console = console  # redefine console signal
+        # pylint: disable=method-hidden
+        self.console = console  # redefine console signal, hidden by design
 
         self.process_queue()  # Process last events.
 
@@ -1094,11 +1146,11 @@ class Kernel:
 
     def register(self, path: str, obj: Any) -> None:
         """
-        Register an element at a given subpath. If this Kernel is not root. Then
-        it is registered relative to this location.
+        Register an element at a given subpath.
+        If this Kernel is not root, then it is registered relative to this location.
 
-        :param path:
-        :param obj:
+        :param path: a "/" separated hierarchical index to the object
+        :param obj: object to be registered
         :return:
         """
         self.registered[path] = obj
@@ -1192,6 +1244,7 @@ class Kernel:
         @param output_type: What is the outgoing context for the command
         @return:
         """
+
         def decorator(func: Callable):
             @functools.wraps(func)
             def inner(command: str, remainder: str, channel: "Channel", **ik):
@@ -1288,7 +1341,9 @@ class Kernel:
                 return value, remainder, out_type
 
             if hasattr(inner, "arguments"):
-                raise MalformedCommandRegistration("Applying console_command() to console_command()")
+                raise MalformedCommandRegistration(
+                    "Applying console_command() to console_command()"
+                )
 
             # Main Decorator
             cmds = path if isinstance(path, tuple) else (path,)
@@ -1453,6 +1508,8 @@ class Kernel:
             dictionary[k] = item
         return dictionary
 
+    read_persistent_string_dict = load_persistent_string_dict
+
     def keylist(self, path: str) -> Generator[str, None, None]:
         """
         Get all keys located at the given path location. The keys are listed in absolute path locations.
@@ -1488,6 +1545,7 @@ class Kernel:
     def threaded(
         self,
         func: Callable,
+        *args,
         thread_name: str = None,
         result: Callable = None,
         daemon: bool = False,
@@ -1503,7 +1561,7 @@ class Kernel:
 
         :param func: The function to be executed.
         :param thread_name: The name under which the thread should be registered.
-        :param result: Final runs after the thread is deleted.
+        :param result: Runs in the thread after func terminates but before the thread itself terminates.
         :param daemon: set this thread as daemon
         :return: The thread object created.
         """
@@ -1528,7 +1586,7 @@ class Kernel:
             channel(_("Thread: %s, Set" % thread_name))
             try:
                 channel(_("Thread: %s, Start" % thread_name))
-                func_result = func()
+                func_result = func(*args)
                 channel(_("Thread: %s, End " % thread_name))
             except Exception:
                 channel(_("Thread: %s, Exception-End" % thread_name))
@@ -1777,8 +1835,14 @@ class Kernel:
                     listener(path, *message)
                     if signal_channel:
                         signal_channel(
-                            "%s %s: %s was sent %s"
-                            % (path, signal, str(listener), str(message))
+                            "Signal: %s %s: %s:%s%s"
+                            % (
+                                path,
+                                signal,
+                                listener.__module__,
+                                listener.__name__,
+                                str(message),
+                            )
                         )
             if path is None:
                 self.last_message[signal] = message
@@ -1817,6 +1881,8 @@ class Kernel:
             chan = Channel(channel, *args, **kwargs)
             chan._ = self.translation
             self.channels[channel] = chan
+        elif "timestamp" in kwargs and isinstance(kwargs["timestamp"], bool):
+            self.channels[channel].timestamp = kwargs["timestamp"]
 
         return self.channels[channel]
 
@@ -1893,7 +1959,7 @@ class Kernel:
         if text.startswith("."):
             text = text[1:]
         else:
-            channel(text)
+            channel(text, indent=False)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -1936,6 +2002,10 @@ class Kernel:
                     break
                 except SyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
+
+                    # ToDo
+                    # Don't use command help, which is or should be descriptive - use command syntax instead
+                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
@@ -2079,7 +2149,6 @@ class Kernel:
                 self.commands.clear()
                 self.schedule(self.console_job)
 
-
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
         )
@@ -2110,7 +2179,7 @@ class Kernel:
             off=False,
             gui=False,
             remainder=None,
-            **kwargs
+            **kwargs,
         ):
             if times == "off":
                 off = True
@@ -2203,7 +2272,7 @@ class Kernel:
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def context(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for name in self._plugins:
                     channel(name.__module__)
@@ -2434,7 +2503,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2452,7 +2521,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2470,7 +2539,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2490,7 +2559,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, filename=None, **kwargs):
+        def channel_save(channel, _, channel_name, filename=None, **kwargs):
             """
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
@@ -2550,8 +2619,6 @@ class Kernel:
 
         @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
-            import os
-
             for f in os.listdir(self._current_directory):
                 channel(str(f))
 
@@ -2568,6 +2635,7 @@ class Kernel:
                 import sys
 
                 if hasattr(sys, "_MEIPASS"):
+                    # pylint: disable=no-member
                     self._current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
                     return
@@ -2643,7 +2711,7 @@ class Channel:
         if buffer_size == 0:
             self.buffer = None
         else:
-            self.buffer = list()
+            self.buffer = deque()
 
     def __repr__(self):
         return "Channel(%s, buffer_size=%s, line_end=%s)" % (
@@ -2652,18 +2720,40 @@ class Channel:
             repr(self.line_end),
         )
 
-    def __call__(self, message: Union[str, bytes, bytearray], *args, **kwargs):
+    def __call__(
+        self,
+        message: Union[str, bytes, bytearray],
+        *args,
+        indent: Optional[bool] = True,
+        **kwargs,
+    ):
+        original_msg = message
         if self.line_end is not None:
             message = message + self.line_end
+        if indent and not isinstance(message, (bytes, bytearray)):
+            message = "    " + message.replace("\n", "\n    ")
         if self.timestamp and not isinstance(message, (bytes, bytearray)):
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
+        console_open_print = False
         for w in self.watchers:
-            w(message)
+            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
+                console_open_print = True
+                break
+        for w in self.watchers:
+            # Avoid double printing if this channel is watched and printed
+            # and console is also printed
+            if w is print and console_open_print:
+                continue
+            # Avoid double timestamp and indent
+            if isinstance(w, Channel):
+                w(original_msg, indent=indent)
+            else:
+                w(message)
         if self.buffer is not None:
             self.buffer.append(message)
-            if len(self.buffer) + 10 > self.buffer_size:
-                self.buffer = self.buffer[-self.buffer_size :]
+            while len(self.buffer) > self.buffer_size:
+                self.buffer.popleft()
 
     def __len__(self):
         return self.buffer_size
@@ -2691,7 +2781,7 @@ class Channel:
         if self.greet is not None:
             monitor_function(self.greet)
         if self.buffer is not None:
-            for line in self.buffer:
+            for line in list(self.buffer):
                 monitor_function(line)
 
     def unwatch(self, monitor_function: Callable):
@@ -2784,23 +2874,25 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name, create=False):
-    from pathlib import Path
-    from sys import platform
+def get_safe_path(
+    name: str, create: Optional[bool] = False, system: Optional[str] = None
+) -> str:
+    import platform
 
-    if platform == "darwin":
-        directory = (
-            Path.home()
-            .joinpath("Library")
-            .joinpath("Application Support")
-            .joinpath(name)
+    if not system:
+        system = platform.system()
+
+    if system == "Darwin":
+        directory = os.path.join(
+            os.path.expanduser("~"),
+            "Library",
+            "Application Support",
+            name,
         )
-    elif "win" in platform:
-        from os.path import expandvars
-
-        directory = Path(expandvars("%LOCALAPPDATA%")).joinpath(name)
+    elif system == "Windows":
+        directory = os.path.join(os.path.expandvars("%LOCALAPPDATA%"), name)
     else:
-        directory = Path.home().joinpath(".config").joinpath(name)
+        directory = os.path.join(os.path.expanduser("~"), ".config", name)
     if directory is not None and create:
-        directory.mkdir(parents=True, exist_ok=True)
+        os.makedirs(directory, exist_ok=True)
     return directory

@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Group, Move, Path, Point, Polygon, Shape
+from meerk40t.svgelements import Group, Move, Path, Point, Polygon
 from meerk40t.tools.pathtools import VectorMontonizer
 
 

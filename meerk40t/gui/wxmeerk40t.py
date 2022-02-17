@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import platform
 import sys
 import traceback
 
@@ -18,6 +19,7 @@ from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
 from .configuration import Configuration
+from .consoleproperty import ConsoleProperty
 from .controller import Controller
 from .executejob import ExecuteJob
 from .file.fileoutput import FileOutput
@@ -65,6 +67,7 @@ GUI_START = True
 
 
 def plugin(kernel, lifecycle):
+    # pylint: disable=global-statement
     global GUI_START
     kernel_root = kernel.root
     if lifecycle == "console":
@@ -112,23 +115,39 @@ def plugin(kernel, lifecycle):
         if GUI_START:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
-            for window in kernel.match("window/.*", suffix=False):
-                if kernel.read_persistent(bool, "%s/open_on_start" % window, False):
-                    kernel.console("window open %s\n" % window.split('/')[-1])
+            for window in kernel.derivable("window"):
+                wsplit = window.split(":")
+                window_name = wsplit[0]
+                window_index = wsplit[-1] if len(wsplit) > 1 else None
+                if kernel.read_persistent(
+                    bool, "window/%s/open_on_start" % window, False
+                ):
+                    if window_index is not None:
+                        kernel.console(
+                            "window open -m {index} {window} {index}\n".format(
+                                index=window_index, window=window_name
+                            )
+                        )
+                    else:
+                        kernel.console(
+                            "window open {window}\n".format(window=window_name)
+                        )
             meerk40tgui.MainLoop()
 
 
 _ = wx.GetTranslation
 supported_languages = (
-    ("en", u"English", wx.LANGUAGE_ENGLISH),
-    ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
-    ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
-    ("zh", u"中文", wx.LANGUAGE_CHINESE),
-    ("hu", u"Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt", u"português", wx.LANGUAGE_PORTUGUESE),
-    ("pt-br", u"português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("en", "English", wx.LANGUAGE_ENGLISH),
+    ("it", "italiano", wx.LANGUAGE_ITALIAN),
+    ("fr", "français", wx.LANGUAGE_FRENCH),
+    ("de", "Deutsch", wx.LANGUAGE_GERMAN),
+    ("es", "español", wx.LANGUAGE_SPANISH),
+    ("zh", "中文", wx.LANGUAGE_CHINESE),
+    ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
+    ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
+    ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("ja", "日本", wx.LANGUAGE_JAPANESE),
+    ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
 )
 
 
@@ -228,6 +247,7 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
+        kernel.register("window/ConsoleProperty", ConsoleProperty)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
@@ -325,6 +345,12 @@ class wxMeerK40t(wx.App, Module):
             return "window", data
 
         @kernel.console_option(
+            "multi",
+            "m",
+            type=int,
+            help=_("Multi window flag for launching multiple copies of this window."),
+        )
+        @kernel.console_option(
             "driver",
             "d",
             type=bool,
@@ -359,8 +385,9 @@ class wxMeerK40t(wx.App, Module):
             driver=False,
             output=False,
             source=None,
+            multi=None,
             args=(),
-            **kwargs
+            **kwargs,
         ):
             path = data
             try:
@@ -401,28 +428,34 @@ class wxMeerK40t(wx.App, Module):
                 if window_uri not in context.registered:
                     window_uri = "window/%s/%s" % ("default", window)
 
+            window_name = (
+                "{window}:{multi}".format(window=window_uri, multi=multi)
+                if multi is not None
+                else window_uri
+            )
+
             def window_open(*a, **k):
-                path.open(window_uri, parent, *args)
+                path.open_as(window_uri, window_name, parent, *args)
 
             def window_close(*a, **k):
-                path.close(window_uri, *args)
+                path.close(window_name, *args)
 
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window Opened."))
+                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
             else:
                 if window_uri in context.registered:
                     try:
-                        w = path.opened[window_uri]
+                        w = path.opened[window_name]
                         kernel.run_later(window_close, None)
-                        channel(_("Window Closed."))
+                        channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window Opened."))
+                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -484,6 +517,7 @@ class wxMeerK40t(wx.App, Module):
         kernel = context.kernel
 
         try:  # pyinstaller internal location
+            # pylint: disable=no-member
             _resource_path = os.path.join(sys._MEIPASS, "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:
@@ -521,7 +555,9 @@ class wxMeerK40t(wx.App, Module):
                     kernel._config = None
                     kernel.shutdown()
             else:
-                channel('Argument "sure" is required. Requires typing: "nuke_settings yes"')
+                channel(
+                    'Argument "sure" is required. Requires typing: "nuke_settings yes"'
+                )
 
     def update_language(self, lang):
         """
@@ -539,7 +575,7 @@ class wxMeerK40t(wx.App, Module):
             del self.locale
         self.locale = wx.Locale(language_index)
         # wxWidgets is broken. IsOk()==false and pops up error dialog, but it translates fine!
-        if self.locale.IsOk() or "linux" in sys.platform:
+        if self.locale.IsOk() or platform.system() == "Linux":
             self.locale.AddCatalog("meerk40t")
         else:
             self.locale = None
@@ -601,14 +637,15 @@ def send_data_to_developers(filename, data):
     s.send(bytes(request, "utf-8"))
     response = s.recv(4096)
     response = response.decode("utf-8")
-    print(response)
     s.close()
+
     if response is None or len(response) == 0:
         http_code = "No Response."
     else:
         http_code = response.split("\n")[0]
 
     if http_code.startswith("HTTP/1.1 200 OK"):
+        print(http_code)
         http_code = response.split("\n")[0]
         dlg = wx.MessageDialog(
             None,
@@ -619,6 +656,7 @@ def send_data_to_developers(filename, data):
         dlg.ShowModal()
         dlg.Destroy()
     else:
+        print(response)
         MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
         dlg = wx.MessageDialog(
             None,
@@ -650,12 +688,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s - %s\n" % (
+    error_log = "MeerK40t crash log. Version: %s on %s:%s - %s\n" % (
         APPLICATION_VERSION,
-        sys.platform,
+        platform.system(),
+        platform.machine(),
         wxversion,
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print("\n")
     print(error_log)
     try:
         import datetime
@@ -674,8 +714,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         except PermissionError:
             from meerk40t.kernel import get_safe_path
 
-            path = get_safe_path(APPLICATION_NAME)
-            with open(path.joinpath(filename), "w") as file:
+            filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
+            with open(filename, "w") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
@@ -683,19 +723,69 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     # Ask to send file.
-    message = _(
-        """
-    Good news MeerK40t User! MeerK40t encountered an crash!
+    git = branch = False
+    if " " in APPLICATION_VERSION:
+        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        git = exec_type == "git"
 
-    You now have the ability to help meerk40t's development by sending us the log.
+    if git:
+        head_file = os.path.join(sys.path[0], ".git", "HEAD")
+        if os.path.isfile(head_file):
+            ref_prefix = "ref: refs/heads/"
+            ref = ""
+            try:
+                with open(head_file, "r") as f:
+                    ref = f.readline()
+            except Exception:
+                pass
+            if ref.startswith(ref_prefix):
+                branch = ref[len(ref_prefix) :].strip("\n")
 
-    Send the following data to the MeerK40t team?
-    ------
-    """
+    if git and branch and branch != "main":
+        message = _("Meerk40t has encountered a crash.")
+        ext_msg = _(
+            """It appears that you are running Meerk40t from source managed by Git,
+from a branch '{branch}' which is not 'main',
+and that you are therefore running a development version of Meerk40t.
+
+To avoid reporting crashes during development, automated submission of this crash has
+been disabled. If this is a crash which is unrelated to any development work that you are
+undertaking, please recreate this crash under main or if you are certain that this is not
+caused by any code changes you have made, then you can manually create a new Github
+issue indicating the branch you are runing from and using the traceback below which can
+be found in "{filename}".
+
+"""
+        ).format(
+            filename=filename,
+            branch=branch,
+        )
+        caption = _("Crash Detected!")
+        style = wx.OK | wx.ICON_WARNING
+    else:
+        message = _(
+            """The bad news is that MeerK40t encountered a crash, and the developers apologise for this bug!
+
+The good news is that you can help us fix this bug by anonymously sending us the crash details."""
+        )
+        ext_msg = _(
+            """Only the crash details below are sent. No data from your MeerK40t project is sent. No
+personal information is sent either.
+
+Send the following data to the MeerK40t team?
+------
+"""
+        )
+        caption = _("Crash Detected! Send Log?")
+        style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+    ext_msg += error_log
+    dlg = wx.MessageDialog(
+        None,
+        message,
+        caption=caption,
+        style=style,
     )
-    message += error_log
-    answer = wx.MessageBox(
-        message, _("Crash Detected! Send Log?"), wx.YES_NO | wx.CANCEL, None
-    )
-    if answer == wx.YES:
+    dlg.SetExtendedMessage(ext_msg)
+    answer = dlg.ShowModal()
+    if answer in (wx.YES, wx.ID_YES):
         send_data_to_developers(filename, error_log)

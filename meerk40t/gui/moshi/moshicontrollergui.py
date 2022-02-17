@@ -357,7 +357,7 @@ class MoshiControllerPanel(wx.Panel):
             None,
         ):
             try:
-                self.context("dev usb_connect\n")
+                self.context("usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -368,7 +368,7 @@ class MoshiControllerPanel(wx.Panel):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("dev usb_disconnect\n")
+            self.context("usb_disconnect\n")
 
     def spin_on_device_index(self, event=None):
         self.context.usb_index = int(self.spin_device_index.GetValue())
@@ -410,9 +410,9 @@ class MoshiControllerGui(MWindow):
         # ==========
         # MENU BAR
         # ==========
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform != "darwin":
+        if _sys() != "Darwin":
             self.MoshiController_menubar = wx.MenuBar()
             self.create_menu(self.MoshiController_menubar.Append)
             self.SetMenuBar(self.MoshiController_menubar)

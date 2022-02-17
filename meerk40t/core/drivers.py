@@ -1,4 +1,5 @@
 import os
+import platform
 import time
 
 from ..core.cutcode import LaserSettings
@@ -64,7 +65,6 @@ class Driver:
         self.plot = None
 
         self.state = DRIVER_STATE_RAPID
-        self.properties = 0
         self.is_relative = False
         self.laser = False
         self.root_context.setting(bool, "opt_rapid_between", True)
@@ -72,8 +72,6 @@ class Driver:
         self.root_context.setting(int, "opt_jog_minimum", 127)
         context._quit = False
 
-        self.rapid = self.root_context.opt_rapid_between
-        self.jog = self.root_context.opt_jog_mode
         self.rapid_override = False
         self.rapid_override_speed_x = 50.0
         self.rapid_override_speed_y = 50.0
@@ -189,8 +187,6 @@ class Driver:
         elif isinstance(element, tuple):
             self.spooled_item = element
         else:
-            self.rapid = self.root_context.opt_rapid_between
-            self.jog = self.root_context.opt_jog_mode
             try:
                 self.spooled_item = element.generate()
             except AttributeError:
@@ -281,7 +277,8 @@ class Driver:
             elif command == COMMAND_WAIT_FINISH:
                 self.wait_finish()
             elif command == COMMAND_BEEP:
-                if os.name == "nt":
+                OS_NAME = platform.system()
+                if OS_NAME == "Windows":
                     try:
                         import winsound
 
@@ -289,17 +286,19 @@ class Driver:
                             winsound.Beep(2000, 100)
                     except Exception:
                         pass
-                if os.name == "posix":
-                    # Mac or linux.
-                    print("\a")  # Beep.
-                    os.system('say "Ding"')
-                else:
+                elif OS_NAME == "Darwin":  # Mac
+                    os.system("afplay /System/Library/Sounds/Ping.aiff")
+                else:  # Assuming other linux like system
                     print("\a")  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
                     if callable(t):
                         t()
+            elif command == COMMAND_CONSOLE:
+                if len(values) == 1:
+                    fn = self.context.console_function(values[0])
+                    fn()
             elif command == COMMAND_SIGNAL:
                 if isinstance(values, str):
                     self.context.signal(values, None)
@@ -511,21 +510,6 @@ class Driver:
         parts.append("power=%d" % self.settings.power)
         status = ";".join(parts)
         self.context.signal("driver;status", status)
-
-    def set_prop(self, mask):
-        self.properties |= mask
-
-    def unset_prop(self, mask):
-        self.properties &= ~mask
-
-    def is_prop(self, mask):
-        return bool(self.properties & mask)
-
-    def toggle_prop(self, mask):
-        if self.is_prop(mask):
-            self.unset_prop(mask)
-        else:
-            self.set_prop(mask)
 
 
 class Drivers(Modifier):

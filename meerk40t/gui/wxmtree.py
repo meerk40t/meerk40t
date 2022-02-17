@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot
+from ..core.elements import ConsoleOperation, LaserOperation, isDot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -41,7 +41,7 @@ NODE_FILE_FILE = 31
 NODE_FILE_ELEMENT = 32
 
 
-def register_panel(window, context):
+def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
 
     pane = (
@@ -420,8 +420,12 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.CollapseAllChildren(item)
-        if self.wxtree.GetItemParent(item) == self.wxtree.GetRootItem():
-            self.wxtree.Expand(item)
+        if (
+            item is self.wxtree.GetRootItem()
+            or self.wxtree.GetItemParent(item) is self.wxtree.GetRootItem()
+        ):
+            self.wxtree.Expand(self.element_root.get(type="branch ops").item)
+            self.wxtree.Expand(self.element_root.get(type="branch elems").item)
 
     def reorder(self, node):
         """
@@ -535,7 +539,6 @@ class ShadowTree:
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
-        # We check these two exist but will open any additional siblings just in case
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
@@ -855,6 +858,9 @@ class ShadowTree:
         """
         if isinstance(node, LaserOperation):
             self.context.open("window/OperationProperty", self.gui, node=node)
+            return
+        if isinstance(node, ConsoleOperation):
+            self.context.open("window/ConsoleProperty", self.gui, node=node)
             return
         if node is None:
             return

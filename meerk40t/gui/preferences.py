@@ -148,6 +148,12 @@ class PreferencesPanel(wx.Panel):
                 False,
             ),
             (
+                _("Check for beta version updates"),
+                _("Check for beta releases in addition to full releases."),
+                "check_for_betas",
+                False,
+            ),
+            (
                 _("Disable ToolTips"),
                 "\n".join(
                     (
@@ -161,6 +167,12 @@ class PreferencesPanel(wx.Panel):
                     )
                 ),
                 "disable_tool_tips",
+                False,
+            ),
+            (
+                _("Enable Laser Arm"),
+                "\n".join((_("Enable Laser Panel Arm/Disarm feature."),)),
+                "laserpane_arm",
                 False,
             ),
         ]
@@ -180,6 +192,7 @@ class PreferencesPanel(wx.Panel):
                 def check(event=None):
                     v = checkbox.GetValue()
                     setattr(self.context, param, v)
+                    self.context.signal(param, v)
 
                 return check
 
@@ -454,17 +467,16 @@ class PreferencesPanel(wx.Panel):
 
 class Preferences(MWindow):
     def __init__(self, *args, **kwds):
-        from sys import platform as _platform
         super().__init__(
             565,
-            327,
+            367,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
             | wx.FRAME_FLOAT_ON_PARENT
             | wx.TAB_TRAVERSAL
-            | (wx.RESIZE_BORDER if _platform != "darwin" else 0),
-            **kwds
+            | (wx.RESIZE_BORDER if platform.system() != "Darwin" else 0),
+            **kwds,
         )
 
         self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)

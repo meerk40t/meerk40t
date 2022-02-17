@@ -1,15 +1,8 @@
-from .scene import Scene, Widget
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = 2 * pi
-
 import wx
 
 from meerk40t.svgelements import Path, Point, Rect
+
+from .scene import Scene, Widget
 
 MILS_IN_MM = 39.3701
 

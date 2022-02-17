@@ -1,30 +1,33 @@
-import argparse
-import asyncio
-import sys
-
-from .core.exceptions import Mk40tImportAbort
-from .kernel import Kernel
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = pi * 2
-
 """
 Laser software for the Stock-LIHUIYU laserboard.
 
 MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
 open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
-
 """
+
+import argparse
+import asyncio
+import os
+import os.path
+import platform
+import sys
+
+from .core.exceptions import Mk40tImportAbort
+from .kernel import Kernel
+
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.5-beta1"
+APPLICATION_VERSION = "0.7.5001"
 
 if not getattr(sys, "frozen", False):
-    APPLICATION_VERSION += " src"
+    # If .git directory does not exist we are running from a package like pypi
+    # Otherwise we are running from source
+    if os.path.isdir(sys.path[0] + "/.git"):
+        APPLICATION_VERSION += " git"
+    elif os.path.isdir(sys.path[0] + "/.github"):
+        APPLICATION_VERSION += " src"
+    else:
+        APPLICATION_VERSION += " pkg"
 
 
 def pair(value):
@@ -105,7 +108,7 @@ def run():
     if args.version:
         print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return
-    python_version_required = (3, 5)
+    python_version_required = (3, 6)
     if sys.version_info < python_version_required:
         print(
             "%s %s requires Python %d.%d or greater."
@@ -212,7 +215,11 @@ def run():
 
     kernel.add_plugin(pathoptimize.plugin)
 
-    if sys.platform == "win32":
+    from .extra import updater
+
+    kernel.add_plugin(updater.plugin)
+
+    if platform.system() == "Windows":
         # Windows only plugin.
         try:
             from .extra import winsleep
@@ -273,6 +280,13 @@ def run():
                 plugin = entry_point.load()
             except pkg_resources.DistributionNotFound:
                 pass
+            except pkg_resources.VersionConflict as e:
+                print(
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
+                )
+                print(e)
             else:
                 kernel.add_plugin(plugin)
 
@@ -290,6 +304,8 @@ def run():
     kernel.bootstrap("configure")
     kernel.boot()
 
+    console = kernel_root.channel("console")
+
     device_context = kernel.get_context("devices")
     if not hasattr(device_context, "_devices") or device_context._devices == 0:
         if args.device == "Moshi":
@@ -304,8 +320,6 @@ def run():
 
     if args.input is not None:
         # Load any input file
-        import os
-
         kernel_root.load(os.path.realpath(args.input.name))
         elements = kernel_root.elements
         elements.classify(list(elements.elems()))
@@ -328,22 +342,30 @@ def run():
 
     kernel.bootstrap("ready")
 
+    def __print_delegate(*args, **kwargs):
+        if print not in console.watchers:
+            print(*args, **kwargs)
+
     if args.execute:
         # Any execute code segments gets executed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
         for v in args.execute:
             if v is None:
                 continue
             kernel_root(v.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     if args.batch:
         # If a batch file is specified it gets processed here.
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
+        unprint_console = True
         with args.batch as batch:
             for line in batch:
                 kernel_root(line.strip() + "\n")
-        kernel_root.channel("console").unwatch(print)
+        if unprint_console:
+            console.unwatch(__print_delegate)
+
+    kernel.bootstrap("finished")
 
     if args.auto:
         # Auto start does the planning and spooling of the data.
@@ -364,12 +386,10 @@ def run():
 
     if args.output is not None:
         # output the file you have at this point.
-        import os
-
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.console:
-        kernel_root.channel("console").watch(print)
+        console.watch(__print_delegate)
 
         async def aio_readline(loop):
             while kernel.lifecycle != "shutdown":
@@ -383,6 +403,6 @@ def run():
         loop = asyncio.get_event_loop()
         loop.run_until_complete(aio_readline(loop))
         loop.close()
-        kernel_root.channel("console").unwatch(print)
+        console.unwatch(__print_delegate)
 
     kernel.bootstrap("mainloop")  # This is where the GUI loads and runs.

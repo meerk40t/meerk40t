@@ -24,7 +24,7 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-def register_panel(window, context):
+def register_panel_camera(window, context):
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
@@ -52,8 +52,6 @@ class CameraPanel(wx.Panel, Job):
     ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        if index is None:
-            index = 0
         self.gui = gui
         self.context = context
         self.index = index
@@ -179,7 +177,8 @@ class CameraPanel(wx.Panel, Job):
             self.check_fisheye.SetValue(self.setting.correction_fisheye)
             self.check_perspective.SetValue(self.setting.correction_perspective)
             self.slider_fps.SetValue(self.setting.fps)
-            self.on_slider_fps()
+
+        self.on_fps_change(None)
 
         if self.setting.fisheye is not None and len(self.setting.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.setting.fisheye)
@@ -201,9 +200,9 @@ class CameraPanel(wx.Panel, Job):
         )
 
     def initialize(self, *args):
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform == "darwin" and not hasattr(self.setting, "_first"):
+        if _sys() == "Darwin" and not hasattr(self.setting, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
             self.setting._first = False
         else:
@@ -211,6 +210,8 @@ class CameraPanel(wx.Panel, Job):
         self.context.schedule(self)
         self.context.listen("refresh_scene", self.on_refresh_scene)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
+        self.context.listen("camera;fps", self.on_fps_change)
+        self.context.listen("camera;stopped", self.on_camera_stop)
 
     def finalize(self, *args):
         self.context("camera%d stop\n" % self.index)
@@ -219,6 +220,22 @@ class CameraPanel(wx.Panel, Job):
         if not self.pane:
             self.context.close("Camera%s" % str(self.index))
         self.context.kernel.unlisten("lifecycle;shutdown", "", self.finalize)
+        self.context.unlisten("camera;fps", self.on_fps_change)
+        self.context.unlisten("camera;stopped", self.on_camera_stop)
+        self.context.signal("camera;stopped", self.index)
+
+    def on_camera_stop(self, origin, index):
+        if index == self.index:
+            self.context("camera%d start\n" % self.index)
+
+    def on_fps_change(self, origin, *args):
+        # Set the camera fps.
+        fps = self.setting.fps
+        if fps == 0:
+            tick = 5
+        else:
+            tick = 1.0 / fps
+        self.interval = tick
 
     def on_refresh_scene(self, origin, *args):
         self.widget_scene.request_refresh(*args)
@@ -331,13 +348,8 @@ class CameraPanel(wx.Panel, Job):
         :param event:
         :return:
         """
-        fps = self.slider_fps.GetValue()
-        if fps == 0:
-            tick = 5
-        else:
-            tick = 1.0 / fps
-        self.setting.fps = fps
-        self.interval = tick
+        self.setting.fps = self.slider_fps.GetValue()
+        self.context.signal("camera;fps", self.setting.fps)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
@@ -500,7 +512,9 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d perspective reset\n" % self.cam.index),
+                lambda e: self.cam.setting(
+                    "camera%d perspective reset\n" % self.cam.index
+                ),
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -515,8 +529,10 @@ class CamInterfaceWidget(Widget):
             item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.context.open("window/CameraURI", self.cam, index=self.cam.index),
-                id=item.GetId()
+                lambda e: self.cam.context.open(
+                    "window/CameraURI", self.cam, index=self.cam.index
+                ),
+                id=item.GetId(),
             )
 
             camera_setting = self.cam.context.get_context("camera")
@@ -669,16 +685,23 @@ class CamImageWidget(Widget):
 
 
 class CameraInterface(MWindow):
-    def __init__(self, *args, index=0, **kwds):
-        super().__init__(640, 480, *args, **kwds)
+    def __init__(self, context, path, parent, index=0, **kwds):
+        if isinstance(index, str):
+            try:
+                index = int(index)
+            except ValueError:
+                pass
+        if index is None:
+            index = 0
+        super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
 
         # ==========
         # MENU BAR
         # ==========
-        from sys import platform as _platform
+        from platform import system as _sys
 
-        if _platform != "darwin":
+        if _sys() != "Darwin":
             self.CameraInterface_menubar = wx.MenuBar()
             self.create_menu(self.CameraInterface_menubar.Append)
             self.SetMenuBar(self.CameraInterface_menubar)
@@ -737,7 +760,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window open CameraInterface %d\n" % index)
+            kernel.console("window open -m {v} CameraInterface {v}\n".format(v=index))
 
 
 class CameraURIPanel(wx.Panel):
@@ -748,7 +771,7 @@ class CameraURIPanel(wx.Panel):
         if index is None:
             index = 0
         self.index = index
-        assert(isinstance(self.index, int))
+        assert isinstance(self.index, int)
 
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES

@@ -1,13 +1,6 @@
-from math import ceil, cos, floor, sin, sqrt, tan
+from math import ceil, cos, floor, sin, sqrt, tan, tau
 
 from meerk40t.svgelements import Point
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = pi * 2
 
 """
 The Zingl-Bresenham plotting algorithms are from Alois Zingl's "The Beauty of Bresenham's Algorithm"

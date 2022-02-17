@@ -16,6 +16,7 @@ class OperationPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._Buffer = None
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_layer_color = wx.Button(self.main_panel, wx.ID_ANY, "")
@@ -29,6 +30,11 @@ class OperationPropertyPanel(wx.Panel):
         self.checkbox_default = wx.CheckBox(self.main_panel, wx.ID_ANY, _("Default"))
         self.text_speed = wx.TextCtrl(self.main_panel, wx.ID_ANY, "20.0")
         self.text_power = wx.TextCtrl(self.main_panel, wx.ID_ANY, "1000.0")
+        self.speed_label = wx.StaticBox(
+            self.main_panel,
+            wx.ID_ANY,
+            _("Speed (mm/s)"),
+        )
         self.power_label = wx.StaticBox(
             self.main_panel,
             wx.ID_ANY,
@@ -205,6 +211,7 @@ class OperationPropertyPanel(wx.Panel):
             wx.Colour(swizzlecolor(self.operation.color))
         )
         if self.operation.settings.speed is not None:
+            self.update_speed_label()
             self.text_speed.SetValue(str(self.operation.settings.speed))
         if self.operation.settings.power is not None:
             self.update_power_label()
@@ -837,11 +844,24 @@ class OperationPropertyPanel(wx.Panel):
         self.operation.default = bool(self.checkbox_default.GetValue())
         self.context.signal("element_property_reload", self.operation)
 
+    def update_speed_label(self):
+        if (
+            self.operation._operation in ("Raster", "Image")
+            and self.operation.settings.speed > 500
+        ) or (
+            self.operation._operation in ("Cut", "Engrave")
+            and self.operation.settings.speed > 50
+        ):
+            self.speed_label.SetLabel(_("Speed (mm/s):") + "⚠️")
+        else:
+            self.speed_label.SetLabel(_("Speed (mm/s):"))
+
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.settings.speed = float(self.text_speed.GetValue())
         except ValueError:
             return
+        self.update_speed_label()
         self.context.signal("element_property_reload", self.operation)
 
     def update_power_label(self):

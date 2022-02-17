@@ -148,9 +148,10 @@ class CH341(Module, Handler):
             for i in range(16):
                 for driver_handler in handlers:
                     try:
-                        return self._connect_attempt(
+                        connection = self._connect_attempt(
                             driver_handler, i, chipv, bus, address
                         )
+                        return connection
                     except ConnectionRefusedError:
                         pass
                     except PermissionError:
