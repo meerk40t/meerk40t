@@ -907,7 +907,7 @@ class RectSelectWidget(Widget):
             statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
             if self.key_shift_pressed:
                 statusmsg += _(self.selection_text_shift)
-            elif self.key_control_pressed:
+            elif self.key_alt_pressed:
                 statusmsg += _(self.selection_text_control)
 
             self.update_statusmsg(statusmsg)
@@ -948,6 +948,7 @@ class RectSelectWidget(Widget):
                     ay1 = y1 - y_signum
 
                     self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.SetPen(self.selection_pen)
                     gc.StrokeLine(ax1, y1, ax1, ay1)
                     gc.StrokeLine(ax1, ay1, x1, ay1)
                     gc.StrokeLine(
@@ -970,6 +971,7 @@ class RectSelectWidget(Widget):
                 ax1 = x1 - x_signum
                 ay1 = y1 - y_signum
                 self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                gc.SetPen(self.selection_pen)
                 gc.StrokeLine(ax1, y1, ax1, ay1)
                 gc.StrokeLine(ax1, ay1, x1, ay1)
                 gc.StrokeLine(
