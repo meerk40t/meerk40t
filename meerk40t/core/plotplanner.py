@@ -1,21 +1,4 @@
-from collections import deque
-
-from meerk40t.tools.zinglplotter import ZinglPlotter
-
-from ..device.basedevice import (
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_LEFT_UPPER,
-    PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
-    PLOT_SETTING,
-    PLOT_START,
-)
-
 """
-
 The PlotPlanner simplifies the plotting and pulsing  modifications routines. These are buffered with plottable elements.
 These can be submitted as destination graphics commands, or by submitting a plot routine. Which may yield either 2 or
 3 value coordinates. These are x, y, and on. Where on is a number between 0 and 1 which designates the on-value. In the
@@ -38,6 +21,21 @@ of zero will remain zero.
 * Groups manipulates the output as max-length changeless orthogonal/diagonal positions.
 """
 
+from collections import deque
+
+from meerk40t.tools.zinglplotter import ZinglPlotter
+
+from ..device.basedevice import (
+    PLOT_AXIS,
+    PLOT_DIRECTION,
+    PLOT_FINISH,
+    PLOT_JOG,
+    PLOT_LEFT_UPPER,
+    PLOT_RAPID,
+    PLOT_RIGHT_LOWER,
+    PLOT_SETTING,
+    PLOT_START,
+)
 
 class PlotPlanner:
     def __init__(self, settings):
@@ -443,7 +441,7 @@ class Shift(PlotManipulation):
             self.process_add(x, y, on)
 
             # When buffer is full start popping off values.
-            if len(self.shift_pixels) >= 6:
+            if len(self.shift_buffer) >= 6:
                 yield self.process_pop()
 
     def process_add(self, x, y, on):
