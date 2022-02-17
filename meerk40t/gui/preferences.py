@@ -149,17 +149,13 @@ class PreferencesPanel(wx.Panel):
             ),
             (
                 _("Automatic check for updates"),
-                _(
-                    "Periodically check for updates at start-up."
-                ),
+                _("Periodically check for updates at start-up."),
                 "updater_check_automated",
                 True,
             ),
             (
                 _("Check for beta version updates"),
-                _(
-                    "Check for beta releases in addition to full releases."
-                ),
+                _("Check for beta releases in addition to full releases."),
                 "updater_check_betas",
                 False,
             ),
