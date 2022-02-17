@@ -1540,6 +1540,33 @@ class LaserCodeNode(Node):
             yield cmd
 
 
+class VirtualArrayNode(Node):
+    """
+    LaserCode is basic command operations. It contains nothing except a list of commands to be executed.
+
+    Node type "virtual_array"
+    """
+
+    def __init__(self, rows, columns, x_gap, y_gap, **kwargs):
+        super().__init__(self, type="virtualarray")
+        self.name = "VirtualArray"
+        self.output = True
+        self.operation = "VirtualArray"
+        self.rows = rows
+        self.columns = columns
+        self.x_gap = x_gap
+        self.y_gap = y_gap
+
+    def __repr__(self):
+        return "VirtualArray({rows}, {columns}, {x_gap}, {y_gap})".format(rows=self.rows, columns=self.columns, x_gap=self.x_gap, y_gap=self.y_gap)
+
+    def __copy__(self):
+        return VirtualArrayNode(self.rows, self.columns, self.x_gap, self.y_gap)
+
+    def __len__(self):
+        return self.rows * self.columns
+
+
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
@@ -1566,6 +1593,7 @@ class RootNode(Node):
             "elem": ElemNode,
             "opnode": OpNode,
             "cutcode": CutNode,
+            "virtualarray": VirtualArrayNode,
         }
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
@@ -5152,6 +5180,15 @@ class Elemental(Modifier):
             self.context.elements.op_branch.add(
                 ConsoleOperation("interrupt \"Spooling was interrupted\""),
                 type="consoleop",
+                pos=pos,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append VirtualArray 2x2"), node_type="branch ops", help="")
+        def append_operation_virtual_array(node, pos=None, **kwargs):
+            self.context.elements.op_branch.add(
+                VirtualArrayNode(2, 2, "50%", "50%"),
+                type="virtualarray",
                 pos=pos,
             )
 

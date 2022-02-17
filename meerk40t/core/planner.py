@@ -530,6 +530,14 @@ class CutPlan:
     def preopt(self):
         context = self.context
         has_cutcode = False
+        has_varray = False
+        for op in self.plan:
+            try:
+                if op.operation == "VirtualArray":
+                    has_varray = True
+                    break
+            except AttributeError:
+                pass
         for op in self.plan:
             try:
                 if op.operation == "CutCode":
@@ -564,6 +572,8 @@ class CutPlan:
             pass
         if context.opt_remove_overlap:
             pass
+        if has_varray:
+            self.commands.append(self.virtual_array)
 
     def optimize_travel_2opt(self):
         channel = self.context.channel("optimize", timestamp=True)
@@ -609,6 +619,101 @@ class CutPlan:
                     grouped_inner=grouped_inner,
                 )
                 last = self.plan[i].end()
+
+    def virtual_array(self):
+        virtual_array = None
+        for op in self.plan:
+            try:
+                if op.operation == "VirtualArray":
+                    virtual_array = op
+                    break
+            except AttributeError:
+                pass
+        if virtual_array is None:
+            return
+        data = self
+        x_distance = Length(virtual_array.x_gap)
+        y_distance = Length(virtual_array.y_gap)
+        cols = virtual_array.columns
+        rows = virtual_array.rows
+        bed_dim = self.context.root
+        # Continue regular routines.
+
+        # Following must be in same order as added in preprocess()
+        pre_plan_items = (
+            (self.context.prephysicalhome, physicalhome),
+            (self.context.prehome, home),
+        )
+        # Following must be in reverse order as added in preprocess()
+        post_plan_items = (
+            (self.context.autointerrupt, interrupt),
+            (self.context.autobeep, beep),
+            (self.context.postunlock, unlock),
+            (self.context.autoorigin, origin),
+            (self.context.autophysicalhome, physicalhome),
+            (self.context.autohome, home),
+        )
+        post_plan = []
+
+        # c_plan is everything but the virtual array.
+        c_plan = list()
+        for op in data.plan:
+            try:
+                if op.operation == "VirtualArray":
+                    continue
+            except AttributeError:
+                pass
+            c_plan.append(op)
+
+        data.plan.clear()
+        data.commands.clear()
+        for cmd, func in pre_plan_items:
+            if (cmd and c_plan[0] is func):
+                data.plan.append(c_plan.pop(0))
+            elif type(c_plan[0]) == str:  # Rotary disabled
+                data.plan.append(c_plan.pop(0))
+
+        for cmd, func in post_plan_items:
+            if (cmd and c_plan[-1] is func):
+                post_plan.insert(0, c_plan.pop())
+            elif type(c_plan[-1]) == str:  # Rotary disabled
+                post_plan.insert(0, c_plan.pop())
+
+        try:
+            if x_distance is None:
+                x_distance = Length("%f%%" % (100.0 / (cols + 1)))
+            if y_distance is None:
+                y_distance = Length("%f%%" % (100.0 / (rows + 1)))
+        except Exception:
+            pass
+        x_distance = x_distance.value(
+            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+        )
+        y_distance = y_distance.value(
+            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+        )
+        x_last = 0
+        y_last = 0
+        y_pos = 0
+        x_pos = 0
+
+        for j in range(rows):
+            x_pos = 0
+            for k in range(cols):
+                x_offset = x_pos - x_last
+                y_offset = y_pos - y_last
+                data.plan.append(origin)
+                if x_offset != 0 or y_offset != 0:
+                    data.plan.append(offset(x_offset, y_offset))
+
+                data.plan.extend(c_plan)
+                x_last = x_pos
+                y_last = y_pos
+                x_pos += x_distance
+            y_pos += y_distance
+        if x_pos != 0 or y_pos != 0:
+            data.plan.append(offset(-x_pos, -y_pos))
+        data.plan.extend(post_plan)
 
     def strip_text(self):
         for k in range(len(self.plan) - 1, -1, -1):
@@ -985,7 +1090,7 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob", "virtualarray"), depth=1
             ):
                 try:
                     if not c.output:
