@@ -125,15 +125,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 220)
-        .FloatingSize(174, 220)
+        .MinSize(174, 230)
+        .FloatingSize(174, 230)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 220
+    pane.dock_proportion = 230
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -898,21 +898,21 @@ class Transform(wx.Panel):
         self.button_rotate_cw.SetToolTip(
             _("Rotate Clockwise by 5° / by 90° on left / right click")
         )
-        self.text_a.SetMinSize((55, 23))
+        self.text_a.SetMinSize((55, -1))
         self.text_a.SetToolTip(
             _(
                 "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_d.SetMinSize((55, 23))
+        self.text_d.SetMinSize((55, -1))
         self.text_d.SetToolTip(
             _(
                 "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
                 "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
             )
         )
-        self.text_c.SetMinSize((55, 23))
+        self.text_c.SetMinSize((55, -1))
         self.text_c.SetToolTip(
             _(
                 "Skew X - to skew the element in X-direction by alpha° you need either \n"
@@ -921,7 +921,7 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_b.SetMinSize((55, 23))
+        self.text_b.SetMinSize((55, -1))
         self.text_b.SetToolTip(
             _(
                 "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
@@ -930,14 +930,14 @@ class Transform(wx.Panel):
                 "In any case this value will then be represented as tan(alpha)"
             )
         )
-        self.text_e.SetMinSize((55, 23))
+        self.text_e.SetMinSize((40, -1))
         self.text_e.SetToolTip(
             _(
                 "Translate X - moves the element by this amount of mils in the X-direction; "
                 "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
             )
         )
-        self.text_f.SetMinSize((55, 23))
+        self.text_f.SetMinSize((40, -1))
         self.text_f.SetToolTip(
             _(
                 "Translate Y - moves the element by this amount of mils in the Y-direction; "
@@ -948,40 +948,49 @@ class Transform(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: Transform.__do_layout
-        matrix_sizer = wx.BoxSizer(wx.VERTICAL)
-        grid_sizer_2 = wx.FlexGridSizer(3, 3, 0, 0)
-        grid_sizer_2.Add(self.button_scale_down, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_up, 0, 0, 0)
-        grid_sizer_2.Add(self.button_scale_up, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_left, 0, 0, 0)
-        grid_sizer_2.Add(self.button_reset, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_right, 0, 0, 0)
-        grid_sizer_2.Add(self.button_rotate_ccw, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_down, 0, 0, 0)
-        grid_sizer_2.Add(self.button_rotate_cw, 0, 0, 0)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        icon_sizer = wx.FlexGridSizer(3, 3, 0, 0)
+        icon_sizer.Add(self.button_scale_down, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_up, 0, 0, 0)
+        icon_sizer.Add(self.button_scale_up, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_left, 0, 0, 0)
+        icon_sizer.Add(self.button_reset, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_right, 0, 0, 0)
+        icon_sizer.Add(self.button_rotate_ccw, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_down, 0, 0, 0)
+        icon_sizer.Add(self.button_rotate_cw, 0, 0, 0)
 
-        grid_sizer_3 = wx.FlexGridSizer(3, 4, 0, 0)
+        matrix_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        col_sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+
         # Add some labels to make textboxes clearer to understand
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
-        # First X
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
-        grid_sizer_3.Add(self.text_a, 0, 0, 0)  # Scale X
-        grid_sizer_3.Add(self.text_c, 0, 0, 0)  # Skew X
-        grid_sizer_3.Add(self.text_e, 0, 0, 0)  # Translate X
-        # Then Y
-        grid_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
-        grid_sizer_3.Add(self.text_d, 0, 0, 0)  # Scale Y
-        grid_sizer_3.Add(self.text_b, 0, 0, 0)  # Skew Y
-        grid_sizer_3.Add(self.text_f, 0, 0, 0)  # Translate Y
+        col_sizer_2 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
+        col_sizer_2.Add(self.text_a, 0, wx.EXPAND, 0)  # Scale X
+        col_sizer_2.Add(self.text_d, 0, wx.EXPAND, 0)  # Scale Y
 
-        matrix_sizer.Add(grid_sizer_2, 0, wx.EXPAND, 0)
-        matrix_sizer.AddSpacer(3)  # Make some room...
-        matrix_sizer.Add(grid_sizer_3, 0, wx.EXPAND, 0)
-        self.SetSizer(matrix_sizer)
-        matrix_sizer.Fit(self)
+        col_sizer_3 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
+        col_sizer_3.Add(self.text_c, 0, wx.EXPAND, 0)  # Skew X
+        col_sizer_3.Add(self.text_b, 0, wx.EXPAND, 0)  # Skew Y
+
+        col_sizer_4 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_4.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
+        col_sizer_4.Add(self.text_e, 0, wx.EXPAND, 0)  # Translate X
+        col_sizer_4.Add(self.text_f, 0, wx.EXPAND, 0)  # Translate Y
+
+        matrix_sizer.Add(col_sizer_1, 0, wx.EXPAND, 0)  # fixed width
+        matrix_sizer.Add(col_sizer_2, 1, wx.EXPAND, 0)  # grow
+        matrix_sizer.Add(col_sizer_3, 1, wx.EXPAND, 0)  # grow
+        matrix_sizer.Add(col_sizer_4, 1, wx.EXPAND, 0)  # grow
+
+        main_sizer.Add(icon_sizer, 0, wx.EXPAND, 0)
+        main_sizer.Add(matrix_sizer, 0, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
 
