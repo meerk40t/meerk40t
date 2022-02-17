@@ -661,13 +661,13 @@ class CutPlan:
         data.plan.clear()
         data.commands.clear()
         for cmd, func in pre_plan_items:
-            if (cmd and c_plan[0] is func):
+            if cmd and c_plan[0] is func:
                 data.plan.append(c_plan.pop(0))
             elif type(c_plan[0]) == str:  # Rotary disabled
                 data.plan.append(c_plan.pop(0))
 
         for cmd, func in post_plan_items:
-            if (cmd and c_plan[-1] is func):
+            if cmd and c_plan[-1] is func:
                 post_plan.insert(0, c_plan.pop())
             elif type(c_plan[-1]) == str:  # Rotary disabled
                 post_plan.insert(0, c_plan.pop())
@@ -1083,7 +1083,16 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob", "virtualarray"), depth=1
+                types=(
+                    "op",
+                    "cutcode",
+                    "cmdop",
+                    "consoleop",
+                    "lasercode",
+                    "blob",
+                    "virtualarray",
+                ),
+                depth=1,
             ):
                 try:
                     if not c.output:

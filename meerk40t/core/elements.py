@@ -1572,7 +1572,9 @@ class VirtualArrayNode(Node):
         self.y_gap = y_gap
 
     def __repr__(self):
-        return "VirtualArray({rows}, {columns}, {x_gap}, {y_gap})".format(rows=self.rows, columns=self.columns, x_gap=self.x_gap, y_gap=self.y_gap)
+        return "VirtualArray({rows}, {columns}, {x_gap}, {y_gap})".format(
+            rows=self.rows, columns=self.columns, x_gap=self.x_gap, y_gap=self.y_gap
+        )
 
     def __copy__(self):
         return VirtualArrayNode(self.rows, self.columns, self.x_gap, self.y_gap)
@@ -5218,7 +5220,9 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append VirtualArray 2x2"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append VirtualArray 2x2"), node_type="branch ops", help=""
+        )
         def append_operation_virtual_array(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
                 VirtualArrayNode(2, 2, "50%", "50%"),
