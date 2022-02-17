@@ -39,7 +39,9 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
-        self.checkbox_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict Programmed Speed Mode"))
+        self.checkbox_strict = wx.CheckBox(
+            self, wx.ID_ANY, _("Strict Programmed Speed Mode")
+        )
         self.spin_home_x = wx.SpinCtrl(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
@@ -72,7 +74,9 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.checkbox_strict)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchless, self.checkbox_twitchless)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster)
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster
+        )
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
         self.Bind(wx.EVT_SPINCTRL, self.spin_on_home_y, self.spin_home_y)
@@ -184,7 +188,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
                     _(
                         "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches "
                         + "e.g. instead of 1010 it will burn 1100. "
-                        + "Because the laser beam is overlapping, and because a bit is only moved at most 1/1000\", "
+                        + 'Because the laser beam is overlapping, and because a bit is only moved at most 1/1000", '
                         + "the difference should not be visible even under magnification."
                     ),
                     _(
@@ -213,10 +217,12 @@ class LhystudiosConfigurationPanel(wx.Panel):
             _("Current number of bytes in the write buffer.")
         )
         self.spin_packet_buffer_max.SetToolTip(_("Current maximum write buffer limit."))
-        self.checkbox_autolock.SetToolTip(_(
-            "Leave the steppers energised and the rail locked after the burn has finished. "
-            + "By default, if this option is not selected, the rail is unlocked at the end of the burn."
-        ))
+        self.checkbox_autolock.SetToolTip(
+            _(
+                "Leave the steppers energised and the rail locked after the burn has finished. "
+                + "By default, if this option is not selected, the rail is unlocked at the end of the burn."
+            )
+        )
         self.checkbox_autolock.SetValue(1)
         # end wxGlade
 

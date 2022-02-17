@@ -169,7 +169,7 @@ def plugin(kernel, lifecycle=None):
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
-                )
+                ),
             },
             {
                 "attr": "opt_complete_subpaths",
@@ -194,7 +194,7 @@ def plugin(kernel, lifecycle=None):
                     + "The total travel time may therefore be shorter or longer. "
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
-                )
+                ),
             },
             {
                 "attr": "opt_merge_passes",
@@ -512,7 +512,8 @@ class Planner(Modifier):
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
             operations = elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"), depth=1
+                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                depth=1,
             ):
                 try:
                     if not c.output:
@@ -712,8 +713,10 @@ class Planner(Modifier):
             y_distance=None,
             data_type=None,
             data=None,
-            **kwgs
+            **kwgs,
         ):
+            # pylint: disable=no-member
+            # No member calls are for dynamically attributed values.
             if y_distance is None:
                 raise SyntaxError
             # Following must be in same order as added in preprocess()
@@ -736,13 +739,13 @@ class Planner(Modifier):
             data.plan.clear()
             data.commands.clear()
             for cmd, func in pre_plan_items:
-                if (cmd and c_plan[0] is func):
+                if cmd and c_plan[0] is func:
                     data.plan.append(c_plan.pop(0))
                 elif type(c_plan[0]) == str:  # Rotary disabled
                     data.plan.append(c_plan.pop(0))
 
             for cmd, func in post_plan_items:
-                if (cmd and c_plan[-1] is func):
+                if cmd and c_plan[-1] is func:
                     post_plan.insert(0, c_plan.pop())
                 elif type(c_plan[-1]) == str:  # Rotary disabled
                     post_plan.insert(0, c_plan.pop())

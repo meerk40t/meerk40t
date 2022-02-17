@@ -17,7 +17,7 @@ from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.5000"
+APPLICATION_VERSION = "0.7.5001"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -282,7 +282,9 @@ def run():
                 pass
             except pkg_resources.VersionConflict as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
                 )
                 print(e)
             else:

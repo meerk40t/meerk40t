@@ -222,6 +222,13 @@ class RuidaEmulator(Module):
             yield COMMAND_PLOT, cutobject
         yield COMMAND_PLOT_START
 
+    def new_plot_cut(self):
+        if len(self.plotcut):
+            self.plotcut.settings = self.cutset
+            self.plotcut.check_if_rasterable()
+            self.cutcode.append(self.plotcut)
+            self.plotcut = PlotCut()
+
     @property
     def cutset(self):
         if self._use_set is None:
@@ -610,12 +617,14 @@ class RuidaEmulator(Module):
             desc = "End Power 4 (%f)" % v0
         elif array[0] == 0xC6:
             if array[1] == 0x01:
+                self.new_plot_cut()
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 min=%f" % power
                 self.power1_min = power
                 self.settings.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x02:
+                self.new_plot_cut()
                 power = self.parse_power(array[2:4])
                 desc = "Power 1 max=%f" % power
                 self.power1_max = power
@@ -710,6 +719,7 @@ class RuidaEmulator(Module):
                 desc = "%d, Laser %d, Frequency (%f)" % (part, laser, frequency)
         elif array[0] == 0xC9:
             if array[1] == 0x02:
+                self.new_plot_cut()
                 speed = self.parse_speed(array[2:7])
                 desc = "Speed Laser 1 %fmm/s" % speed
                 self.settings.speed = speed
@@ -718,6 +728,7 @@ class RuidaEmulator(Module):
                 speed = self.parse_speed(array[2:7])
                 desc = "Axis Speed %fmm/s" % speed
             elif array[1] == 0x04:
+                self.new_plot_cut()
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
                 self.settings.speed = speed
@@ -768,6 +779,7 @@ class RuidaEmulator(Module):
                 value = array[2]
                 desc = "X Sign Map %d" % value
             elif array[1] == 0x05:
+                self.new_plot_cut()
                 c = RuidaEmulator.decodeu35(array[2:7])
                 r = c & 0xFF
                 g = (c >> 8) & 0xFF
@@ -1114,11 +1126,7 @@ class RuidaEmulator(Module):
                 # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
             if array[1] == 0x00:
-                if len(self.plotcut):
-                    self.plotcut.settings = self.cutset
-                    self.plotcut.check_if_rasterable()
-                    self.cutcode.append(self.plotcut)
-                    self.plotcut = PlotCut()
+                self.new_plot_cut()
                 desc = "Block End"
             elif array[1] == 0x01:
                 self.filename = ""

@@ -1,6 +1,6 @@
 import os.path
-from subprocess import PIPE, run
 import platform
+from subprocess import PIPE, run
 
 
 def plugin(kernel, lifecycle):
