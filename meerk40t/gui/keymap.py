@@ -161,7 +161,7 @@ class KeymapPanel(wx.Panel):
             if i != wx.NOT_FOUND:
                 self.list_keymap.Select(i, True)
                 self.list_keymap.Focus(i)
-                self.text_command_name.SetValue(self.list_keymap.GetItemText(i,1))
+                self.text_command_name.SetValue(self.list_keymap.GetItemText(i, 1))
             else:
                 self.list_keymap.Select(i, False)
 
@@ -175,7 +175,9 @@ class KeymapPanel(wx.Panel):
                 self.list_keymap.SetItem(m, 1, str(value))
                 self.list_keymap.SetItemData(m, i)
                 i += 1
-                self.list_index.append(tuple(key.rsplit("+", 1)) if "+" in key else ("", key))
+                self.list_index.append(
+                    tuple(key.rsplit("+", 1)) if "+" in key else ("", key)
+                )
         self.list_keymap.SortItems(self.__list_sort_compare)
 
     def __list_sort_compare(self, item1, item2):
@@ -200,6 +202,7 @@ class KeymapPanel(wx.Panel):
         if len(item2[1]) <= 3 and len(item2[1]) < len(item1[1]):
             return 1
         return -1 if item1 < item2 else 1 if item2 < item1 else 0
+
 
 class Keymap(MWindow):
     def __init__(self, *args, **kwds):

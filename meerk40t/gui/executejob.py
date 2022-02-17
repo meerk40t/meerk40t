@@ -460,10 +460,18 @@ class ExecuteJob(MWindow):
         )
         self.panel.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel)
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel)
-        self.panel.list_operations.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_operations)
-        self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_operations)
-        self.panel.list_command.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_command)
-        self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_command)
+        self.panel.list_operations.Bind(
+            wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_operations
+        )
+        self.panel.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_operations
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_command
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_command
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
