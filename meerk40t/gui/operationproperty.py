@@ -16,6 +16,7 @@ class OperationPropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._Buffer = None
 
         self.main_panel = wx.Panel(self, wx.ID_ANY)
         self.button_layer_color = wx.Button(self.main_panel, wx.ID_ANY, "")
@@ -845,9 +846,11 @@ class OperationPropertyPanel(wx.Panel):
 
     def update_speed_label(self):
         if (
-            (self.operation._operation in ("Raster", "Image") and self.operation.settings.speed > 500)
-            or
-            (self.operation._operation in ("Cut", "Engrave") and self.operation.settings.speed > 50)
+            self.operation._operation in ("Raster", "Image")
+            and self.operation.settings.speed > 500
+        ) or (
+            self.operation._operation in ("Cut", "Engrave")
+            and self.operation.settings.speed > 50
         ):
             self.speed_label.SetLabel(_("Speed (mm/s):") + "⚠️")
         else:

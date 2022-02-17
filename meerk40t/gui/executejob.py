@@ -3,7 +3,7 @@ import math
 import wx
 
 from ..core.elements import LaserOperation
-from ..svgelements import Length, Group
+from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
 from .propertiespanel import PropertiesPanel
@@ -187,7 +187,7 @@ class PlannerPanel(wx.Panel):
             if height:
                 height = "%.1f%s" % (height / conversion, name)
             if width:
-                width  = "%.1f%s" % (width / conversion, name)
+                width = "%.1f%s" % (width / conversion, name)
         dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
@@ -459,8 +459,12 @@ class ExecuteJob(MWindow):
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
-        self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations)
-        self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command)
+        self.panel.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -482,9 +486,7 @@ class ExecuteJob(MWindow):
     def on_menu(self, event):
         from .wxutils import create_menu_for_choices
 
-        menu = create_menu_for_choices(
-            self, self.context.registered["choices/planner"]
-        )
+        menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
         self.PopupMenu(menu)
         menu.Destroy()
 
