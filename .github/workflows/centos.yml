@@ -1,0 +1,35 @@
+# This workflow builds PyInstaller single-file executables
+# of Meerk40t for Linux (CentOS 7 self-hosted runner)
+
+name: Meerk40t (CentOS 7)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-centos7:
+    runs-on: centos7
+    steps:
+    - name: Checkout meerk40t
+      uses: actions/checkout@v2
+    
+    - name: Ensure latest meerk40t-camera
+      run: |
+        pip3 install meerk40t-camera opencv-python-headless
+
+    - name: Build Meerk40t
+      run: |
+        mv meerk40t.py mk40t.py
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/linux/meerk40t.spec
+        mv mk40t.py meerk40t.py
+        mv dist/MeerK40t dist/MeerK40t-Linux
+
+    - name: Upload Release Assets
+      id: release
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          dist/MeerK40t-Linux
+
