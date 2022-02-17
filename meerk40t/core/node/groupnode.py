@@ -1,5 +1,5 @@
 from meerk40t.core.node.node import Node
-from svgelements import Group
+from meerk40t.svgelements import Group
 
 
 class GroupNode(Node):
