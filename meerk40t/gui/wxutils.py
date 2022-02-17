@@ -300,7 +300,7 @@ def get_key_name(event, return_modifier=False):
     key = event.GetKeyCode()
     keyvalue = ""
     if event.RawControlDown() and not event.ControlDown():
-        keyvalue += "macctrl+"
+        keyvalue += "macctl+"  # Deliberately not macctrl+
     elif event.ControlDown():
         keyvalue += "ctrl+"
     if event.AltDown() or key == wx.WXK_ALT:

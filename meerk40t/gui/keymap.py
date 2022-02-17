@@ -1,4 +1,5 @@
 from functools import partial
+import platform
 import wx
 
 from .icons import icons8_keyboard_50
@@ -125,9 +126,9 @@ class KeymapPanel(wx.Panel):
             dlg.Destroy()
             self.text_command_name.SetFocus()
             return
-        self.context.keymap[
-            self.text_key_name.GetValue()
-        ] = self.text_command_name.GetValue()
+        key = self.text_key_name.GetValue()
+        key = self.__translate_from_mac(key)
+        self.context.keymap[key] = self.text_command_name.GetValue()
         self.text_key_name.SetValue("")
         self.text_command_name.SetValue("")
         self.list_keymap.DeleteAllItems()
@@ -170,15 +171,42 @@ class KeymapPanel(wx.Panel):
         self.list_index.clear()
         i = 0
         for key, value in self.context.keymap.items():
+            key = self.__translate_to_mac(key)
             m = self.list_keymap.InsertItem(0, str(key))
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(value))
                 self.list_keymap.SetItemData(m, i)
+                self.list_index.append(self.__split_modifiers(key))
                 i += 1
-                self.list_index.append(
-                    tuple(key.rsplit("+", 1)) if "+" in key else ("", key)
-                )
         self.list_keymap.SortItems(self.__list_sort_compare)
+
+    @staticmethod
+    def __split_modifiers(key):
+        return key.rsplit("+", 1)) if "+" in key else ("", key)
+
+    @staticmethod
+    def __join_modifiers(*args):
+        if len(args) == 1:
+            args = args[0]
+        return args.join("+")
+
+    @staticmethod
+    def __translate_from_mac(self,key):
+        if platform.system() != "Darwin":
+            return key
+        mods, key = self.__split_modifiers(key)
+        mods = mods.replace("ctrl", "cmd")
+        mods = mods.replace("macctl", "ctrl")
+        return self.__join_modifiers(mods, key)
+
+    @staticmethod
+    def __translate_to_mac(key):
+        if platform.system() != "Darwin":
+            return key
+        mods, key = self.__split_modifiers(key)
+        modifiers = mods.replace("ctrl", "macctl")
+        modifiers = mods.replace("cmd", "ctrl")
+        return self.__join_modifiers(mods, key)
 
     def __list_sort_compare(self, item1, item2):
         """
