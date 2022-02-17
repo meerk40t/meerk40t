@@ -427,17 +427,21 @@ class LaserSpeed:
     # raster groups and not for the burns themselves,
     # if these are incorrect we will just get sub-optimal grouping
     # and not quality issues
-    ACCELERATION_DISTANCES = [ # In mm
-        3.2512, # acceleration 1 distance 128mil
-        3.2512, # acceleration 2 distance 128mil
-        4.8768, # acceleration 3 distance 192mil
-        6.5024, # acceleration 4 distance 256mil
+    ACCELERATION_DISTANCES = [  # In mm
+        3.2512,  # acceleration 1 distance 128mil
+        3.2512,  # acceleration 2 distance 128mil
+        4.8768,  # acceleration 3 distance 192mil
+        6.5024,  # acceleration 4 distance 256mil
     ]
 
     @staticmethod
     def get_acceleration_time(speed, accel):
         """Calculate 1/2 sweep distance for speed / accel as raster margin"""
-        return 375.0 * (LaserSpeed.ACCELERATION_DISTANCES[accel - 1] ** 1.36) / (speed ** 0.75)
+        return (
+            375.0
+            * (LaserSpeed.ACCELERATION_DISTANCES[accel - 1] ** 1.36)
+            / (speed ** 0.75)
+        )
 
     @staticmethod
     def get_suffix_c(board, mm_per_second=None):

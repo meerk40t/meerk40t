@@ -44,6 +44,7 @@ from ..svgelements import (
     SVGText,
     Viewbox,
 )
+from ..tools.rastergrouping import group_overlapped_rasters
 from .cutcode import (
     CubicCut,
     CutCode,
@@ -53,7 +54,6 @@ from .cutcode import (
     QuadCut,
     RasterCut,
 )
-from ..tools.rastergrouping import group_overlapped_rasters
 
 
 def plugin(kernel, lifecycle=None):
@@ -6743,7 +6743,9 @@ class Elemental(Modifier):
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = group_overlapped_rasters([(e, e.bbox()) for e in raster_elements])
+        raster_groups = group_overlapped_rasters(
+            [(e, e.bbox()) for e in raster_elements]
+        )
 
         # Remove bbox and add element colour from groups
         # Change list to groups which are a list of tuples, each tuple being element and its classification color

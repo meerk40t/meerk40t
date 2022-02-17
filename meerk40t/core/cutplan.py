@@ -18,19 +18,19 @@ from copy import copy
 from math import ceil
 from os import times
 from time import time
-
 from typing import Any, List
 
 from PIL import Image
 
-from .cutcode import CutCode, CutGroup, CutObject, RasterCut
-from ..svgelements import Group, Path, Polygon, SVGImage, SVGText
-from ..tools.pathtools import VectorMontonizer
-from ..tools.rastergrouping import group_overlapped_rasters, group_elements_overlap
-from .elements import LaserOperation
 from ..device.lhystudios.laserspeed import LaserSpeed
 from ..device.lhystudios.lhystudiosdevice import LhystudiosDriver
 from ..image.actualize import actualize
+from ..svgelements import Group, Path, Polygon, SVGImage, SVGText
+from ..tools.pathtools import VectorMontonizer
+from ..tools.rastergrouping import group_elements_overlap, group_overlapped_rasters
+from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .elements import LaserOperation
+
 
 class CutPlan:
     """
@@ -137,7 +137,6 @@ class CutPlan:
         self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
 
-
     def blob(self):
         """
         blob converts User operations to CutCode objects.
@@ -163,9 +162,8 @@ class CutPlan:
         group = [self.plan[0]]
         for c in self.plan[1:]:
             if (
-                (isinstance(group[-1], LaserOperation) or isinstance(c, LaserOperation))
-                and type(group[-1]) != type(c)
-            ):
+                isinstance(group[-1], LaserOperation) or isinstance(c, LaserOperation)
+            ) and type(group[-1]) != type(c):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
@@ -173,7 +171,7 @@ class CutPlan:
         return grouped_plan
 
     def blob_planner(self, grouped_plan: List) -> List:
-        """ Create CutCode objects from LaserOperations"""
+        """Create CutCode objects from LaserOperations"""
         context = self.context
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
@@ -202,15 +200,17 @@ class CutPlan:
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
-                    if (
-                        context.opt_merge_passes
-                        and (context.opt_nearest_neighbor or context.opt_inner_first)
+                    if context.opt_merge_passes and (
+                        context.opt_nearest_neighbor or context.opt_inner_first
                     ):
                         passes = copies
                         copies = 1
                     for p in range(copies):
                         cutcode = CutCode(
-                            op.as_cutobjects(closed_distance=context.opt_closed_distance, passes=passes),
+                            op.as_cutobjects(
+                                closed_distance=context.opt_closed_distance,
+                                passes=passes,
+                            ),
                             settings=op.settings,
                         )
                         if len(cutcode) == 0:
@@ -267,7 +267,9 @@ class CutPlan:
 
             if merge:
                 if blob.constrained:
-                    self.plan[-1].constrained = (
+                    self.plan[
+                        -1
+                    ].constrained = (
                         True  # if merge is constrained new blob is constrained.
                     )
                 self.plan[-1].extend(blob)
@@ -293,12 +295,8 @@ class CutPlan:
         if not has_cutcode:
             return
 
-        if (
-            context.opt_reduce_travel
-            and (
-                context.opt_nearest_neighbor
-                or context.opt_2opt
-            )
+        if context.opt_reduce_travel and (
+            context.opt_nearest_neighbor or context.opt_2opt
         ):
             if context.opt_nearest_neighbor:
                 self.commands.append(self.optimize_travel)
@@ -364,7 +362,9 @@ class CutPlan:
         for i, op in enumerate(list(self.plan)):
             if isinstance(op, LaserOperation) and op.operation == "Raster":
                 for j, node in enumerate(list(op.children)):
-                    if hasattr(node, "object") and not isinstance(node.object, SVGImage):
+                    if hasattr(node, "object") and not isinstance(
+                        node.object, SVGImage
+                    ):
                         del op.children[j]
                 if not op.children:
                     del self.plan[i]
@@ -411,24 +411,28 @@ class CutPlan:
 
         # Get device and check for lhystudios
         try:
-            spooler, device, controller = root.registered[
-                "device/%s" % root.active
-            ]
+            spooler, device, controller = root.registered["device/%s" % root.active]
         except (KeyError, ValueError):
             return dx, dy
         if not isinstance(device, LhystudiosDriver):
             return dx, dy
 
         # Determine actual speed and acceleration using LaserSpeed
-        speed = LaserSpeed.get_actual_speed(op_settings.speed, device.context.fix_speeds)
+        speed = LaserSpeed.get_actual_speed(
+            op_settings.speed, device.context.fix_speeds
+        )
         if op_settings.acceleration_custom:
             h_accel = v_accel = op_settings.acceleration
         else:
             h_accel = LaserSpeed.get_acceleration_for_speed(
-                speed, raster=True, raster_horizontal=True,
+                speed,
+                raster=True,
+                raster_horizontal=True,
             )
             v_accel = LaserSpeed.get_acceleration_for_speed(
-                speed, raster=True, raster_horizontal=False,
+                speed,
+                raster=True,
+                raster_horizontal=False,
             )
 
         # For cross-raster (type 4) it might make sense to group elements differently
@@ -483,16 +487,17 @@ class CutPlan:
             image = self.make_image_from_raster(g, step=step)
             if image is None:
                 continue
-            if (
-                image.image_width == 1
-                and image.image_height == 1
-            ):
+            if image.image_width == 1 and image.image_height == 1:
                 """
                 TODO: Solve this is a less kludgy manner. The call to make the image can fail the first
                     time around because the renderer is what sets the size of the text. If the size hasn't
                     already been set, the initial bounds are wrong.
                 """
-                print("Retrying make_image_from_raster ({w},{h})".format(w=image.image_width, h=image.image_height))
+                print(
+                    "Retrying make_image_from_raster ({w},{h})".format(
+                        w=image.image_width, h=image.image_height
+                    )
+                )
                 image = self.make_image_from_raster(g, step=step)
             images.append(image)
 
@@ -609,33 +614,33 @@ class CutPlan:
 
     # @staticmethod
     # def bounding_box(elements):
-        # if isinstance(elements, SVGElement):
-            # elements = [elements]
-        # elif isinstance(elements, list):
-            # try:
-                # elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
-            # except AttributeError:
-                # pass
-        # boundary_points = []
-        # for e in elements:
-            # box = e.bbox(False)
-            # if box is None:
-                # continue
-            # top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-            # top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-            # bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-            # bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-            # boundary_points.append(top_left)
-            # boundary_points.append(top_right)
-            # boundary_points.append(bottom_left)
-            # boundary_points.append(bottom_right)
-        # if len(boundary_points) == 0:
-            # return None
-        # xmin = min([e[0] for e in boundary_points])
-        # ymin = min([e[1] for e in boundary_points])
-        # xmax = max([e[0] for e in boundary_points])
-        # ymax = max([e[1] for e in boundary_points])
-        # return xmin, ymin, xmax, ymax
+    # if isinstance(elements, SVGElement):
+    # elements = [elements]
+    # elif isinstance(elements, list):
+    # try:
+    # elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+    # except AttributeError:
+    # pass
+    # boundary_points = []
+    # for e in elements:
+    # box = e.bbox(False)
+    # if box is None:
+    # continue
+    # top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+    # top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+    # bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+    # bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+    # boundary_points.append(top_left)
+    # boundary_points.append(top_right)
+    # boundary_points.append(bottom_left)
+    # boundary_points.append(bottom_right)
+    # if len(boundary_points) == 0:
+    # return None
+    # xmin = min([e[0] for e in boundary_points])
+    # ymin = min([e[1] for e in boundary_points])
+    # xmax = max([e[0] for e in boundary_points])
+    # ymax = max([e[1] for e in boundary_points])
+    # return xmin, ymin, xmax, ymax
 
     def inner_first_ident(self, context: CutGroup):
         """
@@ -654,7 +659,11 @@ class CutPlan:
             self.channel("Executing Inner-First Identification")
 
         groups = [cut for cut in context if isinstance(cut, (CutGroup, RasterCut))]
-        closed_groups = [g for g in groups if isinstance(g, CutGroup) and g.closed and g.original_op == "Cut"]
+        closed_groups = [
+            g
+            for g in groups
+            if isinstance(g, CutGroup) and g.closed and g.original_op == "Cut"
+        ]
 
         constrained = False
         for outer in closed_groups:
@@ -666,11 +675,11 @@ class CutPlan:
                     continue
                 if is_inside(inner, outer):
                     # if inner.bounding_box and outer.bounding_box:
-                        # print(
-                            # outer.__class__.__name__,outer.bounding_box,
-                            # "contains"
-                            # inner.__class__.__name__,inner.bounding_box
-                        # )
+                    # print(
+                    # outer.__class__.__name__,outer.bounding_box,
+                    # "contains"
+                    # inner.__class__.__name__,inner.bounding_box
+                    # )
                     constrained = True
                     if outer.contains is None:
                         outer.contains = []
@@ -683,16 +692,16 @@ class CutPlan:
         context.constrained = constrained
 
         # for g in groups:
-            # if g.contains is not None:
-                # for inner in g.contains:
-                    # assert inner in groups
-                    # assert inner is not g
-                    # assert g in inner.inside
-            # if g.inside is not None:
-                # for outer in g.inside:
-                    # assert outer in groups
-                    # assert outer is not g
-                    # assert g in outer.contains
+        # if g.contains is not None:
+        # for inner in g.contains:
+        # assert inner in groups
+        # assert inner is not g
+        # assert g in inner.inside
+        # if g.inside is not None:
+        # for outer in g.inside:
+        # assert outer in groups
+        # assert outer is not g
+        # assert g in outer.contains
 
         if self.channel:
             end_times = times()
@@ -728,7 +737,12 @@ class CutPlan:
             if not isinstance(img, RasterCut):
                 continue
             dx, dy = self.get_raster_margins(img.settings, smallest=False)
-            bbox = (img.tx - dx, img.ty - dy, img.tx + img.width + dx, img.ty + img.height + dy)
+            bbox = (
+                img.tx - dx,
+                img.ty - dy,
+                img.tx + img.width + dx,
+                img.ty + img.height + dy,
+            )
             groups.append([(img, bbox)])
 
         start_images = len(groups)
@@ -743,10 +757,8 @@ class CutPlan:
                     continue
                 if g1[0][0].passes != g2[0][0].passes:
                     continue
-                if (
-                    (g1[0][0].inside is None and g2[0][0].inside is not None)
-                    or
-                    (g1[0][0].inside is not None and g2[0][0].inside is None)
+                if (g1[0][0].inside is None and g2[0][0].inside is not None) or (
+                    g1[0][0].inside is not None and g2[0][0].inside is None
                 ):
                     continue
 
@@ -799,7 +811,9 @@ class CutPlan:
 
         image = Image.new("L", (width, height), "white")
         for i in images:
-            image.paste(i.image, (int((i.tx - xmin) / i.step), int((i.ty - ymin) / i.step)))
+            image.paste(
+                i.image, (int((i.tx - xmin) / i.step), int((i.ty - ymin) / i.step))
+            )
 
         cut = RasterCut(
             image,
@@ -853,11 +867,13 @@ class CutPlan:
         checks.
         """
         if self.channel:
-            start_length=context.length_travel(True)
+            start_length = context.length_travel(True)
             start_time = time()
             start_times = times()
             self.channel("Executing Greedy Short-Travel optimization")
-            self.channel("Length at start: {length:.0f} mils".format(length=start_length))
+            self.channel(
+                "Length at start: {length:.0f} mils".format(length=start_length)
+            )
 
         curr = context.start
         if curr is None:
@@ -907,7 +923,9 @@ class CutPlan:
             # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
-                closest = self.short_travel_cutcode_candidate(context, closest, curr, distance)
+                closest = self.short_travel_cutcode_candidate(
+                    context, closest, curr, distance
+                )
 
             if closest is None:
                 break
@@ -958,18 +976,18 @@ class CutPlan:
             )
         return ordered
 
-    def short_travel_cutcode_candidate(self, context: CutCode, closest: Any, curr: complex, distance: float) -> Any:
+    def short_travel_cutcode_candidate(
+        self, context: CutCode, closest: Any, curr: complex, distance: float
+    ) -> Any:
         complete_path = self.context.opt_complete_subpaths
-        for cut in context.candidate(complete_path=complete_path, grouped_inner=self.grouped_inner()):
+        for cut in context.candidate(
+            complete_path=complete_path, grouped_inner=self.grouped_inner()
+        ):
             s = cut.start()
             if (
                 abs(s.x - curr.real) <= distance
                 and abs(s.y - curr.imag) <= distance
-                and (
-                    not complete_path
-                    or cut.closed
-                    or cut.first
-                )
+                and (not complete_path or cut.closed or cut.first)
             ):
                 d = abs(complex(s) - curr)
                 if d < distance:
@@ -985,11 +1003,7 @@ class CutPlan:
             if (
                 abs(e.x - curr.real) <= distance
                 and abs(e.y - curr.imag) <= distance
-                and (
-                    not complete_path
-                    or cut.closed
-                    or cut.last
-                )
+                and (not complete_path or cut.closed or cut.last)
             ):
                 d = abs(complex(e) - curr)
                 if d < distance:
@@ -1000,7 +1014,6 @@ class CutPlan:
                     distance = d
 
         return closest
-
 
     def short_travel_cutcode_2opt(self, context: CutCode, passes: int = 50):
         """
@@ -1023,11 +1036,13 @@ class CutPlan:
             return context
 
         if self.channel:
-            start_length=context.length_travel(True)
+            start_length = context.length_travel(True)
             start_time = time()
             start_times = times()
             self.channel("Executing 2-Opt Short-Travel optimization")
-            self.channel("Length at start: {length:.0f} mils".format(length=start_length))
+            self.channel(
+                "Length at start: {length:.0f} mils".format(length=start_length)
+            )
 
         ordered = CutCode(context.flat())
         length = len(ordered)
@@ -1146,7 +1161,6 @@ class CutPlan:
 
         return ordered
 
-
     def inner_selection_cutcode(self, context: CutCode):
         """
         Selects cutcode from candidate cutcode permitted but does nothing to optimize beyond
@@ -1155,11 +1169,13 @@ class CutPlan:
         This routine runs if opt_inner first is selected and opt_greedy is not selected.
         """
         if self.channel:
-            start_length=context.length_travel(True)
+            start_length = context.length_travel(True)
             start_time = time()
             start_times = times()
             self.channel("Executing Inner Selection-Only optimization")
-            self.channel("Length at start: {length:.0f} mils".format(length=start_length))
+            self.channel(
+                "Length at start: {length:.0f} mils".format(length=start_length)
+            )
 
         for c in context.flat():
             c.burns_done = 0
@@ -1265,6 +1281,7 @@ def is_inside(inner, outer):
             return False
     return True
 
+
 def needs_actualization(image_element, step_level=None):
     if not isinstance(image_element, SVGImage):
         return False
@@ -1276,6 +1293,7 @@ def needs_actualization(image_element, step_level=None):
     m = image_element.transform
     # Transformation must be uniform to permit native rastering.
     return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
+
 
 def make_actual(image_element, step_level=None):
     """

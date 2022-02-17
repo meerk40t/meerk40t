@@ -1,9 +1,5 @@
 from copy import copy
 
-from .cutcode import CutCode, CutGroup, RasterCut
-from .cutplan import CutPlan
-from .elements import LaserOperation
-from ..svgelements import Length
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_FUNCTION,
@@ -17,8 +13,13 @@ from ..device.lasercommandconstants import (
     COMMAND_WAIT_FINISH,
 )
 from ..kernel import Modifier
+from ..svgelements import Length
+from .cutcode import CutCode, CutGroup, RasterCut
+from .cutplan import CutPlan
+from .elements import LaserOperation
 
 MILS_IN_MM = 39.3701
+
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -362,7 +363,6 @@ class Planner(Modifier):
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_start_from_position", False)
-
 
         @self.context.console_argument(
             "alias", type=str, help=_("plan command name to alias")
@@ -929,6 +929,7 @@ def reify_matrix(self):
     """Apply the matrix to the path and reset matrix."""
     self.element = abs(self.element)
     self.scene_bounds = None
+
 
 def correct_empty(context: CutGroup):
     """

@@ -1,5 +1,5 @@
-from ..svgelements import Move, Path, Point
 from ..core.cutplan import is_inside
+from ..svgelements import Move, Path, Point
 
 
 def plugin(kernel, lifecycle):

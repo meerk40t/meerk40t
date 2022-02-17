@@ -11,14 +11,13 @@ Currently used:
 
 from typing import Any, Sequence, Tuple, Union
 
-from ..svgelements import SVGElement
 from ..core.cutcode import RasterCut
+from ..svgelements import SVGElement
+
 
 def group_overlapped_rasters(
-        group: Sequence[Tuple[Any, Tuple]],
-    ) -> (
-        Sequence[Sequence[Tuple[Any, Tuple]]]
-    ):
+    group: Sequence[Tuple[Any, Tuple]],
+) -> (Sequence[Sequence[Tuple[Any, Tuple]]]):
     """
     A group consists of a list of elements and associated bboxes.
 
@@ -50,10 +49,11 @@ def group_overlapped_rasters(
                 # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
     return groups
 
+
 def group_elements_overlap(
-        g1: Tuple[Union[SVGElement, RasterCut], Tuple],
-        g2: Tuple[Union[SVGElement, RasterCut], Tuple],
-    ) -> bool:
+    g1: Tuple[Union[SVGElement, RasterCut], Tuple],
+    g2: Tuple[Union[SVGElement, RasterCut], Tuple],
+) -> bool:
     for e1 in g1:
         e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
         for e2 in g2:
