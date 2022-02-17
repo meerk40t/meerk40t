@@ -3,7 +3,7 @@ import math
 import wx
 
 from ..core.elements import LaserOperation
-from ..svgelements import Length, Group
+from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
 from .propertiespanel import PropertiesPanel
@@ -57,7 +57,7 @@ class PlannerPanel(wx.Panel):
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        choices = self.context.registered["choices/optimize"][:5]
+        choices = self.context.registered["choices/optimize"][:7]
         self.panel_optimize = PropertiesPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )
@@ -187,7 +187,7 @@ class PlannerPanel(wx.Panel):
             if height:
                 height = "%.1f%s" % (height / conversion, name)
             if width:
-                width  = "%.1f%s" % (width / conversion, name)
+                width = "%.1f%s" % (width / conversion, name)
         dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
         bed_dim = self.context.root
         bed_dim.setting(int, "bed_width", 310)
@@ -349,7 +349,9 @@ class PlannerPanel(wx.Panel):
         self.context.setting(bool, "opt_merge_passes", False)
         self.context.setting(bool, "opt_merge_ops", False)
         self.context.setting(bool, "opt_reduce_travel", True)
+        self.context.setting(bool, "opt_complete_subpaths", False)
         self.context.setting(bool, "opt_inner_first", True)
+        self.context.setting(bool, "opt_inners_grouped", False)
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_rapid_between", True)
@@ -457,8 +459,12 @@ class ExecuteJob(MWindow):
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
-        self.panel.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations)
-        self.panel.list_command.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command)
+        self.panel.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command
+        )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -480,9 +486,7 @@ class ExecuteJob(MWindow):
     def on_menu(self, event):
         from .wxutils import create_menu_for_choices
 
-        menu = create_menu_for_choices(
-            self, self.context.registered["choices/planner"]
-        )
+        menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
         self.PopupMenu(menu)
         menu.Destroy()
 

@@ -25,8 +25,9 @@ defaults:
 
 jobs:
   analyze:
-    name: ${{ matrix.os }}+py${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: CodeQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -37,10 +38,10 @@ jobs:
     - name: Checkout ${{ github.ref }}
       uses: actions/checkout@v2
 
-    - name: Set up Python
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
 
     - name: Identify precise Python version
       id: full-python-version

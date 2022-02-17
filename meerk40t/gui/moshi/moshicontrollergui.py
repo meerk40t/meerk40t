@@ -357,7 +357,7 @@ class MoshiControllerPanel(wx.Panel):
             None,
         ):
             try:
-                self.context("dev usb_connect\n")
+                self.context("usb_connect\n")
             except ConnectionRefusedError:
                 dlg = wx.MessageDialog(
                     None,
@@ -368,7 +368,7 @@ class MoshiControllerPanel(wx.Panel):
                 result = dlg.ShowModal()
                 dlg.Destroy()
         elif state in ("STATE_CONNECTED", "STATE_USB_CONNECTED"):
-            self.context("dev usb_disconnect\n")
+            self.context("usb_disconnect\n")
 
     def spin_on_device_index(self, event=None):
         self.context.usb_index = int(self.spin_device_index.GetValue())

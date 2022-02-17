@@ -29,21 +29,23 @@ class LhystudiosConfigurationPanel(wx.Panel):
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
         self.checkbox_twitchless = wx.CheckBox(
-            self, wx.ID_ANY, _("Twitchless Vector")
+            self, wx.ID_ANY, _("Reduce vector twitching (BETA)")
         )
         self.checkbox_alternative_raster = wx.CheckBox(
-            self, wx.ID_ANY, _("Alt Raster Style")
+            self, wx.ID_ANY, _("Alternative Rastering (BETA)")
         )
         self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
-        self.checkbox_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict"))
-        self.spin_home_x = wx.SpinCtrlDouble(
+        self.checkbox_strict = wx.CheckBox(
+            self, wx.ID_ANY, _("Strict Programmed Speed Mode")
+        )
+        self.spin_home_x = wx.SpinCtrl(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
-        self.spin_home_y = wx.SpinCtrlDouble(
+        self.spin_home_y = wx.SpinCtrl(
             self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
         )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
@@ -57,7 +59,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
             self, wx.ID_ANY, "1500", min=1, max=1000000
         )
         self.checkbox_autolock = wx.CheckBox(
-            self, wx.ID_ANY, _("Automatically lock rail")
+            self, wx.ID_ANY, _("Leave rail locked after burn")
         )
 
         self.__set_properties()
@@ -72,11 +74,13 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.checkbox_strict)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchless, self.checkbox_twitchless)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_x, self.spin_home_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_x, self.spin_home_x)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.spin_on_home_y, self.spin_home_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.spin_on_home_y, self.spin_home_y)
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster
+        )
+        self.Bind(wx.EVT_SPINCTRL, self.spin_on_home_x, self.spin_home_x)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
+        self.Bind(wx.EVT_SPINCTRL, self.spin_on_home_y, self.spin_home_y)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.spin_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -94,7 +98,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
             wx.EVT_TEXT, self.on_spin_packet_buffer_max, self.spin_packet_buffer_max
         )
         self.Bind(
-            wx.EVT_TEXT_ENTER,
+            wx.EVT_TEXT,
             self.on_spin_packet_buffer_max,
             self.spin_packet_buffer_max,
         )
@@ -117,7 +121,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.combobox_board.SetSelection(0)
         self.checkbox_fix_speeds.SetToolTip(
             _(
-                "Correct for speed invalidity. Lhystudios speeds are 92% of the correctly rated speed."
+                "Lhystudios speeds are approximately 92% of the speed requested. "
+                + "This option applies a correcting factor so that actual burn speeds are the same as in the Operation. "
             )
         )
         self.checkbox_flip_x.SetToolTip(
@@ -137,13 +142,35 @@ class LhystudiosConfigurationPanel(wx.Panel):
         )
         self.checkbox_strict.SetToolTip(
             _(
-                "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+                "Forces the device to enter and exit programmed speed mode from the same direction. "
+                + "This may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
             )
         )
         self.checkbox_alternative_raster.SetToolTip(
-            _("Forces the device to use an alternative method of rastering using NSE transfers rather than the default G0xx raster mode and directional changes.")
+            _(
+                "This is a change we would like you to try because it opens up possibilities for future enhancements. "
+                + "We do not believe it will create any issues, but in case it does we are giving you the choice to switch it on or not. "
+            )
+            + "\n\n"
+            + _(
+                "If this works OK for you please leave it on. "
+                + "If you have any problems, we would very much appreciate it "
+                + "if you could leave a comment on Github issue #{issue}."
+            ).format(issue=773)
         )
-        self.checkbox_twitchless.SetToolTip(_("Forces the device to utilize twitchless mode for vector engraving"))
+        self.checkbox_twitchless.SetToolTip(
+            _(
+                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                + "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                + "This option changes how travel moves are performed and result in a noticeable faster travel time. "
+            )
+            + "\n\n"
+            + _(
+                "If this works OK for you please leave it on. "
+                + "If you have any problems, we would very much appreciate it "
+                + "if you could leave a comment on Github issue #{issue}."
+            ).format(issue=772)
+        )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
         self.spin_home_y.SetMinSize((80, 23))
@@ -152,26 +179,23 @@ class LhystudiosConfigurationPanel(wx.Panel):
             _("Set Home Position based on the current position")
         )
         self.checkbox_plot_shift.SetToolTip(
-            "\n".join(
+            "\n\n".join(
                 (
                     _(
-                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds. "
+                        + "This setting is a global equivalent to the Pulse Grouping option in Operation Properties."
                     ),
                     _(
-                        "This setting is a global equivalent to the Pulse Grouping option in Operation Properties."
+                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches "
+                        + "e.g. instead of 1010 it will burn 1100. "
+                        + 'Because the laser beam is overlapping, and because a bit is only moved at most 1/1000", '
+                        + "the difference should not be visible even under magnification."
                     ),
                     _(
-                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
-                    ),
-                    _(
-                        'As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
-                    ),
-                    _(
-                        "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly,"
-                    )
-                    + " "
-                    + _(
-                        "this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process."
+                        "The Pulse Grouping option in Operations are set for that operation before the job is spooled "
+                        + "and cannot be changed during the burn, "
+                        + "however this global Pulse Grouping option is checked as instructions are sent to the laser "
+                        + "and can turned on and off during the burn process if needed."
                     ),
                     _(
                         "Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
@@ -193,11 +217,18 @@ class LhystudiosConfigurationPanel(wx.Panel):
             _("Current number of bytes in the write buffer.")
         )
         self.spin_packet_buffer_max.SetToolTip(_("Current maximum write buffer limit."))
-        self.checkbox_autolock.SetToolTip(_("Lock rail after operations are finished."))
+        self.checkbox_autolock.SetToolTip(
+            _(
+                "Leave the steppers energised and the rail locked after the burn has finished. "
+                + "By default, if this option is not selected, the rail is unlocked at the end of the burn."
+            )
+        )
         self.checkbox_autolock.SetValue(1)
         # end wxGlade
 
     def __do_layout(self):
+        checkbox_border = (wx.TOP, 3)
+        static_text_border = (wx.TOP, 4)
         # begin wxGlade: LhystudiosDriver.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_general = wx.StaticBoxSizer(
@@ -227,49 +258,49 @@ class LhystudiosConfigurationPanel(wx.Panel):
         sizer_board_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_board_2 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_board_1.Add(self.combobox_board, 1, 0, 0)
-        sizer_board_1.Add(self.checkbox_fix_speeds, 0, 0, 0)
+        sizer_board_1.Add(self.combobox_board, 1, wx.EXPAND | wx.RIGHT, 1)
+        sizer_board_1.Add(self.checkbox_fix_speeds, 0, *checkbox_border)
+        sizer_board_1.Add(self.checkbox_strict, 0, *checkbox_border)
 
-        sizer_board_2.Add(self.checkbox_alternative_raster, 0, 0, 0)
-        sizer_board_2.Add(self.checkbox_twitchless, 0, 0, 0)
+        sizer_board_2.Add(self.checkbox_alternative_raster, 0, *checkbox_border)
+        sizer_board_2.Add(self.checkbox_twitchless, 0, *checkbox_border)
 
         sizer_board.Add(sizer_board_1, 1, 0, 0)
-        sizer_board.Add(sizer_board_2, 1, 0, 0)
+        sizer_board.Add(sizer_board_2, 1, wx.EXPAND | wx.LEFT, 10)
 
         sizer_main.Add(sizer_board, 1, wx.EXPAND, 0)
-        sizer_17.Add(self.checkbox_flip_x, 0, 0, 0)
-        sizer_17.Add(self.checkbox_home_right, 0, 0, 0)
+        sizer_17.Add(self.checkbox_flip_x, 0, *checkbox_border)
+        sizer_17.Add(self.checkbox_home_right, 0, *checkbox_border)
         sizer_config.Add(sizer_17, 1, wx.EXPAND, 0)
-        sizer_16.Add(self.checkbox_flip_y, 0, 0, 0)
-        sizer_16.Add(self.checkbox_home_bottom, 0, 0, 0)
+        sizer_16.Add(self.checkbox_flip_y, 0, *checkbox_border)
+        sizer_16.Add(self.checkbox_home_bottom, 0, *checkbox_border)
         sizer_config.Add(sizer_16, 1, wx.EXPAND, 0)
-        sizer_3.Add(self.checkbox_swap_xy, 0, 0, 0)
-        sizer_3.Add(self.checkbox_strict, 0, 0, 0)
+        sizer_3.Add(self.checkbox_swap_xy, 0, *checkbox_border)
         sizer_config.Add(sizer_3, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_config, 1, wx.EXPAND, 0)
-        label_9 = wx.StaticText(self, wx.ID_ANY, "X")
-        sizer_4.Add(label_9, 0, 0, 0)
+        label_9 = wx.StaticText(self, wx.ID_ANY, "X ")
+        sizer_4.Add(label_9, 0, *static_text_border)
         sizer_4.Add(self.spin_home_x, 0, 0, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("mil"))
-        sizer_4.Add(label_12, 0, 0, 0)
-        sizer_home.Add(sizer_4, 2, wx.EXPAND, 0)
-        label_10 = wx.StaticText(self, wx.ID_ANY, "Y")
-        sizer_2.Add(label_10, 0, 0, 0)
+        label_12 = wx.StaticText(self, wx.ID_ANY, _("mils"))
+        sizer_4.Add(label_12, 0, *static_text_border)
+        sizer_home.Add(sizer_4, 1, wx.EXPAND, 0)
+        label_10 = wx.StaticText(self, wx.ID_ANY, "Y ")
+        sizer_2.Add(label_10, 0, *static_text_border)
         sizer_2.Add(self.spin_home_y, 0, 0, 0)
-        label_11 = wx.StaticText(self, wx.ID_ANY, _("mil"))
-        sizer_2.Add(label_11, 1, 0, 0)
-        sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
-        sizer_home.Add(self.button_home_by_current, 1, 0, 0)
+        label_11 = wx.StaticText(self, wx.ID_ANY, _("mils"))
+        sizer_2.Add(label_11, 0, *static_text_border)
+        sizer_home.Add(sizer_2, 1, wx.EXPAND | wx.LEFT, 10)
+        sizer_home.Add(self.button_home_by_current, 0, wx.LEFT, 10)
         sizer_main.Add(sizer_home, 1, wx.EXPAND, 0)
-        sizer_6.Add(self.checkbox_plot_shift, 1, 0, 0)
-        sizer_6.Add(self.checkbox_random_ppi, 0, 0, 0)
-        sizer_main.Add(sizer_6, 1, wx.EXPAND, 0)
-        sizer_buffer.Add(self.checkbox_limit_buffer, 1, 0, 0)
+        sizer_6.Add(self.checkbox_plot_shift, 1, *checkbox_border)
+        sizer_6.Add(self.checkbox_random_ppi, 0, *checkbox_border)
+        sizer_main.Add(sizer_6, 0, wx.EXPAND, 0)
+        sizer_buffer.Add(self.checkbox_limit_buffer, 1, *checkbox_border)
         sizer_buffer.Add(self.text_buffer_length, 1, 0, 0)
-        label_14 = wx.StaticText(self, wx.ID_ANY, "/")
-        sizer_buffer.Add(label_14, 0, 0, 0)
+        label_14 = wx.StaticText(self, wx.ID_ANY, " / ")
+        sizer_buffer.Add(label_14, 0, *static_text_border)
         sizer_buffer.Add(self.spin_packet_buffer_max, 1, 0, 0)
-        sizer_main.Add(sizer_buffer, 0, 0, 0)
+        sizer_main.Add(sizer_buffer, 1, wx.EXPAND, 0)
         sizer_general.Add(self.checkbox_autolock, 0, 0, 0)
         sizer_main.Add(sizer_general, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)

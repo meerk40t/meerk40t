@@ -1,5 +1,150 @@
 from ..kernel import CommandMatchRejected, Modifier
 
+# The following dicts consist of a tuple of values, the first of
+# which is the current default, with any prior defaults following.
+# Prior defaults are used to keep a users keymap / aliases up to date with
+# any changes, unless the user has already changed away from the default.
+# If you want to delete a bind / alias, set the first value to a null string.
+
+DEFAULT_KEYMAP = {
+    "escape": ("pause",),
+    "pause": ("pause",),
+    "d": ("+right",),
+    "a": ("+left",),
+    "w": ("+up",),
+    "s": ("+down",),
+    "l": ("lock",),
+    "u": ("unlock",),
+    "numpad_down": ("+translate_down",),
+    "numpad_up": ("+translate_up",),
+    "numpad_left": ("+translate_left",),
+    "numpad_right": ("+translate_right",),
+    "numpad_multiply": ("+scale_up",),
+    "numpad_divide": ("+scale_down",),
+    "numpad_add": ("+rotate_cw",),
+    "numpad_subtract": ("+rotate_ccw",),
+    "control+a": ("element* select",),
+    "control+c": ("clipboard copy",),
+    "control+v": ("clipboard paste",),
+    "control+x": ("clipboard cut",),
+    "control+i": ("element* select^",),
+    "control+f": (
+        "",
+        "dialog_fill",
+        "control Fill",
+    ),
+    "control+s": (
+        "",
+        "dialog_stroke",
+        "control Stroke",
+    ),
+    "alt+f": ("dialog_fill",),
+    "alt+p": ("dialog_flip",),
+    "alt+s": ("dialog_stroke",),
+    "alt+h": ("dialog_path",),
+    "alt+t": ("dialog_transform",),
+    "control+r": ("rect 0 0 1000 1000",),
+    "control+e": ("circle 500 500 500",),
+    "control+d": ("element copy",),
+    "control+o": ("outline",),
+    "control+shift+o": ("outline 1mm",),
+    "control+alt+o": ("outline -1mm",),
+    "control+shift+h": ("scale -1 1",),
+    "control+shift+v": ("scale 1 -1",),
+    "control+1": ("bind 1 move $x $y",),
+    "control+2": ("bind 2 move $x $y",),
+    "control+3": ("bind 3 move $x $y",),
+    "control+4": ("bind 4 move $x $y",),
+    "control+5": ("bind 5 move $x $y",),
+    "alt+r": ("raster",),
+    "alt+e": ("engrave",),
+    "alt+c": ("cut",),
+    "delete": (
+        "tree selected delete",
+        "element delete",
+    ),
+    "control+f3": (
+        "",
+        "rotaryview",
+    ),
+    "alt+f3": (
+        "",
+        "rotaryscale",
+    ),
+    "f4": (
+        "",
+        "window open CameraInterface",
+    ),
+    "f5": ("refresh",),
+    "f6": (
+        "",
+        "window open JobSpooler",
+    ),
+    "f7": (
+        "",
+        "window open -o Controller",
+        "window controller",
+        "window open Controller",
+    ),
+    "f8": ("", "dialog_path", "control Path"),
+    "f9": (
+        "",
+        "dialog_transform",
+        "control Transform",
+    ),
+    "control+f9": (
+        "",
+        "dialog_flip",
+        "control Flip",
+    ),
+    "f12": (
+        "",
+        "window open Console",
+        "window open Terminal",
+    ),
+    "control+alt+g": ("image wizard Gold",),
+    "control+alt+x": ("image wizard Xin",),
+    "control+alt+s": ("image wizard Stipo",),
+    "home": ("home",),
+    "control+z": ("reset",),
+    "control+alt+shift+escape": ("reset_bind_alias",),
+}
+DEFAULT_ALIAS = {
+    "+scale_up": ("loop scale 1.02",),
+    "+scale_down": ("loop scale 0.98",),
+    "+rotate_cw": ("loop rotate 2",),
+    "+rotate_ccw": ("loop rotate -2",),
+    "+translate_right": ("loop translate 1mm 0",),
+    "+translate_left": ("loop translate -1mm 0",),
+    "+translate_down": ("loop translate 0 1mm",),
+    "+translate_up": ("loop translate 0 -1mm",),
+    "+right": ("loop right 1mm",),
+    "+left": ("loop left 1mm",),
+    "+up": ("loop up 1mm",),
+    "+down": ("loop down 1mm",),
+    "-scale_up": ("end scale 1.02",),
+    "-scale_down": ("end scale 0.98",),
+    "-rotate_cw": ("end rotate 2",),
+    "-rotate_ccw": ("end rotate -2",),
+    "-translate_right": ("end translate 1mm 0",),
+    "-translate_left": ("end translate -1mm 0",),
+    "-translate_down": ("end translate 0 1mm",),
+    "-translate_up": ("end translate 0 -1mm",),
+    "-right": ("end right 1mm",),
+    "-left": ("end left 1mm",),
+    "-up": ("end up 1mm",),
+    "-down": ("end down 1mm",),
+    "terminal_ruida": (
+        "",
+        "window open Terminal;ruidaserver",
+    ),
+    "terminal_watch": (
+        "",
+        "window open Terminal;channel save usb;channel save send;channel save recv",
+    ),
+    "reset_bind_alias": ("bind default;alias default",),
+}
+
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -17,15 +162,13 @@ class BindAlias(Modifier):
     def __init__(self, context, name=None, channel=None, *args, **kwargs):
         Modifier.__init__(self, context, name, channel)
         # Keymap/alias values
-        self.keymap = {}
-        self.alias = {}
+        self.context.keymap = {}
+        self.context.alias = {}
+        self.context.default_keymap = self.default_keymap
+        self.context.default_alias = self.default_alias
 
     def attach(self, *a, **kwargs):
         _ = self.context._
-        self.context.keymap = self.keymap
-        self.context.alias = self.alias
-        self.context.default_keymap = self.default_keymap
-        self.context.default_alias = self.default_alias
 
         @self.context.console_command("bind", help=_("bind <key> <console command>"))
         def bind(command, channel, _, args=tuple(), **kwgs):
@@ -44,9 +187,8 @@ class BindAlias(Modifier):
             else:
                 key = args[0].lower()
                 if key == "default":
-                    context.keymap = dict()
-                    context.default_keymap()
-                    channel(_("Set default keymap."))
+                    self.default_keymap()
+                    channel(_("Keymap set to default."))
                     return
                 command_line = " ".join(args[1:])
                 f = command_line.find("bind")
@@ -93,9 +235,8 @@ class BindAlias(Modifier):
                 return
             alias = alias.lower()
             if alias == "default":
-                context.alias = dict()
-                context.default_alias()
-                channel(_("Set default aliases."))
+                self.default_alias()
+                channel(_("Aliases set to default."))
                 return
             if remainder is None:
                 if alias in context.alias:
@@ -114,8 +255,8 @@ class BindAlias(Modifier):
             Aliases with ; delimit multipart commands
             """
             context = self.context
-            if command in self.alias:
-                aliased_command = self.alias[command]
+            if command in context.alias:
+                aliased_command = context.alias[command]
                 for cmd in aliased_command.split(";"):
                     context("%s\n" % cmd)
             else:
@@ -135,105 +276,60 @@ class BindAlias(Modifier):
         keys.clear_persistent()
         alias.clear_persistent()
 
-        for key in self.keymap:
+        for key, value in self.context.keymap.items():
             if key is None or len(key) == 0:
                 continue
-            keys.write_persistent(key, self.keymap[key])
+            keys.write_persistent(key, value)
 
-        for key in self.alias:
+        for key, value in self.context.alias.items():
             if key is None or len(key) == 0:
                 continue
-            alias.write_persistent(key, self.alias[key])
+            alias.write_persistent(key, value)
 
     def boot_keymap(self):
-        self.keymap.clear()
-        prefs = self.context.derive("keymap")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.keymap, suffix=True)
-        if not len(self.keymap):
+        context = self.context
+        context.keymap.clear()
+        prefs = context.derive("keymap")
+        prefs.kernel.load_persistent_string_dict(
+            prefs.path, context.keymap, suffix=True
+        )
+        if not len(context.keymap):
             self.default_keymap()
+            return
+        for key, values in DEFAULT_KEYMAP.items():
+            if not key in context.keymap or context.keymap[key] in values[1:]:
+                value = values[0]
+                if value:
+                    context.keymap[key] = value
+                elif key in context.keymap:
+                    del context.keymap[key]
 
     def boot_alias(self):
-        self.alias.clear()
-        prefs = self.context.derive("alias")
-        prefs.kernel.load_persistent_string_dict(prefs.path, self.alias, suffix=True)
-        if not len(self.alias):
+        context = self.context
+        context.alias.clear()
+        prefs = context.derive("alias")
+        prefs.kernel.load_persistent_string_dict(prefs.path, context.alias, suffix=True)
+        if not len(context.alias):
             self.default_alias()
+            return
+        for key, values in DEFAULT_ALIAS.items():
+            if not key in context.alias or context.alias[key] in values[1:]:
+                value = values[0]
+                if value:
+                    context.alias[key] = value
+                elif key in context.alias:
+                    del context.alias[key]
 
     def default_keymap(self):
-        self.keymap["escape"] = "pause"
-        self.keymap["pause"] = "pause"
-        self.keymap["d"] = "+right"
-        self.keymap["a"] = "+left"
-        self.keymap["w"] = "+up"
-        self.keymap["s"] = "+down"
-        self.keymap["l"] = "lock"
-        self.keymap["u"] = "unlock"
-        self.keymap["numpad_down"] = "+translate_down"
-        self.keymap["numpad_up"] = "+translate_up"
-        self.keymap["numpad_left"] = "+translate_left"
-        self.keymap["numpad_right"] = "+translate_right"
-        self.keymap["numpad_multiply"] = "+scale_up"
-        self.keymap["numpad_divide"] = "+scale_down"
-        self.keymap["numpad_add"] = "+rotate_cw"
-        self.keymap["numpad_subtract"] = "+rotate_ccw"
-        self.keymap["control+a"] = "element* select"
-        self.keymap["control+c"] = "clipboard copy"
-        self.keymap["control+v"] = "clipboard paste"
-        self.keymap["control+x"] = "clipboard cut"
-        self.keymap["control+i"] = "element* select^"
-        self.keymap["alt+f"] = "dialog_fill"
-        self.keymap["alt+p"] = "dialog_flip"
-        self.keymap["alt+s"] = "dialog_stroke"
-        self.keymap["alt+h"] = "dialog_path"
-        self.keymap["alt+t"] = "dialog_transform"
-        self.keymap["control+r"] = "rect 0 0 1000 1000"
-        self.keymap["control+e"] = "circle 500 500 500"
-        self.keymap["control+d"] = "element copy"
-        self.keymap["control+o"] = "outline"
-        self.keymap["control+shift+o"] = "outline 1mm"
-        self.keymap["control+alt+o"] = "outline -1mm"
-        self.keymap["control+shift+h"] = "scale -1 1"
-        self.keymap["control+shift+v"] = "scale 1 -1"
-        self.keymap["control+1"] = "bind 1 move $x $y"
-        self.keymap["control+2"] = "bind 2 move $x $y"
-        self.keymap["control+3"] = "bind 3 move $x $y"
-        self.keymap["control+4"] = "bind 4 move $x $y"
-        self.keymap["control+5"] = "bind 5 move $x $y"
-        self.keymap["alt+r"] = "raster"
-        self.keymap["alt+e"] = "engrave"
-        self.keymap["alt+c"] = "cut"
-        self.keymap["delete"] = "tree selected delete"
-        self.keymap["f5"] = "refresh"
-        self.keymap["control+alt+g"] = "image wizard Gold"
-        self.keymap["control+alt+x"] = "image wizard Xin"
-        self.keymap["control+alt+s"] = "image wizard Stipo"
-        self.keymap["home"] = "home"
-        self.keymap["control+z"] = "reset"
-        self.keymap["control+alt+shift+escape"] = "reset_bind_alias"
+        self.context.keymap.clear()
+        for key, values in DEFAULT_KEYMAP.items():
+            value = values[0]
+            if value:
+                self.context.keymap[key] = value
 
     def default_alias(self):
-        self.alias["+scale_up"] = "loop scale 1.02"
-        self.alias["+scale_down"] = "loop scale 0.98"
-        self.alias["+rotate_cw"] = "loop rotate 2"
-        self.alias["+rotate_ccw"] = "loop rotate -2"
-        self.alias["+translate_right"] = "loop translate 1mm 0"
-        self.alias["+translate_left"] = "loop translate -1mm 0"
-        self.alias["+translate_down"] = "loop translate 0 1mm"
-        self.alias["+translate_up"] = "loop translate 0 -1mm"
-        self.alias["+right"] = "loop right 1mm"
-        self.alias["+left"] = "loop left 1mm"
-        self.alias["+up"] = "loop up 1mm"
-        self.alias["+down"] = "loop down 1mm"
-        self.alias["-scale_up"] = "end scale 1.02"
-        self.alias["-scale_down"] = "end scale 0.98"
-        self.alias["-rotate_cw"] = "end rotate 2"
-        self.alias["-rotate_ccw"] = "end rotate -2"
-        self.alias["-translate_right"] = "end translate 1mm 0"
-        self.alias["-translate_left"] = "end translate -1mm 0"
-        self.alias["-translate_down"] = "end translate 0 1mm"
-        self.alias["-translate_up"] = "end translate 0 -1mm"
-        self.alias["-right"] = "end right 1mm"
-        self.alias["-left"] = "end left 1mm"
-        self.alias["-up"] = "end up 1mm"
-        self.alias["-down"] = "end down 1mm"
-        self.alias["reset_bind_alias"] = "bind default;alias default"
+        self.context.alias.clear()
+        for key, values in DEFAULT_ALIAS.items():
+            value = values[0]
+            if value:
+                self.context.alias[key] = value

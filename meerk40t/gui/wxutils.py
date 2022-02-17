@@ -1,10 +1,12 @@
+"""
+Mixin functions for wxMeerk40t
+"""
+
 from typing import List
 
 import wx
 
-"""
-Mixin functions for wxMeerk40t
-"""
+_ = wx.GetTranslation
 
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
@@ -113,7 +115,7 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
                 menu.AppendSeparator()
             if submenu_name is not None:
                 submenu = wx.Menu()
-                menu.AppendSubMenu(submenu, submenu_name)
+                menu.AppendSubMenu(submenu, submenu_name, func.help)
                 submenus[submenu_name] = submenu
 
         menu_context = submenu if submenu is not None else menu
@@ -124,7 +126,9 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
             )
             continue
         if func.radio_state is not None:
-            item = menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_RADIO)
+            item = menu_context.Append(
+                wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO
+            )
             gui.Bind(
                 wx.EVT_MENU,
                 menu_functions(func, node),
@@ -138,7 +142,9 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
             gui.Bind(
                 wx.EVT_MENU,
                 menu_functions(func, node),
-                menu_context.Append(wx.ID_ANY, func.real_name, "", wx.ITEM_NORMAL),
+                menu_context.Append(
+                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
+                ),
             )
             if menu_context not in radio_check_not_needed:
                 radio_check_not_needed.append(menu_context)
@@ -147,7 +153,12 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
 
     for submenu in submenus.values():
         if submenu not in radio_check_not_needed:
-            item = submenu.Append(wx.ID_ANY, "-----", "", wx.ITEM_RADIO)
+            item = submenu.Append(
+                wx.ID_ANY,
+                _("Other value..."),
+                _("Value set using properties"),
+                wx.ITEM_RADIO,
+            )
             item.Check(True)
     return menu
 

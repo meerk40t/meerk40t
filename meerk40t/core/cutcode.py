@@ -1,16 +1,5 @@
 from abc import ABC
-
-from meerk40t.tools.rasterplotter import (
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOP,
-    UNIDIRECTIONAL,
-    X_AXIS,
-    Y_AXIS,
-    RasterPlotter,
-)
-from meerk40t.tools.zinglplotter import ZinglPlotter
+from typing import Optional
 
 from ..device.lasercommandconstants import (
     COMMAND_CUT,
@@ -24,6 +13,17 @@ from ..device.lasercommandconstants import (
     COMMAND_SET_INCREMENTAL,
 )
 from ..svgelements import Color, Path, Point
+from ..tools.rasterplotter import (
+    BOTTOM,
+    LEFT,
+    RIGHT,
+    TOP,
+    UNIDIRECTIONAL,
+    X_AXIS,
+    Y_AXIS,
+    RasterPlotter,
+)
+from ..tools.zinglplotter import ZinglPlotter
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -52,6 +52,8 @@ class LaserSettings:
         self.acceleration_custom = False
         self.acceleration = 1
 
+        self.force_twitchless = False
+        self.raster_alt = False
         self.raster_step = 0
         self.raster_direction = 1  # Bottom To Top - Default.
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
@@ -109,11 +111,15 @@ class LaserSettings:
 
     @property
     def horizontal_raster(self):
-        return self.raster_step and (self.raster_direction == 0 or self.raster_direction == 1)
+        return self.raster_step and (
+            self.raster_direction == 0 or self.raster_direction == 1
+        )
 
     @property
     def vertical_raster(self):
-        return self.raster_step and (self.raster_direction == 2 or self.raster_direction == 3)
+        return self.raster_step and (
+            self.raster_direction == 2 or self.raster_direction == 3
+        )
 
     @property
     def implicit_accel(self):
@@ -158,14 +164,38 @@ class CutObject:
         self.next = None
         self.previous = None
         self.passes = passes
-        self.burns_done = 0
+        self._burns_done = 0
 
         self.mode = None
         self.inside = None
         self.contains = None
-        self.path = None
+        self.first = False
+        self.last = False
+        self.closed = False
         self.original_op = None
         self.pass_index = -1
+
+    @property
+    def burns_done(self):
+        return self._burns_done
+
+    @burns_done.setter
+    def burns_done(self, burns):
+        """
+        Maintain parent burns_done
+        """
+        self._burns_done = burns
+        if self.parent is not None:
+            # If we are resetting then we are going to be resetting all
+            # so don't bother looping
+            if burns == 0:
+                self.parent._burns_done = 0
+                self.parent.burn_started = False
+                return
+            for o in self.parent:
+                burns = min(burns, o._burns_done)
+            self.parent.burn_started = True
+            self.parent._burns_done = burns
 
     def reversible(self):
         return True
@@ -228,13 +258,23 @@ class CutObject:
     def generator(self):
         raise NotImplementedError
 
-    def contains_uncut_objects(self):
+    def contains_burned_groups(self):
         if self.contains is None:
             return False
         for c in self.contains:
-            for pp in c.flat():
-                if pp.burns_done < pp.passes:
+            if isinstance(c, CutGroup):
+                if c.burn_started:
                     return True
+            elif c.burns_done == c.passes:
+                return True
+        return False
+
+    def contains_unburned_groups(self):
+        if self.contains is None:
+            return False
+        for c in self.contains:
+            if c.burns_done < c.passes:
+                return True
         return False
 
     def flat(self):
@@ -244,6 +284,9 @@ class CutObject:
         if self.burns_done < self.passes:
             yield self
 
+    def is_burned(self):
+        return self.burns_done == self.passes
+
 
 class CutGroup(list, CutObject, ABC):
     """
@@ -252,13 +295,19 @@ class CutGroup(list, CutObject, ABC):
     """
 
     def __init__(
-        self, parent, children=(),
-        settings=None, constrained=False, closed=False
+        self,
+        parent,
+        children=(),
+        settings=None,
+        passes=1,
+        constrained=False,
+        closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings)
+        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
         self.closed = closed
         self.constrained = constrained
+        self.burn_started = False
 
     def __copy__(self):
         return CutGroup(self.parent, self)
@@ -298,20 +347,72 @@ class CutGroup(list, CutObject, ABC):
             for s in c.flat():
                 yield s
 
-    def candidate(self):
+    def candidate(
+        self,
+        complete_path: Optional[bool] = False,
+        grouped_inner: Optional[bool] = False,
+    ):
         """
-        Candidates are cutobjects with burns done < passes that do not contain
-        another constrained cutcode object. Which is to say that the
-        inner-most non-containing cutcode are the only candidates for cutting.
+        Candidates are CutObjects:
+        1. That do not contain one or more unburned inner constrained cutcode objects.
+        2. With Group Inner Burns, containing object is a candidate only if:
+            a. It already has one containing object already burned; or
+            b. There are no containing objects with at least one inner element burned.
+        3. With burns done < passes (> 1 only if merge passes)
+        4. With Burn Complete Paths on and non-closed subpath, only first and last segments of the subpath else all segments
         """
-        for c in self:
-            if c.contains_uncut_objects():
-                continue
-            for s in c.flat():
-                if s is None:
+        candidates = list(self)
+        if grouped_inner:
+            # Create list of exactly those groups which are:
+            #   a.  Unburned; and either
+            #   b1. Inside an outer which has at least one inner burned; or
+            #   b2. An outer which has all inner burned.
+            # by removing from the list:
+            #   1. Candidates already burned
+            #   2. Candidates which are neither inner or outer
+            #   3. Candidates which are outer and have at least one inner not yet burned
+            #   4. Candidates which are inner and all outers have no inners burned
+            # If the resulting list is empty then normal rules apply instead.
+            for grp in self:
+                if (
+                    grp.is_burned()
+                    or (grp.contains is None and grp.inside is None)
+                    or (grp.contains is not None and grp.contains_unburned_groups())
+                ):
+                    candidates.remove(grp)
                     continue
-                if s.burns_done < s.passes:
-                    yield s
+                if grp.inside is not None:
+                    for outer in grp.inside:
+                        if outer.contains_burned_groups():
+                            break
+                    else:
+                        candidates.remove(grp)
+            if len(candidates) == 0:
+                candidates = list(self)
+
+        for grp in candidates:
+            # Do not burn this CutGroup if it contains unburned groups
+            # Contains is only set when Cut Inner First is set, so this
+            # so when not set this does nothing.
+            if grp.contains_unburned_groups():
+                continue
+            # If we are only burning complete subpaths then
+            # if this is not a closed path we should only yield first and last segments
+            # Planner will need to determine which end of the subpath is yielded
+            # and only consider the direction starting from the end
+            if complete_path and not grp.closed and isinstance(grp, CutGroup):
+                if grp[0].burns_done < grp[0].passes:
+                    yield grp[0]
+                # Do not yield same segment a 2nd time if only one segment
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
+                    yield grp[-1]
+                continue
+            # If we are either burning any path segment
+            # or this is a closed path
+            # then we should yield all segments.
+            for seg in grp.flat():
+                if seg is not None and seg.burns_done < seg.passes:
+                    yield seg
 
 
 class CutCode(CutGroup):
@@ -503,19 +604,42 @@ class CutCode(CutGroup):
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start()
         end = self.end()
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
 
 class QuadCut(CutObject):
-    def __init__(self, start_point, control_point, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(
+        self,
+        start_point,
+        control_point,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
         self._control = control_point
 
@@ -528,6 +652,7 @@ class QuadCut(CutObject):
         )
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start()
         c = self.c()
         end = self.end()
@@ -542,8 +667,24 @@ class QuadCut(CutObject):
 
 
 class CubicCut(CutObject):
-    def __init__(self, start_point, control1, control2, end_point, settings=None, passes=1):
-        CutObject.__init__(self, start_point, end_point, settings=settings, passes=passes)
+    def __init__(
+        self,
+        start_point,
+        control1,
+        control2,
+        end_point,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         settings.raster_step = 0
         self._control1 = control1
         self._control2 = control2
@@ -584,10 +725,12 @@ class RasterCut(CutObject):
     this is a crosshatched cut or not.
     """
 
-    def __init__(self, image, tx, ty, settings=None, crosshatch=False, passes=1):
-        CutObject.__init__(self, settings=settings, passes=passes)
+    def __init__(
+        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+    ):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
-
+        self.first = True  # Raster cuts are always first within themselves.
         self.image = image
         self.tx = tx
         self.ty = ty
@@ -693,8 +836,8 @@ class RawCut(CutObject):
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=1, parent=None):
+        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
 
     def __len__(self):
@@ -730,4 +873,244 @@ class RawCut(CutObject):
             return None
 
     def generator(self):
+        return self.plot
+
+
+class PlotCut(CutObject):
+    """
+    Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
+    to each other and can be any distance apart. This is a compact way of writing a large series of line positions.
+
+    There is a raster-create value.
+    """
+
+    def __init__(self, settings=None):
+        CutObject.__init__(self, settings=settings)
+        self.plot = []
+        self.max_dx = None
+        self.max_dy = None
+        self.min_x = None
+        self.min_y = None
+        self.max_x = None
+        self.max_y = None
+        self.vertical_raster = False
+        self.horizontal_raster = False
+        self.travels_top = False
+        self.travels_bottom = False
+        self.travels_right = False
+        self.travels_left = False
+
+    def __len__(self):
+        return len(self.plot)
+
+    def __str__(self):
+        parts = list()
+        parts.append("{points} points".format(points=len(self.plot)))
+        parts.append("xmin: {v}".format(v=self.min_x))
+        parts.append("ymin: {v}".format(v=self.min_y))
+        parts.append("xmax: {v}".format(v=self.max_x))
+        parts.append("ymax: {v}".format(v=self.max_y))
+        return "PlotCut(%s)" % ", ".join(parts)
+
+    def check_if_rasterable(self):
+        """
+        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+
+        @return: whether the plot can travel
+        """
+        self.settings.raster_alt = False
+        self.settings.raster_step = 0
+        self.settings.force_twitchless = True
+        if (
+            not self.travels_left
+            and not self.travels_right
+            and not self.travels_bottom
+            and not self.travels_top
+        ):
+            return False
+        if 0 < self.max_dx <= 15:
+            self.vertical_raster = True
+        elif 0 < self.max_dy <= 15:
+            self.horizontal_raster = True
+        else:
+            return False
+        self.settings.raster_step = min(self.max_dx, self.max_dy)
+        self.settings.raster_alt = True
+        return True
+
+    def plot_extend(self, plot):
+        for x, y, laser in plot:
+            self.plot_append(x, y, laser)
+
+    def plot_append(self, x, y, laser):
+        if self.plot:
+            last_x, last_y, last_laser = self.plot[-1]
+            dx = x - last_x
+            dy = y - last_y
+            if self.max_dx is None or abs(dx) > self.max_dx:
+                self.max_dx = abs(dx)
+            if self.max_dy is None or abs(dy) > self.max_dy:
+                self.max_dy = abs(dy)
+            if dy > 0:
+                self.travels_bottom = True
+            if dy < 0:
+                self.travels_top = True
+            if dx > 0:
+                self.travels_right = True
+            if dx < 0:
+                self.travels_left = True
+
+        self.plot.append((x, y, laser))
+        if self.min_x is None or x < self.min_x:
+            self.min_x = x
+        if self.min_y is None or y < self.min_y:
+            self.min_y = y
+        if self.max_x is None or x > self.max_x:
+            self.max_x = x
+        if self.max_y is None or y > self.max_y:
+            self.max_y = y
+
+    def major_axis(self):
+        if self.horizontal_raster:
+            return 0
+        if self.vertical_raster:
+            return 1
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if abs(start.x - end.x) > abs(start.y - end.y):
+            return 0  # X-Axis
+        else:
+            return 1  # Y-Axis
+
+    def x_dir(self):
+        if self.travels_left and not self.travels_right:
+            return -1  # right
+        if self.travels_right and not self.travels_left:
+            return 1  # left
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.x < end.x:
+            return 1
+        else:
+            return -1
+
+    def y_dir(self):
+        if self.travels_top and not self.travels_bottom:
+            return -1  # top
+        if self.travels_bottom and not self.travels_top:
+            return 1  # bottom
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.y < end.y:
+            return 1
+        else:
+            return -1
+
+    def upper(self):
+        return self.min_x
+
+    def lower(self):
+        return self.max_x
+
+    def left(self):
+        return self.min_y
+
+    def right(self):
+        return self.max_y
+
+    def length(self):
+        length = 0
+        last_x = None
+        last_y = None
+        for x, y, on in self.plot:
+            if last_x is not None:
+                length += Point.distance((x, y), (last_x, last_y))
+            last_x = 0
+            last_y = 0
+        return length
+
+    def reverse(self):
+        self.plot = list(reversed(self.plot))
+
+    def start(self):
+        try:
+            return Point(self.plot[0][:2])
+        except IndexError:
+            return None
+
+    def end(self):
+        try:
+            return Point(self.plot[-1][:2])
+        except IndexError:
+            return None
+
+    def generator(self):
+        last_xx = None
+        last_yy = None
+        ix = 0
+        iy = 0
+        # last_dx = None
+        # last_dy = None
+        for x, y, on in self.plot:
+            idx = int(round(x - ix))
+            idy = int(round(y - iy))
+            ix += idx
+            iy += idy
+            if last_xx is not None:
+                # if self.horizontal_raster and idx:
+                #     if idx > 0 > last_dx or idx < 0 < last_dx:
+                #         # If this idx is different direction as the last one, we step y first
+                #         if idy:
+                #             # step y
+                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
+                #                 yield zx, zy, on
+                #         # step x
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, iy, ix, iy):
+                #             yield zx, zy, on
+                #     else:
+                #         # If this idx is the same direction as the last one, we step x first
+                #         # step x
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                #             yield zx, zy, on
+                #         if idy:
+                #             # step y
+                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #                 yield zx, zy, on
+                # elif self.vertical_raster and idy:
+                #     if idy > 0 > last_dy or idy < 0 < last_dy:
+                #         # If this idy is different direction as the last one, we step x first
+                #         if idx:
+                #             # step x
+                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                #                 yield zx, zy, on
+                #         # step y
+                #         for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #             yield zx, zy, on
+                #     else:
+                #         # If this idy is the same direction as the last one, we step y first
+                #         # step y
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
+                #             yield zx, zy, on
+                #         if idx:
+                #             #step y
+                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #                 yield zx, zy, on
+                # else:
+                #     # Non-raster go directly to result.
+                for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
+                    yield zx, zy, on
+            last_xx = ix
+            last_yy = iy
+            # last_dx = idx
+            # last_dy = idy
+
         return self.plot

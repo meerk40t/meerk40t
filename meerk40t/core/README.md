@@ -1,5 +1,3 @@
-
-
 # Core
 
 Core modules are classes that define Meerk40t specific ecosystem requirements within the kernel.
@@ -35,4 +33,3 @@ The SVG_IO module defines the saving and loading of svg files.
 
 ## Webhelp
 The Webhelp module defines simple URIs within registered kernel address `webhelp/*` these are URIs that may need to be launched to help the user. These are opened with console command `webhelp <help>`
-

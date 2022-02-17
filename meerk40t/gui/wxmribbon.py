@@ -36,11 +36,11 @@ ID_NOTES = wx.NewId()
 ID_CONSOLE = wx.NewId()
 ID_NAV = wx.NewId()
 ID_CAMERA = wx.NewId()
+ID_CAMERA0 = wx.NewId()
 ID_CAMERA1 = wx.NewId()
 ID_CAMERA2 = wx.NewId()
 ID_CAMERA3 = wx.NewId()
 ID_CAMERA4 = wx.NewId()
-ID_CAMERA5 = wx.NewId()
 ID_SPOOLER = wx.NewId()
 ID_CONTROLLER = wx.NewId()
 ID_PAUSE = wx.NewId()
@@ -52,7 +52,7 @@ ID_KEYMAP = wx.NewId()
 ID_ROTARY = wx.NewId()
 
 
-def register_panel(window, context):
+def register_panel_ribbon(window, context):
     ribbon = RibbonPanel(window, wx.ID_ANY, context=context)
 
     pane = (
@@ -264,11 +264,11 @@ class RibbonPanel(wx.Panel):
                 self.on_camera_dropdown,
                 id=ID_CAMERA,
             )
+            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA0)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
             self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA5)
 
         button_bar.AddButton(
             ID_SPOOLER,
@@ -335,7 +335,7 @@ class RibbonPanel(wx.Panel):
             ID_CONFIGURATION,
             _("Config"),
             icons8_computer_support_50.GetBitmap(),
-            "",
+            _("Opens Configuration Window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -389,17 +389,19 @@ class RibbonPanel(wx.Panel):
 
     def on_camera_dropdown(self, event):
         menu = wx.Menu()
+        menu.Append(ID_CAMERA0, _("Camera %d") % 0)
         menu.Append(ID_CAMERA1, _("Camera %d") % 1)
         menu.Append(ID_CAMERA2, _("Camera %d") % 2)
         menu.Append(ID_CAMERA3, _("Camera %d") % 3)
         menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-        menu.Append(ID_CAMERA5, _("Camera %d") % 5)
         event.PopupMenu(menu)
 
     def on_camera_click(self, event):
         eid = event.GetId()
-        self.context.setting(int, "camera_default", 1)
-        if eid == ID_CAMERA1:
+        self.context.setting(int, "camera_default", 0)
+        if eid == ID_CAMERA0:
+            self.context.camera_default = 0
+        elif eid == ID_CAMERA1:
             self.context.camera_default = 1
         elif eid == ID_CAMERA2:
             self.context.camera_default = 2
@@ -407,11 +409,9 @@ class RibbonPanel(wx.Panel):
             self.context.camera_default = 3
         elif eid == ID_CAMERA4:
             self.context.camera_default = 4
-        elif eid == ID_CAMERA5:
-            self.context.camera_default = 5
 
         v = self.context.camera_default
-        self.context("window toggle CameraInterface %d\n" % v)
+        self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
 
     def on_pipe_state(self, origin, state):
         if state == self.pipe_state:
