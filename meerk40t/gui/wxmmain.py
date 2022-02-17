@@ -1,10 +1,10 @@
-from functools import partial
 import os
 import platform
 import sys
+from functools import partial
 
-from PIL import Image
 import wx
+from PIL import Image
 from wx import aui
 
 from ..kernel import ConsoleFunction
@@ -1177,6 +1177,7 @@ class MeerK40t(MWindow):
             _resource_path = "help/meerk40t.help"
             if not os.path.exists(_resource_path):
                 try:  # pyinstaller internal location
+                    # pylint: disable=no-member
                     _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
                 except Exception:
                     pass
@@ -1360,7 +1361,7 @@ class MeerK40t(MWindow):
             with wx.BusyInfo(_("Preparing simulation...")):
                 self.context(
                     "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
+                )
 
         self.Bind(
             wx.EVT_MENU,

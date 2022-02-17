@@ -888,7 +888,7 @@ def plugin(kernel, lifecycle=None):
                 element_bottom.image_width,
                 element_bottom.image_height,
             ) = element_bottom.image.size
-            element_bottom.transform.pre_translate(0,y)
+            element_bottom.transform.pre_translate(0, y)
 
             if hasattr(element, "node"):
                 element.node.remove_node()
@@ -1020,15 +1020,16 @@ def plugin(kernel, lifecycle=None):
             w, h = im.size
             from PIL import Image
 
-            def t(i):
-                return int(i * w / (points - 1))
+            def t(i, width):
+                return int(i * width / (points - 1))
 
-            def x(i):
-                return int(w * float(args[i + 1]))
+            def x(i, width):
+                return int(width * float(args[i + 1]))
 
-            boxes = list((t(i), 0, t(i + 1), h) for i in range(points - 1))
+            boxes = list((t(i, w), 0, t(i + 1, w), h) for i in range(points - 1))
             quads = list(
-                (x(i), 0, x(i), h, x(i + 1), h, x(i + 1), 0) for i in range(points - 1)
+                (x(i, w), 0, x(i, w), h, x(i + 1, w), h, x(i + 1, w), 0)
+                for i in range(points - 1)
             )
             mesh = list(zip(boxes, quads))
             element.image = im.transform(im.size, Image.MESH, mesh, Image.BILINEAR)

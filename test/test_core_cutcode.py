@@ -3,9 +3,9 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode, QuadCut, RasterCut
+from meerk40t.core.cutcode import CutCode, LaserSettings, LineCut, QuadCut, RasterCut
 from meerk40t.core.elements import LaserOperation
-from meerk40t.svgelements import Point, Path, SVGImage
+from meerk40t.svgelements import Path, Point, SVGImage
 
 
 class TestCutcode(unittest.TestCase):
@@ -147,7 +147,9 @@ class TestCutcode(unittest.TestCase):
             self.assertTrue(isinstance(image0, Image.Image))
             self.assertIn(image0.mode, ("L", "1"))
             self.assertEqual(image0.size, (3, 3))  # default step value 2, 6/2
-            self.assertEqual(rastercut0.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
+            self.assertEqual(
+                rastercut0.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+            )
 
             rastercut1 = cutcode[1]
             self.assertTrue(isinstance(rastercut1, RasterCut))
@@ -157,7 +159,9 @@ class TestCutcode(unittest.TestCase):
             self.assertTrue(isinstance(image1, Image.Image))
             self.assertIn(image1.mode, ("L", "1"))
             self.assertEqual(image1.size, (3, 3))  # default step value 2, 6/2
-            self.assertEqual(rastercut1.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
+            self.assertEqual(
+                rastercut1.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+            )
 
             self.assertIs(image0, image1)
 
@@ -206,7 +210,9 @@ class TestCutcode(unittest.TestCase):
             self.assertTrue(isinstance(image, Image.Image))
             self.assertIn(image.mode, ("L", "1"))
             self.assertEqual(image.size, (2, 2))  # step value 2, 6/2
-            self.assertEqual(rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
+            self.assertEqual(
+                rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+            )
 
             rastercut1 = cutcode[1]
             self.assertTrue(isinstance(rastercut1, RasterCut))
@@ -364,9 +370,13 @@ class TestCutcode(unittest.TestCase):
             self.assertTrue(isinstance(image, Image.Image))
             self.assertIn(image.mode, ("L", "1"))
             self.assertEqual(image.size, (6, 6))  # step value 1, 6/2
-            self.assertEqual(rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
+            self.assertEqual(
+                rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+            )
 
-            laserop.settings.raster_step = i  # Raster_Step should be ignored, set for next loop
+            laserop.settings.raster_step = (
+                i  # Raster_Step should be ignored, set for next loop
+            )
 
     def test_cutcode_direction_flags(self):
         """
@@ -376,7 +386,7 @@ class TestCutcode(unittest.TestCase):
         """
         path = Path("M0,0")
         for i in range(1000):
-            v = random.randint(0,5)
+            v = random.randint(0, 5)
             if v == 0:
                 path.line(path.current_point.x, random.randint(0, 5000))
             if v == 1:

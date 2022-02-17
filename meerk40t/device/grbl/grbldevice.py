@@ -79,7 +79,7 @@ def plugin(kernel, lifecycle=None):
             silent=False,
             watch=False,
             quit=False,
-            **kwargs
+            **kwargs,
         ):
             ctx = kernel.get_context(path if path is not None else "/")
             if ctx is None:

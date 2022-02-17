@@ -28,8 +28,16 @@ DEFAULT_KEYMAP = {
     "control+v": ("clipboard paste",),
     "control+x": ("clipboard cut",),
     "control+i": ("element* select^",),
-    "control+f": ("", "dialog_fill", "control Fill",),
-    "control+s": ("", "dialog_stroke", "control Stroke",),
+    "control+f": (
+        "",
+        "dialog_fill",
+        "control Fill",
+    ),
+    "control+s": (
+        "",
+        "dialog_stroke",
+        "control Stroke",
+    ),
     "alt+f": ("dialog_fill",),
     "alt+p": ("dialog_flip",),
     "alt+s": ("dialog_stroke",),
@@ -51,17 +59,49 @@ DEFAULT_KEYMAP = {
     "alt+r": ("raster",),
     "alt+e": ("engrave",),
     "alt+c": ("cut",),
-    "delete": ("tree selected delete", "element delete",),
-    "control+f3": ("", "rotaryview",),
-    "alt+f3": ("", "rotaryscale",),
-    "f4": ("", "window open CameraInterface",),
+    "delete": (
+        "tree selected delete",
+        "element delete",
+    ),
+    "control+f3": (
+        "",
+        "rotaryview",
+    ),
+    "alt+f3": (
+        "",
+        "rotaryscale",
+    ),
+    "f4": (
+        "",
+        "window open CameraInterface",
+    ),
     "f5": ("refresh",),
-    "f6": ("", "window open JobSpooler",),
-    "f7": ("", "window open -o Controller", "window controller", "window open Controller",),
+    "f6": (
+        "",
+        "window open JobSpooler",
+    ),
+    "f7": (
+        "",
+        "window open -o Controller",
+        "window controller",
+        "window open Controller",
+    ),
     "f8": ("", "dialog_path", "control Path"),
-    "f9": ("", "dialog_transform", "control Transform",),
-    "control+f9": ("", "dialog_flip", "control Flip",),
-    "f12": ("", "window open Console", "window open Terminal",),
+    "f9": (
+        "",
+        "dialog_transform",
+        "control Transform",
+    ),
+    "control+f9": (
+        "",
+        "dialog_flip",
+        "control Flip",
+    ),
+    "f12": (
+        "",
+        "window open Console",
+        "window open Terminal",
+    ),
     "control+alt+g": ("image wizard Gold",),
     "control+alt+x": ("image wizard Xin",),
     "control+alt+s": ("image wizard Stipo",),
@@ -94,14 +134,16 @@ DEFAULT_ALIAS = {
     "-left": ("end left 1mm",),
     "-up": ("end up 1mm",),
     "-down": ("end down 1mm",),
-    "terminal_ruida": ("", "window open Terminal;ruidaserver",),
+    "terminal_ruida": (
+        "",
+        "window open Terminal;ruidaserver",
+    ),
     "terminal_watch": (
         "",
         "window open Terminal;channel save usb;channel save send;channel save recv",
     ),
     "reset_bind_alias": ("bind default;alias default",),
 }
-
 
 
 def plugin(kernel, lifecycle=None):
@@ -248,15 +290,14 @@ class BindAlias(Modifier):
         context = self.context
         context.keymap.clear()
         prefs = context.derive("keymap")
-        prefs.kernel.load_persistent_string_dict(prefs.path, context.keymap, suffix=True)
+        prefs.kernel.load_persistent_string_dict(
+            prefs.path, context.keymap, suffix=True
+        )
         if not len(context.keymap):
             self.default_keymap()
             return
         for key, values in DEFAULT_KEYMAP.items():
-            if (
-                not key in context.keymap
-                or context.keymap[key] in values[1:]
-            ):
+            if not key in context.keymap or context.keymap[key] in values[1:]:
                 value = values[0]
                 if value:
                     context.keymap[key] = value
@@ -272,10 +313,7 @@ class BindAlias(Modifier):
             self.default_alias()
             return
         for key, values in DEFAULT_ALIAS.items():
-            if (
-                not key in context.alias
-                or context.alias[key] in values[1:]
-            ):
+            if not key in context.alias or context.alias[key] in values[1:]:
                 value = values[0]
                 if value:
                     context.alias[key] = value

@@ -180,7 +180,9 @@ class LaserPanel(wx.Panel):
 
         self.context.setting(bool, "laserpane_hold", False)
         self.checkbox_hold = wx.CheckBox(self, wx.ID_ANY, _("Hold"))
-        self.checkbox_hold.SetToolTip(_("Preserve the job between running, rerunning, and execution"))
+        self.checkbox_hold.SetToolTip(
+            _("Preserve the job between running, rerunning, and execution")
+        )
         self.checkbox_hold.SetValue(self.context.laserpane_hold)
         sizer_source.Add(self.checkbox_hold, 1, 0, 0)
 
@@ -338,7 +340,8 @@ class LaserPanel(wx.Panel):
         else:
             if self.checkbox_optimize.GetValue():
                 self.context(
-                    "planz clear copy preprocess validate blob preopt optimize spool%s\n" % s
+                    "planz clear copy preprocess validate blob preopt optimize spool%s\n"
+                    % s
                 )
             else:
                 self.context("planz clear copy preprocess validate blob spool%s\n" % s)
@@ -383,7 +386,7 @@ class LaserPanel(wx.Panel):
                 else:
                     self.context("planz clear copy preprocess validate blob\n")
 
-            self.context("window toggle Simulation z 0\n"),
+            self.context("window toggle Simulation z 0\n")
 
     def on_check_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()

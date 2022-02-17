@@ -53,7 +53,7 @@ COMMAND_LOCK = 301  # Locks the rail
 COMMAND_UNLOCK = 302  # Unlocks the rail.
 COMMAND_BEEP = 320  # Beep.
 COMMAND_FUNCTION = 350  # Execute the function given by this command. Blocking.
-COMMAND_CONSOLE = 355 # Execute the specified console command.
+COMMAND_CONSOLE = 355  # Execute the specified console command.
 COMMAND_SIGNAL = 360  # Sends the signal, given: "signal_name", operands.
 
 REALTIME_RESET = 1000  # Resets the state, purges buffers
