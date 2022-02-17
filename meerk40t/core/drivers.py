@@ -1,5 +1,5 @@
-import platform
 import os
+import platform
 import time
 
 from ..core.cutcode import LaserSettings
@@ -286,9 +286,9 @@ class Driver:
                             winsound.Beep(2000, 100)
                     except Exception:
                         pass
-                elif OS_NAME == "Darwin": # Mac
-                    os.system('afplay /System/Library/Sounds/Ping.aiff')
-                else: # Assuming other linux like system
+                elif OS_NAME == "Darwin":  # Mac
+                    os.system("afplay /System/Library/Sounds/Ping.aiff")
+                else:  # Assuming other linux like system
                     print("\a")  # Beep.
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:

@@ -20,13 +20,10 @@ from ..basedevice import (
     DRIVER_STATE_PROGRAM,
     DRIVER_STATE_RAPID,
     DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
     PLOT_LEFT_UPPER,
     PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
     PLOT_SETTING,
     PLOT_START,
 )
@@ -692,7 +689,9 @@ class MoshiController:
         self.prev = None
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 
@@ -738,7 +737,6 @@ class MoshiController:
         buffer = "Current Working Buffer: %s\n" % str(self._buffer)
         for p in self._programs:
             buffer += "%s\n" % str(p.data)
-        buffer += "Building Buffer: %s\n" % str(self._queue)
         return buffer
 
     def on_controller_ready(self, origin, *args):
