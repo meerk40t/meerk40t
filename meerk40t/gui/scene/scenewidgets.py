@@ -144,10 +144,21 @@ class SelectionWidget(Widget):
     key_alt_pressed = False
     was_lb_raised = False
 
+    # debug_msg = ""
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
 
         elements = self.elements
-        # print("Selection-Event: %s" % event_type)
+
+        # sdbg = event_type
+        # if sdbg in ("hover_start", "hover_end", "hover"):
+        #    sdbg = "hover"
+        # if sdbg != self.debug_msg:
+        #    self.debug_msg = sdbg
+        #    print(
+        #        "Selection-Event: %s (current state: %s)"
+        #        % (event_type, self.was_lb_raised)
+        #    )
 
         if event_type == "kb_shift_release":
             if self.key_shift_pressed:
@@ -254,15 +265,16 @@ class SelectionWidget(Widget):
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
-            # We are no longer listening directly to the leftdown event but to the delayed one instead
-            return RESPONSE_CHAIN
-        elif event_type == "leftdowndelayed":
-            self.was_lb_raised = True
-            self.save_width = self.width
-            self.save_height = self.height
-            self.uniform = True
-            self.tool(space_pos, dx, dy, -1)
-            return RESPONSE_CONSUME
+            # Lets'check if the Alt or Shift Keys are pressed, if yes ignore the event
+            if not (self.key_alt_pressed or self.key_shift_pressed):
+                self.was_lb_raised = True
+                self.save_width = self.width
+                self.save_height = self.height
+                self.uniform = True
+                if self.key_control_pressed:
+                    self.create_duplicate()
+                self.tool(space_pos, dx, dy, -1)
+                return RESPONSE_CONSUME
         elif event_type == "middledown":
             self.was_lb_raised = False
             self.save_width = self.width
@@ -271,18 +283,17 @@ class SelectionWidget(Widget):
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
         elif event_type == "leftup":
-            self.tool(space_pos, dx, dy, 1)
-            self.elements.ensure_positive_bounds()
             if self.was_lb_raised:
+                self.tool(space_pos, dx, dy, 1)
+                self.elements.ensure_positive_bounds()
                 self.was_lb_raised = False
                 return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
         elif event_type in ("middleup", "lost"):
-            self.was_lb_raised = False
-            self.tool(space_pos, dx, dy, 1)
-            self.elements.ensure_positive_bounds()
-            return RESPONSE_CONSUME
+            if self.was_lb_raised:
+                self.was_lb_raised = False
+                self.tool(space_pos, dx, dy, 1)
+                self.elements.ensure_positive_bounds()
+                return RESPONSE_CONSUME
         elif event_type == "move":
             if self.was_lb_raised:
                 if not elements.has_emphasis():
@@ -622,6 +633,18 @@ class SelectionWidget(Widget):
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
+    def create_duplicate(self):
+        from copy import copy
+
+        self.duplicated_elements = True
+        # Iterate through list of selected elements, duplicate them
+
+        context = self.scene.context
+        elements = context.elements
+        adding_elements = [copy(e) for e in list(elements.elems(emphasized=True))]
+        elements.add_elems(adding_elements)
+        elements.classify(adding_elements)
+
 
 class RectSelectWidget(Widget):
     """
@@ -658,10 +681,11 @@ class RectSelectWidget(Widget):
         1,
         1,
     ]  # Selection rectangle to the right: enclose, to the left: touch
-    last_status_text = ""
+
     key_shift_pressed = False
     key_control_pressed = False
     key_alt_pressed = False
+    was_lb_raised = False
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
@@ -682,8 +706,19 @@ class RectSelectWidget(Widget):
             self.store_last_msg = value
             self.scene.context.signal("statusmsg", value)
 
+    # debug_msg = ""
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        # print("Selection event: %s" % event_type)
+        # sdbg = event_type
+        # if sdbg in ("hover_start", "hover_end", "hover"):
+        #    sdbg = "hover"
+        # if sdbg != self.debug_msg:
+        #    self.debug_msg = sdbg
+        #    print(
+        #        "SelRect-Event: %s (current state: %s)"
+        #        % (event_type, self.was_lb_raised)
+        #    )
+
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.start_location = space_pos
@@ -755,10 +790,8 @@ class RectSelectWidget(Widget):
                 return RESPONSE_CHAIN
 
         elif event_type == "leftup":
-
-            self.update_statusmsg(self.last_status_text)
-            self.last_status_text = ""
-
+            _ = self.scene.context._
+            self.update_statusmsg(_("Status"))
             elements.validate_selected_area()
             sx = self.start_location[0]
             sy = self.start_location[1]
@@ -823,7 +856,7 @@ class RectSelectWidget(Widget):
                     # Add Selection
                     if cover >= self.selection_method[sector]:
                         obj.node.emphasized = True
-                elif self.key_control_pressed:
+                elif self.key_alt_pressed:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
                         obj.node.emphasized = not obj.node.emphasized
@@ -871,9 +904,6 @@ class RectSelectWidget(Widget):
                     sector = 2
 
             _ = self.scene.context._
-            if self.last_status_text == "":
-                # Retrieve last status msg
-                self.last_status_text = _("Status...")
             statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
             if self.key_shift_pressed:
                 statusmsg += _(self.selection_text_shift)
@@ -933,7 +963,7 @@ class RectSelectWidget(Widget):
                         y1 - 0.25 * y_signum,
                     )
 
-            elif self.key_control_pressed:
+            elif self.key_alt_pressed:
                 # Draw tiny - in Corner
                 x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
                 y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X

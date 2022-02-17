@@ -255,47 +255,20 @@ class ScenePanel(wx.Panel):
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "middleup")
 
-    t = None
-    lb_start = [0, 0]
-
-    def stop_the_timer(self):
-        if not self.t is None:
-            self.t.cancel()
-
-    def start_the_timer(self, position):
-        self.stop_the_timer()
-        self.lb_start = position
-        self.t = threading.Timer(0.3, self.timer_callback)
-        self.t.start()
-
-    def timer_callback(self):
-        self.t.cancel()
-        if self.scene.last_position is None:
-            self.scene.last_position = self.lb_start
-        matrix = self.scene.matrix
-        a = self.scene.convert_scene_to_window(self.lb_start)
-        b = self.scene.convert_scene_to_window(self.scene.last_position)
-        # print("Timer (%f,%f) - (%f,%f)" % (a[0], a[1], b[0], b[1]))
-        if (abs(a[0] - b[0]) <= 2) and (abs(a[1] - b[1]) <= 2):
-            self.scene.event(self.lb_start, "leftdowndelayed")
-
     def on_left_mouse_down(self, event):
         """
         Scene Panel left click event for down.
         """
         self.SetFocus()
+
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
-        # Add a timer for 0.3 seconds to see if the user has held the mouse (relatively)
-        # still but pressed, this will then create "leftdowndelayed" event
-        self.start_the_timer(event.GetPosition())
 
     def on_left_mouse_up(self, event):
         """
         Scene Panel left click event for up.
         """
-        self.stop_the_timer()
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "leftup")
@@ -783,20 +756,16 @@ class Scene(Module, Job):
         ):
             # print("Keyboard-Event raised: %s" % event_type)
             self.rebuild_hittable_chain()
-            self.find_hit_chain(window_pos)
-            for i, hit in enumerate(self.hit_chain):
-                if hit is None:
-                    continue  # Element was dropped.
-                current_widget, current_matrix = hit
-                if current_widget is None:
-                    continue
-                space_pos = window_pos
+            space_pos = window_pos
+            for current_widget, current_matrix in self.hittable_elements:
                 try:
+                    # We ignore the consume etc. for the time being...
                     response = current_widget.event(window_pos, space_pos, event_type)
                 except AttributeError:
                     pass
+            return
 
-        elif event_type in (
+        if event_type in (
             "leftdown",
             "middledown",
             "rightdown",
@@ -807,6 +776,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
+
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -850,10 +820,20 @@ class Scene(Module, Job):
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
+
+            # if current_widget is None:
+            #    widgetname = "undefined"
+            # else:
+            #    widgetname = type(current_widget).__name__
+
             if response == RESPONSE_ABORT:
+                # f event_type == "leftdown":
+                #    print("Event was aborted by %s" % widgetname)
                 self.hit_chain.clear()
                 return
             elif response == RESPONSE_CONSUME:
+                # if event_type == "leftdown":
+                #    print("Event was consumed by %s" % widgetname)
                 return
             elif response == RESPONSE_CHAIN:
                 continue
