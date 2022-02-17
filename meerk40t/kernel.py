@@ -38,7 +38,7 @@ class Modifier:
     A modifier alters a context with additional functionality set during attachment and detachment.
 
     These are also booted and shutdown with the kernel's lifecycle. The modifications to the kernel are not expected
-    to be undone. Rather the detach should kill any secondary processes the modifier may possess.
+    to be undone. Rather detach should kill any secondary processes the modifier may possess.
 
     A modifiers can only be called once at any particular context.
     """
@@ -49,11 +49,14 @@ class Modifier:
         self.state = STATE_INITIALIZE
 
     def __repr__(self):
+        # pylint: disable=no-member
         return '{class_name}({context}, name="{name}", channel={channel})'.format(
             class_name=self.__class__.__name__,
             context=repr(self.context),
             name=self.name,
-            channel='Channel({name})'.format(self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+            channel="Channel({name})".format(name=self.channel.name)
+            if hasattr(self, "channel") and self.channel
+            else "None",
         )
 
     def boot(self, *args, **kwargs):
@@ -843,8 +846,6 @@ class Kernel:
 
         :return:
         """
-        import datetime
-        import functools
         import types
 
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
@@ -990,7 +991,8 @@ class Kernel:
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        self.signal = signal  # redefine signal function.
+        # pylint: disable=method-hidden
+        self.signal = signal  # redefine signal function, hidden by design
 
         def console(code):
             if channel:
@@ -998,7 +1000,8 @@ class Kernel:
                     if c:
                         channel(_("Suspended Command: %s" % c))
 
-        self.console = console  # redefine console signal
+        # pylint: disable=method-hidden
+        self.console = console  # redefine console signal, hidden by design
 
         self.process_queue()  # Process last events.
 
@@ -1241,6 +1244,7 @@ class Kernel:
         @param output_type: What is the outgoing context for the command
         @return:
         """
+
         def decorator(func: Callable):
             @functools.wraps(func)
             def inner(command: str, remainder: str, channel: "Channel", **ik):
@@ -1337,7 +1341,9 @@ class Kernel:
                 return value, remainder, out_type
 
             if hasattr(inner, "arguments"):
-                raise MalformedCommandRegistration("Applying console_command() to console_command()")
+                raise MalformedCommandRegistration(
+                    "Applying console_command() to console_command()"
+                )
 
             # Main Decorator
             cmds = path if isinstance(path, tuple) else (path,)
@@ -1825,7 +1831,13 @@ class Kernel:
                     if signal_channel:
                         signal_channel(
                             "Signal: %s %s: %s:%s%s"
-                            % (path, signal, listener.__module__, listener.__name__, str(message))
+                            % (
+                                path,
+                                signal,
+                                listener.__module__,
+                                listener.__name__,
+                                str(message),
+                            )
                         )
             if path is None:
                 self.last_message[signal] = message
@@ -1985,6 +1997,10 @@ class Kernel:
                     break
                 except SyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
+
+                    # ToDo
+                    # Don't use command help, which is or should be descriptive - use command syntax instead
+                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
@@ -2128,7 +2144,6 @@ class Kernel:
                 self.commands.clear()
                 self.schedule(self.console_job)
 
-
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
         )
@@ -2159,7 +2174,7 @@ class Kernel:
             off=False,
             gui=False,
             remainder=None,
-            **kwargs
+            **kwargs,
         ):
             if times == "off":
                 off = True
@@ -2252,7 +2267,7 @@ class Kernel:
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def context(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 for name in self._plugins:
                     channel(name.__module__)
@@ -2483,7 +2498,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2501,7 +2516,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2519,7 +2534,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
@@ -2539,7 +2554,7 @@ class Kernel:
             input_type="channel",
             output_type="channel",
         )
-        def channel(channel, _, channel_name, filename=None, **kwargs):
+        def channel_save(channel, _, channel_name, filename=None, **kwargs):
             """
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
@@ -2599,8 +2614,6 @@ class Kernel:
 
         @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
-            import os
-
             for f in os.listdir(self._current_directory):
                 channel(str(f))
 
@@ -2617,6 +2630,7 @@ class Kernel:
                 import sys
 
                 if hasattr(sys, "_MEIPASS"):
+                    # pylint: disable=no-member
                     self._current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
                     return
@@ -2702,8 +2716,11 @@ class Channel:
         )
 
     def __call__(
-        self, message: Union[str, bytes, bytearray], *args,
-        indent: Optional[bool]=True, **kwargs
+        self,
+        message: Union[str, bytes, bytearray],
+        *args,
+        indent: Optional[bool] = True,
+        **kwargs,
     ):
         original_msg = message
         if self.line_end is not None:
@@ -2715,11 +2732,7 @@ class Channel:
             message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
         for w in self.watchers:
-            if (
-                isinstance(w, Channel)
-                and w.name == "console"
-                and print in w.watchers
-            ):
+            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
         for w in self.watchers:
@@ -2763,7 +2776,7 @@ class Channel:
         if self.greet is not None:
             monitor_function(self.greet)
         if self.buffer is not None:
-            for line in self.buffer:
+            for line in list(self.buffer):
                 monitor_function(line)
 
     def unwatch(self, monitor_function: Callable):
@@ -2849,7 +2862,9 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
+def get_safe_path(
+    name: str, create: Optional[bool] = False, system: Optional[str] = None
+) -> str:
     import platform
 
     if not system:
@@ -2863,16 +2878,9 @@ def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]
             name,
         )
     elif system == "Windows":
-        directory = os.path.join(
-            os.path.expandvars("%LOCALAPPDATA%"),
-            name
-        )
+        directory = os.path.join(os.path.expandvars("%LOCALAPPDATA%"), name)
     else:
-        directory = os.path.join(
-            os.path.expanduser("~"),
-            ".config",
-            name
-        )
+        directory = os.path.join(os.path.expanduser("~"), ".config", name)
     if directory is not None and create:
         os.makedirs(directory, exist_ok=True)
     return directory

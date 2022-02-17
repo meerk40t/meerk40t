@@ -162,7 +162,6 @@ DEFAULT_ALIAS = {
 }
 
 
-
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("modifier/BindAlias", BindAlias)
@@ -307,7 +306,9 @@ class BindAlias(Modifier):
         context = self.context
         context.keymap.clear()
         prefs = context.derive("keymap")
-        prefs.kernel.load_persistent_string_dict(prefs.path, context.keymap, suffix=True)
+        prefs.kernel.load_persistent_string_dict(
+            prefs.path, context.keymap, suffix=True
+        )
         if not len(context.keymap):
             self.default_keymap()
             return
@@ -318,10 +319,7 @@ class BindAlias(Modifier):
                 context.keymap[newkey] = context.keymap[key]
                 del context.keymap[key]
         for key, values in DEFAULT_KEYMAP.items():
-            if (
-                not key in context.keymap
-                or context.keymap[key] in values[1:]
-            ):
+            if not key in context.keymap or context.keymap[key] in values[1:]:
                 value = values[0]
                 if value:
                     context.keymap[key] = value
@@ -337,10 +335,7 @@ class BindAlias(Modifier):
             self.default_alias()
             return
         for key, values in DEFAULT_ALIAS.items():
-            if (
-                not key in context.alias
-                or context.alias[key] in values[1:]
-            ):
+            if not key in context.alias or context.alias[key] in values[1:]:
                 value = values[0]
                 if value:
                     context.alias[key] = value

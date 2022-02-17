@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.cutcode import CutCode
-from ..core.elements import LaserOperation, isDot, ConsoleOperation
+from ..core.elements import ConsoleOperation, LaserOperation, isDot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -41,7 +41,7 @@ NODE_FILE_FILE = 31
 NODE_FILE_ELEMENT = 32
 
 
-def register_panel(window, context):
+def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
 
     pane = (

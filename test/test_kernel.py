@@ -1,6 +1,7 @@
 import unittest
 from test import bootstrap
 
+
 class TestKernel(unittest.TestCase):
     def test_kernel_commands(self):
         """
@@ -22,10 +23,13 @@ class TestKernel(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+
 class TestGetSafePath(unittest.TestCase):
     def test_get_safe_path(self):
-        from meerk40t.kernel import get_safe_path
         import os
+
+        from meerk40t.kernel import get_safe_path
+
         """
         Tests the get_safe_path method for all o/ses
         """
@@ -34,21 +38,19 @@ class TestGetSafePath(unittest.TestCase):
             str(get_safe_path("test", system="Darwin")),
             (
                 os.path.expanduser("~")
-                + sep + "Library" + sep + "Application Support" + sep + "test"
-            )
+                + sep
+                + "Library"
+                + sep
+                + "Application Support"
+                + sep
+                + "test"
+            ),
         )
         self.assertEquals(
             str(get_safe_path("test", system="Windows")),
-            (
-                os.path.expandvars("%LOCALAPPDATA%")
-                + sep + "test"
-            )
+            (os.path.expandvars("%LOCALAPPDATA%") + sep + "test"),
         )
         self.assertEquals(
             str(get_safe_path("test", system="Linux")),
-            (
-                os.path.expanduser("~")
-                + sep + ".config" + sep + "test"
-            )
+            (os.path.expanduser("~") + sep + ".config" + sep + "test"),
         )
-

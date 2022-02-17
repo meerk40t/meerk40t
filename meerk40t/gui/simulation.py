@@ -113,7 +113,7 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.button_spool = wx.Button(self, wx.ID_ANY, "Send to Laser")
+        self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
 
         self.__set_properties()
         self.__do_layout()

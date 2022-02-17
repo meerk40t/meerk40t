@@ -1,5 +1,14 @@
+"""
+Laser software for the Stock-LIHUIYU laserboard.
+
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
+open-source laser cutting software. See https://github.com/meerk40t/meerk40t
+for full details.
+"""
+
 import argparse
 import asyncio
+import os
 import os.path
 import platform
 import sys
@@ -7,23 +16,8 @@ import sys
 from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
 
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = pi * 2
-
-"""
-Laser software for the Stock-LIHUIYU laserboard.
-
-MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed
-open-source laser cutting software. See https://github.com/meerk40t/meerk40t
-for full details.
-
-"""
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.5-beta3"
+APPLICATION_VERSION = "0.7.5001"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -114,7 +108,7 @@ def run():
     if args.version:
         print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return
-    python_version_required = (3, 5)
+    python_version_required = (3, 6)
     if sys.version_info < python_version_required:
         print(
             "%s %s requires Python %d.%d or greater."
@@ -288,7 +282,9 @@ def run():
                 pass
             except pkg_resources.VersionConflict as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
                 )
                 print(e)
             else:
@@ -324,8 +320,6 @@ def run():
 
     if args.input is not None:
         # Load any input file
-        import os
-
         kernel_root.load(os.path.realpath(args.input.name))
         elements = kernel_root.elements
         elements.classify(list(elements.elems()))
@@ -392,8 +386,6 @@ def run():
 
     if args.output is not None:
         # output the file you have at this point.
-        import os
-
         kernel_root.save(os.path.realpath(args.output.name))
 
     if args.console:

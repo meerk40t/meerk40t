@@ -20,13 +20,10 @@ from ..basedevice import (
     DRIVER_STATE_PROGRAM,
     DRIVER_STATE_RAPID,
     DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
     PLOT_LEFT_UPPER,
     PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
     PLOT_SETTING,
     PLOT_START,
 )
@@ -193,8 +190,6 @@ class MoshiDriver(Driver):
         self.plot_planner = PlotPlanner(self.settings)
         self.plot = None
 
-        self.program = MoshiBlob()
-
         self.is_paused = False
         self.context._buffer_size = 0
         self.thread = None
@@ -222,6 +217,7 @@ class MoshiDriver(Driver):
         context.setting(int, "rapid_speed", 40)
 
         self.pipe_channel = context.channel("%s/events" % name)
+        self.program = MoshiBlob(channel=self.pipe_channel)
 
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
@@ -230,9 +226,7 @@ class MoshiDriver(Driver):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
             self.output.push_program(self.program)
-
-            self.program = MoshiBlob()
-            self.program.channel = self.pipe_channel
+            self.program = MoshiBlob(channel=self.pipe_channel)
 
     def ensure_program_mode(self, *values):
         """
@@ -695,7 +689,9 @@ class MoshiController:
         self.prev = None
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 
@@ -741,7 +737,6 @@ class MoshiController:
         buffer = "Current Working Buffer: %s\n" % str(self._buffer)
         for p in self._programs:
             buffer += "%s\n" % str(p.data)
-        buffer += "Building Buffer: %s\n" % str(self._queue)
         return buffer
 
     def on_controller_ready(self, origin, *args):

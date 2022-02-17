@@ -24,7 +24,7 @@ _ = wx.GetTranslation
 CORNER_SIZE = 25
 
 
-def register_panel(window, context):
+def register_panel_camera(window, context):
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
@@ -512,7 +512,9 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.setting("camera%d perspective reset\n" % self.cam.index),
+                lambda e: self.cam.setting(
+                    "camera%d perspective reset\n" % self.cam.index
+                ),
                 id=item.GetId(),
             )
             item = menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -527,8 +529,10 @@ class CamInterfaceWidget(Widget):
             item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.context.open("window/CameraURI", self.cam, index=self.cam.index),
-                id=item.GetId()
+                lambda e: self.cam.context.open(
+                    "window/CameraURI", self.cam, index=self.cam.index
+                ),
+                id=item.GetId(),
             )
 
             camera_setting = self.cam.context.get_context("camera")
@@ -682,9 +686,9 @@ class CamImageWidget(Widget):
 
 class CameraInterface(MWindow):
     def __init__(self, context, path, parent, index=0, **kwds):
-        if isinstance(index,str):
+        if isinstance(index, str):
             try:
-                index=int(index)
+                index = int(index)
             except ValueError:
                 pass
         if index is None:
@@ -767,7 +771,7 @@ class CameraURIPanel(wx.Panel):
         if index is None:
             index = 0
         self.index = index
-        assert(isinstance(self.index, int))
+        assert isinstance(self.index, int)
 
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES

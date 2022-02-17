@@ -102,7 +102,7 @@ class Handler(CH341Handler):
             self.driver, driver_index, channel=self.channel, state=self.status
         )
         _ = self.channel._
-        val = connection.open()
+        connection.open()
 
         if chipv != -1:
             match_chipv = connection.get_chip_version()

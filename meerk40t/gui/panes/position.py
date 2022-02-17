@@ -9,7 +9,7 @@ _ = wx.GetTranslation
 MILS_IN_MM = 39.3701
 
 
-def register_panel(window, context):
+def register_panel_position(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()

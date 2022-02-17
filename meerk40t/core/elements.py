@@ -5,8 +5,8 @@ from copy import copy
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
-    COMMAND_FUNCTION,
     COMMAND_CONSOLE,
+    COMMAND_FUNCTION,
     COMMAND_HOME,
     COMMAND_LASER_OFF,
     COMMAND_LASER_ON,
@@ -191,8 +191,11 @@ class Node:
                 # Disallow drop of non-image elems onto an Image op.
                 # Disallow drop of image elems onto a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Dots"
                 ):
                     return False
                 # Dragging element onto operation adds that element to the op.
@@ -203,8 +206,10 @@ class Node:
                 # Disallow drop of non-image elems onto an opnode inside an Image op.
                 # Disallow drop of image elems onto an opnode inside a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and op.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
                 ):
                     return False
                 # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
@@ -220,8 +225,11 @@ class Node:
                 # Disallow drop of non-image opnodes onto an Image op.
                 # Disallow drop of image opnodes onto a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and drop_node.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and drop_node.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage)
+                    and drop_node.operation == "Dots"
                 ):
                     return False
                 # Move an opnode to end of op.
@@ -232,8 +240,10 @@ class Node:
                 # Disallow drop of non-image opnodes onto an opnode inside an Image op.
                 # Disallow drop of image opnodes onto an opnode inside a Dot op.
                 if (
-                    (not isinstance(drag_node.object, SVGImage) and op.operation == "Image")
-                    or (isinstance(drag_node.object, SVGImage) and op.operation == "Dots")
+                    not isinstance(drag_node.object, SVGImage)
+                    and op.operation == "Image"
+                ) or (
+                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
                 ):
                     return False
                 # Move an opnode to after another opnode.
@@ -255,8 +265,10 @@ class Node:
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
-                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                        not isinstance(e.object, SVGImage)
+                        and drop_node.operation == "Image"
+                    ) or (
+                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
                     ):
                         continue
                     # Add element to operation
@@ -278,8 +290,10 @@ class Node:
                     # Disallow drop of non-image elems onto an Image op.
                     # Disallow drop of image elems onto a Dot op.
                     if (
-                        (not isinstance(e.object, SVGImage) and drop_node.operation == "Image")
-                        or (isinstance(e.object, SVGImage) and drop_node.operation == "Dots")
+                        not isinstance(e.object, SVGImage)
+                        and drop_node.operation == "Image"
+                    ) or (
+                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
                     ):
                         continue
                     # Add element to operation
@@ -1048,6 +1062,12 @@ class LaserOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
+        if (
+            (self._operation in ("Raster", "Image") and self.settings.speed > 500)
+            or (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
+            or self.settings.power <= 100
+        ):
+            parts.append("❌")
         if self.default:
             parts.append("✓")
         if self.settings.passes_custom and self.settings.passes != 1:
@@ -1370,8 +1390,10 @@ class LaserOperation(Node):
                     )
                 )
                 cut = RasterCut(
-                    pil_image, matrix.value_trans_x(), matrix.value_trans_y(),
-                    settings= settings,
+                    pil_image,
+                    matrix.value_trans_x(),
+                    matrix.value_trans_y(),
+                    settings=settings,
                     passes=passes,
                 )
                 cut.path = path
@@ -1864,7 +1886,7 @@ class Elemental(Modifier):
 
         return decor
 
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+    def tree_operation(self, name, node_type=None, help="", **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
@@ -2282,7 +2304,7 @@ class Elemental(Modifier):
             step=None,
             overscan=None,
             passes=None,
-            **kwargs
+            **kwargs,
         ):
             op = LaserOperation()
             if color is not None:
@@ -2341,7 +2363,6 @@ class Elemental(Modifier):
                     op.notify_update()
             return "ops", data
 
-
         @context.console_option(
             "difference",
             "d",
@@ -2353,7 +2374,9 @@ class Elemental(Modifier):
         @context.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
-        def op_speed(command, channel, _, speed=None, difference=None, data=None, **kwrgs):
+        def op_speed(
+            command, channel, _, speed=None, difference=None, data=None, **kwrgs
+        ):
             if speed is None:
                 for op in data:
                     old_speed = op.settings.speed
@@ -2383,7 +2406,8 @@ class Elemental(Modifier):
                     s = new_speed
                 op.settings.speed = s
                 channel(
-                    _("Speed for '%s' updated %f -> %f") % (str(op), old_speed, new_speed)
+                    _("Speed for '%s' updated %f -> %f")
+                    % (str(op), old_speed, new_speed)
                 )
                 op.notify_update()
             return "ops", data
@@ -3166,7 +3190,15 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_grid(
-            command, channel, _, c: int, r: int, x: Length, y: Length, data=None, **kwargs
+            command,
+            channel,
+            _,
+            c: int,
+            r: int,
+            x: Length,
+            y: Length,
+            data=None,
+            **kwargs,
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3470,7 +3502,9 @@ class Elemental(Modifier):
             ),
             output_type="elements",
         )
-        def element_stroke_width(command, channel, _, stroke_width, data=None, **kwargs):
+        def element_stroke_width(
+            command, channel, _, stroke_width, data=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if stroke_width is None:
@@ -3637,7 +3671,7 @@ class Elemental(Modifier):
             y_offset=None,
             data=None,
             args=tuple(),
-            **kwargs
+            **kwargs,
         ):
             """
             Draws an outline of the current shape.
@@ -3652,16 +3686,12 @@ class Elemental(Modifier):
             y_pos = bounds[1]
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
-            offset_x = (
-                y_offset.value(ppi=1000.0, relative_length=width)
-                if len(args) >= 1
-                else 0
-            )
-            offset_y = (
-                x_offset.value(ppi=1000.0, relative_length=height)
-                if len(args) >= 2
-                else offset_x
-            )
+
+            offset_x = x_offset.value(ppi=1000.0, relative_length=width)
+            if y_offset is None:
+                offset_y = offset_x
+            else:
+                offset_y = y_offset.value(ppi=1000.0, relative_length=height)
 
             x_pos -= offset_x
             y_pos -= offset_y
@@ -3706,7 +3736,7 @@ class Elemental(Modifier):
             cy=None,
             absolute=False,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if angle is None:
                 channel("----------")
@@ -3802,7 +3832,7 @@ class Elemental(Modifier):
             py=None,
             absolute=False,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if scale_x is None:
                 channel("----------")
@@ -4004,9 +4034,7 @@ class Elemental(Modifier):
         @context.console_argument(
             "y_pos", type=Length, help=_("y position for top left corner")
         )
-        @context.console_argument(
-            "width", type=Length, help=_("new width of selected")
-        )
+        @context.console_argument("width", type=Length, help=_("new width of selected"))
         @context.console_argument(
             "height", type=Length, help=_("new height of selected")
         )
@@ -4016,7 +4044,9 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_resize(command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs):
+        def element_resize(
+            command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs
+        ):
             if height is None:
                 raise SyntaxError
             try:
@@ -4038,7 +4068,7 @@ class Elemental(Modifier):
                 )
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
-                if w == 0 or h == 0: # dot
+                if w == 0 or h == 0:  # dot
                     channel(_("resize: cannot resize a dot"))
                     return
                 sx = width / w
@@ -4072,20 +4102,20 @@ class Elemental(Modifier):
 
         @context.console_argument("sx", type=float, help=_("scale_x value"))
         @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("ky", type=float, help=_("skew_y value"))
+        @context.console_argument("sy", type=float, help=_("scale_y value"))
         @context.console_argument("tx", type=Length, help=_("translate_x value"))
         @context.console_argument("ty", type=Length, help=_("translate_y value"))
         @context.console_command(
             "matrix",
-            help=_("matrix <sx> <kx> <sy> <ky> <tx> <ty>"),
+            help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
         def element_matrix(
-            command, channel, _, sx, kx, sy, ky, tx, ty, data=None, **kwargs
+            command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
         ):
-            if tx is None:
+            if ty is None:
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
@@ -4102,14 +4132,15 @@ class Elemental(Modifier):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if ty:
-                raise SyntaxError
             try:
+                # SVG 7.15.3 defines the matrix form as:
+                # [a c  e]
+                # [b d  f]
                 m = Matrix(
                     sx,
                     kx,
-                    sy,
                     ky,
+                    sy,
                     tx.value(
                         ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                     ),
@@ -4327,7 +4358,9 @@ class Elemental(Modifier):
             input_type="tree",
             output_type="tree",
         )
-        def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwargs):
+        def tree_menu(
+            command, channel, _, data=None, node=None, execute=None, **kwargs
+        ):
             """
             Create menu for a particular node.
             Processes submenus, references, radio_state as needed.
@@ -4469,11 +4502,11 @@ class Elemental(Modifier):
             Delegate to either ops or elements depending on the current node emphasis
             """
             for item in self.flat(
-                types=("op", "elem", "file", "group"), emphasized=True
+                types=("op", "elem", "group", "file"), emphasized=True
             ):
                 if item.type == "op":
                     return "ops", list(self.ops(emphasized=True))
-                if item.type in ("elem", "file", "group"):
+                if item.type in ("elem", "group", "file"):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
@@ -4758,7 +4791,9 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(_("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help="")
+        @self.tree_operation(
+            _("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help=""
+        )
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
@@ -5128,7 +5163,9 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Return to Origin"), node_type="branch ops", help=""
+        )
         def append_operation_origin(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
                 CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop", pos=pos
@@ -5142,10 +5179,12 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Interrupt (console)"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Interrupt (console)"), node_type="branch ops", help=""
+        )
         def append_operation_interrupt_console(node, pos=None, **kwargs):
             self.context.elements.op_branch.add(
-                ConsoleOperation("interrupt \"Spooling was interrupted\""),
+                ConsoleOperation('interrupt "Spooling was interrupted"'),
                 type="consoleop",
                 pos=pos,
             )
@@ -5164,7 +5203,9 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Home/Beep/Interrupt"), node_type="branch ops", help=""
+        )
         def append_operation_home_beep_interrupt(node, **kwargs):
             append_operation_home(node, **kwargs)
             append_operation_beep(node, **kwargs)
@@ -5357,7 +5398,9 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
         def add_operation_interrupt_console(node, **kwargs):
-            append_operation_interrupt_console(node, pos=add_after_index(self), **kwargs)
+            append_operation_interrupt_console(
+                node, pos=add_after_index(self), **kwargs
+            )
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
@@ -5365,10 +5408,10 @@ class Elemental(Modifier):
             pos = add_after_index(self)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
-                pos +=1
+                pos += 1
             append_operation_beep(node, pos=pos, **kwargs)
             if pos:
-                pos +=1
+                pos += 1
             append_operation_interrupt(node, pos=pos, **kwargs)
 
         @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
@@ -5393,41 +5436,16 @@ class Elemental(Modifier):
             system = platform.system()
             if system == "Darwin":
                 from os import system as open_in_shell
+
                 open_in_shell("open '{file}'".format(file=normalized))
             elif system == "Windows":
                 from os import startfile as open_in_shell
+
                 open_in_shell('"{file}"'.format(file=normalized))
             else:
                 from os import system as open_in_shell
+
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
-        def duplicate_element_1(node, **kwargs):
-            duplicate_element_n(node, copies=1, **kwargs)
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="elem", help=""
-        )
-        def duplicate_element_n(node, copies, **kwargs):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
-
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
-        )
-        def reset_user_changes(node, copies=1, **kwargs):
-            self.context("reset\n")
 
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
@@ -5443,7 +5461,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Horizontally"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Mirror Horizontally"),
         )
         def mirror_elem(node, **kwargs):
@@ -5460,7 +5478,7 @@ class Elemental(Modifier):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Vertically"),
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Flip Vertically"),
         )
         def flip_elem(node, **kwargs):
@@ -5480,7 +5498,7 @@ class Elemental(Modifier):
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
             _("Scale %s%%") % "{scale_percent}",
-            node_type=("elem", "file", "group"),
+            node_type=("elem", "group", "file"),
             help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwargs):
@@ -5542,9 +5560,7 @@ class Elemental(Modifier):
             ),
         )
         @self.tree_operation(
-            _(u"Rotate %s°") % ("{angle}"),
-            node_type=("elem", "file", "group"),
-            help=""
+            _("Rotate %s°") % ("{angle}"), node_type=("elem", "group", "file"), help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
@@ -5557,12 +5573,30 @@ class Elemental(Modifier):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
-        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
+        def duplicate_element_1(node, **kwargs):
+            duplicate_element_n(node, copies=1, **kwargs)
+
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="elem", help=""
+        )
+        # TODO Make this duplicate elements in the group hierarchy
+        def duplicate_element_n(node, copies, **kwargs):
+            context = self.context
+            elements = context.elements
+            adding_elements = [
+                copy(e) for e in list(self.elems(emphasized=True)) * copies
+            ]
+            elements.add_elems(adding_elements)
+            elements.classify(adding_elements)
+            elements.set_emphasis(None)
+
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify User Changes"),
-            node_type=("elem", "file", "group"),
-            help=""
+            _("Reify user changes"), node_type=("elem", "group", "file"), help=""
         )
         def reify_elem_changes(node, **kwargs):
             self.context("reify\n")
@@ -5572,6 +5606,16 @@ class Elemental(Modifier):
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
             self.context("element subpath\n")
+
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Reset user changes"),
+            node_type=("branch elem", "elem", "group", "file"),
+            help="",
+        )
+        def reset_user_changes(node, copies=1, **kwargs):
+            self.context("reset\n")
 
         @self.tree_operation(
             _("Merge items"),
@@ -5776,12 +5820,12 @@ class Elemental(Modifier):
                     for key in dir(q):
                         if key.startswith("_"):
                             continue
-                        if (key in [
+                        if key in [
                             "emphasized",
                             "highlighted",
                             "selected",
                             "targeted",
-                        ]):
+                        ]:
                             continue
                         if key.startswith("implicit"):
                             continue
@@ -5796,12 +5840,12 @@ class Elemental(Modifier):
                     value = getattr(op, key)
                     if key.startswith("_"):
                         continue
-                    if (key in [
+                    if key in [
                         "emphasized",
                         "highlighted",
                         "selected",
                         "targeted",
-                    ]):
+                    ]:
                         continue
                     if value is None:
                         continue
@@ -5828,7 +5872,6 @@ class Elemental(Modifier):
                 op = CommandOperation(name, command)
                 op_setting_context.load_persistent_object(op)
             elif op_type == "consoleop":
-                # name = op_setting_context.get_persistent_value(str, "label")
                 command = op_setting_context.get_persistent_value(str, "command")
                 op = ConsoleOperation(command)
                 op_setting_context.load_persistent_object(op)
@@ -5920,7 +5963,9 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(types=("op", "cmdop", "consoleop"), depth=1, **kwargs):
+        for item in operations.flat(
+            types=("op", "cmdop", "consoleop"), depth=1, **kwargs
+        ):
             yield item
 
     def elems(self, **kwargs):
@@ -5931,7 +5976,7 @@ class Elemental(Modifier):
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
         for item in elements.flat(
-            types=("elem", "file", "group"), depth=depth, **kwargs
+            types=("elem", "group", "file"), depth=depth, **kwargs
         ):
             yield item
 

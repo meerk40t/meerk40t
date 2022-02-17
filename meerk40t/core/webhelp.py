@@ -8,6 +8,7 @@ DISCORD_MEERK40T = "https://discord.gg/qvASRhFZGB"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
 IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation

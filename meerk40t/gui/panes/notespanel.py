@@ -4,7 +4,7 @@ from wx import aui
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_notes(window, context):
     panel = NotePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
