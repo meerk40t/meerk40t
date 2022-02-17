@@ -282,7 +282,9 @@ def run():
                 pass
             except pkg_resources.VersionConflict as e:
                 print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(entrypoint=str(entry_point))
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
                 )
                 print(e)
             else:

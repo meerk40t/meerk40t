@@ -67,4 +67,3 @@ class BufferView(MWindow):
 
     def window_preserve(self):
         return False
-

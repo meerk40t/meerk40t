@@ -19,6 +19,7 @@ from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
 from .configuration import Configuration
+from .consoleproperty import ConsoleProperty
 from .controller import Controller
 from .executejob import ExecuteJob
 from .file.fileoutput import FileOutput
@@ -32,7 +33,6 @@ from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
 from .moshi.moshicontrollergui import MoshiControllerGui
 from .moshi.moshidrivergui import MoshiDriverGui
 from .notes import Notes
-from .consoleproperty import ConsoleProperty
 from .operationproperty import OperationProperty
 from .panes.camerapanel import CameraInterface
 from .panes.consolepanel import Console
@@ -123,25 +123,31 @@ def plugin(kernel, lifecycle):
                     bool, "window/%s/open_on_start" % window, False
                 ):
                     if window_index is not None:
-                        kernel.console("window open -m {index} {window} {index}\n".format(index=window_index, window=window_name))
+                        kernel.console(
+                            "window open -m {index} {window} {index}\n".format(
+                                index=window_index, window=window_name
+                            )
+                        )
                     else:
-                        kernel.console("window open {window}\n".format(window=window_name))
+                        kernel.console(
+                            "window open {window}\n".format(window=window_name)
+                        )
             meerk40tgui.MainLoop()
 
 
 _ = wx.GetTranslation
 supported_languages = (
-    ("en", u"English", wx.LANGUAGE_ENGLISH),
-    ("it", u"italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", u"français", wx.LANGUAGE_FRENCH),
-    ("de", u"Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", u"español", wx.LANGUAGE_SPANISH),
-    ("zh", u"中文", wx.LANGUAGE_CHINESE),
-    ("hu", u"Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt_PT", u"português", wx.LANGUAGE_PORTUGUESE),
-    ("pt_BR", u"português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
-    ("ja", u"日本", wx.LANGUAGE_JAPANESE),
-    ("nl", u"Nederlands", wx.LANGUAGE_DUTCH),
+    ("en", "English", wx.LANGUAGE_ENGLISH),
+    ("it", "italiano", wx.LANGUAGE_ITALIAN),
+    ("fr", "français", wx.LANGUAGE_FRENCH),
+    ("de", "Deutsch", wx.LANGUAGE_GERMAN),
+    ("es", "español", wx.LANGUAGE_SPANISH),
+    ("zh", "中文", wx.LANGUAGE_CHINESE),
+    ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
+    ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
+    ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("ja", "日本", wx.LANGUAGE_JAPANESE),
+    ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
 )
 
 
@@ -381,7 +387,7 @@ class wxMeerK40t(wx.App, Module):
             source=None,
             multi=None,
             args=(),
-            **kwargs
+            **kwargs,
         ):
             path = data
             try:

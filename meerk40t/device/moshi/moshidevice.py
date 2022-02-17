@@ -689,7 +689,9 @@ class MoshiController:
         self.prev = None
 
         self._thread = None
-        self._buffer = bytearray()  # Threadsafe buffered commands to be sent to controller.
+        self._buffer = (
+            bytearray()
+        )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 

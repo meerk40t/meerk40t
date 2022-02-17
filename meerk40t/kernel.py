@@ -54,7 +54,9 @@ class Modifier:
             class_name=self.__class__.__name__,
             context=repr(self.context),
             name=self.name,
-            channel='Channel({name})'.format(name=self.channel.name) if hasattr(self, "channel") and self.channel else "None",
+            channel="Channel({name})".format(name=self.channel.name)
+            if hasattr(self, "channel") and self.channel
+            else "None",
         )
 
     def boot(self, *args, **kwargs):
@@ -1242,6 +1244,7 @@ class Kernel:
         @param output_type: What is the outgoing context for the command
         @return:
         """
+
         def decorator(func: Callable):
             @functools.wraps(func)
             def inner(command: str, remainder: str, channel: "Channel", **ik):
@@ -1338,7 +1341,9 @@ class Kernel:
                 return value, remainder, out_type
 
             if hasattr(inner, "arguments"):
-                raise MalformedCommandRegistration("Applying console_command() to console_command()")
+                raise MalformedCommandRegistration(
+                    "Applying console_command() to console_command()"
+                )
 
             # Main Decorator
             cmds = path if isinstance(path, tuple) else (path,)
@@ -1826,7 +1831,13 @@ class Kernel:
                     if signal_channel:
                         signal_channel(
                             "Signal: %s %s: %s:%s%s"
-                            % (path, signal, listener.__module__, listener.__name__, str(message))
+                            % (
+                                path,
+                                signal,
+                                listener.__module__,
+                                listener.__name__,
+                                str(message),
+                            )
                         )
             if path is None:
                 self.last_message[signal] = message
@@ -2133,7 +2144,6 @@ class Kernel:
                 self.commands.clear()
                 self.schedule(self.console_job)
 
-
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
         )
@@ -2164,7 +2174,7 @@ class Kernel:
             off=False,
             gui=False,
             remainder=None,
-            **kwargs
+            **kwargs,
         ):
             if times == "off":
                 off = True
@@ -2706,8 +2716,11 @@ class Channel:
         )
 
     def __call__(
-        self, message: Union[str, bytes, bytearray], *args,
-        indent: Optional[bool]=True, **kwargs
+        self,
+        message: Union[str, bytes, bytearray],
+        *args,
+        indent: Optional[bool] = True,
+        **kwargs,
     ):
         original_msg = message
         if self.line_end is not None:
@@ -2719,11 +2732,7 @@ class Channel:
             message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
         for w in self.watchers:
-            if (
-                isinstance(w, Channel)
-                and w.name == "console"
-                and print in w.watchers
-            ):
+            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
         for w in self.watchers:
@@ -2853,7 +2862,9 @@ class ConsoleFunction(Job):
         return self.data.replace("\n", "")
 
 
-def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]=None) -> str:
+def get_safe_path(
+    name: str, create: Optional[bool] = False, system: Optional[str] = None
+) -> str:
     import platform
 
     if not system:
@@ -2867,16 +2878,9 @@ def get_safe_path(name: str, create: Optional[bool]=False, system: Optional[str]
             name,
         )
     elif system == "Windows":
-        directory = os.path.join(
-            os.path.expandvars("%LOCALAPPDATA%"),
-            name
-        )
+        directory = os.path.join(os.path.expandvars("%LOCALAPPDATA%"), name)
     else:
-        directory = os.path.join(
-            os.path.expanduser("~"),
-            ".config",
-            name
-        )
+        directory = os.path.join(os.path.expanduser("~"), ".config", name)
     if directory is not None and create:
         os.makedirs(directory, exist_ok=True)
     return directory

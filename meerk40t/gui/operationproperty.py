@@ -846,9 +846,11 @@ class OperationPropertyPanel(wx.Panel):
 
     def update_speed_label(self):
         if (
-            (self.operation._operation in ("Raster", "Image") and self.operation.settings.speed > 500)
-            or
-            (self.operation._operation in ("Cut", "Engrave") and self.operation.settings.speed > 50)
+            self.operation._operation in ("Raster", "Image")
+            and self.operation.settings.speed > 500
+        ) or (
+            self.operation._operation in ("Cut", "Engrave")
+            and self.operation.settings.speed > 50
         ):
             self.speed_label.SetLabel(_("Speed (mm/s):") + "⚠️")
         else:

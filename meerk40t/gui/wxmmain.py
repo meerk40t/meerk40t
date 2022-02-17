@@ -1,10 +1,10 @@
-from functools import partial
 import os
 import platform
 import sys
+from functools import partial
 
-from PIL import Image
 import wx
+from PIL import Image
 from wx import aui
 
 from ..kernel import ConsoleFunction
@@ -122,7 +122,7 @@ class MeerK40t(MWindow):
     def __init__(self, *args, **kwds):
         width, height = wx.DisplaySize()
 
-        super().__init__(int(width*0.9), int(height*0.9), *args, **kwds)
+        super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
         try:
             self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
         except AttributeError:
@@ -165,7 +165,9 @@ class MeerK40t(MWindow):
         self.__set_menubars()
 
         self.main_statusbar = self.CreateStatusBar(4)
-        self.main_statusbar.SetStatusStyles([wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount())
+        self.main_statusbar.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
+        )
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText(_("Status..."), 0)
@@ -328,7 +330,9 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
-        @context.console_argument("message", help=_("Message to display, optional"), default="")
+        @context.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
         @context.console_command("interrupt", hidden=True)
         def interrupt(message="", **kwargs):
             if not message:
@@ -359,7 +363,10 @@ class MeerK40t(MWindow):
         def import_dialog(**kwargs):
             files = context.load_types()
             with wx.FileDialog(
-                gui, _("Import"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                gui,
+                _("Import"),
+                wildcard=files,
+                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return  # the user changed their mind
@@ -388,7 +395,7 @@ class MeerK40t(MWindow):
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
-                context('.dialog_save_as\n')
+                context(".dialog_save_as\n")
             else:
                 gui.set_file_as_recently_used(gui.working_file)
                 gui.validate_save()
@@ -443,68 +450,85 @@ class MeerK40t(MWindow):
 
     def __import_main_panes(self):
         from .wxmscene import register_panel_scene
+
         register_panel_scene(self, self.context)
 
         from .panes.navigationpanels import register_panel_navigation
+
         register_panel_navigation(self, self.context)
 
         # Define Tree
         from .wxmtree import register_panel_tree
+
         register_panel_tree(self, self.context)
 
         # Define Laser.
         from .panes.laserpanel import register_panel_laser
+
         register_panel_laser(self, self.context)
 
         # Define Position
         from .panes.position import register_panel_position
+
         register_panel_position(self, self.context)
 
         # Define Ribbon
         from .wxmribbon import register_panel_ribbon
+
         register_panel_ribbon(self, self.context)
 
         # Define Toolbars
         from .panes.toolbarproject import register_project_tools
+
         register_project_tools(context=self.context, gui=self)
 
         from .panes.toolbarcontrol import register_control_tools
+
         register_control_tools(context=self.context, gui=self)
 
         from .panes.toolbarpreferences import register_preferences_tools
+
         register_preferences_tools(context=self.context, gui=self)
 
         from .panes.toolbarmodify import register_modify_tools
+
         register_modify_tools(context=self.context, gui=self)
 
         from .panes.toolbaralign import register_align_tools
+
         register_align_tools(context=self.context, gui=self)
 
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             from .panes.toolbarshapes import register_shapes_tools
+
             register_shapes_tools(context=self.context, gui=self)
 
     def __import_other_panes(self):
         # Define Notes.
         from .panes.notespanel import register_panel_notes
+
         register_panel_notes(self, self.context)
 
         # Define Spooler.
         from .panes.spoolerpanel import register_panel_spooler
+
         register_panel_spooler(self, self.context)
 
         # Define Console.
         from .panes.consolepanel import register_panel_console
+
         register_panel_console(self, self.context)
 
         # Define Devices.
         from .panes.devicespanel import register_panel_devices
+
         register_panel_devices(self, self.context)
 
         # Define Camera
         if self.context.has_feature("modifier/Camera"):
             from .panes.camerapanel import register_panel_camera
+
             register_panel_camera(self, self.context)
 
     def __define_button_go(self):
@@ -747,11 +771,13 @@ class MeerK40t(MWindow):
         def create_pane(command, _, channel, pane=None, **kwargs):
             if pane == "about":
                 from .about import AboutPanel as CreatePanel
+
                 caption = _("About")
                 width = 646
                 height = 519
             elif pane == "preferences":
                 from .preferences import PreferencesPanel as CreatePanel
+
                 caption = _("Preferences")
                 width = 565
                 height = 327
@@ -761,12 +787,12 @@ class MeerK40t(MWindow):
             panel = CreatePanel(self, context=context)
             _pane = (
                 aui.AuiPaneInfo()
-                    .Dockable(False)
-                    .Float()
-                    .Caption(caption)
-                    .FloatingSize(width, height)
-                    .Name(pane)
-                    .CaptionVisible(True)
+                .Dockable(False)
+                .Float()
+                .Caption(caption)
+                .FloatingSize(width, height)
+                .Name(pane)
+                .CaptionVisible(True)
             )
             _pane.control = panel
             self.on_pane_add(_pane)
@@ -949,7 +975,9 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), "")
+        self.view_menu.Append(
+            ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), ""
+        )
         self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), "")
         self.view_menu.AppendSeparator()
 
@@ -1154,7 +1182,9 @@ class MeerK40t(MWindow):
                     pass
             if not os.path.exists(_resource_path):
                 try:  # Mac py2app resource
-                    _resource_path = os.path.join(os.environ["RESOURCEPATH"], "help/meerk40t.help")
+                    _resource_path = os.path.join(
+                        os.environ["RESOURCEPATH"], "help/meerk40t.help"
+                    )
                 except Exception:
                     pass
             if os.path.exists(_resource_path):
@@ -1170,16 +1200,18 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform.system() == "Darwin":
-            self.help_menu.Append(
-                wx.ID_HELP, _("&MeerK40t Help"), ""
-            )
+            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
             self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
-            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP)
+            self.Bind(
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP
+            )
         else:
             self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
-            self.Bind(wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP)
+            self.Bind(
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
+            )
 
         self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
         self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
@@ -1329,6 +1361,7 @@ class MeerK40t(MWindow):
                 self.context(
                     "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
                 )
+
         self.Bind(
             wx.EVT_MENU,
             open_simulator,
@@ -1357,6 +1390,7 @@ class MeerK40t(MWindow):
         )
 
         if self.context.has_feature("modifier/Camera"):
+
             def launch_camera(event=None):
                 v = self.context.setting(int, "camera_default", 0)
                 self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
@@ -1532,8 +1566,10 @@ class MeerK40t(MWindow):
             if answer != wx.YES:
                 return True  # VETO
         if self.needs_saving:
-            message = _("Save changes to project before closing?\n\n"
-                        "Your changes will be lost if you do not save them.")
+            message = _(
+                "Save changes to project before closing?\n\n"
+                "Your changes will be lost if you do not save them."
+            )
             answer = wx.MessageBox(
                 message, _("Save Project..."), wx.YES_NO | wx.CANCEL, None
             )
@@ -1739,7 +1775,7 @@ class MeerK40t(MWindow):
         ]
 
         # for i in range(self.recent_file_menu.MenuItemCount):
-            # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+        # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
 
         for item in self.recent_file_menu.GetMenuItems():
             self.recent_file_menu.Remove(item)
@@ -1917,11 +1953,11 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            x_delta = (bbox[2]-bbox[0]) * 0.04
-            y_delta = (bbox[3]-bbox[1]) * 0.04
+            x_delta = (bbox[2] - bbox[0]) * 0.04
+            y_delta = (bbox[3] - bbox[1]) * 0.04
             self.context(
-                "scene focus %f %f %f %f\n" %
-                (
+                "scene focus %f %f %f %f\n"
+                % (
                     bbox[0] - x_delta,
                     bbox[1] - y_delta,
                     bbox[2] + x_delta,
