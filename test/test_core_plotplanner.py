@@ -1,13 +1,12 @@
-
 import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import LaserSettings, LineCut, CutCode
+from meerk40t.core.cutcode import CutCode, LaserSettings, LineCut
 from meerk40t.core.elements import LaserOperation
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Point, SVGImage, Path, Circle
+from meerk40t.svgelements import Circle, Path, Point, SVGImage
 
 
 class TestPlotplanner(unittest.TestCase):
@@ -32,13 +31,17 @@ class TestPlotplanner(unittest.TestCase):
         for i in range(211):
             plan.push(LineCut(Point(0, 0), Point(5, 100), settings=settings))
             plan.push(LineCut(Point(100, 50), Point(0, 0), settings=settings))
-            plan.push(LineCut(Point(50, -50), Point(100, -100), settings=LaserSettings(power=0)))
+            plan.push(
+                LineCut(
+                    Point(50, -50), Point(100, -100), settings=LaserSettings(power=0)
+                )
+            )
             q = 0
             for x, y, on in plan.gen():
                 # print(x, y, on)
                 if q == i:
                     # for x, y, on in plan.process_plots(None):
-                        # print("FLUSH!", x, y, on)
+                    # print("FLUSH!", x, y, on)
                     plan.clear()
                     break
                 q += 1
