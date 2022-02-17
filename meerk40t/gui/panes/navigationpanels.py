@@ -1,10 +1,6 @@
-from math import (
-    pi,
-    tan,
-)
-
 import wx
 from wx import aui
+from ...svgelements import Angle
 
 from meerk40t.gui.icons import (
     icon_corner1,
@@ -1143,27 +1139,7 @@ class Transform(wx.Panel):
 
     @staticmethod
     def skewed_value(stxt):
-        tau = pi * 2
-        stxt = stxt.lower()
-        if stxt.endswith("deg"):
-            angle = tau * float(stxt[:-3]) / 360.0
-            valu = tan(angle)
-        elif stxt.endswith("grad"):
-            angle = tau * float(stxt[:-4]) / 400.0
-            valu = tan(angle)
-        elif stxt.endswith(
-            "rad"
-        ):  # Must be after 'grad' since 'grad' ends with 'rad' too.
-            angle = float(stxt[:-3])
-            valu = tan(angle)
-        elif stxt.endswith("turn"):
-            angle = tau * float(stxt[:-4])
-            valu = tan(angle)
-        elif stxt.endswith("%"):
-            angle = tau * (float(stxt[:-1]) / 100.0)
-            valu = tan(angle)
-        else:
-            valu = float(stxt)
+        valu = Angle.parse(stxt)
         return valu
 
     @staticmethod
