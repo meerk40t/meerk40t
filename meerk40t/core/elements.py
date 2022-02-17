@@ -1789,7 +1789,9 @@ class Elemental(Modifier):
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
         self._tree = None
-        self._save_restore_job = ConsoleFunction(context, "save_restore_point\n", times=1)
+        self._save_restore_job = ConsoleFunction(
+            context, "save_restore_point\n", times=1
+        )
 
     def tree_operations_for_node(self, node):
         for m in self.context.match("tree/%s/.*" % node.type):
@@ -4563,7 +4565,7 @@ class Elemental(Modifier):
             "save_restore_point",
         )
         def undo_mark(data=None, **kwgs):
-            del self._undo_stack[0:self._undo_index]
+            del self._undo_stack[0 : self._undo_index]
             if len(self._undo_stack) > 25:
                 del self._undo_stack[25:]
             self._undo_stack.insert(0, list(map(copy, self.elems())))
@@ -4613,7 +4615,7 @@ class Elemental(Modifier):
             "undolist",
         )
         def clipboard_list(command, channel, _, **kwgs):
-            for i,v in enumerate(self._undo_stack):
+            for i, v in enumerate(self._undo_stack):
                 q = "*" if i == self._undo_index else " "
                 channel("%s%s: undo %s elements" % (q, str(i).ljust(5), str(len(v))))
 
