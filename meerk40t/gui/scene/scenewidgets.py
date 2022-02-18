@@ -143,8 +143,22 @@ class SelectionWidget(Widget):
     key_control_pressed = False
     key_alt_pressed = False
     was_lb_raised = False
-
+    hovering = False
     # debug_msg = ""
+
+    def stillinside(self, space_pos=None):
+        res = False
+        matrix = self.parent.matrix
+        if not space_pos is None:
+            sx = space_pos[0] 
+            sy = space_pos[1] 
+            # print ("left=%f, right=%f, top=%f, bottom=%f, x=%f, y=%f" % (self.left, self.right, self.top, self.bottom, sx, sy))
+
+            if (self.left <= sx <= self.right) and (self.top <= sy <= self.bottom):
+                # print ("inside")
+                res = True
+        return res
+
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
 
@@ -163,18 +177,34 @@ class SelectionWidget(Widget):
         if event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False
+                if self.stillinside(space_pos):
+                    self.scene.cursor("sizing")
+                    self.hovering  = True
+                    self.tool = self.tool_translate
             return RESPONSE_CHAIN
         elif event_type == "kb_shift_press":
             if not self.key_shift_pressed:
                 self.key_shift_pressed = True
+            # Are we hovering ? If yes reset cursor
+            if self.hovering:
+                self.hovering  = False
+                self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "kb_ctrl_release":
             if self.key_control_pressed:
                 self.key_control_pressed = False
+                if self.stillinside(space_pos):
+                    self.scene.cursor("sizing")
+                    self.hovering  = True
+                    self.tool = self.tool_translate
             return RESPONSE_CHAIN
         elif event_type == "kb_ctrl_press":
             if not self.key_control_pressed:
                 self.key_control_pressed = True
+            # Are we hovering ? If yes reset cursor
+            if self.hovering:
+                self.hovering  = False
+                self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "kb_alt_release":
             if self.key_alt_pressed:
@@ -186,68 +216,71 @@ class SelectionWidget(Widget):
             return RESPONSE_CHAIN
         elif event_type == "hover_start":
             self.scene.cursor("sizing")
+            self.hovering  = True
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor("arrow")
+            self.hovering  = False
             return RESPONSE_CHAIN
         elif event_type == "hover":
-            matrix = self.parent.matrix
-            xin = space_pos[0] - self.left
-            yin = space_pos[1] - self.top
-            # Half size of equivalent in hit
-            xmin = 5 / matrix.value_scale_x()
-            ymin = 5 / matrix.value_scale_y()
-            # Adjust sizing of hover border as follows:
-            # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
-            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
-            #    to be more than 1/4 of the width or height
-            xmin = (
-                min(xmin * 2.0, max(self.width / 4.0, xmin))
-                if xmin <= self.width / 4.0
-                else 0.0
-            )
-            ymin = (
-                min(ymin * 2.0, max(self.height / 4.0, ymin))
-                if ymin <= self.height / 4.0
-                else 0.0
-            )
-            xmax = self.width - xmin
-            ymax = self.height - ymin
-            for e in elements.elems(emphasized=True):
-                try:
-                    if e.lock:
-                        self.scene.cursor("sizing")
-                        self.tool = self.tool_translate
-                        return RESPONSE_CHAIN
-                except (ValueError, AttributeError):
-                    pass
-            if xin >= xmax and yin >= ymax:
-                self.scene.cursor("size_se")
-                self.tool = self.tool_scalexy_se
-            elif xin <= xmin and yin <= ymin:
-                self.scene.cursor("size_nw")
-                self.tool = self.tool_scalexy_nw
-            elif xin >= xmax and yin <= ymin:
-                self.scene.cursor("size_ne")
-                self.tool = self.tool_scalexy_ne
-            elif xin <= xmin and yin >= ymax:
-                self.scene.cursor("size_sw")
-                self.tool = self.tool_scalexy_sw
-            elif xin <= xmin:
-                self.scene.cursor("size_w")
-                self.tool = self.tool_scalex_w
-            elif yin <= ymin:
-                self.scene.cursor("size_n")
-                self.tool = self.tool_scaley_n
-            elif xin >= xmax:
-                self.scene.cursor("size_e")
-                self.tool = self.tool_scalex_e
-            elif yin >= ymax:
-                self.scene.cursor("size_s")
-                self.tool = self.tool_scaley_s
-            else:
-                self.scene.cursor("sizing")
-                self.tool = self.tool_translate
+            if self.hovering:
+                matrix = self.parent.matrix
+                xin = space_pos[0] - self.left
+                yin = space_pos[1] - self.top
+                # Half size of equivalent in hit
+                xmin = 5 / matrix.value_scale_x()
+                ymin = 5 / matrix.value_scale_y()
+                # Adjust sizing of hover border as follows:
+                # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
+                # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
+                #    to be more than 1/4 of the width or height
+                xmin = (
+                    min(xmin * 2.0, max(self.width / 4.0, xmin))
+                    if xmin <= self.width / 4.0
+                    else 0.0
+                )
+                ymin = (
+                    min(ymin * 2.0, max(self.height / 4.0, ymin))
+                    if ymin <= self.height / 4.0
+                    else 0.0
+                )
+                xmax = self.width - xmin
+                ymax = self.height - ymin
+                for e in elements.elems(emphasized=True):
+                    try:
+                        if e.lock:
+                            self.scene.cursor("sizing")
+                            self.tool = self.tool_translate
+                            return RESPONSE_CHAIN
+                    except (ValueError, AttributeError):
+                        pass
+                if xin >= xmax and yin >= ymax:
+                    self.scene.cursor("size_se")
+                    self.tool = self.tool_scalexy_se
+                elif xin <= xmin and yin <= ymin:
+                    self.scene.cursor("size_nw")
+                    self.tool = self.tool_scalexy_nw
+                elif xin >= xmax and yin <= ymin:
+                    self.scene.cursor("size_ne")
+                    self.tool = self.tool_scalexy_ne
+                elif xin <= xmin and yin >= ymax:
+                    self.scene.cursor("size_sw")
+                    self.tool = self.tool_scalexy_sw
+                elif xin <= xmin:
+                    self.scene.cursor("size_w")
+                    self.tool = self.tool_scalex_w
+                elif yin <= ymin:
+                    self.scene.cursor("size_n")
+                    self.tool = self.tool_scaley_n
+                elif xin >= xmax:
+                    self.scene.cursor("size_e")
+                    self.tool = self.tool_scalex_e
+                elif yin >= ymax:
+                    self.scene.cursor("size_s")
+                    self.tool = self.tool_scaley_s
+                else:
+                    self.scene.cursor("sizing")
+                    self.tool = self.tool_translate
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -656,32 +689,27 @@ class RectSelectWidget(Widget):
     """
 
     # selection_method = 1 = hit, 2 = cross, 3 = enclose
+    SELECTION_TOUCH = 1
+    SELECTION_CROSS = 2
+    SELECTION_ENCLOSE = 3
     # Color for selection rectangle (hit, cross, enclose)
-    selection_colors = [
-        wx.RED,
-        wx.GREEN,
-        wx.BLUE,
-    ]
-    # Visual help for selection rectangle (to help those with visual challenges i.e colorblindness)
-    selection_line = [wx.PENSTYLE_DOT_DASH, wx.PENSTYLE_DOT, wx.PENSTYLE_SHORT_DASH]
-    selection_text = [
-        "Select all elements the selection rectangle touches.",
-        "Select all elements the selection rectangle crosses.",
-        "Select all elements the selection rectangle encloses.",
+    selection_style = [
+        (wx.RED, wx.PENSTYLE_DOT_DASH, "Select all elements the selection rectangle touches."),
+        (wx.GREEN, wx.PENSTYLE_DOT, "Select all elements the selection rectangle crosses."),
+        (wx.BLUE, wx.PENSTYLE_SHORT_DASH, "Select all elements the selection rectangle encloses."),
     ]
     selection_text_shift = " Previously selected remain selected!"
     selection_text_control = " Invert selection state of elements!"
 
-    selection_criteria = [1, 2, 3]
     # 2 | 1        Define Selection method per sector, movement of mouse from point of origin into that sector...
     # - + -
     # 3 | 0
     #
     selection_method = [
-        3,
-        3,
-        1,
-        1,
+        SELECTION_ENCLOSE,
+        SELECTION_ENCLOSE,
+        SELECTION_TOUCH,
+        SELECTION_TOUCH,
     ]  # Selection rectangle to the right: enclose, to the left: touch
 
     key_shift_pressed = False
@@ -692,9 +720,9 @@ class RectSelectWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(self.selection_colors[0])
+        self.selection_pen.SetColour(self.selection_style[0][0])
         self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(self.selection_line[0])
+        self.selection_pen.SetStyle(self.selection_style[0][1])
         self.start_location = None
         self.end_location = None
 
@@ -837,7 +865,7 @@ class RectSelectWidget(Widget):
                 # is greater than the other's maximum in
                 # that dimension.
                 if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
-                    cover = 1
+                    cover = self.SELECTION_TOUCH 
                     # If selection rect is fullly inside an object then ignore
                     if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
                         cover = 0
@@ -849,10 +877,10 @@ class RectSelectWidget(Widget):
                     or ((sy <= ymin) and (ymax <= ey))
                     and not ((sx > xmax) or (ex < xmin))
                 ):
-                    cover = 2
+                    cover = self.SELECTION_CROSS
                 # Check contain
                 if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
-                    cover = 3
+                    cover = self.SELECTION_ENCLOSE
 
                 if self.key_shift_pressed:
                     # Add Selection
@@ -906,7 +934,7 @@ class RectSelectWidget(Widget):
                     sector = 2
 
             _ = self.scene.context._
-            statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
+            statusmsg = _(self.selection_style[self.selection_method[sector] - 1][2])
             if self.key_shift_pressed:
                 statusmsg += _(self.selection_text_shift)
             elif self.key_control_pressed:
@@ -917,10 +945,10 @@ class RectSelectWidget(Widget):
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
 
             self.selection_pen.SetColour(
-                self.selection_colors[self.selection_method[sector] - 1]
+                self.selection_style[self.selection_method[sector] - 1][0]
             )
             self.selection_pen.SetStyle(
-                self.selection_line[self.selection_method[sector] - 1]
+                self.selection_style[self.selection_method[sector] - 1][1]
             )
 
             linewidth = 2.0 / matrix.value_scale_x()
@@ -938,7 +966,7 @@ class RectSelectWidget(Widget):
             matrix = self.parent.matrix
             delta_X = 15.0 / matrix.value_scale_x()
             delta_Y = 15.0 / matrix.value_scale_y()
-            # Draw very ugly indicator...
+            # Draw indicator...
             if self.key_shift_pressed:
                 if (
                     abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
@@ -949,39 +977,38 @@ class RectSelectWidget(Widget):
                     ax1 = x1 - x_signum
                     ay1 = y1 - y_signum
 
-                    self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
                     gc.SetPen(self.selection_pen)
                     gc.StrokeLine(ax1, y1, ax1, ay1)
                     gc.StrokeLine(ax1, ay1, x1, ay1)
-                    gc.StrokeLine(
-                        x1 - 0.75 * x_signum,
-                        (y1 + ay1) / 2,
-                        x1 - 0.25 * x_signum,
-                        (y1 + ay1) / 2,
-                    )
-                    gc.StrokeLine(
-                        (ax1 + x1) / 2,
-                        y1 - 0.75 * y_signum,
-                        (ax1 + x1) / 2,
-                        y1 - 0.25 * y_signum,
-                    )
+                    font_size = 10.0 / matrix.value_scale_x()
+                    if font_size<1.0:
+                        font_size=1.0
+                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
+                    (t_width, t_height) = gc.GetTextExtent("+")
+                    gc.DrawText("+", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
 
             elif self.key_control_pressed:
-                # Draw tiny - in Corner
-                x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
-                y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
-                ax1 = x1 - x_signum
-                ay1 = y1 - y_signum
-                self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
-                gc.SetPen(self.selection_pen)
-                gc.StrokeLine(ax1, y1, ax1, ay1)
-                gc.StrokeLine(ax1, ay1, x1, ay1)
-                gc.StrokeLine(
-                    x1 - 0.75 * x_signum,
-                    (y1 + ay1) / 2,
-                    x1 - 0.25 * x_signum,
-                    (y1 + ay1) / 2,
-                )
+                if (
+                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
+                ):  # Don't draw if too tiny
+                    # Draw tiny - in Corner
+                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+                    ax1 = x1 - x_signum
+                    ay1 = y1 - y_signum
+                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.SetPen(self.selection_pen)
+                    gc.StrokeLine(ax1, y1, ax1, ay1)
+                    gc.StrokeLine(ax1, ay1, x1, ay1)
+                    font_size = 10.0 / matrix.value_scale_x()
+                    if font_size<1.0:
+                        font_size=1.0
+                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
+                    (t_width, t_height) = gc.GetTextExtent("!")
+                    gc.DrawText("!", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
 
 
 class ReticleWidget(Widget):

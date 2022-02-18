@@ -757,8 +757,21 @@ class Scene(Module, Job):
         ):
             # print("Keyboard-Event raised: %s" % event_type)
             self.rebuild_hittable_chain()
-            space_pos = window_pos
             for current_widget, current_matrix in self.hittable_elements:
+                space_pos = window_pos
+                if current_matrix is not None and not current_matrix.is_identity():
+                    space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
+                    space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
+                    sdx = space_cur[0] - space_last[0]
+                    sdy = space_cur[1] - space_last[1]
+                    space_pos = (
+                        space_cur[0],
+                        space_cur[1],
+                        space_last[0],
+                        space_last[1],
+                        sdx,
+                        sdy,
+                    )
                 try:
                     # We ignore the consume etc. for the time being...
                     response = current_widget.event(window_pos, space_pos, event_type)
