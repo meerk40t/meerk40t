@@ -182,7 +182,7 @@ class KeymapPanel(wx.Panel):
 
     @staticmethod
     def __split_modifiers(key):
-        return key.rsplit("+", 1)) if "+" in key else ("", key)
+        return key.rsplit("+", 1) if "+" in key else ("", key)
 
     @staticmethod
     def __join_modifiers(*args):

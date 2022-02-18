@@ -69,7 +69,7 @@ DEFAULT_KEYMAP = {
         "tree selected delete",
         "element delete",
     ),
-    "escape": ("pause",),
+    # "escape": ("pause",),
     "home": ("home",),
     "numpad_down": ("+translate_down",),
     "numpad_up": ("+translate_up",),
