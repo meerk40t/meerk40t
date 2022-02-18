@@ -175,7 +175,7 @@ class Handler(CH341Handler):
                         "K40 devices were found but they were rejected due to chip version."
                     )
                 )
-                connection.close()  # TODO: Close more quietly.
+                connection.close()
                 return None
         # No methods to match bus or address
         return connection

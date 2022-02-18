@@ -3731,14 +3731,6 @@ class Elemental(Service):
             self.classify(adding_elements)
             self.set_emphasis(None)
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
-        )
-        def reset_user_changes(node, copies=1, **kwargs):
-            self("reset\n")
-
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
             and not isinstance(node.object, Path)
@@ -3865,9 +3857,6 @@ class Elemental(Service):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
-        # Duplicate here.
-
-        # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Reify User Changes"), node_type=("elem", "group", "file"), help=""
@@ -3881,7 +3870,14 @@ class Elemental(Service):
         def break_subpath_elem(node, **kwargs):
             self("element subpath\n")
 
-        # TODO: Reset user changes here.
+        @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_operation(
+            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
+        )
+        def reset_user_changes(node, copies=1, **kwargs):
+            self("reset\n")
+
 
         @self.tree_operation(
             _("Merge items"),

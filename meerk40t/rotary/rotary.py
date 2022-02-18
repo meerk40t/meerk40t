@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "boot":
         _ = kernel.root._
         rotary = kernel.rotary
-        # TODO: Flush out implementation into proper device info.
+        # TODO: Flesh out implementation into proper device info.
         choices = [
             {
                 "attr": "rotary_enabled",
