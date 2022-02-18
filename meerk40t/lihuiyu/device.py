@@ -99,22 +99,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "adjust_x",
-                "object": self,
-                "default": "0",
-                "type": str,
-                "label": _("Y"),
-                "tip": _("Offset-X position"),
-            },
-            {
-                "attr": "adjust_y",
-                "object": self,
-                "default": "0",
-                "type": str,
-                "label": _("Y"),
-                "tip": _("Offset-Y position"),
-            },
-            {
                 "attr": "bedwidth",
                 "object": self,
                 "default": "310mm",
@@ -154,7 +138,16 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.register_choices("bed_dim", choices)
         ViewPort.__init__(
-            self, self.adjust_x, self.adjust_y, self.bedwidth, self.bedheight
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            flip_x=False,
+            flip_y=False,
+            swap_xy=False
         )
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)

@@ -40,58 +40,91 @@ nanometers.
 
 class ViewPort:
     """
-    The x, y, width and height are of the viewport are stored in nm. These are converted to mk native units
+    The width and height are of the viewport are stored in MK native units (nm).
+
+    Origin_x and origin_y are the location of the home position in unit square values.
+    This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
+
+    user_scale is a scale factor for applied by the user rather than the driver.
+
+    native_scale is the scale factor of the driver units to MK native units
+
+    flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
     """
 
-    def __init__(self, x, y, width, height):
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
-        self.user_scale_x = 1.0
-        self.user_scale_y = 1.0
-        self.native_scale_x = 1.0
-        self.native_scale_y = 1.0
-        self.flip_x = False
-        self.flip_y = False
-        self.swap_xy = False
-        self.origin_x = 0.0
-        self.origin_y = 0.0
-        self.set_params(x, y, width, height)
-
-    def set_params(self, x, y, width, height):
-        self.x = Length(x).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.y = Length(y).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.width = Length(width).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.height = Length(height).value(ppi=UNITS_PER_INCH, unitless=1.0)
-
-    def position(
-        self, x, y, relative_length=None, as_float=False, unitless=UNITS_PER_PIXEL
+    def __init__(
+        self,
+        width,
+        height,
+        origin_x=0.0,
+        origin_y=0.0,
+        user_scale_x=1.0,
+        user_scale_y=1.0,
+        native_scale_x=1.0,
+        native_scale_y=1.0,
+        flip_x=False,
+        flip_y=False,
+        swap_xy=False,
     ):
-        if relative_length is None:
-            nm_x = Length(x).value(
-                ppi=UNITS_PER_INCH, relative_length=self.width, unitless=unitless
-            )
-            nm_y = Length(x).value(
-                ppi=UNITS_PER_INCH, relative_length=self.height, unitless=unitless
+        self.width = width
+        self.height = height
+        self.origin_x = origin_x
+        self.origin_y = origin_y
+        self.user_scale_x = user_scale_x
+        self.user_scale_y = user_scale_y
+        self.native_scale_x = native_scale_x
+        self.native_scale_y = native_scale_y
+        self.flip_x = flip_x
+        self.flip_y = flip_y
+        self.swap_xy = swap_xy
+
+        self._width = None
+        self._height = None
+        self._offset_x = None
+        self._offset_y = None
+        self._scale_x = None
+        self._scale_y = None
+        self.realize()
+
+    def realize(self):
+        self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._height = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._offset_x = self._width * self.origin_x
+        self._offset_y = self._height * self.origin_y
+        self._scale_x = self.user_scale_x * self.native_scale_x
+        self._scale_y = self.user_scale_y * self.native_scale_y
+
+    def position(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into viewport units.
+        @param x:
+        @param y:
+        @param as_float:
+        @param unitless:
+        @return:
+        """
+        nm_x = Length(x).value(
+            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
+        )
+        nm_y = Length(y).value(
+            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
+        )
+        if self.flip_x:
+            nm_x = -nm_x
+        if self.flip_y:
+            nm_y = -nm_y
+        nm_x += self._offset_x
+        nm_y += self._offset_y
+        if self.swap_xy:
+            return (
+                nm_y * self._scale_y,
+                nm_x * self._scale_x,
             )
         else:
-            nm_x = Length(x).value(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
+            return (
+                nm_x * self._scale_x,
+                nm_y * self._scale_y,
             )
-            nm_y = Length(y).value(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
-            )
-        if self.flip_x:
-            nm_x = (self.width * self.origin_x) - nm_x
-        if self.flip_y:
-            nm_y = (self.height * self.origin_y) - nm_y
-        if self.swap_xy:
-            nm_x, nm_y = nm_x, nm_y
-        return (
-            nm_x * self.user_scale_x * self.native_scale_x,
-            nm_y * self.user_scale_x * self.native_scale_y,
-        )
 
     def length(
         self,
@@ -107,6 +140,8 @@ class ViewPort:
         Axis 1 is Y
 
         Axis -1 is 1D in x, y space. eg. a line width.
+
+        Convert a length of distance {value} to new native values.
 
         @param value:
         @param axis:
@@ -150,16 +185,16 @@ class ViewPort:
             return False
         if y >= self.height:
             return False
-        if x < self.x:
+        if x < 0:
             return False
-        if y < self.y:
+        if y < 0:
             return False
         return True
 
     def bbox(self):
         return (
-            self.x,
-            self.y,
+            0,
+            0,
             self.width,
             self.height,
         )
