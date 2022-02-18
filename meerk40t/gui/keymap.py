@@ -22,17 +22,18 @@ class KeymapPanel(wx.Panel):
         )
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_command_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_command_name = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey, self.button_add)
+        self.button_add.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey)
+        self.text_command_name.Bind(wx.EVT_TEXT_ENTER, self.on_button_add_hotkey)
         # end wxGlade
-        self.Bind(
-            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_keymap
+        self.list_keymap.Bind(
+            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick
         )
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated, self.list_keymap)
+        self.list_keymap.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, partial(self.on_key_press, True))
         self.text_key_name.Bind(wx.EVT_KEY_UP, partial(self.on_key_press, False))
 
@@ -78,11 +79,11 @@ class KeymapPanel(wx.Panel):
         convert = menu.Append(
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
+        convert.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element))
         convert = menu.Append(
             wx.ID_ANY, _("Reset Keymap to defaults"), "", wx.ITEM_NORMAL
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        convert.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element))
         self.PopupMenu(menu)
         menu.Destroy()
 
