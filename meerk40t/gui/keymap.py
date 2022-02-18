@@ -68,7 +68,9 @@ class KeymapPanel(wx.Panel):
     def on_item_activated(self, event):
         element = event.Text
         self.text_key_name.SetValue(element)
-        self.text_command_name.SetValue(self.context.keymap[element])
+        self.text_command_name.SetValue(
+            self.context.keymap[KeymapPanel.__translate_from_mac(element)]
+        )
 
     def on_item_rightclick(self, event):
         element = event.Text
@@ -127,7 +129,7 @@ class KeymapPanel(wx.Panel):
             self.text_command_name.SetFocus()
             return
         key = self.text_key_name.GetValue()
-        key = self.__translate_from_mac(key)
+        key = KeymapPanel.__translate_from_mac(key)
         self.context.keymap[key] = self.text_command_name.GetValue()
         self.text_key_name.SetValue("")
         self.text_command_name.SetValue("")
@@ -137,13 +139,13 @@ class KeymapPanel(wx.Panel):
     def on_key_press(self, keydown, event):
         from meerk40t.gui.wxutils import get_key_name
 
-        keyvalue = get_key_name(event, return_modifier=keydown)
+        keyvalue = KeymapPanel.__translate_to_mac(get_key_name(event, return_modifier=keydown))
 
         # Do not clear keyvalue if key chosen and modifier is released
         # i.e. Alt down, Alt+a, Alt up
         if not keydown and keyvalue is None:
             oldkey = self.text_key_name.GetValue()
-            oldkey = oldkey.rsplit("+", 1)[1] if "+" in oldkey else oldkey
+            mod, oldkey = KeymapPanel.__split_modifiers(oldkey)
             if oldkey != "":
                 return
 
@@ -171,12 +173,12 @@ class KeymapPanel(wx.Panel):
         self.list_index.clear()
         i = 0
         for key, value in self.context.keymap.items():
-            key = self.__translate_to_mac(key)
+            key = KeymapPanel.__translate_to_mac(key)
             m = self.list_keymap.InsertItem(0, str(key))
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(value))
                 self.list_keymap.SetItemData(m, i)
-                self.list_index.append(self.__split_modifiers(key))
+                self.list_index.append(KeymapPanel.__split_modifiers(key))
                 i += 1
         self.list_keymap.SortItems(self.__list_sort_compare)
 
@@ -188,25 +190,29 @@ class KeymapPanel(wx.Panel):
     def __join_modifiers(*args):
         if len(args) == 1:
             args = args[0]
-        return args.join("+")
-
-    @staticmethod
-    def __translate_from_mac(self,key):
-        if platform.system() != "Darwin":
-            return key
-        mods, key = self.__split_modifiers(key)
-        mods = mods.replace("ctrl", "cmd")
-        mods = mods.replace("macctl", "ctrl")
-        return self.__join_modifiers(mods, key)
+        return "+".join(args) if args[0] else args[1]
 
     @staticmethod
     def __translate_to_mac(key):
         if platform.system() != "Darwin":
             return key
-        mods, key = self.__split_modifiers(key)
-        modifiers = mods.replace("ctrl", "macctl")
-        modifiers = mods.replace("cmd", "ctrl")
-        return self.__join_modifiers(mods, key)
+        if key is None:
+            return key
+        mods, key = KeymapPanel.__split_modifiers(key)
+        mods = mods.replace("ctrl", "cmd")
+        mods = mods.replace("macctl", "ctrl")
+        return KeymapPanel.__join_modifiers(mods, key)
+
+    @staticmethod
+    def __translate_from_mac(key):
+        if platform.system() != "Darwin":
+            return key
+        if key is None:
+            return key
+        mods, key = KeymapPanel.__split_modifiers(key)
+        mods = mods.replace("ctrl", "macctl")
+        mods = mods.replace("cmd", "ctrl")
+        return KeymapPanel.__join_modifiers(mods, key)
 
     def __list_sort_compare(self, item1, item2):
         """
