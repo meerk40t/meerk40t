@@ -66,6 +66,7 @@ _ = wx.GetTranslation
 
 
 def plugin(kernel, lifecycle):
+    # pylint: disable=global-statement
     global GUI_START
     kernel_root = kernel.root
     if lifecycle == "init" and kernel.args.no_gui:
@@ -699,6 +700,7 @@ class wxMeerK40t(wx.App, Module):
         kernel = context.kernel
 
         try:  # pyinstaller internal location
+            # pylint: disable=no-member
             _resource_path = os.path.join(sys._MEIPASS, "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:

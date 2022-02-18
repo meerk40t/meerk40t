@@ -366,7 +366,7 @@ class TestCutcode(unittest.TestCase):
         """
         path = Path("M0,0")
         for i in range(1000):
-            v = random.randint(0,5)
+            v = random.randint(0, 5)
             if v == 0:
                 path.line(path.current_point.x, random.randint(0, 5000))
             if v == 1:

@@ -41,7 +41,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Length, Group
+from meerk40t.svgelements import Group, Length
 
 _ = wx.GetTranslation
 

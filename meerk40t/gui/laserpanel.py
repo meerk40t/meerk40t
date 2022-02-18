@@ -336,7 +336,7 @@ class LaserPanel(wx.Panel):
                 else:
                     self.context("planz clear copy preprocess validate blob\n")
 
-            self.context("window toggle Simulation z 0\n"),
+            self.context("window toggle Simulation z 0\n")
 
     def on_check_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()

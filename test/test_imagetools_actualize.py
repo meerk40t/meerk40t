@@ -1,11 +1,11 @@
 import unittest
-from math import floor, ceil
+from math import ceil
+from test import bootstrap
 
 from PIL import Image, ImageDraw
 
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import SVGImage, Matrix
-from test import bootstrap
+from meerk40t.svgelements import Matrix, SVGImage
 
 
 class TestActualize(unittest.TestCase):

@@ -530,6 +530,7 @@ class CutPlan:
             if context.opt_2opt and not context.opt_inner_first:
                 try:
                     # Check for numpy before adding additional 2opt
+                    # pylint: disable=unused-import
                     import numpy as np
 
                     self.commands.append(self.optimize_travel_2opt)
@@ -1135,6 +1136,8 @@ class Planner(Service):
             data=None,
             **kwgs,
         ):
+            # pylint: disable=no-member
+            # No member calls are for dynamically attributed values.
             if y_distance is None:
                 raise SyntaxError
             # Following must be in same order as added in preprocess()

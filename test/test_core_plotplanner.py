@@ -6,7 +6,7 @@ from meerk40t.core.cutcode import Parameters, LineCut, CutCode
 from meerk40t.core.node.laserop import RasterOpNode, EngraveOpNode
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Point, SVGImage, Path, Circle
+from meerk40t.svgelements import Circle, Path, Point, SVGImage
 
 
 class TestPlotplanner(unittest.TestCase):

@@ -538,6 +538,7 @@ class LineCut(CutObject):
         self.raster_step = 0
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start
         end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
@@ -571,6 +572,7 @@ class QuadCut(CutObject):
         return Point.distance(self.start, self.c()) + Point.distance(self.c(), self.end)
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start
         c = self.c()
         end = self.end
@@ -864,6 +866,15 @@ class PlotCut(CutObject):
 
     def __len__(self):
         return len(self.plot)
+
+    def __str__(self):
+        parts = list()
+        parts.append("{points} points".format(points=len(self.plot)))
+        parts.append("xmin: {v}".format(v=self.min_x))
+        parts.append("ymin: {v}".format(v=self.min_y))
+        parts.append("xmax: {v}".format(v=self.max_x))
+        parts.append("ymax: {v}".format(v=self.max_y))
+        return "PlotCut(%s)" % ", ".join(parts)
 
     def check_if_rasterable(self):
         """

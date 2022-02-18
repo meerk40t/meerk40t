@@ -48,7 +48,7 @@ class TestZingl(unittest.TestCase):
             self.assertEqual(x, y)
 
     def test_arc(self):
-        from math import tau, sqrt
+        from math import sqrt, tau
 
         arc = Arc(start=(0, 100), center=(0, 0), end=(0, 100), sweep=tau)
         for x, y in ZinglPlotter.plot_arc(arc):

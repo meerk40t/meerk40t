@@ -41,4 +41,4 @@ reported in confidence by contacting @Tatarize via Github, Discord or irc.
 
 ## Exceptions
 
-Joseph Lane ( @joerlane ) is exempt from the aforementioned. This is not to say he has free reign to troll, harass, or be toxic, but will be banned if/when he becomes more trouble than he's worth.
+Joseph Lane ( @joerlane ) is exempt from the aforementioned. This is not to say he has free rein to troll, harass, or be toxic, but will be banned if/when he becomes more trouble than he's worth.

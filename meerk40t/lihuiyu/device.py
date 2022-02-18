@@ -420,7 +420,7 @@ class LihuiyuDevice(Service, ViewPort):
             "status",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(channel, _, **kwargs):
+        def realtime_status(channel, _, **kwargs):
             try:
                 self.controller.update_status()
                 channel(str(self.controller._status))
@@ -431,7 +431,7 @@ class LihuiyuDevice(Service, ViewPort):
             "continue",
             help=_("abort waiting process on the controller."),
         )
-        def realtime_pause(**kwargs):
+        def realtime_continue(**kwargs):
             self.controller.abort_waiting = True
 
         @self.console_command(
@@ -1249,9 +1249,9 @@ class LhystudiosDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def set_d_ratio(self, dratio=None):
-        if self.dratio != dratio:
-            self.dratio = dratio
+    def set_d_ratio(self, d_ratio=None):
+        if self.dratio != d_ratio:
+            self.dratio = d_ratio
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 

@@ -1,5 +1,6 @@
 import threading
 import time
+from math import isinf, isnan
 
 import wx
 
@@ -930,13 +931,7 @@ class Widget(list):
         """
         if dx == 0 and dy == 0:
             return
-        if dx == float("nan"):
-            return
-        if dy == float("nan"):
-            return
-        if abs(dx) == float("inf"):
-            return
-        if abs(dy) == float("inf"):
+        if isnan(dx) or isnan(dy) or isinf(dx) or isinf(dy):
             return
         self.translate_loop(dx, dy)
 
