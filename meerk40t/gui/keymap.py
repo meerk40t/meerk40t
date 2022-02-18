@@ -129,13 +129,14 @@ class KeymapPanel(wx.Panel):
             dlg.Destroy()
             self.text_command_name.SetFocus()
             return
-        key = self.text_key_name.GetValue()
-        key = KeymapPanel.__translate_from_mac(key)
+        origkey = self.text_key_name.GetValue()
+        key = KeymapPanel.__translate_from_mac(origkey)
         self.context.keymap[key] = self.text_command_name.GetValue()
         self.text_key_name.SetValue("")
         self.text_command_name.SetValue("")
         self.list_keymap.DeleteAllItems()
         self.reload_keymap()
+        self.select_item_by_key(origkey)
 
     def on_key_press(self, keydown, event):
         from meerk40t.gui.wxutils import get_key_name
@@ -161,13 +162,19 @@ class KeymapPanel(wx.Panel):
             self.text_key_name.SetValue("")
         else:
             self.text_key_name.SetValue(keyvalue)
-            i = self.list_keymap.FindItem(-1, keyvalue)
+            i = self.select_item_by_key(keyvalue)
             if i != wx.NOT_FOUND:
-                self.list_keymap.Select(i, True)
-                self.list_keymap.Focus(i)
                 self.text_command_name.SetValue(self.list_keymap.GetItemText(i, 1))
-            else:
-                self.list_keymap.Select(i, False)
+
+    def select_item_by_key(self, keyname):
+        i = self.list_keymap.FindItem(-1, keyname)
+        if i != wx.NOT_FOUND:
+            self.list_keymap.Select(i, True)
+            self.list_keymap.Focus(i)
+            self.text_command_name.SetValue(self.list_keymap.GetItemText(i, 1))
+        else:
+            self.list_keymap.Select(i, False)
+        return i
 
     def reload_keymap(self):
         self.list_keymap.DeleteAllItems()
