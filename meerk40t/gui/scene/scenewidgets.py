@@ -265,13 +265,15 @@ class SelectionWidget(Widget):
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
-            # Lets'check if the Alt or Shift Keys are pressed, if yes ignore the event
-            if not (self.key_alt_pressed or self.key_shift_pressed):
+            # Lets'check if the Ctrl or Shift Keys are pressed, if yes ignore the event, as they belong to the selection rectangle
+            if not (self.key_control_pressed or self.key_shift_pressed):
                 self.was_lb_raised = True
                 self.save_width = self.width
                 self.save_height = self.height
                 self.uniform = True
-                if self.key_control_pressed:
+                if (
+                    self.key_alt_pressed
+                ):  # Duplicate the selection in the background and start moving
                     self.create_duplicate()
                 self.tool(space_pos, dx, dy, -1)
                 return RESPONSE_CONSUME
@@ -856,7 +858,7 @@ class RectSelectWidget(Widget):
                     # Add Selection
                     if cover >= self.selection_method[sector]:
                         obj.node.emphasized = True
-                elif self.key_alt_pressed:
+                elif self.key_control_pressed:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
                         obj.node.emphasized = not obj.node.emphasized
@@ -907,7 +909,7 @@ class RectSelectWidget(Widget):
             statusmsg = _(self.selection_text[self.selection_method[sector] - 1])
             if self.key_shift_pressed:
                 statusmsg += _(self.selection_text_shift)
-            elif self.key_alt_pressed:
+            elif self.key_control_pressed:
                 statusmsg += _(self.selection_text_control)
 
             self.update_statusmsg(statusmsg)
@@ -964,7 +966,7 @@ class RectSelectWidget(Widget):
                         y1 - 0.25 * y_signum,
                     )
 
-            elif self.key_alt_pressed:
+            elif self.key_control_pressed:
                 # Draw tiny - in Corner
                 x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
                 y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X

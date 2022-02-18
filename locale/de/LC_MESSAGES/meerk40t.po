@@ -7604,20 +7604,20 @@ msgstr "Prüft neben Standard-Versionen auch das Vorhandensein von Vorabversione
 
 #: meerk40t/gui/scene/scenewidgets.py:665
 msgid "Select all elements the selection rectangle touches."
-msgstr "Wähle alle Elemente aus, die die Auswahl berührt."
+msgstr "Wähle die Elemente aus, die die Auswahl berührt."
 
 #: meerk40t/gui/scene/scenewidgets.py:666
 msgid "Select all elements the selection rectangle crosses."
-msgstr "Wähle alle Elemente aus, die die Auswahl kreuzt."
+msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
 
 #: meerk40t/gui/scene/scenewidgets.py:667
 msgid  "Select all elements the selection rectangle encloses."
-msgstr "Wähle alle Elemente aus, die die Auswahl umschließt."
+msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
 
 #: meerk40t/gui/scene/scenewidgets.py:667
 msgid " Previously selected remain selected!"
-msgstr " Existierende Selektionen bleiben erhalten!"
+msgstr " Die jetzige Auswahl bleibt erhalten!"
 
 #: meerk40t/gui/scene/scenewidgets.py:667
 msgid " Invert selection state of elements!"
-msgstr " Der Selektionsstatus wird dabei invertiert!"
+msgstr " Der Status wird dabei umgekehrt!"
