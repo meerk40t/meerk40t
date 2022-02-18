@@ -17,48 +17,20 @@ from ..kernel import CommandMatchRejected, Modifier
 # RESERVED KEYS
 # Regardless of the platform used by individual developers, bindalias needs
 # to conform to BOTH of the following:
+#
 # 1. Mac - common shortcuts defined in https://support.apple.com/en-us/HT201236
 #    should be followed where appropriate and avoided if not. This is important
 #    for MK to be accepted into the Apple app store.
 #    Where keys defined in other sections on this page make sense for this application,
 #    these should also be used by preference.
+#
 # 2. Windows - alt-single letter should be avoided as these correspond to menu
 #    shortcuts (e.g. in english locale, alt-f should activate the file menu).
 #    Common Windows shortcuts can be found at
 #    https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec
-# 3. Graphics apps - where it does not conflict with the above, any synergy with
-#    keys commonly used in popular SVG / image editors may be beneficial.
-
-# DISCUSSION for this proposed PR:
-#   alt-c/e/f/h/p/r/s/t need to be removed or mapped elsewhere.
-#   control-z should be reserved for future Undo
-#     (though reset is a close equivalent right now unless we mapped it to file reload).
-#   control-y should be reserved for future Redo
-#   escape should probably NOT be used for pause as this is not common usage
-#     it should perhaps close some open windows (like op properties perhaps)
-#   control-f4 should be made to close a sub-window if it has focus
-#     this might be the same function as for escape above
-#   control-o below is overriden by menu Ctrl-O - delete or use a different mapping
-#   we should consider adding new console commands if it helps us define
-#     common Mac or Windows shortcuts
-#   f1 should be help - but what help?? and should it be a menu shortcut rather than a bindalias
-#   SHOULD WE USE SPECIAL ALIASES to allow menu keys to be remapped by the user
-#     e.g. File/Open calls an alias FileOpen which is mapped to dialog_open
-#     user can change the alias to something else so that Ctrol-O does something else
-#     and map e.g. control-shift-o to dialog_open
-#   SHOULD WE SWITCH TO "ctrl" rather than "control" in order to be consistent with menus?
-
-
-# Current English menu keys
-#   control-n = File/New
-#   control-o = File/Open...
-#   control-s = File/Save
-#   control-shift-s = File/Save as...
-#   control-w = Window close
-#     (mac only but see above - should perhaps be recoded as a command so it can be used here)
-#   control-- = zoom out
-#   control-+ = zoom in
-#   control-, = open preferences window
+#
+# In addition where they do not conflict with the above, any synergy with keys commonly used
+# in popular SVG / image editors (e.g. paint.net, inkscape) may be beneficial.
 
 DEFAULT_KEYMAP = {
     "a": ("+left",),
@@ -108,14 +80,14 @@ DEFAULT_KEYMAP = {
     "numpad_add": ("+rotate_cw",),
     "numpad_subtract": ("+rotate_ccw",),
     "pause": ("pause",),
-    "alt+c": ("cut",),
-    "alt+e": ("engrave",),
-    "alt+f": ("dialog_fill",),
-    "alt+h": ("dialog_path",),
-    "alt+p": ("dialog_flip",),
-    "alt+r": ("raster",),
-    "alt+s": ("dialog_stroke",),
-    "alt+t": ("dialog_transform",),
+    # "alt+c": ("cut",),
+    # "alt+e": ("engrave",),
+    # "alt+f": ("dialog_fill",),
+    # "alt+h": ("dialog_path",),
+    # "alt+p": ("dialog_flip",),
+    # "alt+r": ("raster",),
+    # "alt+s": ("dialog_stroke",),
+    # "alt+t": ("dialog_transform",),
     "alt+f3": (
         "",
         "rotaryscale",
