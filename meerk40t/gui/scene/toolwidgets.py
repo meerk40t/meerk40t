@@ -1,19 +1,19 @@
 import wx
 
 from meerk40t.svgelements import (
+    Circle,
+    Ellipse,
     Path,
     Point,
-    Rect,
-    Ellipse,
-    Circle,
-    Polyline,
     Polygon,
+    Polyline,
+    Rect,
     SVGText,
 )
 
-from .scene import Scene, Widget
-from ..laserrender import LaserRender
 from ...core.units import UNITS_PER_MM, UNITS_PER_PIXEL
+from ..laserrender import LaserRender
+from .scene import Scene, Widget
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1

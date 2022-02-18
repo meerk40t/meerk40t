@@ -3834,7 +3834,7 @@ class Kernel(Settings):
         def ls(channel, **kwargs):
             import os
 
-            #TODO: _current_directory?
+            # TODO: _current_directory?
             for f in os.listdir(self.current_directory):
                 channel(str(f))
 

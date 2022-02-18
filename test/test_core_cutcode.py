@@ -3,9 +3,14 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import Parameters, LineCut, CutCode, QuadCut, RasterCut
-from meerk40t.core.node.laserop import CutOpNode, EngraveOpNode, RasterOpNode, ImageOpNode
-from meerk40t.svgelements import Point, Path, SVGImage
+from meerk40t.core.cutcode import CutCode, LineCut, Parameters, QuadCut, RasterCut
+from meerk40t.core.node.laserop import (
+    CutOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
+from meerk40t.svgelements import Path, Point, SVGImage
 
 
 class TestCutcode(unittest.TestCase):
@@ -354,9 +359,7 @@ class TestCutcode(unittest.TestCase):
                 rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            laserop.raster_step = (
-                i  # Raster_Step should be ignored, set for next loop
-            )
+            laserop.raster_step = i  # Raster_Step should be ignored, set for next loop
 
     def test_cutcode_direction_flags(self):
         """
@@ -392,4 +395,3 @@ class TestCutcode(unittest.TestCase):
                 self.assertNotEqual(y_dir, ry_dir)
             else:
                 self.assertNotEqual(x_dir, rx_dir)
-

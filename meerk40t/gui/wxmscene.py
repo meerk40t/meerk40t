@@ -16,15 +16,15 @@ from meerk40t.gui.scene.scenewidgets import (
     SelectionWidget,
 )
 from meerk40t.gui.scene.toolwidgets import (
-    DrawTool,
-    RectTool,
-    ToolContainer,
-    EllipseTool,
-    RelocateTool,
     CircleTool,
-    PolylineTool,
+    DrawTool,
+    EllipseTool,
     PolygonTool,
+    PolylineTool,
+    RectTool,
+    RelocateTool,
     TextTool,
+    ToolContainer,
     VectorTool,
 )
 from meerk40t.gui.wxutils import get_key_name

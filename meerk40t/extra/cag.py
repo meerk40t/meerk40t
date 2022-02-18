@@ -7,7 +7,7 @@ except ImportError as e:
 
 
 from meerk40t.svgelements import Path, Point, Polygon
-from meerk40t.tools.clipper import Clipper, PolyType, ClipType, PolyFillType
+from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
 
 
 def plugin(kernel, lifecycle):
