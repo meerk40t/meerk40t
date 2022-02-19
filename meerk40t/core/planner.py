@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..kernel import Service
-from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText, Matrix
 from ..tools.pathtools import VectorMontonizer
 from .node.laserop import (
     CutOpNode,
@@ -661,22 +661,23 @@ class CutPlan:
                         make_actual(elem, None)
 
     def scale_to_device_native(self):
+        matrix = Matrix(self.context.device.default_to_device_matrix())
         # rotary = self.context.rotary
         #
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
         # TODO: Correct rotary.
         device = self.context.device
-        scale_str = "scale(%.13f,%.13f)" % (
-            device.get_native_scale_x,
-            device.get_native_scale_y,
-        )
+        # scale_str = "scale(%.13f,%.13f)" % (
+        #     device.get_native_scale_x,
+        #     device.get_native_scale_y,
+        # )
         for o in self.plan:
             if o.type.startswith("op"):
                 for node in o.children:
                     e = node.object
                     try:
-                        ne = e * scale_str
+                        ne = e * matrix
                         node.replace_object(ne)
                     except AttributeError:
                         pass

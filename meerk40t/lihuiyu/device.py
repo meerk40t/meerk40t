@@ -137,6 +137,12 @@ class LihuiyuDevice(Service, ViewPort):
         ]
 
         self.register_choices("bed_dim", choices)
+        self.setting(bool, "swap_xy", False)
+        self.setting(bool, "flip_x", False)
+        self.setting(bool, "flip_y", False)
+        self.setting(bool, "home_right", False)
+        self.setting(bool, "home_bottom", False)
+
         ViewPort.__init__(
             self,
             self.bedwidth,
@@ -145,9 +151,11 @@ class LihuiyuDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
-            flip_x=False,
-            flip_y=False,
-            swap_xy=False
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
         )
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
@@ -158,11 +166,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
-        self.setting(bool, "swap_xy", False)
-        self.setting(bool, "flip_x", False)
-        self.setting(bool, "flip_y", False)
-        self.setting(bool, "home_right", False)
-        self.setting(bool, "home_bottom", False)
         self.setting(int, "home_adjust_x", 0)
         self.setting(int, "home_adjust_y", 0)
         self.setting(int, "buffer_max", 900)
@@ -394,12 +397,12 @@ class LihuiyuDevice(Service, ViewPort):
                     return
 
         @self.console_command(
-            "code_update",
+            "viewport_update",
             hidden=True,
             help=_("Update m2nano codes for movement"),
         )
         def codes_update(**kwargs):
-            self.driver.update_codes()
+            self.realize()
 
         @self.console_command(
             "network_update",
@@ -829,7 +832,6 @@ class LhystudiosDriver(Parameters):
         self.CODE_ANGLE = b"M"
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
-        self.update_codes()
 
         self.is_paused = False
         self.service._buffer_size = 0
@@ -890,26 +892,6 @@ class LhystudiosDriver(Parameters):
 
     def data_output(self, e):
         self.out_pipe.write(e)
-
-    def update_codes(self):
-        if not self.service.swap_xy:
-            self.CODE_RIGHT = b"B"
-            self.CODE_LEFT = b"T"
-            self.CODE_TOP = b"L"
-            self.CODE_BOTTOM = b"R"
-        else:
-            self.CODE_RIGHT = b"R"
-            self.CODE_LEFT = b"L"
-            self.CODE_TOP = b"T"
-            self.CODE_BOTTOM = b"B"
-        if self.service.flip_x:
-            q = self.CODE_LEFT
-            self.CODE_LEFT = self.CODE_RIGHT
-            self.CODE_RIGHT = q
-        if self.service.flip_y:
-            q = self.CODE_TOP
-            self.CODE_TOP = self.CODE_BOTTOM
-            self.CODE_BOTTOM = q
 
     def plotplanner_process(self):
         """

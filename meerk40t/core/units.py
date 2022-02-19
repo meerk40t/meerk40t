@@ -126,6 +126,35 @@ class ViewPort:
                 nm_y * self._scale_y,
             )
 
+    def default_to_device_matrix(self):
+        ops = []
+
+        if self._scale_x != 1.0 or self._scale_y != 1.0:
+            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
+        if self.swap_xy:
+            ops.append("rotate(-90deg)")
+        if self._offset_x != 0 or self._offset_y != 0:
+            ops.append("transform({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        return " ".join(ops)
+
+    def device_to_default(self):
+        ops = []
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self._offset_x != 0 or self._offset_y != 0:
+            ops.append("transform({dx:.13f}, {dy:.13f})".format(dx=self._offset_x, dy=self._offset_y))
+        if self.swap_xy:
+            ops.append("rotate(90deg)")
+        if self._scale_x != 1.0 or self._scale_y != 1.0:
+            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=self._scale_x, sy=self._scale_y))
+        return " ".join(ops)
+
     def length(
         self,
         value,

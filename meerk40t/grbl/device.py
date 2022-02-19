@@ -223,7 +223,7 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
+        ViewPort.__init__(self, self.bedwidth, self.bedheight, user_scale_x=self.scale_x, user_scale_y=self.scale_y)
 
         self.settings = dict()
         self.state = 0

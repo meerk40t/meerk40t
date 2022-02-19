@@ -648,21 +648,23 @@ class ConfigurationInterfacePanel(wx.Panel):
 
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.context("code_update\n")
+        self.context("viewport_update\n")
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()
-        self.context("code_update\n")
+        self.context("viewport_update\n")
 
     def on_check_home_right(self, event=None):
         self.context.home_right = self.checkbox_home_right.GetValue()
+        self.context("viewport_update\n")
 
     def on_check_flip_y(self, event=None):
         self.context.flip_y = self.checkbox_flip_y.GetValue()
-        self.context("code_update\n")
+        self.context("viewport_update\n")
 
     def on_check_home_bottom(self, event=None):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
+        self.context("viewport_update\n")
 
     def on_device_label(
         self, event
