@@ -661,7 +661,7 @@ class CutPlan:
                         make_actual(elem, None)
 
     def scale_to_device_native(self):
-        matrix = Matrix(self.context.device.default_to_device_matrix())
+        matrix = Matrix(self.context.device.scene_to_device_matrix())
         # rotary = self.context.rotary
         #
         # if rotary.rotary_enabled:

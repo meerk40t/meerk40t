@@ -94,7 +94,25 @@ class ViewPort:
         self._scale_x = self.user_scale_x * self.native_scale_x
         self._scale_y = self.user_scale_y * self.native_scale_y
 
-    def position(self, x, y, unitless=UNITS_PER_PIXEL):
+    def position_to_scene_space(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into viewport units.
+
+        @param x:
+        @param y:
+        @param as_float:
+        @param unitless:
+        @return:
+        """
+        nm_x = Length(x).value(
+            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
+        )
+        nm_y = Length(y).value(
+            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
+        )
+        return nm_x, nm_y
+
+    def position_to_device_space(self, x, y, unitless=UNITS_PER_PIXEL):
         """
         Converts an X,Y position into viewport units.
         @param x:
@@ -117,16 +135,16 @@ class ViewPort:
         nm_y += self._offset_y
         if self.swap_xy:
             return (
-                nm_y * self._scale_y,
-                nm_x * self._scale_x,
+                nm_y / self._scale_y,
+                nm_x / self._scale_x,
             )
         else:
             return (
-                nm_x * self._scale_x,
-                nm_y * self._scale_y,
+                nm_x / self._scale_x,
+                nm_y / self._scale_y,
             )
 
-    def default_to_device_matrix(self):
+    def scene_to_device_matrix(self):
         ops = []
 
         if self._scale_x != 1.0 or self._scale_y != 1.0:
@@ -141,7 +159,7 @@ class ViewPort:
             ops.append("scale(-1.0, 1.0)")
         return " ".join(ops)
 
-    def device_to_default(self):
+    def device_to_scene_matrix(self):
         ops = []
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")

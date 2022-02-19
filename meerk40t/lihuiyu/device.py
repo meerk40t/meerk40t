@@ -1071,18 +1071,12 @@ class LhystudiosDriver(Parameters):
         self.state = original_state
 
     def move_abs(self, x, y):
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x / UNITS_PER_MIL))
-        y = int(round(self.service.scale_y * y / UNITS_PER_MIL))
+        x, y = self.service.position_to_device_space(x, y)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = int(round(self.service.scale_x * dx / UNITS_PER_MIL))
-        dy = int(round(self.service.scale_y * dy / UNITS_PER_MIL))
+        dx, dy = self.service.position_to_device_space(dx, dy)
         self.rapid_mode()
         self.move_relative(dx, dy)
 
