@@ -1040,7 +1040,6 @@ class JogDistancePanel(wx.Panel):
             return
         self.context.jog_amount = str(jog)
         self.context.signal("jog_amount", str(jog))
-        print(self.context.jog_amount)
 
 
 class NavigationPanel(wx.Panel):
