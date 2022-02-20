@@ -747,26 +747,25 @@ class LihuiyuDevice(Service, ViewPort):
             spooler.job(jog_transition_test)
 
     @property
-    def current_x(self):
+    def current(self):
         """
         @return: the location in nm for the current known x value.
         """
-        return float(self.driver.native_x * UNITS_PER_MIL) / self.scale_x
+        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return self.current[0]
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return float(self.driver.native_y * UNITS_PER_MIL) / self.scale_y
-
-    @property
-    def get_native_scale_x(self):
-        return self.scale_x / float(UNITS_PER_MIL)
-
-    @property
-    def get_native_scale_y(self):
-        return self.scale_y / float(UNITS_PER_MIL)
+        return self.current[1]
 
     @property
     def output(self):
@@ -1071,12 +1070,12 @@ class LhystudiosDriver(Parameters):
         self.state = original_state
 
     def move_abs(self, x, y):
-        x, y = self.service.position_to_device_space(x, y)
+        x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx, dy = self.service.position_to_device_space(dx, dy)
+        dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self.move_relative(dx, dy)
 
@@ -1551,17 +1550,7 @@ class LhystudiosDriver(Parameters):
         self.laser = False
         self.step_index += 1
 
-    def calc_home_position(self):
-        x = 0
-        y = 0
-        if self.service.home_right:
-            x = int(self.service.device.width)
-        if self.service.home_bottom:
-            y = int(self.service.device.height)
-        return x, y
-
     def home(self, *values):
-        x, y = self.calc_home_position()
         self.rapid_mode()
         self.data_output(b"IPP\n")
         old_current_x = self.service.current_x
@@ -1584,8 +1573,8 @@ class LhystudiosDriver(Parameters):
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
             # Erase adjustment
-            self.native_x = x
-            self.native_y = y
+            self.native_x = 0
+            self.native_y = 0
 
         self.service.signal("driver;mode", self.state)
         new_current_x = self.service.current_x

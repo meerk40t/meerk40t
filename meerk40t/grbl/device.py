@@ -223,7 +223,13 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.bedwidth, self.bedheight, user_scale_x=self.scale_x, user_scale_y=self.scale_y)
+        ViewPort.__init__(
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+        )
 
         self.settings = dict()
         self.state = 0
@@ -378,30 +384,28 @@ class GRBLDevice(Service, ViewPort):
             self.driver.resume()
 
     @property
-    def current_x(self):
+    def current(self):
         """
         @return: the location in nm for the current known x value.
         """
-        return (
-            float(self.driver.native_x * self.driver.stepper_step_size) / self.scale_x
+        return self.position_to_scene_space(
+            self.driver.native_x * self.driver.stepper_step_size,
+            self.driver.native_y * self.driver.stepper_step_size,
         )
+
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return self.current[0]
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return (
-            float(self.driver.native_y * self.driver.stepper_step_size) / self.scale_y
-        )
-
-    @property
-    def get_native_scale_x(self):
-        return self.scale_x / float(self.driver.stepper_step_size)
-
-    @property
-    def get_native_scale_y(self):
-        return self.scale_y / float(self.driver.stepper_step_size)
+        return self.current[1]
 
 
 class GRBLDriver(Parameters):

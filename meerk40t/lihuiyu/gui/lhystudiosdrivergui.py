@@ -421,22 +421,12 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context.home_adjust_y = int(self.spin_home_y.GetValue())
 
     def on_button_set_home_current(self, event=None):
-        x, y = self.calc_home_position()
-        native_x = self.context.device.native_x - x
-        native_y = self.context.device.native_y - y
+        native_x = self.context.device.native_x
+        native_y = self.context.device.native_y
         self.context.home_adjust_x = int(native_x)
         self.context.home_adjust_y = int(native_y)
         self.spin_home_x.SetValue(self.context.home_adjust_x)
         self.spin_home_y.SetValue(self.context.home_adjust_y)
-
-    def calc_home_position(self):
-        x = 0
-        y = 0
-        if self.context.home_right:
-            x = int(self.context.device.width)
-        if self.context.home_bottom:
-            y = int(self.context.device.height)
-        return x, y
 
     def on_text_bedwidth(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
@@ -444,6 +434,7 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context.signal(
             "bed_size", (self.context.device.width, self.context.device.height)
         )
+        self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
@@ -451,6 +442,7 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context.signal(
             "bed_size", (self.context.device.width, self.context.device.height)
         )
+        self.context("viewport_update\n")
 
     def on_text_x_scale(self, event=None):
         try:
@@ -459,6 +451,7 @@ class ConfigurationLaserPanel(wx.Panel):
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
+            self.context("viewport_update\n")
         except ValueError:
             pass
 
@@ -469,6 +462,7 @@ class ConfigurationLaserPanel(wx.Panel):
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
+            self.context("viewport_update\n")
         except ValueError:
             pass
 

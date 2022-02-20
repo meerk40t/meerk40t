@@ -1,6 +1,8 @@
 import re
 from copy import copy
 
+from meerk40t.svgelements import Matrix
+
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-12
@@ -8,6 +10,7 @@ DEFAULT_PPI = 96.0
 
 NM_PER_INCH = 25400000
 NM_PER_MIL = 25400
+NM_PER_NM = 1
 NM_PER_uM = 1000
 NM_PER_MM = 1000000
 NM_PER_CM = 10000000
@@ -19,6 +22,7 @@ UNITS_PER_MIL = NM_PER_MIL
 UNITS_PER_uM = NM_PER_uM
 UNITS_PER_MM = NM_PER_MM
 UNITS_PER_CM = NM_PER_CM
+UNITS_PER_NM = NM_PER_NM
 UNITS_PER_PIXEL = UNITS_PER_INCH / DEFAULT_PPI
 PX_PER_UNIT = DEFAULT_PPI / UNITS_PER_INCH
 
@@ -94,7 +98,7 @@ class ViewPort:
         self._scale_x = self.user_scale_x * self.native_scale_x
         self._scale_y = self.user_scale_y * self.native_scale_y
 
-    def position_to_scene_space(self, x, y, unitless=UNITS_PER_PIXEL):
+    def physical_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
         """
         Converts an X,Y position into viewport units.
 
@@ -112,7 +116,7 @@ class ViewPort:
         )
         return nm_x, nm_y
 
-    def position_to_device_space(self, x, y, unitless=UNITS_PER_PIXEL):
+    def physical_to_device_position(self, x, y, unitless=UNITS_PER_NM):
         """
         Converts an X,Y position into viewport units.
         @param x:
@@ -144,6 +148,16 @@ class ViewPort:
                 nm_y / self._scale_y,
             )
 
+    def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
+        m = Matrix(self.device_to_scene_matrix())
+        point = m.point_in_matrix_space((x,y))
+        return point.x, point.y
+
+    def scene_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
+        m = Matrix(self.scene_to_device_matrix())
+        point = m.point_in_matrix_space((x,y))
+        return point.x, point.y
+
     def scene_to_device_matrix(self):
         ops = []
 
@@ -152,7 +166,7 @@ class ViewPort:
         if self.swap_xy:
             ops.append("rotate(-90deg)")
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("transform({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
@@ -166,12 +180,42 @@ class ViewPort:
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("transform({dx:.13f}, {dy:.13f})".format(dx=self._offset_x, dy=self._offset_y))
+            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=self._offset_x, dy=self._offset_y))
         if self.swap_xy:
             ops.append("rotate(90deg)")
         if self._scale_x != 1.0 or self._scale_y != 1.0:
             ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=self._scale_x, sy=self._scale_y))
         return " ".join(ops)
+
+    def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into dx, dy.
+        @param x:
+        @param y:
+        @param as_float:
+        @param unitless:
+        @return:
+        """
+        nm_x = Length(x).value(
+            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
+        )
+        nm_y = Length(y).value(
+            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
+        )
+        if self.flip_x:
+            nm_x = -nm_x
+        if self.flip_y:
+            nm_y = -nm_y
+        if self.swap_xy:
+            return (
+                nm_y / self._scale_y,
+                nm_x / self._scale_x,
+            )
+        else:
+            return (
+                nm_x / self._scale_x,
+                nm_y / self._scale_y,
+            )
 
     def length(
         self,
@@ -803,6 +847,10 @@ class Length(object):
             if ppi is None:
                 return self
             return self.amount * ppi * 0.393701
+        if self.units == "nm":
+            if ppi is None:
+                return self
+            return self.amount * ppi * 3.93701e-8
         if self.units == "in":
             if ppi is None:
                 return self
