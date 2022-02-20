@@ -32,6 +32,9 @@ from ..kernel import CommandMatchRejected, Modifier
 # In addition where they do not conflict with the above, any synergy with keys commonly used
 # in popular SVG / image editors (e.g. paint.net, inkscape) may be beneficial.
 
+# To change keymaps / alias insert new alias at the beginning of the tuple
+# Later entries in the tuple are used to identify previous defaults and update them to current,
+# so do not delete these until a version change (like 0.8) results in completely new settings anyway.
 DEFAULT_KEYMAP = {
     "a": ("+left",),
     "d": ("+right",),
