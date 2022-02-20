@@ -121,7 +121,6 @@ class ViewPort:
         Converts an X,Y position into viewport units.
         @param x:
         @param y:
-        @param as_float:
         @param unitless:
         @return:
         """
@@ -133,14 +132,11 @@ class ViewPort:
         Converts an X,Y position into dx, dy.
         @param x:
         @param y:
-        @param as_float:
         @param unitless:
         @return:
         """
-        x0, y0 = self.physical_to_scene_position(0, 0, unitless)
-        x0, y0 = self.scene_to_device_position(x0, y0, unitless)
-        x, y = self.physical_to_scene_position(x, y, unitless)
-        x, y = self.scene_to_device_position(x, y, unitless)
+        x0, y0 = self.physical_to_device_position(0,0, unitless)
+        x, y = self.physical_to_device_position(x, y, unitless)
         return x - x0, y - y0
 
     def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
