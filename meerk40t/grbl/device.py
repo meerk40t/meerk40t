@@ -393,9 +393,9 @@ class GRBLDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return self.scene_to_device_position(
-            self.driver.native_x * self.driver.stepper_step_size,
-            self.driver.native_y * self.driver.stepper_step_size,
+        return self.device_to_scene_position(
+            self.driver.native_x,
+            self.driver.native_y,
         )
 
     @property
