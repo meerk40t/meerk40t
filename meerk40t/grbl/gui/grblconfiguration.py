@@ -31,7 +31,11 @@ class GRBLConfiguration(MWindow):
         self.panel_global = PropertiesPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-global"
         )
+        self.panel_dim = PropertiesPanel(
+            self, wx.ID_ANY, context=self.context, choices="bed_dim"
+        )
         self.notebook_main.AddPage(self.panel_main, _("GRBL-connection"))
+        self.notebook_main.AddPage(self.panel_dim, _("Bed Dim"))
         self.notebook_main.AddPage(self.panel_global, _("Global Settings"))
         self.Layout()
         self.add_module_delegate(self.panel_main)

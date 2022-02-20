@@ -188,7 +188,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "bedwidth",
                 "object": self,
-                "default": "310mm",
+                "default": "235mm",
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
@@ -196,7 +196,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": "210mm",
+                "default": "235mm",
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
