@@ -829,6 +829,7 @@ class DwellCut(CutObject):
         pass
 
     def generate(self):
+        # TODO: There is no indication this will work.
         yield "rapid_mode"
         start = self.start
         yield "move_abs", start[0], start[1]
