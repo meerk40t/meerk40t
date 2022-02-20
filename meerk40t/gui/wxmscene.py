@@ -1,11 +1,11 @@
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icon_meerk40t
-from meerk40t.gui.laserrender import LaserRender
-from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.scene.scene import ScenePanel
-from meerk40t.gui.scene.scenewidgets import (
+from .icons import icon_meerk40t
+from .laserrender import LaserRender
+from .mwindow import MWindow
+from .scene.scene import ScenePanel
+from .scene.scenewidgets import (
     MILS_IN_MM,
     ElementsWidget,
     GridWidget,
@@ -15,9 +15,10 @@ from meerk40t.gui.scene.scenewidgets import (
     ReticleWidget,
     SelectionWidget,
 )
-from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer
-from meerk40t.gui.wxutils import get_key_name
-from meerk40t.svgelements import Angle, Length
+from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
+from .wxutils import get_key_name
+from ..svgelements import Angle, Length
+from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 
@@ -288,39 +289,28 @@ class MeerK40tScenePanel(wx.Panel):
         if not keyvalue:
             event.Skip()
             return
-        key = keyvalue.rsplit("+", 1)[1] if "+" in keyvalue else keyvalue
-        if key == "menu":
+        if keyvalue == "menu":
             self.scene.on_right_mouse_down(event)
             return
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            if keyvalue not in self.triggered_keys:
+        if keyvalue not in self.triggered_keys:
+            if keymap_execute(self.context, keyvalue, keydown=True):
                 self.triggered_keys[keyvalue] = 1
-                action = keymap[keyvalue]
-                self.context(action + "\n")
-        else:
-            event.Skip()
+                return
+        event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
         if not keyvalue:
             event.Skip()
             return
-        key = keyvalue.rsplit("+", 1)[1] if "+" in keyvalue else keyvalue
-        if key == "menu":
+        if keyvalue == "menu":
             self.scene.on_right_mouse_up(event)
             return
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            if keyvalue in self.triggered_keys:
-                del self.triggered_keys[keyvalue]
-            action = keymap[keyvalue]
-            if action.startswith("+"):
-                # Keyup commands only trigger if the down command started with +
-                action = "-" + action[1:]
-                self.context(action + "\n")
-        else:
-            event.Skip()
+        if keyvalue in self.triggered_keys:
+            del self.triggered_keys[keyvalue]
+        if keymap_execute(self.context, keyvalue, keydown=False):
+            return
+        event.Skip()
 
 
 class SceneWindow(MWindow):

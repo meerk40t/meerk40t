@@ -361,7 +361,7 @@ class Spoolers(Modifier):
                 spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
             elif command.endswith("down"):
                 spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            context(".timer 1 0 spool%s jog\n" % device_name)
+            context(".timer 1 0 .spool%s jog\n" % device_name)
             return "spooler", data
 
         @context.console_option("force", "f", type=bool, action="store_true")

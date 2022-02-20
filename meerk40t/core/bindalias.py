@@ -278,7 +278,7 @@ class BindAlias(Modifier):
             if alias is None:
                 reverse_keymap = {v: k for k, v in context.keymap.items()}
                 channel(_("Aliases (keybind)`:"))
-                channel(_("    Alias                Command(s)"))
+                channel(_("    Alias                  Command(s)"))
                 for i, key in enumerate(sorted(
                     context.alias.keys(),
                     key=lambda x: x if x[0] not in "+-" else x[1:] + x[0]
@@ -399,3 +399,20 @@ class BindAlias(Modifier):
             value = values[0]
             if value:
                 self.context.alias[key] = value
+
+
+def keymap_execute(context, keyvalue, keydown=True):
+    """
+    Execute keybind accelerator if it exists and return true
+
+    Else return false
+    """
+    if keyvalue not in context.keymap:
+        return False
+    action = context.keymap[keyvalue]
+    if keydown or action.startswith("+"):
+        if not keydown and action.startswith("+"):
+            action = "-" + action[1:]
+        for cmd in action.split(";"):
+            context("%s\n" % cmd)
+    return True
