@@ -1,8 +1,9 @@
 import wx
 from wx import aui
+from wx import richtext
 
-from meerk40t.gui.icons import icons8_console_50
-from meerk40t.gui.mwindow import MWindow
+from ..icons import icons8_console_50
+from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -33,21 +34,26 @@ class ConsolePanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
-        self.text_main = wx.TextCtrl(
+        self.text_main = richtext.RichTextCtrl(
             self,
             wx.ID_ANY,
             "",
-            style=wx.TE_BESTWRAP
-            | wx.TE_MULTILINE
-            | wx.TE_READONLY
-            | wx.TE_RICH2
-            | wx.TE_AUTO_URL,
+            style=wx.richtext.RE_MULTILINE
+            | wx.richtext.RE_READONLY
         )
-        self.text_main.SetFont(
-            wx.Font(
-                10, wx.FONTFAMILY_TELETYPE, wx.NORMAL, wx.NORMAL, faceName="Monospace"
-            )
+        self.text_mainBeginSuppressUndo()
+        font = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
         )
+        textattr = wx.TextAttr(wx.Colour(0), font=font)
+        textattr.SetLineSpacing(0)
+        textattr = richtext.RichTextAttr(textattr)
+        self.text_main.SetBasicStyle(textattr)
+        self.text_main.SetFont(font)
+        self.text_main.BeginLineSpacing(0)
+        self.text_main.BeginParagraphSpacing(0, 0)
+        self.text_main.BeginLeftIndent(0, 320)
+
         self.text_entry = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
@@ -92,7 +98,8 @@ class ConsolePanel(wx.Panel):
 
     def update_text_gui(self, text):
         try:
-            self.text_main.AppendText(text)
+            self.text_main.WriteText(text)
+            self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
         except RuntimeError:
             pass
 

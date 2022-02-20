@@ -8,6 +8,11 @@ import traceback
 from meerk40t.gui.wxmscene import SceneWindow
 
 try:
+    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+    # so we are doing it here even though we do not refer to it in this file
+    # richtext is used for the Console panel.
+    from wx import richtext
     import wx
 except ImportError as e:
     from ..core.exceptions import Mk40tImportAbort
