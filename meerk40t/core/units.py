@@ -169,7 +169,7 @@ class ViewPort:
         if self._offset_x != 0 or self._offset_y != 0:
             ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
         if self.swap_xy:
-            ops.append("rotate(-90deg)")
+            ops.append("scale(-1.0, -1.0) rotate(180deg)")
         return " ".join(ops)
 
     def device_to_scene_matrix(self):
