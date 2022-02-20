@@ -650,6 +650,7 @@ class ConfigurationInterfacePanel(wx.Panel):
 
     def on_check_home_right(self, event=None):
         self.context.home_right = self.checkbox_home_right.GetValue()
+        self.context.origin_x = 1.0 if self.context.home_right else 0.0
         self.context("viewport_update\n")
 
     def on_check_flip_y(self, event=None):
@@ -658,6 +659,7 @@ class ConfigurationInterfacePanel(wx.Panel):
 
     def on_check_home_bottom(self, event=None):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
+        self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
         self.context("viewport_update\n")
 
     def on_device_label(

@@ -92,7 +92,7 @@ class ViewPort:
 
     def realize(self):
         self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self._height = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._offset_x = self._width * self.origin_x
         self._offset_y = self._height * self.origin_y
         self._scale_x = self.user_scale_x * self.native_scale_x
@@ -160,32 +160,22 @@ class ViewPort:
 
     def scene_to_device_matrix(self):
         ops = []
-
-        if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
-        if self.swap_xy:
-            ops.append("rotate(-90deg)")
-        if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if self._scale_x != 1.0 or self._scale_y != 1.0:
+            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
+        if self._offset_x != 0 or self._offset_y != 0:
+            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+        if self.swap_xy:
+            ops.append("rotate(-90deg)")
         return " ".join(ops)
 
     def device_to_scene_matrix(self):
-        ops = []
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=self._offset_x, dy=self._offset_y))
-        if self.swap_xy:
-            ops.append("rotate(90deg)")
-        if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=self._scale_x, sy=self._scale_y))
-        return " ".join(ops)
+        m = Matrix(self.scene_to_device_matrix())
+        m.inverse()
+        return m
 
     def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
         """
