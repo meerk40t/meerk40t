@@ -150,7 +150,8 @@ DEFAULT_KEYMAP = {
     "ctrl+shift+h": ("scale -1 1",),
     "ctrl+shift+o": ("outline 1mm",),
     "ctrl+shift+v": ("scale 1 -1",),
-    "ctrl+alt+shift+escape": ("reset_bind_alias",),
+    "ctrl+alt+shift+escape": ("", "reset_bind_alias",),
+    "ctrl+alt+shift+home": ("bind default;alias default", ),
 }
 DEFAULT_ALIAS = {
     "+scale_up": ("loop scale 1.02",),
@@ -185,7 +186,7 @@ DEFAULT_ALIAS = {
         "",
         "window open Terminal;channel save usb;channel save send;channel save recv",
     ),
-    "reset_bind_alias": ("bind default;alias default",),
+    "reset_bind_alias": ("", "bind default;alias default",),
 }
 
 
