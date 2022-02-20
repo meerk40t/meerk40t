@@ -221,12 +221,19 @@ class BindAlias(Modifier):
             context = self.context
             _ = self.context._
             if len(args) == 0:
-                channel(_("----------"))
                 channel(_("Binds:"))
-                for i, key in enumerate(context.keymap):
+                def keymap_index(key):
+                    mods, key = key.rsplit("+", 1) if "+" in key else ("", key)
+                    return (
+                        mods,
+                        len(key) if len(key) <= 2 else 3,
+                        key,
+                    )
+                channel(_("    Key                    Command"))
+                for i, key in enumerate(sorted(context.keymap.keys(), key=keymap_index)):
                     value = context.keymap[key]
-                    channel(_("%d: key %s %s") % (i, key.ljust(15), value))
-                channel(_("----------"))
+                    channel("%2d: %s %s" % (i, key.ljust(22), value))
+                channel("----------")
             else:
                 key = args[0].lower()
                 if key == "default":
@@ -270,17 +277,18 @@ class BindAlias(Modifier):
             _ = self.context._
             if alias is None:
                 reverse_keymap = {v: k for k, v in context.keymap.items()}
-                channel(_("Aliases:"))
+                channel(_("Aliases (keybind)`:"))
+                channel(_("    Alias                Command(s)"))
                 for i, key in enumerate(sorted(
                     context.alias.keys(),
                     key=lambda x: x if x[0] not in "+-" else x[1:] + x[0]
                 )):
                     value = context.alias[key]
                     keystroke = reverse_keymap[key] if key in reverse_keymap else ""
-                    if keystroke and len(key) + len(keystroke) < 16:
+                    if keystroke and len(key) + len(keystroke) < 18:
                         key += " (%s)" % keystroke
                         keystroke = ""
-                    channel("%2d: %s %s" % (i, key.ljust(20), value))
+                    channel("%2d: %s %s" % (i, key.ljust(22), value))
                     if keystroke:
                         channel("    (%s)" % keystroke)
                 channel("----------")
