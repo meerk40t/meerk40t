@@ -125,28 +125,23 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        nm_x = Length(x).value(
-            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
-        )
-        nm_y = Length(y).value(
-            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
-        )
-        if self.flip_x:
-            nm_x = -nm_x
-        if self.flip_y:
-            nm_y = -nm_y
-        nm_x += self._offset_x
-        nm_y += self._offset_y
-        if self.swap_xy:
-            return (
-                nm_y / self._scale_y,
-                nm_x / self._scale_x,
-            )
-        else:
-            return (
-                nm_x / self._scale_x,
-                nm_y / self._scale_y,
-            )
+        x,y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y, unitless)
+
+    def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into dx, dy.
+        @param x:
+        @param y:
+        @param as_float:
+        @param unitless:
+        @return:
+        """
+        x0, y0 = self.physical_to_scene_position(0, 0, unitless)
+        x0, y0 = self.scene_to_device_position(x0, y0, unitless)
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        x, y = self.scene_to_device_position(x, y, unitless)
+        return x - x0, y - y0
 
     def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
         m = Matrix(self.device_to_scene_matrix())
@@ -176,36 +171,6 @@ class ViewPort:
         m = Matrix(self.scene_to_device_matrix())
         m.inverse()
         return m
-
-    def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
-        """
-        Converts an X,Y position into dx, dy.
-        @param x:
-        @param y:
-        @param as_float:
-        @param unitless:
-        @return:
-        """
-        nm_x = Length(x).value(
-            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
-        )
-        nm_y = Length(y).value(
-            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
-        )
-        if self.flip_x:
-            nm_x = -nm_x
-        if self.flip_y:
-            nm_y = -nm_y
-        if self.swap_xy:
-            return (
-                nm_y / self._scale_y,
-                nm_x / self._scale_x,
-            )
-        else:
-            return (
-                nm_x / self._scale_x,
-                nm_y / self._scale_y,
-            )
 
     def length(
         self,
