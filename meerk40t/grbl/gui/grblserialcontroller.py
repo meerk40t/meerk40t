@@ -125,6 +125,7 @@ class SerialController(MWindow):
         ).watch(self.serial_panel.update_recv)
 
     def window_close(self):
+        # TODO: Can be wrong if we start the window then change com ports.
         self.context.channel(
             "send-{name}".format(name=self.service.com_port.lower())
         ).unwatch(self.serial_panel.update_sent)

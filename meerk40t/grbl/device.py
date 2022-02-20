@@ -229,6 +229,11 @@ class GRBLDevice(Service, ViewPort):
             self.bedheight,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            flip_y=True,
+            origin_x=0.0,
+            origin_y=1.0,
         )
 
         self.settings = dict()
@@ -388,7 +393,7 @@ class GRBLDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return self.position_to_scene_space(
+        return self.scene_to_device_position(
             self.driver.native_x * self.driver.stepper_step_size,
             self.driver.native_y * self.driver.stepper_step_size,
         )
@@ -499,11 +504,11 @@ class GRBLDriver(Parameters):
         self.clean()
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
-
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = self.service.scale_x * x / self.stepper_step_size
-        y = self.service.scale_y * y / self.stepper_step_size
+        x, y = self.service.physical_to_device_position(x, y)
+        # x = self.service.length(x, 0)
+        # y = self.service.length(y, 1)
+        # x = self.service.scale_x * x / self.stepper_step_size
+        # y = self.service.scale_y * y / self.stepper_step_size
         self.rapid_mode()
         self.move(x, y)
         new_current_x = self.service.current_x
@@ -520,10 +525,11 @@ class GRBLDriver(Parameters):
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
 
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = self.service.scale_x * dx / self.stepper_step_size
-        dy = self.service.scale_y * dy / self.stepper_step_size
+        dx, dy = self.service.physical_to_device_length(dx, dy)
+        # dx = self.service.length(dx, 0)
+        # dy = self.service.length(dy, 1)
+        # dx = self.service.scale_x * dx / self.stepper_step_size
+        # dy = self.service.scale_y * dy / self.stepper_step_size
         self.rapid_mode()
         self.move(dx, dy)
 
