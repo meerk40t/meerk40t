@@ -269,12 +269,21 @@ class BindAlias(Modifier):
             context = self.context
             _ = self.context._
             if alias is None:
-                channel(_("----------"))
+                reverse_keymap = {v: k for k, v in context.keymap.items()}
                 channel(_("Aliases:"))
-                for i, key in enumerate(context.alias):
+                for i, key in enumerate(sorted(
+                    context.alias.keys(),
+                    key=lambda x: x if x[0] not in "+-" else x[1:] + x[0]
+                )):
                     value = context.alias[key]
-                    channel("%d: %s %s" % (i, key.ljust(15), value))
-                channel(_("----------"))
+                    keystroke = reverse_keymap[key] if key in reverse_keymap else ""
+                    if keystroke and len(key) + len(keystroke) < 16:
+                        key += " (%s)" % keystroke
+                        keystroke = ""
+                    channel("%2d: %s %s" % (i, key.ljust(20), value))
+                    if keystroke:
+                        channel("    (%s)" % keystroke)
+                channel("----------")
                 return
             alias = alias.lower()
             if alias == "default":
