@@ -3,25 +3,18 @@ import os.path
 import re
 from copy import copy
 
-from ..image.actualize import actualize
 from ..kernel import Service, Settings
 from ..svgelements import (
-    SVG_STRUCT_ATTRIB,
     Angle,
     Circle,
-    Close,
     Color,
-    CubicBezier,
     Ellipse,
     Group,
-    Line,
     Matrix,
-    Move,
     Path,
     Point,
     Polygon,
     Polyline,
-    QuadraticBezier,
     Rect,
     Shape,
     SimpleLine,
@@ -30,7 +23,7 @@ from ..svgelements import (
     SVGText,
     Viewbox,
 )
-from .cutcode import CubicCut, CutCode, CutGroup, LineCut, QuadCut, RasterCut
+from .cutcode import CutCode
 from .node.commandop import CommandOperation
 from .node.consoleop import ConsoleOperation
 from .node.laserop import (
@@ -42,8 +35,7 @@ from .node.laserop import (
 )
 from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
 from .node.rootnode import RootNode
-from .parameters import Parameters
-from .units import UNITS_PER_PIXEL
+from .units import UNITS_PER_PIXEL, Length, UNITS_PER_INCH
 
 
 def plugin(kernel, lifecycle=None):
@@ -129,6 +121,8 @@ class Elemental(Service):
         )
         self._clipboard = {}
         self._clipboard_default = "0"
+        self.units = "nm"
+        self.unitless = UNITS_PER_PIXEL
 
         self.note = None
         self._emphasized_bounds = None
@@ -141,6 +135,7 @@ class Elemental(Service):
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
         self.setting(bool, "operation_default_empty", True)
+
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
         self._init_commands(kernel)
@@ -2238,7 +2233,7 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_translate(command, channel, _, data=None, **kwargs):
+        def element_move_to_laser(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -2897,7 +2892,11 @@ class Elemental(Service):
                 yield "wait_finish"
                 yield "rapid_mode"
                 for p in hull:
-                    yield "move_abs", p[0], p[1]
+                    yield (
+                        "move_abs",
+                        "{x}{units}".format(x=p[0], units=self.units),
+                        "{y}{units}".format(y=p[1], units=self.units),
+                    )
 
             spooler.job(trace_hull)
 
@@ -2913,11 +2912,31 @@ class Elemental(Service):
 
             def trace_quick():
                 yield "rapid_mode"
-                yield "move_abs", bbox[0], bbox[1]
-                yield "move_abs", bbox[2], bbox[1]
-                yield "move_abs", bbox[2], bbox[3]
-                yield "move_abs", bbox[0], bbox[3]
-                yield "move_abs", bbox[0], bbox[1]
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[2], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[2], units=self.units),
+                    "{y}{units}".format(y=bbox[3], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[3], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
 
             spooler.job(trace_quick)
 
@@ -3877,7 +3896,6 @@ class Elemental(Service):
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self("reset\n")
-
 
         @self.tree_operation(
             _("Merge items"),
