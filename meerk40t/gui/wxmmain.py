@@ -911,6 +911,7 @@ class MeerK40t(MWindow):
         context.listen("active", self.on_active_change)
         context.listen("modified", self.on_invalidate_save)
         context.listen("altered", self.on_invalidate_save)
+        context.listen("statusmsg", self.on_update_statusmsg)
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -1607,6 +1608,7 @@ class MeerK40t(MWindow):
         context.unlisten("active", self.on_active_change)
         context.unlisten("modified", self.on_invalidate_save)
         context.unlisten("altered", self.on_invalidate_save)
+        context.unlisten("statusmsg", self.on_update_statusmsg)
 
         self.context("quit\n")
 
@@ -1690,6 +1692,9 @@ class MeerK40t(MWindow):
             obj.image_width = image_width
             obj.image_height = image_height
             elements.add_elem(obj)
+
+    def on_update_statusmsg(self, origin, value):
+        self.main_statusbar.SetStatusText(value, 0)
 
     def __set_titlebar(self):
         device_name = ""
