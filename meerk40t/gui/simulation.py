@@ -528,7 +528,7 @@ class Simulation(MWindow):
         else:
             auto_clear = True
 
-        self.panel = SimulationPanel(
+        self.control = SimulationPanel(
             self,
             wx.ID_ANY,
             context=self.context,
@@ -541,7 +541,7 @@ class Simulation(MWindow):
         self.SetTitle(_("Simulation"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

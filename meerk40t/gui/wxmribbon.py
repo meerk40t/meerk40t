@@ -429,7 +429,7 @@ class Ribbon(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
-        self.panel = RibbonPanel(self, wx.ID_ANY, context=self.context)
+        self.control = RibbonPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -437,13 +437,13 @@ class Ribbon(MWindow):
 
     def window_open(self):
         try:
-            self.panel.initialize()
+            self.control.initialize()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.panel.finalize()
+            self.control.finalize()
         except AttributeError:
             pass
 

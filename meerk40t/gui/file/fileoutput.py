@@ -83,14 +83,14 @@ class FileOutputPanel(wx.Panel):
 class FileOutput(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(312, 155, *args, **kwds)
-        self.panel = FileOutputPanel(self, wx.ID_ANY, context=self.context)
+        self.control = FileOutputPanel(self, wx.ID_ANY, context=self.context)
         self.SetTitle(_("FileOutput"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_file_50.GetBitmap())
         self.SetIcon(_icon)
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

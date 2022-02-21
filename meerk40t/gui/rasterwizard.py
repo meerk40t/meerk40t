@@ -1949,7 +1949,7 @@ class RasterWizard(MWindow):
     def __init__(self, *args, script=None, **kwds):
         super().__init__(605, 636, *args, **kwds)
 
-        self.panel = RasterWizardPanel(
+        self.control = RasterWizardPanel(
             self, wx.ID_ANY, context=self.context, script=script
         )
         _icon = wx.NullIcon
@@ -1960,11 +1960,11 @@ class RasterWizard(MWindow):
 
     def restore(self, *args, script=None, **kwargs):
         if script is not None:
-            self.panel.script = script
-            self.panel.set_wizard_script(script)
+            self.control.script = script
+            self.control.set_wizard_script(script)
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

@@ -143,7 +143,7 @@ class About(MWindow):
             | (wx.RESIZE_BORDER if _sys() != "Darwin" else 0),
             **kwds,
         )
-        self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
+        self.control = AboutPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
         self.SetIcon(_icon)

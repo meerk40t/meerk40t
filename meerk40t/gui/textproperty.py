@@ -264,7 +264,7 @@ class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(317, 360, *args, **kwds)
 
-        self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.control = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
         self.SetIcon(_icon)
@@ -272,15 +272,15 @@ class TextProperty(MWindow):
         self.SetTitle(_("Text Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element_node = node
-        self.panel.element = node.object
-        self.panel.set_widgets()
+        self.control.element_node = node
+        self.control.element = node.object
+        self.control.set_widgets()
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
 
     def window_preserve(self):
         return False

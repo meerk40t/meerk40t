@@ -457,17 +457,17 @@ class LhystudiosDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(365, 365, *args, **kwds)
 
-        self.panel = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        self.control = LhystudiosConfigurationPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Lhystudios-Configuration"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
 
     def window_preserve(self):
         return False

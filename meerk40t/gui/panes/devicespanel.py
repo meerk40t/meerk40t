@@ -342,14 +342,14 @@ class DeviceManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(653, 332, *args, **kwds)
 
-        self.panel = DevicesPanel(self, wx.ID_ANY, context=self.context)
+        self.control = DevicesPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Device Manager"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

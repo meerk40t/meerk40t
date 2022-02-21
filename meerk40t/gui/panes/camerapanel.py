@@ -694,7 +694,7 @@ class CameraInterface(MWindow):
         if index is None:
             index = 0
         super().__init__(640, 480, context, path, parent, **kwds)
-        self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.control = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
 
         # ==========
         # MENU BAR
@@ -718,38 +718,38 @@ class CameraInterface(MWindow):
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-        self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.reset_perspective, id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
-        self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.reset_fisheye, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context.open(
-                "window/CameraURI", self, index=self.panel.index
+                "window/CameraURI", self, index=self.control.index
             ),
             id=item.GetId(),
         )
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(0), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.swap_camera(0), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(1), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.swap_camera(1), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(2), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.swap_camera(2), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(3), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.swap_camera(3), id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(4), id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.control.swap_camera(4), id=item.GetId())
 
         append(wxglade_tmp_menu, _("Camera"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
 
     @staticmethod
     def sub_register(kernel):
@@ -935,7 +935,7 @@ class CameraURI(MWindow):
     def __init__(self, *args, index=None, **kwds):
         super().__init__(437, 530, *args, **kwds)
 
-        self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
+        self.control = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
@@ -943,7 +943,7 @@ class CameraURI(MWindow):
         self.SetTitle(_("Camera URI"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

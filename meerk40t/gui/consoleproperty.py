@@ -10,7 +10,7 @@ class ConsoleProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(730, 621, *args, **kwds)
 
-        self.panel = ConsolePropertiesPanel(
+        self.control = ConsolePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
         _icon = wx.NullIcon
