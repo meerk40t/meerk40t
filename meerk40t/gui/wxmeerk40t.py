@@ -314,7 +314,6 @@ class wxMeerK40t(wx.App, Module):
                 path = kernel.get_context(path)
 
             if remainder is None:
-                channel(_("----------"))
                 channel(_("Loaded Windows in Context %s:") % str(context.path))
                 for i, name in enumerate(context.opened):
                     if not name.startswith("window"):
@@ -322,14 +321,16 @@ class wxMeerK40t(wx.App, Module):
                     module = context.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
 
-                channel(_("----------"))
-                channel(_("Loaded Windows in Device %s:") % str(path.path))
+                channel("----------")
+                if path is context:
+                    return "window", path
+                channel(_("Loaded Windows in Path %s:") % str(path.path))
                 for i, name in enumerate(path.opened):
                     if not name.startswith("window"):
                         continue
                     module = path.opened[name]
                     channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
-                channel(_("----------"))
+                channel("----------")
             return "window", path
 
         @kernel.console_command(
