@@ -7,6 +7,10 @@ from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
+RICHTEXT_TRANSLATE = {
+    "[Red]":    "",
+}
+
 
 def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
@@ -27,6 +31,22 @@ def register_panel_console(window, context):
     window.on_pane_add(pane)
     context.register("pane/console", pane)
 
+    @context.console_command(
+        "cls",
+        help=_("Clear console screen"),
+    )
+    def clear_console(channel, _, *args, **kwargs):
+        panels = [
+            context.opened[x]
+            for x in ("window/Console", "window/Terminal")
+            if x in context.opened
+        ]
+
+        panels.append(
+            context.registered["pane/console"]
+        )
+        for panel in panels:
+            panel.control.clear()
 
 class ConsolePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwargs):
@@ -41,7 +61,7 @@ class ConsolePanel(wx.Panel):
             style=wx.richtext.RE_MULTILINE
             | wx.richtext.RE_READONLY
         )
-        self.text_mainBeginSuppressUndo()
+        self.text_main.BeginSuppressUndo()
         font = wx.Font(
             10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
         )
@@ -89,6 +109,9 @@ class ConsolePanel(wx.Panel):
 
     def finalize(self, *args):
         self.context.channel("console").unwatch(self.update_text)
+
+    def clear(self):
+        self.text_main.Clear()
 
     def update_text(self, text):
         if not wx.IsMainThread():
@@ -155,7 +178,7 @@ class ConsolePanel(wx.Panel):
 class Console(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(581, 410, *args, **kwds)
-        self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
+        self.control = ConsolePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
@@ -163,7 +186,7 @@ class Console(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
