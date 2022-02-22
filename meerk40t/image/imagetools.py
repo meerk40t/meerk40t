@@ -2,7 +2,7 @@ import os
 from copy import copy
 from os import path as ospath
 
-from ..core.planner import make_actual, needs_actualization
+from ..core.cutplan import make_actual, needs_actualization
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 from .actualize import actualize
 

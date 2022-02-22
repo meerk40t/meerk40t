@@ -44,6 +44,7 @@ from ..svgelements import (
     SVGText,
     Viewbox,
 )
+from ..tools.rastergrouping import group_overlapped_rasters
 from .cutcode import (
     CubicCut,
     CutCode,
@@ -6742,26 +6743,9 @@ class Elemental(Modifier):
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = [[(e, e.bbox())] for e in raster_elements]
-        # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
-
-        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
-        for i in range(len(raster_groups) - 2, -1, -1):
-            g1 = raster_groups[i]
-            for j in range(len(raster_groups) - 1, i, -1):
-                g2 = raster_groups[j]
-                if self.group_elements_overlap(g1, g2):
-                    # print("g1", list(map(lambda e: e[0].id,g1)))
-                    # print("g2", list(map(lambda e: e[0].id,g2)))
-
-                    # if elements in the group overlap
-                    # add the element tuples from group 2 to group 1
-                    g1.extend(g2)
-                    # and remove group 2
-                    del raster_groups[j]
-
-                    # print("g1+g2", list(map(lambda e: e[0].id,g1)))
-                    # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+        raster_groups = group_overlapped_rasters(
+            [(e, e.bbox()) for e in raster_elements]
+        )
 
         # Remove bbox and add element colour from groups
         # Change list to groups which are a list of tuples, each tuple being element and its classification color
@@ -6843,20 +6827,6 @@ class Elemental(Modifier):
         for element in elements_to_add:
             for op in default_raster_ops:
                 op.add(element, type="opnode", pos=element_pos)
-
-    def group_elements_overlap(self, g1, g2):
-        for e1 in g1:
-            e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
-            for e2 in g2:
-                e2xmin, e2ymin, e2xmax, e2ymax = e2[1]
-                if (
-                    e1xmin <= e2xmax
-                    and e1xmax >= e2xmin
-                    and e1ymin <= e2ymax
-                    and e1ymax >= e2ymin
-                ):
-                    return True
-        return False
 
     def element_classify_color(self, element: SVGElement):
         element_color = element.stroke
