@@ -1,8 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import UNITS_PER_INCH
-from meerk40t.gui.icons import icon_meerk40t, icons8_console_50
+from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scene import ScenePanel
