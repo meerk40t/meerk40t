@@ -10,30 +10,30 @@ _ = wx.GetTranslation
 
 def bg_Colour(colour):
     def styColour(rtc):
-        style = rtc.DefaultStyle
+        style = rtc.DefaultStyleEx
         style.SetBackgroundColour(wx.Colour(colour))
         return style
     return styColour
 
 def fg_Colour(colour):
     def styColour(rtc):
-        style = rtc.DefaultStyle
+        style = rtc.DefaultStyleEx
         style.SetTextColour(wx.Colour(colour))
         return style
     return styColour
 
 def style_bold(rtc):
-    style = rtc.DefaultStyle
+    style = rtc.DefaultStyleEx
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
 
 def style_italic(rtc):
-    style = rtc.DefaultStyle
+    style = rtc.DefaultStyleEx
     style.SetFontStyle(wx.FONTSTYLE_ITALIC)
     return style
 
 def style_underline(rtc):
-    style = rtc.DefaultStyle
+    style = rtc.DefaultStyleEx
     style.SetFontUnderlined(True)
     return style
 
@@ -69,6 +69,8 @@ BBCODE_LIST = {
     "italic":       style_italic,
     "underline":    style_underline,
     "normal":       style_normal,
+    "raw":          None,
+    "/raw":         None,
 }
 RE_BBCODE = re.compile(r"(%s)" % (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])), re.IGNORECASE)
 
@@ -174,27 +176,37 @@ class ConsolePanel(wx.Panel):
     def clear(self):
         self.text_main.Clear()
 
-    def update_text(self, text, bbcode=True):
+    def update_text(self, text):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, str(text), bbcode=bbcode)
+            wx.CallAfter(self.update_text_gui, str(text))
         else:
-            self.update_text_gui(str(text), bbcode=bbcode)
+            self.update_text_gui(str(text))
 
     def update_text_gui(self, lines, bbcode=True):
         lines = lines.split("\n") if "\n" in lines else [lines]
         basic_style = self.text_main.BasicStyle
+        raw = False
         for text in lines:
             self.text_main.BeginStyle(basic_style)
             parts = RE_BBCODE.split(text)
             for part in parts:
                 if part == "":
                     continue
-                if bbcode and part.startswith("[") and part[1:-1].lower() in BBCODE_LIST:
-                    getstyle = BBCODE_LIST[part[1:-1].lower()]
-                    style = getstyle(self.text_main)
-                    self.text_main.EndStyle()
-                    self.text_main.BeginStyle(style)
-                    continue
+                if (
+                    bbcode
+                    and part.startswith("[")
+                    and part.endswith("]")
+                    and part[1:-1].lower() in BBCODE_LIST
+                ):
+                    if part[-4:] == "raw]":
+                        raw = part[1] == "r"
+                        continue
+                    if not raw:
+                        getstyle = BBCODE_LIST[part[1:-1].lower()]
+                        style = getstyle(self.text_main)
+                        self.text_main.EndStyle()
+                        self.text_main.BeginStyle(style)
+                        continue
                 self.text_main.WriteText(part)
             self.text_main.EndStyle()
             self.text_main.Newline()
