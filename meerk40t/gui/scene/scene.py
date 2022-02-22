@@ -290,6 +290,10 @@ class ScenePanel(wx.Panel):
         """
         Scene Panel left click event for down.
         """
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_right_mouse_down(event)
+            return
         self.SetFocus()
 
         if not self.scene_panel.HasCapture():
@@ -300,6 +304,10 @@ class ScenePanel(wx.Panel):
         """
         Scene Panel left click event for up.
         """
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_right_mouse_up(event)
+            return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "leftup")

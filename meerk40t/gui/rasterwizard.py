@@ -378,12 +378,20 @@ class RasterWizardPanel(wx.Panel):
         return script
 
     def on_preview_mouse_left_down(self, event):
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_preview_mouse_right_down(event)
+            return
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(
             self.previous_window_position
         )
 
     def on_preview_mouse_left_up(self, event=None):
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            event.Skip()
+            return
         self.previous_window_position = None
         self.previous_scene_position = None
 
