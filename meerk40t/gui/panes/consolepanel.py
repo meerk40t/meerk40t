@@ -1,3 +1,4 @@
+import re
 import wx
 from wx import aui
 from wx import richtext
@@ -7,10 +8,69 @@ from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
-RICHTEXT_TRANSLATE = {
-    "[Red]":    "",
-}
+def bg_Colour(colour):
+    def styColour(rtc):
+        style = rtc.DefaultStyle
+        style.SetBackgroundColour(wx.Colour(colour))
+        return style
+    return styColour
 
+def fg_Colour(colour):
+    def styColour(rtc):
+        style = rtc.DefaultStyle
+        style.SetTextColour(wx.Colour(colour))
+        return style
+    return styColour
+
+def style_bold(rtc):
+    style = rtc.DefaultStyle
+    style.SetFontWeight(wx.FONTWEIGHT_BOLD)
+    return style
+
+def style_italic(rtc):
+    style = rtc.DefaultStyle
+    style.SetFontStyle(wx.FONTSTYLE_ITALIC)
+    return style
+
+def style_underline(rtc):
+    style = rtc.DefaultStyle
+    style.SetFontUnderlined(True)
+    return style
+
+def style_normal(rtc):
+    return rtc.BasicStyle
+
+BBCODE_LIST = {
+    "black":        fg_Colour("black"),
+    "white":        fg_Colour("white"),
+    "red":          fg_Colour("red"),
+    "pink":         fg_Colour("pink"),
+    "orange":       fg_Colour("orange"),
+    "yellow":       fg_Colour("yellow"),
+    "green":        fg_Colour("green"),
+    "cyan":         fg_Colour("cyan"),
+    "blue":         fg_Colour("blue"),
+    "magenta":      fg_Colour("magenta"),
+    "purple":       fg_Colour("purple"),
+    "violet":       fg_Colour("violet"),
+    "bg-black":     bg_Colour("black"),
+    "bg-white":     bg_Colour("white"),
+    "bg-red":       bg_Colour("red"),
+    "bg-pink":      bg_Colour("pink"),
+    "bg-orange":    bg_Colour("orange"),
+    "bg-yellow":    bg_Colour("yellow"),
+    "bg-green":     bg_Colour("green"),
+    "bg-cyan":      bg_Colour("cyan"),
+    "bg-blue":      bg_Colour("blue"),
+    "bg-magenta":   bg_Colour("magenta"),
+    "bg-purple":    bg_Colour("purple"),
+    "bg-violet":    bg_Colour("violet"),
+    "bold":         style_bold,
+    "italic":       style_italic,
+    "underline":    style_underline,
+    "normal":       style_normal,
+}
+RE_BBCODE = re.compile(r"(%s)" % (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])), re.IGNORECASE)
 
 def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
@@ -48,6 +108,7 @@ def register_panel_console(window, context):
         for panel in panels:
             panel.control.clear()
 
+
 class ConsolePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
@@ -62,17 +123,17 @@ class ConsolePanel(wx.Panel):
             | wx.richtext.RE_READONLY
         )
         self.text_main.BeginSuppressUndo()
+        style = richtext.RichTextAttr(wx.TextAttr(wx.Colour("black")))
         font = wx.Font(
             10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
         )
-        textattr = wx.TextAttr(wx.Colour(0), font=font)
-        textattr.SetLineSpacing(0)
-        textattr = richtext.RichTextAttr(textattr)
-        self.text_main.SetBasicStyle(textattr)
-        self.text_main.SetFont(font)
-        self.text_main.BeginLineSpacing(0)
-        self.text_main.BeginParagraphSpacing(0, 0)
-        self.text_main.BeginLeftIndent(0, 320)
+        style.SetFont(font)
+        style.SetLineSpacing(0)
+        style.SetParagraphSpacingBefore(0)
+        style.SetParagraphSpacingAfter(0)
+        style.SetLeftIndent(0, 320)
+        self.text_main.SetBasicStyle(style)
+        self.text_main.SetDefaultStyle(style)
 
         self.text_entry = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
@@ -113,18 +174,31 @@ class ConsolePanel(wx.Panel):
     def clear(self):
         self.text_main.Clear()
 
-    def update_text(self, text):
+    def update_text(self, text, bbcode=True):
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, str(text) + "\n")
+            wx.CallAfter(self.update_text_gui, str(text), bbcode=bbcode)
         else:
-            self.update_text_gui(str(text) + "\n")
+            self.update_text_gui(str(text), bbcode=bbcode)
 
-    def update_text_gui(self, text):
-        try:
-            self.text_main.WriteText(text)
+    def update_text_gui(self, lines, bbcode=True):
+        lines = lines.split("\n") if "\n" in lines else [lines]
+        basic_style = self.text_main.BasicStyle
+        for text in lines:
+            self.text_main.BeginStyle(basic_style)
+            parts = RE_BBCODE.split(text)
+            for part in parts:
+                if part == "":
+                    continue
+                if bbcode and part.startswith("[") and part[1:-1].lower() in BBCODE_LIST:
+                    getstyle = BBCODE_LIST[part[1:-1].lower()]
+                    style = getstyle(self.text_main)
+                    self.text_main.EndStyle()
+                    self.text_main.BeginStyle(style)
+                    continue
+                self.text_main.WriteText(part)
+            self.text_main.EndStyle()
+            self.text_main.Newline()
             self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
-        except RuntimeError:
-            pass
 
     def on_text_uri(self, event):
         mouse_event = event.GetMouseEvent()
