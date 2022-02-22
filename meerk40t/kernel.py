@@ -2131,6 +2131,13 @@ class Kernel:
                 else:
                     channel(command_name.split("/")[-1])
 
+        @self.console_command(
+            "echo",
+            help=_("Echo text to console"),
+        )
+        def echo_to_console(channel, remainder, *args, **kwargs):
+            channel(remainder)
+
         @self.console_command("loop", help=_("loop <command>"))
         def loop(remainder=None, **kwargs):
             if remainder:
