@@ -1,8 +1,8 @@
 import unittest
+from test import bootstrap
 
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Circle, Rect
-from test import bootstrap
 
 
 class TestElements(unittest.TestCase):

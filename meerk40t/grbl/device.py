@@ -188,7 +188,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "bedwidth",
                 "object": self,
-                "default": "310mm",
+                "default": "235mm",
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
@@ -196,7 +196,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": "210mm",
+                "default": "235mm",
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
@@ -223,7 +223,18 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
+        ViewPort.__init__(
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            flip_y=True,
+            origin_x=0.0,
+            origin_y=1.0,
+        )
 
         self.settings = dict()
         self.state = 0
@@ -240,7 +251,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "com_port",
                 "object": self,
-                "default": False,
+                "default": "com1",
                 "type": str,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
@@ -378,30 +389,28 @@ class GRBLDevice(Service, ViewPort):
             self.driver.resume()
 
     @property
-    def current_x(self):
+    def current(self):
         """
         @return: the location in nm for the current known x value.
         """
-        return (
-            float(self.driver.native_x * self.driver.stepper_step_size) / self.scale_x
+        return self.device_to_scene_position(
+            self.driver.native_x,
+            self.driver.native_y,
         )
+
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return self.current[0]
 
     @property
     def current_y(self):
         """
         @return: the location in nm for the current known y value.
         """
-        return (
-            float(self.driver.native_y * self.driver.stepper_step_size) / self.scale_y
-        )
-
-    @property
-    def get_native_scale_x(self):
-        return self.scale_x / float(self.driver.stepper_step_size)
-
-    @property
-    def get_native_scale_y(self):
-        return self.scale_y / float(self.driver.stepper_step_size)
+        return self.current[1]
 
 
 class GRBLDriver(Parameters):
@@ -495,11 +504,11 @@ class GRBLDriver(Parameters):
         self.clean()
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
-
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = self.service.scale_x * x / self.stepper_step_size
-        y = self.service.scale_y * y / self.stepper_step_size
+        x, y = self.service.physical_to_device_position(x, y)
+        # x = self.service.length(x, 0)
+        # y = self.service.length(y, 1)
+        # x = self.service.scale_x * x / self.stepper_step_size
+        # y = self.service.scale_y * y / self.stepper_step_size
         self.rapid_mode()
         self.move(x, y)
         new_current_x = self.service.current_x
@@ -516,10 +525,11 @@ class GRBLDriver(Parameters):
         old_current_x = self.service.current_x
         old_current_y = self.service.current_y
 
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = self.service.scale_x * dx / self.stepper_step_size
-        dy = self.service.scale_y * dy / self.stepper_step_size
+        dx, dy = self.service.physical_to_device_length(dx, dy)
+        # dx = self.service.length(dx, 0)
+        # dy = self.service.length(dy, 1)
+        # dx = self.service.scale_x * dx / self.stepper_step_size
+        # dy = self.service.scale_y * dy / self.stepper_step_size
         self.rapid_mode()
         self.move(dx, dy)
 

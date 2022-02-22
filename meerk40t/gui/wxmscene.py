@@ -15,7 +15,18 @@ from meerk40t.gui.scene.scenewidgets import (
     ReticleWidget,
     SelectionWidget,
 )
-from meerk40t.gui.scene.toolwidgets import DrawTool, RectTool, ToolContainer
+from meerk40t.gui.scene.toolwidgets import (
+    CircleTool,
+    DrawTool,
+    EllipseTool,
+    PolygonTool,
+    PolylineTool,
+    RectTool,
+    RelocateTool,
+    TextTool,
+    ToolContainer,
+    VectorTool,
+)
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
@@ -23,7 +34,7 @@ from meerk40t.svgelements import Angle, Length
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_scene(window, context):
     # control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
     # panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
     # control.AddPage(panel1, "scene1")
@@ -90,6 +101,13 @@ class MeerK40tScenePanel(wx.Panel):
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
+        context.register("tool/polyline", PolylineTool)
+        context.register("tool/polygon", PolygonTool)
+        context.register("tool/circle", CircleTool)
+        context.register("tool/ellipse", EllipseTool)
+        context.register("tool/relocate", RelocateTool)
+        context.register("tool/text", TextTool)
+        context.register("tool/vector", VectorTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
@@ -141,7 +159,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoom_y", type=float, help="zoom amount from current"
         )
         @self.context.console_command("aspect", input_type="scene")
-        def scene(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+        def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
             if zoom_x is None or zoom_y is None:
                 raise SyntaxError
             matrix = data.widget_root.scene_widget.matrix
@@ -154,7 +172,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoomfactor", type=float, help="zoom amount from current"
         )
         @self.context.console_command("zoom", input_type="scene")
-        def scene(command, _, channel, data, zoomfactor=1.0, **kwargs):
+        def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoomfactor)
             data.request_refresh()
@@ -168,7 +186,7 @@ class MeerK40tScenePanel(wx.Panel):
             "pan_y", type=float, default=0, help="pan from current position y"
         )
         @self.context.console_command("pan", input_type="scene")
-        def scene(command, _, channel, data, pan_x, pan_y, **kwargs):
+        def scene_pan(command, _, channel, data, pan_x, pan_y, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_translate(pan_x, pan_y)
             data.request_refresh()
@@ -179,7 +197,7 @@ class MeerK40tScenePanel(wx.Panel):
             "angle", type=Angle.parse, default=0, help="Rotate scene"
         )
         @self.context.console_command("rotate", input_type="scene")
-        def scene(command, _, channel, data, angle, **kwargs):
+        def scene_rotate(command, _, channel, data, angle, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_rotate(angle)
             data.request_refresh()
@@ -187,7 +205,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @self.context.console_command("reset", input_type="scene")
-        def scene(command, _, channel, data, **kwargs):
+        def scene_reset(command, _, channel, data, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.reset()
             data.request_refresh()
@@ -199,7 +217,7 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("width", type=str, help="width of view")
         @self.context.console_argument("height", type=str, help="height of view")
         @self.context.console_command("focus", input_type="scene")
-        def scene(command, _, channel, data, x, y, width, height, **kwargs):
+        def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
             x = self.context.device.length(x, 0)
             y = self.context.device.length(y, 1)
             width = self.context.device.length(width, 0)
@@ -231,7 +249,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("modified", self.on_element_modified)
         context.listen("altered", self.on_element_modified)
         context.listen("units", self.space_changed)
-        context("scene focus -10% -10% 110% 110%\n")
+        context("scene focus -4% -4% 104% 104%\n")
 
     def pane_hide(self, *args):
         context = self.context

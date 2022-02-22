@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from ..core.node.laserop import LaserOperation
+from ..core.node.laserop import CutOpNode, EngraveOpNode, ImageOpNode, RasterOpNode
 from ..kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
@@ -145,7 +145,7 @@ class PlannerPanel(wx.Panel):
         elems = []
         cutplan = self.context.planner.default_plan
         for node in cutplan.plan:
-            if type(node) is LaserOperation:
+            if node.type.startswith("op"):
                 objs = [e.object for e in node.children]
                 elems.extend(objs)
         bounds = Group.union_bbox(elems)
@@ -262,7 +262,7 @@ class PlannerPanel(wx.Panel):
             return
         cutplan = self.context.planner.default_plan
         obj = cutplan.plan[node_index]
-        if isinstance(obj, LaserOperation):
+        if isinstance(obj, (RasterOpNode, CutOpNode, EngraveOpNode, ImageOpNode)):
             self.context.open("window/OperationProperty", self, node=obj)
         event.Skip()
 

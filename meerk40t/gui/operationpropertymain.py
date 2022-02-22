@@ -139,16 +139,16 @@ class LayerSettingPanel(wx.Panel):
     def set_widgets(self, node):
         self.operation = node
         if self.operation is not None:
-            op = self.operation.operation
-            if op == "Engrave":
+            op = self.operation.type
+            if op == "op engrave":
                 self.combo_type.SetSelection(0)
-            elif op == "Cut":
+            elif op == "op cut":
                 self.combo_type.SetSelection(1)
-            elif op == "Raster":
+            elif op == "op raster":
                 self.combo_type.SetSelection(2)
-            elif op == "Image":
+            elif op == "op image":
                 self.combo_type.SetSelection(3)
-            elif op == "Dots":
+            elif op == "op dots":
                 for m in self.GetParent().Children:
                     if isinstance(m, wx.Window):
                         m.Hide()
@@ -184,15 +184,15 @@ class LayerSettingPanel(wx.Panel):
 
         select = self.combo_type.GetSelection()
         if select == 0:
-            self.operation.operation = "Engrave"
+            self.context.elements.replace_node(self.operation, type="op engrave")
         elif select == 1:
-            self.operation.operation = "Cut"
+            self.context.elements.replace_node(self.operation, type="op cut")
         elif select == 2:
-            self.operation.operation = "Raster"
+            self.context.elements.replace_node(self.operation, type="op raster")
         elif select == 3:
-            self.operation.operation = "Image"
+            self.context.elements.replace_node(self.operation, type="op image")
         elif select == 4:
-            self.operation.operation = "Dots"
+            self.context.elements.replace_node(self.operation, type="op dots")
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
@@ -844,7 +844,7 @@ class ParameterPanel(wx.Panel):
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
-        if self.operation.operation not in ("Raster", "Image"):
+        if self.operation.type not in ("op raster", "op image"):
             if self.raster_panel.Shown:
                 self.raster_panel.Hide()
         else:

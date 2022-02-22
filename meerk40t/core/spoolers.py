@@ -386,7 +386,7 @@ class Spooler:
                 # There is realtime work.
                 with self._lock:
                     # threadsafe
-                    program = self._realtime_queue.pop()
+                    program = self._realtime_queue.pop(0)
                 if program is not None:
                     # Process all data in the program.
                     self._execute_program(program)
@@ -398,7 +398,7 @@ class Spooler:
                 # There is active work to do.
                 with self._lock:
                     # threadsafe
-                    program = self._queue.pop()
+                    program = self._queue.pop(0)
                 if program is not None:
                     # Process all data in the program.
                     self._execute_program(program)

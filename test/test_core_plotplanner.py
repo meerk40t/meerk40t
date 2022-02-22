@@ -2,11 +2,11 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import Parameters, LineCut, CutCode
-from meerk40t.core.elements import LaserOperation
+from meerk40t.core.cutcode import CutCode, LineCut, Parameters
+from meerk40t.core.node.laserop import EngraveOpNode, RasterOpNode
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Point, SVGImage, Path, Circle
+from meerk40t.svgelements import Circle, Path, Point, SVGImage
 
 
 class TestPlotplanner(unittest.TestCase):
@@ -32,11 +32,7 @@ class TestPlotplanner(unittest.TestCase):
         for i in range(211):
             plan.push(LineCut(Point(0, 0), Point(5, 100), settings=settings))
             plan.push(LineCut(Point(100, 50), Point(0, 0), settings=settings))
-            plan.push(
-                LineCut(
-                    Point(50, -50), Point(100, -100), settings={"power": 0}
-                )
-            )
+            plan.push(LineCut(Point(50, -50), Point(100, -100), settings={"power": 0}))
             q = 0
             for x, y, on in plan.gen():
                 # print(x, y, on)
@@ -66,19 +62,19 @@ class TestPlotplanner(unittest.TestCase):
         :return:
         """
 
-        rasterop = LaserOperation(operation="Raster")
+        rasterop = RasterOpNode()
         svg_image = SVGImage()
         svg_image.image = Image.new("RGBA", (256, 256))
         draw = ImageDraw.Draw(svg_image.image)
         draw.ellipse((0, 0, 255, 255), "black")
-        rasterop.add(svg_image, type="opnode")
+        rasterop.add(svg_image, type="ref elem")
 
-        vectorop = LaserOperation(operation="Engrave")
-        vectorop.add(Path(Circle(cx=127, cy=127, r=128, fill="black")), type="opnode")
+        vectorop = EngraveOpNode()
+        vectorop.add(Path(Circle(cx=127, cy=127, r=128, fill="black")), type="ref elem")
         cutcode = CutCode()
         cutcode.extend(vectorop.as_cutobjects())
         cutcode.extend(rasterop.as_cutobjects())
-        settings = { "power": 500}
+        settings = {"power": 500}
         plan = PlotPlanner(settings)
         for c in cutcode.flat():
             plan.push(c)

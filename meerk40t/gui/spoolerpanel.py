@@ -9,7 +9,7 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -172,7 +172,7 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         pass
                     try:
-                        self.list_job_spool.SetItem(m, 3, e.operation)
+                        self.list_job_spool.SetItem(m, 3, str(e))
                     except AttributeError:
                         pass
                     try:
@@ -234,7 +234,7 @@ class JobSpooler(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("wxpane/JobSpooler", register_panel)
+        kernel.register("wxpane/JobSpooler", register_panel_spooler)
         kernel.register(
             "button/control/Spooler",
             {

@@ -36,6 +36,8 @@ BOOL_PARAMETERS = (
     "shift_enabled",
     "raster_swing",
     "advanced",
+    "raster_alt",
+    "force_twitchless",
 )
 
 
@@ -76,15 +78,19 @@ class Parameters:
     def color(self):
         color = self.settings.get("color")
         if color is None:
-            if self.operation == "Cut":
+            try:
+                type = self.type
+            except AttributeError:
+                type = None
+            if type == "op cut":
                 return Color("red")
-            elif self.operation == "Engrave":
+            elif type == "op engrave":
                 return Color("blue")
-            elif self.operation == "Raster":
+            elif type == "op raster":
                 return Color("black")
-            elif self.operation == "Image":
+            elif type == "op image":
                 return Color("transparent")
-            elif self.operation == "Dots":
+            elif type == "op dots":
                 return Color("transparent")
             else:
                 return Color("white")
@@ -97,14 +103,6 @@ class Parameters:
         if isinstance(value, Color):
             value = value.hexa
         self.settings["color"] = value
-
-    @property
-    def operation(self):
-        return self.settings.get("operation", "Unknown")
-
-    @operation.setter
-    def operation(self, value):
-        self.settings["operation"] = value
 
     @property
     def default(self):
@@ -124,7 +122,11 @@ class Parameters:
 
     @property
     def raster_step(self):
-        return self.settings.get("raster_step", 2 if self.operation == "Raster" else 0)
+        try:
+            type = self.type
+        except AttributeError:
+            type = None
+        return self.settings.get("raster_step", 2 if type == "op raster" else 0)
 
     @raster_step.setter
     def raster_step(self, value):
@@ -142,15 +144,19 @@ class Parameters:
     def speed(self):
         speed = self.settings.get("speed")
         if speed is None:
-            if self.operation == "Cut":
+            try:
+                type = self.type
+            except AttributeError:
+                type = None
+            if type == "op cut":
                 return 10.0
-            elif self.operation == "Engrave":
+            elif type == "op engrave":
                 return 35.0
-            elif self.operation == "Raster":
+            elif type == "op raster":
                 return 150.0
-            elif self.operation == "Image":
+            elif type == "op image":
                 return 150.0
-            elif self.operation == "Dots":
+            elif type == "op dots":
                 return 35.0
             else:
                 return 10.0
@@ -371,3 +377,19 @@ class Parameters:
         return self.raster_step and (
             self.raster_direction == 2 or self.raster_direction == 3
         )
+
+    @property
+    def raster_alt(self):
+        return self.settings.get("raster_alt", False)
+
+    @raster_alt.setter
+    def raster_alt(self, value):
+        self.settings["raster_alt"] = value
+
+    @property
+    def force_twitchless(self):
+        return self.settings.get("force_twitchless", False)
+
+    @force_twitchless.setter
+    def force_twitchless(self, value):
+        self.settings["force_twitchless"] = value

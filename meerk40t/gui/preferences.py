@@ -263,7 +263,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             565,
-            347,
+            367,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX

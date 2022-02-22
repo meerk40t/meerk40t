@@ -1,4 +1,4 @@
-from meerk40t.camera.gui.camerapanel import CameraInterface, register_panel
+from meerk40t.camera.gui.camerapanel import CameraInterface, register_panel_camera
 
 try:
     import wx
@@ -13,4 +13,4 @@ def plugin(kernel, lifecycle):
     #     return "provider/camera/mk"
     if lifecycle == "register":
         kernel.register("window/CameraInterface", CameraInterface)
-        kernel.register("wxpane/CameraPane", register_panel)
+        kernel.register("wxpane/CameraPane", register_panel_camera)

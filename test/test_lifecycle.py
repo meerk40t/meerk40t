@@ -6,9 +6,7 @@ state = 0
 
 
 class TestLifeCycle(unittest.TestCase):
-
     def test_kernel_lifecycle(self):
-
         def lifecycle_test(obj=None, lifecycle=None):
             global state
             if lifecycle == "preregister":
@@ -62,7 +60,7 @@ class TestLifeCycle(unittest.TestCase):
                 self.assertEquals(state, 15)
                 state = 16
             print(lifecycle)
+
         kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t")
         kernel.add_plugin(lifecycle_test)
         kernel()
-

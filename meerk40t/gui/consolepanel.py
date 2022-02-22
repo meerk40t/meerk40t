@@ -7,7 +7,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
@@ -158,7 +158,7 @@ class Console(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("wxpane/Console", register_panel)
+        kernel.register("wxpane/Console", register_panel_console)
         kernel.register(
             "button/project/Console",
             {

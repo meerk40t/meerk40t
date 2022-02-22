@@ -84,6 +84,7 @@ class CutObject(Parameters):
             # so don't bother looping
             if burns == 0:
                 self.parent._burns_done = 0
+                self.parent.burn_started = False
                 return
             for o in self.parent:
                 burns = min(burns, o._burns_done)
@@ -310,6 +311,9 @@ class CutGroup(list, CutObject, ABC):
                 candidates = list(self)
 
         for grp in candidates:
+            # Do not burn this CutGroup if it contains unburned groups
+            # Contains is only set when Cut Inner First is set, so this
+            # so when not set this does nothing.
             if grp.contains_unburned_groups():
                 continue
             # If we are only burning complete subpaths then
@@ -327,9 +331,7 @@ class CutGroup(list, CutObject, ABC):
             # or this is a closed path
             # then we should yield all segments.
             for seg in grp.flat():
-                if seg is None:
-                    continue
-                if seg.burns_done < seg.passes:
+                if seg is not None and seg.burns_done < seg.passes:
                     yield seg
 
 
@@ -337,7 +339,6 @@ class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
-        self.operation = "CutCode"
 
         self.travel_speed = 20.0
         self.mode = None
@@ -492,6 +493,11 @@ class CutCode(CutGroup):
                 cutcode.append(cut)
                 x = nx
                 y = ny
+            elif cmd == "dwell":
+                time = code[1]
+                cut = DwellCut(x, y, time)
+                cutcode.append(cut)
+
         return cutcode
 
     def reordered(self, order):
@@ -532,6 +538,7 @@ class LineCut(CutObject):
         self.raster_step = 0
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start
         end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
@@ -565,6 +572,7 @@ class QuadCut(CutObject):
         return Point.distance(self.start, self.c()) + Point.distance(self.c(), self.end)
 
     def generator(self):
+        # pylint: disable=unsubscriptable-object
         start = self.start
         c = self.c()
         end = self.end
@@ -799,4 +807,275 @@ class RawCut(CutObject):
         self._end_y = value[1]
 
     def generator(self):
+        return self.plot
+
+
+class DwellCut(CutObject):
+    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            start_point,
+            end_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        # TODO: There is no indication this will work.
+        yield "rapid_mode"
+        start = self.start
+        yield "move_abs", start[0], start[1]
+        yield "dwell", self.dwell_time
+
+    def generator(self):
+        start = self.start
+        end = self.end
+        return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
+
+
+class PlotCut(CutObject):
+    """
+    Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
+    to each other and can be any distance apart. This is a compact way of writing a large series of line positions.
+
+    There is a raster-create value.
+    """
+
+    def __init__(self, settings=None):
+        CutObject.__init__(self, settings=settings)
+        self.plot = []
+        self.max_dx = None
+        self.max_dy = None
+        self.min_x = None
+        self.min_y = None
+        self.max_x = None
+        self.max_y = None
+        self.v_raster = False
+        self.h_raster = False
+        self.travels_top = False
+        self.travels_bottom = False
+        self.travels_right = False
+        self.travels_left = False
+
+    def __len__(self):
+        return len(self.plot)
+
+    def __str__(self):
+        parts = list()
+        parts.append("{points} points".format(points=len(self.plot)))
+        parts.append("xmin: {v}".format(v=self.min_x))
+        parts.append("ymin: {v}".format(v=self.min_y))
+        parts.append("xmax: {v}".format(v=self.max_x))
+        parts.append("ymax: {v}".format(v=self.max_y))
+        return "PlotCut(%s)" % ", ".join(parts)
+
+    def check_if_rasterable(self):
+        """
+        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+
+        @return: whether the plot can travel
+        """
+        self.settings.raster_alt = False
+        self.settings.raster_step = 0
+        self.settings.force_twitchless = True
+        if (
+            not self.travels_left
+            and not self.travels_right
+            and not self.travels_bottom
+            and not self.travels_top
+        ):
+            return False
+        if 0 < self.max_dx <= 15:
+            self.v_raster = True
+        elif 0 < self.max_dy <= 15:
+            self.h_raster = True
+        else:
+            return False
+        self.settings.raster_step = min(self.max_dx, self.max_dy)
+        self.settings.raster_alt = True
+        return True
+
+    def plot_extend(self, plot):
+        for x, y, laser in plot:
+            self.plot_append(x, y, laser)
+
+    def plot_append(self, x, y, laser):
+        if self.plot:
+            last_x, last_y, last_laser = self.plot[-1]
+            dx = x - last_x
+            dy = y - last_y
+            if self.max_dx is None or abs(dx) > self.max_dx:
+                self.max_dx = abs(dx)
+            if self.max_dy is None or abs(dy) > self.max_dy:
+                self.max_dy = abs(dy)
+            if dy > 0:
+                self.travels_bottom = True
+            if dy < 0:
+                self.travels_top = True
+            if dx > 0:
+                self.travels_right = True
+            if dx < 0:
+                self.travels_left = True
+
+        self.plot.append((x, y, laser))
+        if self.min_x is None or x < self.min_x:
+            self.min_x = x
+        if self.min_y is None or y < self.min_y:
+            self.min_y = y
+        if self.max_x is None or x > self.max_x:
+            self.max_x = x
+        if self.max_y is None or y > self.max_y:
+            self.max_y = y
+
+    def major_axis(self):
+        if self.h_raster:
+            return 0
+        if self.v_raster:
+            return 1
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if abs(start.x - end.x) > abs(start.y - end.y):
+            return 0  # X-Axis
+        else:
+            return 1  # Y-Axis
+
+    def x_dir(self):
+        if self.travels_left and not self.travels_right:
+            return -1  # right
+        if self.travels_right and not self.travels_left:
+            return 1  # left
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.x < end.x:
+            return 1
+        else:
+            return -1
+
+    def y_dir(self):
+        if self.travels_top and not self.travels_bottom:
+            return -1  # top
+        if self.travels_bottom and not self.travels_top:
+            return 1  # bottom
+
+        if len(self.plot) < 2:
+            return 0
+        start = Point(self.plot[0])
+        end = Point(self.plot[1])
+        if start.y < end.y:
+            return 1
+        else:
+            return -1
+
+    def upper(self):
+        return self.min_x
+
+    def lower(self):
+        return self.max_x
+
+    def left(self):
+        return self.min_y
+
+    def right(self):
+        return self.max_y
+
+    def length(self):
+        length = 0
+        last_x = None
+        last_y = None
+        for x, y, on in self.plot:
+            if last_x is not None:
+                length += Point.distance((x, y), (last_x, last_y))
+            last_x = 0
+            last_y = 0
+        return length
+
+    def reverse(self):
+        self.plot = list(reversed(self.plot))
+
+    def start(self):
+        try:
+            return Point(self.plot[0][:2])
+        except IndexError:
+            return None
+
+    def end(self):
+        try:
+            return Point(self.plot[-1][:2])
+        except IndexError:
+            return None
+
+    def generator(self):
+        last_xx = None
+        last_yy = None
+        ix = 0
+        iy = 0
+        # last_dx = None
+        # last_dy = None
+        for x, y, on in self.plot:
+            idx = int(round(x - ix))
+            idy = int(round(y - iy))
+            ix += idx
+            iy += idy
+            if last_xx is not None:
+                # if self.horizontal_raster and idx:
+                #     if idx > 0 > last_dx or idx < 0 < last_dx:
+                #         # If this idx is different direction as the last one, we step y first
+                #         if idy:
+                #             # step y
+                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
+                #                 yield zx, zy, on
+                #         # step x
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, iy, ix, iy):
+                #             yield zx, zy, on
+                #     else:
+                #         # If this idx is the same direction as the last one, we step x first
+                #         # step x
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                #             yield zx, zy, on
+                #         if idy:
+                #             # step y
+                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #                 yield zx, zy, on
+                # elif self.vertical_raster and idy:
+                #     if idy > 0 > last_dy or idy < 0 < last_dy:
+                #         # If this idy is different direction as the last one, we step x first
+                #         if idx:
+                #             # step x
+                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
+                #                 yield zx, zy, on
+                #         # step y
+                #         for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #             yield zx, zy, on
+                #     else:
+                #         # If this idy is the same direction as the last one, we step y first
+                #         # step y
+                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
+                #             yield zx, zy, on
+                #         if idx:
+                #             #step y
+                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
+                #                 yield zx, zy, on
+                # else:
+                #     # Non-raster go directly to result.
+                for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
+                    yield zx, zy, on
+            last_xx = ix
+            last_yy = iy
+            # last_dx = idx
+            # last_dy = idy
+
         return self.plot

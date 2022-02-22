@@ -1,6 +1,11 @@
 import unittest
 
-from meerk40t.lihuiyu.laserspeed import LaserSpeed, get_speed_from_code, get_code_from_speed, decode_16bit
+from meerk40t.lihuiyu.laserspeed import (
+    LaserSpeed,
+    decode_16bit,
+    get_code_from_speed,
+    get_speed_from_code,
+)
 
 codes = (
     "CV0051131001065112C M2 0.4 0",
@@ -3082,9 +3087,7 @@ class TestLaserSpeeds(unittest.TestCase):
             board = values[1]
             mm_per_second = float(values[2])
             step_amount = int(values[3])
-            created_speedcode = get_code_from_speed(
-                mm_per_second, step_amount, board
-            )
+            created_speedcode = get_code_from_speed(mm_per_second, step_amount, board)
             # print("%s %s ~= %s" % (board, created_speedcode, speed_code))
             if "G" in speed_code:
                 self.assertAlmostEqual(
@@ -3110,9 +3113,7 @@ class TestLaserSpeeds(unittest.TestCase):
             board = values[1]
             mm_per_second = float(values[2])
             step_amount = int(values[3])
-            created_speedcode = get_code_from_speed(
-                mm_per_second, step_amount, board
-            )
+            created_speedcode = get_code_from_speed(mm_per_second, step_amount, board)
             # print("%s %s ~= %s" % (board, created_speedcode, speed_code))
             if "G" in speed_code:
                 self.assertEqual(created_speedcode[7], speed_code[7])
@@ -3132,9 +3133,7 @@ class TestLaserSpeeds(unittest.TestCase):
                 continue
             mm_per_second = float(values[2])
             step_amount = int(values[3])
-            created_speedcode = get_code_from_speed(
-                mm_per_second, step_amount, board
-            )
+            created_speedcode = get_code_from_speed(mm_per_second, step_amount, board)
             # print("%s %s ~= %s" % (board, created_speedcode, speed_code))
             if "G" in speed_code:
                 continue
@@ -3154,9 +3153,7 @@ class TestLaserSpeeds(unittest.TestCase):
                 continue
             mm_per_second = float(values[2])
             step_amount = int(values[3])
-            created_speedcode = get_code_from_speed(
-                mm_per_second, step_amount, board
-            )
+            created_speedcode = get_code_from_speed(mm_per_second, step_amount, board)
             # print("%s %s ~= %s" % (board, created_speedcode, speed_code))
             if "G" in speed_code:
                 continue
@@ -3205,9 +3202,7 @@ class TestLaserSpeeds(unittest.TestCase):
             for i in range(0, 25000, 7):
                 speed = i / 100.0
                 i_speed = speed
-                speed_code = get_code_from_speed(
-                    speed, board=board, fix_lows=True
-                )
+                speed_code = get_code_from_speed(speed, board=board, fix_lows=True)
                 # print("%s %f %f %f = %s" % (board, i_speed, speed, validated_speed, speed_code))
                 if speed_code[-1] == "C":
                     speed_code = speed_code[:-1]
@@ -3278,9 +3273,7 @@ class TestLaserSpeeds(unittest.TestCase):
         for board in boards:
             for i in range(140, 5000, 3):
                 speed = i / 10.0
-                speed_code = get_code_from_speed(
-                    speed, raster_step=2, board=board
-                )
+                speed_code = get_code_from_speed(speed, raster_step=2, board=board)
                 determined_speed = get_speed_from_code(speed_code, board)
                 # print("%s %s  %f ~= %f" % (board, speed_code, speed, determined_speed))
                 self.assertAlmostEqual(determined_speed, speed, delta=speed / 100)
@@ -3302,9 +3295,7 @@ class TestLaserSpeeds(unittest.TestCase):
         flaw = 0.919493599053179
         for i in range(1, 1000):
             speed = i / 10.0
-            speed_code = get_code_from_speed(
-                speed, board="M2", fix_speeds=False
-            )
+            speed_code = get_code_from_speed(speed, board="M2", fix_speeds=False)
             determined_speed = get_speed_from_code(
                 speed_code, board="M2", fix_speeds=True
             )

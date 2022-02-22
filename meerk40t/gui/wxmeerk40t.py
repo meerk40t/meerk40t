@@ -66,6 +66,7 @@ _ = wx.GetTranslation
 
 
 def plugin(kernel, lifecycle):
+    # pylint: disable=global-statement
     global GUI_START
     kernel_root = kernel.root
     if lifecycle == "init" and kernel.args.no_gui:
@@ -363,8 +364,10 @@ supported_languages = (
     ("es", "español", wx.LANGUAGE_SPANISH),
     ("zh", "中文", wx.LANGUAGE_CHINESE),
     ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt", "português", wx.LANGUAGE_PORTUGUESE),
-    ("pt-br", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
+    ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    ("ja", "日本", wx.LANGUAGE_JAPANESE),
+    ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
 )
 
 
@@ -485,42 +488,34 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
 
-        from meerk40t.gui.wxmribbon import register_panel
+        from meerk40t.gui.wxmribbon import register_panel_ribbon
 
-        kernel.register("wxpane/Ribbon", register_panel)
+        kernel.register("wxpane/Ribbon", register_panel_ribbon)
 
-        from meerk40t.gui.wxmscene import register_panel
+        from meerk40t.gui.wxmscene import register_panel_scene
 
-        kernel.register("wxpane/ScenePane", register_panel)
+        kernel.register("wxpane/ScenePane", register_panel_scene)
 
-        from meerk40t.gui.wxmtree import register_panel
+        from meerk40t.gui.wxmtree import register_panel_tree
 
-        kernel.register("wxpane/Tree", register_panel)
+        kernel.register("wxpane/Tree", register_panel_tree)
 
-        from meerk40t.gui.laserpanel import register_panel
+        from meerk40t.gui.laserpanel import register_panel_laser
 
-        kernel.register("wxpane/LaserPanel", register_panel)
+        kernel.register("wxpane/LaserPanel", register_panel_laser)
 
-        from meerk40t.gui.position import register_panel
+        from meerk40t.gui.position import register_panel_position
 
-        kernel.register("wxpane/Position", register_panel)
+        kernel.register("wxpane/Position", register_panel_position)
+        #
+        # if kernel.root.setting(bool, "developer_mode", False):
+        from meerk40t.gui.auitoolbars import register_toolbars
 
-        if kernel.root.setting(bool, "developer_mode", False):
-            from meerk40t.gui.auitoolbars import register_toolbars
+        kernel.register("wxpane/Toolbars", register_toolbars)
 
-            kernel.register("wxpane/Toolbars", register_toolbars)
-            #
-            # from meerk40t.gui.toolbarmodify import register_modify_tools
-            #
-            # kernel.register("wxpane/Tool-Modify", register_modify_tools)
-            #
-            # from meerk40t.gui.toolbaralign import register_align_tools
-            #
-            # kernel.register("wxpane/Tool-Align", register_align_tools)
-            #
-            # from meerk40t.gui.toolbarshapes import register_shapes_tools
-            #
-            # kernel.register("wxpane/Tool-Shape", register_shapes_tools)
+        from meerk40t.gui.toolbaralign import register_align_tools
+
+        kernel.register("wxpane/Tool-Align", register_align_tools)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
@@ -705,6 +700,7 @@ class wxMeerK40t(wx.App, Module):
         kernel = context.kernel
 
         try:  # pyinstaller internal location
+            # pylint: disable=no-member
             _resource_path = os.path.join(sys._MEIPASS, "locale")
             wx.Locale.AddCatalogLookupPathPrefix(_resource_path)
         except Exception:

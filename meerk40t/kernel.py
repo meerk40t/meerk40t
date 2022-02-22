@@ -1153,8 +1153,6 @@ class Kernel(Settings):
 
         @return:
         """
-        import datetime
-        import functools
         import types
 
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
@@ -2102,7 +2100,8 @@ class Kernel(Settings):
             if channel:
                 channel(_("Suspended Signal: %s for %s" % (code, message)))
 
-        self.signal = signal  # redefine signal function.
+        # pylint: disable=method-hidden
+        self.signal = signal  # redefine signal function, hidden by design
 
         def console(code):
             if channel:
@@ -2110,7 +2109,8 @@ class Kernel(Settings):
                     if c:
                         channel(_("Suspended Command: %s" % c))
 
-        self.console = console  # redefine console signal
+        # pylint: disable=method-hidden
+        self.console = console  # redefine console signal, hidden by design
 
         self.process_queue()  # Process last events.
 
@@ -3030,6 +3030,10 @@ class Kernel(Settings):
                     break
                 except SyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
+
+                    # ToDo
+                    # Don't use command help, which is or should be descriptive - use command syntax instead
+                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
@@ -3407,7 +3411,7 @@ class Kernel(Settings):
             return
 
         @self.console_command("plugin", _("list loaded plugins in kernel"))
-        def plugins(channel, _, args=tuple(), **kwargs):
+        def plugin(channel, _, args=tuple(), **kwargs):
             if len(args) == 0:
                 plugins = self._kernel_plugins
                 channel(_("Kernel Plugins:"))
@@ -3854,6 +3858,7 @@ class Kernel(Settings):
                 import sys
 
                 if hasattr(sys, "_MEIPASS"):
+                    # pylint: disable=no-member
                     self.current_directory = sys._MEIPASS
                     channel(_("Internal Directory"))
                     return

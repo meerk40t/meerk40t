@@ -1,6 +1,8 @@
 import re
 from copy import copy
 
+from meerk40t.svgelements import Matrix
+
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-12
@@ -8,6 +10,7 @@ DEFAULT_PPI = 96.0
 
 NM_PER_INCH = 25400000
 NM_PER_MIL = 25400
+NM_PER_NM = 1
 NM_PER_uM = 1000
 NM_PER_MM = 1000000
 NM_PER_CM = 10000000
@@ -19,6 +22,7 @@ UNITS_PER_MIL = NM_PER_MIL
 UNITS_PER_uM = NM_PER_uM
 UNITS_PER_MM = NM_PER_MM
 UNITS_PER_CM = NM_PER_CM
+UNITS_PER_NM = NM_PER_NM
 UNITS_PER_PIXEL = UNITS_PER_INCH / DEFAULT_PPI
 PX_PER_UNIT = DEFAULT_PPI / UNITS_PER_INCH
 
@@ -40,21 +44,129 @@ nanometers.
 
 class ViewPort:
     """
-    The x, y, width and height are of the viewport are stored in nm. These are converted to mk native units
+    The width and height are of the viewport are stored in MK native units (nm).
+
+    Origin_x and origin_y are the location of the home position in unit square values.
+    This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
+
+    user_scale is a scale factor for applied by the user rather than the driver.
+
+    native_scale is the scale factor of the driver units to MK native units
+
+    flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
     """
 
-    def __init__(self, x, y, width, height):
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
-        self.set_params(x, y, width, height)
+    def __init__(
+        self,
+        width,
+        height,
+        origin_x=0.0,
+        origin_y=0.0,
+        user_scale_x=1.0,
+        user_scale_y=1.0,
+        native_scale_x=1.0,
+        native_scale_y=1.0,
+        flip_x=False,
+        flip_y=False,
+        swap_xy=False,
+    ):
+        self.width = width
+        self.height = height
+        self.origin_x = origin_x
+        self.origin_y = origin_y
+        self.user_scale_x = user_scale_x
+        self.user_scale_y = user_scale_y
+        self.native_scale_x = native_scale_x
+        self.native_scale_y = native_scale_y
+        self.flip_x = flip_x
+        self.flip_y = flip_y
+        self.swap_xy = swap_xy
 
-    def set_params(self, x, y, width, height):
-        self.x = Length(x).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.y = Length(y).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.width = Length(width).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self.height = Length(height).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._width = None
+        self._height = None
+        self._offset_x = None
+        self._offset_y = None
+        self._scale_x = None
+        self._scale_y = None
+        self.realize()
+
+    def realize(self):
+        self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._offset_x = self._width * self.origin_x
+        self._offset_y = self._height * self.origin_y
+        self._scale_x = self.user_scale_x * self.native_scale_x
+        self._scale_y = self.user_scale_y * self.native_scale_y
+
+    def physical_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into viewport units.
+
+        @param x:
+        @param y:
+        @param as_float:
+        @param unitless:
+        @return:
+        """
+        nm_x = Length(x).value(
+            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
+        )
+        nm_y = Length(y).value(
+            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
+        )
+        return nm_x, nm_y
+
+    def physical_to_device_position(self, x, y, unitless=UNITS_PER_NM):
+        """
+        Converts an X,Y position into viewport units.
+        @param x:
+        @param y:
+        @param unitless:
+        @return:
+        """
+        x,y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y, unitless)
+
+    def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
+        """
+        Converts an X,Y position into dx, dy.
+        @param x:
+        @param y:
+        @param unitless:
+        @return:
+        """
+        x0, y0 = self.physical_to_device_position(0,0, unitless)
+        x, y = self.physical_to_device_position(x, y, unitless)
+        return x - x0, y - y0
+
+    def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
+        m = Matrix(self.device_to_scene_matrix())
+        point = m.point_in_matrix_space((x,y))
+        return point.x, point.y
+
+    def scene_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
+        m = Matrix(self.scene_to_device_matrix())
+        point = m.point_in_matrix_space((x,y))
+        return point.x, point.y
+
+    def scene_to_device_matrix(self):
+        ops = []
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self._scale_x != 1.0 or self._scale_y != 1.0:
+            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
+        if self._offset_x != 0 or self._offset_y != 0:
+            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+        if self.swap_xy:
+            ops.append("scale(-1.0, -1.0) rotate(180deg)")
+        return " ".join(ops)
+
+    def device_to_scene_matrix(self):
+        m = Matrix(self.scene_to_device_matrix())
+        m.inverse()
+        return m
 
     def length(
         self,
@@ -70,6 +182,8 @@ class ViewPort:
         Axis 1 is Y
 
         Axis -1 is 1D in x, y space. eg. a line width.
+
+        Convert a length of distance {value} to new native values.
 
         @param value:
         @param axis:
@@ -113,16 +227,16 @@ class ViewPort:
             return False
         if y >= self.height:
             return False
-        if x < self.x:
+        if x < 0:
             return False
-        if y < self.y:
+        if y < 0:
             return False
         return True
 
     def bbox(self):
         return (
-            self.x,
-            self.y,
+            0,
+            0,
             self.width,
             self.height,
         )
@@ -684,6 +798,10 @@ class Length(object):
             if ppi is None:
                 return self
             return self.amount * ppi * 0.393701
+        if self.units == "nm":
+            if ppi is None:
+                return self
+            return self.amount * ppi * 3.93701e-8
         if self.units == "in":
             if ppi is None:
                 return self

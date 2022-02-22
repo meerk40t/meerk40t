@@ -1,12 +1,21 @@
 import os
+import platform
 import sys
+from functools import partial
 
 import wx
+from PIL import Image
 from wx import aui
 
 from ..core.cutcode import CutCode
 from ..core.node.consoleop import ConsoleOperation
-from ..core.node.laserop import LaserOperation
+from ..core.node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 from ..core.units import UNITS_PER_INCH
 from ..kernel import ConsoleFunction, lookup_listener, signal_listener
 from ..svgelements import (
@@ -21,14 +30,25 @@ from ..svgelements import (
 )
 from .icons import (
     icon_meerk40t,
+    icons8_circle_50,
+    icons8_cursor_50,
     icons8_emergency_stop_button_50,
     icons8_flip_vertical,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
+    icons8_oval_50,
     icons8_pause_50,
+    icons8_pencil_drawing_50,
+    icons8_place_marker_50,
+    icons8_polygon_50,
+    icons8_polyline_50,
+    icons8_rectangular_50,
     icons8_save_50,
+    icons8_type_50,
+    icons8_union_50,
+    icons8_vector_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -128,9 +148,7 @@ ID_IRC = wx.NewId()
 
 
 class MeerK40t(MWindow):
-    """
-    MeerK40t main window
-    """
+    """MeerK40t main window"""
 
     def __init__(self, *args, **kwds):
         width, height = wx.DisplaySize()
@@ -141,6 +159,7 @@ class MeerK40t(MWindow):
         except AttributeError:
             # Not WX 4.1
             pass
+
         self.context.gui = self
         self.usb_running = False
         context = self.context
@@ -173,13 +192,25 @@ class MeerK40t(MWindow):
         self._mgr.SetManagedWindow(self)
 
         self.__set_panes()
-        self.__set_dialogs()
+        self.__set_commands()
 
         # Menu Bar
         self.main_menubar = wx.MenuBar()
-        self.__set_menubar()
+        self.__set_menubars()
 
-        self.main_statusbar = self.CreateStatusBar(3)
+        self.main_statusbar = self.CreateStatusBar(4)
+        self.main_statusbar.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
+        )
+        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        self.SetStatusBarPane(0)
+        self.main_statusbar.SetStatusText(_("Status..."), 0)
+        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
+        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
+        self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
+        self.DoGiveHelp_called = False
+        self.menus_open = 0
+        self.top_menu = None  # Needed because event.GetMenu is None for submenu titles
 
         self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
 
@@ -202,7 +233,9 @@ class MeerK40t(MWindow):
         """
         gui = self
         root = self.context.root
-        if isinstance(node, LaserOperation):
+        if isinstance(
+            node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+        ):
             root.open("window/OperationProperty", gui, node=node)
             return
         if isinstance(node, ConsoleOperation):
@@ -266,7 +299,143 @@ class MeerK40t(MWindow):
             },
         )
 
-    def __set_dialogs(self):
+        kernel.register(
+            "button/tools/Scene",
+            {
+                "label": _("Regular Scene"),
+                "icon": icons8_cursor_50,
+                "tip": _("Regular selection tool"),
+                "action": lambda v: kernel.elements("tool none\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Relocate",
+            {
+                "label": _("Set Position"),
+                "icon": icons8_place_marker_50,
+                "tip": _("Set position to given location"),
+                "action": lambda v: kernel.elements("tool relocate\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Draw",
+            {
+                "label": _("Draw"),
+                "icon": icons8_pencil_drawing_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool draw\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/ellipse",
+            {
+                "label": _("Ellipse"),
+                "icon": icons8_oval_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool ellipse\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/circle",
+            {
+                "label": _("Circle"),
+                "icon": icons8_circle_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool circle\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Polygon",
+            {
+                "label": _("Polygon"),
+                "icon": icons8_polygon_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool polygon\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Polyline",
+            {
+                "label": _("Polyline"),
+                "icon": icons8_polyline_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool polyline\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Rectangle",
+            {
+                "label": _("Rectangle"),
+                "icon": icons8_rectangular_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool rect\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Vector",
+            {
+                "label": _("Vector"),
+                "icon": icons8_vector_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool vector\n"),
+            },
+        )
+
+        kernel.register(
+            "button/tools/Text",
+            {
+                "label": _("Text"),
+                "icon": icons8_type_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool text\n"),
+            },
+        )
+        kernel.register(
+            "button/geometry/Union",
+            {
+                "label": _("Union"),
+                "icon": icons8_union_50,
+                "tip": _("Create a union of the selected elements"),
+                "action": lambda v: kernel.elements("element union\n"),
+            },
+        )
+        kernel.register(
+            "button/geometry/Difference",
+            {
+                "label": _("Difference"),
+                "icon": icons8_union_50,
+                "tip": _("Create a difference of the selected elements"),
+                "action": lambda v: kernel.elements("element difference\n"),
+            },
+        )
+        kernel.register(
+            "button/geometry/Xor",
+            {
+                "label": _("Xor"),
+                "icon": icons8_union_50,
+                "tip": _("Create a xor of the selected elements"),
+                "action": lambda v: kernel.elements("element xor\n"),
+            },
+        )
+        kernel.register(
+            "button/geometry/Intersection",
+            {
+                "label": _("Intersection"),
+                "icon": icons8_union_50,
+                "tip": _("Create a intersection of the selected elements"),
+                "action": lambda v: kernel.elements("element intersection\n"),
+            },
+        )
+
+    def __set_commands(self):
         context = self.context
         gui = self
 
@@ -521,7 +690,9 @@ class MeerK40t(MWindow):
             self._mgr.LoadPerspective(self.context.perspective)
 
         self.on_config_panes()
+        self.__console_commands()
 
+    def __console_commands(self):
         context = self.context
 
         @context.console_command(
@@ -529,7 +700,7 @@ class MeerK40t(MWindow):
             help=_("control various panes for main window"),
             output_type="panes",
         )
-        def pane(**kwargs):
+        def panes(**kwargs):
             return "panes", self
 
         @context.console_argument("pane", help=_("pane to be shown"))
@@ -581,7 +752,6 @@ class MeerK40t(MWindow):
             _pane.Float()
             _pane.Show()
             _pane.Dockable(not always)
-            print(_pane.IsDockable())
             self._mgr.Update()
 
         @context.console_command(
@@ -605,7 +775,7 @@ class MeerK40t(MWindow):
             input_type="panes",
             help=_("unlock the panes"),
         )
-        def lock_pane(command, _, channel, **kwargs):
+        def unlock_pane(command, _, channel, **kwargs):
             self.on_pane_lock(None, lock=False)
 
         @context.console_argument("pane", help=_("pane to create"))
@@ -907,7 +1077,18 @@ class MeerK40t(MWindow):
             id=ID_MENU_WINDOW_RESET,
         )
 
-    def __set_menubar(self):
+    def __set_menubars(self):
+        self.__set_file_menu()
+        self.__set_view_menu()
+        self.__set_pane_menu()
+        self.__set_tool_menu()
+        self.__set_window_menu()
+        self.__set_help_menu()
+        self.__set_menu_binds()
+        self.add_language_menu()
+        self.__set_draw_modes()
+
+    def __set_file_menu(self):
         self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
@@ -922,13 +1103,12 @@ class MeerK40t(MWindow):
         self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
         self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
         self.file_menu.AppendSeparator()
-        import platform
-
         if platform.system() == "Darwin":
             self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
         self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
         self.main_menubar.Append(self.file_menu, _("File"))
 
+    def __set_view_menu(self):
         # ==========
         # VIEW MENU
         # ==========
@@ -936,8 +1116,10 @@ class MeerK40t(MWindow):
 
         self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
         self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_SIZE, _("Zoom to &Selected"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed"), "")
+        self.view_menu.Append(
+            ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), ""
+        )
+        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), "")
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
@@ -986,25 +1168,28 @@ class MeerK40t(MWindow):
 
         self.main_menubar.Append(self.view_menu, _("View"))
 
+    def __set_pane_menu(self):
         # ==========
         # PANE MENU
         # ==========
         self.dynamic_fill_pane_menu()
+
+    def __set_tool_menu(self):
         # ==========
         # TOOL MENU
         # ==========
 
         self.dynamic_fill_window_menu()
 
+    def __set_window_menu(self):
         # ==========
         # OSX-ONLY WINDOW MENU
         # ==========
-        import platform
-
         if platform.system() == "Darwin":
             wt_menu = wx.Menu()
             self.main_menubar.Append(wt_menu, _("Window"))
 
+    def __set_help_menu(self):
         # ==========
         # HELP MENU
         # ==========
@@ -1014,6 +1199,7 @@ class MeerK40t(MWindow):
             _resource_path = "help/meerk40t.help"
             if not os.path.exists(_resource_path):
                 try:  # pyinstaller internal location
+                    # pylint: disable=no-member
                     _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
                 except Exception:
                     pass
@@ -1062,8 +1248,14 @@ class MeerK40t(MWindow):
         self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
-        # Menu Bar end
 
+    def __set_menu_binds(self):
+        self.__set_file_menu_binds()
+        self.__set_view_menu_binds()
+        self.__set_panes_menu_binds()
+        self.__set_help_menu_binds()
+
+    def __set_file_menu_binds(self):
         # ==========
         # BINDS
         # ==========
@@ -1076,6 +1268,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_close, id=wx.ID_CLOSE)
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
 
+    def __set_view_menu_binds(self):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
@@ -1166,6 +1359,7 @@ class MeerK40t(MWindow):
             id=ID_MENU_SCREEN_FLIPXY,
         )
 
+    def __set_panes_menu_binds(self):
         self.Bind(
             wx.EVT_MENU,
             self.on_pane_reset,
@@ -1176,11 +1370,8 @@ class MeerK40t(MWindow):
             self.on_pane_lock,
             id=ID_MENU_PANE_LOCK,
         )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle About\n"),
-            id=wx.ID_ABOUT,
-        )
+
+    def __set_help_menu_binds(self):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp beginners\n"),
@@ -1216,9 +1407,13 @@ class MeerK40t(MWindow):
             lambda e: self.context("webhelp irc\n"),
             id=ID_IRC,
         )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle About\n"),
+            id=wx.ID_ABOUT,
+        )
 
-        self.add_language_menu()
-
+    def __set_draw_modes(self):
         self.context.setting(int, "draw_mode", 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
         m.Check(self.context.draw_mode & DRAW_MODE_FILLS != 0)
@@ -1391,7 +1586,10 @@ class MeerK40t(MWindow):
 
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
-        self.main_statusbar.SetStatusText(_("Usb: %s") % value, 0)
+        self.main_statusbar.SetStatusText(
+            _("Usb: %s") % value,
+            1,
+        )
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
@@ -1400,13 +1598,15 @@ class MeerK40t(MWindow):
         self.pipe_state = state
 
         self.main_statusbar.SetStatusText(
-            _("Controller: %s") % self.context.kernel.get_text_thread_state(state), 1
+            _("Controller: %s") % self.context.kernel.get_text_thread_state(state),
+            2,
         )
 
     @signal_listener("spooler;thread")
     def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value), 2
+            _("Spooler: %s") % self.context.get_text_thread_state(value),
+            3,
         )
 
     @signal_listener("export-image")
@@ -1414,8 +1614,6 @@ class MeerK40t(MWindow):
         image_width, image_height, frame = frame
         if frame is not None:
             elements = self.context.elements
-            from PIL import Image
-
             img = Image.fromarray(frame)
             obj = SVGImage()
             obj.image = img
@@ -1436,14 +1634,9 @@ class MeerK40t(MWindow):
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
         self.__set_titlebar()
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
-        # statusbar fields
-        main_statusbar_fields = ["Status"]
-        for i in range(len(main_statusbar_fields)):
-            self.main_statusbar.SetStatusText(main_statusbar_fields[i], i)
 
     def load_or_open(self, filename):
         """
@@ -1483,79 +1676,35 @@ class MeerK40t(MWindow):
         if not hasattr(self, "recent_file_menu"):
             return  # No menu, cannot populate.
 
-        for i in range(self.recent_file_menu.MenuItemCount):
-            self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
         context = self.context
-        if context.file0 is not None and len(context.file0):
-            self.recent_file_menu.Append(ID_MENU_FILE0, "&1   " + context.file0, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file0),
-                id=ID_MENU_FILE0,
-            )
-        if context.file1 is not None and len(context.file1):
-            self.recent_file_menu.Append(ID_MENU_FILE1, "&2   " + context.file1, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file1),
-                id=ID_MENU_FILE1,
-            )
-        if context.file2 is not None and len(context.file2):
-            self.recent_file_menu.Append(ID_MENU_FILE2, "&3   " + context.file2, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file2),
-                id=ID_MENU_FILE2,
-            )
-        if context.file3 is not None and len(context.file3):
-            self.recent_file_menu.Append(ID_MENU_FILE3, "&4   " + context.file3, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file3),
-                id=ID_MENU_FILE3,
-            )
-        if context.file4 is not None and len(context.file4):
-            self.recent_file_menu.Append(ID_MENU_FILE4, "&5   " + context.file4, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file4),
-                id=ID_MENU_FILE4,
-            )
-        if context.file5 is not None and len(context.file5):
-            self.recent_file_menu.Append(ID_MENU_FILE5, "&6   " + context.file5, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file5),
-                id=ID_MENU_FILE5,
-            )
-        if context.file6 is not None and len(context.file6):
-            self.recent_file_menu.Append(ID_MENU_FILE6, "&7   " + context.file6, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file6),
-                id=ID_MENU_FILE6,
-            )
-        if context.file7 is not None and len(context.file7):
-            self.recent_file_menu.Append(ID_MENU_FILE7, "&8   " + context.file7, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file7),
-                id=ID_MENU_FILE7,
-            )
-        if context.file8 is not None and len(context.file8):
-            self.recent_file_menu.Append(ID_MENU_FILE8, "&9   " + context.file8, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file8),
-                id=ID_MENU_FILE8,
-            )
-        if context.file9 is not None and len(context.file9):
-            self.recent_file_menu.Append(ID_MENU_FILE9, "1&0 " + context.file9, "")
-            self.Bind(
-                wx.EVT_MENU,
-                lambda e: self.load_or_open(context.file9),
-                id=ID_MENU_FILE9,
-            )
+        recents = [
+            (context.file0, ID_MENU_FILE0, "&1 "),
+            (context.file1, ID_MENU_FILE1, "&2 "),
+            (context.file2, ID_MENU_FILE2, "&3 "),
+            (context.file3, ID_MENU_FILE3, "&4 "),
+            (context.file4, ID_MENU_FILE4, "&5 "),
+            (context.file5, ID_MENU_FILE5, "&6 "),
+            (context.file6, ID_MENU_FILE6, "&7 "),
+            (context.file7, ID_MENU_FILE7, "&8 "),
+            (context.file8, ID_MENU_FILE8, "&9 "),
+            (context.file9, ID_MENU_FILE9, "1&0"),
+        ]
+
+        # for i in range(self.recent_file_menu.MenuItemCount):
+        # self.recent_file_menu.Remove(self.recent_file_menu.FindItemByPosition(0))
+
+        for item in self.recent_file_menu.GetMenuItems():
+            self.recent_file_menu.Remove(item)
+
+        for file, id, shortcode in recents:
+            if file is not None and file:
+                self.recent_file_menu.Append(id, shortcode + "  " + file, "")
+                self.Bind(
+                    wx.EVT_MENU,
+                    partial(lambda f, event: self.load_or_open(f), file),
+                    id=id,
+                )
+
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.AppendSeparator()
             self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
@@ -1747,3 +1896,68 @@ class MeerK40t(MWindow):
             self.context.signal("refresh_scene", "Scene")
 
         return toggle
+
+    def update_statusbar(self, text):
+        self.main_statusbar.SetStatusText(text, self.GetStatusBarPane())
+
+    def status_update(self):
+        # ToDo Get spool status and make the status dynamic
+        self.update_statusbar(_("Idle..."))
+
+    # The standard wx.Frame version of DoGiveHelp is not passed the help text in Windows
+    # (no idea about other platforms - wxWidgets code for each platform is different)
+    # and has no way of knowing the menuitem and getting the text itself.
+
+    # So we override the standard wx.Frame version and make it do nothing
+    # and capture the EVT_MENU_HIGHLIGHT ourselves to process it.
+    def DoGiveHelp(self, text, show):
+        """Override wx default DoGiveHelp method
+
+        Because we do not call event.Skip() on EVT_MENU_HIGHLIGHT, this should not be called.
+        """
+        if self.DoGiveHelp_called:
+            return
+        if text:
+            print("DoGiveHelp called with help text:", text)
+        else:
+            print("DoGiveHelp called but still no help text")
+        self.DoGiveHelp_called = True
+
+    def on_menu_open(self, event):
+        self.menus_open += 1
+        menu = event.GetMenu()
+        if menu:
+            title = menu.GetTitle()
+            if title:
+                self.update_statusbar(title + "...")
+
+    def on_menu_close(self, event):
+        self.menus_open -= 1
+        if self.menus_open <= 0:
+            self.top_menu = None
+        self.status_update()
+
+    def on_menu_highlight(self, event):
+        menuid = event.GetId()
+        menu = event.GetMenu()
+        if menuid == wx.ID_SEPARATOR:
+            self.update_statusbar("...")
+            return
+        if not self.top_menu and not menu:
+            self.status_update()
+            return
+        if menu and not self.top_menu:
+            self.top_menu = menu
+        if self.top_menu and not menu:
+            menu = self.top_menu
+        menuitem, submenu = menu.FindItem(menuid)
+        if not menuitem:
+            self.update_statusbar("...")
+            return
+        helptext = menuitem.GetHelp()
+        if not helptext:
+            helptext = "{m} ({s})".format(
+                m=menuitem.GetItemLabelText(),
+                s=_("No help text"),
+            )
+        self.update_statusbar(helptext)

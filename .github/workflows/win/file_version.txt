@@ -36,7 +36,7 @@ VSVersionInfo(
         StringStruct(u'LegalCopyright', u'MeerK40t, MIT License'),
         StringStruct(u'OriginalFilename', u'MeerK40t.exe'),
         StringStruct(u'ProductName', u'MeerK40t'),
-        StringStruct(u'ProductVersion', u'0.8.0-beta1')])
+        StringStruct(u'ProductVersion', u'0.8.0001')])
       ]),
     VarFileInfo([VarStruct(u'Translation', [1033, 1031, 2058])])
   ]

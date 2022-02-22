@@ -11,7 +11,7 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
-def register_panel(window, context):
+def register_panel_ribbon(window, context):
     ribbon = RibbonPanel(window, wx.ID_ANY, context=context)
 
     pane = (
@@ -20,8 +20,8 @@ def register_panel(window, context):
         .Top()
         .RightDockable(False)
         .LeftDockable(False)
-        .MinSize(300, 120)
-        .FloatingSize(640, 120)
+        .MinSize(300, 150)
+        .FloatingSize(640, 150)
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
     )
@@ -127,6 +127,14 @@ class RibbonPanel(wx.Panel):
     def set_modify_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.modify_button_bar)
 
+    @lookup_listener("button/tool")
+    def set_tool_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.tool_button_bar)
+
+    @lookup_listener("button/geometry")
+    def set_geometry_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.geometry_button_bar)
+
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
@@ -188,8 +196,16 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
+
+        tool = RB.RibbonPage(
+            self._ribbon,
+            wx.ID_ANY,
+            _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+        )
+
         self.modify_panel = RB.RibbonPanel(
-            home,
+            tool,
             wx.ID_ANY,
             "" if self.is_dark else _("Modification"),
             icons8_opened_folder_50.GetBitmap(),
@@ -197,6 +213,26 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.modify_panel)
         self.modify_button_bar = button_bar
+
+        self.tool_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.tool_panel)
+        self.tool_button_bar = button_bar
+
+        self.geometry_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Geometry"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.geometry_panel)
+        self.geometry_button_bar = button_bar
 
         self.ensure_realize()
 

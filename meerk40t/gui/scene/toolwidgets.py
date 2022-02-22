@@ -1,15 +1,19 @@
-from .scene import Scene, Widget
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = 2 * pi
-
 import wx
 
-from meerk40t.svgelements import Path, Point, Rect
+from meerk40t.svgelements import (
+    Circle,
+    Ellipse,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    Rect,
+    SVGText,
+)
+
+from ...core.units import UNITS_PER_MM, UNITS_PER_PIXEL
+from ..laserrender import LaserRender
+from .scene import Scene, Widget
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1
@@ -199,3 +203,352 @@ class RectTool(ToolWidget):
                 self.p2 = None
             except IndexError:
                 pass
+
+
+class CircleTool(ToolWidget):
+    """
+    Circle Drawing Tool.
+
+    Adds Circle with click and drag.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.p1 = None
+        self.p2 = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.p1 is not None and self.p2 is not None:
+            x0 = min(self.p1.real, self.p2.real)
+            y0 = min(self.p1.imag, self.p2.imag)
+            x1 = max(self.p1.real, self.p2.real)
+            y1 = max(self.p1.imag, self.p2.imag)
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            ellipse = Circle(
+                (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
+            )
+            t = Path(ellipse)
+            bbox = t.bbox()
+            gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.p1 = complex(space_pos[0], space_pos[1])
+        elif event_type == "move":
+            self.p2 = complex(space_pos[0], space_pos[1])
+            self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "leftup":
+            try:
+                if self.p1 is None:
+                    return
+                self.p2 = complex(space_pos[0], space_pos[1])
+                x0 = min(self.p1.real, self.p2.real)
+                y0 = min(self.p1.imag, self.p2.imag)
+                x1 = max(self.p1.real, self.p2.real)
+                y1 = max(self.p1.imag, self.p2.imag)
+                ellipse = Circle(
+                    (x1 + x0) / 2.0,
+                    (y1 + y0) / 2.0,
+                    abs(self.p1 - self.p2) / 2,
+                    stroke="blue",
+                )
+                t = Path(ellipse)
+                if len(t) != 0:
+                    self.scene.context.elements.add_elem(t, classify=True)
+                self.p1 = None
+                self.p2 = None
+            except IndexError:
+                pass
+
+
+class EllipseTool(ToolWidget):
+    """
+    Ellipse Drawing Tool.
+
+    Adds Circle with click and drag.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.p1 = None
+        self.p2 = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.p1 is not None and self.p2 is not None:
+            x0 = min(self.p1.real, self.p2.real)
+            y0 = min(self.p1.imag, self.p2.imag)
+            x1 = max(self.p1.real, self.p2.real)
+            y1 = max(self.p1.imag, self.p2.imag)
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.p1 = complex(space_pos[0], space_pos[1])
+        elif event_type == "move":
+            self.p2 = complex(space_pos[0], space_pos[1])
+            self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "leftup":
+            try:
+                if self.p1 is None:
+                    return
+                self.p2 = complex(space_pos[0], space_pos[1])
+                x0 = min(self.p1.real, self.p2.real)
+                y0 = min(self.p1.imag, self.p2.imag)
+                x1 = max(self.p1.real, self.p2.real)
+                y1 = max(self.p1.imag, self.p2.imag)
+                ellipse = Ellipse(
+                    (x1 + x0) / 2.0,
+                    (y1 + y0) / 2.0,
+                    abs(x0 - x1) / 2,
+                    abs(y0 - y1) / 2,
+                    stroke="blue",
+                )
+                t = Path(ellipse)
+                if len(t) != 0:
+                    self.scene.context.elements.add_elem(t, classify=True)
+                self.p1 = None
+                self.p2 = None
+            except IndexError:
+                pass
+
+
+class PolylineTool(ToolWidget):
+    """
+    Polyline Drawing Tool.
+
+    Adds polylines with clicks.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.point_series = []
+        self.mouse_position = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.point_series:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            points = list(self.point_series)
+            if self.mouse_position is not None:
+                points.append(self.mouse_position)
+            gc.DrawLines(points)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftclick":
+            self.point_series.append((space_pos[0], space_pos[1]))
+        elif event_type == "rightdown":
+            self.point_series = []
+            self.mouse_position = None
+            self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "hover":
+            self.mouse_position = space_pos[0], space_pos[1]
+            if self.point_series:
+                self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "doubleclick":
+            polyline = Polyline(*self.point_series, stroke="blue")
+            t = Path(polyline)
+            if len(t) != 0:
+                self.scene.context.elements.add_elem(t, classify=True)
+            self.point_series = []
+            self.mouse_position = None
+
+
+class PolygonTool(ToolWidget):
+    """
+    Polygon Drawing Tool.
+
+    Adds polygon with clicks.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.point_series = []
+        self.mouse_position = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.point_series:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            points = list(self.point_series)
+            if self.mouse_position is not None:
+                points.append(self.mouse_position)
+            points.append(points[0])
+            gc.DrawLines(points)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftclick":
+            self.point_series.append((space_pos[0], space_pos[1]))
+        elif event_type == "rightdown":
+            self.point_series = []
+            self.mouse_position = None
+            self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "hover":
+            self.mouse_position = space_pos[0], space_pos[1]
+            if self.point_series:
+                self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "doubleclick":
+            polyline = Polygon(*self.point_series, stroke="blue")
+            t = Path(polyline)
+            if len(t) != 0:
+                self.scene.context.elements.add_elem(t, classify=True)
+            self.point_series = []
+            self.mouse_position = None
+
+
+class RelocateTool(ToolWidget):
+    """
+    Relocate laser Tool.
+
+    Adds Circle with click and drag.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.p1 = None
+        self.p2 = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.p1 is not None and self.p2 is not None:
+            x0 = min(self.p1.real, self.p2.real)
+            y0 = min(self.p1.imag, self.p2.imag)
+            x1 = max(self.p1.real, self.p2.real)
+            y1 = max(self.p1.imag, self.p2.imag)
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            bed_width = self.scene.context.device.width_as_nm
+            bed_height = self.scene.context.device.height_as_nm
+            x = space_pos[0]
+            y = space_pos[1]
+            if x > bed_width:
+                x = bed_width
+            if y > bed_height:
+                y = bed_height
+            if x < 0:
+                x = 0
+            if y < 0:
+                y = 0
+            x /= UNITS_PER_MM
+            y /= UNITS_PER_MM
+            self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+
+
+class TextTool(ToolWidget):
+    """
+    Text Drawing Tool
+
+    Adds Text at set location.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.x = None
+        self.y = None
+        self.text = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.text is not None:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            gc.DrawText(self.text.text, self.x, self.y)
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftdown":
+            self.p1 = complex(space_pos[0], space_pos[1])
+            _ = self.scene.context._
+            self.text = SVGText("")
+            x = space_pos[0]
+            y = space_pos[1]
+            self.x = x
+            self.y = y
+            self.text *= "translate({x}, {y}) scale({scale})".format(
+                x=x, y=y, scale=UNITS_PER_PIXEL
+            )
+            dlg = wx.TextEntryDialog(
+                self.scene.gui, _("What text message"), _("Text"), ""
+            )
+            dlg.SetValue("")
+            if dlg.ShowModal() == wx.ID_OK:
+                self.text.text = dlg.GetValue()
+                self.scene.context.elements.add_elem(self.text, classify=True)
+                self.text = None
+            dlg.Destroy()
+            self.scene.context.signal("refresh_scene", self.scene.name)
+
+
+class VectorTool(ToolWidget):
+    """
+    Path Drawing Tool.
+
+    Adds Path with click and drag.
+    """
+
+    def __init__(self, scene):
+        ToolWidget.__init__(self, scene)
+        self.start_position = None
+        self.path = None
+        self.mouse_position = None
+        self.render = LaserRender(scene.context)
+        self.c0 = None
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.path:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            path = Path(self.path)
+            if self.mouse_position is not None:
+                if self.c0:
+                    path.smooth_cubic(self.c0, self.mouse_position)
+                else:
+                    path.line(self.mouse_position)
+            gpath = self.render.make_path(gc, path)
+            gc.DrawPath(gpath)
+            del gpath
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if event_type == "leftclick":
+            if self.path is None:
+                self.path = Path(stroke="blue")
+                self.path.move((space_pos[0], space_pos[1]))
+            else:
+                self.path.line((space_pos[0], space_pos[1]))
+            self.c0 = None
+            print(self.path.d())
+        elif event_type == "rightdown":
+            self.path = None
+            self.mouse_position = None
+            self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "leftdown":
+            self.c0 = (space_pos[0], space_pos[1])
+        elif event_type == "move":
+            self.c0 = (space_pos[0], space_pos[1])
+            if self.path:
+                self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "leftup":
+            if self.c0 is not None and self.path:
+                self.path.smooth_cubic(self.c0, self.mouse_position)
+                self.scene.context.signal("refresh_scene", self.scene.name)
+            self.c0 = None
+            self.mouse_position = None
+        elif event_type == "hover":
+            self.mouse_position = space_pos[0], space_pos[1]
+            if self.path:
+                self.scene.context.signal("refresh_scene", self.scene.name)
+        elif event_type == "doubleclick":
+            t = self.path
+            if len(t) != 0:
+                self.scene.context.elements.add_elem(t, classify=True)
+            self.path = None
+            self.mouse_position = None

@@ -1,16 +1,8 @@
-from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.gui.scene.scene import Widget
-from meerk40t.gui.wxutils import create_menu
-
-try:
-    from math import tau
-except ImportError:
-    from math import pi
-
-    tau = 2 * pi
+import math
 
 import wx
 
+from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.gui.laserrender import (
     DRAW_MODE_BACKGROUND,
     DRAW_MODE_GRID,
@@ -20,6 +12,8 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_SELECTION,
     swizzlecolor,
 )
+from meerk40t.gui.scene.scene import Widget
+from meerk40t.gui.wxutils import create_menu
 from meerk40t.svgelements import Color
 
 HITCHAIN_HIT = 0
@@ -1002,7 +996,7 @@ class GuideWidget(Widget):
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
 
-                gc.DrawText("%g" % mark_point, x, edge_gap, -tau / 4)
+                gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
             x += points
 
         y = offset_y
