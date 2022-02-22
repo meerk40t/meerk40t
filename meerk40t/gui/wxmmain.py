@@ -1075,18 +1075,19 @@ class MeerK40t(MWindow):
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
 
             id_new = wx.NewId()
-            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
-            self.Bind(
-                wx.EVT_MENU,
-                toggle_pane(pane_name),
-                id=id_new,
-            )
-            pane = self._mgr.GetPane(pane_name)
-            try:
-                menu_item.Check(pane.IsShown())
-                pane.window.check = menu_item.Check
-            except AttributeError:
-                pass
+            if pane_caption:
+                menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
+                self.Bind(
+                    wx.EVT_MENU,
+                    toggle_pane(pane_name),
+                    id=id_new,
+                )
+                pane = self._mgr.GetPane(pane_name)
+                try:
+                    menu_item.Check(pane.IsShown())
+                    pane.window.check = menu_item.Check
+                except AttributeError:
+                    pass
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.panereset = self.panes_menu.Append(
