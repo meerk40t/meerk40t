@@ -2025,7 +2025,7 @@ class Kernel:
         if text.startswith("."):
             text = text[1:]
         else:
-            channel("[raw]%s[/raw]" % text, indent=False)
+            channel("[blue][bold][raw]%s[/raw]" % text, indent=False)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2075,7 +2075,7 @@ class Kernel:
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
-                    channel(_("Syntax Error (%s): %s") % (command, message))
+                    channel("[red][bold]" + _("Syntax Error (%s): %s") % (command, message))
                     return None
                 except CommandMatchRejected:
                     # If the command function raises a CommandMatchRejected more commands should be matched.
@@ -2087,7 +2087,7 @@ class Kernel:
                     ctx_name = "Base"
                 else:
                     ctx_name = input_type
-                channel(
+                channel("[red][bold]" +
                     _("%s is not a registered command in this context: %s")
                     % (command, ctx_name)
                 )

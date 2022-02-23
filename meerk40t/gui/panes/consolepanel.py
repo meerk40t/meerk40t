@@ -142,6 +142,7 @@ class ConsolePanel(wx.Panel):
             style=wx.richtext.RE_MULTILINE
             | wx.richtext.RE_READONLY
         )
+        self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
         style = richtext.RichTextAttr(wx.TextAttr(wx.Colour("black")))
         font = wx.Font(
@@ -205,6 +206,7 @@ class ConsolePanel(wx.Panel):
         lines = lines.split("\n") if "\n" in lines else [lines]
         basic_style = self.text_main.BasicStyle
         raw = negative = False
+        self.text_main.SetInsertionPointEnd()
         for text in lines:
             self.text_main.BeginStyle(basic_style)
             parts = RE_BBCODE.split(text)
@@ -239,6 +241,7 @@ class ConsolePanel(wx.Panel):
             self.text_main.EndStyle()
             self.text_main.Newline()
             self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
+            self.text_main.Update()
 
     def on_text_uri(self, event):
         mouse_event = event.GetMouseEvent()
