@@ -1,7 +1,9 @@
+import ctypes
 import datetime
 import functools
 import inspect
 import os
+import platform
 import re
 import threading
 import time
@@ -31,6 +33,75 @@ _cmd_parse = [
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
 ]
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
+
+# https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
+BBCODE_LIST = {
+    "black":        "\033[30m",
+    "red":          "\033[31m",
+    "green":        "\033[32m",
+    "yellow":       "\033[33m",
+    "blue":         "\033[34m",
+    "magenta":      "\033[35m",
+    "cyan":         "\033[36m",
+    "white":        "\033[37m",
+    "bg-black":     "\033[40m",
+    "bg-red":       "\033[41m",
+    "bg-green":     "\033[42m",
+    "bg-yellow":    "\033[43m",
+    "bg-blue":      "\033[44m",
+    "bg-magenta":   "\033[45m",
+    "bg-cyan":      "\033[46m",
+    "bg-white":     "\033[47m",
+    "bold":         "\033[1m",
+    "/bold":        "\033[22m",
+    "italic":       "\033[3m",
+    "/italic":      "\033[3m",
+    "underline":    "\033[4m",
+    "/underline":   "\033[24m",
+    "underscore":   "\033[4m",
+    "/underscore":  "\033[24m",
+    "negative":     "\033[7m",
+    "positive":     "\033[27m",
+    "normal":       "\033[0m",
+}
+
+# re for bbcode->ansi
+RE_ANSI = re.compile(
+    r"((?:\[raw\])(.*?)(?:\[/raw\]|$)|"
+    + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])
+    + r")",
+    re.IGNORECASE
+)
+
+def ansi_supported():
+    # https://en.wikipedia.org/wiki/ANSI_escape_code#Platform_support
+    os = platform.system()
+    if os != "Windows":
+        return True
+    if int(platform.release()) < 10:
+        return False
+    if int(platform.version().split('.')[2]) < 10586:
+        return False
+    # Fix ANSI color in Windows 10 version 10.0.14393 (Windows Anniversary Update)
+    # https://gist.github.com/RDCH106/6562cc7136b30a5c59628501d87906f7
+    kernel32 = ctypes.windll.kernel32
+    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+    return True
+
+def bbcode_to_ansi(text):
+    return "".join([
+        BBCODE_LIST["normal"],
+        RE_ANSI.sub(bbcode_to_ansi_match, text),
+        BBCODE_LIST["normal"],
+    ])
+
+def bbcode_to_ansi_match(m):
+    tag = re.sub(r"\].*", "", m[0])[1:].lower()
+    return BBCODE_LIST[tag] if tag != "raw" else m[2]
+
+def bbcode_to_plain(text):
+    return RE_ANSI.sub("", text)
+
 
 
 class Modifier:
@@ -1954,7 +2025,7 @@ class Kernel:
         if text.startswith("."):
             text = text[1:]
         else:
-            channel(text, indent=False)
+            channel("[raw]%s[/raw]" % text, indent=False)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2714,6 +2785,7 @@ class Channel:
             self.buffer = None
         else:
             self.buffer = deque()
+        self.ansi_supported = ansi_supported()
 
     def __repr__(self):
         return "Channel(%s, buffer_size=%s, line_end=%s)" % (
@@ -2738,19 +2810,28 @@ class Channel:
             ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
             message = ts + message.replace("\n", "\n%s" % ts)
         console_open_print = False
+        # Check if this channel is "open" i.e. being sent to console
+        # and if so whether the console is being sent to print
+        # because if so then we don't want to print ourselves
         for w in self.watchers:
             if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
                 console_open_print = True
                 break
         for w in self.watchers:
-            # Avoid double printing if this channel is watched and printed
+            # Avoid double printing if this channel is "open" and printed
             # and console is also printed
             if w is print and console_open_print:
                 continue
             # Avoid double timestamp and indent
-            if isinstance(w, Channel):
+            printing = w is print or w.__name__ == "__print_delegate"
+            if printing:
+                if self.ansi_supported:
+                    w(bbcode_to_ansi(message))
+                else:
+                    w(bbcode_to_plain(message))
+            elif isinstance(w, Channel):
                 w(original_msg, indent=indent)
-            else:
+            else:  # "open"
                 w(message)
         if self.buffer is not None:
             self.buffer.append(message)
@@ -2872,8 +2953,6 @@ class ConsoleFunction(Job):
 def get_safe_path(
     name: str, create: Optional[bool] = False, system: Optional[str] = None
 ) -> str:
-    import platform
-
     if not system:
         system = platform.system()
 
