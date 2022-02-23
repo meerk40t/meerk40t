@@ -27,14 +27,29 @@ def style_bold(rtc):
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
 
+def style_unbold(rtc):
+    style = rtc.DefaultStyleEx
+    style.SetFontWeight(wx.FONTWEIGHT_NORMAL)
+    return style
+
 def style_italic(rtc):
     style = rtc.DefaultStyleEx
     style.SetFontStyle(wx.FONTSTYLE_ITALIC)
     return style
 
+def style_unitalic(rtc):
+    style = rtc.DefaultStyleEx
+    style.SetFontStyle(wx.FONTSTYLE_NORMAL)
+    return style
+
 def style_underline(rtc):
     style = rtc.DefaultStyleEx
     style.SetFontUnderlined(True)
+    return style
+
+def style_ununderline(rtc):
+    style = rtc.DefaultStyleEx
+    style.SetFontUnderlined(False)
     return style
 
 def style_normal(rtc):
@@ -66,8 +81,11 @@ BBCODE_LIST = {
     "bg-purple":    bg_Colour("purple"),
     "bg-violet":    bg_Colour("violet"),
     "bold":         style_bold,
+    "/bold":        style_unbold,
     "italic":       style_italic,
+    "/italic":      style_unitalic,
     "underline":    style_underline,
+    "/underline":   style_ununderline,
     "normal":       style_normal,
     "raw":          None,
     "/raw":         None,
