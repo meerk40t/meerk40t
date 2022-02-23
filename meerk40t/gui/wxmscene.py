@@ -34,7 +34,7 @@ def register_panel_scene(window, context):
     pane.control = panel
 
     window.on_pane_add(pane)
-    context.register("pane/console", pane)
+    context.register("pane/scene", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
