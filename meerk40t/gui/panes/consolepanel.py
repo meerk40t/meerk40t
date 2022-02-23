@@ -9,46 +9,38 @@ from ..mwindow import MWindow
 _ = wx.GetTranslation
 
 def bg_Colour(colour):
-    def styColour(rtc):
-        style = rtc.DefaultStyleEx
+    def styColour(style):
         style.SetBackgroundColour(wx.Colour(colour))
         return style
     return styColour
 
 def fg_Colour(colour):
-    def styColour(rtc):
-        style = rtc.DefaultStyleEx
+    def styColour(style):
         style.SetTextColour(wx.Colour(colour))
         return style
     return styColour
 
-def style_bold(rtc):
-    style = rtc.DefaultStyleEx
+def style_bold(style):
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
 
-def style_unbold(rtc):
-    style = rtc.DefaultStyleEx
+def style_unbold(style):
     style.SetFontWeight(wx.FONTWEIGHT_NORMAL)
     return style
 
-def style_italic(rtc):
-    style = rtc.DefaultStyleEx
+def style_italic(style):
     style.SetFontStyle(wx.FONTSTYLE_ITALIC)
     return style
 
-def style_unitalic(rtc):
-    style = rtc.DefaultStyleEx
+def style_unitalic(style):
     style.SetFontStyle(wx.FONTSTYLE_NORMAL)
     return style
 
-def style_underline(rtc):
-    style = rtc.DefaultStyleEx
+def style_underline(style):
     style.SetFontUnderlined(True)
     return style
 
-def style_ununderline(rtc):
-    style = rtc.DefaultStyleEx
+def style_ununderline(style):
     style.SetFontUnderlined(False)
     return style
 
@@ -57,29 +49,21 @@ def style_normal(rtc):
 
 BBCODE_LIST = {
     "black":        fg_Colour("black"),
-    "white":        fg_Colour("white"),
     "red":          fg_Colour("red"),
-    "pink":         fg_Colour("pink"),
-    "orange":       fg_Colour("orange"),
-    "yellow":       fg_Colour("yellow"),
     "green":        fg_Colour("green"),
-    "cyan":         fg_Colour("cyan"),
+    "yellow":       fg_Colour("yellow"),
     "blue":         fg_Colour("blue"),
     "magenta":      fg_Colour("magenta"),
-    "purple":       fg_Colour("purple"),
-    "violet":       fg_Colour("violet"),
+    "cyan":         fg_Colour("cyan"),
+    "white":        fg_Colour("white"),
     "bg-black":     bg_Colour("black"),
-    "bg-white":     bg_Colour("white"),
     "bg-red":       bg_Colour("red"),
-    "bg-pink":      bg_Colour("pink"),
-    "bg-orange":    bg_Colour("orange"),
-    "bg-yellow":    bg_Colour("yellow"),
     "bg-green":     bg_Colour("green"),
-    "bg-cyan":      bg_Colour("cyan"),
+    "bg-yellow":    bg_Colour("yellow"),
     "bg-blue":      bg_Colour("blue"),
     "bg-magenta":   bg_Colour("magenta"),
-    "bg-purple":    bg_Colour("purple"),
-    "bg-violet":    bg_Colour("violet"),
+    "bg-cyan":      bg_Colour("cyan"),
+    "bg-white":     bg_Colour("white"),
     "bold":         style_bold,
     "/bold":        style_unbold,
     "italic":       style_italic,
@@ -87,10 +71,24 @@ BBCODE_LIST = {
     "underline":    style_underline,
     "/underline":   style_ununderline,
     "normal":       style_normal,
+    "negative":     None,
+    "positive":     None,
     "raw":          None,
     "/raw":         None,
 }
-RE_BBCODE = re.compile(r"(%s)" % (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])), re.IGNORECASE)
+
+RE_BBCODE = re.compile(
+    r"(%s)" %
+        (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])),
+    re.IGNORECASE,
+)
+
+def style_negate(style):
+    bg_colour = style.BackgroundColour
+    fg_colour = style.TextColour
+    style.SetBackgroundColour(fg_colour)
+    style.SetTextColour(bg_colour)
+    return style
 
 def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
@@ -147,6 +145,7 @@ class ConsolePanel(wx.Panel):
         font = wx.Font(
             10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
         )
+        style.SetBackgroundColour(wx.Colour("white"))
         style.SetFont(font)
         style.SetLineSpacing(0)
         style.SetParagraphSpacingBefore(0)
@@ -203,25 +202,34 @@ class ConsolePanel(wx.Panel):
     def update_text_gui(self, lines, bbcode=True):
         lines = lines.split("\n") if "\n" in lines else [lines]
         basic_style = self.text_main.BasicStyle
-        raw = False
+        raw = negative = False
         for text in lines:
             self.text_main.BeginStyle(basic_style)
             parts = RE_BBCODE.split(text)
             for part in parts:
                 if part == "":
                     continue
+                tag = part[1:-1].lower()
                 if (
                     bbcode
                     and part.startswith("[")
                     and part.endswith("]")
-                    and part[1:-1].lower() in BBCODE_LIST
+                    and tag in BBCODE_LIST
                 ):
-                    if part[-4:] == "raw]":
-                        raw = part[1] == "r"
+                    if tag[-3:] == "raw":
+                        raw = tag == "raw"
                         continue
                     if not raw:
+                        style = self.text_main.DefaultStyleEx
+                        if negative:
+                            style = style_negate(style)
+                        if tag in ("negative", "positive"):
+                            negative = tag == "negative"
                         getstyle = BBCODE_LIST[part[1:-1].lower()]
-                        style = getstyle(self.text_main)
+                        if getstyle:
+                            style = getstyle(style)
+                        if negative:
+                            style = style_negate(style)
                         self.text_main.EndStyle()
                         self.text_main.BeginStyle(style)
                         continue
