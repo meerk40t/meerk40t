@@ -1037,15 +1037,14 @@ class MeerK40t(MWindow):
 
         def toggle_pane(pane_toggle):
             def toggle(event=None):
-                pane_obj = self._mgr.GetPane(pane_toggle)
+                pane_obj = self._mgr.GetPane(pane_toggle.name)
                 if pane_obj.IsShown():
                     if hasattr(pane_obj.window, "finalize"):
                         pane_obj.window.finalize()
                     pane_obj.Hide()
                     self._mgr.Update()
                     return
-                pane_init = self.context.registered["pane/%s" % pane_toggle]
-                self.on_pane_add(pane_init)
+                self.on_pane_add(pane_toggle)
 
             return toggle
 
@@ -1064,29 +1063,20 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
             menu_context = submenu if submenu is not None else self.panes_menu
-            try:
-                pane_name = pane.name
-            except AttributeError:
-                pane_name = p.split("/")[-1]
 
-            try:
-                pane_caption = pane.caption
-            except AttributeError:
-                pane_caption = pane_name[0].upper() + pane_name[1:] + "."
-
-            id_new = wx.NewId()
-            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
-            self.Bind(
-                wx.EVT_MENU,
-                toggle_pane(pane_name),
-                id=id_new,
-            )
-            pane = self._mgr.GetPane(pane_name)
-            try:
-                menu_item.Check(pane.IsShown())
-                pane.window.check = menu_item.Check
-            except AttributeError:
-                pass
+            if pane.caption:
+                id_new = wx.NewId()
+                menu_item = menu_context.AppendCheckItem(id_new, pane.caption, "")
+                menu_context.Bind(
+                    wx.EVT_MENU,
+                    toggle_pane(pane),
+                    id=id_new,
+                )
+                try:
+                    menu_item.Check(pane.control.IsShown())
+                    pane.control.window.check = menu_item.Check
+                except AttributeError:
+                    pass
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.panereset = self.panes_menu.Append(
