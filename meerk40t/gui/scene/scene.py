@@ -14,6 +14,8 @@ from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
+from meerk40t.gui.wxutils import get_key_name
+
 MILS_IN_MM = 39.3701
 
 HITCHAIN_HIT = 0
@@ -37,7 +39,6 @@ ORIENTATION_VERTICAL = 0b00000010000000
 ORIENTATION_GRID = 0b00000100000000
 ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
-
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -151,34 +152,46 @@ class ScenePanel(wx.Panel):
     isAltPressed = False
 
     def on_key_down(self, evt):
+        literal = get_key_name(evt, True)
         keycode = evt.GetKeyCode()
-        # print("Key-Down: %f" % keycode)
-        if keycode == wx.WXK_SHIFT:
+        # print("Key-Down: %f - literal: %s" % (keycode, literal))
+        if "shift+" in literal:
             if not self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = True
                 self.scene.event(self.scene.last_position, "kb_shift_press")
-        elif keycode == wx.WXK_CONTROL:
+        if "ctrl+" in literal:
             if not self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = True
                 self.scene.event(self.scene.last_position, "kb_ctrl_press")
-        elif keycode == wx.WXK_ALT:
+        if "alt+" in literal:
             if not self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = True
                 self.scene.event(self.scene.last_position, "kb_alt_press")
                 # self.scene.event(self.scene.last_position, "kb_alt_press")
 
     def on_key_up(self, evt):
-        keycode = evt.GetKeyCode()
-        # print("Key-Up: %f" % keycode)
-        if keycode == wx.WXK_SHIFT:
+        # literal = get_key_name(evt, True) # Until the behaviour of multi-keypresses has been clarified
+        literal = ""
+        keystates = (evt.ShiftDown(), evt.ControlDown(), evt.AltDown())
+        if self.isShiftPressed and not keystates[0]:
+            literal += "shift+"
+        if self.isCtrlPressed and not keystates[1]:
+            literal += "ctrl+"
+        if self.isAltPressed and not keystates[2]:
+            literal += "alt+"
+
+        key = evt.GetKeyCode()
+        # print("Key-Up: %f - literal: %s" % (key, literal))
+
+        if "shift+" in literal:
             if self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = False
                 self.scene.event(self.scene.last_position, "kb_shift_release")
-        elif keycode == wx.WXK_CONTROL:
+        if "ctrl+" in literal:
             if self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = False
                 self.scene.event(self.scene.last_position, "kb_ctrl_release")
-        elif keycode == wx.WXK_ALT:
+        if "alt+" in literal:
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
                 self.scene.event(self.scene.last_position, "kb_alt_release")
