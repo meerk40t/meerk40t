@@ -70,6 +70,8 @@ BBCODE_LIST = {
     "/italic":      style_unitalic,
     "underline":    style_underline,
     "/underline":   style_ununderline,
+    "underscore":   style_underline,
+    "/underscore":  style_ununderline,
     "normal":       style_normal,
     "negative":     None,
     "positive":     None,
