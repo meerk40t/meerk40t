@@ -140,72 +140,148 @@ class SelectionWidget(Widget):
             self.clear()
             return HITCHAIN_DELEGATE
 
+    key_shift_pressed = False
+    key_control_pressed = False
+    key_alt_pressed = False
+    was_lb_raised = False
+    hovering = False
+    # debug_msg = ""
+
+    def stillinside(self, space_pos=None):
+        res = False
+        matrix = self.parent.matrix
+        if not space_pos is None:
+            sx = space_pos[0]
+            sy = space_pos[1]
+            # print ("left=%f, right=%f, top=%f, bottom=%f, x=%f, y=%f" % (self.left, self.right, self.top, self.bottom, sx, sy))
+
+            if (self.left <= sx <= self.right) and (self.top <= sy <= self.bottom):
+                # print ("inside")
+                res = True
+        return res
+
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
+
         elements = self.scene.context.elements
-        if event_type == "hover_start":
+
+        # sdbg = event_type
+        # if sdbg in ("hover_start", "hover_end", "hover"):
+        #    sdbg = "hover"
+        # if sdbg != self.debug_msg:
+        #    self.debug_msg = sdbg
+        #    print(
+        #        "Selection-Event: %s (current state: %s)"
+        #        % (event_type, self.was_lb_raised)
+        #    )
+
+        if event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+                if self.stillinside(space_pos):
+                    self.scene.cursor("sizing")
+                    self.hovering  = True
+                    self.tool = self.tool_translate
+            return RESPONSE_CHAIN
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+            # Are we hovering ? If yes reset cursor
+            if self.hovering:
+                self.hovering  = False
+                self.scene.cursor("arrow")
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_release":
+            if self.key_control_pressed:
+                self.key_control_pressed = False
+                if self.stillinside(space_pos):
+                    self.scene.cursor("sizing")
+                    self.hovering  = True
+                    self.tool = self.tool_translate
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_press":
+            if not self.key_control_pressed:
+                self.key_control_pressed = True
+            # Are we hovering ? If yes reset cursor
+            if self.hovering:
+                self.hovering  = False
+                self.scene.cursor("arrow")
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_release":
+            if self.key_alt_pressed:
+                self.key_alt_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_press":
+            if not self.key_alt_pressed:
+                self.key_alt_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "hover_start":
             self.scene.cursor("sizing")
+            self.hovering  = True
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor("arrow")
+            self.hovering  = False
             return RESPONSE_CHAIN
         elif event_type == "hover":
-            matrix = self.parent.matrix
-            xin = space_pos[0] - self.left
-            yin = space_pos[1] - self.top
-            # Half size of equivalent in hit
-            xmin = 5 / matrix.value_scale_x()
-            ymin = 5 / matrix.value_scale_y()
-            # Adjust sizing of hover border as follows:
-            # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
-            # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
-            #    to be more than 1/4 of the width or height
-            xmin = (
-                min(xmin * 2.0, max(self.width / 4.0, xmin))
-                if xmin <= self.width / 4.0
-                else 0.0
-            )
-            ymin = (
-                min(ymin * 2.0, max(self.height / 4.0, ymin))
-                if ymin <= self.height / 4.0
-                else 0.0
-            )
-            xmax = self.width - xmin
-            ymax = self.height - ymin
-            for e in elements.elems(emphasized=True):
-                try:
-                    if e.lock:
-                        self.scene.cursor("sizing")
-                        self.tool = self.tool_translate
-                        return RESPONSE_CHAIN
-                except (ValueError, AttributeError):
-                    pass
-            if xin >= xmax and yin >= ymax:
-                self.scene.cursor("size_se")
-                self.tool = self.tool_scalexy_se
-            elif xin <= xmin and yin <= ymin:
-                self.scene.cursor("size_nw")
-                self.tool = self.tool_scalexy_nw
-            elif xin >= xmax and yin <= ymin:
-                self.scene.cursor("size_ne")
-                self.tool = self.tool_scalexy_ne
-            elif xin <= xmin and yin >= ymax:
-                self.scene.cursor("size_sw")
-                self.tool = self.tool_scalexy_sw
-            elif xin <= xmin:
-                self.scene.cursor("size_w")
-                self.tool = self.tool_scalex_w
-            elif yin <= ymin:
-                self.scene.cursor("size_n")
-                self.tool = self.tool_scaley_n
-            elif xin >= xmax:
-                self.scene.cursor("size_e")
-                self.tool = self.tool_scalex_e
-            elif yin >= ymax:
-                self.scene.cursor("size_s")
-                self.tool = self.tool_scaley_s
-            else:
-                self.scene.cursor("sizing")
-                self.tool = self.tool_translate
+            if self.hovering:
+                matrix = self.parent.matrix
+                xin = space_pos[0] - self.left
+                yin = space_pos[1] - self.top
+                # Half size of equivalent in hit
+                xmin = 5 / matrix.value_scale_x()
+                ymin = 5 / matrix.value_scale_y()
+                # Adjust sizing of hover border as follows:
+                # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
+                # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
+                #    to be more than 1/4 of the width or height
+                xmin = (
+                    min(xmin * 2.0, max(self.width / 4.0, xmin))
+                    if xmin <= self.width / 4.0
+                    else 0.0
+                )
+                ymin = (
+                    min(ymin * 2.0, max(self.height / 4.0, ymin))
+                    if ymin <= self.height / 4.0
+                    else 0.0
+                )
+                xmax = self.width - xmin
+                ymax = self.height - ymin
+                for e in elements.elems(emphasized=True):
+                    try:
+                        if e.lock:
+                            self.scene.cursor("sizing")
+                            self.tool = self.tool_translate
+                            return RESPONSE_CHAIN
+                    except (ValueError, AttributeError):
+                        pass
+                if xin >= xmax and yin >= ymax:
+                    self.scene.cursor("size_se")
+                    self.tool = self.tool_scalexy_se
+                elif xin <= xmin and yin <= ymin:
+                    self.scene.cursor("size_nw")
+                    self.tool = self.tool_scalexy_nw
+                elif xin >= xmax and yin <= ymin:
+                    self.scene.cursor("size_ne")
+                    self.tool = self.tool_scalexy_ne
+                elif xin <= xmin and yin >= ymax:
+                    self.scene.cursor("size_sw")
+                    self.tool = self.tool_scalexy_sw
+                elif xin <= xmin:
+                    self.scene.cursor("size_w")
+                    self.tool = self.tool_scalex_w
+                elif yin <= ymin:
+                    self.scene.cursor("size_n")
+                    self.tool = self.tool_scaley_n
+                elif xin >= xmax:
+                    self.scene.cursor("size_e")
+                    self.tool = self.tool_scalex_e
+                elif yin >= ymax:
+                    self.scene.cursor("size_s")
+                    self.tool = self.tool_scaley_s
+                else:
+                    self.scene.cursor("sizing")
+                    self.tool = self.tool_translate
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -223,29 +299,46 @@ class SelectionWidget(Widget):
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.save_width = self.width
-            self.save_height = self.height
-            self.uniform = True
-            self.tool(space_pos, dx, dy, -1)
-            return RESPONSE_CONSUME
+            # Lets'check if the Ctrl or Shift Keys are pressed, if yes ignore the event, as they belong to the selection rectangle
+            if not (self.key_control_pressed or self.key_shift_pressed):
+                self.was_lb_raised = True
+                self.save_width = self.width
+                self.save_height = self.height
+                self.uniform = True
+                if (
+                    self.key_alt_pressed
+                ):  # Duplicate the selection in the background and start moving
+                    self.create_duplicate()
+                self.tool(space_pos, dx, dy, -1)
+                return RESPONSE_CONSUME
         elif event_type == "middledown":
+            self.was_lb_raised = False
             self.save_width = self.width
             self.save_height = self.height
             self.uniform = False
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
-        elif event_type in ("middleup", "leftup", "lost"):
-            self.tool(space_pos, dx, dy, 1)
-            elements.ensure_positive_bounds()
-            return RESPONSE_CONSUME
-        elif event_type == "move":
-            if not elements.has_emphasis():
+        elif event_type == "leftup":
+            if self.was_lb_raised:
+                self.tool(space_pos, dx, dy, 1)
+                self.scene.context.elements.ensure_positive_bounds()
+                self.was_lb_raised = False
                 return RESPONSE_CONSUME
-            if self.save_width is None or self.save_height is None:
-                self.save_width = self.width
-                self.save_height = self.height
-            self.tool(space_pos, dx, dy, 0)
-            return RESPONSE_CONSUME
+        elif event_type in ("middleup", "lost"):
+            if self.was_lb_raised:
+                self.was_lb_raised = False
+                self.tool(space_pos, dx, dy, 1)
+                self.scene.context.elements.ensure_positive_bounds()
+                return RESPONSE_CONSUME
+        elif event_type == "move":
+            if self.was_lb_raised:
+                if not elements.has_emphasis():
+                    return RESPONSE_CONSUME
+                if self.save_width is None or self.save_height is None:
+                    self.save_width = self.width
+                    self.save_height = self.height
+                self.tool(space_pos, dx, dy, 0)
+                return RESPONSE_CONSUME
         return RESPONSE_CHAIN
 
     def tool_scalexy(self, position, dx, dy, event=0):
@@ -604,6 +697,18 @@ class SelectionWidget(Widget):
                     y1,
                 )
 
+    def create_duplicate(self):
+        from copy import copy
+
+        self.duplicated_elements = True
+        # Iterate through list of selected elements, duplicate them
+
+        context = self.scene.context
+        elements = context.elements
+        adding_elements = [copy(e) for e in list(elements.elems(emphasized=True))]
+        elements.add_elems(adding_elements)
+        elements.classify(adding_elements)
+
 
 class RectSelectWidget(Widget):
     """
@@ -612,19 +717,67 @@ class RectSelectWidget(Widget):
     Rectangle Selection Widget, draws the selection rectangle if left-clicked and dragged
     """
 
+    # selection_method = 1 = hit, 2 = cross, 3 = enclose
+    SELECTION_TOUCH = 1
+    SELECTION_CROSS = 2
+    SELECTION_ENCLOSE = 3
+    # Color for selection rectangle (hit, cross, enclose)
+    selection_style = [
+        (wx.RED, wx.PENSTYLE_DOT_DASH, "Select all elements the selection rectangle touches."),
+        (wx.GREEN, wx.PENSTYLE_DOT, "Select all elements the selection rectangle crosses."),
+        (wx.BLUE, wx.PENSTYLE_SHORT_DASH, "Select all elements the selection rectangle encloses."),
+    ]
+    selection_text_shift = " Previously selected remain selected!"
+    selection_text_control = " Invert selection state of elements!"
+
+    # 2 | 1        Define Selection method per sector, movement of mouse from point of origin into that sector...
+    # - + -
+    # 3 | 0
+    #
+    selection_method = [
+        SELECTION_ENCLOSE,
+        SELECTION_ENCLOSE,
+        SELECTION_TOUCH,
+        SELECTION_TOUCH,
+    ]  # Selection rectangle to the right: enclose, to the left: touch
+
+    key_shift_pressed = False
+    key_control_pressed = False
+    key_alt_pressed = False
+    was_lb_raised = False
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.BLUE)
+        self.selection_pen.SetColour(self.selection_style[0][0])
         self.selection_pen.SetWidth(25)
-        self.selection_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.selection_pen.SetStyle(self.selection_style[0][1])
         self.start_location = None
         self.end_location = None
 
     def hit(self):
         return HITCHAIN_HIT
 
+    store_last_msg = ""
+
+    def update_statusmsg(self, value):
+        if value != self.store_last_msg:
+            self.store_last_msg = value
+            self.scene.context.signal("statusmsg", value)
+
+    # debug_msg = ""
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        # sdbg = event_type
+        # if sdbg in ("hover_start", "hover_end", "hover"):
+        #    sdbg = "hover"
+        # if sdbg != self.debug_msg:
+        #    self.debug_msg = sdbg
+        #    print(
+        #        "SelRect-Event: %s (current state: %s)"
+        #        % (event_type, self.was_lb_raised)
+        #    )
+
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.start_location = space_pos
@@ -634,8 +787,94 @@ class RectSelectWidget(Widget):
             self.start_location = None
             self.end_location = None
             return RESPONSE_DROP
+        elif event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_release":
+            if self.key_control_pressed:
+                self.key_control_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_press":
+            if not self.key_control_pressed:
+                self.key_control_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_alt_release":
+            if self.key_alt_pressed:
+                self.key_alt_pressed = False
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        elif event_type == "kb_alt_press":
+            if not self.key_alt_pressed:
+                self.key_alt_pressed = True
+                if self.start_location is None:
+                    return RESPONSE_CHAIN
+                else:
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+
         elif event_type == "leftup":
+            _ = self.scene.context._
+            self.update_statusmsg(_("Status"))
             elements.validate_selected_area()
+            sx = self.start_location[0]
+            sy = self.start_location[1]
+            ex = self.end_location[0]
+            ey = self.end_location[1]
+            if sx <= ex:
+                if sy <= ey:
+                    sector = 0
+                else:
+                    sector = 1
+            else:
+                if sy <= ey:
+                    sector = 3
+                else:
+                    sector = 2
+
+            sx = min(self.start_location[0], self.end_location[0])
+            sy = min(self.start_location[1], self.end_location[1])
+            ex = max(self.start_location[0], self.end_location[0])
+            ey = max(self.start_location[1], self.end_location[1])
+            # print(
+            #    "Selection_box: (%f,%f)-(%f,%f) - Method=%f"
+            #    % (sx, sy, ex, ey, self.selection_method[sector])
+            # )
             for obj in elements.elems():
                 try:
                     q = obj.bbox(True)
@@ -643,39 +882,54 @@ class RectSelectWidget(Widget):
                     continue  # This element has no bounds.
                 if q is None:
                     continue
-                sx = self.start_location[0]
-                sy = self.start_location[1]
-                ex = self.end_location[0]
-                ey = self.end_location[1]
-                right_drag = sx <= ex and sy <= ey
-                sx = min(self.start_location[0], self.end_location[0])
-                sy = min(self.start_location[1], self.end_location[1])
-                ex = max(self.start_location[0], self.end_location[0])
-                ey = max(self.start_location[1], self.end_location[1])
                 xmin = q[0]
                 ymin = q[1]
                 xmax = q[2]
                 ymax = q[3]
-                if right_drag:
-                    if (
-                        sx <= xmin <= ex
-                        and sy <= ymin <= ey
-                        and sx <= xmax <= ex
-                        and sy <= ymax <= ey
-                    ):
+                # no hit
+                cover = 0
+                # Check Hit
+                # The rectangles don't overlap if
+                # one rectangle's minimum in some dimension
+                # is greater than the other's maximum in
+                # that dimension.
+                if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
+                    cover = self.SELECTION_TOUCH
+                    # If selection rect is fullly inside an object then ignore
+                    if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
+                        cover = 0
+
+                # Check Cross
+                if (
+                    ((sx <= xmin) and (xmax <= ex))
+                    and not ((sy > ymax) or (ey < ymin))
+                    or ((sy <= ymin) and (ymax <= ey))
+                    and not ((sx > xmax) or (ex < xmin))
+                ):
+                    cover = self.SELECTION_CROSS
+                # Check contain
+                if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
+                    cover = self.SELECTION_ENCLOSE
+
+                if self.key_shift_pressed:
+                    # Add Selection
+                    if cover >= self.selection_method[sector]:
                         obj.node.emphasized = True
-                    else:
-                        obj.node.emphasized = False
+                elif self.key_control_pressed:
+                    # Invert Selection
+                    if cover >= self.selection_method[sector]:
+                        obj.node.emphasized = not obj.node.emphasized
                 else:
-                    if (sx <= xmin <= ex or sx <= xmax <= ex) and (
-                        sy <= ymin <= ey or sy <= ymax <= ey
-                    ):
+                    # Replace Selection
+                    if cover >= self.selection_method[sector]:
                         obj.node.emphasized = True
                     else:
                         obj.node.emphasized = False
+
             self.scene.request_refresh()
             self.start_location = None
             self.end_location = None
+
             return RESPONSE_CONSUME
         elif event_type == "move":
             self.scene.request_refresh()
@@ -697,6 +951,35 @@ class RectSelectWidget(Widget):
             y0 = self.start_location[1]
             x1 = self.end_location[0]
             y1 = self.end_location[1]
+            if x0 <= x1:
+                if y0 <= y1:
+                    sector = 0
+                else:
+                    sector = 1
+            else:
+                if y0 <= y1:
+                    sector = 3
+                else:
+                    sector = 2
+
+            _ = self.scene.context._
+            statusmsg = _(self.selection_style[self.selection_method[sector] - 1][2])
+            if self.key_shift_pressed:
+                statusmsg += _(self.selection_text_shift)
+            elif self.key_control_pressed:
+                statusmsg += _(self.selection_text_control)
+
+            self.update_statusmsg(statusmsg)
+
+            # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
+
+            self.selection_pen.SetColour(
+                self.selection_style[self.selection_method[sector] - 1][0]
+            )
+            self.selection_pen.SetStyle(
+                self.selection_style[self.selection_method[sector] - 1][1]
+            )
+
             linewidth = 2.0 / matrix.value_scale_x()
             if linewidth < 1:
                 linewidth = 1
@@ -709,6 +992,52 @@ class RectSelectWidget(Widget):
             gc.StrokeLine(x1, y0, x1, y1)
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
+            matrix = self.parent.matrix
+            delta_X = 15.0 / matrix.value_scale_x()
+            delta_Y = 15.0 / matrix.value_scale_y()
+            # Draw indicator...
+            if self.key_shift_pressed:
+                if (
+                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
+                ):  # Don't draw if too tiny
+                    # Draw tiny + in Corner
+                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+                    ax1 = x1 - x_signum
+                    ay1 = y1 - y_signum
+
+                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.SetPen(self.selection_pen)
+                    gc.StrokeLine(ax1, y1, ax1, ay1)
+                    gc.StrokeLine(ax1, ay1, x1, ay1)
+                    font_size = 10.0 / matrix.value_scale_x()
+                    if font_size<1.0:
+                        font_size=1.0
+                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
+                    (t_width, t_height) = gc.GetTextExtent("+")
+                    gc.DrawText("+", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
+
+            elif self.key_control_pressed:
+                if (
+                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
+                ):  # Don't draw if too tiny
+                    # Draw tiny - in Corner
+                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+                    ax1 = x1 - x_signum
+                    ay1 = y1 - y_signum
+                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.SetPen(self.selection_pen)
+                    gc.StrokeLine(ax1, y1, ax1, ay1)
+                    gc.StrokeLine(ax1, ay1, x1, ay1)
+                    font_size = 10.0 / matrix.value_scale_x()
+                    if font_size<1.0:
+                        font_size=1.0
+                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
+                    (t_width, t_height) = gc.GetTextExtent("!")
+                    gc.DrawText("!", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
 
 
 class ReticleWidget(Widget):

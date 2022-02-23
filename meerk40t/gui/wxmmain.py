@@ -1621,6 +1621,10 @@ class MeerK40t(MWindow):
             obj.image_height = image_height
             elements.add_elem(obj)
 
+    @signal_listener("statusmsg")
+    def on_update_statusmsg(self, origin, value):
+        self.main_statusbar.SetStatusText(value, 0)
+
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
