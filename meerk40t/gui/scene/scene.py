@@ -97,6 +97,9 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_PAINT, self.on_paint)
         self.scene_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
 
+        self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+
         self.scene_panel.Bind(wx.EVT_MOTION, self.on_mouse_move)
 
         self.scene_panel.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -141,6 +144,44 @@ class ScenePanel(wx.Panel):
         within the scene.
         """
         self.scene._signal_widget(self.scene.widget_root, *args, **kwargs)
+
+    # Indicator for Keyboard-Modifier
+    isShiftPressed = False
+    isCtrlPressed = False
+    isAltPressed = False
+
+    def on_key_down(self, evt):
+        keycode = evt.GetKeyCode()
+        # print("Key-Down: %f" % keycode)
+        if keycode == wx.WXK_SHIFT:
+            if not self.isShiftPressed:  # ignore multiple calls
+                self.isShiftPressed = True
+                self.scene.event(self.scene.last_position, "kb_shift_press")
+        elif keycode == wx.WXK_CONTROL:
+            if not self.isCtrlPressed:  # ignore multiple calls
+                self.isCtrlPressed = True
+                self.scene.event(self.scene.last_position, "kb_ctrl_press")
+        elif keycode == wx.WXK_ALT:
+            if not self.isAltPressed:  # ignore multiple calls
+                self.isAltPressed = True
+                self.scene.event(self.scene.last_position, "kb_alt_press")
+                # self.scene.event(self.scene.last_position, "kb_alt_press")
+
+    def on_key_up(self, evt):
+        keycode = evt.GetKeyCode()
+        # print("Key-Up: %f" % keycode)
+        if keycode == wx.WXK_SHIFT:
+            if self.isShiftPressed:  # ignore multiple calls
+                self.isShiftPressed = False
+                self.scene.event(self.scene.last_position, "kb_shift_release")
+        elif keycode == wx.WXK_CONTROL:
+            if self.isCtrlPressed:  # ignore multiple calls
+                self.isCtrlPressed = False
+                self.scene.event(self.scene.last_position, "kb_ctrl_release")
+        elif keycode == wx.WXK_ALT:
+            if self.isAltPressed:  # ignore multiple calls
+                self.isAltPressed = False
+                self.scene.event(self.scene.last_position, "kb_alt_release")
 
     def on_size(self, event=None):
         if self.context is None:
@@ -219,7 +260,12 @@ class ScenePanel(wx.Panel):
         """
         Scene Panel left click event for down.
         """
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_right_mouse_down(event)
+            return
         self.SetFocus()
+
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
         self.scene.event(event.GetPosition(), "leftdown")
@@ -228,6 +274,10 @@ class ScenePanel(wx.Panel):
         """
         Scene Panel left click event for up.
         """
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_right_mouse_up(event)
+            return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
         self.scene.event(event.GetPosition(), "leftup")
@@ -239,6 +289,8 @@ class ScenePanel(wx.Panel):
         if self.scene_panel.HasCapture():
             return
         self.scene.event(event.GetPosition(), "doubleclick")
+
+    last_mode = None
 
     def on_mouse_move(self, event: wx.MouseEvent):
         """
@@ -676,6 +728,7 @@ class Scene(Module, Job):
         """
         if self.log_events:
             self.log_events("%s: %s" % (event_type, str(window_pos)))
+
         if window_pos is None:
             # Capture Lost
             for i, hit in enumerate(self.hit_chain):
@@ -701,6 +754,39 @@ class Scene(Module, Job):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
+
+        if event_type in (
+            "kb_shift_release",
+            "kb_shift_press",
+            "kb_ctrl_release",
+            "kb_ctrl_press",
+            "kb_alt_release",
+            "kb_alt_press",
+        ):
+            # print("Keyboard-Event raised: %s" % event_type)
+            self.rebuild_hittable_chain()
+            for current_widget, current_matrix in self.hittable_elements:
+                space_pos = window_pos
+                if current_matrix is not None and not current_matrix.is_identity():
+                    space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
+                    space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
+                    sdx = space_cur[0] - space_last[0]
+                    sdy = space_cur[1] - space_last[1]
+                    space_pos = (
+                        space_cur[0],
+                        space_cur[1],
+                        space_last[0],
+                        space_last[1],
+                        sdx,
+                        sdy,
+                    )
+                try:
+                    # We ignore the consume etc. for the time being...
+                    response = current_widget.event(window_pos, space_pos, event_type)
+                except AttributeError:
+                    pass
+            return
+
         if event_type in (
             "leftdown",
             "middledown",
@@ -712,6 +798,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
+
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -755,10 +842,20 @@ class Scene(Module, Job):
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
+
+            # if current_widget is None:
+            #    widgetname = "undefined"
+            # else:
+            #    widgetname = type(current_widget).__name__
+
             if response == RESPONSE_ABORT:
+                # f event_type == "leftdown":
+                #    print("Event was aborted by %s" % widgetname)
                 self.hit_chain.clear()
                 return
             elif response == RESPONSE_CONSUME:
+                # if event_type == "leftdown":
+                #    print("Event was consumed by %s" % widgetname)
                 return
             elif response == RESPONSE_CHAIN:
                 continue
@@ -1323,6 +1420,7 @@ class SceneSpaceWidget(Widget):
 
         If nothing was otherwise hit by the event, we process the scene manipulation events
         """
+
         if event_type == "hover":
             return RESPONSE_CHAIN
         if self.aspect:
@@ -1430,7 +1528,7 @@ class SceneSpaceWidget(Widget):
             )
             p /= 250.0
             if self._previous_zoom is not None:
-                zoom_factor = e ** p
+                zoom_factor = e**p
                 zoom_change = zoom_factor / self._previous_zoom
                 self._previous_zoom = zoom_factor
                 self.scene_widget.matrix.post_scale(

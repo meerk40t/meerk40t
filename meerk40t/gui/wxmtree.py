@@ -27,6 +27,7 @@ from .icons import (
 from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
+from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 
@@ -106,24 +107,15 @@ class TreePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            self.context(action + "\n")
-        else:
-            event.Skip()
+        if keymap_execute(self.context, keyvalue, keydown=True):
+            return
+        event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            if action.startswith("+"):
-                # Keyup commands only trigger if the down command started with +
-                action = "-" + action[1:]
-                self.context(action + "\n")
-        else:
-            event.Skip()
+        if keymap_execute(self.context, keyvalue, keydown=False):
+            return
+        event.Skip()
 
     def initialize(self):
         self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
