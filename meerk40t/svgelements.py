@@ -564,20 +564,20 @@ class Length(object):
             if value is None:
                 self.amount = None
                 self.units = None
-                self.isValid = False
                 return
             s = str(value)
             for m in REGEX_LENGTH.findall(s):
                 self.amount = float(m[0])
                 self.units = m[1]
-                self.isValid = True
+                if len(m[1]) == 0 or m[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                    self.isValid = True
                 return
         elif len(args) == 2:
             self.amount = args[0]
             self.units = args[1]
             try:
                 x = float(args[0])
-                if (args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT)):
+                if len(args[1]) == 0 or args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
                     self.isValid = True
             except ValueError:
                 pass
@@ -585,6 +585,7 @@ class Length(object):
         self.amount = 0.0
         self.units = ""
 
+# TODO: if isValid is False either use that knowledge and / or propagate that to the results of operations
     def __float__(self):
         if self.amount is None:
             return None
