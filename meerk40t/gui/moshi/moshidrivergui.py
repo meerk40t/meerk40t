@@ -140,17 +140,17 @@ class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(335, 170, *args, **kwds)
 
-        self.panel = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
+        self.control = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Configuration"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
 
     def window_preserve(self):
         return False

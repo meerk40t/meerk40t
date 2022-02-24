@@ -1193,7 +1193,7 @@ class Navigation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(598, 429, *args, **kwds)
 
-        self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
+        self.control = NavigationPanel(self, wx.ID_ANY, context=self.context)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
@@ -1202,7 +1202,7 @@ class Navigation(MWindow):
         self.SetTitle(_("Navigation"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

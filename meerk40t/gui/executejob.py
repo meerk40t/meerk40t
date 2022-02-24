@@ -455,7 +455,7 @@ class ExecuteJob(MWindow):
             plan_name = args[3]
         else:
             plan_name = 0
-        self.panel = PlannerPanel(
+        self.control = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
         self.panel.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel)
@@ -520,27 +520,27 @@ class ExecuteJob(MWindow):
 
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_home,
+            self.control.jobadd_home,
             wx_menu.Append(wx.ID_ANY, _("Home"), _("Add a home")),
         )
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_physicalhome,
+            self.control.jobadd_physicalhome,
             wx_menu.Append(wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")),
         )
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_wait,
+            self.control.jobadd_wait,
             wx_menu.Append(wx.ID_ANY, _("Wait"), _("Add a wait")),
         )
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_beep,
+            self.control.jobadd_beep,
             wx_menu.Append(wx.ID_ANY, _("Beep"), _("Add a beep")),
         )
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_interrupt,
+            self.control.jobadd_interrupt,
             wx_menu.Append(wx.ID_ANY, _("Interrupt"), _("Add an interrupt")),
         )
 
@@ -554,7 +554,7 @@ class ExecuteJob(MWindow):
         if self.context.developer_mode:
             self.Bind(
                 wx.EVT_MENU,
-                self.panel.jobchange_return_to_operations,
+                self.control.jobchange_return_to_operations,
                 wx_menu.Append(
                     wx.ID_ANY,
                     _("Return to Operations"),
@@ -564,12 +564,12 @@ class ExecuteJob(MWindow):
 
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobchange_step_repeat,
+            self.control.jobchange_step_repeat,
             wx_menu.Append(wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")),
         )
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

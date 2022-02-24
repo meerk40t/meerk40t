@@ -206,7 +206,7 @@ class PathProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(288, 303, *args, **kwds)
 
-        self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.control = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
         self.SetIcon(_icon)
@@ -214,9 +214,9 @@ class PathProperty(MWindow):
         self.SetTitle(_("Path Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element = node.object
-        self.panel.element_node = node
-        self.panel.set_widgets()
+        self.control.element = node.object
+        self.control.element_node = node
+        self.control.set_widgets()
 
     def window_preserve(self):
         return False

@@ -670,7 +670,7 @@ class LhystudiosControllerGui(MWindow):
         # MENUBAR END
         # ==========
 
-        self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.control = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -701,13 +701,13 @@ class LhystudiosControllerGui(MWindow):
         append(wxglade_tmp_menu, _("Views"))
 
     def restore(self, *args, **kwargs):
-        self.panel.set_widgets()
+        self.control.set_widgets()
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
 
     def window_preserve(self):
         return False

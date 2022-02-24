@@ -72,7 +72,7 @@ class UsbConnect(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(915, 424, *args, **kwds)
 
-        self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
+        self.control = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
@@ -80,7 +80,7 @@ class UsbConnect(MWindow):
         self.SetTitle(_("UsbConnect"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()

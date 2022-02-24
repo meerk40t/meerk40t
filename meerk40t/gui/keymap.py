@@ -250,7 +250,7 @@ class Keymap(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(500, 530, *args, **kwds)
 
-        self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
+        self.control = KeymapPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
         self.SetIcon(_icon)
@@ -258,7 +258,7 @@ class Keymap(MWindow):
         self.SetTitle(_("Keymap Settings"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.control.initialize()
 
     def window_close(self):
-        self.panel.finalize()
+        self.control.finalize()
