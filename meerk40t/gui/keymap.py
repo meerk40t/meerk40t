@@ -1,9 +1,9 @@
-from functools import partial
 import platform
 import wx
 
 from .icons import icons8_keyboard_50
 from .mwindow import MWindow
+from .wxutils import get_key_name
 
 _ = wx.GetTranslation
 
@@ -34,8 +34,9 @@ class KeymapPanel(wx.Panel):
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick
         )
         self.list_keymap.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated)
-        self.text_key_name.Bind(wx.EVT_KEY_DOWN, partial(self.on_key_press, True))
-        self.text_key_name.Bind(wx.EVT_KEY_UP, partial(self.on_key_press, False))
+        self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.text_key_name.Bind(wx.EVT_KEY_UP, self.on_key_up)
+        self.key_pressed = False
 
     def initialize(self):
         self.reload_keymap()
@@ -138,18 +139,28 @@ class KeymapPanel(wx.Panel):
         self.reload_keymap()
         self.select_item_by_key(origkey)
 
-    def on_key_press(self, keydown, event):
-        from meerk40t.gui.wxutils import get_key_name
+    def on_key_down(self, event):
+        keyvalue = get_key_name(event, return_modifier=True)
+        # print("down", keyvalue)
+        mod, key = KeymapPanel.__split_modifiers(keyvalue)
+        if key:
+            self.key_pressed = True
+        self.process_key_event(keyvalue)
 
-        keyvalue = KeymapPanel.__translate_to_mac(get_key_name(event, return_modifier=keydown))
+    def on_key_up(self, event):
+        keyvalue = get_key_name(event, return_modifier=True)
+        # print("up", keyvalue)
+        if self.key_pressed:
+            if keyvalue is None:
+                self.key_pressed = False
+            return
+        mod, key = KeymapPanel.__split_modifiers(keyvalue)
+        if key:
+            self.key_pressed = True
+        self.process_key_event(keyvalue)
 
-        # Do not clear keyvalue if key chosen and modifier is released
-        # i.e. Alt down, Alt+a, Alt up
-        if not keydown and keyvalue is None:
-            oldkey = self.text_key_name.GetValue()
-            mod, oldkey = KeymapPanel.__split_modifiers(oldkey)
-            if oldkey != "":
-                return
+    def process_key_event(self, keyvalue):
+        keyvalue = KeymapPanel.__translate_to_mac(keyvalue)
 
         # Clear existing selection(s)
         i = self.list_keymap.GetFirstSelected()
