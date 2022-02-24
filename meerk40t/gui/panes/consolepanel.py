@@ -81,7 +81,7 @@ BBCODE_LIST = {
 
 RE_BBCODE = re.compile(
     r"(%s)" %
-        (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])),
+        (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])),
     re.IGNORECASE,
 )
 

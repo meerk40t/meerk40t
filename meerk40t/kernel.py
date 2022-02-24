@@ -2206,8 +2206,9 @@ class Kernel:
             "echo",
             help=_("Echo text to console"),
         )
-        def echo_to_console(channel, remainder, *args, **kwargs):
-            channel(remainder)
+        def echo_to_console(channel, remainder=None, *args, **kwargs):
+            if remainder:
+                channel(remainder)
 
         @self.console_command("loop", help=_("loop <command>"))
         def loop(remainder=None, **kwargs):
