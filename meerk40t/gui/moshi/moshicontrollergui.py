@@ -420,7 +420,7 @@ class MoshiControllerGui(MWindow):
         # MENUBAR END
         # ==========
 
-        self.control = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -457,10 +457,10 @@ class MoshiControllerGui(MWindow):
         self.set_widgets()
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()
 
     def window_preserve(self):
         return False

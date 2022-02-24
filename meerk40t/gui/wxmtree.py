@@ -200,7 +200,7 @@ class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
-        self.control = TreePanel(self, wx.ID_ANY, context=self.context)
+        self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
         self.SetIcon(_icon)
@@ -208,13 +208,13 @@ class ElementsTree(MWindow):
 
     def window_open(self):
         try:
-            self.control.initialize()
+            self.panel.initialize()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.control.finalize()
+            self.panel.finalize()
         except AttributeError:
             pass
 

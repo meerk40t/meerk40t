@@ -1057,7 +1057,7 @@ class OperationProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(_simple_width, 500, *args, **kwds)
 
-        self.control = OperationPropertyPanel(
+        self.panel = OperationPropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
         # begin wxGlade: OperationProperty.__set_properties
@@ -1067,17 +1067,17 @@ class OperationProperty(MWindow):
         self.SetTitle(_("Operation Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.control.operation = node
-        self.control.set_widgets()
-        self.control.on_size()
+        self.panel.operation = node
+        self.panel.set_widgets()
+        self.panel.on_size()
         self.Refresh()
         self.Update()
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()
 
     def window_preserve(self):
         return False
