@@ -558,20 +558,29 @@ class Length(object):
     """
 
     def __init__(self, *args, **kwargs):
+        self.isValid = False
         if len(args) == 1:
             value = args[0]
             if value is None:
                 self.amount = None
                 self.units = None
+                self.isValid = False
                 return
             s = str(value)
             for m in REGEX_LENGTH.findall(s):
                 self.amount = float(m[0])
                 self.units = m[1]
+                self.isValid = True
                 return
         elif len(args) == 2:
             self.amount = args[0]
             self.units = args[1]
+            try:
+                x = float(args[0])
+                if (args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT)):
+                    self.isValid = True
+            except ValueError:
+                pass
             return
         self.amount = 0.0
         self.units = ""

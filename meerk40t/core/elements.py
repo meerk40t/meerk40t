@@ -3658,7 +3658,7 @@ class Elemental(Modifier):
         @context.console_command(
             "outline",
             help=_("outline the current selected elements"),
-            input_type=(
+            input_type=(            
                 None,
                 "elements",
             ),
@@ -3679,6 +3679,13 @@ class Elemental(Modifier):
             """
             if x_offset is None:
                 raise SyntaxError
+            elif not  x_offset.isValid:
+                raise SyntaxError(_("This is not a valid length"))
+            if not y_offset is None:
+                if not  y_offset.isValid:
+                    raise SyntaxError(_("This is not a valid length"))
+            
+
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
