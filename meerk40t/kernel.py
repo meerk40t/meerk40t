@@ -2205,7 +2205,7 @@ class Kernel:
             "echo",
             help=_("Echo text to console"),
         )
-        def echo_to_console(channel, remainder=None, *args, **kwargs):
+        def echo_to_console(channel, remainder=None, **kwargs):
             if remainder:
                 channel(remainder)
 
