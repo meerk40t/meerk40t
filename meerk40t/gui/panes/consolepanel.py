@@ -44,9 +44,6 @@ def style_ununderline(style):
     style.SetFontUnderlined(False)
     return style
 
-def style_normal(rtc):
-    return rtc.BasicStyle
-
 BBCODE_LIST = {
     "black":        fg_Colour("black"),
     "red":          fg_Colour("red"),
@@ -72,7 +69,7 @@ BBCODE_LIST = {
     "/underline":   style_ununderline,
     "underscore":   style_underline,
     "/underscore":  style_ununderline,
-    "normal":       style_normal,
+    "normal":       None,
     "negative":     None,
     "positive":     None,
     "raw":          None,
@@ -227,11 +224,14 @@ class ConsolePanel(wx.Panel):
                         style = self.text_main.DefaultStyleEx
                         if negative:
                             style = style_negate(style)
-                        if tag in ("negative", "positive"):
+                        if tag in ("negative", "positive", "normal"):
                             negative = tag == "negative"
-                        getstyle = BBCODE_LIST[part[1:-1].lower()]
-                        if getstyle:
-                            style = getstyle(style)
+                        if tag == "normal":
+                            style = basic_style
+                        else:
+                            getstyle = BBCODE_LIST[part[1:-1].lower()]
+                            if getstyle:
+                                style = getstyle(style)
                         if negative:
                             style = style_negate(style)
                         self.text_main.EndStyle()
