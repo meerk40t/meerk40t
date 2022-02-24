@@ -68,15 +68,14 @@ BBCODE_LIST = {
 # re for bbcode->ansi
 RE_ANSI = re.compile(
     r"((?:\[raw\])(.*?)(?:\[/raw\]|$)|"
-    + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST.keys()])
+    + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])
     + r")",
     re.IGNORECASE
 )
 
 def ansi_supported():
     # https://en.wikipedia.org/wiki/ANSI_escape_code#Platform_support
-    os = platform.system()
-    if os != "Windows":
+    if platform.system() != "Windows":
         return True
     if int(platform.release()) < 10:
         return False
