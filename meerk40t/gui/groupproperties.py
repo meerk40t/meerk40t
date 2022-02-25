@@ -87,7 +87,7 @@ class GroupProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(372, 141, *args, **kwds)
 
-        self.panel = GroupPropertiesPanel(
+        self.control = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
         self.add_module_delegate(self.panel)
