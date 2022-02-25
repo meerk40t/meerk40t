@@ -304,7 +304,7 @@ class LhystudiosAccelerationChart(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, *args, **kwds)
 
-        self.control = LhystudiosAccelerationChartPanel(
+        self.panel = LhystudiosAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
         _icon = wx.NullIcon
@@ -313,7 +313,7 @@ class LhystudiosAccelerationChart(MWindow):
         self.SetTitle(_("Acceleration Chart"))
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()

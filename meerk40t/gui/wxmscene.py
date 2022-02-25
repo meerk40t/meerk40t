@@ -316,7 +316,7 @@ class MeerK40tScenePanel(wx.Panel):
 class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
-        self.control = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
@@ -324,7 +324,7 @@ class SceneWindow(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()

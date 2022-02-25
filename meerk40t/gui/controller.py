@@ -66,17 +66,17 @@ class Controller(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 131, *args, **kwds)
 
-        self.control = ControllerDefaultPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = ControllerDefaultPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Controller"))
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()
 
     def window_preserve(self):
         return False
