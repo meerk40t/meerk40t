@@ -929,7 +929,7 @@ class SizePanel(wx.Panel):
                     self.objratio = 0
                 else:
                     self.objratio = mw / mh
-            except:
+            except (ValueError, AttributeError):
                 self.objratio = 1.0
                 v = False  # has no bounding box...
 
@@ -1358,7 +1358,7 @@ class Transform(wx.Panel):
         return float(
             Angle.parse(stxt).as_radians
         )  # Temp fix until svgelements fix is merged
-        return Angle.parse(stxt).as_radians
+        # return Angle.parse(stxt).as_radians
 
     @staticmethod
     def scaled_value(stxt):
