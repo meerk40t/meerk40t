@@ -3,8 +3,8 @@ import wx
 from wx import aui
 from wx import richtext
 
-from ..icons import icons8_console_50
-from ..mwindow import MWindow
+from meerk40t.gui.icons import icons8_console_50
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
