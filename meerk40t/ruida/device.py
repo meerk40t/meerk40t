@@ -6,7 +6,8 @@ from ..core.cutcode import CutCode, LineCut, PlotCut
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
-from ..kernel import Module, Service
+from meerk40t.kernel.module import Module
+from meerk40t.kernel.service import Service
 from ..svgelements import Color, Point
 
 UNITS_PER_uM = UNITS_PER_uM

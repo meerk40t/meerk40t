@@ -19,7 +19,7 @@ from ..core.units import (
     UNITS_PERCENT,
 )
 from ..image.imagetools import RasterScripts
-from ..kernel import signal_listener
+from meerk40t.kernel.kernel import signal_listener
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender

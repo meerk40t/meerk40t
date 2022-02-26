@@ -17,18 +17,8 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Service,
-)
+from meerk40t.kernel.states import *
+from meerk40t.kernel.service import Service
 from .moshiblob import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,

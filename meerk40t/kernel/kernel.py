@@ -1,5 +1,4 @@
-import ctypes
-import datetime
+from datetime import datetime
 import functools
 import inspect
 import os
@@ -7,100 +6,25 @@ import platform
 import re
 import threading
 import time
-from collections import deque
-from configparser import ConfigParser, NoSectionError
-from pathlib import Path
-from threading import Lock, Thread
+from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+
+from meerk40t.kernel.lifecycles import *
+from meerk40t.kernel.states import *
+from meerk40t.core.exceptions import CommandMatchRejected, MalformedCommandRegistration
+from meerk40t.kernel.channel import Channel
+# from meerk40t.kernel.console_decorators import console_argument, console_option
+from meerk40t.kernel.context import Context
+from meerk40t.kernel.functions import get_safe_path
+from meerk40t.kernel.jobs import Job, ConsoleFunction
+from meerk40t.kernel.module import Module
+from meerk40t.kernel.service import Service
+from meerk40t.kernel.settings import Settings
 
 KERNEL_VERSION = "0.0.1"
 
-STATE_UNKNOWN = -1
-STATE_INITIALIZE = 0
-STATE_IDLE = 1
-STATE_ACTIVE = 2
-STATE_BUSY = 3
-STATE_PAUSE = 4
-STATE_END = 5
-STATE_SUSPEND = 6
-STATE_WAIT = 7
-STATE_TERMINATE = 10
-
-LIFECYCLE_SHUTDOWN = 1000
-LIFECYCLE_INIT = 0
-LIFECYCLE_KERNEL_PREREGISTER = 100
-LIFECYCLE_KERNEL_REGISTER = 101
-LIFECYCLE_KERNEL_CONFIGURE = 102
-LIFECYCLE_KERNEL_PREBOOT = 200
-LIFECYCLE_KERNEL_BOOT = 201
-LIFECYCLE_KERNEL_POSTBOOT = 202
-LIFECYCLE_KERNEL_PRESTART = 300
-LIFECYCLE_KERNEL_START = 301
-LIFECYCLE_KERNEL_POSTSTART = 302
-LIFECYCLE_KERNEL_READY = 303
-LIFECYCLE_KERNEL_FINISHED = 304
-LIFECYCLE_KERNEL_PREMAIN = 400
-LIFECYCLE_KERNEL_MAINLOOP = 401
-LIFECYCLE_KERNEL_PRESHUTDOWN = 900
-
-LIFECYCLE_SERVICE_ADDED = 50
-LIFECYCLE_SERVICE_ATTACHED = 100
-LIFECYCLE_SERVICE_ASSIGNED = 101
-LIFECYCLE_SERVICE_DETACHED = 200
-
-LIFECYCLE_MODULE_OPENED = 100
-LIFECYCLE_MODULE_CLOSED = 200
-
-
-def kernel_lifecycle_name(lifecycle):
-    if lifecycle == LIFECYCLE_INIT:
-        return "init"
-    if lifecycle == LIFECYCLE_KERNEL_PREREGISTER:
-        return "preregister"
-    if lifecycle == LIFECYCLE_KERNEL_REGISTER:
-        return "register"
-    if lifecycle == LIFECYCLE_KERNEL_CONFIGURE:
-        return "configure"
-    if lifecycle == LIFECYCLE_KERNEL_PREBOOT:
-        return "preboot"
-    if lifecycle == LIFECYCLE_KERNEL_BOOT:
-        return "boot"
-    if lifecycle == LIFECYCLE_KERNEL_POSTBOOT:
-        return "postboot"
-    if lifecycle == LIFECYCLE_KERNEL_PRESTART:
-        return "prestart"
-    if lifecycle == LIFECYCLE_KERNEL_START:
-        return "start"
-    if lifecycle == LIFECYCLE_KERNEL_POSTSTART:
-        return "poststart"
-    if lifecycle == LIFECYCLE_KERNEL_READY:
-        return "ready"
-    if lifecycle == LIFECYCLE_KERNEL_FINISHED:
-        return "finished"
-    if lifecycle == LIFECYCLE_KERNEL_PREMAIN:
-        return "premain"
-    if lifecycle == LIFECYCLE_KERNEL_MAINLOOP:
-        return "mainloop"
-    if lifecycle == LIFECYCLE_KERNEL_PRESHUTDOWN:
-        return "preshutdown"
-    if lifecycle == LIFECYCLE_SHUTDOWN:
-        return "shutdown"
-
-
-def service_lifecycle_name(lifecycle):
-    if lifecycle >= LIFECYCLE_SHUTDOWN:
-        return "shutdown"
-    if lifecycle >= LIFECYCLE_SERVICE_DETACHED:
-        return "detached"
-    if lifecycle >= LIFECYCLE_SERVICE_ASSIGNED:
-        return "assigned"
-    if lifecycle >= LIFECYCLE_SERVICE_ATTACHED:
-        return "attached"
-    if lifecycle >= LIFECYCLE_SERVICE_ADDED:
-        return "added"
-    if lifecycle >= LIFECYCLE_INIT:
-        return "init"
-
+RE_ACTIVE = re.compile("service/(.*)/active")
+RE_AVAILABLE = re.compile("service/(.*)/available")
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
@@ -110,986 +34,6 @@ _cmd_parse = [
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
 ]
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
-
-# https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
-BBCODE_LIST = {
-    "black":        "\033[30m",
-    "red":          "\033[31m",
-    "green":        "\033[32m",
-    "yellow":       "\033[33m",
-    "blue":         "\033[34m",
-    "magenta":      "\033[35m",
-    "cyan":         "\033[36m",
-    "white":        "\033[37m",
-    "bg-black":     "\033[40m",
-    "bg-red":       "\033[41m",
-    "bg-green":     "\033[42m",
-    "bg-yellow":    "\033[43m",
-    "bg-blue":      "\033[44m",
-    "bg-magenta":   "\033[45m",
-    "bg-cyan":      "\033[46m",
-    "bg-white":     "\033[47m",
-    "bold":         "\033[1m",
-    "/bold":        "\033[22m",
-    "italic":       "\033[3m",
-    "/italic":      "\033[3m",
-    "underline":    "\033[4m",
-    "/underline":   "\033[24m",
-    "underscore":   "\033[4m",
-    "/underscore":  "\033[24m",
-    "negative":     "\033[7m",
-    "positive":     "\033[27m",
-    "normal":       "\033[0m",
-}
-
-# re for bbcode->ansi
-RE_ANSI = re.compile(
-    r"((?:\[raw\])(.*?)(?:\[/raw\]|$)|"
-    + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])
-    + r")",
-    re.IGNORECASE
-)
-
-def ansi_supported():
-    # https://en.wikipedia.org/wiki/ANSI_escape_code#Platform_support
-    if platform.system() != "Windows":
-        return True
-    if int(platform.release()) < 10:
-        return False
-    if int(platform.version().split('.')[2]) < 10586:
-        return False
-    # Fix ANSI color in Windows 10 version 10.0.14393 (Windows Anniversary Update)
-    # https://gist.github.com/RDCH106/6562cc7136b30a5c59628501d87906f7
-    kernel32 = ctypes.windll.kernel32
-    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-    return True
-
-def bbcode_to_ansi(text):
-    return "".join([
-        BBCODE_LIST["normal"],
-        RE_ANSI.sub(bbcode_to_ansi_match, text),
-        BBCODE_LIST["normal"],
-    ])
-
-def bbcode_to_ansi_match(m):
-    tag = re.sub(r"\].*", "", m[0])[1:].lower()
-    return BBCODE_LIST[tag] if tag != "raw" else m[2]
-
-def bbcode_to_plain(text):
-    return RE_ANSI.sub("", text)
-
-
-
-class Module:
-    """
-    Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
-    a context. When close() is called on the context, it will close and delete references to the opened module and call
-    module_close().
-
-    If an opened module tries to open() a second time in a context with the same name, and was not closed, the
-    restore() function is called for the module, with the same args and kwargs that would have been called on
-    __init__().
-
-    Multiple instances of a module can be opened but this requires a different initialization name.
-    """
-
-    def __init__(
-        self,
-        context: "Context",
-        name: str = None,
-        registered_path: str = None,
-        *args,
-        **kwargs,
-    ):
-        self.context = context
-        self.name = name
-        self.registered_path = registered_path
-        self.state = STATE_INITIALIZE
-
-    def __repr__(self):
-        return '{class_name}({context}, name="{name}")'.format(
-            class_name=self.__class__.__name__,
-            context=repr(self.context),
-            name=self.name,
-        )
-
-    def restore(self, *args, **kwargs):
-        """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
-        same context."""
-        pass
-
-    def module_open(self, *args, **kwargs):
-        """Initialize() is called after open() to setup the module and allow it to register various hooks into the
-        kernelspace."""
-        pass
-
-    def module_close(self, *args, **kwargs):
-        """Finalize is called after close() to unhook various kernelspace hooks. This will happen if kernel is being
-        shutdown or if this individual module is being closed on its own."""
-        pass
-
-    def add_module_delegate(self, delegate):
-        self.context.kernel.add_delegate(delegate, self)
-
-
-class Context:
-    """
-    Contexts serve as path-relevant snapshots of the kernel. These are the primary interaction between the modules
-    and the kernel. They permit getting other contexts of the kernel. This should serve as the primary interface
-    code between the kernel and the modules.
-
-    Contexts store the persistent settings and settings from at their path locations.
-
-    Contexts have attribute settings located at .<setting> and so long as this setting does not begin with _ it will be
-    reloaded when .setting() is called for the given attribute. This should be called by code that intends access
-    an attribute even if it was already called.
-    """
-
-    def __init__(self, kernel: "Kernel", path: str):
-        self._kernel = kernel
-        self._path = path
-        self._state = STATE_UNKNOWN
-        self.opened = {}
-
-        self.console_argument = console_argument
-        self.console_option = console_option
-
-    def __repr__(self):
-        return "Context('%s')" % self._path
-
-    def __call__(self, data: str, **kwargs):
-        if len(data) and data[-1] != "\n":
-            data += "\n"
-        return self._kernel.console(data)
-
-    # ==========
-    # PATH INFORMATION
-    # ==========
-
-    def abs_path(self, subpath: str) -> str:
-        """
-        The absolute path function determines the absolute path of the given subpath within the current path of the
-        context.
-
-        @param subpath: relative path to the path at this context
-        @return:
-        """
-        subpath = str(subpath)
-        if subpath.startswith("/"):
-            return subpath[1:]
-        if self._path is None or self._path == "/":
-            return subpath
-        return "%s/%s" % (self._path, subpath)
-
-    def derive(self, path: str) -> "Context":
-        """
-        Derive a subpath context.
-
-        @param path:
-        @return:
-        """
-        return self._kernel.get_context(self.abs_path(path))
-
-    @property
-    def root(self) -> "Context":
-        return self.get_context("/")
-
-    @property
-    def path(self) -> str:
-        return self._path
-
-    @property
-    def kernel(self) -> "Kernel":
-        return self._kernel
-
-    @property
-    def _(self):
-        return self._kernel.translation
-
-    def get_context(self, path) -> "Context":
-        """
-        Get a context at a given path location.
-
-        @param path: path location to get a context.
-        @return:
-        """
-        return self._kernel.get_context(path)
-
-    def derivable(self) -> Generator[str, None, None]:
-        """
-        Generate all sub derived paths.
-
-        @return:
-        """
-        yield from self._kernel.derivable(self._path)
-
-    def subpaths(self) -> Generator["Context", None, None]:
-        """
-        Generate all subpaths of the current context with their path name and the relevant context.
-        """
-        for e in list(self._kernel.contexts):
-            if e.startswith(self._path):
-                yield e, self._kernel.contexts[e]
-
-    def close_subpaths(self) -> None:
-        """
-        Find all subpaths of the current context and delete them.
-
-        This is not a maintenance operation. It's needed for rare instances during shutdown. All contexts will be
-        shutdown, this prevents normal shutdown procedure.
-        """
-        for e in list(self._kernel.contexts):
-            if e.startswith(self._path):
-                del self._kernel.contexts[e]
-
-    def destroy(self):
-        self.clear_persistent()
-        self.close_subpaths()
-
-    # ==========
-    # PERSISTENT SETTINGS.
-    # ==========
-
-    def setting(self, setting_type, key, default=None) -> Any:
-        """
-        Registers a setting to be used between modules.
-
-        If the setting exists, its value remains unchanged.
-        If the setting exists in the persistent storage that value is used.
-        If there is no settings value, the default will be used.
-
-        @param setting_type: int, float, str, or bool value
-        @param key: name of the setting
-        @param default: default value for the setting to have.
-        @return: load_value
-        """
-        if hasattr(self, key) and getattr(self, key) is not None:
-            return getattr(self, key)
-
-        # Key is not located in the attr. Load the value.
-        if not key.startswith("_"):
-            load_value = self._kernel.read_persistent(
-                setting_type, self._path, key, default
-            )
-        else:
-            load_value = default
-        setattr(self, key, load_value)
-        return load_value
-
-    def flush(self) -> None:
-        """
-        Commit any and all values currently stored as attr for this object to persistent storage.
-        """
-        self._kernel.write_persistent_attributes(self._path, self)
-
-    def write_persistent_attributes(self, obj: Any) -> None:
-        """
-        Writes values of the object's attributes at this context
-        @param obj:
-        @return:
-        """
-        self._kernel.write_persistent_attributes(self._path, obj)
-
-    def read_persistent(self, t: type, key: str) -> Any:
-        """
-        Gets a specific value of the persistent attributes.
-
-        The attribute type of the value depends on the provided object value default values.
-
-        @param t: type of value
-        @param key: relative key for the value
-        @return: the value associated with the key otherwise None
-        """
-        return self._kernel.read_persistent(t, self._path, key)
-
-    def read_persistent_attributes(self, obj: Any) -> None:
-        """
-        Loads values of the persistent attributes, at this context and assigns them to the provided object.
-
-        The attribute type of the value depends on the provided object value default values.
-
-        @param obj:
-        @return:
-        """
-        self._kernel.read_persistent_attributes(self._path, obj)
-
-    def read_persistent_string_dict(
-        self, dictionary: Optional[Dict] = None, suffix: bool = False
-    ) -> Dict:
-        """
-        Delegate to kernel to get a local string of dictionary values.
-
-        @param dictionary: optional dictionary to be update with values
-        @param suffix:
-        @return:
-        """
-        return self._kernel.read_persistent_string_dict(
-            self._path, dictionary=dictionary, suffix=suffix
-        )
-
-    def clear_persistent(self) -> None:
-        """
-        Delegate to Kernel to clear the persistent settings located at this context.
-        """
-        self._kernel.clear_persistent(self._path)
-
-    def write_persistent(self, key: str, value: Union[int, float, str, bool]) -> None:
-        """
-        Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
-        shutdown but there are a variety of reasons to force this call early.
-
-        If the persistence object is not yet established this function cannot succeed.
-        """
-        self._kernel.write_persistent(self._path, key, value)
-
-    # ==========
-    # DELEGATES
-    # ==========
-
-    def register(self, path: str, obj: Any) -> None:
-        """
-        Delegate to Kernel
-        """
-        self._kernel.register(path, obj)
-
-    def unregister(self, path: str) -> None:
-        """
-        Delegate to Kernel
-        """
-        self._kernel.unregister(path)
-
-    def console_command(self, *args, **kwargs) -> Callable:
-        """
-        Delegate to Kernel
-
-        Uses current context to be passed to the console_command being registered.
-        """
-        return console_command(self._kernel, *args, **kwargs)
-
-    def console_command_remove(self, *args, **kwargs) -> Callable:
-        """
-        Delegate to Kernel
-
-        Uses current context to be passed to the console_command being removed.
-        """
-        return console_command_remove(self._kernel, *args, **kwargs)
-
-    @property
-    def contexts(self) -> Dict[str, "Context"]:
-        return self._kernel.contexts
-
-    def has_feature(self, feature: str) -> bool:
-        """
-        Return whether or not this is a registered feature within the kernel.
-
-        @param feature: feature to check if exists in kernel.
-        @return:
-        """
-        return self.lookup(feature) is not None
-
-    def find(self, *args):
-        """
-        Delegate of Kernel match.
-
-        @param args:  arguments to be delegated
-        :yield: matched entries.
-        """
-        yield from self._kernel.find(*args)
-
-    def match(self, matchtext: str, suffix: bool = False) -> Generator[str, None, None]:
-        """
-        Delegate of Kernel match.
-
-        @param matchtext:  regex matchtext to locate.
-        @param suffix: provide the suffix of the match only.
-        :yield: matched entries.
-        """
-        yield from self._kernel.match(matchtext, suffix)
-
-    def lookup(self, *args) -> Any:
-        """
-        Lookup a value in the kernel or services.
-
-        @param args: arguments
-        @return:
-        """
-        return self._kernel.lookup(*args)
-
-    def lookup_all(self, *args) -> Any:
-        """
-        Lookup all matching values in the kernel or services.
-
-        @param args: arguments
-        @return:
-        """
-        yield from self._kernel.lookup_all(*args)
-
-    def console(self, data: str) -> None:
-        """
-        Call the Kernel's Console with the given data.
-
-        Note: '\n' is usually used to execute these functions and this is not added by default.
-        """
-        self._kernel.console(data)
-
-    def schedule(self, job: Union["Job", Any]) -> None:
-        """
-        Call the Kernel's Scheduler with the given job.
-        """
-        self._kernel.schedule(job)
-
-    def unschedule(self, job: Union["Job", Any]) -> None:
-        """
-        Unschedule a given job.
-
-        This is often unneeded if the job completes on it's own, it will be removed from the scheduler.
-        """
-        self._kernel.unschedule(job)
-
-    def threaded(
-        self,
-        func: Callable,
-        *args,
-        thread_name: str = None,
-        result: Callable = None,
-        daemon: bool = False,
-    ):
-        """
-        Calls a thread to be registered in the kernel.
-
-        Registered threads must complete before shutdown can be completed. These will told to stop and waited on until
-        completion.
-
-        The result function will be called with any returned result func.
-        """
-        return self._kernel.threaded(
-            func,
-            *args,
-            thread_name=thread_name,
-            result=result,
-            daemon=daemon,
-        )
-
-    # ==========
-    # MODULES
-    # ==========
-
-    def get_open(self, path: str) -> Union["Module", None]:
-        """
-        Finds a loaded instance. Or returns None if not such instance.
-
-        Note: 'name' is not necessarily the type of instance. It could be the named value of the instance.
-
-        @param path: The opened path to find the given instance.
-        @return: The instance, if found, otherwise None.
-        """
-        try:
-            return self.opened[path]
-        except KeyError:
-            return None
-
-    def open(self, registered_path: str, *args, **kwargs) -> "Module":
-        """
-        Opens a registered module with the same instance path as the registered path.
-
-        This is fairly standard but should not be used if the goal would be to open the same module several times.
-        Unless those modules are being opened at different contexts.
-
-        @param registered_path: registered path of the given module.
-        @param args: args to open the module with.
-        @param kwargs: kwargs to open the module with.
-        @return:
-        """
-        return self.open_as(registered_path, registered_path, *args, **kwargs)
-
-    def open_as(
-        self, registered_path: str, instance_path: str, *args, **kwargs
-    ) -> "Module":
-        """
-        Opens a registered module. If that module already exists it returns the already open module.
-
-        Instance_name is the name under which this given module is opened.
-
-        If the module already exists, the restore function is called on that object (if restore() exists), with the same
-        args and kwargs that were intended for the init() routine.
-
-        @param registered_path: path of object being opened.
-        @param instance_path: instance_path of object.
-        @param args: Args to pass to newly opened module.
-        @param kwargs: Kwargs to pass to newly opened module.
-        @return: Opened module.
-        """
-        try:
-            find = self.opened[instance_path]
-            try:
-                # Module found, attempt restore call.
-                find.restore(*args, **kwargs)
-            except AttributeError:
-                pass
-            return find
-        except KeyError:
-            # Module not found.
-            pass
-
-        open_object = self._kernel.lookup(registered_path)
-        if open_object is None:
-            raise ValueError
-
-        instance = open_object(self, instance_path, *args, **kwargs)
-        instance.registered_path = registered_path
-
-        # Call module_open lifecycle event.
-        self.kernel.set_module_lifecycle(instance, LIFECYCLE_MODULE_OPENED)
-
-        return instance
-
-    def close(self, instance_path: str, *args, **kwargs) -> None:
-        """
-        Closes an opened module instance. Located at the instance_path location.
-
-        This calls the close() function on the object (which may not exist). Then calls module_close() on the module,
-        which should exist.
-
-        @param instance_path: Instance path to close.
-        @return:
-        """
-        try:
-            instance = self.opened[instance_path]
-        except KeyError:
-            return  # Nothing to close.
-        # Call module_close lifecycle event.
-        self.kernel.set_module_lifecycle(instance, LIFECYCLE_MODULE_CLOSED)
-
-    # ==========
-    # SIGNALS DELEGATES
-    # ==========
-
-    def signal(self, code: str, *message) -> None:
-        """
-        Send Signal to all registered listeners.
-
-        @param code: Code to delegate at this given context location.
-        @param message: Message to send.
-        @return:
-        """
-        self._kernel.signal(code, self._path, *message)
-
-    def last_signal(self, signal: str) -> Tuple:
-        """
-        Returns the last signal payload at the given code.
-
-        @param signal: Code to delegate at this given context location.
-        @return: message value of the last signal sent for that code.
-        """
-        return self._kernel.last_signal(signal)
-
-    def listen(
-        self,
-        signal: str,
-        process: Callable,
-        lifecycle_object: Union["Service", Module, None] = None,
-    ) -> None:
-        """
-        Listen at a particular signal with a given process.
-
-        @param signal: Signal code to listen for
-        @param process: listener to be attached
-        @param lifecycle_object: Object to use as a cookie to bind the listener.
-        @return:
-        """
-        self._kernel.listen(signal, process, lifecycle_object)
-
-    def unlisten(self, signal: str, process: Callable):
-        """
-        Unlisten to a particular signal with a given process.
-
-        This should be called on the ending of the lifecycle of whatever process listened to the given signal.
-
-        @param signal: Signal to unlisten for.
-        @param process: listener that is to be detached.
-        @return:
-        """
-        self._kernel.unlisten(signal, process)
-
-    # ==========
-    # CHANNEL DELEGATES
-    # ==========
-
-    def channel(self, channel: str, *args, **kwargs) -> "Channel":
-        """
-        Return a channel from the kernel location
-
-        @param channel: Channel to be opened.
-        @return: Channel object that is opened.
-        """
-        return self._kernel.channel(channel, *args, **kwargs)
-
-    def console_function(self, data: str) -> "ConsoleFunction":
-        """
-        Returns a function that calls a console command. This serves as a Job to be used in Scheduler or simply a
-        function with the command as the str form.
-        """
-        return ConsoleFunction(self, data)
-
-
-class Service(Context):
-    """
-    A service is a context that with additional capabilities. These get registered by a domain in the kernel as a
-    particular aspect. For example, .device or .gui could be a service and this service would be found at that attribute
-    at for any context. As a type of context, services have a path for saving settings. The path is the saving/loading
-    location for persistent settings. As a service, these contexts may exist at .<domain> relative to any context.
-    This also allows several services to be registered for the same domain. These are swapped with the activate_service
-    commands in the kernel.
-
-    Each service has its own registered lookup of data. This extends the lookup of the kernel but only for those
-    services which are currently active. This extends to various data types that are registered in the kernel such
-    as choices and console commands. The currently active service can modify these simply by being activated. A command
-    registered in a deactivate service cannot be executed from the console, only the activated service's command is
-    executed in that case.
-
-    Unlike contexts which should be derived or gotten at a particular path. Services can be directly instanced.
-    """
-
-    def __init__(self, kernel: "Kernel", path: str, registered_path: str = None):
-        super().__init__(kernel, path)
-        kernel.register_as_context(self)
-        self.registered_path = registered_path
-        self._registered = {}
-
-    def __str__(self):
-        if hasattr(self, "label"):
-            return self.label
-        return "Service('{path}', {rpath})".format(
-            path=self._path, rpath=self.registered_path
-        )
-
-    def service_attach(self, *args, **kwargs):
-        pass
-
-    def service_detach(self, *args, **kwargs):
-        pass
-
-    def shutdown(self, *args, **kwargs):
-        """
-        Called by kernel during shutdown process for all services.
-        @param args:
-        @param kwargs:
-        @return:
-        """
-        pass
-
-    def register(self, path: str, obj: Any) -> None:
-        """
-        Registers an element within this service.
-
-        @param path:
-        @param obj:
-        @return:
-        """
-        self._registered[path] = obj
-        try:
-            obj.sub_register(self)
-        except AttributeError:
-            pass
-        self._kernel.lookup_change(path)
-
-    def unregister(self, path: str) -> None:
-        """
-        Unregister an element within this service.
-
-        @param path: Path to unregister
-        @return:
-        """
-        del self._registered[path]
-        self._kernel.lookup_change(path)
-
-    def console_command(self, *args, **kwargs) -> Callable:
-        """
-        Service console command registration.
-
-        Uses the current registration to register the given command.
-        """
-        return console_command(self, *args, **kwargs)
-
-    def console_command_remove(self, *args, **kwargs) -> Callable:
-        """
-        Delegate to Kernel
-
-        Uses current context to be passed to the console_command being removed.
-        """
-        return console_command_remove(self, *args, **kwargs)
-
-    def destroy(self):
-        self.kernel.set_service_lifecycle(self, LIFECYCLE_SHUTDOWN)
-        self.clear_persistent()
-        self.close_subpaths()
-
-    def register_choices(self, sheet, choices):
-        """
-        Service register choices command registration.
-
-        Uses the current registration to register the choices.
-        @param sheet: Name of choices being registered
-        @param choices: list of choices
-        @return:
-        """
-        Kernel.register_choices(self, sheet, choices)
-
-    def add_service_delegate(self, delegate):
-        self.kernel.add_delegate(delegate, self)
-
-
-class Settings:
-    def __init__(self, directory, filename):
-        self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
-            filename
-        )
-        self._config_dict = {}
-        self.read_configuration()
-
-    def read_configuration(self):
-        """
-        Read configuration reads the self._config_file to get the parsed config file data.
-
-        Circa 0.8.0 this uses ConfigParser() in python rather than FileConfig in wxPython
-
-        @return:
-        """
-        try:
-            parser = ConfigParser()
-            parser.read(self._config_file, encoding="utf-8")
-            for section in parser.sections():
-                for option in parser.options(section):
-                    try:
-                        config_section = self._config_dict[section]
-                    except KeyError:
-                        config_section = dict()
-                        self._config_dict[section] = config_section
-                    config_section[option] = parser.get(section, option)
-        except PermissionError:
-            return
-
-    def write_configuration(self):
-        """
-        Write configuration writes the config file to disk. This is typically done during the shutdown process.
-
-        This uses the python ConfigParser to save data from the _config_dict.
-        @return:
-        """
-        try:
-            parser = ConfigParser()
-            for section_key in self._config_dict:
-                section = self._config_dict[section_key]
-                for key in section:
-                    value = section[key]
-                    try:
-                        parser.set(section_key, key, value)
-                    except NoSectionError:
-                        parser.add_section(section_key)
-                        parser.set(section_key, key, value)
-            with open(self._config_file, "w", encoding="utf-8") as fp:
-                parser.write(fp)
-        except PermissionError:
-            return
-
-    def read_persistent(
-        self,
-        t: type,
-        section: str,
-        key: str,
-        default: Union[str, int, float, bool] = None,
-    ) -> Any:
-        """
-        Directly read from persistent storage the value of an item.
-
-        @param t: datatype.
-        @param section: section in which to store the key
-        @param key: key used to reference item.
-        @param default: default value if item does not exist.
-        @return: value
-        """
-        try:
-            value = self._config_dict[section][key]
-            if t == bool:
-                return value == "True"
-
-            return t(value)
-        except (KeyError, ValueError):
-            return default
-
-    def read_persistent_attributes(self, section: str, obj: Any):
-        """
-        Reads persistent settings for any value found set on the object so long as the object type is int, float, str
-        or bool.
-
-        @param section:
-        @param obj:
-        @return:
-        """
-        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            if attr in props:
-                continue
-            obj_value = getattr(obj, attr)
-            t = type(obj_value) if obj_value is not None else str
-            load_value = self.read_persistent(t, section, attr)
-            if load_value is None:
-                continue
-            try:
-                setattr(obj, attr, load_value)
-            except AttributeError:
-                pass
-
-    def read_persistent_string_dict(
-        self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
-    ) -> Dict:
-        """
-        Updates the given dictionary with the key values at the given section.
-
-        This reads string values and provides no typing information to convert the setting values.
-
-        @param section: section to load into string dict
-        @param dictionary: optional dictionary to update values
-        @param suffix: provide only the keys or section/key combination.
-        @return:
-        """
-        if dictionary is None:
-            dictionary = dict()
-        for k in list(self.keylist(section)):
-            item = self._config_dict[section][k]
-            if not suffix:
-                k = "{section}/{key}".format(section=section, key=k)
-            dictionary[k] = item
-        return dictionary
-
-    load_persistent_string_dict = read_persistent_string_dict
-
-    def write_persistent(
-        self, section: str, key: str, value: Union[str, int, float, bool]
-    ):
-        """
-        Directly write the value to persistent storage.
-
-        @param section: section to write key value
-        @param key: The item key being written
-        @param value: the value of the item.
-        """
-        try:
-            config_section = self._config_dict[section]
-        except KeyError:
-            config_section = dict()
-            self._config_dict[section] = config_section
-
-        if isinstance(value, (str, int, float, bool)):
-            config_section[str(key)] = str(value)
-
-    def write_persistent_dict(self, section, write_dict):
-        """
-        Write all valid attribute values of this object to the section provided.
-
-        @param section: section to write to
-        @param obj: object whose attributes should be written
-        @return:
-        """
-        for key in write_dict:
-            value = write_dict[key]
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float)):
-                self.write_persistent(section, key, value)
-
-    def write_persistent_attributes(self, section, obj):
-        """
-        Write all valid attribute values of this object to the section provided.
-
-        @param section: section to write to
-        @param obj: object whose attributes should be written
-        @return:
-        """
-        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            if attr in props:
-                continue
-            value = getattr(obj, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float)):
-                self.write_persistent(section, attr, value)
-
-    def clear_persistent(self, section: str):
-        """
-        Clears a section of the persistent settings, all subsections are also cleared.
-
-        @param section:
-        @return:
-        """
-        try:
-            for section_name in list(self._config_dict):
-                if section_name.startswith(section):
-                    del self._config_dict[section_name]
-        except KeyError:
-            pass
-
-    def delete_persistent(self, section: str, key: str):
-        """
-        Deletes a key within a section of the persistent settings.
-
-        @param section: section to delete key from
-        @param key: key to delete
-        @return:
-        """
-        try:
-            self._config_dict[section][key]
-        except KeyError:
-            pass
-
-    def delete_all_persistent(self):
-        """
-        Deletes all persistent settings.
-        @return:
-        """
-        self._config_dict.clear()
-
-    def keylist(self, section: str) -> Generator[str, None, None]:
-        """
-        Get all keys located at the given path location. The keys are listed in absolute path locations.
-
-        @param section: Path to check for keys.
-        @return:
-        """
-        try:
-            yield from self._config_dict[section]
-        except KeyError:
-            return
-
-    def derivable(self, section: str) -> Generator[str, None, None]:
-        """
-        Finds all derivable paths within the config from the set path location.
-        @param section:
-        @return:
-        """
-        for section_name in self._config_dict:
-            section_name.split("/")
-
-            if section_name.startswith(section):
-                yield section_name
-
-    def section_set(self) -> Generator[str, None, None]:
-        """
-        Finds all derivable paths within the config from the set path location.
-        @return:
-        """
-        yield from set([s.split(" ")[0] for s in self._config_dict])
-
-
-# ==========
-# END SETTINGS
-# ==========
-
 
 class Kernel(Settings):
     """
@@ -1135,7 +79,7 @@ class Kernel(Settings):
 
         # All registered threads.
         self.threads = {}
-        self.thread_lock = Lock()
+        self.thread_lock = threading.Lock()
 
         # All established delegates
         self.delegates = []
@@ -1152,7 +96,7 @@ class Kernel(Settings):
         self.lookups = {}
         self.lookup_previous = {}
         self._dirty_paths = []
-        self._lookup_lock = Lock()
+        self._lookup_lock = threading.Lock()
 
         # The translation object to be overridden by any valid translation functions
         self.translation = lambda e: e
@@ -1172,7 +116,7 @@ class Kernel(Settings):
         self._adding_listeners = []
         self._removing_listeners = []
         self._last_message = {}
-        self._signal_lock = Lock()
+        self._signal_lock = threading.Lock()
         self._message_queue = {}
         self._is_queue_processing = False
 
@@ -1196,9 +140,6 @@ class Kernel(Settings):
         # Arguments Objects
         self.args = None
 
-        self.console_argument = console_argument
-        self.console_option = console_option
-
     def __str__(self):
         return "Kernel()"
 
@@ -1206,10 +147,8 @@ class Kernel(Settings):
         try:
             return open(*args)
         except PermissionError:
-            from os import chdir
-
             original = os.getcwd()
-            chdir(get_safe_path(self.name, True))
+            os.chdir(get_safe_path(self.name, True))
             print(
                 "Changing working directory from %s to %s."
                 % (str(original), str(os.getcwd()))
@@ -1226,7 +165,7 @@ class Kernel(Settings):
         import types
 
         filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            name=self.name, date=datetime.datetime.now()
+            name=self.name, date=datetime.now()
         )
         debug_file = self.open_safe(filename, "a")
         debug_file.write("\n\n\n")
@@ -1333,10 +272,8 @@ class Kernel(Settings):
 
         @return: domain, service
         """
-        matchtext = "service/(.*)/active"
-        match = re.compile(matchtext)
         for r in list(self._registered):
-            result = match.match(r)
+            result = RE_ACTIVE.match(r)
             if result:
                 yield result.group(1), self._registered[r]
 
@@ -1346,15 +283,13 @@ class Kernel(Settings):
 
         @return: domain, service
         """
-        matchtext = "service/(.*)/available"
-        match = re.compile(matchtext)
         for r in list(self._registered):
-            result = match.match(r)
+            result = RE_AVAILABLE.match(r)
             if result:
                 yield result.group(1), self._registered[r]
 
     def remove_service(self, service: Service):
-        self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
+        self.set_service_lifecycle(service, LIFECYCLE_KERNEL_SHUTDOWN)
         for path, services in self.services_available():
             for i in range(len(services) - 1, -1, -1):
                 s = services[i]
@@ -1765,14 +700,14 @@ class Kernel(Settings):
                 if hasattr(k, "preshutdown"):
                     k.preshutdown()
 
-        if start < LIFECYCLE_SHUTDOWN <= end:
+        if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
                 channel("(plugin) kernel-shutdown")
             for plugin in self._kernel_plugins:
                 plugin(kernel, "shutdown")
         for k in objects:
-            if klp(k) < LIFECYCLE_SHUTDOWN <= end:
-                k._kernel_lifecycle = LIFECYCLE_SHUTDOWN
+            if klp(k) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
                     channel("kernel-shutdown: {object}".format(object=str(k)))
                 self._signal_detach(k)
@@ -1909,20 +844,20 @@ class Kernel(Settings):
 
         # Update objects: service_shutdown
         for s in objects:
-            if slp(s) < LIFECYCLE_SHUTDOWN <= end:
-                s._service_lifecycle = LIFECYCLE_SHUTDOWN
+            if slp(s) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
+                s._service_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
                     channel("service-shutdown: {object}".format(object=str(s)))
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
 
         # Update plugin: shutdown
-        if start < LIFECYCLE_SHUTDOWN <= end:
+        if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
                 channel(
                     "(plugin) service-shutdown: {object}".format(object=str(service))
                 )
-            start = LIFECYCLE_SHUTDOWN
+            start = LIFECYCLE_KERNEL_SHUTDOWN
             self.remove_service(service)
             try:
                 for plugin in self._service_plugins[service.registered_path]:
@@ -2006,15 +941,15 @@ class Kernel(Settings):
 
         # Update objects: shutdown
         for m in objects:
-            if mlp(m) < LIFECYCLE_SHUTDOWN <= end:
-                m._module_lifecycle = LIFECYCLE_SHUTDOWN
+            if mlp(m) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
+                m._module_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
                     channel("module-shutdown: {object}".format(object=str(m)))
                 if hasattr(m, "shutdown"):
                     m.shutdown()
 
         # Update plugin: shutdown
-        if start < LIFECYCLE_SHUTDOWN <= end:
+        if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
                 channel("(plugin) module-shutdown: {object}".format(object=str(module)))
             try:
@@ -2130,7 +1065,7 @@ class Kernel(Settings):
                     )
                 self.set_module_lifecycle(
                     obj,
-                    LIFECYCLE_SHUTDOWN,
+                    LIFECYCLE_KERNEL_SHUTDOWN,
                     None,
                     opened_name,
                     channel=channel,
@@ -2139,7 +1074,7 @@ class Kernel(Settings):
 
         for domain, services in self.services_available():
             for service in list(services):
-                self.set_service_lifecycle(service, LIFECYCLE_SHUTDOWN)
+                self.set_service_lifecycle(service, LIFECYCLE_KERNEL_SHUTDOWN)
 
     def shutdown(self):
         """
@@ -2507,26 +1442,6 @@ class Kernel(Settings):
         self.lookup_change(path)
 
     # ==========
-    # COMMAND REGISTRATION
-    # ==========
-
-    def console_command(self, *args, **kwargs) -> Callable:
-        """
-        Service console command registration.
-
-        Uses the current registration to register the given command.
-        """
-        return console_command(self, *args, **kwargs)
-
-    def console_command_remove(self, *args, **kwargs) -> Callable:
-        """
-        Delegate to Kernel
-
-        Uses current context to be passed to the console_command being removed.
-        """
-        return console_command_remove(self, *args, **kwargs)
-
-    # ==========
     # PATH & CONTEXTS
     # ==========
 
@@ -2540,7 +1455,7 @@ class Kernel(Settings):
             setattr(context, domain, service)
         self.contexts[context.path] = context
 
-    def get_context(self, path: str) -> Context:
+    def get_context(self, path: str) -> "Context":
         """
         Create a context derived from this kernel, at the given path.
 
@@ -3442,8 +2357,6 @@ class Kernel(Settings):
             )
 
         def beep(channel, _, **kwargs):
-            import platform
-
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
                 try:
@@ -3454,7 +2367,6 @@ class Kernel(Settings):
                 except Exception:
                     pass
             elif OS_NAME == "Darwin":  # Mac
-                import os
 
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             else:  # Assuming other linux like system
@@ -3568,7 +2480,7 @@ class Kernel(Settings):
         # SERVICE COMMANDS
         # ==========
 
-        @console_argument("domain")
+        @self.console_argument("domain")
         @self.console_command(
             "service",
             output_type="service",
@@ -3605,7 +2517,7 @@ class Kernel(Settings):
                 return None
             return "service", (domain, available, active)
 
-        @console_argument("index", type=int, help="Index of service to activate.")
+        @self.console_argument("index", type=int, help="Index of service to activate.")
         @self.console_command(
             "activate",
             input_type="service",
@@ -3617,9 +2529,9 @@ class Kernel(Settings):
                 raise SyntaxError
             self.activate_service_index(domain, index)
 
-        @console_argument("name", help="Name of service to start")
-        @console_option("path", "p", help="optional forced path initialize location")
-        @console_option(
+        @self.console_argument("name", help="Name of service to start")
+        @self.console_option("path", "p", help="optional forced path initialize location")
+        @self.console_option(
             "init",
             "i",
             type=bool,
@@ -3676,13 +2588,13 @@ class Kernel(Settings):
                 channel(_("----------"))
             return "batch", batch
 
-        @console_option(
+        @self.console_option(
             "origin",
             "o",
             type=str,
             help="flag added batch command with a specific origin",
         )
-        @console_option("index", "i", type=int, help="insert position for add")
+        @self.console_option("index", "i", type=int, help="insert position for add")
         @self.console_command(
             "add", input_type="batch", help=_("add a batch command 'batch add <line>'")
         )
@@ -3693,7 +2605,7 @@ class Kernel(Settings):
                 raise SyntaxError
             self.batch_add(remainder, origin, index)
 
-        @console_argument("index", type=int, help="line to delete")
+        @self.console_argument("index", type=int, help="line to delete")
         @self.console_command(
             "remove",
             input_type="batch",
@@ -3819,8 +2731,6 @@ class Kernel(Settings):
             if channel_name is None:
                 raise SyntaxError(_("channel_name is not specified."))
 
-            from datetime import datetime
-
             if filename is None:
                 filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
                     date=datetime.now()
@@ -3902,7 +2812,7 @@ class Kernel(Settings):
             if self._shutdown:
                 return
             self._shutdown = True
-            self.set_kernel_lifecycle(self, LIFECYCLE_SHUTDOWN)
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
         # ==========
         # FILE MANAGER
@@ -3910,16 +2820,12 @@ class Kernel(Settings):
 
         @self.console_command(("ls", "dir"), help=_("list directory"))
         def ls(channel, **kwargs):
-            import os
-
             for f in os.listdir(self.current_directory):
                 channel(str(f))
 
         @self.console_argument("directory")
         @self.console_command("cd", help=_("change directory"))
         def cd(channel, _, directory=None, **kwargs):
-            import os
-
             if directory == "~":
                 self.current_directory = "."
                 channel(_("Working directory"))
@@ -4002,518 +2908,262 @@ class Kernel(Settings):
     # Prompt should be replaced with higher level versions of this depending on the user interface.
     prompt = _text_prompt
 
+    # ==========
+    # CONSOLE DECORATORS
+    # ==========
 
-# ==========
-# END KERNEL
-# ==========
-
-
-class CommandMatchRejected(BaseException):
-    """
-    Exception to be raised by a registered console command if the match to the command was erroneous
-    """
-
-    def __init__(self, *args):
-        super().__init__(*args)
-
-
-class MalformedCommandRegistration(BaseException):
-    """
-    Exception raised by the Kernel if the registration of the console command is malformed.
-    """
-
-    def __init__(self, *args):
-        super().__init__(*args)
-
-
-class Channel:
-    """
-    Register and configure the Kernel channel that is used to send and view data within the kernel. Channels can send
-    both string data and binary data. They provide debug information and data such as from a server module.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        buffer_size: int = 0,
-        line_end: Optional[str] = None,
-        timestamp: bool = False,
-        pure: bool = False,
-    ):
-        self.watchers = []
-        self.greet = None
-        self.name = name
-        self.buffer_size = buffer_size
-        self.line_end = line_end
-        self._ = lambda e: e
-        self.timestamp = timestamp
-        self.pure = pure
-        if buffer_size == 0:
-            self.buffer = None
-        else:
-            self.buffer = deque()
-        self.ansi_supported = ansi_supported()
-
-    def __repr__(self):
-        return "Channel(%s, buffer_size=%s, line_end=%s)" % (
-            repr(self.name),
-            str(self.buffer_size),
-            repr(self.line_end),
-        )
-
-    def __call__(
-        self,
-        message: Union[str, bytes, bytearray],
-        *args,
-        indent: Optional[bool] = True,
-        **kwargs,
-    ):
-        original_msg = message
-        if not self.pure and not isinstance(message, (bytes, bytearray)):
-            if self.line_end is not None:
-                message = message + self.line_end
-            if indent:
-                message = "    " + message.replace("\n", "\n    ")
-            if self.timestamp:
-                ts = datetime.datetime.now().strftime("[%H:%M:%S] ")
-                message = ts + message.replace("\n", "\n%s" % ts)
-        console_open_print = False
-        # Check if this channel is "open" i.e. being sent to console
-        # and if so whether the console is being sent to print
-        # because if so then we don't want to print ourselves
-        for w in self.watchers:
-            if isinstance(w, Channel) and w.name == "console" and print in w.watchers:
-                console_open_print = True
-                break
-        for w in self.watchers:
-            # Avoid double printing if this channel is "open" and printed
-            # and console is also printed
-            if w is print and console_open_print:
-                continue
-            # Avoid double timestamp and indent
-            printing = w is print or w.__name__ == "__print_delegate"
-            if printing:
-                if self.ansi_supported:
-                    w(bbcode_to_ansi(message))
-                else:
-                    w(bbcode_to_plain(message))
-            elif isinstance(w, Channel):
-                w(original_msg, indent=indent)
-            else:  # "open"
-                w(message)
-        if self.buffer is not None:
-            self.buffer.append(message)
-            while len(self.buffer) > self.buffer_size:
-                self.buffer.popleft()
-
-    def __len__(self):
-        return self.buffer_size
-
-    def __iadd__(self, other):
-        self.watch(monitor_function=other)
-
-    def __isub__(self, other):
-        self.unwatch(monitor_function=other)
-
-    def __bool__(self):
+    @staticmethod
+    def console_option(name: str, short: str = None, **kwargs) -> Callable:
         """
-        In the case that a channel requires preprocessing or object creation, the truthy value
-        of the channel reflects whether that data will be actually sent anywhere before trying to
-        send the data. With this you can have channels that do no work unless something in the kernel
-        is listening for that data, or the data is being buffered.
+        Adds an option for a console_command.
+
+        @param name: option name
+        @param short: short flag of option name.
+        @param kwargs:
+        @return:
         """
-        return bool(self.watchers) or self.buffer_size != 0
+        try:
+            if short.startswith("-"):
+                short = short[1:]
+        except Exception:
+            pass
 
-    def watch(self, monitor_function: Callable):
-        for q in self.watchers:
-            if q is monitor_function:
-                return  # This is already being watched by that.
-        self.watchers.append(monitor_function)
-        if self.greet is not None:
-            monitor_function(self.greet)
-        if self.buffer is not None:
-            for line in list(self.buffer):
-                monitor_function(line)
+        def decor(func):
+            kwargs["name"] = name
+            kwargs["short"] = short
+            if "action" in kwargs:
+                kwargs["type"] = bool
+            elif "type" not in kwargs:
+                kwargs["type"] = str
+            func.options.insert(0, kwargs)
+            return func
 
-    def unwatch(self, monitor_function: Callable):
-        self.watchers.remove(monitor_function)
+        return decor
 
+    @staticmethod
+    def console_argument(name: str, **kwargs) -> Callable:
+        """
+        Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
+        command is called from console.
 
-class Job:
-    """
-    Generic job for the scheduler.
+        @param name:
+        @param kwargs:
+        @return:
+        """
 
-    Jobs that can be scheduled in the scheduler-kernel to run at a particular time and a given number of times.
-    This is done calling schedule() and unschedule() and setting the parameters for process, args, interval,
-    and times.
-    """
+        def decor(func):
+            kwargs["name"] = name
+            if "type" not in kwargs:
+                kwargs["type"] = str
+            func.arguments.insert(0, kwargs)
+            return func
 
-    def __init__(
-        self,
-        process: Optional[Callable] = None,
-        args: Optional[Tuple] = (),
-        interval: float = 1.0,
-        times: Optional[int] = None,
-        job_name: Optional[str] = None,
-        run_main: bool = False,
-        conditional: Callable = None,
+        return decor
+
+    def console_command(
+        registration,
+        path: Union[str, Tuple[str, ...]] = None,
+        regex: bool = False,
+        hidden: bool = False,
+        help: str = None,
+        input_type: Union[str, Tuple[str, ...]] = None,
+        output_type: str = None,
     ):
-        self.job_name = job_name
-        self.state = STATE_INITIALIZE
-        self.run_main = run_main
-        self.conditional = conditional
+        """
+        Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
+        within the console are registered with this decorator. It varies attributes that define how the decorator
+        should be treated. Commands work with named contexts in a pipelined architecture. So "element" commands output
+        must be followed by "element" command inputs. The input_type and output_type do not have to match and can be
+        a tuple of different types. None refers to the base context.
 
-        self.process = process
-        self.args = args
-        self.interval = interval
-        self.times = times
+        The long_help is the docstring of the actual function itself.
 
-        self._last_run = None
-        self._next_run = time.time() + self.interval
-        self._remaining = self.times
+        @param registration: the kernel or service this is being registered to
+        @param path: command name of the command being registered
+        @param regex: Should this command name match regex command values.
+        @param hidden: Whether this command shows up in `help` or not.
+        @param help: What should the help for this command be.
+        @param input_type: What is the incoming context for the command
+        @param output_type: What is the outgoing context for the command
+        @return:
+        """
 
-    def __call__(self, *args, **kwargs):
-        self.process(*args, **kwargs)
+        def decorator(func: Callable):
+            @functools.wraps(func)
+            def inner(command: str, remainder: str, channel: "Channel", **ik):
+                options = inner.options
+                arguments = inner.arguments
+                stack = list()
+                stack.extend(arguments)
+                kwargs = dict()
+                argument_index = 0
+                opt_index = 0
+                output_type = inner.output_type
+                pos = 0
+                for kind, value, start, pos in Kernel._cmd_parser(remainder):
+                    if kind == "PARAM":
+                        if argument_index == len(stack):
+                            pos = start
+                            break  # Nothing else is expected.
+                        k = stack[argument_index]
+                        argument_index += 1
+                        if "type" in k and value is not None:
+                            try:
+                                value = k["type"](value)
+                            except ValueError:
+                                raise SyntaxError(
+                                    "'%s' does not cast to %s"
+                                    % (str(value), str(k["type"]))
+                                )
+                        key = k["name"]
+                        current = kwargs.get(key, True)
+                        if current is True:
+                            kwargs[key] = [value]
+                        else:
+                            kwargs[key].append(value)
+                        opt_index = argument_index
+                    elif kind == "LONG":
+                        for pk in options:
+                            if value == pk["name"]:
+                                if pk.get("action") != "store_true":
+                                    count = pk.get("nargs", 1)
+                                    for n in range(count):
+                                        stack.insert(opt_index, pk)
+                                        opt_index += 1
+                                kwargs[value] = True
+                                break
+                        opt_index = argument_index
+                    elif kind == "OPT":
+                        for pk in options:
+                            if value == pk["short"]:
+                                if pk.get("action") != "store_true":
+                                    stack.insert(opt_index, pk)
+                                    opt_index += 1
+                                kwargs[pk["name"]] = True
+                                break
 
-    def __str__(self):
-        if self.job_name is not None:
-            return self.job_name
-        else:
-            try:
-                return self.process.__name__
-            except AttributeError:
-                return object.__str__(self)
-
-    @property
-    def scheduled(self) -> bool:
-        return (
-            self._next_run is not None
-            and time.time() >= self._next_run
-            and (self.conditional is None or self.conditional())
-        )
-
-    def reset(self) -> None:
-        self._last_run = None
-        self._next_run = time.time() + self.interval
-        self._remaining = self.times
-
-    def cancel(self) -> None:
-        self._remaining = -1
-
-
-class ConsoleFunction(Job):
-    """
-    Special type of Job that runs the Console command provided when the job is executed.
-    """
-
-    def __init__(
-        self,
-        context: Context,
-        data: str,
-        interval: float = 1.0,
-        times: Optional[int] = None,
-        job_name: Optional[str] = None,
-        run_main: bool = False,
-        conditional: Callable = None,
-    ):
-        Job.__init__(
-            self, self.__call__, None, interval, times, job_name, run_main, conditional
-        )
-        self.context = context
-        self.data = data
-
-    def __call__(self, *args, **kwargs):
-        self.context.console(self.data)
-
-    def __str__(self):
-        return self.data.replace("\n", "")
-
-
-def get_safe_path(
-    name: str, create: Optional[bool] = False, system: Optional[str] = None
-) -> str:
-    """
-    Get a path which should have valid user permissions in an OS dependent method.
-
-    @param name: directory name within the safe OS dependent userdirectory
-    @param create: Should this directory be created if needed.
-    @param system: Override the system value determination
-    @return:
-    """
-    import platform
-
-    if not system:
-        system = platform.system()
-
-    if system == "Darwin":
-        directory = os.path.join(
-            os.path.expanduser("~"),
-            "Library",
-            "Application Support",
-            name,
-        )
-    elif system == "Windows":
-        directory = os.path.join(os.path.expandvars("%LOCALAPPDATA%"), name)
-    else:
-        directory = os.path.join(os.path.expanduser("~"), ".config", name)
-    if directory is not None and create:
-        os.makedirs(directory, exist_ok=True)
-    return directory
-
-
-def console_option(name: str, short: str = None, **kwargs) -> Callable:
-    """
-    Adds an option for a console_command.
-
-    @param name: option name
-    @param short: short flag of option name.
-    @param kwargs:
-    @return:
-    """
-    try:
-        if short.startswith("-"):
-            short = short[1:]
-    except Exception:
-        pass
-
-    def decor(func):
-        kwargs["name"] = name
-        kwargs["short"] = short
-        if "action" in kwargs:
-            kwargs["type"] = bool
-        elif "type" not in kwargs:
-            kwargs["type"] = str
-        func.options.insert(0, kwargs)
-        return func
-
-    return decor
-
-
-def console_argument(name: str, **kwargs) -> Callable:
-    """
-    Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
-    command is called from console.
-
-    @param name:
-    @param kwargs:
-    @return:
-    """
-
-    def decor(func):
-        kwargs["name"] = name
-        if "type" not in kwargs:
-            kwargs["type"] = str
-        func.arguments.insert(0, kwargs)
-        return func
-
-    return decor
-
-
-def console_command(
-    registration,
-    path: Union[str, Tuple[str, ...]] = None,
-    regex: bool = False,
-    hidden: bool = False,
-    help: str = None,
-    input_type: Union[str, Tuple[str, ...]] = None,
-    output_type: str = None,
-):
-    """
-    Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
-    within the console are registered with this decorator. It varies attributes that define how the decorator
-    should be treated. Commands work with named contexts in a pipelined architecture. So "element" commands output
-    must be followed by "element" command inputs. The input_type and output_type do not have to match and can be
-    a tuple of different types. None refers to the base context.
-
-    The long_help is the docstring of the actual function itself.
-
-    @param registration: the kernel or service this is being registered to
-    @param path: command name of the command being registered
-    @param regex: Should this command name match regex command values.
-    @param hidden: Whether this command shows up in `help` or not.
-    @param help: What should the help for this command be.
-    @param input_type: What is the incoming context for the command
-    @param output_type: What is the outgoing context for the command
-    @return:
-    """
-
-    def decorator(func: Callable):
-        @functools.wraps(func)
-        def inner(command: str, remainder: str, channel: "Channel", **ik):
-            options = inner.options
-            arguments = inner.arguments
-            stack = list()
-            stack.extend(arguments)
-            kwargs = dict()
-            argument_index = 0
-            opt_index = 0
-            output_type = inner.output_type
-            pos = 0
-            for kind, value, start, pos in _cmd_parser(remainder):
-                if kind == "PARAM":
-                    if argument_index == len(stack):
-                        pos = start
-                        break  # Nothing else is expected.
-                    k = stack[argument_index]
-                    argument_index += 1
+                # Any unprocessed positional arguments get default values.
+                for a in range(argument_index, len(stack)):
+                    k = stack[a]
+                    value = k.get("default")
                     if "type" in k and value is not None:
-                        try:
-                            value = k["type"](value)
-                        except ValueError:
-                            raise SyntaxError(
-                                "'%s' does not cast to %s"
-                                % (str(value), str(k["type"]))
-                            )
+                        value = k["type"](value)
                     key = k["name"]
-                    current = kwargs.get(key, True)
-                    if current is True:
+                    current = kwargs.get(key)
+                    if current is None:
                         kwargs[key] = [value]
                     else:
                         kwargs[key].append(value)
-                    opt_index = argument_index
-                elif kind == "LONG":
-                    for pk in options:
-                        if value == pk["name"]:
-                            if pk.get("action") != "store_true":
-                                count = pk.get("nargs", 1)
-                                for n in range(count):
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
-                            kwargs[value] = True
-                            break
-                    opt_index = argument_index
-                elif kind == "OPT":
-                    for pk in options:
-                        if value == pk["short"]:
-                            if pk.get("action") != "store_true":
-                                stack.insert(opt_index, pk)
-                                opt_index += 1
-                            kwargs[pk["name"]] = True
-                            break
 
-            # Any unprocessed positional arguments get default values.
-            for a in range(argument_index, len(stack)):
-                k = stack[a]
-                value = k.get("default")
-                if "type" in k and value is not None:
-                    value = k["type"](value)
-                key = k["name"]
-                current = kwargs.get(key)
-                if current is None:
-                    kwargs[key] = [value]
+                # TODO: Options with default values should be passed to the function with those values.
+
+                # Any singleton list arguments should become their only element.
+                for a in range(len(stack)):
+                    k = stack[a]
+                    key = k["name"]
+                    current = kwargs.get(key)
+                    if isinstance(current, list):
+                        if len(current) == 1:
+                            kwargs[key] = current[0]
+
+                remainder = remainder[pos:]
+                if len(remainder) > 0:
+                    kwargs["remainder"] = remainder
+                    kwargs["args"] = remainder.split()
+                if output_type is None:
+                    remainder = ""  # not chaining
+                returned = func(command=command, channel=channel, **ik, **kwargs)
+                if returned is None:
+                    value = None
+                    out_type = None
                 else:
-                    kwargs[key].append(value)
+                    if not isinstance(returned, tuple) or len(returned) != 2:
+                        raise ValueError(
+                            '"%s" from command "%s" returned improper values. "%s"'
+                            % (str(returned), command, str(kwargs))
+                        )
+                    out_type, value = returned
+                return value, remainder, out_type
 
-            # TODO: Options with default values should be passed to the function with those values.
+            if hasattr(inner, "arguments"):
+                raise MalformedCommandRegistration(
+                    "Applying console_command() to console_command()"
+                )
 
-            # Any singleton list arguments should become their only element.
-            for a in range(len(stack)):
-                k = stack[a]
-                key = k["name"]
-                current = kwargs.get(key)
-                if isinstance(current, list):
-                    if len(current) == 1:
-                        kwargs[key] = current[0]
+            # Main Decorator
+            cmds = path if isinstance(path, tuple) else (path,)
+            ins = input_type if isinstance(input_type, tuple) else (input_type,)
+            inner.long_help = func.__doc__
+            inner.help = help
+            inner.regex = regex
+            inner.hidden = hidden
+            inner.input_type = input_type
+            inner.output_type = output_type
 
-            remainder = remainder[pos:]
-            if len(remainder) > 0:
-                kwargs["remainder"] = remainder
-                kwargs["args"] = remainder.split()
-            if output_type is None:
-                remainder = ""  # not chaining
-            returned = func(command=command, channel=channel, **ik, **kwargs)
-            if returned is None:
-                value = None
-                out_type = None
-            else:
-                if not isinstance(returned, tuple) or len(returned) != 2:
-                    raise ValueError(
-                        '"%s" from command "%s" returned improper values. "%s"'
-                        % (str(returned), command, str(kwargs))
-                    )
-                out_type, value = returned
-            return value, remainder, out_type
+            inner.arguments = list()
+            inner.options = list()
 
-        if hasattr(inner, "arguments"):
-            raise MalformedCommandRegistration(
-                "Applying console_command() to console_command()"
-            )
+            for cmd in cmds:
+                for i in ins:
+                    p = "command/%s/%s" % (i, cmd)
+                    registration.register(p, inner)
+            return inner
 
-        # Main Decorator
+        return decorator
+
+    def console_command_remove(
+        registration,
+        path: Union[str, Tuple[str, ...]] = None,
+        input_type: Union[str, Tuple[str, ...]] = None,
+    ):
+        """
+        Removes a console command with the given input_type at the given path.
+
+        @param registration: the kernel or service this is being registered to
+        @param path: path or tuple of paths to delete.
+        @param input_type: type or tuple of types to delete
+        @return:
+        """
         cmds = path if isinstance(path, tuple) else (path,)
         ins = input_type if isinstance(input_type, tuple) else (input_type,)
-        inner.long_help = func.__doc__
-        inner.help = help
-        inner.regex = regex
-        inner.hidden = hidden
-        inner.input_type = input_type
-        inner.output_type = output_type
-
-        inner.arguments = list()
-        inner.options = list()
-
         for cmd in cmds:
             for i in ins:
                 p = "command/%s/%s" % (i, cmd)
-                registration.register(p, inner)
-        return inner
+                registration.unregister(p)
 
-    return decorator
+    @staticmethod
+    def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
+        """
+        Parser for console command events.
 
-
-def console_command_remove(
-    registration,
-    path: Union[str, Tuple[str, ...]] = None,
-    input_type: Union[str, Tuple[str, ...]] = None,
-):
-    """
-    Removes a console command with the given input_type at the given path.
-
-    @param registration: the kernel or service this is being registered to
-    @param path: path or tuple of paths to delete.
-    @param input_type: type or tuple of types to delete
-    @return:
-    """
-    cmds = path if isinstance(path, tuple) else (path,)
-    ins = input_type if isinstance(input_type, tuple) else (input_type,)
-    for cmd in cmds:
-        for i in ins:
-            p = "command/%s/%s" % (i, cmd)
-            registration.unregister(p)
-
-
-def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
-    """
-    Parser for console command events.
-
-    @param text:
-    @return:
-    """
-    pos = 0
-    limit = len(text)
-    while pos < limit:
-        match = _CMD_RE.match(text, pos)
-        if match is None:
-            break  # No more matches.
-        kind = match.lastgroup
-        start = pos
-        pos = match.end()
-        if kind == "SKIP":
-            continue
-        elif kind == "PARAM":
-            value = match.group()
-            yield kind, value, start, pos
-        elif kind == "QPARAM":
-            value = match.group()
-            yield "PARAM", value[1:-1], start, pos
-        elif kind == "LONG":
-            value = match.group()
-            yield kind, value[2:], start, pos
-        elif kind == "OPT":
-            value = match.group()
-            for letter in value[1:]:
-                yield kind, letter, start, start + 1
-                start += 1
+        @param text:
+        @return:
+        """
+        pos = 0
+        limit = len(text)
+        while pos < limit:
+            match = _CMD_RE.match(text, pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            start = pos
+            pos = match.end()
+            if kind == "SKIP":
+                continue
+            elif kind == "PARAM":
+                value = match.group()
+                yield kind, value, start, pos
+            elif kind == "QPARAM":
+                value = match.group()
+                yield "PARAM", value[1:-1], start, pos
+            elif kind == "LONG":
+                value = match.group()
+                yield kind, value[2:], start, pos
+            elif kind == "OPT":
+                value = match.group()
+                for letter in value[1:]:
+                    yield kind, letter, start, start + 1
+                    start += 1
 
 
 def lookup_listener(param):
@@ -4533,7 +3183,6 @@ def lookup_listener(param):
         return func
 
     return decor
-
 
 def signal_listener(param):
     """

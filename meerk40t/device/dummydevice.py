@@ -1,5 +1,5 @@
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import Service
+from meerk40t.kernel.service import Service
 
 from ..core.units import ViewPort
 

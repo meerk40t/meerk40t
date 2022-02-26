@@ -1,3 +1,4 @@
+import platform
 import threading
 import time
 from math import isinf, isnan, tau
@@ -11,7 +12,8 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_REFRESH,
 )
 from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.kernel import Job, Module
+from meerk40t.kernel.jobs import Job
+from meerk40t.kernel.module import Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
 
@@ -822,8 +824,6 @@ class Scene(Module, Job):
         @param cursor:
         @return:
         """
-        import platform
-
         if cursor == "sizing":
             new_cursor = wx.CURSOR_SIZING
         elif cursor in ("size_nw", "size_se"):

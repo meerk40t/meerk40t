@@ -1,3 +1,5 @@
+import platform
+
 import wx
 from wx import aui
 
@@ -16,7 +18,8 @@ from meerk40t.gui.scene.scene import (
     ScenePanel,
     Widget,
 )
-from meerk40t.kernel import Job, signal_listener
+from meerk40t.kernel.kernel import signal_listener
+from meerk40t.kernel.jobs import Job
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -179,9 +182,7 @@ class CameraPanel(wx.Panel, Job):
         )
 
     def pane_show(self, *args):
-        from platform import system as _sys
-
-        if _sys() == "Darwin" and not hasattr(self.camera, "_first"):
+        if platform.system() == "Darwin" and not hasattr(self.camera, "_first"):
             self.context("camera%d start -t 1\n" % self.index)
             self.camera._first = False
         else:
@@ -676,9 +677,7 @@ class CameraInterface(MWindow):
         # ==========
         # MENU BAR
         # ==========
-        from platform import system as _sys
-
-        if _sys() != "Darwin":
+        if platform.system() != "Darwin":
             self.CameraInterface_menubar = wx.MenuBar()
             self.create_menu(self.CameraInterface_menubar.Append)
             self.SetMenuBar(self.CameraInterface_menubar)

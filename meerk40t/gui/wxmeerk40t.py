@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
-
 import os
 import platform
 import sys
 import traceback
+from datetime import datetime
+from meerk40t.kernel.functions import get_safe_path
 
 from wx import aui
 
@@ -34,7 +34,8 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 
-from ..kernel import ConsoleFunction, Module
+from meerk40t.kernel.jobs import ConsoleFunction
+from meerk40t.kernel.module import Module
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
@@ -885,10 +886,8 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     print("\n")
     print(error_log)
     try:
-        import datetime
-
         filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            date=datetime.datetime.now()
+            date=datetime.now()
         )
     except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
@@ -899,8 +898,6 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                 file.write(error_log)
                 print(file)
         except PermissionError:
-            from meerk40t.kernel import get_safe_path
-
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w") as file:
                 file.write(error_log)

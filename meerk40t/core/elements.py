@@ -3,7 +3,8 @@ import os.path
 import re
 from copy import copy
 
-from ..kernel import Service, Settings
+from meerk40t.kernel.service import Service
+from meerk40t.kernel.settings import Settings
 from ..svgelements import (
     Angle,
     Circle,

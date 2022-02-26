@@ -17,7 +17,8 @@ from ..core.node.laserop import (
     RasterOpNode,
 )
 from ..core.units import UNITS_PER_INCH
-from ..kernel import ConsoleFunction, lookup_listener, signal_listener
+from meerk40t.kernel.jobs import ConsoleFunction
+from meerk40t.kernel.kernel import lookup_listener, signal_listener
 from ..svgelements import (
     Color,
     Group,

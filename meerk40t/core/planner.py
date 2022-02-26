@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from .cutplan import CutPlan, CutPlanningFailedError
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
-from ..kernel import Service
+from meerk40t.kernel.service import Service
 from ..svgelements import Group, Polygon, SVGElement, SVGImage, SVGText, Matrix
 from ..tools.pathtools import VectorMontonizer
 from .node.laserop import (

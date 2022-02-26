@@ -27,20 +27,9 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_SUSPEND,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    Module,
-    Service,
-)
+from meerk40t.kernel.states import *
+from meerk40t.kernel.module import Module
+from meerk40t.kernel.service import Service
 from ..svgelements import Length
 from .laserspeed import LaserSpeed
 
