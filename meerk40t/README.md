@@ -66,4 +66,3 @@ Images are the regular values for the images within MeerK40t.
 Many commands accept Angles and Lengths as real values.
 The Viewbox functions is used to do things like center the camera image in the window.
 These are fundamental objects within MeerK40t.
-
