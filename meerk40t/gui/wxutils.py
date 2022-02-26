@@ -229,15 +229,15 @@ WX_METAKEYS = [
     wx.WXK_WINDOWS_RIGHT,
 ]
 
-WX_MODIFIERS = [
-    wx.WXK_CONTROL,
-    wx.WXK_RAW_CONTROL,
-    wx.WXK_ALT,
-    wx.WXK_SHIFT,
-    wx.WXK_START,
-    wx.WXK_WINDOWS_LEFT,
-    wx.WXK_WINDOWS_RIGHT,
-]
+WX_MODIFIERS = {
+    wx.WXK_CONTROL: "ctrl",
+    wx.WXK_RAW_CONTROL: "macctl",
+    wx.WXK_ALT: "alt",
+    wx.WXK_SHIFT: "shift",
+    wx.WXK_START: "start",
+    wx.WXK_WINDOWS_LEFT: "win-left",
+    wx.WXK_WINDOWS_RIGHT: "win-right",
+}
 
 WX_SPECIALKEYS = {
     wx.WXK_F1: "f1",
@@ -339,8 +339,11 @@ WX_SPECIALKEYS = {
 
 
 def get_key_name(event, return_modifier=False):
-    key = event.GetKeyCode()
     keyvalue = ""
+    # https://wxpython.org/Phoenix/docs/html/wx.KeyEvent.html
+    key = event.GetUnicodeKey()
+    if key == wx.WXK_NONE:
+        key = event.GetKeyCode()
     if event.RawControlDown() and not event.ControlDown():
         keyvalue += "macctl+"  # Deliberately not macctrl+
     elif event.ControlDown():

@@ -160,7 +160,6 @@ class SelectionWidget(Widget):
                 res = True
         return res
 
-
     def event(self, window_pos=None, space_pos=None, event_type=None):
 
         elements = self.scene.context.elements
@@ -180,7 +179,7 @@ class SelectionWidget(Widget):
                 self.key_shift_pressed = False
                 if self.stillinside(space_pos):
                     self.scene.cursor("sizing")
-                    self.hovering  = True
+                    self.hovering = True
                     self.tool = self.tool_translate
             return RESPONSE_CHAIN
         elif event_type == "kb_shift_press":
@@ -188,7 +187,7 @@ class SelectionWidget(Widget):
                 self.key_shift_pressed = True
             # Are we hovering ? If yes reset cursor
             if self.hovering:
-                self.hovering  = False
+                self.hovering = False
                 self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "kb_ctrl_release":
@@ -196,7 +195,7 @@ class SelectionWidget(Widget):
                 self.key_control_pressed = False
                 if self.stillinside(space_pos):
                     self.scene.cursor("sizing")
-                    self.hovering  = True
+                    self.hovering = True
                     self.tool = self.tool_translate
             return RESPONSE_CHAIN
         elif event_type == "kb_ctrl_press":
@@ -204,7 +203,7 @@ class SelectionWidget(Widget):
                 self.key_control_pressed = True
             # Are we hovering ? If yes reset cursor
             if self.hovering:
-                self.hovering  = False
+                self.hovering = False
                 self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "kb_alt_release":
@@ -217,11 +216,11 @@ class SelectionWidget(Widget):
             return RESPONSE_CHAIN
         elif event_type == "hover_start":
             self.scene.cursor("sizing")
-            self.hovering  = True
+            self.hovering = True
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor("arrow")
-            self.hovering  = False
+            self.hovering = False
             return RESPONSE_CHAIN
         elif event_type == "hover":
             if self.hovering:
@@ -723,9 +722,21 @@ class RectSelectWidget(Widget):
     SELECTION_ENCLOSE = 3
     # Color for selection rectangle (hit, cross, enclose)
     selection_style = [
-        (wx.RED, wx.PENSTYLE_DOT_DASH, "Select all elements the selection rectangle touches."),
-        (wx.GREEN, wx.PENSTYLE_DOT, "Select all elements the selection rectangle crosses."),
-        (wx.BLUE, wx.PENSTYLE_SHORT_DASH, "Select all elements the selection rectangle encloses."),
+        (
+            wx.RED,
+            wx.PENSTYLE_DOT_DASH,
+            "Select all elements the selection rectangle touches.",
+        ),
+        (
+            wx.GREEN,
+            wx.PENSTYLE_DOT,
+            "Select all elements the selection rectangle crosses.",
+        ),
+        (
+            wx.BLUE,
+            wx.PENSTYLE_SHORT_DASH,
+            "Select all elements the selection rectangle encloses.",
+        ),
     ]
     selection_text_shift = " Previously selected remain selected!"
     selection_text_control = " Invert selection state of elements!"
@@ -941,11 +952,76 @@ class RectSelectWidget(Widget):
             return RESPONSE_CONSUME
         return RESPONSE_DROP
 
+    def draw_rectangle(self, gc, x0, y0, x1, y1, tcolor, tstyle):
+        matrix = self.parent.matrix
+        self.selection_pen.SetColour(tcolor)
+        self.selection_pen.SetStyle(tstyle)
+        gc.SetPen(self.selection_pen)
+
+        linewidth = 2.0 / matrix.value_scale_x()
+        if linewidth < 1:
+            linewidth = 1
+        try:
+            self.selection_pen.SetWidth(linewidth)
+        except TypeError:
+            self.selection_pen.SetWidth(int(linewidth))
+        gc.SetPen(self.selection_pen)
+        gc.StrokeLine(x0, y0, x1, y0)
+        gc.StrokeLine(x1, y0, x1, y1)
+        gc.StrokeLine(x1, y1, x0, y1)
+        gc.StrokeLine(x0, y1, x0, y0)
+
+    def draw_tiny_indicator(self, gc, symbol, x0, y0, x1, y1, tcolor, tstyle):
+        matrix = self.parent.matrix
+        self.selection_pen.SetColour(tcolor)
+        self.selection_pen.SetStyle(tstyle)
+
+        linewidth = 2.0 / matrix.value_scale_x()
+        if linewidth < 1:
+            linewidth = 1
+        try:
+            self.selection_pen.SetWidth(linewidth)
+        except TypeError:
+            self.selection_pen.SetWidth(int(linewidth))
+        gc.SetPen(self.selection_pen)
+        delta_X = 15.0 / matrix.value_scale_x()
+        delta_Y = 15.0 / matrix.value_scale_y()
+        if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
+            # Draw tiny + in Corner in corner of pointer
+            x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
+            y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
+            ax1 = x1 - x_signum
+            ay1 = y1 - y_signum
+
+            gc.SetPen(self.selection_pen)
+            gc.StrokeLine(ax1, y1, ax1, ay1)
+            gc.StrokeLine(ax1, ay1, x1, ay1)
+            font_size = 10.0 / matrix.value_scale_x()
+            if font_size < 1.0:
+                font_size = 1.0
+            font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+
+            gc.SetFont(font, tcolor)
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            gc.DrawText(
+                symbol, (ax1 + x1) / 2 - t_width / 2, (ay1 + y1) / 2 - t_height / 2
+            )
+            if (
+                abs(x1 - x0) > 2 * delta_X and abs(y1 - y0) > 2 * delta_Y
+            ):  # Don't draw if too tiny
+                # Draw second symbol at origin
+                ax1 = x0 + x_signum
+                ay1 = y0 + y_signum
+                gc.StrokeLine(ax1, y0, ax1, ay1)
+                gc.StrokeLine(ax1, ay1, x0, ay1)
+                gc.DrawText(
+                    symbol, (ax1 + x0) / 2 - t_width / 2, (ay1 + y0) / 2 - t_height / 2
+                )
+
     def process_draw(self, gc):
         """
         Draw the selection rectangle
         """
-        matrix = self.parent.matrix
         if self.start_location is not None and self.end_location is not None:
             x0 = self.start_location[0]
             y0 = self.start_location[1]
@@ -970,74 +1046,43 @@ class RectSelectWidget(Widget):
                 statusmsg += _(self.selection_text_control)
 
             self.update_statusmsg(statusmsg)
+            gcstyle = self.selection_style[self.selection_method[sector] - 1][0]
+            gccolor = self.selection_style[self.selection_method[sector] - 1][1]
+            self.draw_rectangle(
+                gc,
+                x0,
+                y0,
+                x1,
+                y1,
+                gcstyle,
+                gccolor,
+            )
 
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
-
-            self.selection_pen.SetColour(
-                self.selection_style[self.selection_method[sector] - 1][0]
-            )
-            self.selection_pen.SetStyle(
-                self.selection_style[self.selection_method[sector] - 1][1]
-            )
-
-            linewidth = 2.0 / matrix.value_scale_x()
-            if linewidth < 1:
-                linewidth = 1
-            try:
-                self.selection_pen.SetWidth(linewidth)
-            except TypeError:
-                self.selection_pen.SetWidth(int(linewidth))
-            gc.SetPen(self.selection_pen)
-            gc.StrokeLine(x0, y0, x1, y0)
-            gc.StrokeLine(x1, y0, x1, y1)
-            gc.StrokeLine(x1, y1, x0, y1)
-            gc.StrokeLine(x0, y1, x0, y0)
-            matrix = self.parent.matrix
-            delta_X = 15.0 / matrix.value_scale_x()
-            delta_Y = 15.0 / matrix.value_scale_y()
             # Draw indicator...
             if self.key_shift_pressed:
-                if (
-                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
-                ):  # Don't draw if too tiny
-                    # Draw tiny + in Corner
-                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
-                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
-                    ax1 = x1 - x_signum
-                    ay1 = y1 - y_signum
-
-                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
-                    gc.SetPen(self.selection_pen)
-                    gc.StrokeLine(ax1, y1, ax1, ay1)
-                    gc.StrokeLine(ax1, ay1, x1, ay1)
-                    font_size = 10.0 / matrix.value_scale_x()
-                    if font_size<1.0:
-                        font_size=1.0
-                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
-                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
-                    (t_width, t_height) = gc.GetTextExtent("+")
-                    gc.DrawText("+", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
+                self.draw_tiny_indicator(
+                    gc,
+                    "+",
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    gcstyle,
+                    gccolor,
+                )
 
             elif self.key_control_pressed:
-                if (
-                    abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y
-                ):  # Don't draw if too tiny
-                    # Draw tiny - in Corner
-                    x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
-                    y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
-                    ax1 = x1 - x_signum
-                    ay1 = y1 - y_signum
-                    # self.selection_pen.SetStyle(wx.PENSTYLE_SOLID)
-                    gc.SetPen(self.selection_pen)
-                    gc.StrokeLine(ax1, y1, ax1, ay1)
-                    gc.StrokeLine(ax1, ay1, x1, ay1)
-                    font_size = 10.0 / matrix.value_scale_x()
-                    if font_size<1.0:
-                        font_size=1.0
-                    font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
-                    gc.SetFont(font, self.selection_style[self.selection_method[sector] - 1][0])
-                    (t_width, t_height) = gc.GetTextExtent("!")
-                    gc.DrawText("!", (ax1+x1)/2-t_width/2, (ay1+y1)/2-t_height/2)
+                self.draw_tiny_indicator(
+                    gc,
+                    "^",
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    self.selection_style[self.selection_method[sector] - 1][0],
+                    self.selection_style[self.selection_method[sector] - 1][1],
+                )
 
 
 class ReticleWidget(Widget):
