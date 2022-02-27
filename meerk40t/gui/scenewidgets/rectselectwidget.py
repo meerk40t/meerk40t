@@ -5,8 +5,8 @@ from meerk40t.gui.scene.scene import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
-    Widget,
 )
+from meerk40t.gui.scene.widget import Widget
 
 
 class RectSelectWidget(Widget):

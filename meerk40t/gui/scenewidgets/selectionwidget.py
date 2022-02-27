@@ -6,8 +6,8 @@ from meerk40t.gui.scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
-    Widget,
 )
+from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu
 
 

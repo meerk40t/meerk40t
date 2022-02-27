@@ -1,7 +1,8 @@
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, swizzlecolor
-from meerk40t.gui.scene.scene import HITCHAIN_HIT, RESPONSE_CHAIN, Widget
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.widget import Widget
 
 
 class GridWidget(Widget):

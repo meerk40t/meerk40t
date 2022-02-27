@@ -8,14 +8,14 @@ from meerk40t.gui.icons import (
     icons8_picture_in_picture_alternative_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.scene.scene import (
+from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
-    ScenePanel,
-    Widget,
 )
+from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.scene.widget import Widget
 from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
