@@ -276,7 +276,7 @@ class Camera(Service):
         self.setting(bool, "aspect", False)
         self.setting(str, "preserve_aspect", "xMinYMin meet")
 
-        # TODO: regex confirm fisheye and perspective.
+        # TODO: regex confirm fisheye
         if self.fisheye is not None and len(self.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.fisheye)
         try:
