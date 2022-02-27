@@ -35,7 +35,7 @@ from .node.laserop import (
 )
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
-from .units import UNITS_PER_PIXEL, Length, UNITS_PER_INCH
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):

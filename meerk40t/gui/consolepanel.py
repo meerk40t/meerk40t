@@ -1,86 +1,97 @@
 import re
+
 import wx
-from wx import aui
-from wx import richtext
+from wx import aui, richtext
 
 from meerk40t.gui.icons import icons8_console_50
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
+
 def bg_Colour(colour):
     def styColour(style):
         style.SetBackgroundColour(wx.Colour(colour))
         return style
+
     return styColour
+
 
 def fg_Colour(colour):
     def styColour(style):
         style.SetTextColour(wx.Colour(colour))
         return style
+
     return styColour
+
 
 def style_bold(style):
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
 
+
 def style_unbold(style):
     style.SetFontWeight(wx.FONTWEIGHT_NORMAL)
     return style
+
 
 def style_italic(style):
     style.SetFontStyle(wx.FONTSTYLE_ITALIC)
     return style
 
+
 def style_unitalic(style):
     style.SetFontStyle(wx.FONTSTYLE_NORMAL)
     return style
+
 
 def style_underline(style):
     style.SetFontUnderlined(True)
     return style
 
+
 def style_ununderline(style):
     style.SetFontUnderlined(False)
     return style
 
+
 BBCODE_LIST = {
-    "black":        fg_Colour("black"),
-    "red":          fg_Colour("red"),
-    "green":        fg_Colour("green"),
-    "yellow":       fg_Colour("yellow"),
-    "blue":         fg_Colour("blue"),
-    "magenta":      fg_Colour("magenta"),
-    "cyan":         fg_Colour("cyan"),
-    "white":        fg_Colour("white"),
-    "bg-black":     bg_Colour("black"),
-    "bg-red":       bg_Colour("red"),
-    "bg-green":     bg_Colour("green"),
-    "bg-yellow":    bg_Colour("yellow"),
-    "bg-blue":      bg_Colour("blue"),
-    "bg-magenta":   bg_Colour("magenta"),
-    "bg-cyan":      bg_Colour("cyan"),
-    "bg-white":     bg_Colour("white"),
-    "bold":         style_bold,
-    "/bold":        style_unbold,
-    "italic":       style_italic,
-    "/italic":      style_unitalic,
-    "underline":    style_underline,
-    "/underline":   style_ununderline,
-    "underscore":   style_underline,
-    "/underscore":  style_ununderline,
-    "normal":       None,
-    "negative":     None,
-    "positive":     None,
-    "raw":          None,
-    "/raw":         None,
+    "black": fg_Colour("black"),
+    "red": fg_Colour("red"),
+    "green": fg_Colour("green"),
+    "yellow": fg_Colour("yellow"),
+    "blue": fg_Colour("blue"),
+    "magenta": fg_Colour("magenta"),
+    "cyan": fg_Colour("cyan"),
+    "white": fg_Colour("white"),
+    "bg-black": bg_Colour("black"),
+    "bg-red": bg_Colour("red"),
+    "bg-green": bg_Colour("green"),
+    "bg-yellow": bg_Colour("yellow"),
+    "bg-blue": bg_Colour("blue"),
+    "bg-magenta": bg_Colour("magenta"),
+    "bg-cyan": bg_Colour("cyan"),
+    "bg-white": bg_Colour("white"),
+    "bold": style_bold,
+    "/bold": style_unbold,
+    "italic": style_italic,
+    "/italic": style_unitalic,
+    "underline": style_underline,
+    "/underline": style_ununderline,
+    "underscore": style_underline,
+    "/underscore": style_ununderline,
+    "normal": None,
+    "negative": None,
+    "positive": None,
+    "raw": None,
+    "/raw": None,
 }
 
 RE_BBCODE = re.compile(
-    r"(%s)" %
-        (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])),
+    r"(%s)" % (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])),
     re.IGNORECASE,
 )
+
 
 def style_negate(style):
     bg_colour = style.BackgroundColour
@@ -88,6 +99,7 @@ def style_negate(style):
     style.SetBackgroundColour(fg_colour)
     style.SetTextColour(bg_colour)
     return style
+
 
 def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
@@ -119,9 +131,7 @@ def register_panel_console(window, context):
             if x in context.opened
         ]
 
-        panels.append(
-            context.registered["pane/console"]
-        )
+        panels.append(context.registered["pane/console"])
         for panel in panels:
             panel.control.clear()
 
@@ -136,14 +146,16 @@ class ConsolePanel(wx.Panel):
             self,
             wx.ID_ANY,
             "",
-            style=wx.richtext.RE_MULTILINE
-            | wx.richtext.RE_READONLY
+            style=wx.richtext.RE_MULTILINE | wx.richtext.RE_READONLY,
         )
         self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
         style = richtext.RichTextAttr(wx.TextAttr(wx.Colour("black")))
         font = wx.Font(
-            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
         )
         style.SetBackgroundColour(wx.Colour("white"))
         style.SetFont(font)

@@ -932,7 +932,7 @@ class Transform(wx.Panel):
 
     def on_scale_up(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        x,y = self.context.device.current
+        x, y = self.context.device.current
         self.context(
             "scale %f %f %f %f\n"
             % (

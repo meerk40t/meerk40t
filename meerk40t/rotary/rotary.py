@@ -74,10 +74,7 @@ class Rotary(Service):
             sx = self.scale_x
             sy = self.scale_y
             x, y = self.device.current
-            mx = Matrix(
-                "scale(%f, %f, %f, %f)"
-                % (sx, sy, x, y)
-            )
+            mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, x, y))
             for element in self.elements.elems():
                 if hasattr(element, "rotary_scale"):
                     # This element is already scaled

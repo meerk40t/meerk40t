@@ -14,7 +14,6 @@ from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
-
 MILS_IN_MM = 39.3701
 
 HITCHAIN_HIT = 0
@@ -1480,7 +1479,7 @@ class SceneSpaceWidget(Widget):
             )
             p /= 250.0
             if self._previous_zoom is not None:
-                zoom_factor = e**p
+                zoom_factor = e ** p
                 zoom_change = zoom_factor / self._previous_zoom
                 self._previous_zoom = zoom_factor
                 self.scene_widget.matrix.post_scale(

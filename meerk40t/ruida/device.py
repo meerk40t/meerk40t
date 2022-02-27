@@ -215,7 +215,13 @@ class RuidaDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.bedwidth, self.bedheight, user_scale_x=self.scale_x, user_scale_y=self.scale_y)
+        ViewPort.__init__(
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+        )
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
