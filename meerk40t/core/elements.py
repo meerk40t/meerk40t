@@ -5076,19 +5076,19 @@ class Elemental(Service):
                 )
                 continue
 
-            is_dot = is_dot(element)
-            is_straight_line = is_straight_line(element)
+            dot = is_dot(element)
+            straight_line = is_straight_line(element)
             # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
 
             # Check for default vector operations
             element_vector = False
-            if isinstance(element, (Shape, SVGText)) and not is_dot:
+            if isinstance(element, (Shape, SVGText)) and not dot:
                 # Vector if not filled
                 if (
                     element.fill is None
                     or element.fill.rgb is None
                     or (element.fill.alpha is not None and element.fill.alpha == 0)
-                    or is_straight_line
+                    or straight_line
                 ):
                     element_vector = True
 
@@ -5106,8 +5106,8 @@ class Elemental(Service):
                 (
                     element,
                     element_vector,
-                    is_dot,
-                    is_straight_line,
+                    dot,
+                    straight_line,
                 )
             )
 
@@ -5123,14 +5123,14 @@ class Elemental(Service):
         for i, (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in enumerate(elements_to_classify):
             if (
                 # Raster?
                 not element_vector
                 and isinstance(element, (Shape, SVGText))
-                and not is_dot
+                and not dot
                 # White non-transparent fill?
                 and element.fill is not None
                 and element.fill.rgb is not None
@@ -5166,16 +5166,16 @@ class Elemental(Service):
                     elements_to_classify[i] = (
                         element,
                         element_vector,
-                        is_dot,
-                        is_straight_line,
+                        dot,
+                        straight_line,
                     )
 
         # Convert vector elements with element in front crossing the stroke to raster
         for i, (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in reversed_enumerate(elements_to_classify):
             if (
                 element_vector
@@ -5216,8 +5216,8 @@ class Elemental(Service):
                         elements_to_classify[i] = (
                             element,
                             element_vector,
-                            is_dot,
-                            is_straight_line,
+                            dot,
+                            straight_line,
                         )
                         break
 
@@ -5225,8 +5225,8 @@ class Elemental(Service):
         for (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in elements_to_classify:
 
             element_color = self.element_classify_color(element)
@@ -5241,9 +5241,9 @@ class Elemental(Service):
                 continue
 
             element_added = False
-            if is_dot or isinstance(element, SVGImage):
+            if dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (is_dot and op.type == "op dots") or (
+                    if (dot and op.type == "op dots") or (
                         isinstance(element, SVGImage) and op.type == "op image"
                     ):
                         op.add(element, type="ref elem", pos=element_pos)
@@ -5309,7 +5309,7 @@ class Elemental(Service):
             elif (
                 rasters_one_pass
                 and isinstance(element, (Shape, SVGText))
-                and not is_dot
+                and not dot
                 and raster_ops
             ):
                 for op in raster_ops:
@@ -5321,7 +5321,7 @@ class Elemental(Service):
 
             # Need to add a new operation to classify into
             op = None
-            if is_dot:
+            if dot:
                 op = DotsOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, SVGImage):
