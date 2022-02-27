@@ -10,7 +10,7 @@ class GuideWidget(Widget):
     """
     Interface Widget
 
-    Guide lines drawn at along the scene edges.
+    Guidelines drawn at along the scene edges.
     """
 
     def __init__(self, scene):
@@ -87,7 +87,7 @@ class GuideWidget(Widget):
 
     def signal(self, signal, *args, **kwargs):
         """
-        Process guide signal to delete the current guide lines and force them to be recalculated.
+        Process guide signal to delete the current guidelines and force them to be recalculated.
         """
         if signal == "guide":
             pass
