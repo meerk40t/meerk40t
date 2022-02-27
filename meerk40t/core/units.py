@@ -237,8 +237,8 @@ class ViewPort:
         return (
             0,
             0,
-            self.width,
-            self.height,
+            self.width_as_nm,
+            self.height_as_nm,
         )
 
     @property
