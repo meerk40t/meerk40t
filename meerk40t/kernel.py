@@ -4091,7 +4091,7 @@ class Channel:
             if w is print and console_open_print:
                 continue
             # Avoid double timestamp and indent
-            printing = w is print or w.__name__ == "__print_delegate"
+            printing = w is print or (hasattr(w, "__name__") and w.__name__ == "__print_delegate")
             if printing:
                 if self.ansi_supported:
                     w(bbcode_to_ansi(message))
