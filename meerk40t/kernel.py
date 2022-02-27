@@ -2823,14 +2823,19 @@ class Channel:
             if w is print and console_open_print:
                 continue
             # Avoid double timestamp and indent
-            printing = w is print or w.__name__ == "__print_delegate"
-            if printing:
+            if isinstance(w, Channel):
+                w(original_msg, indent=indent)
+            elif (
+                w is print
+                or (
+                    hasattr(w, "__name__")
+                    and w.__name__ == "__print_delegate"
+                )
+            ):
                 if self.ansi_supported:
                     w(bbcode_to_ansi(message))
                 else:
                     w(bbcode_to_plain(message))
-            elif isinstance(w, Channel):
-                w(original_msg, indent=indent)
             else:  # "open"
                 w(message)
         if self.buffer is not None:
