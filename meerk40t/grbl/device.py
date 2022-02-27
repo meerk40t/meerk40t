@@ -4,8 +4,14 @@ import socket
 import threading
 import time
 
-import serial
-from serial import SerialException
+from ..core.exceptions import Mk40tImportAbort
+
+try:
+    import serial
+    from serial import SerialException
+except ImportError as e:
+    raise Mk40tImportAbort("pyserial")
+
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
