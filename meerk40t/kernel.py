@@ -811,13 +811,13 @@ class Service(Context):
         """
         return console_command(self, *args, **kwargs)
 
-    def console_command_remove(self, *args, **kwargs) -> Callable:
+    def console_command_remove(self, *args, **kwargs) -> None:
         """
         Delegate to Kernel
 
         Uses current context to be passed to the console_command being removed.
         """
-        return console_command_remove(self, *args, **kwargs)
+        console_command_remove(self, *args, **kwargs)
 
     def destroy(self):
         self.kernel.set_service_lifecycle(self, LIFECYCLE_SHUTDOWN)
