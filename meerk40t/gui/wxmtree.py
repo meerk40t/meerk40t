@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from ..core.node.node import isDot
+from ..core.node.node import is_dot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -650,7 +650,7 @@ class ShadowTree:
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
-                if isDot(data_object):
+                if is_dot(data_object):
                     if (
                         data_object.stroke is not None
                         and data_object.stroke.rgb is not None

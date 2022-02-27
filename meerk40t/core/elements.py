@@ -33,7 +33,7 @@ from .node.laserop import (
     ImageOpNode,
     RasterOpNode,
 )
-from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
+from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
 from .units import UNITS_PER_PIXEL, Length, UNITS_PER_INCH
 
@@ -4789,7 +4789,7 @@ class Elemental(Service):
                     op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif op.type == "op dots" and isDot(element):
+                elif op.type == "op dots" and is_dot(element):
                     op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in Dots.
@@ -4802,7 +4802,7 @@ class Elemental(Service):
                 op = None
                 if isinstance(element, SVGImage):
                     op = ImageOpNode(output=False)
-                elif isDot(element):
+                elif is_dot(element):
                     op = DotsOpNode(output=False)
                 elif (
                     # test for Shape or SVGText instance is probably unnecessary,
@@ -4825,7 +4825,7 @@ class Elemental(Service):
                     isinstance(element, (Shape, SVGText))
                     and element.fill is not None
                     and element.fill.argb is not None
-                    and not isDot(element)
+                    and not is_dot(element)
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
@@ -5083,8 +5083,8 @@ class Elemental(Service):
                 )
                 continue
 
-            is_dot = isDot(element)
-            is_straight_line = isStraightLine(element)
+            is_dot = is_dot(element)
+            is_straight_line = is_straight_line(element)
             # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
 
             # Check for default vector operations
