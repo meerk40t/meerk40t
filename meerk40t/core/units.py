@@ -143,9 +143,9 @@ class ViewPort:
         return self.scene_to_device_position(x, y, vector=True)
 
     def device_to_scene_position(self, x, y):
-        if self._matrix is None:
+        if self._imatrix is None:
             self.calculate_matrices()
-        point = self._matrix.point_in_matrix_space((x,y))
+        point = self._imatrix.point_in_matrix_space((x,y))
         return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
