@@ -1,4 +1,3 @@
-
 MILS_IN_MM = 39.3701
 
 HITCHAIN_HIT = 0

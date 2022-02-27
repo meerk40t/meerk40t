@@ -2,8 +2,6 @@ import math
 
 import wx
 
-from .scene.scenepanel import ScenePanel
-from .scene.widget import Widget
 from ..core.cutcode import CutCode, LineCut
 from ..kernel import Job, signal_listener
 from ..svgelements import Matrix
@@ -15,6 +13,8 @@ from .icons import (
 )
 from .laserrender import LaserRender
 from .mwindow import MWindow
+from .scene.scenepanel import ScenePanel
+from .scene.widget import Widget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
 

@@ -1,8 +1,4 @@
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CONSUME,
-    RESPONSE_DROP,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.scene.widget import Widget
 
 

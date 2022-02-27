@@ -10,13 +10,21 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, HITCHAIN_DELEGATE, HITCHAIN_HIT_AND_DELEGATE, \
-    HITCHAIN_DELEGATE_AND_HIT, RESPONSE_ABORT, RESPONSE_CONSUME, RESPONSE_CHAIN, RESPONSE_DROP, ORIENTATION_RELATIVE
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE,
+    HITCHAIN_DELEGATE_AND_HIT,
+    HITCHAIN_HIT,
+    HITCHAIN_HIT_AND_DELEGATE,
+    ORIENTATION_RELATIVE,
+    RESPONSE_ABORT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
+)
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
-
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -35,7 +43,6 @@ def plugin(kernel, lifecycle):
             },
         ]
         kernel.register_choices("units", choices)
-
 
 
 class Scene(Module, Job):
@@ -536,5 +543,3 @@ class Scene(Module, Job):
         Delegate to the SceneSpaceWidget interface.
         """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
-
-
