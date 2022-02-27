@@ -125,7 +125,7 @@ class ViewPort:
         @return:
         """
         x,y = self.physical_to_scene_position(x, y, unitless)
-        return self.scene_to_device_position(x, y, unitless)
+        return self.scene_to_device_position(x, y)
 
     def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
         """
@@ -135,19 +135,22 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        x0, y0 = self.physical_to_device_position(0,0, unitless)
-        x, y = self.physical_to_device_position(x, y, unitless)
-        return x - x0, y - y0
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y, vector=True)
 
-    def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
+    def device_to_scene_position(self, x, y):
         m = Matrix(self.device_to_scene_matrix())
         point = m.point_in_matrix_space((x,y))
         return point.x, point.y
 
-    def scene_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
+    def scene_to_device_position(self, x, y, vector=False):
         m = Matrix(self.scene_to_device_matrix())
-        point = m.point_in_matrix_space((x,y))
-        return point.x, point.y
+        if vector:
+            point = m.transform_vector([x, y])
+            return point[0], point[1]
+        else:
+            point = m.point_in_matrix_space((x,y))
+            return point.x, point.y
 
     def scene_to_device_matrix(self):
         ops = []
