@@ -238,8 +238,8 @@ class Camera(Service):
         self.image_height = -1
 
         # Used during calibration.
-        self.objpoints = []  # 3d point in real world space
-        self.imgpoints = []  # 2d points in image plane.
+        self._object_points = []  # 3d point in real world space
+        self._image_points = []  # 2d points in image plane.
 
         self.camera_lock = threading.Lock()
 
@@ -324,9 +324,9 @@ class Camera(Service):
         # If found, add object points, image points (after refining them)
 
         if ret:
-            self.objpoints.append(objp)
+            self._object_points.append(objp)
             cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
-            self.imgpoints.append(corners)
+            self._image_points.append(corners)
         else:
             self.signal(
                 "warning",
@@ -335,15 +335,15 @@ class Camera(Service):
                 4,
             )
             return
-        N_OK = len(self.objpoints)
+        N_OK = len(self._object_points)
         K = np.zeros((3, 3))
         D = np.zeros((4, 1))
         rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
         tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
         try:
             rms, a, b, c, d = cv2.fisheye.calibrate(
-                self.objpoints,
-                self.imgpoints,
+                self._object_points,
+                self._image_points,
                 gray.shape[::-1],
                 K,
                 D,
@@ -361,7 +361,7 @@ class Camera(Service):
             return
         self.signal(
             "warning",
-            _("Success. %d images so far.") % len(self.objpoints),
+            _("Success. %d images so far.") % len(self._object_points),
             _("Image Captured"),
             4 | 2048,
         )
@@ -543,9 +543,9 @@ class Camera(Service):
         self.perspective = ""
 
     def backtrack_fisheye(self):
-        if self.objpoints:
-            del self.objpoints[-1]
-            del self.imgpoints[-1]
+        if self._object_points:
+            del self._object_points[-1]
+            del self._image_points[-1]
 
     def reset_fisheye(self):
         """
@@ -556,8 +556,8 @@ class Camera(Service):
         """
         self.fisheye_k = None
         self.fisheye_d = None
-        self.objpoints = []
-        self.imgpoints = []
+        self._object_points = []
+        self._image_points = []
         self.fisheye = ""
 
     def set_uri(self, uri):
