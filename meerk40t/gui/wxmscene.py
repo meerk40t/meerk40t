@@ -4,16 +4,15 @@ from wx import aui
 from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.scene.elementswidget import ElementsWidget
-from meerk40t.gui.scene.gridwidget import GridWidget
-from meerk40t.gui.scene.guidewidget import GuideWidget
-from meerk40t.gui.scene.laserpathwidget import LaserPathWidget
-from meerk40t.gui.scene.rectselectwidget import RectSelectWidget
-from meerk40t.gui.scene.reticlewidget import ReticleWidget
 from meerk40t.gui.scene.scene import ScenePanel
-from meerk40t.gui.scene.selectionwidget import SelectionWidget
-
-from meerk40t.gui.scene.toolwidgets import (
+from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
+from meerk40t.gui.scenewidgets.gridwidget import GridWidget
+from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
+from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
+from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
+from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
+from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.scenewidgets.toolwidgets import (
     CircleTool,
     DrawTool,
     EllipseTool,

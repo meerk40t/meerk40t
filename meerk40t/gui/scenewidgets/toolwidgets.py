@@ -13,7 +13,7 @@ from meerk40t.svgelements import (
 
 from ...core.units import UNITS_PER_MM, UNITS_PER_PIXEL
 from ..laserrender import LaserRender
-from .scene import Scene, Widget
+from ..scene.scene import Scene, Widget
 
 HITCHAIN_HIT = 0
 HITCHAIN_DELEGATE = 1

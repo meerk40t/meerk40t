@@ -1,4 +1,3 @@
-
 from meerk40t.gui.scene.scene import (
     HITCHAIN_HIT,
     RESPONSE_CONSUME,
