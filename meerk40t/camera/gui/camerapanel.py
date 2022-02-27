@@ -69,18 +69,6 @@ class CameraPanel(wx.Panel, Job):
         self.camera = self.context.get_context(
             "camera/%d" % self.index
         )  # camera service location.
-        self.camera.setting(int, "width", 640)
-        self.camera.setting(int, "height", 480)
-        self.camera.setting(int, "fps", 1)
-        self.camera.setting(bool, "correction_fisheye", False)
-        self.camera.setting(bool, "correction_perspective", False)
-        self.camera.setting(str, "fisheye", "")
-        self.camera.setting(str, "perspective", "")
-        self.camera.setting(str, "uri", "0")
-        self.camera.setting(int, "index", 0)
-        self.camera.setting(bool, "autonormal", False)
-        self.camera.setting(bool, "aspect", False)
-        self.camera.setting(str, "preserve_aspect", "xMinYMin meet")
         self.last_frame_index = -1
 
         if not pane:
@@ -563,7 +551,7 @@ class CamPerspectiveWidget(Widget):
 
     def update(self):
         half = CORNER_SIZE / 2.0
-        perspective = self.cam.camera.perspective
+        perspective = self.cam.camera._perspective
         pos = perspective[self.index]
         if not self.mid:
             self.set_position(pos[0] - half, pos[1] - half)
@@ -580,7 +568,7 @@ class CamPerspectiveWidget(Widget):
     def process_draw(self, gc):
         if (
             not self.cam.camera.correction_perspective
-            and self.cam.camera.perspective
+            and self.cam.camera._perspective
             and not self.cam.camera.aspect
         ):
             gc.SetPen(self.pen)
@@ -604,7 +592,7 @@ class CamPerspectiveWidget(Widget):
             return RESPONSE_CONSUME
         if event_type == "move":
             # self.translate_self(space_pos[4], space_pos[5])
-            perspective = self.cam.camera.perspective
+            perspective = self.cam.camera._perspective
             if perspective:
                 perspective[self.index][0] += space_pos[4]
                 perspective[self.index][1] += space_pos[5]
@@ -626,21 +614,19 @@ class CamSceneWidget(Widget):
 
     def process_draw(self, gc):
         if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            if self.cam.camera.perspective:
+            if self.cam.camera._perspective:
                 if not len(self):
                     for i in range(4):
                         self.add_widget(
                             -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
                         )
-                    # for i in range(4):
-                    #     self.add_widget(-1, CamPerspectiveWidget(self.scene, self.cam, i, True))
                 gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLines(self.cam.camera.perspective)
+                gc.StrokeLines(self.cam.camera._perspective)
                 gc.StrokeLine(
-                    self.cam.camera.perspective[0][0],
-                    self.cam.camera.perspective[0][1],
-                    self.cam.camera.perspective[3][0],
-                    self.cam.camera.perspective[3][1],
+                    self.cam.camera._perspective[0][0],
+                    self.cam.camera._perspective[0][1],
+                    self.cam.camera._perspective[3][0],
+                    self.cam.camera._perspective[3][1],
                 )
         else:
             if len(self):

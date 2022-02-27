@@ -268,7 +268,6 @@ class Camera(Service):
             self.fisheye_k, self.fisheye_d = eval(self.fisheye)
         if self.perspective is not None and len(self.perspective) != 0:
             self._perspective = eval(self.perspective)
-        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -417,18 +416,19 @@ class Camera(Service):
                 interpolation=cv2.INTER_LINEAR,
                 borderMode=cv2.BORDER_CONSTANT,
             )
+        width, height = frame.shape[:2][::-1]
+        if self._perspective is None:
+            self._perspective = (
+                [0, 0],
+                [width, 0],
+                [width, height],
+                [0, height],
+            )
         if self.correction_perspective:
             # Perspective the drawing.
             dest_width = self.width
             dest_height = self.height
-            width, height = frame.shape[:2][::-1]
-            if self._perspective is None:
-                rect = np.array(
-                    [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]],
-                    dtype="float32",
-                )
-            else:
-                rect = np.array(self._perspective, dtype="float32")
+            rect = np.array(self._perspective, dtype="float32")
             dst = np.array(
                 [
                     [0, 0],
