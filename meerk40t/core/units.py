@@ -70,6 +70,8 @@ class ViewPort:
         flip_y=False,
         swap_xy=False,
     ):
+        self._matrix = None
+        self._imatrix = None
         self.width = width
         self.height = height
         self.origin_x = origin_x
@@ -91,6 +93,8 @@ class ViewPort:
         self.realize()
 
     def realize(self):
+        self._imatrix = None
+        self._matrix = None
         self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._offset_x = self._width * self.origin_x
@@ -139,18 +143,25 @@ class ViewPort:
         return self.scene_to_device_position(x, y, vector=True)
 
     def device_to_scene_position(self, x, y):
-        m = Matrix(self.device_to_scene_matrix())
-        point = m.point_in_matrix_space((x,y))
+        if self._matrix is None:
+            self.calculate_matrices()
+        point = self._matrix.point_in_matrix_space((x,y))
         return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
-        m = Matrix(self.scene_to_device_matrix())
+        if self._matrix is None:
+            self.calculate_matrices()
         if vector:
-            point = m.transform_vector([x, y])
+            point = self._matrix.transform_vector([x, y])
             return point[0], point[1]
         else:
-            point = m.point_in_matrix_space((x,y))
+            point = self._matrix.point_in_matrix_space((x,y))
             return point.x, point.y
+
+    def calculate_matrices(self):
+        self._matrix = Matrix(self.scene_to_device_matrix())
+        self._imatrix = Matrix(self._matrix)
+        self._imatrix.inverse()
 
     def scene_to_device_matrix(self):
         ops = []
@@ -165,11 +176,6 @@ class ViewPort:
         if self.swap_xy:
             ops.append("scale(-1.0, -1.0) rotate(180deg)")
         return " ".join(ops)
-
-    def device_to_scene_matrix(self):
-        m = Matrix(self.scene_to_device_matrix())
-        m.inverse()
-        return m
 
     def length(
         self,

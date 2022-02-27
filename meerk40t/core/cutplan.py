@@ -394,16 +394,13 @@ class CutPlan:
 
     def scale_to_device_native(self):
         matrix = Matrix(self.context.device.scene_to_device_matrix())
+
+        # TODO: Correct rotary.
         # rotary = self.context.rotary
-        #
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
-        # TODO: Correct rotary.
+
         device = self.context.device
-        # scale_str = "scale(%.13f,%.13f)" % (
-        #     device.get_native_scale_x,
-        #     device.get_native_scale_y,
-        # )
         for o in self.plan:
             if o.type.startswith("op"):
                 for node in o.children:
