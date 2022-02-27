@@ -223,8 +223,14 @@ class Camera(Service):
         self.uri = 0
         self.fisheye_k = None
         self.fisheye_d = None
-        self.perspective = None
-        self._perspective = None
+        self.perspective_x1 = None
+        self.perspective_y1 = None
+        self.perspective_x2 = None
+        self.perspective_y2 = None
+        self.perspective_x3 = None
+        self.perspective_y3 = None
+        self.perspective_x4 = None
+        self.perspective_y4 = None
         self.camera_job = None
 
         self.current_frame = None
@@ -256,7 +262,14 @@ class Camera(Service):
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(str, "fisheye", "")
-        self.setting(str, "perspective", "")
+        self.setting(float, "perspective_x1", None)
+        self.setting(float, "perspective_y1", None)
+        self.setting(float, "perspective_x2", None)
+        self.setting(float, "perspective_y2", None)
+        self.setting(float, "perspective_x3", None)
+        self.setting(float, "perspective_y3", None)
+        self.setting(float, "perspective_x4", None)
+        self.setting(float, "perspective_y4", None)
         self.setting(str, "uri", "0")
         self.setting(int, "index", 0)
         self.setting(bool, "autonormal", False)
@@ -266,8 +279,6 @@ class Camera(Service):
         # TODO: regex confirm fisheye and perspective.
         if self.fisheye is not None and len(self.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.fisheye)
-        if self.perspective is not None and len(self.perspective) != 0:
-            self._perspective = eval(self.perspective)
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -417,18 +428,28 @@ class Camera(Service):
                 borderMode=cv2.BORDER_CONSTANT,
             )
         width, height = frame.shape[:2][::-1]
-        if self._perspective is None:
-            self._perspective = (
-                [0, 0],
-                [width, 0],
-                [width, height],
-                [0, height],
-            )
+        if self.perspective_x1 is None:
+            self.perspective_x1 = 0
+            self.perspective_y1 = 0
+            self.perspective_x2 = width
+            self.perspective_y2 = 0
+            self.perspective_x3 = width
+            self.perspective_y3 = height
+            self.perspective_x4 = 0
+            self.perspective_y4 = height
         if self.correction_perspective:
             # Perspective the drawing.
             dest_width = self.width
             dest_height = self.height
-            rect = np.array(self._perspective, dtype="float32")
+            rect = np.array(
+                [
+                    [self.perspective_x1, self.perspective_y1],
+                    [self.perspective_x2, self.perspective_y2],
+                    [self.perspective_x3, self.perspective_y3],
+                    [self.perspective_x4, self.perspective_y4],
+                ],
+                dtype="float32",
+            )
             dst = np.array(
                 [
                     [0, 0],
@@ -539,8 +560,14 @@ class Camera(Service):
         :param event:
         :return:
         """
-        self._perspective = None
-        self.perspective = ""
+        self.perspective_x1 = None
+        self.perspective_y1 = None
+        self.perspective_x2 = None
+        self.perspective_y2 = None
+        self.perspective_x3 = None
+        self.perspective_y3 = None
+        self.perspective_x4 = None
+        self.perspective_y4 = None
 
     def backtrack_fisheye(self):
         if self._object_points:

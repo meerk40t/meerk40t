@@ -226,13 +226,6 @@ class CameraPanel(wx.Panel, Job):
         self.frame_bitmap = wx.Bitmap.FromBuffer(
             self.image_width, self.image_height, frame
         )
-        if self.camera.perspective is None:
-            self.camera.perspective = (
-                [0, 0],
-                [self.camera.width, 0],
-                [self.camera.width, self.camera.height],
-                [0, self.camera.height],
-            )
         if self.camera.correction_perspective:
             if (
                 self.camera.width != self.image_width
@@ -551,16 +544,19 @@ class CamPerspectiveWidget(Widget):
 
     def update(self):
         half = CORNER_SIZE / 2.0
-        perspective = self.cam.camera._perspective
-        pos = perspective[self.index]
-        if not self.mid:
-            self.set_position(pos[0] - half, pos[1] - half)
+        if self.index == 0:
+            pos_x = self.cam.camera.perspective_x1
+            pos_y = self.cam.camera.perspective_y1
+        elif self.index == 1:
+            pos_x = self.cam.camera.perspective_x2
+            pos_y = self.cam.camera.perspective_y2
+        elif self.index == 2:
+            pos_x = self.cam.camera.perspective_x3
+            pos_y = self.cam.camera.perspective_y3
         else:
-            center_x = sum([e[0] for e in perspective]) / len(perspective)
-            center_y = sum([e[1] for e in perspective]) / len(perspective)
-            x = (center_x + pos[0]) / 2.0
-            y = (center_y + pos[1]) / 2.0
-            self.set_position(x - half, y - half)
+            pos_x = self.cam.camera.perspective_x4
+            pos_y = self.cam.camera.perspective_y4
+        self.set_position(pos_x - half, pos_y - half)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -568,7 +564,6 @@ class CamPerspectiveWidget(Widget):
     def process_draw(self, gc):
         if (
             not self.cam.camera.correction_perspective
-            and self.cam.camera._perspective
             and not self.cam.camera.aspect
         ):
             gc.SetPen(self.pen)
@@ -591,19 +586,22 @@ class CamPerspectiveWidget(Widget):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
-            # self.translate_self(space_pos[4], space_pos[5])
-            perspective = self.cam.camera._perspective
-            if perspective:
-                perspective[self.index][0] += space_pos[4]
-                perspective[self.index][1] += space_pos[5]
-                if self.mid:
-                    perspective[self.index][0] += space_pos[4]
-                    perspective[self.index][1] += space_pos[5]
-                for w in self.parent:
-                    if isinstance(w, CamPerspectiveWidget):
-                        w.update()
-                self.cam.camera.perspective = repr(perspective)
-                self.cam.context.signal("refresh_scene", self.scene.name)
+            if self.index == 0:
+                self.cam.camera.perspective_x1 += space_pos[4]
+                self.cam.camera.perspective_y1 += space_pos[5]
+            elif self.index == 1:
+                self.cam.camera.perspective_x2 += space_pos[4]
+                self.cam.camera.perspective_y2 += space_pos[5]
+            elif self.index == 2:
+                self.cam.camera.perspective_x3 += space_pos[4]
+                self.cam.camera.perspective_y3 += space_pos[5]
+            else:
+                self.cam.camera.perspective_x4 += space_pos[4]
+                self.cam.camera.perspective_y4 += space_pos[5]
+            for w in self.parent:
+                if isinstance(w, CamPerspectiveWidget):
+                    w.update()
+            self.cam.context.signal("refresh_scene", self.scene.name)
             return RESPONSE_CONSUME
 
 
@@ -614,19 +612,36 @@ class CamSceneWidget(Widget):
 
     def process_draw(self, gc):
         if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            if self.cam.camera._perspective:
+            if self.cam.camera.perspective_x1 is not None:
                 if not len(self):
                     for i in range(4):
                         self.add_widget(
                             -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
                         )
                 gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLines(self.cam.camera._perspective)
-                gc.StrokeLine(
-                    self.cam.camera._perspective[0][0],
-                    self.cam.camera._perspective[0][1],
-                    self.cam.camera._perspective[3][0],
-                    self.cam.camera._perspective[3][1],
+                gc.StrokeLines(
+                    [
+                        (
+                            self.cam.camera.perspective_x1,
+                            self.cam.camera.perspective_y1,
+                        ),
+                        (
+                            self.cam.camera.perspective_x2,
+                            self.cam.camera.perspective_y2,
+                        ),
+                        (
+                            self.cam.camera.perspective_x3,
+                            self.cam.camera.perspective_y3,
+                        ),
+                        (
+                            self.cam.camera.perspective_x4,
+                            self.cam.camera.perspective_y4,
+                        ),
+                        (
+                            self.cam.camera.perspective_x1,
+                            self.cam.camera.perspective_y1,
+                        ),
+                    ]
                 )
         else:
             if len(self):
