@@ -2239,14 +2239,7 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            try:
-                tx = self.device.current_x
-            except AttributeError:
-                tx = 0
-            try:
-                ty = self.device.current_y
-            except AttributeError:
-                ty = 0
+            tx, ty = self.device.current
             try:
                 bounds = Group.union_bbox([abs(e) for e in data])
                 otx = bounds[0]
