@@ -214,8 +214,7 @@ class Bind(Service):
                 action = self.keymap[keyvalue]
                 self(action + "\n")
                 return True
-        else:
-            return False
+        return False
 
     def untrigger(self, keyvalue):
         keymap = self.keymap
