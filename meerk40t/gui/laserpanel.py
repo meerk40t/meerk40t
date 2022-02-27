@@ -52,7 +52,7 @@ def register_panel_laser(window, context):
     choices = [
         {
             "attr": "laserpane_arm",
-            "object": context.kernel.elements,
+            "object": context.root,
             "default": False,
             "type": bool,
             "label": _("Enable Laser Arm"),
@@ -237,7 +237,7 @@ class LaserPanel(wx.Panel):
             else:
                 self.text_plan.SetValue("%s: %s" % (str(stage), str(plan)))
 
-    @lookup_listener("laserpane_arm")
+    @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
         self.context.setting(bool, "laserpane_arm", True)
         if self.context.laserpane_arm:
