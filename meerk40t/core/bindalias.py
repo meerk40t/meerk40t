@@ -227,8 +227,7 @@ class Bind(Service):
                 action = "-" + action[1:]
                 self(action + "\n")
                 return True
-        else:
-            return False
+        return False
 
     def shutdown(self, *args, **kwargs):
         self.clear_persistent()
