@@ -1551,11 +1551,11 @@ class GCodeLoader:
 
     @staticmethod
     def load(kernel, elements_modifier, pathname, **kwargs):
-        basename = os.path.basename(pathname)
-        with open(pathname, "r") as f:
-            grblemulator = GRBLEmulator(kernel.root, basename)
-            grblemulator.elements = elements_modifier
-            commandcode = GcodeBlob(get_command_code(f.readlines()), name=basename)
-            elements_modifier.op_branch.add(commandcode, type="lasercode")
-            kernel.root.close(basename)
+        # basename = os.path.basename(pathname)
+        # with open(pathname, "r") as f:
+        #     grblemulator = GRBLEmulator(kernel.root, basename)
+        #     grblemulator.elements = elements_modifier
+        #     commandcode = GcodeBlob(get_command_code(f.readlines()), name=basename)
+        #     elements_modifier.op_branch.add(commandcode, type="lasercode")
+        #     kernel.root.close(basename)
         return True
