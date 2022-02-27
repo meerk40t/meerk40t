@@ -856,391 +856,391 @@ class GRBLDriver(Parameters):
     # This code isn't currently used.
     ####################
 
-    def grbl_write(self, data):
-        if self.grbl_channel is not None:
-            self.grbl_channel(data)
-        if self.reply is not None:
-            self.reply(data)
-
-    def realtime_write(self, bytes_to_write):
-        device = self.device
-        if bytes_to_write == "?":  # Status report
-            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if device.state == 0:
-                state = "Idle"
-            else:
-                state = "Busy"
-            x = device.current_x / self.stepper_step_size
-            y = device.current_y / self.stepper_step_size
-            z = 0.0
-            parts = list()
-            parts.append(state)
-            parts.append("MPos:%f,%f,%f" % (x, y, z))
-            speed = device.settings.speed
-            if speed is None:
-                speed = 30.0
-            f = self.feed_invert(speed)
-            power = device.settings.power
-            if power is None:
-                power = 1000
-            s = power
-            parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r" % "|".join(parts))
-        elif bytes_to_write == "~":  # Resume.
-            self.context("resume\n")
-        elif bytes_to_write == "!":  # Pause.
-            self.context("pause\n")
-        elif bytes_to_write == "\x18":  # Soft reset.
-            self.context("estop\n")
-
-    def write2(self, data):
-        if isinstance(data, bytes):
-            data = data.decode()
-        if "?" in data:
-            data = data.replace("?", "")
-            self.realtime_write("?")
-        if "~" in data:
-            data = data.replace("$", "")
-            self.realtime_write("~")
-        if "!" in data:
-            data = data.replace("!", "")
-            self.realtime_write("!")
-        if "\x18" in data:
-            data = data.replace("\x18", "")
-            self.realtime_write("\x18")
-        self.buffer += data
-        while "\b" in self.buffer:
-            self.buffer = re.sub(".\b", "", self.buffer, count=1)
-            if self.buffer.startswith("\b"):
-                self.buffer = re.sub("\b+", "", self.buffer)
-
-        while "\n" in self.buffer:
-            pos = self.buffer.find("\n")
-            command = self.buffer[0:pos].strip("\r")
-            self.buffer = self.buffer[pos + 1 :]
-            cmd = self.process_line(command)
-            if cmd == 0:  # Execute GCode.
-                self.grbl_write("ok\r")
-            else:
-                self.grbl_write("error:%d\r" % cmd)
-
-    def process_line(self, data):
-        if data.startswith("$"):
-            if data == "$":
-                self.grbl_write(
-                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r"
-                )
-                return 0
-            elif data == "$$":
-                for s in self.settings:
-                    v = self.settings[s]
-                    if isinstance(v, int):
-                        self.grbl_write("$%d=%d\r" % (s, v))
-                    elif isinstance(v, float):
-                        self.grbl_write("$%d=%.3f\r" % (s, v))
-                return 0
-            if GRBL_SET_RE.match(data):
-                settings = list(GRBL_SET_RE.findall(data))[0]
-                print(settings)
-                try:
-                    c = self.settings[int(settings[0])]
-                except KeyError:
-                    return 3
-                if isinstance(c, float):
-                    self.settings[int(settings[0])] = float(settings[1])
-                else:
-                    self.settings[int(settings[0])] = int(settings[1])
-                return 0
-            elif data == "$I":
-                pass
-            elif data == "$G":
-                pass
-            elif data == "$N":
-                pass
-            elif data == "$H":
-                self.spooler.job("home")
-                if self.home_adjust is not None:
-                    self.spooler.job("rapid_mode")
-                    self.spooler.job("move", self.home_adjust[0], self.home_adjust[1])
-                return 0
-                # return 5  # Homing cycle not enabled by settings.
-            return 3  # GRBL '$' system command was not recognized or supported.
-        if data.startswith("cat"):
-            return 2
-        commands = {}
-        for c in _tokenize_code(data):
-            g = c[0]
-            if g not in commands:
-                commands[g] = []
-            if len(c) >= 2:
-                commands[g].append(c[1])
-            else:
-                commands[g].append(None)
-        return self._process_commands(commands)
-
-    def _process_commands(self, gc):
-        """
-        Process parsed gcode commands.
-
-        @param gc:
-        @return:
-        """
-        if "m" in gc:
-            for v in gc["m"]:
-                if v == 0 or v == 1:
-                    yield "rapid_mode"
-                    yield "wait_finish"
-                elif v == 2:
-                    return
-                elif v == 30:
-                    return
-                elif v == 3 or v == 4:
-                    on_mode = True
-                elif v == 5:
-                    on_mode = False
-                    yield "laser_off"
-                elif v == 7:
-                    #  Coolant control.
-                    pass
-                elif v == 8:
-                    yield "signal", ("coolant", True)
-                elif v == 9:
-                    yield "signal", ("coolant", False)
-                elif v == 56:
-                    pass  # Parking motion override control.
-                elif v == 911:
-                    pass  # Set TMC2130 holding currents
-                elif v == 912:
-                    pass  # M912: Set TMC2130 running currents
-                else:
-                    return 20
-            del gc["m"]
-        if "g" in gc:
-            for v in gc["g"]:
-                if v is None:
-                    return 2
-                elif v == 0.0:
-                    move_mode = 0
-                elif v == 1.0:
-                    move_mode = 1
-                elif v == 2.0:  # CW_ARC
-                    move_mode = 2
-                elif v == 3.0:  # CCW_ARC
-                    move_mode = 3
-                elif v == 4.0:  # DWELL
-                    t = 0
-                    if "p" in gc:
-                        t = float(gc["p"].pop()) / 1000.0
-                        if len(gc["p"]) == 0:
-                            del gc["p"]
-                    if "s" in gc:
-                        t = float(gc["s"].pop())
-                        if len(gc["s"]) == 0:
-                            del gc["s"]
-                    yield "rapid_mode"
-                    yield "wait", t
-                elif v == 10.0:
-                    if "l" in gc:
-                        l = float(gc["l"].pop(0))
-                        if len(gc["l"]) == 0:
-                            del gc["l"]
-                        if l == 2.0:
-                            pass
-                        elif l == 20:
-                            pass
-                elif v == 17:
-                    pass  # Set XY coords.
-                elif v == 18:
-                    return 2  # Set the XZ plane for arc.
-                elif v == 19:
-                    return 2  # Set the YZ plane for arc.
-                elif v == 20.0 or v == 70.0:
-                    scale = UNITS_PER_INCH  # g20 is inch mode.
-                elif v == 21.0 or v == 71.0:
-                    scale = UNITS_PER_MM  # g21 is mm mode.
-                elif v == 28.0:
-                    yield "rapid_mode"
-                    yield "home"
-                    if home_adjust is not None:
-                        yield "move_abs", home_adjust[0], home_adjust[1]
-                    if home is not None:
-                        yield "move", home
-                elif v == 28.1:
-                    if "x" in gc and "y" in gc:
-                        x = gc["x"].pop(0)
-                        if len(gc["x"]) == 0:
-                            del gc["x"]
-                        y = gc["y"].pop(0)
-                        if len(gc["y"]) == 0:
-                            del gc["y"]
-                        if x is None:
-                            x = 0
-                        if y is None:
-                            y = 0
-                        home = (x, y)
-                elif v == 28.2:
-                    # Run homing cycle.
-                    yield "rapid_mode"
-                    yield "home"
-                    if home_adjust is not None:
-                        yield "move_abs", home_adjust[0], home_adjust[1]
-                elif v == 28.3:
-                    yield "rapid_mode"
-                    yield "home"
-                    if home_adjust is not None:
-                        yield "move", home_adjust[0], home_adjust[1]
-                    if "x" in gc:
-                        x = gc["x"].pop(0)
-                        if len(gc["x"]) == 0:
-                            del gc["x"]
-                        if x is None:
-                            x = 0
-                        yield "move", x, 0
-                    if "y" in gc:
-                        y = gc["y"].pop(0)
-                        if len(gc["y"]) == 0:
-                            del gc["y"]
-                        if y is None:
-                            y = 0
-                        yield "move", 0, y
-                elif v == 30.0:
-                    # Goto predefined position. Return to secondary home position.
-                    if "p" in gc:
-                        p = float(gc["p"].pop(0))
-                        if len(gc["p"]) == 0:
-                            del gc["p"]
-                    else:
-                        p = None
-                    yield "rapid_mode"
-                    yield "home"
-                    if home_adjust is not None:
-                        yield "move", home_adjust[0], home_adjust[1]
-                    if home2 is not None:
-                        yield "move", home2
-                elif v == 30.1:
-                    # Stores the current absolute position.
-                    if "x" in gc and "y" in gc:
-                        x = gc["x"].pop(0)
-                        if len(gc["x"]) == 0:
-                            del gc["x"]
-                        y = gc["y"].pop(0)
-                        if len(gc["y"]) == 0:
-                            del gc["y"]
-                        if x is None:
-                            x = 0
-                        if y is None:
-                            y = 0
-                        home2 = (x, y)
-                elif v == 38.1:
-                    # Touch Plate
-                    pass
-                elif v == 38.2:
-                    # Straight Probe
-                    pass
-                elif v == 38.3:
-                    # Prope towards workpiece
-                    pass
-                elif v == 38.4:
-                    # Probe away from workpiece, signal error
-                    pass
-                elif v == 38.5:
-                    # Probe away from workpiece.
-                    pass
-                elif v == 40.0:
-                    pass  # Compensation Off
-                elif v == 43.1:
-                    pass  # Dynamic tool Length offsets
-                elif v == 49:
-                    # Cancel tool offset.
-                    pass  # Dynamic tool length offsets
-                elif v == 53:
-                    pass  # Move in Absolute Coordinates
-                elif 54 <= v <= 59:
-                    # Fixture offset 1-6, G10 and G92
-                    system = v - 54
-                    pass  # Work Coordinate Systems
-                elif v == 61:
-                    # Exact path control mode. GRBL required
-                    pass
-                elif v == 80:
-                    # Motion mode cancel. Canned cycle.
-                    pass
-                elif v == 90.0:
-                    yield "set", "relative", False
-                elif v == 91.0:
-                    yield "set", "relative", True
-                elif v == 91.1:
-                    # Offset mode for certain cam. Incremental distance mode for arcs.
-                    pass  # ARC IJK Distance Modes # TODO Implement
-                elif v == 92:
-                    # Change the current coords without moving.
-                    pass  # Coordinate Offset TODO: Implement
-                elif v == 92.1:
-                    # Clear Coordinate offset set by 92.
-                    pass  # Clear Coordinate offset TODO: Implement
-                elif v == 93.0:
-                    feed_convert, feed_invert = g93_feed_convert, g93_feed_invert
-                elif v == 94.0:
-                    feed_convert, feed_invert = g94_feed_convert, g94_feed_invert
-                else:
-                    return 20  # Unsupported or invalid g-code command found in block.
-            del gc["g"]
-        if "comment" in gc:
-            del gc["comment"]
-        if "f" in gc:  # Feed_rate
-            for v in gc["f"]:
-                if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
-                feed_rate = feed_convert(v)
-                if speed != feed_rate:
-                    speed = feed_rate
-            del gc["f"]
-        if "s" in gc:
-            for v in gc["s"]:
-                if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
-                if 0.0 < v <= 1.0:
-                    v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
-                power = v
-                yield "set", "power", v
-
-            del gc["s"]
-        if "x" in gc or "y" in gc:
-            if "x" in gc:
-                x = gc["x"].pop(0)
-                if x is None:
-                    x = 0
-                else:
-                    x *= scale * flip_x
-                if len(gc["x"]) == 0:
-                    del gc["x"]
-            else:
-                x = 0
-            if "y" in gc:
-                y = gc["y"].pop(0)
-                if y is None:
-                    y = 0
-                else:
-                    y *= scale * flip_y
-                if len(gc["y"]) == 0:
-                    del gc["y"]
-            else:
-                y = 0
-            if move_mode == 0:
-                yield "program_mode"
-                yield "move", x, y
-            elif move_mode >= 1:
-                yield "program_mode"
-                if power == 0:
-                    yield "move", x, y
-                else:
-                    if used_speed != speed:
-                        yield "set", "speed", speed
-                        used_speed = speed
-                    yield "cut", x, y
-                # TODO: Implement CW_ARC
-                # TODO: Implement CCW_ARC
-        return 0
+    # def grbl_write(self, data):
+    #     if self.grbl_channel is not None:
+    #         self.grbl_channel(data)
+    #     if self.reply is not None:
+    #         self.reply(data)
+    #
+    # def realtime_write(self, bytes_to_write):
+    #     device = self.device
+    #     if bytes_to_write == "?":  # Status report
+    #         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+    #         if device.state == 0:
+    #             state = "Idle"
+    #         else:
+    #             state = "Busy"
+    #         x = device.current_x / self.stepper_step_size
+    #         y = device.current_y / self.stepper_step_size
+    #         z = 0.0
+    #         parts = list()
+    #         parts.append(state)
+    #         parts.append("MPos:%f,%f,%f" % (x, y, z))
+    #         speed = device.settings.speed
+    #         if speed is None:
+    #             speed = 30.0
+    #         f = self.feed_invert(speed)
+    #         power = device.settings.power
+    #         if power is None:
+    #             power = 1000
+    #         s = power
+    #         parts.append("FS:%f,%d" % (f, s))
+    #         self.grbl_write("<%s>\r" % "|".join(parts))
+    #     elif bytes_to_write == "~":  # Resume.
+    #         self.context("resume\n")
+    #     elif bytes_to_write == "!":  # Pause.
+    #         self.context("pause\n")
+    #     elif bytes_to_write == "\x18":  # Soft reset.
+    #         self.context("estop\n")
+    #
+    # def write2(self, data):
+    #     if isinstance(data, bytes):
+    #         data = data.decode()
+    #     if "?" in data:
+    #         data = data.replace("?", "")
+    #         self.realtime_write("?")
+    #     if "~" in data:
+    #         data = data.replace("$", "")
+    #         self.realtime_write("~")
+    #     if "!" in data:
+    #         data = data.replace("!", "")
+    #         self.realtime_write("!")
+    #     if "\x18" in data:
+    #         data = data.replace("\x18", "")
+    #         self.realtime_write("\x18")
+    #     self.buffer += data
+    #     while "\b" in self.buffer:
+    #         self.buffer = re.sub(".\b", "", self.buffer, count=1)
+    #         if self.buffer.startswith("\b"):
+    #             self.buffer = re.sub("\b+", "", self.buffer)
+    #
+    #     while "\n" in self.buffer:
+    #         pos = self.buffer.find("\n")
+    #         command = self.buffer[0:pos].strip("\r")
+    #         self.buffer = self.buffer[pos + 1 :]
+    #         cmd = self.process_line(command)
+    #         if cmd == 0:  # Execute GCode.
+    #             self.grbl_write("ok\r")
+    #         else:
+    #             self.grbl_write("error:%d\r" % cmd)
+    #
+    # def process_line(self, data):
+    #     if data.startswith("$"):
+    #         if data == "$":
+    #             self.grbl_write(
+    #                 "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r"
+    #             )
+    #             return 0
+    #         elif data == "$$":
+    #             for s in self.settings:
+    #                 v = self.settings[s]
+    #                 if isinstance(v, int):
+    #                     self.grbl_write("$%d=%d\r" % (s, v))
+    #                 elif isinstance(v, float):
+    #                     self.grbl_write("$%d=%.3f\r" % (s, v))
+    #             return 0
+    #         if GRBL_SET_RE.match(data):
+    #             settings = list(GRBL_SET_RE.findall(data))[0]
+    #             print(settings)
+    #             try:
+    #                 c = self.settings[int(settings[0])]
+    #             except KeyError:
+    #                 return 3
+    #             if isinstance(c, float):
+    #                 self.settings[int(settings[0])] = float(settings[1])
+    #             else:
+    #                 self.settings[int(settings[0])] = int(settings[1])
+    #             return 0
+    #         elif data == "$I":
+    #             pass
+    #         elif data == "$G":
+    #             pass
+    #         elif data == "$N":
+    #             pass
+    #         elif data == "$H":
+    #             self.spooler.job("home")
+    #             if self.home_adjust is not None:
+    #                 self.spooler.job("rapid_mode")
+    #                 self.spooler.job("move", self.home_adjust[0], self.home_adjust[1])
+    #             return 0
+    #             # return 5  # Homing cycle not enabled by settings.
+    #         return 3  # GRBL '$' system command was not recognized or supported.
+    #     if data.startswith("cat"):
+    #         return 2
+    #     commands = {}
+    #     for c in _tokenize_code(data):
+    #         g = c[0]
+    #         if g not in commands:
+    #             commands[g] = []
+    #         if len(c) >= 2:
+    #             commands[g].append(c[1])
+    #         else:
+    #             commands[g].append(None)
+    #     return self._process_commands(commands)
+    #
+    # def _process_commands(self, gc):
+    #     """
+    #     Process parsed gcode commands.
+    #
+    #     @param gc:
+    #     @return:
+    #     """
+    #     if "m" in gc:
+    #         for v in gc["m"]:
+    #             if v == 0 or v == 1:
+    #                 yield "rapid_mode"
+    #                 yield "wait_finish"
+    #             elif v == 2:
+    #                 return
+    #             elif v == 30:
+    #                 return
+    #             elif v == 3 or v == 4:
+    #                 on_mode = True
+    #             elif v == 5:
+    #                 on_mode = False
+    #                 yield "laser_off"
+    #             elif v == 7:
+    #                 #  Coolant control.
+    #                 pass
+    #             elif v == 8:
+    #                 yield "signal", ("coolant", True)
+    #             elif v == 9:
+    #                 yield "signal", ("coolant", False)
+    #             elif v == 56:
+    #                 pass  # Parking motion override control.
+    #             elif v == 911:
+    #                 pass  # Set TMC2130 holding currents
+    #             elif v == 912:
+    #                 pass  # M912: Set TMC2130 running currents
+    #             else:
+    #                 return 20
+    #         del gc["m"]
+    #     if "g" in gc:
+    #         for v in gc["g"]:
+    #             if v is None:
+    #                 return 2
+    #             elif v == 0.0:
+    #                 move_mode = 0
+    #             elif v == 1.0:
+    #                 move_mode = 1
+    #             elif v == 2.0:  # CW_ARC
+    #                 move_mode = 2
+    #             elif v == 3.0:  # CCW_ARC
+    #                 move_mode = 3
+    #             elif v == 4.0:  # DWELL
+    #                 t = 0
+    #                 if "p" in gc:
+    #                     t = float(gc["p"].pop()) / 1000.0
+    #                     if len(gc["p"]) == 0:
+    #                         del gc["p"]
+    #                 if "s" in gc:
+    #                     t = float(gc["s"].pop())
+    #                     if len(gc["s"]) == 0:
+    #                         del gc["s"]
+    #                 yield "rapid_mode"
+    #                 yield "wait", t
+    #             elif v == 10.0:
+    #                 if "l" in gc:
+    #                     l = float(gc["l"].pop(0))
+    #                     if len(gc["l"]) == 0:
+    #                         del gc["l"]
+    #                     if l == 2.0:
+    #                         pass
+    #                     elif l == 20:
+    #                         pass
+    #             elif v == 17:
+    #                 pass  # Set XY coords.
+    #             elif v == 18:
+    #                 return 2  # Set the XZ plane for arc.
+    #             elif v == 19:
+    #                 return 2  # Set the YZ plane for arc.
+    #             elif v == 20.0 or v == 70.0:
+    #                 scale = UNITS_PER_INCH  # g20 is inch mode.
+    #             elif v == 21.0 or v == 71.0:
+    #                 scale = UNITS_PER_MM  # g21 is mm mode.
+    #             elif v == 28.0:
+    #                 yield "rapid_mode"
+    #                 yield "home"
+    #                 if home_adjust is not None:
+    #                     yield "move_abs", home_adjust[0], home_adjust[1]
+    #                 if home is not None:
+    #                     yield "move", home
+    #             elif v == 28.1:
+    #                 if "x" in gc and "y" in gc:
+    #                     x = gc["x"].pop(0)
+    #                     if len(gc["x"]) == 0:
+    #                         del gc["x"]
+    #                     y = gc["y"].pop(0)
+    #                     if len(gc["y"]) == 0:
+    #                         del gc["y"]
+    #                     if x is None:
+    #                         x = 0
+    #                     if y is None:
+    #                         y = 0
+    #                     home = (x, y)
+    #             elif v == 28.2:
+    #                 # Run homing cycle.
+    #                 yield "rapid_mode"
+    #                 yield "home"
+    #                 if home_adjust is not None:
+    #                     yield "move_abs", home_adjust[0], home_adjust[1]
+    #             elif v == 28.3:
+    #                 yield "rapid_mode"
+    #                 yield "home"
+    #                 if home_adjust is not None:
+    #                     yield "move", home_adjust[0], home_adjust[1]
+    #                 if "x" in gc:
+    #                     x = gc["x"].pop(0)
+    #                     if len(gc["x"]) == 0:
+    #                         del gc["x"]
+    #                     if x is None:
+    #                         x = 0
+    #                     yield "move", x, 0
+    #                 if "y" in gc:
+    #                     y = gc["y"].pop(0)
+    #                     if len(gc["y"]) == 0:
+    #                         del gc["y"]
+    #                     if y is None:
+    #                         y = 0
+    #                     yield "move", 0, y
+    #             elif v == 30.0:
+    #                 # Goto predefined position. Return to secondary home position.
+    #                 if "p" in gc:
+    #                     p = float(gc["p"].pop(0))
+    #                     if len(gc["p"]) == 0:
+    #                         del gc["p"]
+    #                 else:
+    #                     p = None
+    #                 yield "rapid_mode"
+    #                 yield "home"
+    #                 if home_adjust is not None:
+    #                     yield "move", home_adjust[0], home_adjust[1]
+    #                 if home2 is not None:
+    #                     yield "move", home2
+    #             elif v == 30.1:
+    #                 # Stores the current absolute position.
+    #                 if "x" in gc and "y" in gc:
+    #                     x = gc["x"].pop(0)
+    #                     if len(gc["x"]) == 0:
+    #                         del gc["x"]
+    #                     y = gc["y"].pop(0)
+    #                     if len(gc["y"]) == 0:
+    #                         del gc["y"]
+    #                     if x is None:
+    #                         x = 0
+    #                     if y is None:
+    #                         y = 0
+    #                     home2 = (x, y)
+    #             elif v == 38.1:
+    #                 # Touch Plate
+    #                 pass
+    #             elif v == 38.2:
+    #                 # Straight Probe
+    #                 pass
+    #             elif v == 38.3:
+    #                 # Prope towards workpiece
+    #                 pass
+    #             elif v == 38.4:
+    #                 # Probe away from workpiece, signal error
+    #                 pass
+    #             elif v == 38.5:
+    #                 # Probe away from workpiece.
+    #                 pass
+    #             elif v == 40.0:
+    #                 pass  # Compensation Off
+    #             elif v == 43.1:
+    #                 pass  # Dynamic tool Length offsets
+    #             elif v == 49:
+    #                 # Cancel tool offset.
+    #                 pass  # Dynamic tool length offsets
+    #             elif v == 53:
+    #                 pass  # Move in Absolute Coordinates
+    #             elif 54 <= v <= 59:
+    #                 # Fixture offset 1-6, G10 and G92
+    #                 system = v - 54
+    #                 pass  # Work Coordinate Systems
+    #             elif v == 61:
+    #                 # Exact path control mode. GRBL required
+    #                 pass
+    #             elif v == 80:
+    #                 # Motion mode cancel. Canned cycle.
+    #                 pass
+    #             elif v == 90.0:
+    #                 yield "set", "relative", False
+    #             elif v == 91.0:
+    #                 yield "set", "relative", True
+    #             elif v == 91.1:
+    #                 # Offset mode for certain cam. Incremental distance mode for arcs.
+    #                 pass  # ARC IJK Distance Modes # TODO Implement
+    #             elif v == 92:
+    #                 # Change the current coords without moving.
+    #                 pass  # Coordinate Offset TODO: Implement
+    #             elif v == 92.1:
+    #                 # Clear Coordinate offset set by 92.
+    #                 pass  # Clear Coordinate offset TODO: Implement
+    #             elif v == 93.0:
+    #                 feed_convert, feed_invert = g93_feed_convert, g93_feed_invert
+    #             elif v == 94.0:
+    #                 feed_convert, feed_invert = g94_feed_convert, g94_feed_invert
+    #             else:
+    #                 return 20  # Unsupported or invalid g-code command found in block.
+    #         del gc["g"]
+    #     if "comment" in gc:
+    #         del gc["comment"]
+    #     if "f" in gc:  # Feed_rate
+    #         for v in gc["f"]:
+    #             if v is None:
+    #                 return 2  # Numeric value format is not valid or missing an expected value.
+    #             feed_rate = feed_convert(v)
+    #             if speed != feed_rate:
+    #                 speed = feed_rate
+    #         del gc["f"]
+    #     if "s" in gc:
+    #         for v in gc["s"]:
+    #             if v is None:
+    #                 return 2  # Numeric value format is not valid or missing an expected value.
+    #             if 0.0 < v <= 1.0:
+    #                 v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+    #             power = v
+    #             yield "set", "power", v
+    #
+    #         del gc["s"]
+    #     if "x" in gc or "y" in gc:
+    #         if "x" in gc:
+    #             x = gc["x"].pop(0)
+    #             if x is None:
+    #                 x = 0
+    #             else:
+    #                 x *= scale * flip_x
+    #             if len(gc["x"]) == 0:
+    #                 del gc["x"]
+    #         else:
+    #             x = 0
+    #         if "y" in gc:
+    #             y = gc["y"].pop(0)
+    #             if y is None:
+    #                 y = 0
+    #             else:
+    #                 y *= scale * flip_y
+    #             if len(gc["y"]) == 0:
+    #                 del gc["y"]
+    #         else:
+    #             y = 0
+    #         if move_mode == 0:
+    #             yield "program_mode"
+    #             yield "move", x, y
+    #         elif move_mode >= 1:
+    #             yield "program_mode"
+    #             if power == 0:
+    #                 yield "move", x, y
+    #             else:
+    #                 if used_speed != speed:
+    #                     yield "set", "speed", speed
+    #                     used_speed = speed
+    #                 yield "cut", x, y
+    #             # TODO: Implement CW_ARC
+    #             # TODO: Implement CCW_ARC
+    #     return 0
 
 
 class GrblController:
