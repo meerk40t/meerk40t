@@ -223,8 +223,14 @@ class Camera(Service):
         self.uri = 0
         self.fisheye_k = None
         self.fisheye_d = None
-        self.perspective = None
-        self._perspective = None
+        self.perspective_x1 = None
+        self.perspective_y1 = None
+        self.perspective_x2 = None
+        self.perspective_y2 = None
+        self.perspective_x3 = None
+        self.perspective_y3 = None
+        self.perspective_x4 = None
+        self.perspective_y4 = None
         self.camera_job = None
 
         self.current_frame = None
@@ -238,8 +244,8 @@ class Camera(Service):
         self.image_height = -1
 
         # Used during calibration.
-        self.objpoints = []  # 3d point in real world space
-        self.imgpoints = []  # 2d points in image plane.
+        self._object_points = []  # 3d point in real world space
+        self._image_points = []  # 2d points in image plane.
 
         self.camera_lock = threading.Lock()
 
@@ -256,19 +262,23 @@ class Camera(Service):
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(str, "fisheye", "")
-        self.setting(str, "perspective", "")
+        self.setting(float, "perspective_x1", None)
+        self.setting(float, "perspective_y1", None)
+        self.setting(float, "perspective_x2", None)
+        self.setting(float, "perspective_y2", None)
+        self.setting(float, "perspective_x3", None)
+        self.setting(float, "perspective_y3", None)
+        self.setting(float, "perspective_x4", None)
+        self.setting(float, "perspective_y4", None)
         self.setting(str, "uri", "0")
         self.setting(int, "index", 0)
         self.setting(bool, "autonormal", False)
         self.setting(bool, "aspect", False)
         self.setting(str, "preserve_aspect", "xMinYMin meet")
 
-        # TODO: regex confirm fisheye and perspective.
+        # TODO: regex confirm fisheye
         if self.fisheye is not None and len(self.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = eval(self.fisheye)
-        if self.perspective is not None and len(self.perspective) != 0:
-            self._perspective = eval(self.perspective)
-        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -324,9 +334,9 @@ class Camera(Service):
         # If found, add object points, image points (after refining them)
 
         if ret:
-            self.objpoints.append(objp)
+            self._object_points.append(objp)
             cv2.cornerSubPix(gray, corners, (3, 3), (-1, -1), subpix_criteria)
-            self.imgpoints.append(corners)
+            self._image_points.append(corners)
         else:
             self.signal(
                 "warning",
@@ -335,15 +345,15 @@ class Camera(Service):
                 4,
             )
             return
-        N_OK = len(self.objpoints)
+        N_OK = len(self._object_points)
         K = np.zeros((3, 3))
         D = np.zeros((4, 1))
         rvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
         tvecs = [np.zeros((1, 1, 3), dtype=np.float64) for i in range(N_OK)]
         try:
             rms, a, b, c, d = cv2.fisheye.calibrate(
-                self.objpoints,
-                self.imgpoints,
+                self._object_points,
+                self._image_points,
                 gray.shape[::-1],
                 K,
                 D,
@@ -361,7 +371,7 @@ class Camera(Service):
             return
         self.signal(
             "warning",
-            _("Success. %d images so far.") % len(self.objpoints),
+            _("Success. %d images so far.") % len(self._object_points),
             _("Image Captured"),
             4 | 2048,
         )
@@ -417,18 +427,29 @@ class Camera(Service):
                 interpolation=cv2.INTER_LINEAR,
                 borderMode=cv2.BORDER_CONSTANT,
             )
+        width, height = frame.shape[:2][::-1]
+        if self.perspective_x1 is None:
+            self.perspective_x1 = 0
+            self.perspective_y1 = 0
+            self.perspective_x2 = width
+            self.perspective_y2 = 0
+            self.perspective_x3 = width
+            self.perspective_y3 = height
+            self.perspective_x4 = 0
+            self.perspective_y4 = height
         if self.correction_perspective:
             # Perspective the drawing.
             dest_width = self.width
             dest_height = self.height
-            width, height = frame.shape[:2][::-1]
-            if self._perspective is None:
-                rect = np.array(
-                    [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]],
-                    dtype="float32",
-                )
-            else:
-                rect = np.array(self._perspective, dtype="float32")
+            rect = np.array(
+                [
+                    [self.perspective_x1, self.perspective_y1],
+                    [self.perspective_x2, self.perspective_y2],
+                    [self.perspective_x3, self.perspective_y3],
+                    [self.perspective_x4, self.perspective_y4],
+                ],
+                dtype="float32",
+            )
             dst = np.array(
                 [
                     [0, 0],
@@ -539,13 +560,19 @@ class Camera(Service):
         :param event:
         :return:
         """
-        self._perspective = None
-        self.perspective = ""
+        self.perspective_x1 = None
+        self.perspective_y1 = None
+        self.perspective_x2 = None
+        self.perspective_y2 = None
+        self.perspective_x3 = None
+        self.perspective_y3 = None
+        self.perspective_x4 = None
+        self.perspective_y4 = None
 
     def backtrack_fisheye(self):
-        if self.objpoints:
-            del self.objpoints[-1]
-            del self.imgpoints[-1]
+        if self._object_points:
+            del self._object_points[-1]
+            del self._image_points[-1]
 
     def reset_fisheye(self):
         """
@@ -556,8 +583,8 @@ class Camera(Service):
         """
         self.fisheye_k = None
         self.fisheye_d = None
-        self.objpoints = []
-        self.imgpoints = []
+        self._object_points = []
+        self._image_points = []
         self.fisheye = ""
 
     def set_uri(self, uri):

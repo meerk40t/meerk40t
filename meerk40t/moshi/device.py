@@ -138,7 +138,11 @@ class MoshiDevice(Service, ViewPort):
         ]
         self.register_choices("bed_dim", choices)
         ViewPort.__init__(
-            self, self.bedwidth, self.bedheight, user_scale_x=self.scale_x, user_scale_y=self.scale_y
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
         )
 
         self.settings = dict()
@@ -830,8 +834,7 @@ class MoshiDriver:
         Goto absolute position. Cut flags whether this should be with or without the laser.
         """
         self._ensure_program_or_raster_mode(x, y)
-        oldx = self.service.current_x
-        oldy = self.service.current_y
+        old_current = self.service.current
 
         if self.state == DRIVER_STATE_PROGRAM:
             if cut:
@@ -854,25 +857,27 @@ class MoshiDriver:
                     self.program.move_horizontal_abs(x=x)
         self.native_x = x
         self.native_y = y
-        x = self.service.current_x
-        y = self.service.current_y
-        self.service.signal("driver;position", (oldx, oldy, x, y))
+
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def _move_absolute(self, x, y):
         """
         Move to a position x, y. This is an absolute position.
         """
-        oldx = self.service.current_x
-        oldy = self.service.current_y
+        old_current = self.service.current
         self._ensure_program_or_raster_mode(x, y)
         self.program.move_abs(x, y)
         self.native_x = x
         self.native_y = y
-        x = self.service.current_x
-        y = self.service.current_y
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (oldx, oldy, x, y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def calc_home_position(self):

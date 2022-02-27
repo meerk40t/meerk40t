@@ -49,7 +49,7 @@ from meerk40t.svgelements import (
 )
 
 
-def isDot(element):
+def is_dot(element):
     if not isinstance(element, Shape):
         return False
     if isinstance(element, Path):
@@ -65,7 +65,7 @@ def isDot(element):
     return False
 
 
-def isStraightLine(element):
+def is_straight_line(element):
     if not isinstance(element, Shape):
         return False
     if isinstance(element, Path):
@@ -581,7 +581,7 @@ class Node:
             element_type = "Text"
         elif element_type == "SimpleLine":
             element_type = "Line"
-        elif isDot(element):
+        elif is_dot(element):
             element_type = "Dot"
 
         if element is not None:

@@ -70,6 +70,8 @@ class ViewPort:
         flip_y=False,
         swap_xy=False,
     ):
+        self._matrix = None
+        self._imatrix = None
         self.width = width
         self.height = height
         self.origin_x = origin_x
@@ -91,6 +93,8 @@ class ViewPort:
         self.realize()
 
     def realize(self):
+        self._imatrix = None
+        self._matrix = None
         self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._offset_x = self._width * self.origin_x
@@ -124,8 +128,8 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        x,y = self.physical_to_scene_position(x, y, unitless)
-        return self.scene_to_device_position(x, y, unitless)
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y)
 
     def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
         """
@@ -135,19 +139,29 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        x0, y0 = self.physical_to_device_position(0,0, unitless)
-        x, y = self.physical_to_device_position(x, y, unitless)
-        return x - x0, y - y0
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y, vector=True)
 
-    def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
-        m = Matrix(self.device_to_scene_matrix())
-        point = m.point_in_matrix_space((x,y))
+    def device_to_scene_position(self, x, y):
+        if self._imatrix is None:
+            self.calculate_matrices()
+        point = self._imatrix.point_in_matrix_space((x, y))
         return point.x, point.y
 
-    def scene_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
-        m = Matrix(self.scene_to_device_matrix())
-        point = m.point_in_matrix_space((x,y))
-        return point.x, point.y
+    def scene_to_device_position(self, x, y, vector=False):
+        if self._matrix is None:
+            self.calculate_matrices()
+        if vector:
+            point = self._matrix.transform_vector([x, y])
+            return point[0], point[1]
+        else:
+            point = self._matrix.point_in_matrix_space((x, y))
+            return point.x, point.y
+
+    def calculate_matrices(self):
+        self._matrix = Matrix(self.scene_to_device_matrix())
+        self._imatrix = Matrix(self._matrix)
+        self._imatrix.inverse()
 
     def scene_to_device_matrix(self):
         ops = []
@@ -156,17 +170,20 @@ class ViewPort:
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
         if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
+            ops.append(
+                "scale({sx:.13f}, {sy:.13f})".format(
+                    sx=1.0 / self._scale_x, sy=1.0 / self._scale_y
+                )
+            )
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+            ops.append(
+                "translate({dx:.13f}, {dy:.13f})".format(
+                    dx=-self._offset_x, dy=-self._offset_y
+                )
+            )
         if self.swap_xy:
             ops.append("scale(-1.0, -1.0) rotate(180deg)")
         return " ".join(ops)
-
-    def device_to_scene_matrix(self):
-        m = Matrix(self.scene_to_device_matrix())
-        m.inverse()
-        return m
 
     def length(
         self,
@@ -237,8 +254,8 @@ class ViewPort:
         return (
             0,
             0,
-            self.width,
-            self.height,
+            self.width_as_nm,
+            self.height_as_nm,
         )
 
     @property

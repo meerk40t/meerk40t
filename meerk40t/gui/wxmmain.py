@@ -17,7 +17,6 @@ from ..core.node.laserop import (
     RasterOpNode,
 )
 from ..core.units import UNITS_PER_INCH
-from meerk40t.kernel.jobs import ConsoleFunction
 from meerk40t.kernel.kernel import lookup_listener, signal_listener
 from ..svgelements import (
     Color,
@@ -174,8 +173,6 @@ class MeerK40t(MWindow):
 
         self.root_context = context.root
         self.DragAcceptFiles(True)
-
-        self.renderer = LaserRender(context)
 
         self.needs_saving = False
         self.working_file = None
@@ -456,8 +453,9 @@ class MeerK40t(MWindow):
                 elements = context.elements
 
                 m = str(dlg.GetValue())
-                m = m.replace("$x", str(context.device.current_x))
-                m = m.replace("$y", str(context.device.current_y))
+                x, y = self.context.device.current
+                m = m.replace("$x", str(x))
+                m = m.replace("$y", str(y))
                 mx = Matrix(m)
                 width_in_nm = context.device.width
                 height_in_nm = context.device.height

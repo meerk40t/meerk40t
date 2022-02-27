@@ -44,9 +44,9 @@ def bootstrap():
 
     kernel.add_plugin(moshidevice.plugin)
 
-    from meerk40t.grbl import device as grbldevice
-
-    kernel.add_plugin(grbldevice.plugin)
+    # from meerk40t.grbl import device as grbldevice
+    #
+    # kernel.add_plugin(grbldevice.plugin)
 
     from meerk40t.ruida import device as ruidadevice
 

@@ -291,7 +291,7 @@ class LihuiyuDevice(Service, ViewPort):
             def move_at_speed():
                 yield "set", "speed", speed
                 yield "program_mode"
-                yield "move_rel", dx, dy
+                yield "move_rel", "{dx}nm".format(dx=dx), "{dy}nm".format(dy=dy)
                 yield "rapid_mode"
 
             if not self.spooler.job_if_idle(move_at_speed):
@@ -530,7 +530,7 @@ class LihuiyuDevice(Service, ViewPort):
             if not remainder:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                self.out_pipe.write(
+                self.output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
                 )
 
@@ -546,7 +546,7 @@ class LihuiyuDevice(Service, ViewPort):
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
                 )
                 code = b"A%s\n" % challenge
-                self.out_pipe.write(code)
+                self.output.write(code)
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
@@ -741,20 +741,6 @@ class LihuiyuDevice(Service, ViewPort):
         @return: the location in nm for the current known x value.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
 
     @property
     def output(self):
@@ -1171,8 +1157,7 @@ class LhystudiosDriver(Parameters):
             return
         dx = int(round(dx))
         dy = int(round(dy))
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
+        old_current = self.service.current
         if self.state == DRIVER_STATE_RAPID:
             self._move_in_rapid_mode(dx, dy, cut)
         elif self.state == DRIVER_STATE_RASTER:
@@ -1193,11 +1178,11 @@ class LhystudiosDriver(Parameters):
             self.data_output(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def set_speed(self, speed=None):
@@ -1542,8 +1527,7 @@ class LhystudiosDriver(Parameters):
     def home(self, *values):
         self.rapid_mode()
         self.data_output(b"IPP\n")
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
+        old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
         self.reset_modes()
@@ -1566,11 +1550,11 @@ class LhystudiosDriver(Parameters):
             self.native_y = 0
 
         self.service.signal("driver;mode", self.state)
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def lock_rail(self):

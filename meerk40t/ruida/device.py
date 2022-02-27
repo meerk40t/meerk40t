@@ -216,7 +216,13 @@ class RuidaDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, self.bedwidth, self.bedheight, user_scale_x=self.scale_x, user_scale_y=self.scale_y)
+        ViewPort.__init__(
+            self,
+            self.bedwidth,
+            self.bedheight,
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+        )
         self.current_x = 0.0
         self.current_y = 0.0
         self.state = 0
@@ -2064,10 +2070,8 @@ class RuidaEmulator(Module, Parameters):
             return "Ring Number", 0
         if mem == 0x0221:
             if self.device is not None:
-                try:
-                    self.x = int(self.device.current_x * UNITS_PER_uM)
-                except AttributeError:
-                    pass
+                dev_x, dev_y = self.device.current
+                self.x = int(dev_x * UNITS_PER_uM)
             x = int(self.x)
             return "Axis Preferred Position 1, Pos X", x
         if mem == 0x0223:
@@ -2076,10 +2080,8 @@ class RuidaEmulator(Module, Parameters):
             return "Position Point 0", 0
         if mem == 0x0231:
             if self.device is not None:
-                try:
-                    self.y = int(self.device.current_y * UNITS_PER_uM)
-                except AttributeError:
-                    pass
+                dev_x, dev_y = self.device.current
+                self.y = int(dev_y * UNITS_PER_uM)
             y = int(self.y)
             return "Axis Preferred Position 2, Pos Y", y
         if mem == 0x0233:

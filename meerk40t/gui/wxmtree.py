@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from ..core.node.node import isDot
+from ..core.node.node import is_dot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -23,7 +23,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor, LaserRender
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
 
@@ -210,7 +210,7 @@ class ShadowTree:
         self.context = service
         self.gui = gui
         self.wxtree = wxtree
-        self.renderer = gui.renderer
+        self.renderer = LaserRender(service.root)
         self.dragging_nodes = None
         self.tree_images = None
         self.object = "Project"
@@ -650,7 +650,7 @@ class ShadowTree:
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
-                if isDot(data_object):
+                if is_dot(data_object):
                     if (
                         data_object.stroke is not None
                         and data_object.stroke.rgb is not None

@@ -64,6 +64,15 @@ class RasterWizardPanel(wx.Panel):
         self.sizer_operation_panels = None
 
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
+        # self.panel_preview = ScenePanel(
+        #     self.context,
+        #     self,
+        #     scene_name="rasterwizard",
+        #     style=wx.EXPAND | wx.WANTS_CHARS,
+        # )
+        # self.widget_scene = self.panel_preview.scene
+
+
         list_choices = []
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]

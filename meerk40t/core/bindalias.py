@@ -189,16 +189,10 @@ class Bind(Service):
                 f = command_line.find("bind")
                 if f == -1:  # If bind value has a bind, do not evaluate.
                     if "$x" in command_line:
-                        try:
-                            x = self.device.current_x
-                        except AttributeError:
-                            x = 0
+                        x, y = self.device.current
                         command_line = command_line.replace("$x", str(x))
                     if "$y" in command_line:
-                        try:
-                            y = self.device.current_y
-                        except AttributeError:
-                            y = 0
+                        x, y = self.device.current
                         command_line = command_line.replace("$y", str(y))
                 if len(command_line) != 0:
                     self.keymap[key] = command_line
@@ -221,8 +215,7 @@ class Bind(Service):
                 action = self.keymap[keyvalue]
                 self(action + "\n")
                 return True
-        else:
-            return False
+        return False
 
     def untrigger(self, keyvalue):
         keymap = self.keymap
@@ -235,8 +228,7 @@ class Bind(Service):
                 action = "-" + action[1:]
                 self(action + "\n")
                 return True
-        else:
-            return False
+        return False
 
     def shutdown(self, *args, **kwargs):
         self.clear_persistent()

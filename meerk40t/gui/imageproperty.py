@@ -190,7 +190,7 @@ class ImageProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(276, 218, *args, **kwds)
 
-        self.control = ImagePropertyPanel(
+        self.panel = ImagePropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
         self.add_module_delegate(self.panel)
@@ -201,9 +201,9 @@ class ImageProperty(MWindow):
         self.SetTitle(_("Image Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.control.element_node = node
-        self.control.element = node.object
-        self.control.set_widgets()
+        self.panel.element_node = node
+        self.panel.element = node.object
+        self.panel.set_widgets()
 
     def window_preserve(self):
         return False

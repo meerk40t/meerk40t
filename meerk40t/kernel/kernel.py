@@ -13,7 +13,6 @@ from meerk40t.kernel.lifecycles import *
 from meerk40t.kernel.states import *
 from meerk40t.core.exceptions import CommandMatchRejected, MalformedCommandRegistration
 from meerk40t.kernel.channel import Channel
-# from meerk40t.kernel.console_decorators import console_argument, console_option
 from meerk40t.kernel.context import Context
 from meerk40t.kernel.functions import get_safe_path
 from meerk40t.kernel.jobs import Job, ConsoleFunction
@@ -2022,7 +2021,9 @@ class Kernel(Settings):
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
-                    channel("[red][bold]" + _("Syntax Error (%s): %s") % (command, message))
+                    channel(
+                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message)
+                    )
                     return None
                 except CommandMatchRejected:
                     # If the command function raises a CommandMatchRejected more commands should be matched.
@@ -2034,8 +2035,9 @@ class Kernel(Settings):
                     ctx_name = "Base"
                 else:
                     ctx_name = input_type
-                channel("[red][bold]" +
-                    _("%s is not a registered command in this context: %s")
+                channel(
+                    "[red][bold]"
+                    + _("%s is not a registered command in this context: %s")
                     % (command, ctx_name)
                 )
                 return None
