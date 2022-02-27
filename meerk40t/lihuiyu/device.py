@@ -541,7 +541,7 @@ class LihuiyuDevice(Service, ViewPort):
             if not remainder:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
-                self.out_pipe.write(
+                self.output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
                 )
 
@@ -557,7 +557,7 @@ class LihuiyuDevice(Service, ViewPort):
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
                 )
                 code = b"A%s\n" % challenge
-                self.out_pipe.write(code)
+                self.output.write(code)
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
