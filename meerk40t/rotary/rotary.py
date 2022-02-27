@@ -73,9 +73,10 @@ class Rotary(Service):
         def apply_rotary_scale(*args, **kwargs):
             sx = self.scale_x
             sy = self.scale_y
+            x, y = self.device.current
             mx = Matrix(
                 "scale(%f, %f, %f, %f)"
-                % (sx, sy, self.device.current_x, self.device.current_y)
+                % (sx, sy, x, y)
             )
             for element in self.elements.elems():
                 if hasattr(element, "rotary_scale"):

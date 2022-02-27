@@ -508,42 +508,30 @@ class GRBLDriver(Parameters):
     def move_abs(self, x, y):
         self.g91_absolute()
         self.clean()
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
+        old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        # x = self.service.length(x, 0)
-        # y = self.service.length(y, 1)
-        # x = self.service.scale_x * x / self.stepper_step_size
-        # y = self.service.scale_y * y / self.stepper_step_size
         self.rapid_mode()
         self.move(x, y)
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def move_rel(self, dx, dy):
         # TODO: Should use $J syntax
         self.g90_relative()
         self.clean()
-        old_current_x = self.service.current_x
-        old_current_y = self.service.current_y
+        old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        # dx = self.service.length(dx, 0)
-        # dy = self.service.length(dy, 1)
-        # dx = self.service.scale_x * dx / self.stepper_step_size
-        # dy = self.service.scale_y * dy / self.stepper_step_size
         self.rapid_mode()
         self.move(dx, dy)
 
-        new_current_x = self.service.current_x
-        new_current_y = self.service.current_y
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (old_current_x, old_current_y, new_current_x, new_current_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def clean(self):
