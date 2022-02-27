@@ -950,7 +950,7 @@ class Widget(list):
 
     def contains(self, x, y=None):
         """
-        Query as to whether the current point is contained within the current widget.
+        Query whether the current point is contained within the current widget.
         """
         if y is None:
             y = x.y
