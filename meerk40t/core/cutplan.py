@@ -23,7 +23,7 @@ from typing import Any, List, Optional
 from PIL import Image
 
 from ..image.actualize import actualize
-from ..svgelements import Group, Path, Polygon, SVGImage, SVGText, Matrix, SVGElement
+from ..svgelements import Group, Matrix, Path, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 
