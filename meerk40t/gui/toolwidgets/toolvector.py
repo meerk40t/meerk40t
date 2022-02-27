@@ -43,7 +43,6 @@ class VectorTool(ToolWidget):
             else:
                 self.path.line((space_pos[0], space_pos[1]))
             self.c0 = None
-            print(self.path.d())
         elif event_type == "rightdown":
             self.path = None
             self.mouse_position = None
