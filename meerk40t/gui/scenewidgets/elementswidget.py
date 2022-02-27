@@ -5,7 +5,7 @@ from meerk40t.gui.scene.widget import Widget
 class ElementsWidget(Widget):
     """
     The ElementsWidget is tasked with drawing the elements within the scene. It also
-    serve to process leftclick in order to emphasize the given object.
+    serves to process leftclick in order to emphasize the given object.
     """
 
     def __init__(self, scene, renderer):

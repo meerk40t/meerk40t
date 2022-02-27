@@ -174,8 +174,6 @@ class MeerK40t(MWindow):
         self.root_context = context.root
         self.DragAcceptFiles(True)
 
-        self.renderer = LaserRender(context)
-
         self.needs_saving = False
         self.working_file = None
 

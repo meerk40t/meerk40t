@@ -23,7 +23,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor, LaserRender
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
 
@@ -210,7 +210,7 @@ class ShadowTree:
         self.context = service
         self.gui = gui
         self.wxtree = wxtree
-        self.renderer = gui.renderer
+        self.renderer = LaserRender(service.root)
         self.dragging_nodes = None
         self.tree_images = None
         self.object = "Project"
