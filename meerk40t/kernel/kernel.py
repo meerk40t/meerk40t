@@ -11,7 +11,6 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, U
 
 from meerk40t.kernel.lifecycles import *
 from meerk40t.kernel.states import *
-from meerk40t.core.exceptions import CommandMatchRejected, MalformedCommandRegistration
 from meerk40t.kernel.channel import Channel
 from meerk40t.kernel.context import Context
 from meerk40t.kernel.functions import get_safe_path
@@ -33,6 +32,16 @@ _cmd_parse = [
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
 ]
 _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
+
+class CommandMatchRejected(Exception):
+    """
+    Exception to be raised by a registered console command if the match to the command was erroneous
+    """
+
+class MalformedCommandRegistration(Exception):
+    """
+    Exception raised by the Kernel if the registration of the console command is malformed.
+    """
 
 class Kernel(Settings):
     """
