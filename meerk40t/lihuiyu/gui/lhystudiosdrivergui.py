@@ -425,16 +425,20 @@ class ConfigurationLaserPanel(wx.Panel):
     def on_text_bedwidth(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
+        self.context.device.bedwidth = self.text_bedwidth.GetValue()
+        self.context.device.bedheight = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.width, self.context.device.height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
         self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
+        self.context.device.bedwidth = self.text_bedwidth.GetValue()
+        self.context.device.bedheight = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.width, self.context.device.height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
         self.context("viewport_update\n")
 
