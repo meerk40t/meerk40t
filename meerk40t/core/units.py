@@ -179,6 +179,11 @@ class ViewPort:
         self._imatrix = Matrix(self._matrix)
         self._imatrix.inverse()
 
+    def device_to_scene_matrix(self):
+        if self._matrix is None:
+            self.calculate_matrices()
+        return self._imatrix
+
     def scene_to_device_matrix(self):
         ops = []
         if self.flip_y:
