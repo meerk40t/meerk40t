@@ -2,7 +2,7 @@ import wx
 from wx import aui
 from wx.aui import EVT_AUITOOLBAR_TOOL_DROPDOWN
 
-from meerk40t.kernel import lookup_listener
+from meerk40t.kernel.kernel import lookup_listener
 
 ID_ADD_FILE = wx.NewId()
 ID_OPEN = wx.NewId()

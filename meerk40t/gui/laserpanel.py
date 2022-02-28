@@ -13,7 +13,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
 from meerk40t.gui.wxutils import disable_window
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 

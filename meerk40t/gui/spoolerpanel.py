@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.gui.icons import icons8_route_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import disable_window
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel.kernel import signal_listener
 
 _ = wx.GetTranslation
 

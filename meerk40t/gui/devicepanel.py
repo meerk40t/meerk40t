@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 

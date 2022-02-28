@@ -24,7 +24,7 @@ from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 
 from meerk40t.gui.wxutils import get_key_name
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
 
 _ = wx.GetTranslation

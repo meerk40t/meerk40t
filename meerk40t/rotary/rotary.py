@@ -1,4 +1,4 @@
-from meerk40t.kernel import Service
+from meerk40t.kernel.service import Service
 from meerk40t.svgelements import Matrix
 
 
