@@ -32,15 +32,15 @@ class DummyDevice(Service, ViewPort):
             {
                 "attr": "bedwidth",
                 "object": self,
-                "default": 12205.0,
-                "type": float,
+                "default": "320mm",
+                "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
             {
                 "attr": "bedheight",
                 "object": self,
-                "default": 8268.0,
+                "default": "220mm",
                 "type": float,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
@@ -67,7 +67,7 @@ class DummyDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, 0, 0, self.bedwidth, self.bedheight)
+        ViewPort.__init__(self, 0, 0, self.width, self.height)
 
         @self.console_command(
             "spool",

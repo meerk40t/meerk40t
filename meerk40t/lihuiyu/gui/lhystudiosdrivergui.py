@@ -341,9 +341,6 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
         sizer_14.Add(self.text_bedwidth, 4, 0, 0)
 
-        label_17 = wx.StaticText(self, wx.ID_ANY, _("steps"))
-        sizer_14.Add(label_17, 1, 0, 0)
-
         sizer_15 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Height")), wx.HORIZONTAL
         )
@@ -357,11 +354,8 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_bedheight.SetToolTip(_("Height of the laser bed."))
         sizer_15.Add(self.text_bedheight, 4, 0, 0)
 
-        label_18 = wx.StaticText(self, wx.ID_ANY, _("steps"))
-        sizer_15.Add(label_18, 1, 0, 0)
-
         sizer_scale_factors = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Mil/Step Scale Factor")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("User Scale Factor")), wx.HORIZONTAL
         )
         sizer_27.Add(sizer_scale_factors, 0, wx.EXPAND, 0)
 
@@ -431,16 +425,20 @@ class ConfigurationLaserPanel(wx.Panel):
     def on_text_bedwidth(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
+        self.context.device.bedwidth = self.text_bedwidth.GetValue()
+        self.context.device.bedheight = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.width, self.context.device.height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
         self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
+        self.context.device.bedwidth = self.text_bedwidth.GetValue()
+        self.context.device.bedheight = self.text_bedheight.GetValue()
         self.context.signal(
-            "bed_size", (self.context.device.width, self.context.device.height)
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
         self.context("viewport_update\n")
 

@@ -9,8 +9,9 @@ except ImportError as e:
 
 
 def plugin(kernel, lifecycle):
-    # if lifecycle == "service":
-    #     return "provider/camera/mk"
     if lifecycle == "register":
+        t = list(kernel.lookup_all("camera-enabled"))
+        if not t:
+            return
         kernel.register("window/CameraInterface", CameraInterface)
         kernel.register("wxpane/CameraPane", register_panel_camera)
