@@ -10,3 +10,4 @@ from .kernel import *
 from .channel import *
 from .jobs import *
 from .functions import *
+from .exceptions import *

@@ -1,7 +1,9 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
+from .functions import console_command, console_command_remove
 from .context import Context
 from .lifecycles import *
+
 
 class Service(Context):
     """
@@ -80,7 +82,7 @@ class Service(Context):
 
         Uses the current registration to register the given command.
         """
-        return self._kernel.console_command(*args, **kwargs)
+        return console_command(self, *args, **kwargs)
 
     def console_command_remove(self, *args, **kwargs) -> None:
         """
@@ -88,15 +90,21 @@ class Service(Context):
 
         Uses current context to be passed to the console_command being removed.
         """
-        self._kernel.console_command_remove(*args, **kwargs)
+        return console_command_remove(self, *args, **kwargs)
 
     def destroy(self):
         self.kernel.set_service_lifecycle(self, LIFECYCLE_SERVICE_SHUTDOWN)
         self.clear_persistent()
         self.close_subpaths()
 
-    def register_choices(self, sheet, choices):
+    def register_choices(registration, sheet, choices):
         """
+        Registers choices to a given sheet. If the sheet already exists then the new choices
+        are appended to the given sheet.
+
+        If these choices are registered to an object of Context type we then set the given
+        default values.
+
         Service register choices command registration.
 
         Uses the current registration to register the choices.
@@ -104,7 +112,17 @@ class Service(Context):
         @param choices: list of choices
         @return:
         """
-        self.kernel.register_choices(sheet, choices)
+        key = "choices/%s" % sheet
+        if key in registration._registered:
+            others = registration._registered[key]
+            others.extend(choices)
+            registration.register(key, others)  # Reregister to trigger lookup change
+        else:
+            registration.register(key, choices)
+        for c in choices:
+            obj = c["object"]
+            if isinstance(obj, Context):
+                obj.setting(c["type"], c["attr"], c["default"])
 
     def add_service_delegate(self, delegate):
         self.kernel.add_delegate(delegate, self)
