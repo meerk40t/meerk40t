@@ -50,8 +50,8 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         context = self.scene.context
-        width_in_nm = context.device.width_as_nm
-        height_in_nm = context.device.height_as_nm
+        width_in_nm = float(context.device.width_as_nm)
+        height_in_nm = float(context.device.height_as_nm)
         step = context.device.length("10mm", as_float=True)
         starts = []
         ends = []
@@ -60,12 +60,12 @@ class GridWidget(Widget):
             return starts, ends
         x = 0.0
         while x < width_in_nm:
-            starts.append((x, 0))
+            starts.append((x, 0.))
             ends.append((x, height_in_nm))
             x += step
         y = 0.0
         while y < height_in_nm:
-            starts.append((0, y))
+            starts.append((0., y))
             ends.append((width_in_nm, y))
             y += step
         self.grid = starts, ends
