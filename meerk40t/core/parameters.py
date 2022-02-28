@@ -20,7 +20,7 @@ INT_PARAMETERS = (
 FLOAT_PARAMETERS = (
     "speed",
     "dratio",
-    "dwell",
+    "dwell_time",
 )
 
 BOOL_PARAMETERS = (
