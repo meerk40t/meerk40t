@@ -227,6 +227,26 @@ class GRBLDevice(Service, ViewPort):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
+            {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _(
+                    "+X is standard for grbl but sometimes settings can flip that."
+                ),
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _(
+                    "-Y is standard for grbl but sometimes settings can flip that."
+                ),
+            },
         ]
         self.register_choices("bed_dim", choices)
         ViewPort.__init__(
@@ -237,7 +257,8 @@ class GRBLDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
-            flip_y=True,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
             origin_x=0.0,
             origin_y=1.0,
         )
