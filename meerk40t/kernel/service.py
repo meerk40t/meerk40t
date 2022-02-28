@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from .functions import console_command, console_command_remove
+from .functions import console_command, console_command_remove, console_argument, console_option
 from .context import Context
 from .lifecycles import *
 
@@ -76,6 +76,23 @@ class Service(Context):
         del self._registered[path]
         self._kernel.lookup_change(path)
 
+    def console_argument(self, *args, **kwargs) -> Callable:
+        """
+        Delegate to Kernel
+
+        Uses current context to be passed to the console_argument being registered.
+        """
+        return console_argument(*args, **kwargs)
+
+    def console_option(self, *args, **kwargs) -> Callable:
+        """
+        Delegate to Kernel
+
+        Uses current context to be passed to the console_option being registered.
+        """
+        return console_option(*args, **kwargs)
+
+
     def console_command(self, *args, **kwargs) -> Callable:
         """
         Service console command registration.
@@ -97,7 +114,7 @@ class Service(Context):
         self.clear_persistent()
         self.close_subpaths()
 
-    def register_choices(registration, sheet, choices):
+    def register_choices(self, sheet, choices):
         """
         Registers choices to a given sheet. If the sheet already exists then the new choices
         are appended to the given sheet.
@@ -113,12 +130,12 @@ class Service(Context):
         @return:
         """
         key = "choices/%s" % sheet
-        if key in registration._registered:
-            others = registration._registered[key]
+        if key in self._registered:
+            others = self._registered[key]
             others.extend(choices)
-            registration.register(key, others)  # Reregister to trigger lookup change
+            self.register(key, others)  # Reregister to trigger lookup change
         else:
-            registration.register(key, choices)
+            self.register(key, choices)
         for c in choices:
             obj = c["object"]
             if isinstance(obj, Context):
