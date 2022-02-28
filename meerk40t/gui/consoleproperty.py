@@ -19,6 +19,12 @@ class ConsoleProperty(MWindow):
         self.SetTitle(_("Console Properties"))
         self.Children[0].SetFocus()
 
+    def window_preserve(self):
+        return False
+
+    def window_menu(self):
+        return False
+
 
 class ConsolePropertiesPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
