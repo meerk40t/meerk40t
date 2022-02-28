@@ -457,9 +457,9 @@ class MeerK40t(MWindow):
                 m = m.replace("$x", str(x))
                 m = m.replace("$y", str(y))
                 mx = Matrix(m)
-                width_in_nm = context.device.width
-                height_in_nm = context.device.height
-                mx.render(ppi=UNITS_PER_INCH, width=width_in_nm, height=height_in_nm)
+                unit_width = context.device.unit_width
+                unit_height = context.device.unit_height
+                mx.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
                 if mx.is_identity():
                     dlg.Destroy()
                     dlg = wx.MessageDialog(
@@ -490,9 +490,9 @@ class MeerK40t(MWindow):
             )
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
-                width_in_nm = context.device.width
+                unit_width = context.device.unit_width
                 length = Length(dlg.GetValue()).value(
-                    ppi=UNITS_PER_INCH, relative_length=width_in_nm
+                    ppi=UNITS_PER_INCH, relative_length=unit_width
                 )
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)

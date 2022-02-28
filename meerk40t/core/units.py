@@ -179,6 +179,11 @@ class ViewPort:
         self._imatrix = Matrix(self._matrix)
         self._imatrix.inverse()
 
+    def device_to_scene_matrix(self):
+        if self._matrix is None:
+            self.calculate_matrices()
+        return self._imatrix
+
     def scene_to_device_matrix(self):
         ops = []
         if self.flip_y:
@@ -274,8 +279,8 @@ class ViewPort:
         return (
             0,
             0,
-            self.width_as_nm,
-            self.height_as_nm,
+            self.unit_width,
+            self.unit_height,
         )
 
     @property
@@ -295,11 +300,11 @@ class ViewPort:
         return Length(self.height).to_inch(ppi=UNITS_PER_INCH)
 
     @property
-    def width_as_nm(self):
+    def unit_width(self):
         return Length(self.width).value(ppi=UNITS_PER_INCH)
 
     @property
-    def height_as_nm(self):
+    def unit_height(self):
         return Length(self.height).value(ppi=UNITS_PER_INCH)
 
     @staticmethod

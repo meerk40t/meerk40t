@@ -214,6 +214,8 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("height", type=str, help="height of view")
         @self.context.console_command("focus", input_type="scene")
         def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
+            if height is None:
+                raise SyntaxError("x, y, width, height not specified")
             x = self.context.device.length(x, 0)
             y = self.context.device.length(y, 1)
             width = self.context.device.length(width, 0)

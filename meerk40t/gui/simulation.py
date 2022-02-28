@@ -372,6 +372,7 @@ class SimulationWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
+        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.progress > 1:
@@ -391,6 +392,7 @@ class SimulationTravelWidget(Widget):
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
+        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
         self.starts = list()
         self.ends = list()
         self.pos = list()
@@ -451,6 +453,7 @@ class SimReticleWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
+        self.sim_matrix = scene.context.device.device_to_scene_matrix()
         self.sim = sim
 
     def process_draw(self, gc):
@@ -467,6 +470,7 @@ class SimReticleWidget(Widget):
                 pos = self.sim.cutcode[self.sim.progress - 2].end
             x = pos[0]
             y = pos[1]
+            x, y = self.sim_matrix.point_in_matrix_space((x, y))
 
         try:
             # Draw Reticle
