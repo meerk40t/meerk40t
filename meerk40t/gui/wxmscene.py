@@ -1,32 +1,28 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import UNITS_PER_INCH
-from meerk40t.gui.icons import icon_meerk40t, icons8_console_50
+from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.scene.scene import ScenePanel
-from meerk40t.gui.scene.scenewidgets import (
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    ReticleWidget,
-    SelectionWidget,
-)
-from meerk40t.gui.scene.toolwidgets import (
-    CircleTool,
-    DrawTool,
-    EllipseTool,
-    PolygonTool,
-    PolylineTool,
-    RectTool,
-    RelocateTool,
-    TextTool,
-    ToolContainer,
-    VectorTool,
-)
+from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
+from meerk40t.gui.scenewidgets.gridwidget import GridWidget
+from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
+from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
+from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
+from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
+from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.toolwidgets.toolcircle import CircleTool
+from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
+from meerk40t.gui.toolwidgets.tooldraw import DrawTool
+from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
+from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
+from meerk40t.gui.toolwidgets.toolrect import RectTool
+from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
+from meerk40t.gui.toolwidgets.tooltext import TextTool
+from meerk40t.gui.toolwidgets.toolvector import VectorTool
+
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length

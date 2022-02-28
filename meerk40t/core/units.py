@@ -7,6 +7,7 @@ PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-12
 DEFAULT_PPI = 96.0
+NATIVE_UNIT_PER_INCH = 65535
 
 NM_PER_INCH = 25400000
 NM_PER_MIL = 25400
@@ -17,14 +18,29 @@ NM_PER_CM = 10000000
 NM_PER_PIXEL = NM_PER_INCH / DEFAULT_PPI
 PX_PER_uM = DEFAULT_PPI / NM_PER_INCH
 
-UNITS_PER_INCH = NM_PER_INCH
-UNITS_PER_MIL = NM_PER_MIL
-UNITS_PER_uM = NM_PER_uM
-UNITS_PER_MM = NM_PER_MM
-UNITS_PER_CM = NM_PER_CM
-UNITS_PER_NM = NM_PER_NM
-UNITS_PER_PIXEL = UNITS_PER_INCH / DEFAULT_PPI
-PX_PER_UNIT = DEFAULT_PPI / UNITS_PER_INCH
+MIL_PER_INCH = 1000
+NM_PER_INCH = 2.54e7
+uM_PER_INCH = 25400
+MM_PER_INCH = 25.4
+CM_PER_INCH = 2.54
+
+PX_PER_INCH = DEFAULT_PPI
+PX_PER_MIL = DEFAULT_PPI / MIL_PER_INCH
+PX_PER_NM = DEFAULT_PPI / NM_PER_INCH
+PX_PER_uM = DEFAULT_PPI / uM_PER_INCH
+PX_PER_MM = DEFAULT_PPI / MM_PER_INCH
+PX_PER_CM = DEFAULT_PPI / CM_PER_INCH
+PX_PER_PIXEL = 1
+
+
+UNITS_PER_INCH = NATIVE_UNIT_PER_INCH
+UNITS_PER_MIL = NATIVE_UNIT_PER_INCH / MIL_PER_INCH
+UNITS_PER_uM = NATIVE_UNIT_PER_INCH / uM_PER_INCH
+UNITS_PER_MM = NATIVE_UNIT_PER_INCH / MM_PER_INCH
+UNITS_PER_CM = NATIVE_UNIT_PER_INCH / CM_PER_INCH
+UNITS_PER_NM = NATIVE_UNIT_PER_INCH / NM_PER_INCH
+UNITS_PER_PIXEL = NATIVE_UNIT_PER_INCH / DEFAULT_PPI
+PX_PER_UNIT = 1.0 / UNITS_PER_PIXEL
 
 UNITS_NANOMETER = 0
 UNITS_MM = 1
@@ -70,6 +86,8 @@ class ViewPort:
         flip_y=False,
         swap_xy=False,
     ):
+        self._matrix = None
+        self._imatrix = None
         self.width = width
         self.height = height
         self.origin_x = origin_x
@@ -91,6 +109,8 @@ class ViewPort:
         self.realize()
 
     def realize(self):
+        self._imatrix = None
+        self._matrix = None
         self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
         self._offset_x = self._width * self.origin_x
@@ -124,8 +144,8 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        x,y = self.physical_to_scene_position(x, y, unitless)
-        return self.scene_to_device_position(x, y, unitless)
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y)
 
     def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
         """
@@ -135,19 +155,29 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        x0, y0 = self.physical_to_device_position(0,0, unitless)
-        x, y = self.physical_to_device_position(x, y, unitless)
-        return x - x0, y - y0
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_device_position(x, y, vector=True)
 
-    def device_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
-        m = Matrix(self.device_to_scene_matrix())
-        point = m.point_in_matrix_space((x,y))
+    def device_to_scene_position(self, x, y):
+        if self._imatrix is None:
+            self.calculate_matrices()
+        point = self._imatrix.point_in_matrix_space((x, y))
         return point.x, point.y
 
-    def scene_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
-        m = Matrix(self.scene_to_device_matrix())
-        point = m.point_in_matrix_space((x,y))
-        return point.x, point.y
+    def scene_to_device_position(self, x, y, vector=False):
+        if self._matrix is None:
+            self.calculate_matrices()
+        if vector:
+            point = self._matrix.transform_vector([x, y])
+            return point[0], point[1]
+        else:
+            point = self._matrix.point_in_matrix_space((x, y))
+            return point.x, point.y
+
+    def calculate_matrices(self):
+        self._matrix = Matrix(self.scene_to_device_matrix())
+        self._imatrix = Matrix(self._matrix)
+        self._imatrix.inverse()
 
     def scene_to_device_matrix(self):
         ops = []
@@ -156,17 +186,20 @@ class ViewPort:
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
         if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append("scale({sx:.13f}, {sy:.13f})".format(sx=1.0/self._scale_x, sy=1.0/self._scale_y))
+            ops.append(
+                "scale({sx:.13f}, {sy:.13f})".format(
+                    sx=1.0 / self._scale_x, sy=1.0 / self._scale_y
+                )
+            )
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append("translate({dx:.13f}, {dy:.13f})".format(dx=-self._offset_x, dy=-self._offset_y))
+            ops.append(
+                "translate({dx:.13f}, {dy:.13f})".format(
+                    dx=-self._offset_x, dy=-self._offset_y
+                )
+            )
         if self.swap_xy:
             ops.append("scale(-1.0, -1.0) rotate(180deg)")
         return " ".join(ops)
-
-    def device_to_scene_matrix(self):
-        m = Matrix(self.scene_to_device_matrix())
-        m.inverse()
-        return m
 
     def length(
         self,
@@ -219,6 +252,10 @@ class ViewPort:
             return Length(value).to_px(
                 ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
             )
+        elif new_units == "mil":
+            return Length(value).to_inch(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            ) / 1000.0
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -237,8 +274,8 @@ class ViewPort:
         return (
             0,
             0,
-            self.width,
-            self.height,
+            self.width_as_nm,
+            self.height_as_nm,
         )
 
     @property

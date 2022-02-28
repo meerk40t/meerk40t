@@ -33,9 +33,9 @@ from .node.laserop import (
     ImageOpNode,
     RasterOpNode,
 )
-from .node.node import OP_PRIORITIES, isDot, isStraightLine, label_truncate_re
+from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
-from .units import UNITS_PER_PIXEL, Length, UNITS_PER_INCH
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -2239,14 +2239,7 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            try:
-                tx = self.device.current_x
-            except AttributeError:
-                tx = 0
-            try:
-                ty = self.device.current_y
-            except AttributeError:
-                ty = 0
+            tx, ty = self.device.current
             try:
                 bounds = Group.union_bbox([abs(e) for e in data])
                 otx = bounds[0]
@@ -4789,7 +4782,7 @@ class Elemental(Service):
                     op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif op.type == "op dots" and isDot(element):
+                elif op.type == "op dots" and is_dot(element):
                     op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in Dots.
@@ -4802,7 +4795,7 @@ class Elemental(Service):
                 op = None
                 if isinstance(element, SVGImage):
                     op = ImageOpNode(output=False)
-                elif isDot(element):
+                elif is_dot(element):
                     op = DotsOpNode(output=False)
                 elif (
                     # test for Shape or SVGText instance is probably unnecessary,
@@ -4825,7 +4818,7 @@ class Elemental(Service):
                     isinstance(element, (Shape, SVGText))
                     and element.fill is not None
                     and element.fill.argb is not None
-                    and not isDot(element)
+                    and not is_dot(element)
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
@@ -5083,19 +5076,19 @@ class Elemental(Service):
                 )
                 continue
 
-            is_dot = isDot(element)
-            is_straight_line = isStraightLine(element)
+            dot = is_dot(element)
+            straight_line = is_straight_line(element)
             # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
 
             # Check for default vector operations
             element_vector = False
-            if isinstance(element, (Shape, SVGText)) and not is_dot:
+            if isinstance(element, (Shape, SVGText)) and not dot:
                 # Vector if not filled
                 if (
                     element.fill is None
                     or element.fill.rgb is None
                     or (element.fill.alpha is not None and element.fill.alpha == 0)
-                    or is_straight_line
+                    or straight_line
                 ):
                     element_vector = True
 
@@ -5113,8 +5106,8 @@ class Elemental(Service):
                 (
                     element,
                     element_vector,
-                    is_dot,
-                    is_straight_line,
+                    dot,
+                    straight_line,
                 )
             )
 
@@ -5130,14 +5123,14 @@ class Elemental(Service):
         for i, (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in enumerate(elements_to_classify):
             if (
                 # Raster?
                 not element_vector
                 and isinstance(element, (Shape, SVGText))
-                and not is_dot
+                and not dot
                 # White non-transparent fill?
                 and element.fill is not None
                 and element.fill.rgb is not None
@@ -5173,16 +5166,16 @@ class Elemental(Service):
                     elements_to_classify[i] = (
                         element,
                         element_vector,
-                        is_dot,
-                        is_straight_line,
+                        dot,
+                        straight_line,
                     )
 
         # Convert vector elements with element in front crossing the stroke to raster
         for i, (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in reversed_enumerate(elements_to_classify):
             if (
                 element_vector
@@ -5223,8 +5216,8 @@ class Elemental(Service):
                         elements_to_classify[i] = (
                             element,
                             element_vector,
-                            is_dot,
-                            is_straight_line,
+                            dot,
+                            straight_line,
                         )
                         break
 
@@ -5232,8 +5225,8 @@ class Elemental(Service):
         for (
             element,
             element_vector,
-            is_dot,
-            is_straight_line,
+            dot,
+            straight_line,
         ) in elements_to_classify:
 
             element_color = self.element_classify_color(element)
@@ -5248,9 +5241,9 @@ class Elemental(Service):
                 continue
 
             element_added = False
-            if is_dot or isinstance(element, SVGImage):
+            if dot or isinstance(element, SVGImage):
                 for op in special_ops:
-                    if (is_dot and op.type == "op dots") or (
+                    if (dot and op.type == "op dots") or (
                         isinstance(element, SVGImage) and op.type == "op image"
                     ):
                         op.add(element, type="ref elem", pos=element_pos)
@@ -5316,7 +5309,7 @@ class Elemental(Service):
             elif (
                 rasters_one_pass
                 and isinstance(element, (Shape, SVGText))
-                and not is_dot
+                and not dot
                 and raster_ops
             ):
                 for op in raster_ops:
@@ -5328,7 +5321,7 @@ class Elemental(Service):
 
             # Need to add a new operation to classify into
             op = None
-            if is_dot:
+            if dot:
                 op = DotsOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, SVGImage):

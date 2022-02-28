@@ -137,10 +137,12 @@ def plugin(kernel, lifecycle):
                 return
             if idx == 0 and idy == 0:
                 return
+            sidx = "{dx}nm".format(dx=idx)
+            sidy = "{dy}nm".format(dy=idy)
             if force:
-                spooler.job("move_rel", idx, idy)
+                spooler.job("move_rel", sidx, sidy)
             else:
-                if spooler.job_if_idle("move_rel", idx, idy):
+                if spooler.job_if_idle("move_rel", sidx, sidy):
                     channel(_("Position moved: %d %d") % (idx, idy))
                     spooler._dx -= idx
                     spooler._dy -= idy

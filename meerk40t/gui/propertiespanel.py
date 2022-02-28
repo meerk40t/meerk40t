@@ -78,6 +78,7 @@ class PropertiesPanel(wx.Panel):
                     def check(event=None):
                         v = ctrl.GetValue()
                         setattr(obj, param, v)
+                        self.context.signal(param, v)
 
                     return check
 

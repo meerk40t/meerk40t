@@ -100,7 +100,7 @@ class KeymapPanel(wx.Panel):
 
     def reload_keymap(self):
         self.list_keymap.DeleteAllItems()
-        for key, value in self.context.bind.items():
+        for key, value in self.context.bind.keymap.items():
             m = self.list_keymap.InsertItem(0, str(key))
             if m != -1:
                 self.list_keymap.SetItem(m, 1, str(value))

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.8"
+SVGELEMENTS_VERSION = "1.6.10"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -2415,7 +2415,7 @@ class Angle(float):
 
     @property
     def as_radians(self):
-        return self
+        return float(self)
 
     @property
     def as_degrees(self):
@@ -4101,6 +4101,10 @@ class Move(PathSegment):
             return self.end
         else:
             raise IndexError
+
+    def bbox(self):
+        """Return the bounding box for a Move which is the end point."""
+        return self.end.x, self.end.y, self.end.x, self.end.y
 
     def d(self, current_point=None, relative=None, smooth=None):
         if (
@@ -6045,21 +6049,44 @@ class Path(Shape, MutableSequence):
         self._segments[0].start = prepoint
         return self
 
+    def _subpath_indices(self):
+        """
+        Returns the indexes of Move segments assuming that the first segment is a Move.
+
+        This can be used to count subpaths or to get segment start and end numbers for subpaths.
+        """
+        if len(self._segments) == 0:
+            return
+        yield 0
+        last = self._segments[0]
+        for i in range(1, len(self._segments)):
+            if isinstance(self._segments[i], Move) or isinstance(last, Close):
+                yield i
+            last = self._segments[i]
+
     def subpath(self, index):
-        subpaths = list(self.as_subpaths())
-        return subpaths[index]
+        if index < 0:
+            raise IndexError("Subpath negative index")
+        start = None
+        for i, end in enumerate(self._subpath_indices()):
+            if i > index:
+                return Subpath(self, start, end - 1)
+            start = end
+        if i == index:
+            return Subpath(self, start, len(self) - 1)
+        else:
+            raise IndexError("Subpath index out of range")
 
     def count_subpaths(self):
-        subpaths = list(self.as_subpaths())
-        return len(subpaths)
+        return len(tuple(self._subpath_indices()))
 
     def as_subpaths(self):
-        last = 0
-        for current, seg in enumerate(self):
-            if current != last and isinstance(seg, Move):
-                yield Subpath(self, last, current - 1)
-                last = current
-        yield Subpath(self, last, len(self) - 1)
+        last = None
+        for end in self._subpath_indices():
+            if last is not None:
+                yield Subpath(self, last, end - 1)
+            last = end
+        yield Subpath(self, end, len(self) - 1)
 
     def as_points(self):
         """Returns the list of defining points within path"""
@@ -8646,7 +8673,7 @@ class SVG(Group):
                     if height is None:
                         height = s.viewbox.height if s.viewbox is not None else 1000
 
-                    s.render(ppi=ppi, width=width, height=height)
+                    s.render(ppi=ppi, width=width, height=height, viewbox=s.viewbox)
                     height, width = s.width, s.height
                     if s.viewbox is not None:
                         try:

@@ -55,13 +55,13 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python3 -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
+        python -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
         if [ "${{ runner.os }}" == "Windows" ]; then
-            pip3 install --upgrade --upgrade-strategy eager wxPython
+            pip install --upgrade --upgrade-strategy eager wxPython
         else
-            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+            pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
         fi
-        if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+        if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
 
     - name: List environment
       env:

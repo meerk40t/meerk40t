@@ -153,9 +153,15 @@ def run():
 
     kernel.add_plugin(moshi_driver.plugin)
 
-    from .grbl import device as grbl_driver
+    try:
+        from .grbl import device as grbl_driver
 
-    kernel.add_plugin(grbl_driver.plugin)
+        kernel.add_plugin(grbl_driver.plugin)
+    except Mk40tImportAbort as e:
+        print(
+            "Cannot install meerk40t 'grbl' plugin - prerequisite '%s' needs to be installed"
+            % e
+        )
 
     from .ruida import device as ruida_driver
 

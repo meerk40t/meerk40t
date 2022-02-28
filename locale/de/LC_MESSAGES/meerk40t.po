@@ -7513,7 +7513,7 @@ msgstr "Sollte diese Option die für die Optimerung benötigte Zeit drastisch ve
 "* Die Option 'Brenne Innenliegendes zuerst' abwählen, falls nicht vollständig durch das Material geschnitten werden soll \n"
 "* Verlegen der innenliegende Pfade in einen eigenen frühen Arbeitsgang und Abwahl der Optionen 'Verbinde Arbeitsgänge' und 'Brenne Innenliegendes zuerst' \n"
 "* Falls mehrere Durchgänge genutzt werden, wähle 'Verbinde Durchläufe' aus"
-                    
+
 
 #: meerk40t/core/planner.py:275
 msgid "Group Inner Burns"
@@ -7601,3 +7601,23 @@ msgstr "Prüfe auf Vorabversionen"
 #: meerk40t/gui/preferences.py:153
 msgid "Check for beta releases in addition to full releases."
 msgstr "Prüft neben Standard-Versionen auch das Vorhandensein von Vorabversionen (beta)"
+
+#: meerk40t/gui/scene/scenewidgets.py:665
+msgid "Select all elements the selection rectangle touches."
+msgstr "Wähle die Elemente aus, die die Auswahl berührt."
+
+#: meerk40t/gui/scene/scenewidgets.py:666
+msgid "Select all elements the selection rectangle crosses."
+msgstr "Wähle die Elemente aus, die die Auswahl kreuzt."
+
+#: meerk40t/gui/scene/scenewidgets.py:667
+msgid  "Select all elements the selection rectangle encloses."
+msgstr "Wähle die Elemente aus, die die Auswahl umschließt."
+
+#: meerk40t/gui/scene/scenewidgets.py:667
+msgid " Previously selected remain selected!"
+msgstr " Die jetzige Auswahl bleibt erhalten!"
+
+#: meerk40t/gui/scene/scenewidgets.py:667
+msgid " Invert selection state of elements!"
+msgstr " Der Status wird dabei umgekehrt!"
