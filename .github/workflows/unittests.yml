@@ -72,7 +72,7 @@ jobs:
         STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
-        pip3 list
+        pip list
         env
 
     - name: Run Unittests

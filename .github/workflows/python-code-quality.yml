@@ -57,13 +57,13 @@ jobs:
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
-        pip3 install --upgrade --upgrade-strategy eager pylint pyproject-flake8 flake8-deprecated black mypy isort
+        pip install --upgrade --upgrade-strategy eager pylint pyproject-flake8 flake8-deprecated black mypy isort
         if [ "${{ runner.os }}" == "Windows" ]; then
-            pip3 install --upgrade --upgrade-strategy eager wxPython
+            pip install --upgrade --upgrade-strategy eager wxPython
         else
-            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+            pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
         fi
-        if [ -f requirements-gui.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requirements-gui.txt; fi
+        if [ -f requirements-gui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-gui.txt; fi
 
     - name: List environment
       env:
@@ -74,7 +74,7 @@ jobs:
         STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
-        pip3 list
+        pip list
         env
 
     - name: Create output directory
