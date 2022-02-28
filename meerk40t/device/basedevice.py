@@ -19,7 +19,10 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "boot":
         last_device = kernel.read_persistent(str, "/", "activated_device", None)
         if last_device:
-            kernel.activate_service_path("device", last_device)
+            try:
+                kernel.activate_service_path("device", last_device)
+            except ValueError:
+                pass
 
         if not hasattr(kernel, "device"):
             preferred_device = kernel.root.setting(
