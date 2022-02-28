@@ -125,15 +125,12 @@ def register_panel_console(window, context):
         help=_("Clear console screen"),
     )
     def clear_console(channel, _, *args, **kwargs):
-        panels = [
-            context.opened[x]
-            for x in ("window/Console", "window/Terminal")
-            if x in context.opened
-        ]
-
-        panels.append(context.registered["pane/console"])
-        for panel in panels:
-            panel.control.clear()
+        if "window/Console" in context.opened:
+            w = context.opened["window/Console"]
+            w.panel.clear()
+        if "pane/console" in context.opened:
+            w = context.opened["pane/console"]
+            w.control.clear()
 
 
 class ConsolePanel(wx.Panel):
