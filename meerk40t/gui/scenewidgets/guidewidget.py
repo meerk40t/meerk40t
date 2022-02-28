@@ -42,8 +42,8 @@ class GuideWidget(Widget):
         sx, sy = self.scene.convert_scene_to_window([0, 0])
         if points == 0:
             return
-        offset_x = sx % points
-        offset_y = sy % points
+        offset_x = float(sx) % points
+        offset_y = float(sy) % points
 
         starts = []
         ends = []
@@ -55,7 +55,7 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx) / scaled_conversion
-                if round(mark_point * 1000) == 0:
+                if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 starts.append((x, edge_gap))
                 ends.append((x, length + edge_gap))
@@ -70,7 +70,7 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy) / scaled_conversion
-                if round(mark_point * 1000) == 0:
+                if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))

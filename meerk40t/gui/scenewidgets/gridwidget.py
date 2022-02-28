@@ -104,7 +104,8 @@ class GridWidget(Widget):
                     self.grid_line_pen.SetWidth(int(line_width))
 
                 gc.SetPen(self.grid_line_pen)
-                gc.StrokeLineSegments(starts, ends)
+                if starts and ends:
+                    gc.StrokeLineSegments(starts, ends)
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()
 
