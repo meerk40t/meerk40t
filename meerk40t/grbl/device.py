@@ -1405,8 +1405,11 @@ class SerialConnection:
         return self.laser is not None
 
     def read(self):
-        if self.laser.in_waiting:
-            self.read_buffer += self.laser.readall()
+        try:
+            if self.laser.in_waiting:
+                self.read_buffer += self.laser.readall()
+        except SerialException:
+            return None
         f = self.read_buffer.find(b"\n")
         if f == -1:
             return None
@@ -1444,6 +1447,8 @@ class SerialConnection:
         self.channel("Disconnected")
         if self.laser:
             self.laser.close()
+            del self.laser
+            self.laser = None
         self.service.signal("serial;status", "disconnected")
 
 
