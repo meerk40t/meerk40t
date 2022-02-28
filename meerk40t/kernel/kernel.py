@@ -9,15 +9,15 @@ import time
 from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.lifecycles import *
-from meerk40t.kernel.states import *
-from meerk40t.kernel.channel import Channel
-from meerk40t.kernel.context import Context
-from meerk40t.kernel.functions import get_safe_path
-from meerk40t.kernel.jobs import Job, ConsoleFunction
-from meerk40t.kernel.module import Module
-from meerk40t.kernel.service import Service
-from meerk40t.kernel.settings import Settings
+from .lifecycles import *
+from .states import *
+from .channel import Channel
+from .context import Context
+from .functions import get_safe_path
+from .jobs import Job, ConsoleFunction
+from .module import Module
+from .service import Service
+from .settings import Settings
 
 KERNEL_VERSION = "0.0.1"
 

@@ -1,8 +1,7 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.lifecycles import *
-from meerk40t.kernel.states import *
-# from meerk40t.kernel.console_decorators import console_argument, console_option
+from .lifecycles import *
+from .states import *
 
 class Context:
     """

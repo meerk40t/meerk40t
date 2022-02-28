@@ -1,4 +1,4 @@
-from meerk40t.kernel.states import *
+from .states import *
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 class Module:

@@ -147,7 +147,7 @@ class Channel:
                     and w.__name__ == "__print_delegate"
                 )
             ):
-               if self.ansi_supported:
+                if self.ansi_supported:
                     w(bbcode_to_ansi(message))
                 else:
                     w(bbcode_to_plain(message))

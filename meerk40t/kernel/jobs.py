@@ -1,7 +1,7 @@
 import time
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.states import *
+from .states import *
 
 class Job:
     """

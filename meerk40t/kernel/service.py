@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.context import Context
-from meerk40t.kernel.lifecycles import *
+from .context import Context
+from .lifecycles import *
 
 class Service(Context):
     """

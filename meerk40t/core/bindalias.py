@@ -1,5 +1,5 @@
 from meerk40t.kernel.service import Service
-from meerk40t.core.exceptions import CommandMatchRejected
+from meerk40t.kernel.kernel import CommandMatchRejected
 
 # The following dicts consist of a tuple of values, the first of
 # which is the current default, with any prior defaults following.

@@ -2,7 +2,7 @@ from configparser import ConfigParser, NoSectionError
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.functions import get_safe_path
+from .functions import get_safe_path
 
 class Settings:
     def __init__(self, directory, filename):
