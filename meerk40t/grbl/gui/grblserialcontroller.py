@@ -76,10 +76,21 @@ class SerialControllerPanel(wx.Panel):
         self.gcode_text.Clear()
 
     def update_sent(self, text):
-        self.data_exchange.AppendText("<--" + text + "\n")
+        text = "<--" + text + "\n"
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, str(text))
+        else:
+            self.update_text_gui(str(text))
 
     def update_recv(self, text):
-        self.data_exchange.AppendText("-->\t" + text + "\n")
+        text = "-->\t" + text + "\n"
+        if not wx.IsMainThread():
+            wx.CallAfter(self.update_text_gui, str(text))
+        else:
+            self.update_text_gui(str(text))
+
+    def update_text_gui(self, text):
+        self.data_exchange.AppendText(text)
 
     def on_serial_status(self, origin, state):
         self.state = state
