@@ -190,7 +190,7 @@ class RotarySettings(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(222, 147, *args, **kwds)
 
-        self.control = RotarySettingsPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
@@ -198,7 +198,7 @@ class RotarySettings(MWindow):
         self.SetTitle(_("RotarySettings"))
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()

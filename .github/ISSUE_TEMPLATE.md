@@ -3,8 +3,8 @@
 Thank you for taking the time to report a MeerK40t bug or make an enhancement suggestion! 😄
 
 To help us avoid duplicates, please search open and closed issues before submitting a new one.
-If you find an existing issue that is close to the one you want to report, 
-and to help avoid us having duplicate issues, 
+If you find an existing issue that is close to the one you want to report,
+and to help avoid us having duplicate issues,
 please consider adding your points as a new comment rather than opening a new issue.
 
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before completing this form.
@@ -15,8 +15,8 @@ Please remove any sections that you believe are not needed to describe your issu
 
 This is a:
 
-* [] Bug
-* [] Suggestion for an enhancement
+*   [] Bug
+*   [] Suggestion for an enhancement
 
 ## SUMMARY
 
@@ -33,9 +33,9 @@ This is a:
 
 ## YOUR ENVIRONMENT
 
-* MeerK40t version: 
-* OS: <!-- e.g. Windows 10 1904 or Ubuntu 5.4.0-26-generic x86_64 etc. ... -->
-* Running from: <|-- e.g. Executable, package (PIP3/Pypi), downloaded source, git managed source 
+*   MeerK40t version:
+*   OS: <!-- e.g. Windows 10 1904 or Ubuntu 5.4.0-26-generic x86_64 etc. ... -->
+*   Running from: <|-- e.g. Executable, package (PIP3/Pypi), downloaded source, git managed source
 
 ### SCREENSHOTS
 <!-- If applicable, add screenshots or videos to help explain your problem. -->

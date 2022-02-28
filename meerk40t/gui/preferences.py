@@ -479,14 +479,14 @@ class Preferences(MWindow):
             **kwds,
         )
 
-        self.control = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()

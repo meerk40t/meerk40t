@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.4"
+SVGELEMENTS_VERSION = "1.6.10"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -1078,6 +1078,8 @@ class Color(object):
             self.blue = kwargs["b"]
         if "rgb" in kwargs:
             self.rgb = kwargs["rgb"]
+        if "bgr" in kwargs:
+            self.bgr = kwargs["bgr"]
         if "argb" in kwargs:
             self.argb = kwargs["argb"]
         if "rgba" in kwargs:
@@ -1627,6 +1629,20 @@ class Color(object):
         rgb <<= 8
         rgb |= 0xFF
         self.value = rgb
+
+    @property
+    def bgr(self):
+        if self.value is None:
+            return None
+        return self.blue << 16 | self.green << 8 | self.red
+
+    @bgr.setter
+    def bgr(self, bgr):
+        self.value = 0
+        self.alpha = 0xFF
+        self.red = bgr & 0xFF
+        self.green = (bgr >> 8) & 0xFF
+        self.blue = (bgr >> 16) & 0xFF
 
     @property
     def rgba(self):
@@ -2409,7 +2425,7 @@ class Angle(float):
 
     @property
     def as_radians(self):
-        return self
+        return float(self)
 
     @property
     def as_degrees(self):
@@ -3737,7 +3753,11 @@ class Shape(SVGElement, GraphicObject, Transformable):
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
 
-        if with_stroke and self.stroke_width is not None:
+        if (
+            with_stroke
+            and self.stroke_width is not None
+            and not (self.stroke is None or self.stroke.value is None)
+        ):
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
@@ -4091,6 +4111,10 @@ class Move(PathSegment):
             return self.end
         else:
             raise IndexError
+
+    def bbox(self):
+        """Return the bounding box for a Move which is the end point."""
+        return self.end.x, self.end.y, self.end.x, self.end.y
 
     def d(self, current_point=None, relative=None, smooth=None):
         if (
@@ -6035,21 +6059,44 @@ class Path(Shape, MutableSequence):
         self._segments[0].start = prepoint
         return self
 
+    def _subpath_indices(self):
+        """
+        Returns the indexes of Move segments assuming that the first segment is a Move.
+
+        This can be used to count subpaths or to get segment start and end numbers for subpaths.
+        """
+        if len(self._segments) == 0:
+            return
+        yield 0
+        last = self._segments[0]
+        for i in range(1, len(self._segments)):
+            if isinstance(self._segments[i], Move) or isinstance(last, Close):
+                yield i
+            last = self._segments[i]
+
     def subpath(self, index):
-        subpaths = list(self.as_subpaths())
-        return subpaths[index]
+        if index < 0:
+            raise IndexError("Subpath negative index")
+        start = None
+        for i, end in enumerate(self._subpath_indices()):
+            if i > index:
+                return Subpath(self, start, end - 1)
+            start = end
+        if i == index:
+            return Subpath(self, start, len(self) - 1)
+        else:
+            raise IndexError("Subpath index out of range")
 
     def count_subpaths(self):
-        subpaths = list(self.as_subpaths())
-        return len(subpaths)
+        return len(tuple(self._subpath_indices()))
 
     def as_subpaths(self):
-        last = 0
-        for current, seg in enumerate(self):
-            if current != last and isinstance(seg, Move):
-                yield Subpath(self, last, current - 1)
-                last = current
-        yield Subpath(self, last, len(self) - 1)
+        last = None
+        for end in self._subpath_indices():
+            if last is not None:
+                yield Subpath(self, last, end - 1)
+            last = end
+        yield Subpath(self, end, len(self) - 1)
 
     def as_points(self):
         """Returns the list of defining points within path"""
@@ -7359,7 +7406,11 @@ class Subpath:
         except ValueError:
             return None  # No bounding box items existed. So no bounding box.
 
-        if with_stroke and self._path.stroke_width is not None:
+        if (
+            with_stroke
+            and self._path.stroke_width is not None
+            and not (self._path.stroke is None or self._path.stroke.value is None)
+        ):
             delta = float(self._path.stroke_width) / 2.0
         else:
             delta = 0.0
@@ -7836,6 +7887,7 @@ class Text(SVGElement, GraphicObject, Transformable):
     def property_by_values(self, values):
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
+        SVGElement.property_by_values(self, values)
         self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
         self.font_face = values.get("font_face")
         self.font_face = values.get(SVG_ATTR_FONT_FACE, self.font_face)
@@ -7922,7 +7974,11 @@ class Text(SVGElement, GraphicObject, Transformable):
             xmax = max(p0[0], p1[0], p2[0], p3[0])
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
-        if with_stroke and self.stroke_width is not None:
+        if (
+            with_stroke
+            and self.stroke_width is not None
+            and not (self.stroke is None or self.stroke.value is None)
+        ):
             if transformed:
                 delta = float(self.implicit_stroke_width) / 2.0
             else:
@@ -8078,6 +8134,7 @@ class Image(SVGElement, GraphicObject, Transformable):
     def render(self, **kwargs):
         GraphicObject.render(self, **kwargs)
         Transformable.render(self, **kwargs)
+        SVGElement.render(self, **kwargs)
         width = kwargs.get("width", kwargs.get("relative_length"))
         height = kwargs.get("height", kwargs.get("relative_length"))
         try:
@@ -8626,7 +8683,7 @@ class SVG(Group):
                     if height is None:
                         height = s.viewbox.height if s.viewbox is not None else 1000
 
-                    s.render(ppi=ppi, width=width, height=height)
+                    s.render(ppi=ppi, width=width, height=height, viewbox=s.viewbox)
                     height, width = s.width, s.height
                     if s.viewbox is not None:
                         try:
@@ -8737,6 +8794,13 @@ class SVG(Group):
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
+                if (
+                    SVG_ATTR_DISPLAY in values
+                    and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
+                ):
+                    # We are in a display=none, do not render this. Pop values and continue.
+                    context, values = stack.pop()
+                    continue
                 s = None
                 if tag in (
                     SVG_TAG_TEXT,
@@ -8797,5 +8861,6 @@ class SVG(Group):
                 context, values = stack.pop()
             elif event == "start-ns":
                 if elem[0] != SVG_ATTR_DATA:
+                    # Rare wc3 test uses a 'd' namespace.
                     values[elem[0]] = elem[1]
         return root

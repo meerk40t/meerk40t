@@ -67,7 +67,7 @@ class Configuration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(423, 110, *args, **kwds)
 
-        self.control = ConfigurationDefaultPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = ConfigurationDefaultPanel(self, wx.ID_ANY, context=self.context)
         # begin wxGlade: Properties.__set_properties
         self.SetTitle(_("Configuration"))
         _icon = wx.NullIcon
@@ -75,10 +75,10 @@ class Configuration(MWindow):
         self.SetIcon(_icon)
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()
 
     def window_preserve(self):
         return False

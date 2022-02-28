@@ -35,7 +35,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Group, Length
+from meerk40t.svgelements import Angle, Group, Length
 
 _ = wx.GetTranslation
 
@@ -116,19 +116,37 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/pulse", pane)
 
+    panel = SizePanel(window, wx.ID_ANY, context=context)
+    pane = (
+        aui.AuiPaneInfo()
+        .Right()
+        .MinSize(75, 50)
+        .FloatingSize(150, 75)
+        .Hide()
+        .Caption(_("Element-Size"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("objsizer")
+    )
+    pane.dock_proportion = 150
+    pane.control = panel
+    pane.submenu = _("Navigation")
+
+    window.on_pane_add(pane)
+    context.register("pane/objsizer", pane)
+
     panel = Transform(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 220)
-        .FloatingSize(174, 220)
+        .MinSize(174, 230)
+        .FloatingSize(174, 230)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 220
+    pane.dock_proportion = 230
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -635,14 +653,24 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
         default_pos = "0{units}".format(units=context.root.units_name)
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
+        self.text_position_x = wx.TextCtrl(
+            self, wx.ID_ANY, value=default_pos, style=wx.TE_PROCESS_ENTER
+        )
+        self.text_position_y = wx.TextCtrl(
+            self, wx.ID_ANY, value=default_pos, style=wx.TE_PROCESS_ENTER
+        )
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_move_to, self.button_navigate_move_to
+        )
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_x
+        )
+        self.Bind(
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
         # end wxGlade
         self.bed_dim = context.root
@@ -667,10 +695,12 @@ class MovePanel(wx.Panel):
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_12.Add(self.button_navigate_move_to, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
+        label_9.SetMinSize((-1, 23))
         sizer_14.Add(label_9, 0, 0, 0)
         sizer_14.Add(self.text_position_x, 0, 0, 0)
         sizer_13.Add(sizer_14, 0, wx.EXPAND, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
+        label_10.SetMinSize((-1, 23))
         sizer_15.Add(label_10, 0, 0, 0)
         sizer_15.Add(self.text_position_y, 0, 0, 0)
         sizer_13.Add(sizer_15, 0, wx.EXPAND, 0)
@@ -716,7 +746,9 @@ class PulsePanel(wx.Panel):
         self.button_navigate_pulse = wx.BitmapButton(
             self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap()
         )
-        self.spin_pulse_duration = wx.SpinCtrl(self, wx.ID_ANY, "50", min=1, max=1000)
+        self.spin_pulse_duration = wx.SpinCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
+        )
         self.__set_properties()
         self.__do_layout()
 
@@ -727,7 +759,7 @@ class PulsePanel(wx.Panel):
             wx.EVT_SPINCTRL, self.on_spin_pulse_duration, self.spin_pulse_duration
         )
         self.Bind(
-            wx.EVT_TEXT_ENTER, self.on_spin_pulse_duration, self.spin_pulse_duration
+            wx.EVT_TEXT_ENTER, self.on_button_navigate_pulse, self.spin_pulse_duration
         )
         # end wxGlade
 
@@ -763,6 +795,198 @@ class PulsePanel(wx.Panel):
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
 
 
+class SizePanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: SizePanel.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
+        self.mainsizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Object Dimensions")), wx.HORIZONTAL
+        )
+        self.button_navigate_resize = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_compress_50.GetBitmap()
+        )
+        self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
+        self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+
+        self.text_width = wx.TextCtrl(self, wx.ID_ANY, "0")
+        self.text_height = wx.TextCtrl(self, wx.ID_ANY, "0")
+        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
+        )
+        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_w)
+        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_h)
+        # self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_lock_toggle, self.btn_lock_ratio)
+        # end wxGlade
+
+    def __set_properties(self):
+        # begin wxGlade: SizePanel.__set_properties
+        self.button_navigate_resize.SetToolTip(_("Resize the object"))
+        self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
+        self.text_width.SetToolTip(_("Define width of selected object"))
+        self.text_height.SetToolTip(_("Define height of selected object"))
+        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetBitmap(
+            icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+        )
+        self.btn_lock_ratio.SetToolTip(
+            _("Lock the ratio of width / height to the original values")
+        )
+        self.text_height.Enable(False)
+        self.text_width.Enable(False)
+        self.button_navigate_resize.Enable(False)
+
+        # end wxGlade
+
+    def __do_layout(self):
+        # begin wxGlade: SizePanel.__do_layout
+        self.mainsizer.Add(self.button_navigate_resize, 0, 0, 0)
+        fieldsizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_label = wx.BoxSizer(wx.VERTICAL)
+
+        self.mainsizer.Add(fieldsizer, 1, wx.EXPAND, 0)
+
+        fieldsizer.Add(sizer_label, 0, wx.EXPAND, 0)
+
+        self.label_9.SetMinSize((-1, 23))
+        sizer_label.Add(self.label_9, 0, 0, 0)
+
+        self.label_10.SetMinSize((-1, 23))
+        sizer_label.Add(self.label_10, 0, 0, 0)
+
+        sizer_text = wx.BoxSizer(wx.VERTICAL)
+        fieldsizer.Add(sizer_text, 1, wx.EXPAND, 0)
+
+        sizer_text.Add(self.text_width, 0, wx.EXPAND, 0)
+
+        sizer_text.Add(self.text_height, 0, wx.EXPAND, 0)
+
+        sizer_lock = wx.BoxSizer(wx.VERTICAL)
+        fieldsizer.Add(sizer_lock, 0, wx.EXPAND, 0)
+
+        sizer_lock.Add(self.btn_lock_ratio, 0, 0, 0)
+
+        self.SetSizer(self.mainsizer)
+        self.mainsizer.Fit(self)
+
+        self.Layout()
+        # end wxGlade
+
+    def initialize(self, *args):
+        self.context.listen("emphasized", self.on_emphasized_elements_changed)
+        self.context.listen("modified", self.on_modified_element)
+        self.update_sizes()
+
+    def finalize(self, *args):
+        self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
+        self.context.unlisten("modified", self.on_modified_element)
+
+    def on_modified_element(self, origin, *args):
+        self.update_sizes()
+
+    def on_emphasized_elements_changed(self, origin, elements):
+        self.update_sizes()
+
+    objratio = 1.0
+    org_x = 0
+    org_y = 0
+    org_w = 0
+    org_h = 0
+
+    def update_sizes(self):
+        f = self.context.elements.first_element(emphasized=True)
+        v = f is not None
+        if self.context.root.units_name == "mm":
+            fmt = "{valu:.2f}{units}"
+            scale_factor = 1.0 / MILS_IN_MM
+        elif self.context.root.units_name == "cm":
+            fmt = "{valu:.4f}{units}"
+            scale_factor = 1.0 / (10.0 * MILS_IN_MM)
+        elif self.context.root.units_name == "inch":
+            fmt = "{valu:.4f}{units}"
+            scale_factor = 0.001
+        else:
+            fmt = "{valu:.1f}{units}"
+            scale_factor = 1.0
+
+        if v:
+            try:
+                bb = f.bbox()
+                self.org_x = bb[0]
+                self.org_y = bb[1]
+                mw = abs(bb[2] - bb[0]) * scale_factor
+                mh = abs(bb[3] - bb[1]) * scale_factor
+                self.org_w = mw
+                self.org_h = mh
+                if mh == 0:
+                    self.objratio = 0
+                else:
+                    self.objratio = mw / mh
+            except (ValueError, AttributeError):
+                self.objratio = 1.0
+                v = False  # has no bounding box...
+
+        self.button_navigate_resize.Enable(v)
+        self.text_width.Enable(v)
+        self.text_height.Enable(v)
+
+        if v:
+            self.text_width.SetValue(
+                fmt.format(units=self.context.root.units_name, valu=mw)
+            )
+            self.text_height.SetValue(
+                fmt.format(units=self.context.root.units_name, valu=mh)
+            )
+        else:
+            self.text_width.SetValue("---")
+            self.text_height.SetValue("---")
+
+    def on_button_navigate_resize(self, event):  # wxGlade: SizePanel.<event_handler>
+        llw = Length(self.text_width.Value, relative_length=self.org_w)
+        llh = Length(self.text_height.Value, relative_length=self.org_w)
+        munits1 = llw.units
+        munits2 = llh.units
+        mval1 = float(llw.value(relative_length=self.org_w))
+        mval2 = float(llh.value(relative_length=self.org_h))
+        # print("Target size: %f %s x %f %s" % (mval1, munits1, mval2, munits2))
+        self.context(
+            "resize %f %f %f%s %f%s"
+            % (self.org_x, self.org_y, mval1, munits1, mval2, munits2)
+        )
+
+    def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
+        if self.btn_lock_ratio.GetValue():
+            ll = Length(self.text_width.Value, relative_length=self.org_w)
+            munits = ll.units
+            mval = float(ll.value(relative_length=self.org_w))
+            print("Length provides for width: %f" % mval)
+            if mval != 0:
+                mval = mval / self.objratio
+            self.text_height.SetValue(
+                "{valu:.4f}{units}".format(units=munits, valu=mval)
+            )
+        event.Skip()
+
+    def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
+        if self.btn_lock_ratio.GetValue():
+            ll = Length(self.text_height.Value, relative_length=self.org_h)
+            munits = ll.units
+            mval = float(ll.value(relative_length=self.org_h))
+            if mval != 0:
+                mval = self.objratio * mval
+            self.text_width.SetValue(
+                "{valu:.4f}{units}".format(units=munits, valu=mval)
+            )
+        event.Skip()
+
+
 class Transform(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Transform.__init__
@@ -796,31 +1020,59 @@ class Transform(wx.Panel):
         self.button_rotate_cw = wx.BitmapButton(
             self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
         )
-        self.text_a = wx.TextCtrl(self, wx.ID_ANY, "1.000000")
-        self.text_c = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_e = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_b = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
-        self.text_d = wx.TextCtrl(self, wx.ID_ANY, "1.000000")
-        self.text_f = wx.TextCtrl(self, wx.ID_ANY, "0.000000")
+        self.text_a = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        )
+        self.text_d = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        )
+        self.text_c = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        )
+        self.text_b = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        )
+        self.text_e = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        )
+        self.text_f = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        )
 
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_scale_down, self.button_scale_down)
-        self.Bind(wx.EVT_BUTTON, self.on_translate_up, self.button_translate_up)
-        self.Bind(wx.EVT_BUTTON, self.on_scale_up, self.button_scale_up)
-        self.Bind(wx.EVT_BUTTON, self.on_translate_left, self.button_translate_left)
-        self.Bind(wx.EVT_BUTTON, self.on_reset, self.button_reset)
-        self.Bind(wx.EVT_BUTTON, self.on_translate_right, self.button_translate_right)
-        self.Bind(wx.EVT_BUTTON, self.on_rotate_ccw, self.button_rotate_ccw)
-        self.Bind(wx.EVT_BUTTON, self.on_translate_down, self.button_translate_down)
-        self.Bind(wx.EVT_BUTTON, self.on_rotate_cw, self.button_rotate_cw)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_a)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_c)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_e)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_b)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_d)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix, self.text_f)
+        self.button_scale_down.Bind(wx.EVT_BUTTON, self.on_scale_down_5)
+        self.button_translate_up.Bind(wx.EVT_BUTTON, self.on_translate_up_1)
+        self.button_scale_up.Bind(wx.EVT_BUTTON, self.on_scale_up_5)
+        self.button_translate_left.Bind(wx.EVT_BUTTON, self.on_translate_left_1)
+        self.button_reset.Bind(wx.EVT_BUTTON, self.on_reset)
+        self.button_rotate_ccw.Bind(wx.EVT_BUTTON, self.on_rotate_ccw_5)
+        self.button_translate_right.Bind(wx.EVT_BUTTON, self.on_translate_right_1)
+        self.button_rotate_cw.Bind(wx.EVT_BUTTON, self.on_rotate_cw_5)
+        self.button_translate_down.Bind(wx.EVT_BUTTON, self.on_translate_down_1)
+        self.text_a.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_b.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_c.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_d.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_e.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_f.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
+        self.text_a.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_b.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_c.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_d.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_e.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_f.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+
+        self.button_translate_up.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_up_10)
+        self.button_translate_down.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_down_10)
+        self.button_translate_left.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_left_10)
+        self.button_translate_right.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_right_10)
+
+        self.button_rotate_ccw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_ccw_90)
+        self.button_rotate_cw.Bind(wx.EVT_RIGHT_DOWN, self.on_rotate_cw_90)
+        self.button_scale_down.Bind(wx.EVT_RIGHT_DOWN, self.on_scale_down_50)
+        self.button_scale_up.Bind(wx.EVT_RIGHT_DOWN, self.on_scale_up_50)
         # end wxGlade
         self.select_ready(False)
 
@@ -836,60 +1088,136 @@ class Transform(wx.Panel):
         self.button_translate_down.SetSize(self.button_translate_down.GetBestSize())
         self.button_rotate_cw.SetSize(self.button_rotate_cw.GetBestSize())
 
-        self.button_scale_down.SetToolTip(_("Scale Down"))
-        self.button_translate_up.SetToolTip(_("Translate Top"))
-        self.button_scale_up.SetToolTip(_("Scale Up"))
-        self.button_translate_left.SetToolTip(_("Translate Left"))
+        self.button_scale_down.SetToolTip(
+            _("Scale Down by 5% / 50% on left / right click")
+        )
+        self.button_translate_up.SetToolTip(
+            _("Translate Up by 1x / 10x Jog-Distance on left / right click")
+        )
+        self.button_scale_up.SetToolTip(_("Scale Up by 5% / 50% on left / right click"))
+        self.button_translate_left.SetToolTip(
+            _("Translate Left by 1x / 10x Jog-Distance on left / right click")
+        )
         self.button_reset.SetToolTip(_("Reset Matrix"))
-        self.button_translate_right.SetToolTip(_("Translate Right"))
-        self.button_rotate_ccw.SetToolTip(_("Rotate Counterclockwise"))
-        self.button_translate_down.SetToolTip(_("Translate Bottom"))
-        self.button_rotate_cw.SetToolTip(_("Rotate Clockwise"))
-        self.text_a.SetMinSize((58, 23))
-        self.text_a.SetToolTip(_("Transform: Scale X"))
-        self.text_c.SetMinSize((58, 23))
-        self.text_c.SetToolTip(_("Transform: Skew Y"))
-        self.text_e.SetMinSize((58, 23))
-        self.text_e.SetToolTip(_("Transform: Translate X"))
-        self.text_b.SetMinSize((58, 23))
-        self.text_b.SetToolTip(_("Transform: Skew X"))
-        self.text_d.SetMinSize((58, 23))
-        self.text_d.SetToolTip(_("Transform: Scale Y"))
-        self.text_f.SetMinSize((58, 23))
-        self.text_f.SetToolTip(_("Transform: Translate Y"))
+        self.button_translate_right.SetToolTip(
+            _("Translate Right by 1x / 10x Jog-Distance on left / right click")
+        )
+        self.button_rotate_ccw.SetToolTip(
+            _("Rotate Counterclockwise by 5° / by 90° on left / right click")
+        )
+        self.button_translate_down.SetToolTip(
+            _("Translate Down by 1x / 10x Jog-Distance on left / right click")
+        )
+        self.button_rotate_cw.SetToolTip(
+            _("Rotate Clockwise by 5° / by 90° on left / right click")
+        )
+        self.text_a.SetMinSize((55, -1))
+        self.text_a.SetToolTip(
+            _(
+                "Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale. "
+                "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+            )
+        )
+        self.text_d.SetMinSize((55, -1))
+        self.text_d.SetToolTip(
+            _(
+                "Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale. "
+                "You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+            )
+        )
+        self.text_c.SetMinSize((55, -1))
+        self.text_c.SetToolTip(
+            _(
+                "Skew X - to skew the element in X-direction by alpha° you need either \n"
+                "- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+                "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+                "In any case this value will then be represented as tan(alpha)"
+            )
+        )
+        self.text_b.SetMinSize((55, -1))
+        self.text_b.SetToolTip(
+            _(
+                "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
+                "- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+                "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+                "In any case this value will then be represented as tan(alpha)"
+            )
+        )
+        self.text_e.SetMinSize((40, -1))
+        self.text_e.SetToolTip(
+            _(
+                "Translate X - moves the element by this amount of mils in the X-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+        )
+        self.text_f.SetMinSize((40, -1))
+        self.text_f.SetToolTip(
+            _(
+                "Translate Y - moves the element by this amount of mils in the Y-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+        )
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: Transform.__do_layout
-        matrix_sizer = wx.BoxSizer(wx.VERTICAL)
-        grid_sizer_2 = wx.FlexGridSizer(5, 3, 0, 0)
-        grid_sizer_2.Add(self.button_scale_down, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_up, 0, 0, 0)
-        grid_sizer_2.Add(self.button_scale_up, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_left, 0, 0, 0)
-        grid_sizer_2.Add(self.button_reset, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_right, 0, 0, 0)
-        grid_sizer_2.Add(self.button_rotate_ccw, 0, 0, 0)
-        grid_sizer_2.Add(self.button_translate_down, 0, 0, 0)
-        grid_sizer_2.Add(self.button_rotate_cw, 0, 0, 0)
-        grid_sizer_2.Add(self.text_a, 0, 0, 0)
-        grid_sizer_2.Add(self.text_c, 0, 0, 0)
-        grid_sizer_2.Add(self.text_e, 0, 0, 0)
-        grid_sizer_2.Add(self.text_b, 0, 0, 0)
-        grid_sizer_2.Add(self.text_d, 0, 0, 0)
-        grid_sizer_2.Add(self.text_f, 0, 0, 0)
-        matrix_sizer.Add(grid_sizer_2, 0, wx.EXPAND, 0)
-        self.SetSizer(matrix_sizer)
-        matrix_sizer.Fit(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        icon_sizer = wx.FlexGridSizer(3, 3, 0, 0)
+        icon_sizer.Add(self.button_scale_down, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_up, 0, 0, 0)
+        icon_sizer.Add(self.button_scale_up, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_left, 0, 0, 0)
+        icon_sizer.Add(self.button_reset, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_right, 0, 0, 0)
+        icon_sizer.Add(self.button_rotate_ccw, 0, 0, 0)
+        icon_sizer.Add(self.button_translate_down, 0, 0, 0)
+        icon_sizer.Add(self.button_rotate_cw, 0, 0, 0)
+
+        matrix_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        col_sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, ""), wx.HORIZONTAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL)
+        col_sizer_1.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL)
+
+        # Add some labels to make textboxes clearer to understand
+        col_sizer_2 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_2.Add(wx.StaticText(self, wx.ID_ANY, _("Scale")), wx.HORIZONTAL)
+        col_sizer_2.Add(self.text_a, 0, wx.EXPAND, 0)  # Scale X
+        col_sizer_2.Add(self.text_d, 0, wx.EXPAND, 0)  # Scale Y
+
+        col_sizer_3 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_3.Add(wx.StaticText(self, wx.ID_ANY, _("Skew")), wx.HORIZONTAL)
+        col_sizer_3.Add(self.text_c, 0, wx.EXPAND, 0)  # Skew X
+        col_sizer_3.Add(self.text_b, 0, wx.EXPAND, 0)  # Skew Y
+
+        col_sizer_4 = wx.BoxSizer(wx.VERTICAL)
+        col_sizer_4.Add(wx.StaticText(self, wx.ID_ANY, _("Translate")), wx.HORIZONTAL)
+        col_sizer_4.Add(self.text_e, 0, wx.EXPAND, 0)  # Translate X
+        col_sizer_4.Add(self.text_f, 0, wx.EXPAND, 0)  # Translate Y
+
+        matrix_sizer.Add(col_sizer_1, 0, wx.EXPAND, 0)  # fixed width
+        matrix_sizer.Add(col_sizer_2, 1, wx.EXPAND, 0)  # grow
+        matrix_sizer.Add(col_sizer_3, 1, wx.EXPAND, 0)  # grow
+        matrix_sizer.Add(col_sizer_4, 1, wx.EXPAND, 0)  # grow
+
+        main_sizer.Add(icon_sizer, 0, wx.EXPAND, 0)
+        main_sizer.Add(matrix_sizer, 0, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
 
     def initialize(self, *args):
         self.context.listen("emphasized", self.on_emphasized_elements_changed)
+        self.context.listen("modified", self.on_modified_element)
         self.update_matrix_text()
 
     def finalize(self, *args):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
+        self.context.unlisten("modified", self.on_modified_element)
+
+    def on_modified_element(self, origin, *args):
+        self.update_matrix_text()
 
     def on_emphasized_elements_changed(self, origin, elements):
         self.select_ready(self.context.elements.has_emphasis())
@@ -906,12 +1234,16 @@ class Transform(wx.Panel):
         self.text_f.Enable(v)
         if v:
             matrix = f.transform
-            self.text_a.SetValue(str(matrix.a))
-            self.text_b.SetValue(str(matrix.b))
-            self.text_c.SetValue(str(matrix.c))
-            self.text_d.SetValue(str(matrix.d))
-            self.text_e.SetValue(str(matrix.e))
-            self.text_f.SetValue(str(matrix.f))
+            # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
+            # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
+            # that should be good enough...
+            self.text_a.SetValue("%.5f" % matrix.a)  # Scale X
+            self.text_b.SetValue("%.5f" % matrix.b)  # Skew Y
+            self.text_c.SetValue("%.5f" % matrix.c)  # Skew X
+            self.text_d.SetValue("%.5f" % matrix.d)  # Scale Y
+            # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
+            self.text_e.SetValue("%.1f" % matrix.e)  # Translate X
+            self.text_f.SetValue("%.1f" % matrix.f)  # Translate Y
 
     def select_ready(self, v):
         """
@@ -933,104 +1265,148 @@ class Transform(wx.Panel):
         self.context.signal("refresh_scene")
         self.update_matrix_text()
 
-    def on_scale_down(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def scaleit(self, scale):
+        self.context("scale %f %f \n" % (scale, scale))
+        self.matrix_updated()
+
+    def rotateit(self, angle):
+        self.context("rotate %fdeg \n" % (angle))
+        self.matrix_updated()
+
+    def translateit(self, dx, dy):
+        self.context("translate %f %f\n" % (dx, dy))
+        self.matrix_updated()
+
+    def on_scale_down_50(self, event=None):  # wxGlade: Navigation.<event_handler>
+        scale = 2.0 / 3.0  # 66.6% - inverse of 150%
+        self.scaleit(scale)
+
+    def on_scale_up_50(self, event=None):  # wxGlade: Navigation.<event_handler>
+        scale = 3.0 / 2.0  # 150%
+        self.scaleit(scale)
+
+    def on_scale_down_5(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 19.0 / 20.0
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "scale %f %f %f %f\n"
-            % (
-                scale,
-                scale,
-                x,
-                y,
-            )
-        )
-        self.matrix_updated()
+        self.scaleit(scale)
 
-    def on_scale_up(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_scale_up_5(self, event=None):  # wxGlade: Navigation.<event_handler>
         scale = 20.0 / 19.0
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context(
-            "scale %f %f %f %f\n"
-            % (
-                scale,
-                scale,
-                x,
-                y,
-            )
-        )
-        self.matrix_updated()
+        self.scaleit(scale)
 
-    def on_translate_up(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_translate_up_1(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = -self.context.navigate_jog
-        self.context("translate %f %f\n" % (dx, dy))
-        self.matrix_updated()
+        self.translateit(dx, dy)
 
-    def on_translate_left(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_translate_up_10(self, event=None):  # wxGlade: Navigation.<event_handler>
+        dx = 0
+        dy = -self.context.navigate_jog * 10
+        self.translateit(dx, dy)
+
+    def on_translate_left_1(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = -self.context.navigate_jog
         dy = 0
-        self.context("translate %f %f\n" % (dx, dy))
-        self.matrix_updated()
+        self.translateit(dx, dy)
 
-    def on_translate_right(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_translate_left_10(self, event=None):  # wxGlade: Navigation.<event_handler>
+        dx = -self.context.navigate_jog * 10
+        dy = 0
+        self.translateit(dx, dy)
+
+    def on_translate_right_1(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.navigate_jog
         dy = 0
-        self.context("translate %f %f\n" % (dx, dy))
-        self.matrix_updated()
+        self.translateit(dx, dy)
 
-    def on_translate_down(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def on_translate_right_10(self, event=None):  # wxGlade: Navigation.<event_handler>
+        dx = self.context.navigate_jog * 10
+        dy = 0
+        self.translateit(dx, dy)
+
+    def on_translate_down_1(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.navigate_jog
-        self.context("translate %f %f\n" % (dx, dy))
-        self.matrix_updated()
+        self.translateit(dx, dy)
+
+    def on_translate_down_10(self, event=None):  # wxGlade: Navigation.<event_handler>
+        dx = 0
+        dy = self.context.navigate_jog * 10
+        self.translateit(dx, dy)
 
     def on_reset(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context("reset\n")
         self.matrix_updated()
 
-    def on_rotate_ccw(self, event=None):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context("rotate %fdeg %f %f\n" % (-5, x, y))
-        self.matrix_updated()
+    def on_rotate_ccw_5(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = -5.0
+        self.rotateit(angle)
 
-    def on_rotate_cw(self, event=None):  # wxGlade: Navigation.<event_handler>
-        spooler, input_driver, output = self.context.registered[
-            "device/%s" % self.context.root.active
-        ]
-        x = input_driver.current_x if input_driver is not None else 0
-        y = input_driver.current_y if input_driver is not None else 0
-        self.context("rotate %fdeg %f %f\n" % (5, x, y))
-        self.matrix_updated()
+    def on_rotate_cw_5(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = 5.0
+        self.rotateit(angle)
+
+    def on_rotate_ccw_90(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = -90.0
+        self.rotateit(angle)
+
+    def on_rotate_cw_90(self, event=None):  # wxGlade: Navigation.<event_handler>
+        angle = 90.0
+        self.rotateit(angle)
+
+    @staticmethod
+    def skewed_value(stxt):
+        return float(
+            Angle.parse(stxt).as_radians
+        )  # Temp fix until svgelements fix is merged
+        # return Angle.parse(stxt).as_radians
+
+    @staticmethod
+    def scaled_value(stxt):
+        if stxt.endswith("%"):
+            valu = float(stxt[:-1]) / 100.0
+        else:
+            valu = float(stxt)
+        return valu
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
+            event.Skip()
+            sc_x = self.scaled_value(self.text_a.GetValue())
+            sk_x = self.skewed_value(self.text_c.GetValue())
+            sc_y = self.scaled_value(self.text_d.GetValue())
+            sk_y = self.skewed_value(self.text_b.GetValue())
+            tl_x = float(self.text_e.GetValue())
+            tl_y = float(self.text_f.GetValue())
+            f = self.context.elements.first_element(emphasized=True)
+            matrix = f.transform
+            if (
+                sc_x == matrix.a
+                and sk_y == matrix.b
+                and sk_x == matrix.c
+                and sc_y == matrix.d
+                and tl_x == matrix.e
+                and tl_y == matrix.f
+            ):
+                return
+            # SVG defines the transformation Matrix as  - Matrix parameters are
+            #  Scale X  - Skew X  - Translate X            1 - 3 - 5
+            #  Skew Y   - Scale Y - Translate Y            2 - 4 - 6
             self.context(
                 "matrix %f %f %f %f %s %s\n"
                 % (
-                    float(self.text_a.GetValue()),
-                    float(self.text_b.GetValue()),
-                    float(self.text_c.GetValue()),
-                    float(self.text_d.GetValue()),
-                    self.text_e.GetValue(),
-                    self.text_f.GetValue(),
+                    sc_x,  # Scale X
+                    sk_y,  # Skew Y
+                    sk_x,  # Skew X
+                    sc_y,  # Scale Y
+                    tl_x,  # Translate X
+                    tl_y,  # Translate Y
                 )
             )
+            self.context.signal("refresh_scene")
         except ValueError:
-            self.update_matrix_text()
-        self.context.signal("refresh_scene")
+            pass
+
+        self.update_matrix_text()
 
 
 class JogDistancePanel(wx.Panel):
@@ -1040,15 +1416,22 @@ class JogDistancePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.spin_jog_mils = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "100.0", min=0.0, max=10000.0
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="100.0",
+            min=0.0,
+            max=10000.0,
         )
         self.spin_jog_inch = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "0.394", min=0.0, max=10.0
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.394", min=0.0, max=10.0
         )
         self.spin_jog_mm = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "10.0", min=0.0, max=254.0
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="10.0", min=0.0, max=254.0
         )
-        self.spin_jog_cm = wx.SpinCtrlDouble(self, wx.ID_ANY, "1.0", min=0.0, max=25.4)
+        self.spin_jog_cm = wx.SpinCtrlDouble(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.0", min=0.0, max=25.4
+        )
 
         # begin wxGlade: JogDistancePanel.__set_properties
         self.spin_jog_mils.SetMinSize((80, 23))
@@ -1161,6 +1544,9 @@ class NavigationPanel(wx.Panel):
         move_panel = MovePanel(self, wx.ID_ANY, context=self.context)
         pulse_and_move_sizer.Add(move_panel, 0, wx.EXPAND, 0)
 
+        size_panel = SizePanel(self, wx.ID_ANY, context=self.context)
+        pulse_and_move_sizer.Add(size_panel, 0, wx.EXPAND, 0)
+
         main_sizer.Add(pulse_and_move_sizer, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
@@ -1171,6 +1557,7 @@ class NavigationPanel(wx.Panel):
             transformpanel,
             short_pulse,
             move_panel,
+            size_panel,
         ]
         # end wxGlade
 
@@ -1193,7 +1580,7 @@ class Navigation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(598, 429, *args, **kwds)
 
-        self.control = NavigationPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
@@ -1202,7 +1589,7 @@ class Navigation(MWindow):
         self.SetTitle(_("Navigation"))
 
     def window_open(self):
-        self.control.initialize()
+        self.panel.initialize()
 
     def window_close(self):
-        self.control.finalize()
+        self.panel.finalize()
