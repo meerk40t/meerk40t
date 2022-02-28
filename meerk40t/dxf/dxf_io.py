@@ -69,7 +69,7 @@ class DxfLoader:
 
     @staticmethod
     def load(kernel, elements_modifier, pathname, **kwargs):
-        """ "
+        """
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
         Dxf data has an origin point located in the lower left corner. +y -> top
@@ -100,7 +100,7 @@ class DxfLoader:
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
-                if w > viewport.width or h > viewport.height:
+                if w > viewport.width_as_nm or h > viewport.height_as_nm:
                     # Cannot fit to bed. Scale.
                     bb = Viewbox(
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
