@@ -1,6 +1,7 @@
 import socket
 
-from .kernel import STATE_TERMINATE, Module
+from meerk40t.kernel.module import Module
+from meerk40t.kernel.states import STATE_TERMINATE
 
 
 def plugin(kernel, lifecycle=None):

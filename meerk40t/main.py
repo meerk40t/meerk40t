@@ -13,8 +13,8 @@ import os.path
 import platform
 import sys
 
-from .core.exceptions import Mk40tImportAbort
-from .kernel import Kernel
+from meerk40t.core.exceptions import Mk40tImportAbort
+from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
 APPLICATION_VERSION = "0.8.0001"
