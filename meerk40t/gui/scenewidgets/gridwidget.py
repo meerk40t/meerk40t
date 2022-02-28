@@ -50,8 +50,8 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         context = self.scene.context
-        width_in_nm = float(context.device.width_as_nm)
-        height_in_nm = float(context.device.height_as_nm)
+        units_width = float(context.device.unit_width)
+        units_height = float(context.device.unit_height)
         step = context.device.length("10mm", as_float=True)
         starts = []
         ends = []
@@ -59,14 +59,14 @@ class GridWidget(Widget):
             self.grid = None
             return starts, ends
         x = 0.0
-        while x < width_in_nm:
+        while x < units_width:
             starts.append((x, 0.))
-            ends.append((x, height_in_nm))
+            ends.append((x, units_height))
             x += step
         y = 0.0
-        while y < height_in_nm:
+        while y < units_height:
             starts.append((0., y))
-            ends.append((width_in_nm, y))
+            ends.append((units_width, y))
             y += step
         self.grid = starts, ends
 
@@ -76,17 +76,17 @@ class GridWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
-            width_in_nm = context.device.width_as_nm
-            height_in_nm = context.device.height_as_nm
+            unit_width = context.device.unit_width
+            unit_height = context.device.unit_height
             background = self.background
             if background is None:
                 gc.SetBrush(wx.WHITE_BRUSH)
-                gc.DrawRectangle(0, 0, width_in_nm, height_in_nm)
+                gc.DrawRectangle(0, 0, unit_width, unit_height)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, width_in_nm, height_in_nm)
+                gc.DrawRectangle(0, 0, unit_width, unit_height)
             else:
-                gc.DrawBitmap(background, 0, 0, width_in_nm, height_in_nm)
+                gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:

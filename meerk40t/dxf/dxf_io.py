@@ -86,7 +86,7 @@ class DxfLoader:
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, kernel.device.height_as_nm
+                elements, dxf, entity, scale, kernel.device.unit_height
             )
 
         kernel.setting(bool, "dxf_center", True)
@@ -96,15 +96,15 @@ class DxfLoader:
             bbox = g.bbox()
             if bbox is not None:
                 viewport = kernel.device
-                bw = viewport.width_as_nm
-                bh = viewport.height_as_nm
+                bw = viewport.unit_width
+                bh = viewport.unit_height
                 bx = 0
                 by = 0
                 x = bbox[0]
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
-                if w > viewport.width_as_nm or h > viewport.height_as_nm:
+                if w > viewport.unit_width or h > viewport.unit_height:
                     # Cannot fit to bed. Scale.
                     bb = Viewbox(
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"

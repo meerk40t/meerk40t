@@ -30,8 +30,8 @@ class RelocateTool(ToolWidget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
-            bed_width = self.scene.context.device.width_as_nm
-            bed_height = self.scene.context.device.height_as_nm
+            bed_width = self.scene.context.device.unit_width
+            bed_height = self.scene.context.device.unit_height
             x = space_pos[0]
             y = space_pos[1]
             if x > bed_width:
