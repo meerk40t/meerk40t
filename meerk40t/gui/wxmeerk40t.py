@@ -925,7 +925,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix) :].strip("\n")
 
-    if git and branch and branch != "main":
+    if git and branch and branch not in ("main", "tatarize-services"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
             """It appears that you are running Meerk40t from source managed by Git,
