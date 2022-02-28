@@ -252,6 +252,10 @@ class ViewPort:
             return Length(value).to_px(
                 ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
             )
+        elif new_units == "mil":
+            return Length(value).to_inch(
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+            ) / 1000.0
 
     def contains(self, x, y):
         x = self.length(x, 0)
