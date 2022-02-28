@@ -96,6 +96,10 @@ class DxfLoader:
             bbox = g.bbox()
             if bbox is not None:
                 viewport = kernel.device
+                bw = viewport.width_as_nm
+                bh = viewport.height_as_nm
+                bx = 0
+                by = 0
                 x = bbox[0]
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
@@ -105,7 +109,7 @@ class DxfLoader:
                     bb = Viewbox(
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
                     )
-                    matrix = bb.transform(viewport)
+                    matrix = bb.transform(Viewbox(bx, by, bw, bh))
                     for e in elements:
                         e *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:
