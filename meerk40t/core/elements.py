@@ -3245,6 +3245,7 @@ class Elemental(Modifier):
                     raise SyntaxError("x: " + _("This is not a valid length"))
             if y is None:
                 y = Length("100%")
+            else:
                 if not y.is_valid_length:
                     raise SyntaxError("y: " + _("This is not a valid length"))
             try:
@@ -4152,7 +4153,7 @@ class Elemental(Modifier):
                         raise SyntaxError("y_pos: " + _("This is not a valid length"))
                 if not width is None:
                     if not width.is_valid_length:
-                        raise SyntaxError("width: " + _("This is not a valid length"))python tranl
+                        raise SyntaxError("width: " + _("This is not a valid length"))
                 if not height is None:
                     if not height.is_valid_length:
                         raise SyntaxError("height: " + _("This is not a valid length"))
