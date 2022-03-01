@@ -1224,7 +1224,7 @@ class MeerK40t(MWindow):
         self.window_menu.executejob = self.window_menu.Append(
             ID_MENU_JOB,
             _("E&xecute Job"),
-            _("Set execute options and step through the burn preparation")
+            _("Set execute options and burn the current project")
         )
         self.window_menu.simulate = self.window_menu.Append(
             ID_MENU_SIMULATE,
@@ -1234,7 +1234,7 @@ class MeerK40t(MWindow):
         self.window_menu.rasterwizard = self.window_menu.Append(
             ID_MENU_RASTER_WIZARD,
             _("&RasterWizard"),
-            _("Prepare the selected image for burning by dithering to a smaller number of B/W pixels")
+            _("Prepare the selected image by dithering to a smaller number of B/W pixels")
         )
         self.window_menu.notes = self.window_menu.Append(
             ID_MENU_NOTES,
@@ -1273,7 +1273,7 @@ class MeerK40t(MWindow):
         self.window_menu.devices = self.window_menu.Append(
             ID_MENU_DEVICE_MANAGER,
             _("&Devices"),
-            _("Show/Hide the Devices window")
+            _("Show/Hide the Devices list")
         )
         self.window_menu.config = self.window_menu.Append(
             ID_MENU_CONFIG,
@@ -2107,10 +2107,10 @@ class MeerK40t(MWindow):
         self.clear_project()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.context("dialog_load\n")
+        self.context(".dialog_load\n")
 
     def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.context("dialog_import\n")
+        self.context(".dialog_import\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -2119,10 +2119,10 @@ class MeerK40t(MWindow):
         self.context("pause\n")
 
     def on_click_save(self, event):
-        self.context("dialog_save\n")
+        self.context(".dialog_save\n")
 
     def on_click_save_as(self, event=None):
-        self.context("dialog_save_as\n")
+        self.context(".dialog_save_as\n")
 
     def on_click_close(self, event=None):
         try:
