@@ -1,8 +1,7 @@
 wheel
 Pillow
 pyusb
+pyserial
 wxPython
-ezdxf
+ezdxf>=0.14
 opencv-python-headless
-pytest
-flake8

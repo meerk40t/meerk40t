@@ -1,3 +1,4 @@
+wheel
 Pillow
 pyusb
 pyserial
