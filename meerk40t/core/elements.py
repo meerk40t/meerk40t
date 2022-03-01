@@ -2,6 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
+from math import sin, cos, pi
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -3184,9 +3185,10 @@ class Elemental(Modifier):
         @context.console_argument("r", type=int, help=_("Number of rows"))
         @context.console_argument("x", type=Length, help=_("x distance"))
         @context.console_argument("y", type=Length, help=_("y distance"))
+        @context.console_argument("origin", type=int, help=_("Point of origin (1-9)"))
         @context.console_command(
             "grid",
-            help=_("grid <columns> <rows> <x_distance> <y_distance>"),
+            help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3198,6 +3200,7 @@ class Elemental(Modifier):
             r: int,
             x: Length,
             y: Length,
+            origin: int,
             data=None,
             **kwargs,
         ):
@@ -3210,8 +3213,13 @@ class Elemental(Modifier):
                 raise SyntaxError
             if x is None:
                 x = Length("100%")
+#            else:
+#               if not x.is_valid_length:
+#                    raise SyntaxError("x: " + _("This is not a valid length"))
             if y is None:
                 y = Length("100%")
+#                if not y.is_valid_length:
+#                    raise SyntaxError("x: " + _("This is not a valid length"))
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
@@ -3222,12 +3230,32 @@ class Elemental(Modifier):
             y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
-            y_pos = 0
+            if origin is None:
+                origin = 1
+            if origin < 1:
+                origin = 1
+            if origin > 9:
+                origin = 9
+            # origin defines where the original elements will be placed in the to created grid
+            #  1 2 3                  i.e. 1 is the 'old' way create copies to the right and to the bottom,
+            #  4 5 6                  9 is creating copies to the left and upwards
+            #  7 8 9                  NB: if use a center position then eerything works fine for odd c and r
+            #                         for even values we are taking a precedence to put the original just left
+            #                         respectively just above the center
+            pos_idx_x = (0, max(0, c // 2 + c % 2 - 1), c - 1)
+            pos_idx_y = (0, max(0, r // 2 + r % 2 - 1), r - 1)
+
             data_out = list(data)
+            # Tell whether original is at the left / middle / or right
+            org_x = (origin - 1) % 3   # 1, 4, 7 = 0 | 2, 5, 8 = 1 | 3, 6, 9 = 2
+            org_y = (origin - 1) // 3  # 1, 2, 3 = 0 | 4, 5, 6 = 1 | 7, 8, 9 = 2
+            start_x = -1 * x * (pos_idx_x[org_x])
+            start_y = -1 * y * (pos_idx_y[org_y])
+            y_pos = start_y
             for j in range(r):
-                x_pos = 0
+                x_pos = start_x
                 for k in range(c):
-                    if j != 0 or k != 0:
+                    if j != pos_idx_y[org_y] or k != pos_idx_x[org_x]:
                         add_elem = list(map(copy, data))
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
@@ -3235,7 +3263,97 @@ class Elemental(Modifier):
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
+
+            self.context.signal("refresh_scene")
             return "elements", data_out
+
+        @context.console_argument("copies", type=int, help=_("Number of copies"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @context.console_argument("rotate", type=int, help=_("Rotate copies (1=yes)"))
+        @context.console_command(
+            "circ_copy",
+            help=_("circ_copy <copies> <radius> <startangle> <endangle> <rotate>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_circularcopies(
+            command,
+            channel,
+            _,
+            copies: int,
+            radius=None,
+            startangle=None,
+            endangle=None,
+            rotate=None,
+            data=None,
+            **kwargs,
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0 and self._emphasized_bounds is None:
+                channel(_("No item selected."))
+                return
+
+            if copies is None:
+                raise SyntaxError
+            if copies <= 0:
+                copies = 1
+            if radius is None:
+                radius = Length(0)
+            else:
+                pass
+#                if not radius.is_valid_length:
+#                   raise SyntaxError("radius: " + _("This is not a valid length"))
+            if startangle is None:
+                startangle = Angle.parse("0deg")
+            if endangle is None:
+                endangle = Angle.parse("360deg")
+            if rotate is None:
+                rotate = 0
+
+            # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
+
+            try:
+                bounds = self._emphasized_bounds
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except Exception:
+                raise SyntaxError
+            radius = radius.value(ppi=1000, relative_length=width)
+            if isinstance(radius, Length):
+                raise SyntaxError
+
+            data_out = list(data)
+            # Notabene: we are not following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
+            # the perceive angle travel is CCW (which is counter-intuitive)
+            segment_len = (endangle.as_radians - startangle.as_radians) / copies
+            currentangle = startangle.as_radians
+            bounds = self._emphasized_bounds
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            for cc in range(copies):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate != 0:
+                        x_pos = radius
+                        y_pos = 0
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= "rotate(%frad, %f, %f)" % (currentangle, center_x, center_y)
+                    else:
+                        x_pos = radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+
+                self.add_elems(add_elem)
+                data_out.extend(add_elem)
+                currentangle += segment_len
+
+            self.context.signal("refresh_scene")
+            return "elements", data_out
+
 
         @context.console_option("step", "s", default=2.0, type=float)
         @context.console_command(
