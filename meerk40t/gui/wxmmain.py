@@ -114,6 +114,7 @@ ID_FACEBOOK = wx.NewId()
 ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
+ID_SPONSOR = wx.NewId()
 
 
 class MeerK40t(MWindow):
@@ -1212,6 +1213,8 @@ class MeerK40t(MWindow):
         self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
         self.help_menu.Append(ID_IRC, _("&IRC"), "")
         self.help_menu.AppendSeparator()
+        self.help_menu.Append(ID_SPONSOR, _("&Sponsor Meerk40t"), _("Donate money to help cover essential costs"))
+        self.help_menu.AppendSeparator()
         self.help_menu.Append(wx.ID_ABOUT, _("&About MeerK40t"), "")
         self.main_menubar.Append(self.help_menu, _("Help"))
 
@@ -1473,6 +1476,11 @@ class MeerK40t(MWindow):
             wx.EVT_MENU,
             lambda e: self.context("webhelp irc\n"),
             id=ID_IRC,
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp sponsor\n"),
+            id=ID_SPONSOR,
         )
         self.Bind(
             wx.EVT_MENU,

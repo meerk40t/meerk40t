@@ -7,6 +7,7 @@ FACEBOOK_MEERK40T = "https://www.facebook.com/groups/716000085655097"
 DISCORD_MEERK40T = "https://discord.gg/qvASRhFZGB"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
 IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
+GITHUB_SPONSOR = "https://github.com/sponsors/tatarize"
 
 
 def plugin(kernel, lifecycle):
@@ -54,3 +55,4 @@ def plugin(kernel, lifecycle):
         kernel.register("webhelp/discord", DISCORD_MEERK40T)
         kernel.register("webhelp/makers", MAKERS_FORUM_MEERK40T)
         kernel.register("webhelp/irc", IRC_CLIENT)
+        kernel.register("webhelp/sponsor", GITHUB_SPONSOR)
