@@ -5553,8 +5553,8 @@ class Elemental(Service):
                     except OSError:
                         return False
                     if results:
-                        self.signal("scene focus -4% -4% 104% 104%\n")
                         self.signal("tree_changed\n")
+                        self("scene focus -4% -4% 104% 104%\n")
                         return True
         return False
 
