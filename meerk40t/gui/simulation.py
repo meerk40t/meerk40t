@@ -3,8 +3,8 @@ import math
 import wx
 
 from ..core.cutcode import CutCode, LineCut
-from meerk40t.kernel.jobs import Job
-from meerk40t.kernel.kernel import signal_listener
+from meerk40t.kernel import Job
+from meerk40t.kernel import signal_listener
 from ..svgelements import Matrix
 from .icons import (
     icons8_laser_beam_hazard2_50,

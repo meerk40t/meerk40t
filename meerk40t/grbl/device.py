@@ -33,7 +33,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel.service import Service
+from meerk40t.kernel import Service
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

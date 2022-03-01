@@ -3,7 +3,7 @@ import math
 import wx
 
 from ..core.node.laserop import CutOpNode, EngraveOpNode, ImageOpNode, RasterOpNode
-from meerk40t.kernel.kernel import signal_listener
+from meerk40t.kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow

@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.kernel.module import Module
+from meerk40t.kernel import Module
 
 _ = wx.GetTranslation
 

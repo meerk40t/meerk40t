@@ -15,7 +15,7 @@ except ImportError as e:
 
     raise Mk40tImportAbort("numpy")
 
-from meerk40t.kernel.service import Service
+from meerk40t.kernel import Service
 
 
 def plugin(kernel, lifecycle=None):

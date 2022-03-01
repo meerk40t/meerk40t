@@ -4,7 +4,7 @@ from meerk40t.gui.icons import (
     icons8_emergency_stop_button_50,
     icons8_pause_50,
 )
-from meerk40t.kernel.kernel import signal_listener
+from meerk40t.kernel import signal_listener
 from meerk40t.moshi.gui.moshicontrollergui import MoshiControllerGui
 from meerk40t.moshi.gui.moshidrivergui import MoshiDriverGui
 

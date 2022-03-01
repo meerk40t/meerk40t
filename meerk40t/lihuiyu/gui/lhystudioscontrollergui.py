@@ -14,8 +14,8 @@ from meerk40t.gui.icons import (
     icons8_play_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel.kernel import signal_listener
-from meerk40t.kernel.states import *
+from meerk40t.kernel import signal_listener
+from meerk40t.kernel import *
 
 _ = wx.GetTranslation
 

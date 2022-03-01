@@ -18,8 +18,8 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.kernel.kernel import signal_listener
-from meerk40t.kernel.jobs import Job
+from meerk40t.kernel import signal_listener
+from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation

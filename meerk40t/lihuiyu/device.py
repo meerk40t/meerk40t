@@ -27,9 +27,9 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel.states import *
-from meerk40t.kernel.module import Module
-from meerk40t.kernel.service import Service
+from meerk40t.kernel import *
+from meerk40t.kernel import Module
+from meerk40t.kernel import Service
 from ..svgelements import Length
 from .laserspeed import LaserSpeed
 

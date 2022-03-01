@@ -4,8 +4,8 @@ import wx
 import wx.ribbon as RB
 from wx import aui
 
-from meerk40t.kernel.kernel import lookup_listener
-from meerk40t.kernel.jobs import Job
+from meerk40t.kernel import lookup_listener
+from meerk40t.kernel import Job
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
 

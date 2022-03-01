@@ -17,8 +17,8 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel.states import *
-from meerk40t.kernel.service import Service
+from meerk40t.kernel import *
+from meerk40t.kernel import Service
 from .moshiblob import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,

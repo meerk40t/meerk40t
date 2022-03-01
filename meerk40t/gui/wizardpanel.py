@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.kernel.context import Context
+from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
