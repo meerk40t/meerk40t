@@ -5,6 +5,19 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+    Service,
+)
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import CutCode, RawCut
@@ -27,9 +40,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel import *
-from meerk40t.kernel import Module
-from meerk40t.kernel import Service
 from ..svgelements import Length
 from .laserspeed import LaserSpeed
 

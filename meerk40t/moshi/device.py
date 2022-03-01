@@ -1,6 +1,19 @@
 import threading
 import time
 
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Service,
+)
+
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, ViewPort
@@ -17,8 +30,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel import *
-from meerk40t.kernel import Service
 from .moshiblob import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,
@@ -1191,7 +1202,6 @@ class MoshiController:
                 # No packet could be sent.
                 if self.state not in (
                     STATE_PAUSE,
-                    STATE_BUSY,
                     STATE_BUSY,
                     STATE_TERMINATE,
                 ):
