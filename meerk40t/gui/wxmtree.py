@@ -23,7 +23,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor, LaserRender
+from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, LaserRender, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
 

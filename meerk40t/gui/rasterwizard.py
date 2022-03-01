@@ -9,6 +9,8 @@ from math import ceil
 
 import wx
 
+from meerk40t.kernel import signal_listener
+
 from ..core.units import (
     UNITS_CM,
     UNITS_INCH,
@@ -19,7 +21,6 @@ from ..core.units import (
     UNITS_PERCENT,
 )
 from ..image.imagetools import RasterScripts
-from meerk40t.kernel import signal_listener
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender
@@ -71,7 +72,6 @@ class RasterWizardPanel(wx.Panel):
         #     style=wx.EXPAND | wx.WANTS_CHARS,
         # )
         # self.widget_scene = self.panel_preview.scene
-
 
         list_choices = []
         if self.ops is not None:

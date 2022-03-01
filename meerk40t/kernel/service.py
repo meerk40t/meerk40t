@@ -1,7 +1,12 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from .functions import console_command, console_command_remove, console_argument, console_option
 from .context import Context
+from .functions import (
+    console_argument,
+    console_command,
+    console_command_remove,
+    console_option,
+)
 from .lifecycles import *
 
 
@@ -91,7 +96,6 @@ class Service(Context):
         Uses current context to be passed to the console_option being registered.
         """
         return console_option(*args, **kwargs)
-
 
     def console_command(self, *args, **kwargs) -> Callable:
         """

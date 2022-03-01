@@ -1,4 +1,3 @@
-from datetime import datetime
 import functools
 import inspect
 import os
@@ -6,19 +5,26 @@ import platform
 import re
 import threading
 import time
+from datetime import datetime
 from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from .exceptions import CommandMatchRejected
-from .lifecycles import *
-from .states import *
 from .channel import Channel
 from .context import Context
-from .functions import get_safe_path, console_argument, console_option, console_command, console_command_remove
-from .jobs import Job, ConsoleFunction
+from .exceptions import CommandMatchRejected
+from .functions import (
+    console_argument,
+    console_command,
+    console_command_remove,
+    console_option,
+    get_safe_path,
+)
+from .jobs import ConsoleFunction, Job
+from .lifecycles import *
 from .module import Module
 from .service import Service
 from .settings import Settings
+from .states import *
 
 KERNEL_VERSION = "0.0.1"
 
@@ -2524,7 +2530,9 @@ class Kernel(Settings):
             self.activate_service_index(domain, index)
 
         @self.console_argument("name", help="Name of service to start")
-        @self.console_option("path", "p", help="optional forced path initialize location")
+        @self.console_option(
+            "path", "p", help="optional forced path initialize location"
+        )
         @self.console_option(
             "init",
             "i",
@@ -2922,7 +2930,6 @@ class Kernel(Settings):
         """
         return console_option(*args, **kwargs)
 
-
     def console_command(self, *args, **kwargs) -> Callable:
         """
         Delegate to Kernel
@@ -2938,7 +2945,6 @@ class Kernel(Settings):
         Uses current context to be passed to the console_command being removed.
         """
         return console_command_remove(self, *args, **kwargs)
-
 
 
 def lookup_listener(param):
@@ -2958,6 +2964,7 @@ def lookup_listener(param):
         return func
 
     return decor
+
 
 def signal_listener(param):
     """

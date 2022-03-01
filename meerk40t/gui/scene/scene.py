@@ -24,8 +24,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.kernel import Job
-from meerk40t.kernel import Module
+from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.

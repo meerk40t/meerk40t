@@ -39,7 +39,12 @@ class GuideWidget(Widget):
         # tweak the scaled points into being useful.
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
         points = scaled_conversion * float("{:.1g}".format(points / scaled_conversion))
-        sx, sy = self.scene.convert_scene_to_window([p.device.unit_width * p.device.origin_x, p.device.unit_height * p.device.origin_y])
+        sx, sy = self.scene.convert_scene_to_window(
+            [
+                p.device.unit_width * p.device.origin_x,
+                p.device.unit_height * p.device.origin_y,
+            ]
+        )
         if points == 0:
             return
         offset_x = float(sx) % points

@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, U
 
 from .states import *
 
+
 class Job:
     """
     Generic job for the scheduler.

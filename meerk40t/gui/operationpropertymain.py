@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.kernel import signal_listener
+
 from ..svgelements import Color
 from .laserrender import swizzlecolor
 

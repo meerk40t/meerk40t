@@ -18,8 +18,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.kernel import signal_listener
-from meerk40t.kernel import Job
+from meerk40t.kernel import Job, signal_listener
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -563,10 +562,7 @@ class CamPerspectiveWidget(Widget):
         return HITCHAIN_HIT
 
     def process_draw(self, gc):
-        if (
-            not self.cam.camera.correction_perspective
-            and not self.cam.camera.aspect
-        ):
+        if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
             gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.StrokeLine(

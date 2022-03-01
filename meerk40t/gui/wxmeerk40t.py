@@ -3,11 +3,11 @@ import platform
 import sys
 import traceback
 from datetime import datetime
-from meerk40t.kernel import get_safe_path
 
 from wx import aui
 
 from meerk40t.gui.wxmscene import SceneWindow
+from meerk40t.kernel import get_safe_path
 
 from .devicepanel import DeviceManager
 from .icons import (
@@ -33,9 +33,8 @@ except ImportError as e:
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
+from meerk40t.kernel import ConsoleFunction, Module
 
-from meerk40t.kernel import ConsoleFunction
-from meerk40t.kernel import Module
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
@@ -886,9 +885,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     print("\n")
     print(error_log)
     try:
-        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            date=datetime.now()
-        )
+        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
     except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 

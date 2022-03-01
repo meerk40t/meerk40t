@@ -60,12 +60,12 @@ class GridWidget(Widget):
             return starts, ends
         x = 0.0
         while x < units_width:
-            starts.append((x, 0.))
+            starts.append((x, 0.0))
             ends.append((x, units_height))
             x += step
         y = 0.0
         while y < units_height:
-            starts.append((0., y))
+            starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
         self.grid = starts, ends

@@ -1,5 +1,4 @@
-from meerk40t.kernel import Service
-from meerk40t.kernel import CommandMatchRejected
+from meerk40t.kernel import CommandMatchRejected, Service
 
 # The following dicts consist of a tuple of values, the first of
 # which is the current default, with any prior defaults following.
@@ -73,7 +72,10 @@ DEFAULT_KEYMAP = {
         "tree selected delete",
         "element delete",
     ),
-    "escape": ("", "pause",),
+    "escape": (
+        "",
+        "pause",
+    ),
     "home": ("home",),
     "numpad_down": ("+translate_down",),
     "numpad_up": ("+translate_up",),
@@ -84,14 +86,38 @@ DEFAULT_KEYMAP = {
     "numpad_add": ("+rotate_cw",),
     "numpad_subtract": ("+rotate_ccw",),
     "pause": ("pause",),
-    "alt+c": ("", "cut",),
-    "alt+e": ("", "engrave",),
-    "alt+f": ("", "dialog_fill",),
-    "alt+h": ("", "dialog_path",),
-    "alt+p": ("", "dialog_flip",),
-    "alt+r": ("", "raster",),
-    "alt+s": ("", "dialog_stroke",),
-    "alt+t": ("", "dialog_transform",),
+    "alt+c": (
+        "",
+        "cut",
+    ),
+    "alt+e": (
+        "",
+        "engrave",
+    ),
+    "alt+f": (
+        "",
+        "dialog_fill",
+    ),
+    "alt+h": (
+        "",
+        "dialog_path",
+    ),
+    "alt+p": (
+        "",
+        "dialog_flip",
+    ),
+    "alt+r": (
+        "",
+        "raster",
+    ),
+    "alt+s": (
+        "",
+        "dialog_stroke",
+    ),
+    "alt+t": (
+        "",
+        "dialog_transform",
+    ),
     "alt+f3": (
         "",
         "rotaryscale",
@@ -154,8 +180,11 @@ DEFAULT_KEYMAP = {
     "ctrl+shift+h": ("scale -1 1",),
     "ctrl+shift+o": ("outline 1mm",),
     "ctrl+shift+v": ("scale 1 -1",),
-    "ctrl+alt+shift+escape": ("", "reset_bind_alias",),
-    "ctrl+alt+shift+home": ("bind default;alias default", ),
+    "ctrl+alt+shift+escape": (
+        "",
+        "reset_bind_alias",
+    ),
+    "ctrl+alt+shift+home": ("bind default;alias default",),
 }
 DEFAULT_ALIAS = {
     "+scale_up": ("loop scale 1.02",),
@@ -219,6 +248,7 @@ class Bind(Service):
             """
             if len(args) == 0:
                 channel(_("Binds:"))
+
                 def keymap_index(key):
                     mods, key = key.rsplit("+", 1) if "+" in key else ("", key)
                     return (
@@ -226,6 +256,7 @@ class Bind(Service):
                         len(key) if len(key) <= 2 else 3,
                         key,
                     )
+
                 channel(_("    Key                    Command"))
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
@@ -339,7 +370,7 @@ class Alias(Service):
                     else:
                         channel("%2d: %s %s" % (i, key.ljust(22), value))
                     last = key
-                    
+
                 channel("----------")
                 return
             alias = alias.lower()

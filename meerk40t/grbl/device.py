@@ -13,6 +13,8 @@ except ImportError as e:
     raise Mk40tImportAbort("pyserial")
 
 
+from meerk40t.kernel import Service
+
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -33,7 +35,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel import Service
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

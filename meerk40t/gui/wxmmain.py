@@ -7,6 +7,8 @@ import wx
 from PIL import Image
 from wx import aui
 
+from meerk40t.kernel import lookup_listener, signal_listener
+
 from ..core.cutcode import CutCode
 from ..core.node.consoleop import ConsoleOperation
 from ..core.node.laserop import (
@@ -17,7 +19,6 @@ from ..core.node.laserop import (
     RasterOpNode,
 )
 from ..core.units import UNITS_PER_INCH
-from meerk40t.kernel import lookup_listener, signal_listener
 from ..svgelements import (
     Color,
     Group,

@@ -1,4 +1,3 @@
-
 class CommandMatchRejected(Exception):
     """
     Exception to be raised by a registered console command if the match to the command was erroneous

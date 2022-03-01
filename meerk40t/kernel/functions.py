@@ -74,6 +74,7 @@ def console_option(name: str, short: str = None, **kwargs) -> Callable:
 
     return decor
 
+
 def console_argument(name: str, **kwargs) -> Callable:
     """
     Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
@@ -92,6 +93,7 @@ def console_argument(name: str, **kwargs) -> Callable:
         return func
 
     return decor
+
 
 def console_command(
     registration,
