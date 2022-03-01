@@ -36,7 +36,6 @@ from .laserrender import (
     DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
-    DRAW_MODE_TREE,
     LaserRender,
     swizzlecolor,
 )
@@ -61,7 +60,6 @@ ID_MENU_HIDE_BACKGROUND = wx.NewId()
 ID_MENU_HIDE_LINEWIDTH = wx.NewId()
 ID_MENU_HIDE_STROKES = wx.NewId()
 ID_MENU_HIDE_ICONS = wx.NewId()
-# ID_MENU_HIDE_TREE = wx.NewId()
 ID_MENU_HIDE_LASERPATH = wx.NewId()
 ID_MENU_HIDE_RETICLE = wx.NewId()
 ID_MENU_HIDE_SELECTION = wx.NewId()
@@ -1103,12 +1101,6 @@ class MeerK40t(MWindow):
             "",
             wx.ITEM_CHECK
         )
-        # Hide Tree commented out as now a pane and is shown / hidden from the Panes menu
-        # If you hide the tree here, it is not immediately hidden, but it is hidden on
-        # next launch - and when it is hidden loading a file causes a crash.
-        # ToDo remove all code relating to Show/Hide tree.
-        # self.view_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
-
         self.view_menu.Append(
             ID_MENU_PREVENT_CACHING,
             _("Do Not Cache Image"),
@@ -1501,9 +1493,6 @@ class MeerK40t(MWindow):
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ICONS), id=ID_MENU_HIDE_ICONS
         )
-        # self.Bind(
-            # wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_TREE), id=ID_MENU_HIDE_TREE
-        # )
         self.Bind(
             wx.EVT_MENU,
             self.toggle_draw_mode(DRAW_MODE_CACHE),
@@ -1709,8 +1698,6 @@ class MeerK40t(MWindow):
         m.Check(self.context.draw_mode & DRAW_MODE_STROKES != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_ICONS)
         m.Check(self.context.draw_mode & DRAW_MODE_ICONS != 0)
-        # m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TREE)
-        # m.Check(self.context.draw_mode & DRAW_MODE_TREE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
         m.Check(self.context.draw_mode & DRAW_MODE_CACHE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_ALPHABLACK)

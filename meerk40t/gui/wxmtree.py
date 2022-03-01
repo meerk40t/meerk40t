@@ -24,7 +24,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
 from ..core.bindalias import keymap_execute
@@ -184,11 +184,7 @@ class TreePanel(wx.Panel):
         :param args:
         :return:
         """
-        if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.wxtree.Hide()
-            return
-        else:
-            self.wxtree.Show()
+        # self.wxtree.Show()
         self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
