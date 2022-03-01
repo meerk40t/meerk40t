@@ -1810,15 +1810,17 @@ class MeerK40t(MWindow):
                 break
         self.populate_recent_menu()
 
-    def clear_project(self):
+    def clear_project(self, clear_ops=True):
         context = self.context
         self.working_file = None
         self.validate_save()
-        context.elements.clear_all()
+        context.elements.clear_project()
+        if clear_ops:
+            context.elements.clear_operations()
         self.context(".laserpath_clear\n")
 
     def clear_and_open(self, pathname):
-        self.clear_project()
+        self.clear_project(clear_ops=False)
         if self.load(pathname):
             try:
                 if self.context.uniform_svg and pathname.lower().endswith("svg"):

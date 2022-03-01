@@ -6088,15 +6088,18 @@ class Elemental(Modifier):
         pass
 
     def clear_elements_and_operations(self):
-        self.clear_elements()
         self.clear_operations()
+        self.clear_elements()
 
-    def clear_all(self):
+    def clear_project(self):
         self.clear_elements()
-        self.clear_operations()
         self.clear_files()
         self.clear_note()
         self.validate_selected_area()
+
+    def clear_all(self):
+        self.clear_operations()
+        self.clear_project()
 
     def clear_note(self):
         self.note = None
