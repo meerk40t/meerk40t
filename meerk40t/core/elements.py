@@ -3441,6 +3441,73 @@ class Elemental(Modifier):
                 data.append(pts)
                 return "elements", data
 
+        @context.console_argument("corners", type=int)
+        @context.console_argument("hops", type=int)
+        @context.console_argument("x_pos", type=Length)
+        @context.console_argument("y_pos", type=Length)
+        @context.console_argument("radius", type=Length)
+        @context.console_argument("startangle", type=Angle.parse)
+        @context.console_command(
+            "star",
+            help=_("star <corners> <hops> <x> <y> <r> <startangle> or star <corners> <hops> <r>"),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_star(corners, hops, x_pos, y_pos, radius, startangle, data=None, **kwargs):
+            if corners is None:
+                raise SyntaxError
+            if corners < 5:
+                raise SyntaxError(_("A star needs to have at least 5 corners"))
+
+            if hops is None or x_pos is None:
+                raise SyntaxError(_("Please provide at least three parameters: corners, hops and radius"))
+
+            if hops < 2 or hops >= corners:
+                raise SyntaxError(_("Hops needs to be greater than 1 and smaller than corners"))
+
+            if y_pos is None:
+                y_pos = Length(0)
+            # do we have something like 'star 5 2 4cm' ? If yes, reassign the parameters
+            if radius is None:
+                radius = x_pos
+                x_pos = Length(0)
+                y_pos = Length(0)
+            if startangle is None:
+                startangle = Angle.parse("0deg")
+            x_pos = x_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+            y_pos = y_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+            radius = radius.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+            if isinstance(radius, Length) or isinstance(x_pos, Length) or isinstance(y_pos, Length):
+                raise SyntaxError
+
+            pts = []
+            myangle = startangle.as_radians
+            deltaangle = 2 * pi / corners
+            for j in range(corners):
+                thisx = x_pos + radius * cos(myangle)
+                thisy = y_pos + radius * sin(myangle)
+                if j == 0:
+                    firstx = thisx
+                    firsty = thisy
+                myangle += deltaangle
+                pts += [(thisx, thisy)]
+            # Close the path
+            pts += [(firstx, firsty)]
+            starpts = [(pts[0][0], pts[0][1])]
+            idx = hops
+            while (idx != 0):
+                starpts += [(pts[idx][0], pts[idx][1])]
+                idx += hops
+                if idx>=corners:
+                    idx -= corners
+
+            self.add_element(Polygon(starpts))
+            if data is None:
+                return "elements", [starpts]
+            else:
+                data.append(pts)
+                return "elements", data
+
         @context.console_option("step", "s", default=2.0, type=float)
         @context.console_command(
             "render",
