@@ -411,8 +411,8 @@ class CutPlan:
             return dx, dy
 
         # set minimum margins otherwise
-        dx = 256 if h_sweep else 0
-        dy = 256 if v_sweep else 0
+        dx = 500 if h_sweep else 0
+        dy = 500 if v_sweep else 0
 
         # Get device and check for lhystudios
         try:
