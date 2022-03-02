@@ -6475,7 +6475,7 @@ msgstr ""
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:128
 msgid "Not a valid speed or percent."
-msgstr ""
+msgstr "Das ist weder eine gültige Geschwindigkeit noch eine korrekte Prozent-Angabe"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:139
 msgid "pulses per inch [0-1000]"
@@ -7655,3 +7655,7 @@ msgstr " Die jetzige Auswahl bleibt erhalten!"
 #: meerk40t/gui/scene/scenewidgets.py:667
 msgid " Invert selection state of elements!"
 msgstr " Der Status wird dabei umgekehrt!"
+
+#: meerk40t/core/elements.py:3245
+msgid "This is not a valid length"
+msgstr "Das ist keine gültige Längenangabe"
