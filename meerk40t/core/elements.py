@@ -27,7 +27,7 @@ from ..svgelements import (
     CubicBezier,
     Ellipse,
     Group,
-    Length,
+    Length as SVGLength,
     Line,
     Matrix,
     Move,
@@ -43,6 +43,10 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+    PATTERN_LENGTH_UNITS,
+    PATTERN_PERCENT,
+    PATTERN_FLOAT,
+    REGEX_LENGTH,
 )
 from ..tools.rastergrouping import group_overlapped_rasters
 from .cutcode import (
@@ -86,6 +90,32 @@ image_simplify_re = re.compile(
 )
 
 OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
+
+# Overload svgelement Length class by adding a validity check
+class Length(SVGLength):
+    is_valid_length = False
+
+    def __init__(self, *args, **kwargs):
+        # Call super_init...
+        super().__init__(*args, **kwargs)
+        self.is_valid_length = False
+        if len(args) == 1:
+            value = args[0]
+            if value is None:
+                return
+            s = str(value)
+            for m in REGEX_LENGTH.findall(s):
+                if len(m[1]) == 0 or m[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                    self.is_valid_length = True
+                return
+        elif len(args) == 2:
+            try:
+                x = float(args[0])
+                if len(args[1]) == 0 or args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                    self.is_valid_length = True
+            except ValueError:
+                pass
+            return
 
 
 def reversed_enumerate(collection: list):
@@ -3210,8 +3240,14 @@ class Elemental(Modifier):
                 raise SyntaxError
             if x is None:
                 x = Length("100%")
+            else:
+                if not x.is_valid_length:
+                    raise SyntaxError("x: " + _("This is not a valid length"))
             if y is None:
                 y = Length("100%")
+            else:
+                if not y.is_valid_length:
+                    raise SyntaxError("y: " + _("This is not a valid length"))
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
@@ -3366,6 +3402,19 @@ class Elemental(Modifier):
             """
             if x_pos is None:
                 raise SyntaxError
+            else:
+                if not x_pos.is_valid_length:
+                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
+            if not y_pos is None:
+                if not y_pos.is_valid_length:
+                    raise SyntaxError("y-pos: " + _("This is not a valid length"))
+            if not rx is None:
+                if not rx.is_valid_length:
+                    raise SyntaxError("rx: " + _("This is not a valid length"))
+            if not ry is None:
+                if not ry.is_valid_length:
+                    raise SyntaxError("ry: " + _("This is not a valid length"))
+
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             rect.render(
                 ppi=1000.0,
@@ -3396,6 +3445,19 @@ class Elemental(Modifier):
             """
             if y1 is None:
                 raise SyntaxError
+            if not x0 is None:
+                if not x0.is_valid_length:
+                    raise SyntaxError("x0: " + _("This is not a valid length"))
+            if not y0 is None:
+                if not y0.is_valid_length:
+                    raise SyntaxError("y0: " + _("This is not a valid length"))
+            if not x1 is None:
+                if not x1.is_valid_length:
+                    raise SyntaxError("x1: " + _("This is not a valid length"))
+            if not y1 is None:
+                if not y1.is_valid_length:
+                    raise SyntaxError("y1: " + _("This is not a valid length"))
+
             simple_line = SimpleLine(x0, y0, x1, y1)
             simple_line.render(
                 ppi=1000.0,
@@ -3523,6 +3585,9 @@ class Elemental(Modifier):
                     i += 1
                 channel("----------")
                 return
+            else:
+                if not stroke_width.is_valid_length:
+                    raise SyntaxError("stroke-width: " + _("This is not a valid length"))
 
             if len(data) == 0:
                 channel(_("No selected elements."))
@@ -3679,6 +3744,13 @@ class Elemental(Modifier):
             """
             if x_offset is None:
                 raise SyntaxError
+            elif not x_offset.is_valid_length:
+                raise SyntaxError("x-offset: " + _("This is not a valid length"))
+            if not y_offset is None:
+                if not y_offset.is_valid_length:
+                    raise SyntaxError("y-offset: " + _("This is not a valid length"))
+
+
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
@@ -3767,15 +3839,21 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if cx.is_valid_length:
+                    cx = cx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("cx: " + _("This is not a valid length"))
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if cy.is_valid_length:
+                    cy = cy.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("cy: " + _("This is not a valid length"))
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -3864,15 +3942,21 @@ class Elemental(Modifier):
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
-                center_x = px.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if px.is_valid_length:
+                    center_x = px.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("px: " + _("This is not a valid length"))
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                center_y = py.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if py.is_valid_length:
+                    center_y = py.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("py: " + _("This is not a valid length"))
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
@@ -3958,15 +4042,21 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if tx.is_valid_length:
+                    tx = tx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("tx: " + _("This is not a valid length"))
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if ty.is_valid_length:
+                    ty = ty.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("ty: " + _("This is not a valid length"))
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -4055,6 +4145,19 @@ class Elemental(Modifier):
                 if area is None:
                     channel(_("resize: nothing selected"))
                     return
+                if not x_pos is None:
+                    if not x_pos.is_valid_length:
+                        raise SyntaxError("x_pos: " + _("This is not a valid length"))
+                if not y_pos is None:
+                    if not y_pos.is_valid_length:
+                        raise SyntaxError("y_pos: " + _("This is not a valid length"))
+                if not width is None:
+                    if not width.is_valid_length:
+                        raise SyntaxError("width: " + _("This is not a valid length"))
+                if not height is None:
+                    if not height.is_valid_length:
+                        raise SyntaxError("height: " + _("This is not a valid length"))
+
                 x_pos = x_pos.value(
                     ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
@@ -4137,6 +4240,13 @@ class Elemental(Modifier):
                 # SVG 7.15.3 defines the matrix form as:
                 # [a c  e]
                 # [b d  f]
+                if not tx is None:
+                    if not tx.is_valid_length:
+                        raise SyntaxError("tx: " + _("This is not a valid length"))
+                if not ty is None:
+                    if not ty.is_valid_length:
+                        raise SyntaxError("ty: " + _("This is not a valid length"))
+
                 m = Matrix(
                     sx,
                     kx,
@@ -4565,15 +4675,21 @@ class Elemental(Modifier):
                 if dx is None:
                     dx = 0
                 else:
-                    dx = dx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
+                    if dx.is_valid_length:
+                        dx = dx.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        raise SyntaxError("dx: " + _("This is not a valid length"))
                 if dy is None:
                     dy = 0
                 else:
-                    dy = dy.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
+                    if dy.is_valid_length:
+                        dy = dy.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                        )
+                    else:
+                        raise SyntaxError("dy: " + _("This is not a valid length"))
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
