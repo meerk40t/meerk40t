@@ -80,7 +80,7 @@ def ansi_supported():
     version = platform.version().split(".")
     if int(version[0]) < 10:
         return False
-    if int(version[2]) < 10586:
+    if int(version[0]) == 10 and int(version[2]) < 10586:
         return False
     # Fix ANSI color in Windows 10 version 10.0.14393 (Windows Anniversary Update)
     # https://gist.github.com/RDCH106/6562cc7136b30a5c59628501d87906f7
