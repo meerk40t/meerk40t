@@ -3251,7 +3251,7 @@ class Elemental(Modifier):
             else:
                 if not y.is_valid_length:
                     raise SyntaxError("y: " + _("This is not a valid length"))
-                    
+
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
@@ -3335,9 +3335,8 @@ class Elemental(Modifier):
             if radius is None:
                 radius = Length(0)
             else:
-                pass
-#                if not radius.is_valid_length:
-#                   raise SyntaxError("radius: " + _("This is not a valid length"))
+                if not radius.is_valid_length:
+                   raise SyntaxError("radius: " + _("This is not a valid length"))
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
