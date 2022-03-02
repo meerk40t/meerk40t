@@ -400,7 +400,7 @@ class CutPlan:
         h_sweep = direction in (0, 1, 4)
         v_sweep = direction in (2, 3, 4)
 
-        # set minimum margins
+        # set minimum margins for inners_grouped
         dx = op_settings.overscan if h_sweep else 0
         dy = op_settings.overscan if v_sweep else 0
 
@@ -409,6 +409,10 @@ class CutPlan:
         root = context.root
         if smallest and context.opt_inner_first and context.opt_inners_grouped:
             return dx, dy
+
+        # set minimum margins otherwise
+        dx = 256 if h_sweep else 0
+        dy = 256 if v_sweep else 0
 
         # Get device and check for lhystudios
         try:
