@@ -12,6 +12,7 @@ from meerk40t.kernel import (
     STATE_IDLE,
     STATE_INITIALIZE,
     STATE_PAUSE,
+    STATE_SUSPEND,
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
