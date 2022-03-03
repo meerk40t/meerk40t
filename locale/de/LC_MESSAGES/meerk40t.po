@@ -7659,3 +7659,63 @@ msgstr " Der Status wird dabei umgekehrt!"
 #: meerk40t/core/elements.py:3245
 msgid "This is not a valid length"
 msgstr "Das ist keine gültige Längenangabe"
+
+#: meerk40t/core/elements.py:3218
+msgid "Point of origin (1-9)"
+msgstr "Platzierung des Originals (1-9)"
+
+#: meerk40t/core/elements.py:3303
+msgid "Number of copies"
+msgstr "Anzahl der Kopien"
+
+#: meerk40t/core/elements.py:3304
+msgid "Start-Angle"
+msgstr "Winkel bei dem der Kreisbogen beginnt"
+
+#: meerk40t/core/elements.py:3305
+msgid "End-Angle"
+msgstr "Winkel bei dem der Kreisbogen endet"
+
+#: meerk40t/core/elements.py:3306
+msgid "Rotate copies (1=yes)"
+msgstr "Sollen Kopien rotiert werden (1=Ja)"
+
+#: meerk40t/core/elements.py:3245
+msgid "Please provide at least one additional value (which will act as radius then)"
+msgstr "Bitte geben Sie mindestens einen weiteren Wert an (der dann als Radius verwendet wird)"
+
+#: meerk40t/core/elements.py:3388
+msgid "Number of corners/vertices"
+msgstr "Anzahl der Eckpunkte"
+
+#: meerk40t/core/elements.py:3389
+msgid "X-Value of polygon's center"
+msgstr "X-Wert des Polygon-Mittelpunkts"
+
+#: meerk40t/core/elements.py:3390
+msgid "Y-Value of polygon's center"
+msgstr "Y-Wert des Polygon-Mittelpunkts"
+
+#: meerk40t/core/elements.py:3393
+msgid "Shall the polygon touch the inscribing circle (1=Yes)"
+msgstr "Soll das Polygon am innenliegenden Kreis ausgerichtet werden (1=Ja)"
+
+#: meerk40t/core/elements.py:3404
+msgid "A polyshape needs to have at least three corners"
+msgstr "Ein Polygon muss mindestens drei Eckpunkte haben"
+
+#: meerk40t/core/elements.py:3451
+msgid "Amount of vertices to skip"
+msgstr "Zahl der zu überspringenden Ecken"
+
+#: meerk40t/core/elements.py:3466
+msgid "A star needs to have at least 5 corners"
+msgstr "Ein Stern muss mindestens 5 Eckpunkte haben"
+
+#: meerk40t/core/elements.py:3469
+msgid "Please provide at least three parameters: corners, hops and radius"
+msgstr "Bitte geben Sie mindestens drei Werte an: corners, hops und radius"
+
+#: meerk40t/core/elements.py:3472
+msgid "Hops needs to be greater than 1 and smaller than corners"
+msgstr "Der Wert für hops muss größer als 1 und kleiner als die Zahl der Ecken sein"

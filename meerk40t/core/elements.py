@@ -3271,7 +3271,7 @@ class Elemental(Modifier):
             # origin defines where the original elements will be placed in the to created grid
             #  1 2 3                  i.e. 1 is the 'old' way create copies to the right and to the bottom,
             #  4 5 6                  9 is creating copies to the left and upwards
-            #  7 8 9                  NB: if use a center position then eerything works fine for odd c and r
+            #  7 8 9                  NB: if use a center position then everything works fine for odd c and r
             #                         for even values we are taking a precedence to put the original just left
             #                         respectively just above the center
             pos_idx_x = (0, max(0, c // 2 + c % 2 - 1), c - 1)
@@ -3385,12 +3385,12 @@ class Elemental(Modifier):
             self.context.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("corners", type=int)
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("radius", type=Length)
-        @context.console_argument("startangle", type=Angle.parse)
-        @context.console_argument("inscribed", type=int)
+        @context.console_argument("corners", type=int, help=_("Number of corners/vertices"))
+        @context.console_argument("x_pos", type=Length, help=_("X-Value of polygon's center"))
+        @context.console_argument("y_pos", type=Length, help=_("Y-Value of polygon's center"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("inscribed", type=int, help=_("Shall the polygon touch the inscribing circle (1=Yes)"))
         @context.console_command(
             "polyshape",
             help=_("polyshape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"),
@@ -3446,13 +3446,13 @@ class Elemental(Modifier):
                 data.append(pts)
                 return "elements", data
 
-        @context.console_argument("corners", type=int)
-        @context.console_argument("hops", type=int)
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("radius", type=Length)
-        @context.console_argument("startangle", type=Angle.parse)
-        @context.console_argument("inscribed", type=int)
+        @context.console_argument("corners", type=int, help=_("Number of corners/vertices"))
+        @context.console_argument("hops", type=int, help=_("Amount of vertices to skip"))
+        @context.console_argument("x_pos", type=Length, help=_("X-Value of polygon's center"))
+        @context.console_argument("y_pos", type=Length, help=_("Y-Value of polygon's center"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("inscribed", type=int, help=_("Shall the polygon touch the inscribing circle (1=Yes)"))
         @context.console_command(
             "star",
             help=_("star <corners> <hops> <x> <y> <r> <startangle> <inscribed> or star <corners> <hops> <r>"),
