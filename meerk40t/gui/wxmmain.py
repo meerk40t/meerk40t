@@ -85,6 +85,16 @@ ID_MENU_FILE6 = wx.NewId()
 ID_MENU_FILE7 = wx.NewId()
 ID_MENU_FILE8 = wx.NewId()
 ID_MENU_FILE9 = wx.NewId()
+ID_MENU_FILE10 = wx.NewId()
+ID_MENU_FILE11 = wx.NewId()
+ID_MENU_FILE12 = wx.NewId()
+ID_MENU_FILE13 = wx.NewId()
+ID_MENU_FILE14 = wx.NewId()
+ID_MENU_FILE15 = wx.NewId()
+ID_MENU_FILE16 = wx.NewId()
+ID_MENU_FILE17 = wx.NewId()
+ID_MENU_FILE18 = wx.NewId()
+ID_MENU_FILE19 = wx.NewId()
 ID_MENU_FILE_CLEAR = wx.NewId()
 
 ID_MENU_KEYMAP = wx.NewId()
@@ -935,6 +945,16 @@ class MeerK40t(MWindow):
         context.setting(str, "file7", None)
         context.setting(str, "file8", None)
         context.setting(str, "file9", None)
+        context.setting(str, "file10", None)
+        context.setting(str, "file11", None)
+        context.setting(str, "file12", None)
+        context.setting(str, "file13", None)
+        context.setting(str, "file14", None)
+        context.setting(str, "file15", None)
+        context.setting(str, "file16", None)
+        context.setting(str, "file17", None)
+        context.setting(str, "file18", None)
+        context.setting(str, "file19", None)
         self.populate_recent_menu()
 
     def __set_menubars(self):
@@ -1767,6 +1787,16 @@ class MeerK40t(MWindow):
             (context.file7, ID_MENU_FILE7, "&8 "),
             (context.file8, ID_MENU_FILE8, "&9 "),
             (context.file9, ID_MENU_FILE9, "1&0"),
+            (context.file10, ID_MENU_FILE10, "11"),
+            (context.file11, ID_MENU_FILE11, "12"),
+            (context.file12, ID_MENU_FILE12, "13"),
+            (context.file13, ID_MENU_FILE13, "14"),
+            (context.file14, ID_MENU_FILE14, "15"),
+            (context.file15, ID_MENU_FILE15, "16"),
+            (context.file16, ID_MENU_FILE16, "17"),
+            (context.file17, ID_MENU_FILE17, "18"),
+            (context.file18, ID_MENU_FILE18, "19"),
+            (context.file19, ID_MENU_FILE19, "20"),
         ]
 
         # for i in range(self.recent_file_menu.MenuItemCount):
@@ -1790,7 +1820,7 @@ class MeerK40t(MWindow):
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
 
     def clear_recent(self):
-        for i in range(10):
+        for i in range(20):
             try:
                 setattr(self.context, "file" + str(i), "")
             except IndexError:
@@ -1799,11 +1829,11 @@ class MeerK40t(MWindow):
 
     def set_file_as_recently_used(self, pathname):
         recent = list()
-        for i in range(10):
+        for i in range(20):
             recent.append(getattr(self.context, "file" + str(i)))
         recent = [r for r in recent if r is not None and r != pathname and len(r) > 0]
         recent.insert(0, pathname)
-        for i in range(10):
+        for i in range(20):
             try:
                 setattr(self.context, "file" + str(i), recent[i])
             except IndexError:
