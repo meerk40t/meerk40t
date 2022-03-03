@@ -3390,13 +3390,14 @@ class Elemental(Modifier):
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("radius", type=Length)
         @context.console_argument("startangle", type=Angle.parse)
+        @context.console_argument("inscribed", type=int)
         @context.console_command(
             "polyshape",
-            help=_("polyshape <corners> <x> <y> <r> <startangle> or polyshape <corners> <r>"),
+            help=_("polyshape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"),
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_polyshape(corners, x_pos, y_pos, radius, startangle, data=None, **kwargs):
+        def element_polyshape(corners, x_pos, y_pos, radius, startangle, inscribed, data=None, **kwargs):
             if corners is None:
                 raise SyntaxError
             if corners < 3:
@@ -3414,12 +3415,16 @@ class Elemental(Modifier):
                 y_pos = Length(0)
             if startangle is None:
                 startangle = Angle.parse("0deg")
+            if inscribed is None: # Use circumscribed circle by default
+                inscribed = 0
+
             x_pos = x_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
             y_pos = y_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
             radius = radius.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
             if isinstance(radius, Length) or isinstance(x_pos, Length) or isinstance(y_pos, Length):
                 raise SyntaxError
-
+            if inscribed != 0:
+                radius = radius / cos(pi / corners)
             pts = []
             myangle = startangle.as_radians
             deltaangle = 2 * pi / corners
@@ -3447,13 +3452,14 @@ class Elemental(Modifier):
         @context.console_argument("y_pos", type=Length)
         @context.console_argument("radius", type=Length)
         @context.console_argument("startangle", type=Angle.parse)
+        @context.console_argument("inscribed", type=int)
         @context.console_command(
             "star",
-            help=_("star <corners> <hops> <x> <y> <r> <startangle> or star <corners> <hops> <r>"),
+            help=_("star <corners> <hops> <x> <y> <r> <startangle> <inscribed> or star <corners> <hops> <r>"),
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_star(corners, hops, x_pos, y_pos, radius, startangle, data=None, **kwargs):
+        def element_star(corners, hops, x_pos, y_pos, radius, startangle, inscribed, data=None, **kwargs):
             if corners is None:
                 raise SyntaxError
             if corners < 5:
@@ -3479,6 +3485,10 @@ class Elemental(Modifier):
             radius = radius.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
             if isinstance(radius, Length) or isinstance(x_pos, Length) or isinstance(y_pos, Length):
                 raise SyntaxError
+            if inscribed is None: # Use circumscribed circle by default
+                inscribed = 0
+            if inscribed != 0:
+                radius = radius / cos(pi / corners)
 
             pts = []
             myangle = startangle.as_radians
