@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_pentagon_50,
+    icons8_air_50,
 )
 from meerk40t.gui.propertiespanel import PropertiesPanel
 
@@ -145,6 +146,11 @@ class LaserPanel(wx.Panel):
         )
         sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
 
+        self.air_toggle = wx.ToggleButton(self, wx.ID_ANY, _("Air-Assist"))
+        self.air_toggle.SetToolTip(_("Toggle Air-Assist"))
+        self.air_toggle.SetBitmap(icons8_air_50.GetBitmap(resize=25))
+        sizer_control_misc.Add(self.air_toggle, 1, 0, 0)
+
         # self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
         # self.button_save_file.SetToolTip(_("Save the job"))
         # self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
@@ -199,6 +205,8 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_air_toggle, self.air_toggle)
+
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
@@ -216,6 +224,7 @@ class LaserPanel(wx.Panel):
         self.context.listen("plan", self.plan_update)
         self.context.listen("active", self.active_update)
         self.context.listen("legacy_spooler_label", self.spooler_label_update)
+        # self.context.listen("airassist", self.airassist_update)
 
     def finalize(self):
         self.context.unlisten("laserpane_arm", self.check_laser_arm)
@@ -407,3 +416,11 @@ class LaserPanel(wx.Panel):
             self.connected_output,
         ) = self.available_devices[index]
         self.context("device activate %s\n" % str(index))
+
+    def on_air_toggle(self, event):  # wxGlade: LaserPanel.<event_handler>
+        if self.air_toggle.GetValue():
+            self.air_toggle.SetBackgroundColour(wx.GREEN)
+            self.context("air_assist 1\n")
+        else:
+            self.air_toggle.SetBackgroundColour(wx.Colour(240, 240, 240))
+            self.context("air_assist 0\n")
