@@ -1,3 +1,4 @@
 Pillow
 pyusb
 wxPython
+paho-mqtt

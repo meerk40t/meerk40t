@@ -46,7 +46,7 @@ class Driver:
         self.root_context = context.root
         self.settings = LaserSettings()
         self.AAssist = AirAssist()
-        self.AAssist.method = AA_METHOD_SHELL
+        self.AAssist.method = AA_METHOD_MQTT
         self.AAssist.overshoot = 15.0  # let the airassist run for another 15 seconds
 
         self.next = None
