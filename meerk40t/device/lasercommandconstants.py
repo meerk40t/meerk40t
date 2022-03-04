@@ -55,6 +55,9 @@ COMMAND_BEEP = 320  # Beep.
 COMMAND_FUNCTION = 350  # Execute the function given by this command. Blocking.
 COMMAND_CONSOLE = 355  # Execute the specified console command.
 COMMAND_SIGNAL = 360  # Sends the signal, given: "signal_name", operands.
+COMMAND_AIRASSIST_ON = 365  # Turns air-assist on
+COMMAND_AIRASSIST_OFF = 370  # Turns air-assist off (delayed)
+COMMAND_AIRASSIST_OFF_NOW = 375  # Turns air-assist off (immediately)
 
 REALTIME_RESET = 1000  # Resets the state, purges buffers
 REALTIME_PAUSE = 1010  # Issue a pause command.
@@ -146,6 +149,10 @@ def lasercode_string(code):
         return "COMMAND_UNLOCK"  # Unlocks the rail.
     if code == COMMAND_BEEP:
         return "COMMAND_BEEP"  # Beep.
+    if code == COMMAND_AIRASSIST_ON:
+        return "COMMAND_AIRASSIST_ON"  # AirAssist
+    if code == COMMAND_AIRASSIST_OFF:
+        return "COMMAND_AIRASSIST_OFF"  # AirAssist
     if code == COMMAND_FUNCTION:
         return (
             "COMMAND_FUNCTION"  # Execute the function given by this command. Blocking.

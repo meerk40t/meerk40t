@@ -368,11 +368,12 @@ def get_command_code(lines):
                     yield COMMAND_LASER_OFF
                 elif v == 7:
                     #  Coolant control.
-                    pass
+                    yield COMMAND_SIGNAL, ("airassiston")
                 elif v == 8:
                     yield COMMAND_SIGNAL, ("coolant", True)
                 elif v == 9:
                     yield COMMAND_SIGNAL, ("coolant", False)
+                    yield COMMAND_SIGNAL, ("airassistoff")
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -823,11 +824,14 @@ class GRBLEmulator(Module):
                     self.spooler.job(COMMAND_LASER_OFF)
                 elif v == 7:
                     #  Coolant control.
-                    pass
+                    self.spooler.job(COMMAND_AIRASSIST_ON)
                 elif v == 8:
                     self.spooler.job(COMMAND_SIGNAL, ("coolant", True))
+                    # coolant is not yet recognised afais, so will be translated temporarily to airassist
+                    self.spooler.job(COMMAND_AIRASSIST_ON)
                 elif v == 9:
                     self.spooler.job(COMMAND_SIGNAL, ("coolant", False))
+                    self.spooler.job(COMMAND_AIRASSIST_OFF)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:

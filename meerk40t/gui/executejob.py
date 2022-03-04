@@ -263,6 +263,14 @@ class PlannerPanel(wx.Panel):
         self.context("plan%s command -o beep\n" % self.plan_name)
         self.update_gui()
 
+    def jobadd_airassist_on(self, event=None):
+        self.context("plan%s command -o airassiston\n" % self.plan_name)
+        self.update_gui()
+
+    def jobadd_airassist_off(self, event=None):
+        self.context("plan%s command -o airassistoff\n" % self.plan_name)
+        self.update_gui()
+
     def jobadd_interrupt(self, event=None):
         self.context("plan%s command -o interrupt\n" % self.plan_name)
         self.update_gui()
@@ -537,6 +545,16 @@ class ExecuteJob(MWindow):
             wx.EVT_MENU,
             self.panel.jobadd_beep,
             wx_menu.Append(wx.ID_ANY, _("Beep"), _("Add a beep")),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.panel.jobadd_airassist_on,
+            wx_menu.Append(wx.ID_ANY, _("Air-Assist On"), _("Turn air-assist on")),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.panel.jobadd_airassist_off,
+            wx_menu.Append(wx.ID_ANY, _("Air-Assist Off"), _("Turn air-assist off")),
         )
         self.Bind(
             wx.EVT_MENU,

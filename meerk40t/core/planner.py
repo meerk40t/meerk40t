@@ -11,6 +11,8 @@ from ..device.lasercommandconstants import (
     COMMAND_UNLOCK,
     COMMAND_WAIT,
     COMMAND_WAIT_FINISH,
+    COMMAND_AIRASSIST_ON,
+    COMMAND_AIRASSIST_OFF,
 )
 from ..kernel import Modifier
 from ..svgelements import Length
@@ -34,6 +36,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("plan/beep", beep)
         kernel.register("function/interrupt", interrupt_text)
         kernel.register("plan/interrupt", interrupt)
+        kernel.register("plan/airassiston", airassist_on)
+        kernel.register("plan/airassistoff", airassist_off)
 
         def shutdown():
             yield COMMAND_WAIT_FINISH
@@ -902,6 +906,14 @@ def offset(x, y):
         yield COMMAND_SET_POSITION, -int(x), -int(y)
 
     return offset_value
+
+
+def airassist_on():
+    yield COMMAND_AIRASSIST_ON
+
+
+def airassist_off():
+    yield COMMAND_AIRASSIST_OFF
 
 
 def wait():

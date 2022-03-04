@@ -484,6 +484,28 @@ class Spoolers(Modifier):
             spooler.job(COMMAND_LOCK)
             return "spooler", data
 
+        @context.console_argument(
+            "onoff", type=int, help=_("Turn Air Assist on (1=Yes)")
+        )
+        @context.console_command(
+            "air_assist",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("Turns Air-Assist on/off"),
+        )
+        def airassist(onoff=None, data=None, **kwgs):
+            if data is None:
+                data = self.default_spooler(), self.context.root.active
+            spooler, device_name = data
+            if onoff is None:
+                onoff = True
+            if onoff:
+                spooler.job(COMMAND_AIRASSIST_ON)
+            else:
+                spooler.job(COMMAND_AIRASSIST_OFF_NOW)
+
+            return "spooler", data
+
         for i in range(5):
             self.get_or_make_spooler(str(i))
 

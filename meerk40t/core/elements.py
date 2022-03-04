@@ -4,6 +4,8 @@ import re
 from copy import copy
 
 from ..device.lasercommandconstants import (
+    COMMAND_AIRASSIST_ON,
+    COMMAND_AIRASSIST_OFF,
     COMMAND_BEEP,
     COMMAND_CONSOLE,
     COMMAND_FUNCTION,
@@ -105,13 +107,17 @@ class Length(SVGLength):
                 return
             s = str(value)
             for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                if len(m[1]) == 0 or m[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
                     self.is_valid_length = True
                 return
         elif len(args) == 2:
             try:
                 x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                if len(args[1]) == 0 or args[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
                     self.is_valid_length = True
             except ValueError:
                 pass
@@ -3587,7 +3593,9 @@ class Elemental(Modifier):
                 return
             else:
                 if not stroke_width.is_valid_length:
-                    raise SyntaxError("stroke-width: " + _("This is not a valid length"))
+                    raise SyntaxError(
+                        "stroke-width: " + _("This is not a valid length")
+                    )
 
             if len(data) == 0:
                 channel(_("No selected elements."))
@@ -3749,7 +3757,6 @@ class Elemental(Modifier):
             if not y_offset is None:
                 if not y_offset.is_valid_length:
                     raise SyntaxError("y-offset: " + _("This is not a valid length"))
-
 
             bounds = self.selected_area()
             if bounds is None:
@@ -5296,6 +5303,26 @@ class Elemental(Modifier):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Air-Assist On"), node_type="branch ops", help="")
+        def append_operation_airassiston(node, pos=None, **kwargs):
+            self.context.elements.op_branch.add(
+                CommandOperation("Air-Assist On", COMMAND_AIRASSIST_ON, True),
+                type="cmdop",
+                pos=pos,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(
+            _("Append Air-Assist Off"), node_type="branch ops", help=""
+        )
+        def append_operation_airassistoff(node, pos=None, **kwargs):
+            self.context.elements.op_branch.add(
+                CommandOperation("Air-Assist Off", COMMAND_AIRASSIST_OFF, False),
+                type="cmdop",
+                pos=pos,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
             _("Append Interrupt (console)"), node_type="branch ops", help=""
         )
@@ -5506,6 +5533,16 @@ class Elemental(Modifier):
         @self.tree_operation(_("Add Beep"), node_type="op", help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Airassist On"), node_type="op", help="")
+        def add_operation_airassiston(node, **kwargs):
+            append_operation_airassiston(node, pos=add_after_index(self), **kwargs)
+
+        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_operation(_("Add Airassist Off"), node_type="op", help="")
+        def add_operation_airassistoff(node, **kwargs):
+            append_operation_airassistoff(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type="op", help="")

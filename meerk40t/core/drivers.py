@@ -6,6 +6,7 @@ from ..core.cutcode import LaserSettings
 from ..device.lasercommandconstants import *
 from ..kernel import Modifier
 from .plotplanner import PlotPlanner
+from meerk40t.core.airassist import *
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -44,6 +45,9 @@ class Driver:
         self.name = name
         self.root_context = context.root
         self.settings = LaserSettings()
+        self.AAssist = AirAssist()
+        self.AAssist.method = AA_METHOD_SHELL
+        self.AAssist.overshoot = 15.0  # let the airassist run for another 15 seconds
 
         self.next = None
         self.prev = None
@@ -290,6 +294,12 @@ class Driver:
                     os.system("afplay /System/Library/Sounds/Ping.aiff")
                 else:  # Assuming other linux like system
                     print("\a")  # Beep.
+            elif command == COMMAND_AIRASSIST_ON:
+                self.AAssist.turn_on()
+            elif command == COMMAND_AIRASSIST_OFF:
+                self.AAssist.turn_off(immediately=False)
+            elif command == COMMAND_AIRASSIST_OFF_NOW:
+                self.AAssist.turn_off(immediately=True)
             elif command == COMMAND_FUNCTION:
                 if len(values) >= 1:
                     t = values[0]
@@ -353,6 +363,12 @@ class Driver:
 
     def data_output(self, e):
         self.output.write(e)
+
+    def airassist(self, value):
+        if value:
+            self.AAssist.turn_on()
+        else:
+            self.AAssist.turn_off(immediately=True)
 
     def hold(self):
         """
