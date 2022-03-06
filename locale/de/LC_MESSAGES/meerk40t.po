@@ -7661,8 +7661,8 @@ msgid "This is not a valid length"
 msgstr "Das ist keine gültige Längenangabe"
 
 #: meerk40t/core/elements.py:3218
-msgid "Point of origin (1-9)"
-msgstr "Platzierung des Originals (1-9)"
+msgid "Position of copy in matrix (e.g '2,2' or '4,3')"
+msgstr "Platzierung des Originals im neuen Gitter (z.B. '2,2' oder '4,3')"
 
 #: meerk40t/core/elements.py:3303
 msgid "Number of copies"
@@ -7677,8 +7677,12 @@ msgid "End-Angle"
 msgstr "Winkel bei dem der Kreisbogen endet"
 
 #: meerk40t/core/elements.py:3306
-msgid "Rotate copies (1=yes)"
-msgstr "Sollen Kopien rotiert werden (1=Ja)"
+msgid "Rotate copies towards center?"
+msgstr "Sollen Kopien zum Mittelpunkt hin rotiert werden?"
+
+#: meerk40t/core/elements.py:3404
+msgid "Delta-Angle (if ommited will take (end-start)/copies )"
+msgstr "Delta-Winkel (falls nicht angegeben, dann (endwinkel-startwinkel)/kopien )"
 
 #: meerk40t/core/elements.py:3245
 msgid "Please provide at least one additional value (which will act as radius then)"
@@ -7697,12 +7701,20 @@ msgid "Y-Value of polygon's center"
 msgstr "Y-Wert des Polygon-Mittelpunkts"
 
 #: meerk40t/core/elements.py:3393
-msgid "Shall the polygon touch the inscribing circle (1=Yes)"
-msgstr "Soll das Polygon am innenliegenden Kreis ausgerichtet werden (1=Ja)"
+msgid "Shall the polygon touch the inscribing circle?"
+msgstr "Soll das Polygon am innenliegenden Kreis ausgerichtet werden"
 
 #: meerk40t/core/elements.py:3404
 msgid "A polyshape needs to have at least three corners"
 msgstr "Ein Polygon muss mindestens drei Eckpunkte haben"
+
+#: meerk40t/core/elements.py:3404
+msgid "Alternating radius for every other vertice"
+msgstr "Alternativer Radius für alterntierrende Eckpunkte"
+
+#: meerk40t/core/elements.py:3404
+msgid "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns"
+msgstr "Wieviele Punkte sollen auf dem Außenkreis liegen bevor zum Innenkreis gewechselt wird (1=Stern-Figur, >=2 Zahnrad-Muster)"
 
 #: meerk40t/core/elements.py:3451
 msgid "Amount of vertices to skip"

@@ -106,13 +106,17 @@ class Length(SVGLength):
                 return
             s = str(value)
             for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                if len(m[1]) == 0 or m[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
                     self.is_valid_length = True
                 return
         elif len(args) == 2:
             try:
                 x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (PATTERN_LENGTH_UNITS + "|"  + PATTERN_PERCENT):
+                if len(args[1]) == 0 or args[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
                     self.is_valid_length = True
             except ValueError:
                 pass
@@ -3215,7 +3219,12 @@ class Elemental(Modifier):
         @context.console_argument("r", type=int, help=_("Number of rows"))
         @context.console_argument("x", type=Length, help=_("x distance"))
         @context.console_argument("y", type=Length, help=_("y distance"))
-        @context.console_argument("origin", type=int, help=_("Point of origin (1-9)"))
+        @context.console_option(
+            "origin",
+            "o",
+            type=str,
+            help=_("Position of copy in matrix (e.g '2,2' or '4,3')"),
+        )
         @context.console_command(
             "grid",
             help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
@@ -3230,7 +3239,7 @@ class Elemental(Modifier):
             r: int,
             x: Length,
             y: Length,
-            origin: int,
+            origin=None,
             data=None,
             **kwargs,
         ):
@@ -3262,32 +3271,39 @@ class Elemental(Modifier):
             y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
+
+            cx = 1
+            cy = 1
             if origin is None:
-                origin = 1
-            if origin < 1:
-                origin = 1
-            if origin > 9:
-                origin = 9
+                origin = "1,1"
+            subtext = origin.split(",")
+            if len(subtext) < 2:  # make sure we have something for y
+                subtext.append("1")
+            if subtext[0].isdigit():
+                cx = int(subtext[0])
+                if cx < 1:
+                    cx = 1
+                elif cx > c:
+                    cx = c
+            if subtext[1].isdigit():
+                cy = int(subtext[1])
+                if cy < 1:
+                    cy = 1
+                elif cy > r:
+                    cy = r
+            # print("Cx=%d, Cy=%d" % (cx, cy))
             # origin defines where the original elements will be placed in the to created grid
-            #  1 2 3                  i.e. 1 is the 'old' way create copies to the right and to the bottom,
-            #  4 5 6                  9 is creating copies to the left and upwards
-            #  7 8 9                  NB: if use a center position then everything works fine for odd c and r
-            #                         for even values we are taking a precedence to put the original just left
-            #                         respectively just above the center
-            pos_idx_x = (0, max(0, c // 2 + c % 2 - 1), c - 1)
-            pos_idx_y = (0, max(0, r // 2 + r % 2 - 1), r - 1)
+            # i.e. (1, 1) is the 'old' way create copies to the right and to the bottom,
 
             data_out = list(data)
             # Tell whether original is at the left / middle / or right
-            org_x = (origin - 1) % 3   # 1, 4, 7 = 0 | 2, 5, 8 = 1 | 3, 6, 9 = 2
-            org_y = (origin - 1) // 3  # 1, 2, 3 = 0 | 4, 5, 6 = 1 | 7, 8, 9 = 2
-            start_x = -1 * x * (pos_idx_x[org_x])
-            start_y = -1 * y * (pos_idx_y[org_y])
+            start_x = -1 * x * (cx - 1)
+            start_y = -1 * y * (cy - 1)
             y_pos = start_y
             for j in range(r):
                 x_pos = start_x
                 for k in range(c):
-                    if j != pos_idx_y[org_y] or k != pos_idx_x[org_x]:
+                    if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
@@ -3303,7 +3319,19 @@ class Elemental(Modifier):
         @context.console_argument("radius", type=Length, help=_("Radius"))
         @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
-        @context.console_argument("rotate", type=int, help=_("Rotate copies (1=yes)"))
+        @context.console_option(
+            "rotate",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Rotate copies towards center?"),
+        )
+        @context.console_option(
+            "deltaangle",
+            "d",
+            type=Angle.parse,
+            help=_("Delta-Angle (if ommited will take (end-start)/copies )"),
+        )
         @context.console_command(
             "circ_copy",
             help=_("circ_copy <copies> <radius> <startangle> <endangle> <rotate>"),
@@ -3319,6 +3347,7 @@ class Elemental(Modifier):
             startangle=None,
             endangle=None,
             rotate=None,
+            deltaangle=None,
             data=None,
             **kwargs,
         ):
@@ -3336,13 +3365,13 @@ class Elemental(Modifier):
                 radius = Length(0)
             else:
                 if not radius.is_valid_length:
-                   raise SyntaxError("radius: " + _("This is not a valid length"))
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
                 endangle = Angle.parse("360deg")
             if rotate is None:
-                rotate = 0
+                rotate = False
 
             # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
 
@@ -3357,9 +3386,12 @@ class Elemental(Modifier):
                 raise SyntaxError
 
             data_out = list(data)
-            # Notabene: we are not following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
+            if deltaangle is None:
+                segment_len = (endangle.as_radians - startangle.as_radians) / copies
+            else:
+                segment_len = deltaangle.as_radians
+            # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
             # the perceived angle travel is CCW (which is counter-intuitive)
-            segment_len = (endangle.as_radians - startangle.as_radians) / copies
             currentangle = startangle.as_radians
             bounds = self._emphasized_bounds
             center_x = (bounds[2] + bounds[0]) / 2.0
@@ -3368,11 +3400,15 @@ class Elemental(Modifier):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
                 add_elem = list(map(copy, data))
                 for e in add_elem:
-                    if rotate != 0:
+                    if rotate:
                         x_pos = radius
                         y_pos = 0
                         e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e *= "rotate(%frad, %f, %f)" % (currentangle, center_x, center_y)
+                        e *= "rotate(%frad, %f, %f)" % (
+                            currentangle,
+                            center_x,
+                            center_y,
+                        )
                     else:
                         x_pos = radius * cos(currentangle)
                         y_pos = radius * sin(currentangle)
@@ -3385,52 +3421,142 @@ class Elemental(Modifier):
             self.context.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("corners", type=int, help=_("Number of corners/vertices"))
-        @context.console_argument("x_pos", type=Length, help=_("X-Value of polygon's center"))
-        @context.console_argument("y_pos", type=Length, help=_("Y-Value of polygon's center"))
+        @context.console_argument(
+            "corners", type=int, help=_("Number of corners/vertices")
+        )
+        @context.console_argument(
+            "x_pos", type=Length, help=_("X-Value of polygon's center")
+        )
+        @context.console_argument(
+            "y_pos", type=Length, help=_("Y-Value of polygon's center")
+        )
         @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("inscribed", type=int, help=_("Shall the polygon touch the inscribing circle (1=Yes)"))
+        @context.console_option(
+            "startangle", "ang", type=Angle.parse, help=_("Start-Angle")
+        )
+        @context.console_option(
+            "inscribed",
+            "ins",
+            type=bool,
+            action="store_true",
+            help=_("Shall the polygon touch the inscribing circle?"),
+        )
+        @context.console_option(
+            "radius_inner",
+            "ri",
+            type=Length,
+            help=_("Alternating radius for every other vertice"),
+        )
+        @context.console_option(
+            "alternate_seq",
+            "as",
+            type=int,
+            help=_(
+                "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns"
+            ),
+        )
         @context.console_command(
             "polyshape",
-            help=_("polyshape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"),
+            help=_(
+                "polyshape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"
+            ),
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_polyshape(corners, x_pos, y_pos, radius, startangle, inscribed, data=None, **kwargs):
+        def element_polyshape(
+            corners,
+            x_pos,
+            y_pos,
+            radius,
+            startangle=None,
+            inscribed=None,
+            radius_inner=None,
+            alternate_seq=None,
+            data=None,
+            **kwargs,
+        ):
             if corners is None:
                 raise SyntaxError
             if corners < 3:
                 raise SyntaxError(_("A polyshape needs to have at least three corners"))
 
             if x_pos is None:
-                raise SyntaxError(_("Please provide at least one additional value (which will act as radius then)"))
+                raise SyntaxError(
+                    _(
+                        "Please provide at least one additional value (which will act as radius then)"
+                    )
+                )
+            else:
+                if not x_pos.is_valid_length:
+                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
 
             if y_pos is None:
                 y_pos = Length(0)
+            else:
+                if not y_pos.is_valid_length:
+                    raise SyntaxError("y_pos: " + _("This is not a valid length"))
             # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
             if radius is None:
                 radius = x_pos
                 x_pos = Length(0)
                 y_pos = Length(0)
+            else:
+                if not radius.is_valid_length:
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
+
             if startangle is None:
                 startangle = Angle.parse("0deg")
-            if inscribed is None: # Use circumscribed circle by default
-                inscribed = 0
+            if inscribed is None:  # Use circumscribed circle by default
+                inscribed = False
 
-            x_pos = x_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y_pos = y_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            radius = radius.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            if isinstance(radius, Length) or isinstance(x_pos, Length) or isinstance(y_pos, Length):
+            if radius_inner is None:
+                radius_inner = radius
+            else:
+                if not radius_inner.is_valid_length:
+                    raise SyntaxError(
+                        "radius_inner: " + _("This is not a valid length")
+                    )
+
+            if alternate_seq is None:
+                alternate_seq = 1
+
+            x_pos = x_pos.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            y_pos = y_pos.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            radius = radius.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            if (
+                isinstance(radius, Length)
+                or isinstance(x_pos, Length)
+                or isinstance(y_pos, Length)
+            ):
                 raise SyntaxError
-            if inscribed != 0:
+            if inscribed:
                 radius = radius / cos(pi / corners)
+
+            #            print("Radius: Out=%.2f In=%.2f" % (radius, radius_inner))
+            radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
+            if isinstance(radius_inner, Length):
+                radius_inner = radius
+            #            print("Radius: Out=%.2f In=%.2f" % (radius, radius_inner))
             pts = []
             myangle = startangle.as_radians
             deltaangle = 2 * pi / corners
+            ct = 0
             for j in range(corners):
-                thisx = x_pos + radius * cos(myangle)
-                thisy = y_pos + radius * sin(myangle)
+                if ct < alternate_seq:
+                    thisx = x_pos + radius * cos(myangle)
+                    thisy = y_pos + radius * sin(myangle)
+                else:
+                    thisx = x_pos + radius_inner * cos(myangle)
+                    thisy = y_pos + radius_inner * sin(myangle)
+                ct += 1
+                if ct >= 2 * alternate_seq:
+                    ct = 0
                 if j == 0:
                     firstx = thisx
                     firsty = thisy
@@ -3439,55 +3565,105 @@ class Elemental(Modifier):
             # Close the path
             pts += [(firstx, firsty)]
 
-            self.add_element(Path(Polygon(pts)))
+            self.add_element(Polygon(pts))
             if data is None:
                 return "elements", [pts]
             else:
                 data.append(pts)
                 return "elements", data
 
-        @context.console_argument("corners", type=int, help=_("Number of corners/vertices"))
-        @context.console_argument("hops", type=int, help=_("Amount of vertices to skip"))
-        @context.console_argument("x_pos", type=Length, help=_("X-Value of polygon's center"))
-        @context.console_argument("y_pos", type=Length, help=_("Y-Value of polygon's center"))
+        @context.console_argument(
+            "corners", type=int, help=_("Number of corners/vertices")
+        )
+        @context.console_argument(
+            "hops", type=int, help=_("Amount of vertices to skip")
+        )
+        @context.console_argument(
+            "x_pos", type=Length, help=_("X-Value of polygon's center")
+        )
+        @context.console_argument(
+            "y_pos", type=Length, help=_("Y-Value of polygon's center")
+        )
         @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("inscribed", type=int, help=_("Shall the polygon touch the inscribing circle (1=Yes)"))
+        @context.console_option("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_option(
+            "inscribed",
+            type=bool,
+            action="store_true",
+            help=_("Shall the polygon touch the inscribing circle?"),
+        )
         @context.console_command(
             "star",
-            help=_("star <corners> <hops> <x> <y> <r> <startangle> <inscribed> or star <corners> <hops> <r>"),
+            help=_(
+                "star <corners> <hops> <x> <y> <r> <startangle> <inscribed> or star <corners> <hops> <r>"
+            ),
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_star(corners, hops, x_pos, y_pos, radius, startangle, inscribed, data=None, **kwargs):
+        def element_star(
+            corners,
+            hops,
+            x_pos,
+            y_pos,
+            radius,
+            startangle=None,
+            inscribed=None,
+            data=None,
+            **kwargs,
+        ):
             if corners is None:
                 raise SyntaxError
             if corners < 5:
                 raise SyntaxError(_("A star needs to have at least 5 corners"))
 
             if hops is None or x_pos is None:
-                raise SyntaxError(_("Please provide at least three parameters: corners, hops and radius"))
+                raise SyntaxError(
+                    _(
+                        "Please provide at least three parameters: corners, hops and radius"
+                    )
+                )
 
             if hops < 2 or hops >= corners:
-                raise SyntaxError(_("Hops needs to be greater than 1 and smaller than corners"))
+                raise SyntaxError(
+                    _("Hops needs to be greater than 1 and smaller than corners")
+                )
 
+            if not x_pos.is_valid_length:
+                raise SyntaxError("x_pos: " + _("This is not a valid length"))
             if y_pos is None:
                 y_pos = Length(0)
+            else:
+                if not y_pos.is_valid_length:
+                    raise SyntaxError("y_pos: " + _("This is not a valid length"))
             # do we have something like 'star 5 2 4cm' ? If yes, reassign the parameters
             if radius is None:
                 radius = x_pos
                 x_pos = Length(0)
                 y_pos = Length(0)
+            else:
+                if not radius.is_valid_length:
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
+
             if startangle is None:
                 startangle = Angle.parse("0deg")
-            x_pos = x_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y_pos = y_pos.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            radius = radius.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            if isinstance(radius, Length) or isinstance(x_pos, Length) or isinstance(y_pos, Length):
+            x_pos = x_pos.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            y_pos = y_pos.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            radius = radius.value(
+                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+            )
+            if (
+                isinstance(radius, Length)
+                or isinstance(x_pos, Length)
+                or isinstance(y_pos, Length)
+            ):
                 raise SyntaxError
-            if inscribed is None: # Use circumscribed circle by default
-                inscribed = 0
-            if inscribed != 0:
+            if inscribed is None:  # Use circumscribed circle by default
+                inscribed = False
+            if inscribed:
                 radius = radius / cos(pi / corners)
 
             pts = []
@@ -3505,10 +3681,10 @@ class Elemental(Modifier):
             pts += [(firstx, firsty)]
             starpts = [(pts[0][0], pts[0][1])]
             idx = hops
-            while (idx != 0):
+            while idx != 0:
                 starpts += [(pts[idx][0], pts[idx][1])]
                 idx += hops
-                if idx>=corners:
+                if idx >= corners:
                     idx -= corners
 
             self.add_element(Polygon(starpts))
@@ -3832,7 +4008,9 @@ class Elemental(Modifier):
                 return
             else:
                 if not stroke_width.is_valid_length:
-                    raise SyntaxError("stroke-width: " + _("This is not a valid length"))
+                    raise SyntaxError(
+                        "stroke-width: " + _("This is not a valid length")
+                    )
 
             if len(data) == 0:
                 channel(_("No selected elements."))
@@ -3994,7 +4172,6 @@ class Elemental(Modifier):
             if not y_offset is None:
                 if not y_offset.is_valid_length:
                     raise SyntaxError("y-offset: " + _("This is not a valid length"))
-
 
             bounds = self.selected_area()
             if bounds is None:
