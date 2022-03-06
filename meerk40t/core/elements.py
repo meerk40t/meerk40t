@@ -23,6 +23,10 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+    PATTERN_LENGTH_UNITS,
+    PATTERN_PERCENT,
+    PATTERN_FLOAT,
+    REGEX_LENGTH,
 )
 from .cutcode import CutCode
 from .node.commandop import CommandOperation
@@ -1488,6 +1492,7 @@ class Elemental(Service):
                 raise SyntaxError
             x = self.device.length(x, 0, relative_length=width)
             y = self.device.length(y, 1, relative_length=height)
+            # TODO: Check lengths do not accept gibberish.
             y_pos = 0
             data_out = list(data)
             for j in range(r):

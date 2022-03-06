@@ -915,65 +915,99 @@ msgstr "Umrisse der Auswahl genau nachfahren"
 msgid "Perform a simple trace of the selection"
 msgstr "Umrisse der Auswahl vereinfacht umfahren"
 
-#: meerk40t/gui/navigation.py:402 meerk40t/gui/panes/transformpanel.py:92
-msgid "Scale Down"
-msgstr "Verkleinern"
+#: meerk40t/gui/panes/navigationpanels.py:850
+msgid "Scale Down by 5% / 50% on left / right click"
+msgstr "Verkleinern um 5% / 50% mit linker / rechter Maustaste"
 
 #: meerk40t/gui/navigation.py:403 meerk40t/gui/panes/transformpanel.py:93
-msgid "Translate Top"
-msgstr "Nach oben verschieben"
+msgid "Translate Up by 1x / 10x Jog-Distance on left / right click"
+msgstr "Nach oben verschieben um 1x / 10x des o.a. Abstands mit linker / rechter Maustaste"
 
 #: meerk40t/gui/navigation.py:404 meerk40t/gui/panes/transformpanel.py:94
-msgid "Scale Up"
-msgstr "Vergrößern"
+msgid "Scale Up by 5% / 50% on left / right click"
+msgstr "Vergrößern um 5% / 50% mit linker / rechter Maustaste"
 
 #: meerk40t/gui/navigation.py:405 meerk40t/gui/panes/transformpanel.py:95
-msgid "Translate Left"
-msgstr "Nach links verschieben"
+msgid "Translate Left by 1x / 10x Jog-Distance on left / right click"
+msgstr "Nach links verschieben um 1x / 10x des o.a. Abstands mit linker / rechter Maustaste"
 
 #: meerk40t/gui/navigation.py:406 meerk40t/gui/panes/transformpanel.py:96
 msgid "Reset Matrix"
 msgstr "Matrix zurücksetzen"
 
-#: meerk40t/gui/navigation.py:407 meerk40t/gui/panes/transformpanel.py:97
-msgid "Translate Right"
-msgstr "Nach rechts verschieben"
+#: meerk40t/gui/panes/navigationpanels.py:854
+msgid "Translate Right by 1x / 10x Jog-Distance on left / right click"
+msgstr "Nach rechts verschieben um 1x / 10x des o.a. Abstands mit linker / rechter Maustaste"
 
 #: meerk40t/gui/navigation.py:408 meerk40t/gui/panes/transformpanel.py:98
-msgid "Rotate Counterclockwise"
-msgstr "Gegen den Uhrzeigersinn drehen"
+msgid "Rotate Counterclockwise by 5° / by 90° on left / right click"
+msgstr "Gegen den Uhrzeigersinn um 5° / 90° drehen mit linker / rechter Maustaste"
 
-#: meerk40t/gui/navigation.py:409 meerk40t/gui/panes/transformpanel.py:99
-msgid "Translate Bottom"
-msgstr "Nach unten verschieben"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid "Translate Down by 1x / 10x Jog-Distance on left / right click"
+msgstr "Nach unten verschieben um 1x / 10x des o.a. Abstands mit linker / rechter Maustaste"
 
-#: meerk40t/gui/navigation.py:410 meerk40t/gui/panes/transformpanel.py:100
-msgid "Rotate Clockwise"
-msgstr "Im Uhrzeigersinn drehen"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid "Rotate Clockwise by 5° / by 90° on left / right click"
+msgstr "Im Uhrzeigersinn um 5° / 90° drehen mit linker / rechter Maustaste"
 
-#: meerk40t/gui/navigation.py:413 meerk40t/gui/panes/transformpanel.py:102
-msgid "Transform: Scale X"
-msgstr "Transformieren: X skalieren"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid ""
+"Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means 200% of the original scale"
+"You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+msgstr "Skaliert das Element um diesen Faktor in X-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%."
+"Die Änderung kann entweder direkt als Zahl, alternativ auch als %-Wert angegeben werden, 0.5 oder 50% haben den gleichen Effekt."
 
-#: meerk40t/gui/navigation.py:415 meerk40t/gui/panes/transformpanel.py:104
-msgid "Transform: Skew Y"
-msgstr "Transformieren: Versatz Y"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid ""
+"Skew X - to skew the element in X-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr "Verzerren in X - um das Element um alpha° zu verzerren, muss der Wert entweder \n"
+"- direkt als tan(alpha) angegeben werden, also: 15° = 0.2679, 30° = 0.5774, 45° = 1.0 usw.\n"
+"- oder als Winkel wie 15deg, 0.25turn, usw. angegeben werden\n"
+"In jedem Fall wird der Wert dann als tan(alpha) dargestellt."
 
-#: meerk40t/gui/navigation.py:417 meerk40t/gui/panes/transformpanel.py:106
-msgid "Transform: Translate X"
-msgstr "Transformieren: X verschieben"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid ""
+"Translate X - moves the element by this amount of mils in the X-direction; "
+"you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+msgstr "Verschieben des Elements um den Wert in mils (1/1000 Zoll) in X-Richtung; "
+"es können auch 'reale' Entfernungen wie 3cm, 50mm, 2in verwendet werden"
 
-#: meerk40t/gui/navigation.py:419 meerk40t/gui/panes/transformpanel.py:108
-msgid "Transform: Skew X"
-msgstr "Transformieren: Versatz X"
+#: meerk40t/gui/panes/navigationpanels.py:875
+msgid ""
+"Skew Y - to skew the element in Y-direction by alpha° you need either \n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
+"- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
+"In any case this value will then be represented as tan(alpha)"
+msgstr "Verzerren in Y - um das Element um alpha° zu verzerren, muss der Wert entweder \n"
+"- direkt als tan(alpha) angegeben werden, also: 15° = 0.2679, 30° = 0.5774, 45° = 1.0 usw.\n"
+"- oder als Winkel wie 15deg, 0.25turn, usw. angegeben werden\n"
+"In jedem Fall wird der Wert dann als tan(alpha) dargestellt."
 
 #: meerk40t/gui/navigation.py:421 meerk40t/gui/panes/transformpanel.py:110
-msgid "Transform: Scale Y"
-msgstr "Transformieren: Y skalieren"
+msgid ""
+"Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means 200% of the original scale"
+"You may enter either this factor directly or state the scale as a %-value, so 0.5 or 50% will both cut the scale in half."
+msgstr "Skaliert das Element um diesen Faktor in Y-Richtung, so bedeutet etwa 2.0 einen Faktor von 200%. "
+"Die Änderung kann entweder direkt als Zahl, alternativ auch als %-Wert angegeben werden, 0.5 oder 50% haben den gleichen Effekt."
 
 #: meerk40t/gui/navigation.py:423 meerk40t/gui/panes/transformpanel.py:112
-msgid "Transform: Translate Y"
-msgstr "Transformieren: Y verschieben"
+msgid ""
+"Translate Y - moves the element by this amount of mils in the Y-direction; "
+"you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+msgstr "Verschieben des Elements um den Wert in mils (1/1000 Zoll) in Y-Richtung; "
+"es können auch 'reale' Entfernungen wie 3cm, 50mm, 2in verwendet werden"
+
+#: meerk40t/gui/panes/navigationpanels.py:901
+msgid "Skew"
+msgstr "Verzerren"
+
+#: meerk40t/gui/panes/navigationpanels.py:902
+msgid "Translate"
+msgstr "Verschieben"
 
 #: meerk40t/gui/navigation.py:425 meerk40t/gui/panes/pulsepanel.py:36
 msgid "Fire a short laser pulse"
@@ -5589,7 +5623,7 @@ msgstr "Drehen"
 
 #: meerk40t/core/elements.py:4904
 msgid "Reify User Changes"
-msgstr "Benutzeränderungen überprüfen"
+msgstr "Benutzeränderungen übernehmen"
 
 #: meerk40t/core/elements.py:4910
 msgid "Break Subpaths"
@@ -6441,7 +6475,7 @@ msgstr ""
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:128
 msgid "Not a valid speed or percent."
-msgstr ""
+msgstr "Das ist weder eine gültige Geschwindigkeit noch eine korrekte Prozent-Angabe"
 
 #: meerk40t/device/lhystudios/lhystudiosdevice.py:139
 msgid "pulses per inch [0-1000]"
@@ -7621,3 +7655,7 @@ msgstr " Die jetzige Auswahl bleibt erhalten!"
 #: meerk40t/gui/scene/scenewidgets.py:667
 msgid " Invert selection state of elements!"
 msgstr " Der Status wird dabei umgekehrt!"
+
+#: meerk40t/core/elements.py:3245
+msgid "This is not a valid length"
+msgstr "Das ist keine gültige Längenangabe"
