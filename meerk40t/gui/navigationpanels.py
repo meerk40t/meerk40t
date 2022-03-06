@@ -35,7 +35,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Group
+from meerk40t.svgelements import Group, Angle
 
 _ = wx.GetTranslation
 
@@ -1295,10 +1295,7 @@ class Transform(wx.Panel):
 
     @staticmethod
     def skewed_value(stxt):
-        return float(
-            Angle.parse(stxt).as_radians
-        )  # Temp fix until svgelements fix is merged
-        # return Angle.parse(stxt).as_radians
+        return Angle.parse(stxt).as_radians
 
     @staticmethod
     def scaled_value(stxt):
