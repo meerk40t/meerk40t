@@ -214,6 +214,7 @@ class ViewPort:
         relative_length=None,
         as_float=False,
         unitless=UNITS_PER_PIXEL,
+        scale=None,
     ):
         """
         Axis 0 is X
@@ -229,6 +230,7 @@ class ViewPort:
         @param relative_length:
         @param as_float:
         @param unitless: factor for units with no units sets.
+        @param scale: scale length by given factor.
         @return:
         """
         if axis == 0:
@@ -238,24 +240,27 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            return Length(value).value(
+            length = Length(value)
+            if scale is not None:
+                length *= scale
+            return length.value(
                 ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
             )
         elif new_units == "mm":
             return Length(value).to_mm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
             )
         elif new_units == "inch":
             return Length(value).to_inch(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
             )
         elif new_units == "cm":
             return Length(value).to_cm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
             )
         elif new_units == "px":
             return Length(value).to_px(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
             )
         elif new_units == "mil":
             return (
@@ -729,6 +734,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -738,6 +744,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.0393701)
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%smm" % (Length.str(v)))
@@ -750,6 +758,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -759,6 +768,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.393701)
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%scm" % (Length.str(v)))
@@ -771,6 +782,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -780,6 +792,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / ppi
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%sin" % (Length.str(v)))
@@ -792,6 +806,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -801,6 +816,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = (value / ppi) / DEFAULT_PPI
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%sin" % (Length.str(v)))
