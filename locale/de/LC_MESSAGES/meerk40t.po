@@ -7713,7 +7713,7 @@ msgid "Alternating radius for every other vertice"
 msgstr "Alternativer Radius für alternierende Eckpunkte"
 
 #: meerk40t/core/elements.py:3404
-msgid "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns"
+msgid "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
 msgstr "Wieviele Punkte sollen auf dem Außenkreis liegen bevor zum Innenkreis gewechselt wird (1=Stern-Figur, >=2 Zahnrad-Muster)"
 
 #: meerk40t/core/elements.py:3451
