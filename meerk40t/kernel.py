@@ -2164,6 +2164,8 @@ class Kernel:
                         opt_name = b.get("name", "")
                         opt_short = b.get("short", "")
                         opt_type = b.get("type", type(None)).__name__
+                        opt_nargs = int(b.get("nargs", 1))
+                        opt_type = ",".join([opt_type] * opt_nargs)
                         opt_help = b.get("help")
                         opt_help = (
                             ":\n\t\t%s" % opt_help if opt_help is not None else ""
