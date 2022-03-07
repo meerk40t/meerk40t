@@ -3374,13 +3374,10 @@ class Elemental(Modifier):
                 rotate = False
 
             # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
-
-            try:
-                bounds = self._emphasized_bounds
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-            except Exception:
-                raise SyntaxError
+            bounds = Group.union_bbox(data, with_stroke=True)
+            if bounds is None:
+                return
+            width = bounds[2] - bounds[0]
             radius = radius.value(ppi=1000, relative_length=width)
             if isinstance(radius, Length):
                 raise SyntaxError
@@ -3393,7 +3390,7 @@ class Elemental(Modifier):
             # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
             # the perceived angle travel is CCW (which is counter-intuitive)
             currentangle = startangle.as_radians
-            bounds = self._emphasized_bounds
+            # bounds = self._emphasized_bounds
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             for cc in range(copies):
