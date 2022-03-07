@@ -2,7 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
-from math import sin, cos, pi
+from math import sin, cos, pi, gcd
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -3582,7 +3582,7 @@ class Elemental(Modifier):
             "corners", type=int, help=_("Number of corners/vertices")
         )
         @context.console_argument(
-            "hops", type=int, help=_("Amount of vertices to skip")
+            "density", type=int, help=_("Amount of vertices to skip")
         )
         @context.console_argument(
             "x_pos", type=Length, help=_("X-Value of polygon's center")
@@ -3604,7 +3604,7 @@ class Elemental(Modifier):
         @context.console_command(
             "star",
             help=_(
-                "star <corners> <hops> <x> <y> <r> <startangle> <inscribed> or star <corners> <hops> <r>"
+                "star <corners> <density> <x> <y> <r> <startangle> <inscribed> or star <corners> <density> <r>"
             ),
             input_type=("elements", None),
             output_type="elements",
@@ -3614,7 +3614,7 @@ class Elemental(Modifier):
             channel,
             _,
             corners,
-            hops,
+            density,
             x_pos,
             y_pos,
             radius,
@@ -3623,21 +3623,22 @@ class Elemental(Modifier):
             data=None,
             **kwargs,
         ):
+
             if corners is None:
                 raise SyntaxError
             if corners < 5:
                 raise SyntaxError(_("A star needs to have at least 5 corners"))
 
-            if hops is None or x_pos is None:
+            if density is None or x_pos is None:
                 raise SyntaxError(
                     _(
-                        "Please provide at least three parameters: corners, hops and radius"
+                        "Please provide at least three parameters: corners, density and radius"
                     )
                 )
 
-            if hops < 2 or hops >= corners:
+            if density < 1 or density > corners:
                 raise SyntaxError(
-                    _("Hops needs to be greater than 1 and smaller than corners")
+                    _("density needs to be between 1 and the amount of corners")
                 )
 
             if not x_pos.is_valid_length:
@@ -3678,13 +3679,6 @@ class Elemental(Modifier):
             if inscribed:
                 radius = radius / cos(pi / corners)
 
-            if (corners % 2 == 0) and (hops % 2 == 0):
-                channel(
-                    _(
-                        "You haven chosen two even numbers for corners and hops in a 'star'. This will mean that you aren't hitting the odd numbered vertices!"
-                    )
-                )
-
             pts = []
             myangle = startangle.as_radians
             deltaangle = 2 * pi / corners
@@ -3699,13 +3693,31 @@ class Elemental(Modifier):
             # Close the path
             pts += [(firstx, firsty)]
             starpts = [(pts[0][0], pts[0][1])]
-            idx = hops
+            idx = density
             while idx != 0:
                 starpts += [(pts[idx][0], pts[idx][1])]
-                idx += hops
+                idx += density
                 if idx >= corners:
                     idx -= corners
-
+            if len(starpts) < corners:
+                ct = 0
+                possible_combinations = ""
+                for i in range(corners - 1):
+                    j = i + 2
+                    if gcd(j, corners) == 1:
+                        if ct % 3 == 0:
+                            possible_combinations += "\n star %d %d ... " % (corners, j)
+                        else:
+                            possible_combinations += ", star %d %d ... " % (corners, j)
+                        ct += 1
+                channel(
+                    _("Just for info: we have missed %d vertices...")
+                    % (corners - len(starpts))
+                )
+                channel(
+                    _("To hit all, the density parameters should be e.g. %s")
+                    % possible_combinations
+                )
             star_path = Polygon(starpts)
             self.add_element(star_path)
             if data is None:
