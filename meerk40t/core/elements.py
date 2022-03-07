@@ -3222,7 +3222,8 @@ class Elemental(Modifier):
         @context.console_option(
             "origin",
             "o",
-            type=str,
+            type=int,
+            nargs=2,
             help=_("Position of copy in matrix (e.g '2,2' or '4,3')"),
         )
         @context.console_command(
@@ -3271,30 +3272,7 @@ class Elemental(Modifier):
             y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
-
-            cx = 1
-            cy = 1
-            if origin is None:
-                origin = "1,1"
-            subtext = origin.split(",")
-            if len(subtext) < 2:  # make sure we have something for y
-                subtext.append("1")
-            if subtext[0].isdigit():
-                cx = int(subtext[0])
-                if cx < 1:
-                    cx = 1
-                elif cx > c:
-                    cx = c
-            if subtext[1].isdigit():
-                cy = int(subtext[1])
-                if cy < 1:
-                    cy = 1
-                elif cy > r:
-                    cy = r
-            # print("Cx=%d, Cy=%d" % (cx, cy))
-            # origin defines where the original elements will be placed in the to created grid
-            # i.e. (1, 1) is the 'old' way create copies to the right and to the bottom,
-
+            cx, cy = origin
             data_out = list(data)
             # Tell whether original is at the left / middle / or right
             start_x = -1 * x * (cx - 1)
