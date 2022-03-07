@@ -3272,8 +3272,14 @@ class Elemental(Modifier):
             y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
+            if origin is None:
+                origin = (1,1)
             cx, cy = origin
             data_out = list(data)
+            if cx is None:
+                cx = 1
+            if cy is None:
+                cy = 1
             # Tell whether original is at the left / middle / or right
             start_x = -1 * x * (cx - 1)
             start_y = -1 * y * (cy - 1)
