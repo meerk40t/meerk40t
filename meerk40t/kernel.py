@@ -1364,8 +1364,10 @@ class Kernel:
                         for pk in options:
                             if value == pk["short"]:
                                 if pk.get("action") != "store_true":
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
+                                    count = pk.get("nargs", 1)
+                                    for n in range(count):
+                                        stack.insert(opt_index, pk)
+                                        opt_index += 1
                                 kwargs[pk["name"]] = True
                                 break
 
