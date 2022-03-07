@@ -3308,7 +3308,7 @@ class Elemental(Modifier):
             "deltaangle",
             "d",
             type=Angle.parse,
-            help=_("Delta-Angle (if ommited will take (end-start)/copies )"),
+            help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
         )
         @context.console_command(
             "circ_copy",
