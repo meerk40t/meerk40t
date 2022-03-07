@@ -3684,9 +3684,10 @@ class Elemental(Modifier):
                 if idx >= corners:
                     idx -= corners
 
-            self.add_element(Polygon(starpts))
+            star_path = Polygon(starpts)
+            self.add_element(star_path)
             if data is None:
-                return "elements", [starpts]
+                return "elements", [star_path]
             else:
                 data.append(pts)
                 return "elements", data
