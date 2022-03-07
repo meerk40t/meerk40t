@@ -7710,7 +7710,7 @@ msgstr "Ein Polygon muss mindestens drei Eckpunkte haben"
 
 #: meerk40t/core/elements.py:3404
 msgid "Alternating radius for every other vertice"
-msgstr "Alternativer Radius für alterntierrende Eckpunkte"
+msgstr "Alternativer Radius für alternierende Eckpunkte"
 
 #: meerk40t/core/elements.py:3404
 msgid "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns"
@@ -7731,3 +7731,7 @@ msgstr "Bitte geben Sie mindestens drei Werte an: corners, hops und radius"
 #: meerk40t/core/elements.py:3472
 msgid "Hops needs to be greater than 1 and smaller than corners"
 msgstr "Der Wert für hops muss größer als 1 und kleiner als die Zahl der Ecken sein"
+
+#: meerk40t/core/elements.py:3684
+msgid "You haven chosen two even numbers for corners and hops in a 'star'. This will mean that you aren't hitting the odd numbered vertices!"
+msgstr "Es wurden zwei gerade Zahlen als Werte für corners und hops gewählt. Damit werden aber ungerade Eckpunkte nicht getroffen!"

@@ -3433,20 +3433,20 @@ class Elemental(Modifier):
         )
         @context.console_option(
             "inscribed",
-            "ins",
+            "i",
             type=bool,
             action="store_true",
             help=_("Shall the polygon touch the inscribing circle?"),
         )
         @context.console_option(
             "radius_inner",
-            "ri",
+            "r",
             type=Length,
             help=_("Alternating radius for every other vertice"),
         )
         @context.console_option(
             "alternate_seq",
-            "as",
+            "a",
             type=int,
             help=_(
                 "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns"
@@ -3535,20 +3535,29 @@ class Elemental(Modifier):
             if inscribed:
                 radius = radius / cos(pi / corners)
 
-            #            print("Radius: Out=%.2f In=%.2f" % (radius, radius_inner))
             radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
             if isinstance(radius_inner, Length):
                 radius_inner = radius
-            #            print("Radius: Out=%.2f In=%.2f" % (radius, radius_inner))
+            if alternate_seq < 2:
+                radius_inner = radius
+
+            # print("These are your parameters:")
+            # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, x_pos, y_pos))
+            # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
+            # print("Inscribe: %s" % inscribed)
+            # print("Startangle: %.2f, Alternate-Seq: %d" % (startangle.as_degrees, alternate_seq) )
+
             pts = []
             myangle = startangle.as_radians
             deltaangle = 2 * pi / corners
             ct = 0
             for j in range(corners):
                 if ct < alternate_seq:
+                    # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
                     thisx = x_pos + radius * cos(myangle)
                     thisy = y_pos + radius * sin(myangle)
                 else:
+                    # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
                     thisx = x_pos + radius_inner * cos(myangle)
                     thisy = y_pos + radius_inner * sin(myangle)
                 ct += 1
@@ -3561,12 +3570,12 @@ class Elemental(Modifier):
                 pts += [(thisx, thisy)]
             # Close the path
             pts += [(firstx, firsty)]
-
-            self.add_element(Polygon(pts))
+            poly_path = Polygon(pts)
+            self.add_element(poly_path)
             if data is None:
-                return "elements", [pts]
+                return "elements", [poly_path]
             else:
-                data.append(pts)
+                data.append(poly_path)
                 return "elements", data
 
         @context.console_argument(
@@ -3582,9 +3591,12 @@ class Elemental(Modifier):
             "y_pos", type=Length, help=_("Y-Value of polygon's center")
         )
         @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_option("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_option(
+            "startangle", "s", type=Angle.parse, help=_("Start-Angle")
+        )
         @context.console_option(
             "inscribed",
+            "i",
             type=bool,
             action="store_true",
             help=_("Shall the polygon touch the inscribing circle?"),
@@ -3598,6 +3610,9 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_star(
+            command,
+            channel,
+            _,
             corners,
             hops,
             x_pos,
@@ -3663,6 +3678,13 @@ class Elemental(Modifier):
             if inscribed:
                 radius = radius / cos(pi / corners)
 
+            if (corners % 2 == 0) and (hops % 2 == 0):
+                channel(
+                    _(
+                        "You haven chosen two even numbers for corners and hops in a 'star'. This will mean that you aren't hitting the odd numbered vertices!"
+                    )
+                )
+
             pts = []
             myangle = startangle.as_radians
             deltaangle = 2 * pi / corners
@@ -3689,7 +3711,7 @@ class Elemental(Modifier):
             if data is None:
                 return "elements", [star_path]
             else:
-                data.append(pts)
+                data.append(star_path)
                 return "elements", data
 
         @context.console_option("step", "s", default=2.0, type=float)
