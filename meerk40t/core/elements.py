@@ -3515,7 +3515,7 @@ class Elemental(Modifier):
                     )
 
             if alternate_seq is None:
-                alternate_seq = 1
+                alternate_seq = 0
 
             x_pos = x_pos.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
@@ -3538,14 +3538,17 @@ class Elemental(Modifier):
             radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
             if isinstance(radius_inner, Length):
                 radius_inner = radius
-            if alternate_seq < 2:
+            if alternate_seq < 1:
                 radius_inner = radius
 
             # print("These are your parameters:")
             # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, x_pos, y_pos))
             # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
             # print("Inscribe: %s" % inscribed)
-            # print("Startangle: %.2f, Alternate-Seq: %d" % (startangle.as_degrees, alternate_seq) )
+            # print(
+            #    "Startangle: %.2f, Alternate-Seq: %d"
+            #    % (startangle.as_degrees, alternate_seq)
+            # )
 
             pts = []
             myangle = startangle.as_radians
