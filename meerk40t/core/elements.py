@@ -3224,7 +3224,7 @@ class Elemental(Modifier):
             "o",
             type=int,
             nargs=2,
-            help=_("Position of copy in matrix (e.g '2,2' or '4,3')"),
+            help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
         )
         @context.console_command(
             "grid",

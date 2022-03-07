@@ -7661,7 +7661,7 @@ msgid "This is not a valid length"
 msgstr "Das ist keine gültige Längenangabe"
 
 #: meerk40t/core/elements.py:3218
-msgid "Position of copy in matrix (e.g '2,2' or '4,3')"
+msgid "Position of original in matrix (e.g '2,2' or '4,3')"
 msgstr "Platzierung des Originals im neuen Gitter (z.B. '2,2' oder '4,3')"
 
 #: meerk40t/core/elements.py:3303
@@ -7681,7 +7681,7 @@ msgid "Rotate copies towards center?"
 msgstr "Sollen Kopien zum Mittelpunkt hin rotiert werden?"
 
 #: meerk40t/core/elements.py:3404
-msgid "Delta-Angle (if ommited will take (end-start)/copies )"
+msgid "Delta-Angle (if omitted will take (end-start)/copies )"
 msgstr "Delta-Winkel (falls nicht angegeben, dann (endwinkel-startwinkel)/kopien )"
 
 #: meerk40t/core/elements.py:3245
