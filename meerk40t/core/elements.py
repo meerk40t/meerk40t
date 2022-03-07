@@ -3429,7 +3429,7 @@ class Elemental(Modifier):
         )
         @context.console_argument("radius", type=Length, help=_("Radius"))
         @context.console_option(
-            "startangle", "a", type=Angle.parse, help=_("Start-Angle")
+            "startangle", "s", type=Angle.parse, help=_("Start-Angle")
         )
         @context.console_option(
             "inscribed",
@@ -3446,7 +3446,7 @@ class Elemental(Modifier):
         )
         @context.console_option(
             "alternate_seq",
-            "s",
+            "a",
             type=int,
             help=_(
                 "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
