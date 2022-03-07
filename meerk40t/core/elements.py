@@ -3506,6 +3506,12 @@ class Elemental(Modifier):
             if inscribed is None:  # Use circumscribed circle by default
                 inscribed = False
 
+            if alternate_seq is None:
+                if radius_inner is None:
+                    alternate_seq = 0
+                else:
+                    alternate_seq = 1
+
             if radius_inner is None:
                 radius_inner = radius
             else:
@@ -3513,9 +3519,6 @@ class Elemental(Modifier):
                     raise SyntaxError(
                         "radius_inner: " + _("This is not a valid length")
                     )
-
-            if alternate_seq is None:
-                alternate_seq = 0
 
             x_pos = x_pos.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
