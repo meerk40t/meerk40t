@@ -135,12 +135,18 @@ class CutPlan:
         context = self.context
 
         grouped_plan = list()
+        last_type = ""
         group = [self.plan[0]]
         for c in self.plan[1:]:
-            if group[-1].type.startswith("op") != c.type.startswith("op"):
+            if hasattr(c, "type"):
+                c_type = c.type
+            else:
+                c_type = type(c).__name__
+            if c_type.startswith("op") != last_type.startswith("op"):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
+            last_type = c_type
         grouped_plan.append(group)
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
