@@ -3301,6 +3301,118 @@ class Elemental(Modifier):
 
         @context.console_argument("copies", type=int, help=_("Number of copies"))
         @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("cx", type=Length, help=_("X of center to circle around"))
+        @context.console_argument("cy", type=Length, help=_("Y of center to circle around"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @context.console_option(
+            "rotate",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Rotate copies towards center?"),
+        )
+        @context.console_option(
+            "deltaangle",
+            "d",
+            type=Angle.parse,
+            help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
+        )
+        @context.console_command(
+            "circ_array",
+            help=_("circ_array <copies> <radius> <cx> <cy> <startangle> <endangle> <rotate>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_circulararray(
+            command,
+            channel,
+            _,
+            copies: int,
+            radius=None,
+            startangle=None,
+            endangle=None,
+            rotate=None,
+            deltaangle=None,
+            data=None,
+            **kwargs,
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0 and self._emphasized_bounds is None:
+                channel(_("No item selected."))
+                return
+
+            if copies is None:
+                raise SyntaxError
+            if copies <= 1:
+                raise SyntaxError (_("copies should be greater or equal to 2"))
+            if radius is None:
+                radius = Length(0)
+            else:
+                if not radius.is_valid_length:
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
+            if startangle is None:
+                startangle = Angle.parse("0deg")
+            if endangle is None:
+                endangle = Angle.parse("360deg")
+            if rotate is None:
+                rotate = False
+
+            # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
+            bounds = Group.union_bbox(data, with_stroke=True)
+            if bounds is None:
+                return
+            width = bounds[2] - bounds[0]
+            radius = radius.value(ppi=1000, relative_length=width)
+            if isinstance(radius, Length):
+                raise SyntaxError
+
+            data_out = list(data)
+            if deltaangle is None:
+                segment_len = (endangle.as_radians - startangle.as_radians) / copies
+            else:
+                segment_len = deltaangle.as_radians
+            # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
+            # the perceived angle travel is CCW (which is counter-intuitive)
+            currentangle = startangle.as_radians
+            # bounds = self._emphasized_bounds
+            center_x = (bounds[2] + bounds[0]) / 2.0 - radius
+            center_y = (bounds[3] + bounds[1]) / 2.0
+
+            # print ("Copies: %d, Radius: %.1f" % (copies, radius))
+            # print ("Center: %.1f, %.1f" % (center_x, center_y))
+            # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
+
+            for cc in range(copies):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                if cc>0:
+                    add_elem = list(map(copy, data))
+                    for e in add_elem:
+                        if rotate:
+                            x_pos = -1 * radius
+                            y_pos = 0
+                            # e *= "translate(%f, %f)" % (x_pos, y_pos)
+                            e *= "rotate(%frad, %f, %f)" % (
+                                currentangle,
+                                center_x,
+                                center_y,
+                            )
+                        else:
+                            x_pos = -1 * radius + radius * cos(currentangle)
+                            y_pos = radius * sin(currentangle)
+                            e *= "translate(%f, %f)" % (x_pos, y_pos)
+
+                    self.add_elems(add_elem)
+                    data_out.extend(add_elem)
+
+                currentangle += segment_len
+
+            self.context.signal("refresh_scene")
+            return "elements", data_out
+
+        @context.console_argument("copies", type=int, help=_("Number of copies"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
         @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @context.console_option(
