@@ -3273,7 +3273,7 @@ class Elemental(Modifier):
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
             if origin is None:
-                origin = (1,1)
+                origin = (1, 1)
             cx, cy = origin
             data_out = list(data)
             if cx is None:
@@ -3938,12 +3938,24 @@ class Elemental(Modifier):
         )
         def element_polygon(args=tuple(), **kwargs):
             try:
-                element = Polygon(list(map(float, args)))
+                mlist = list(map(str, args))
+                for ct, e in enumerate(mlist):
+                    ll = Length(e)
+                    # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
+                    if ct % 2 == 0:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                        )
+                    mlist[ct] = x
+                    ct += 1
+                element = Polygon(mlist)
             except ValueError:
                 raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
+                    _("Must be a list of spaced delimited floating point length pairs.")
                 )
             self.add_element(element)
 
@@ -3954,13 +3966,24 @@ class Elemental(Modifier):
         )
         def element_polyline(command, channel, _, args=tuple(), **kwargs):
             try:
-                element = Polyline(list(map(float, args)))
+                mlist = list(map(str, args))
+                for ct, e in enumerate(mlist):
+                    ll = Length(e)
+                    # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
+                    if ct % 2 == 0:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        x = ll.value(
+                            ppi=1000.0,
+                            relative_length=bed_dim.bed_height * MILS_IN_MM,
+                        )
+                    mlist[ct] = x
+                    ct += 1
+                element = Polyline(mlist)
             except ValueError:
-                raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
-                )
+                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
 
         @context.console_command(
