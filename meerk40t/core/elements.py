@@ -2,7 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
-from math import sin, cos, pi, gcd
+from math import sin, cos, pi, gcd, tau
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -3299,10 +3299,8 @@ class Elemental(Modifier):
             self.context.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("copies", type=int, help=_("Number of copies"))
+        @context.console_argument("repeats", type=int, help=_("Number of repeats"))
         @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("cx", type=Length, help=_("X of center to circle around"))
-        @context.console_argument("cy", type=Length, help=_("Y of center to circle around"))
         @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @context.console_option(
@@ -3316,19 +3314,19 @@ class Elemental(Modifier):
             "deltaangle",
             "d",
             type=Angle.parse,
-            help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
+            help=_("Delta-Angle (if omitted will take (end-start)/repeats )"),
         )
         @context.console_command(
-            "circ_array",
-            help=_("circ_array <copies> <radius> <cx> <cy> <startangle> <endangle> <rotate>"),
+            "radial",
+            help=_("radial <repeats> <radius> <cx> <cy> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_circulararray(
+        def element_radial(
             command,
             channel,
             _,
-            copies: int,
+            repeats: int,
             radius=None,
             startangle=None,
             endangle=None,
@@ -3343,10 +3341,10 @@ class Elemental(Modifier):
                 channel(_("No item selected."))
                 return
 
-            if copies is None:
+            if repeats is None:
                 raise SyntaxError
-            if copies <= 1:
-                raise SyntaxError (_("copies should be greater or equal to 2"))
+            if repeats <= 1:
+                raise SyntaxError (_("repeats should be greater or equal to 2"))
             if radius is None:
                 radius = Length(0)
             else:
@@ -3370,7 +3368,7 @@ class Elemental(Modifier):
 
             data_out = list(data)
             if deltaangle is None:
-                segment_len = (endangle.as_radians - startangle.as_radians) / copies
+                segment_len = (endangle.as_radians - startangle.as_radians) / repeats
             else:
                 segment_len = deltaangle.as_radians
             # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
@@ -3380,31 +3378,31 @@ class Elemental(Modifier):
             center_x = (bounds[2] + bounds[0]) / 2.0 - radius
             center_y = (bounds[3] + bounds[1]) / 2.0
 
-            # print ("Copies: %d, Radius: %.1f" % (copies, radius))
+            # print ("repeats: %d, Radius: %.1f" % (repeats, radius))
             # print ("Center: %.1f, %.1f" % (center_x, center_y))
             # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
 
-            for cc in range(copies):
+            currentangle = segment_len
+            for cc in range(1, repeats):
                 # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
-                if cc>0:
-                    add_elem = list(map(copy, data))
-                    for e in add_elem:
-                        if rotate:
-                            x_pos = -1 * radius
-                            y_pos = 0
-                            # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                            e *= "rotate(%frad, %f, %f)" % (
-                                currentangle,
-                                center_x,
-                                center_y,
-                            )
-                        else:
-                            x_pos = -1 * radius + radius * cos(currentangle)
-                            y_pos = radius * sin(currentangle)
-                            e *= "translate(%f, %f)" % (x_pos, y_pos)
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate:
+                        x_pos = -1 * radius
+                        y_pos = 0
+                        # e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= "rotate(%frad, %f, %f)" % (
+                            currentangle,
+                            center_x,
+                            center_y,
+                        )
+                    else:
+                        x_pos = -1 * radius + radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
 
-                    self.add_elems(add_elem)
-                    data_out.extend(add_elem)
+                self.add_elems(add_elem)
+                data_out.extend(add_elem)
 
                 currentangle += segment_len
 
@@ -3518,10 +3516,10 @@ class Elemental(Modifier):
             "corners", type=int, help=_("Number of corners/vertices")
         )
         @context.console_argument(
-            "x_pos", type=Length, help=_("X-Value of polygon's center")
+            "cx", type=Length, help=_("X-Value of polygon's center")
         )
         @context.console_argument(
-            "y_pos", type=Length, help=_("Y-Value of polygon's center")
+            "cy", type=Length, help=_("Y-Value of polygon's center")
         )
         @context.console_argument("radius", type=Length, help=_("Radius"))
         @context.console_option(
@@ -3558,8 +3556,8 @@ class Elemental(Modifier):
         )
         def element_polyshape(
             corners,
-            x_pos,
-            y_pos,
+            cx,
+            cy,
             radius,
             startangle=None,
             inscribed=None,
@@ -3573,26 +3571,26 @@ class Elemental(Modifier):
             if corners < 3:
                 raise SyntaxError(_("A polyshape needs to have at least three corners"))
 
-            if x_pos is None:
+            if cx is None:
                 raise SyntaxError(
                     _(
                         "Please provide at least one additional value (which will act as radius then)"
                     )
                 )
             else:
-                if not x_pos.is_valid_length:
-                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
+                if not cx.is_valid_length:
+                    raise SyntaxError("cx: " + _("This is not a valid length"))
 
-            if y_pos is None:
-                y_pos = Length(0)
+            if cy is None:
+                cy = Length(0)
             else:
-                if not y_pos.is_valid_length:
-                    raise SyntaxError("y_pos: " + _("This is not a valid length"))
+                if not cy.is_valid_length:
+                    raise SyntaxError("cy: " + _("This is not a valid length"))
             # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
             if radius is None:
-                radius = x_pos
-                x_pos = Length(0)
-                y_pos = Length(0)
+                radius = cx
+                cx = Length(0)
+                cy = Length(0)
             else:
                 if not radius.is_valid_length:
                     raise SyntaxError("radius: " + _("This is not a valid length"))
@@ -3616,10 +3614,10 @@ class Elemental(Modifier):
                         "radius_inner: " + _("This is not a valid length")
                     )
 
-            x_pos = x_pos.value(
+            cx = cx.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
-            y_pos = y_pos.value(
+            cy = cy.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
             radius = radius.value(
@@ -3627,8 +3625,8 @@ class Elemental(Modifier):
             )
             if (
                 isinstance(radius, Length)
-                or isinstance(x_pos, Length)
-                or isinstance(y_pos, Length)
+                or isinstance(cx, Length)
+                or isinstance(cy, Length)
             ):
                 raise SyntaxError
             if inscribed:
@@ -3641,7 +3639,7 @@ class Elemental(Modifier):
                 radius_inner = radius
 
             # print("These are your parameters:")
-            # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, x_pos, y_pos))
+            # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
             # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
             # print("Inscribe: %s" % inscribed)
             # print(
@@ -3651,17 +3649,17 @@ class Elemental(Modifier):
 
             pts = []
             myangle = startangle.as_radians
-            deltaangle = 2 * pi / corners
+            deltaangle = tau / corners
             ct = 0
             for j in range(corners):
                 if ct < alternate_seq:
                     # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
-                    thisx = x_pos + radius * cos(myangle)
-                    thisy = y_pos + radius * sin(myangle)
+                    thisx = cx + radius * cos(myangle)
+                    thisy = cy + radius * sin(myangle)
                 else:
                     # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
-                    thisx = x_pos + radius_inner * cos(myangle)
-                    thisy = y_pos + radius_inner * sin(myangle)
+                    thisx = cx + radius_inner * cos(myangle)
+                    thisy = cy + radius_inner * sin(myangle)
                 ct += 1
                 if ct >= 2 * alternate_seq:
                     ct = 0
@@ -3687,10 +3685,10 @@ class Elemental(Modifier):
             "density", type=int, help=_("Amount of vertices to skip")
         )
         @context.console_argument(
-            "x_pos", type=Length, help=_("X-Value of polygon's center")
+            "cx", type=Length, help=_("X-Value of polygon's center")
         )
         @context.console_argument(
-            "y_pos", type=Length, help=_("Y-Value of polygon's center")
+            "cy", type=Length, help=_("Y-Value of polygon's center")
         )
         @context.console_argument("radius", type=Length, help=_("Radius"))
         @context.console_option(
@@ -3717,8 +3715,8 @@ class Elemental(Modifier):
             _,
             corners,
             density,
-            x_pos,
-            y_pos,
+            cx,
+            cy,
             radius,
             startangle=None,
             inscribed=None,
@@ -3731,7 +3729,7 @@ class Elemental(Modifier):
             if corners < 5:
                 raise SyntaxError(_("A star needs to have at least 5 corners"))
 
-            if density is None or x_pos is None:
+            if density is None or cx is None:
                 raise SyntaxError(
                     _(
                         "Please provide at least three parameters: corners, density and radius"
@@ -3743,28 +3741,28 @@ class Elemental(Modifier):
                     _("density needs to be between 1 and the amount of corners")
                 )
 
-            if not x_pos.is_valid_length:
-                raise SyntaxError("x_pos: " + _("This is not a valid length"))
-            if y_pos is None:
-                y_pos = Length(0)
+            if not cx.is_valid_length:
+                raise SyntaxError("cx: " + _("This is not a valid length"))
+            if cy is None:
+                cy = Length(0)
             else:
-                if not y_pos.is_valid_length:
-                    raise SyntaxError("y_pos: " + _("This is not a valid length"))
+                if not cy.is_valid_length:
+                    raise SyntaxError("cy: " + _("This is not a valid length"))
             # do we have something like 'star 5 2 4cm' ? If yes, reassign the parameters
             if radius is None:
-                radius = x_pos
-                x_pos = Length(0)
-                y_pos = Length(0)
+                radius = cx
+                cx = Length(0)
+                cy = Length(0)
             else:
                 if not radius.is_valid_length:
                     raise SyntaxError("radius: " + _("This is not a valid length"))
 
             if startangle is None:
                 startangle = Angle.parse("0deg")
-            x_pos = x_pos.value(
+            cx = cx.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
-            y_pos = y_pos.value(
+            cy = cy.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
             )
             radius = radius.value(
@@ -3772,8 +3770,8 @@ class Elemental(Modifier):
             )
             if (
                 isinstance(radius, Length)
-                or isinstance(x_pos, Length)
-                or isinstance(y_pos, Length)
+                or isinstance(cx, Length)
+                or isinstance(cy, Length)
             ):
                 raise SyntaxError
             if inscribed is None:  # Use circumscribed circle by default
@@ -3783,10 +3781,10 @@ class Elemental(Modifier):
 
             pts = []
             myangle = startangle.as_radians
-            deltaangle = 2 * pi / corners
+            deltaangle = tau / corners
             for j in range(corners):
-                thisx = x_pos + radius * cos(myangle)
-                thisy = y_pos + radius * sin(myangle)
+                thisx = cx + radius * cos(myangle)
+                thisy = cy + radius * sin(myangle)
                 if j == 0:
                     firstx = thisx
                     firsty = thisy
@@ -4046,9 +4044,9 @@ class Elemental(Modifier):
                 return "elements", data
 
         @context.console_command(
-            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
+            "polygon", help=_("polygon (Length Length)*"), input_type=("elements", None)
         )
-        def element_polygon(args=tuple(), **kwargs):
+        def element_polygon(args=tuple(), data=None, **kwargs):
             try:
                 mlist = list(map(str, args))
                 for ct, e in enumerate(mlist):
@@ -4067,21 +4065,27 @@ class Elemental(Modifier):
                 element = Polygon(mlist)
             except ValueError:
                 raise SyntaxError(
-                    _("Must be a list of spaced delimited floating point length pairs.")
+                    _("Must be a list of spaced delimited length pairs.")
                 )
             self.add_element(element)
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_command(
             "polyline",
-            help=_("polyline (float float)*"),
+            help=_("polyline (Length Length)*"),
             input_type=("elements", None),
         )
-        def element_polyline(command, channel, _, args=tuple(), **kwargs):
+        def element_polyline(command, channel, _, args=tuple(), data=None, **kwargs):
+            pcol = None
+            pstroke = Color()
             try:
                 mlist = list(map(str, args))
                 for ct, e in enumerate(mlist):
                     ll = Length(e)
-                    # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
                     if ct % 2 == 0:
                         x = ll.value(
                             ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
@@ -4092,11 +4096,19 @@ class Elemental(Modifier):
                             relative_length=bed_dim.bed_height * MILS_IN_MM,
                         )
                     mlist[ct] = x
+
                     ct += 1
+
                 element = Polyline(mlist)
+                element.fill = pcol
             except ValueError:
                 raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
