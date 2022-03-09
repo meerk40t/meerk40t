@@ -3721,9 +3721,9 @@ class Elemental(Modifier):
                         j = i + 2
                         if gcd(j, corners) == 1:
                             if ct % 3 == 0:
-                                possible_combinations += "\n star %d %d ... " % (corners, j)
+                                possible_combinations += "\n shape %d ... -d %d" % (corners, j)
                             else:
-                                possible_combinations += ", star %d %d ... " % (corners, j)
+                                possible_combinations += ", shape %d ... -d %d " % (corners, j)
                             ct += 1
                     channel(
                         _("Just for info: we have missed %d vertices...")
