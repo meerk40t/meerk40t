@@ -3575,139 +3575,164 @@ class Elemental(Modifier):
         ):
             if corners is None:
                 raise SyntaxError
-            if corners < 3:
-                raise SyntaxError(_("A polyshape needs to have at least three corners"))
-
-            if cx is None:
-                raise SyntaxError(
-                    _(
-                        "Please provide at least one additional value (which will act as radius then)"
-                    )
-                )
-            else:
-                if not cx.is_valid_length:
+            if corners <= 2:
+                if cx is None:
+                    cx = Length(0)
+                elif not cx.is_valid_length:
                     raise SyntaxError("cx: " + _("This is not a valid length"))
-
-            if cy is None:
-                cy = Length(0)
-            else:
-                if not cy.is_valid_length:
+                if cy is None:
+                    cy = Length(0)
+                elif not cy.is_valid_length:
                     raise SyntaxError("cy: " + _("This is not a valid length"))
-            # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
-            if radius is None:
-                radius = cx
-                cx = Length(0)
-                cy = Length(0)
+                cx = cx.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                cy = cy.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                if radius is None:
+                    radius = Length(0)
+                radius = radius.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                starpts = [(cx, cy)]
+                if corners==2:
+                    starpts += [(cx + cos(startangle.as_radians) * radius, cy + sin(startangle.as_radians) * radius)]
+
             else:
-                if not radius.is_valid_length:
-                    raise SyntaxError("radius: " + _("This is not a valid length"))
-
-            if startangle is None:
-                startangle = Angle.parse("0deg")
-            if inscribed is None:  # Use circumscribed circle by default
-                inscribed = False
-
-            if alternate_seq is None:
-                if radius_inner is None:
-                    alternate_seq = 0
-                else:
-                    alternate_seq = 1
-
-            if radius_inner is None:
-                radius_inner = radius
-            else:
-                if not radius_inner.is_valid_length:
+                if cx is None:
                     raise SyntaxError(
-                        "radius_inner: " + _("This is not a valid length")
+                        _(
+                            "Please provide at least one additional value (which will act as radius then)"
+                        )
                     )
-            if density is None:
-                density = 1
-            if density<1 or density > corners:
-                density = 1
-
-            cx = cx.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            cy = cy.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            radius = radius.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            if (
-                isinstance(radius, Length)
-                or isinstance(cx, Length)
-                or isinstance(cy, Length)
-            ):
-                raise SyntaxError
-            if inscribed:
-                radius = radius / cos(pi / corners)
-
-            radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
-            if isinstance(radius_inner, Length):
-                radius_inner = radius
-            if alternate_seq < 1:
-                radius_inner = radius
-
-            # print("These are your parameters:")
-            # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
-            # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
-            # print("Inscribe: %s" % inscribed)
-            # print(
-            #    "Startangle: %.2f, Alternate-Seq: %d"
-            #    % (startangle.as_degrees, alternate_seq)
-            # )
-
-            pts = []
-            myangle = startangle.as_radians
-            deltaangle = tau / corners
-            ct = 0
-            for j in range(corners):
-                if ct < alternate_seq:
-                    # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
-                    thisx = cx + radius * cos(myangle)
-                    thisy = cy + radius * sin(myangle)
                 else:
-                    # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
-                    thisx = cx + radius_inner * cos(myangle)
-                    thisy = cy + radius_inner * sin(myangle)
-                ct += 1
-                if ct >= 2 * alternate_seq:
-                    ct = 0
-                if j == 0:
-                    firstx = thisx
-                    firsty = thisy
-                myangle += deltaangle
-                pts += [(thisx, thisy)]
-            # Close the path
-            pts += [(firstx, firsty)]
+                    if not cx.is_valid_length:
+                        raise SyntaxError("cx: " + _("This is not a valid length"))
 
-            starpts = [(pts[0][0], pts[0][1])]
-            idx = density
-            while idx != 0:
-                starpts += [(pts[idx][0], pts[idx][1])]
-                idx += density
-                if idx >= corners:
-                    idx -= corners
-            if len(starpts) < corners:
+                if cy is None:
+                    cy = Length(0)
+                else:
+                    if not cy.is_valid_length:
+                        raise SyntaxError("cy: " + _("This is not a valid length"))
+                # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
+                if radius is None:
+                    radius = cx
+                    cx = Length(0)
+                    cy = Length(0)
+                else:
+                    if not radius.is_valid_length:
+                        raise SyntaxError("radius: " + _("This is not a valid length"))
+
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+                if inscribed is None:  # Use circumscribed circle by default
+                    inscribed = False
+
+                if alternate_seq is None:
+                    if radius_inner is None:
+                        alternate_seq = 0
+                    else:
+                        alternate_seq = 1
+
+                if radius_inner is None:
+                    radius_inner = radius
+                else:
+                    if not radius_inner.is_valid_length:
+                        raise SyntaxError(
+                            "radius_inner: " + _("This is not a valid length")
+                        )
+                if density is None:
+                    density = 1
+                if density<1 or density > corners:
+                    density = 1
+
+                cx = cx.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                cy = cy.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                radius = radius.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                if (
+                    isinstance(radius, Length)
+                    or isinstance(cx, Length)
+                    or isinstance(cy, Length)
+                ):
+                    raise SyntaxError
+                if inscribed:
+                    radius = radius / cos(pi / corners)
+
+                radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
+                if isinstance(radius_inner, Length):
+                    radius_inner = radius
+                if alternate_seq < 1:
+                    radius_inner = radius
+
+                # print("These are your parameters:")
+                # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
+                # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
+                # print("Inscribe: %s" % inscribed)
+                # print(
+                #    "Startangle: %.2f, Alternate-Seq: %d"
+                #    % (startangle.as_degrees, alternate_seq)
+                # )
+
+                pts = []
+                myangle = startangle.as_radians
+                deltaangle = tau / corners
                 ct = 0
-                possible_combinations = ""
-                for i in range(corners - 1):
-                    j = i + 2
-                    if gcd(j, corners) == 1:
-                        if ct % 3 == 0:
-                            possible_combinations += "\n star %d %d ... " % (corners, j)
-                        else:
-                            possible_combinations += ", star %d %d ... " % (corners, j)
-                        ct += 1
-                channel(
-                    _("Just for info: we have missed %d vertices...")
-                    % (corners - len(starpts))
-                )
-                channel(
-                    _("To hit all, the density parameters should be e.g. %s")
-                    % possible_combinations
-                )
+                for j in range(corners):
+                    if ct < alternate_seq:
+                        # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
+                        thisx = cx + radius * cos(myangle)
+                        thisy = cy + radius * sin(myangle)
+                    else:
+                        # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
+                        thisx = cx + radius_inner * cos(myangle)
+                        thisy = cy + radius_inner * sin(myangle)
+                    ct += 1
+                    if ct >= 2 * alternate_seq:
+                        ct = 0
+                    if j == 0:
+                        firstx = thisx
+                        firsty = thisy
+                    myangle += deltaangle
+                    pts += [(thisx, thisy)]
+                # Close the path
+                pts += [(firstx, firsty)]
+
+                starpts = [(pts[0][0], pts[0][1])]
+                idx = density
+                while idx != 0:
+                    starpts += [(pts[idx][0], pts[idx][1])]
+                    idx += density
+                    if idx >= corners:
+                        idx -= corners
+                if len(starpts) < corners:
+                    ct = 0
+                    possible_combinations = ""
+                    for i in range(corners - 1):
+                        j = i + 2
+                        if gcd(j, corners) == 1:
+                            if ct % 3 == 0:
+                                possible_combinations += "\n star %d %d ... " % (corners, j)
+                            else:
+                                possible_combinations += ", star %d %d ... " % (corners, j)
+                            ct += 1
+                    channel(
+                        _("Just for info: we have missed %d vertices...")
+                        % (corners - len(starpts))
+                    )
+                    channel(
+                        _("To hit all, the density parameters should be e.g. %s")
+                        % possible_combinations
+                    )
 
             poly_path = Polygon(starpts)
             self.add_element(poly_path)
@@ -3717,153 +3742,6 @@ class Elemental(Modifier):
                 data.append(poly_path)
                 return "elements", data
 
-        @context.console_argument(
-            "corners", type=int, help=_("Number of corners/vertices")
-        )
-        @context.console_argument(
-            "density", type=int, help=_("Amount of vertices to skip")
-        )
-        @context.console_argument(
-            "cx", type=Length, help=_("X-Value of polygon's center")
-        )
-        @context.console_argument(
-            "cy", type=Length, help=_("Y-Value of polygon's center")
-        )
-        @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_option(
-            "startangle", "s", type=Angle.parse, help=_("Start-Angle")
-        )
-        @context.console_option(
-            "inscribed",
-            "i",
-            type=bool,
-            action="store_true",
-            help=_("Shall the polygon touch the inscribing circle?"),
-        )
-        @context.console_command(
-            "star",
-            help=_(
-                "star <corners> <density> <x> <y> <r> <startangle> <inscribed> or star <corners> <density> <r>"
-            ),
-            input_type=("elements", None),
-            output_type="elements",
-        )
-        def element_star(
-            command,
-            channel,
-            _,
-            corners,
-            density,
-            cx,
-            cy,
-            radius,
-            startangle=None,
-            inscribed=None,
-            data=None,
-            **kwargs,
-        ):
-
-            if corners is None:
-                raise SyntaxError
-            if corners < 5:
-                raise SyntaxError(_("A star needs to have at least 5 corners"))
-
-            if density is None or cx is None:
-                raise SyntaxError(
-                    _(
-                        "Please provide at least three parameters: corners, density and radius"
-                    )
-                )
-
-            if density < 1 or density > corners:
-                raise SyntaxError(
-                    _("density needs to be between 1 and the amount of corners")
-                )
-
-            if not cx.is_valid_length:
-                raise SyntaxError("cx: " + _("This is not a valid length"))
-            if cy is None:
-                cy = Length(0)
-            else:
-                if not cy.is_valid_length:
-                    raise SyntaxError("cy: " + _("This is not a valid length"))
-            # do we have something like 'star 5 2 4cm' ? If yes, reassign the parameters
-            if radius is None:
-                radius = cx
-                cx = Length(0)
-                cy = Length(0)
-            else:
-                if not radius.is_valid_length:
-                    raise SyntaxError("radius: " + _("This is not a valid length"))
-
-            if startangle is None:
-                startangle = Angle.parse("0deg")
-            cx = cx.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            cy = cy.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            radius = radius.value(
-                ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            if (
-                isinstance(radius, Length)
-                or isinstance(cx, Length)
-                or isinstance(cy, Length)
-            ):
-                raise SyntaxError
-            if inscribed is None:  # Use circumscribed circle by default
-                inscribed = False
-            if inscribed:
-                radius = radius / cos(pi / corners)
-
-            pts = []
-            myangle = startangle.as_radians
-            deltaangle = tau / corners
-            for j in range(corners):
-                thisx = cx + radius * cos(myangle)
-                thisy = cy + radius * sin(myangle)
-                if j == 0:
-                    firstx = thisx
-                    firsty = thisy
-                myangle += deltaangle
-                pts += [(thisx, thisy)]
-            # Close the path
-            pts += [(firstx, firsty)]
-            starpts = [(pts[0][0], pts[0][1])]
-            idx = density
-            while idx != 0:
-                starpts += [(pts[idx][0], pts[idx][1])]
-                idx += density
-                if idx >= corners:
-                    idx -= corners
-            if len(starpts) < corners:
-                ct = 0
-                possible_combinations = ""
-                for i in range(corners - 1):
-                    j = i + 2
-                    if gcd(j, corners) == 1:
-                        if ct % 3 == 0:
-                            possible_combinations += "\n star %d %d ... " % (corners, j)
-                        else:
-                            possible_combinations += ", star %d %d ... " % (corners, j)
-                        ct += 1
-                channel(
-                    _("Just for info: we have missed %d vertices...")
-                    % (corners - len(starpts))
-                )
-                channel(
-                    _("To hit all, the density parameters should be e.g. %s")
-                    % possible_combinations
-                )
-            star_path = Polygon(starpts)
-            self.add_element(star_path)
-            if data is None:
-                return "elements", [star_path]
-            else:
-                data.append(star_path)
-                return "elements", data
 
         @context.console_option("step", "s", default=2.0, type=float)
         @context.console_command(
