@@ -3546,15 +3546,21 @@ class Elemental(Modifier):
                 "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
             ),
         )
+        @context.console_option(
+            "density","d", type=int, help=_("Amount of vertices to skip")
+        )
         @context.console_command(
-            "polyshape",
+            "shape",
             help=_(
-                "polyshape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"
+                "shape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"
             ),
             input_type=("elements", None),
             output_type="elements",
         )
-        def element_polyshape(
+        def element_shape(
+            command,
+            channel,
+            _,
             corners,
             cx,
             cy,
@@ -3563,6 +3569,7 @@ class Elemental(Modifier):
             inscribed=None,
             radius_inner=None,
             alternate_seq=None,
+            density=None,
             data=None,
             **kwargs,
         ):
@@ -3613,6 +3620,10 @@ class Elemental(Modifier):
                     raise SyntaxError(
                         "radius_inner: " + _("This is not a valid length")
                     )
+            if density is None:
+                density = 1
+            if density<1 or density > corners:
+                density = 1
 
             cx = cx.value(
                 ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
@@ -3670,7 +3681,35 @@ class Elemental(Modifier):
                 pts += [(thisx, thisy)]
             # Close the path
             pts += [(firstx, firsty)]
-            poly_path = Polygon(pts)
+
+            starpts = [(pts[0][0], pts[0][1])]
+            idx = density
+            while idx != 0:
+                starpts += [(pts[idx][0], pts[idx][1])]
+                idx += density
+                if idx >= corners:
+                    idx -= corners
+            if len(starpts) < corners:
+                ct = 0
+                possible_combinations = ""
+                for i in range(corners - 1):
+                    j = i + 2
+                    if gcd(j, corners) == 1:
+                        if ct % 3 == 0:
+                            possible_combinations += "\n star %d %d ... " % (corners, j)
+                        else:
+                            possible_combinations += ", star %d %d ... " % (corners, j)
+                        ct += 1
+                channel(
+                    _("Just for info: we have missed %d vertices...")
+                    % (corners - len(starpts))
+                )
+                channel(
+                    _("To hit all, the density parameters should be e.g. %s")
+                    % possible_combinations
+                )
+
+            poly_path = Polygon(starpts)
             self.add_element(poly_path)
             if data is None:
                 return "elements", [poly_path]
