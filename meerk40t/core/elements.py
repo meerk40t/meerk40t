@@ -3471,6 +3471,7 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
+        @context.console_option("size", "s", type=float, help=_("font size to for object"))
         @context.console_argument("text", type=str, help=_("quoted string of text"))
         @context.console_command(
             "text",
@@ -3478,11 +3479,13 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, **kwargs):
+        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
             if text is None:
                 channel(_("No text specified"))
                 return
             svg_text = SVGText(text)
+            if size is not None:
+                svg_text.font_size = size
             self.add_element(svg_text)
             if data is None:
                 return "elements", [svg_text]
