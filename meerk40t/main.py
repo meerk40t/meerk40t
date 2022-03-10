@@ -298,7 +298,7 @@ def run():
         """
         import pkg_resources
 
-        for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
+        for entry_point in pkg_resources.iter_entry_points("meerk40t.plugin"):
             try:
                 try:
                     plugin = entry_point.load()
