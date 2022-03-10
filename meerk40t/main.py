@@ -6,14 +6,9 @@ open-source laser cutting software. See https://github.com/meerk40t/meerk40t
 for full details.
 """
 
-import argparse
-import asyncio
-import os
 import os.path
-import platform
 import sys
 
-from meerk40t.core.exceptions import Mk40tImportAbort
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
@@ -30,83 +25,135 @@ if not getattr(sys, "frozen", False):
         APPLICATION_VERSION += " pkg"
 
 
-def pair(value):
-    rv = value.split("=")
-    if len(rv) != 2:
-        # raise argparse.ArgumentError, do not raise error.
-        pass
-    return rv
+def plugin(kernel, lifecycle):
+    if lifecycle == "plugins":
+        plugins = list()
 
+        from . import kernelserver
+        plugins.append(kernelserver.plugin)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-V", "--version", action="store_true", help="MeerK40t version")
-parser.add_argument("input", nargs="?", type=argparse.FileType("r"), help="input file")
-parser.add_argument(
-    "-o", "--output", type=argparse.FileType("w"), help="output file name"
-)
-parser.add_argument("-z", "--no-gui", action="store_true", help="run without gui")
-parser.add_argument(
-    "-Z", "--gui-suppress", action="store_true", help="completely suppress gui"
-)
-parser.add_argument(
-    "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
-)
-parser.add_argument("-c", "--console", action="store_true", help="start as console")
-parser.add_argument(
-    "-e",
-    "--execute",
-    action="append",
-    type=str,
-    nargs="?",
-    help="execute console command",
-)
-parser.add_argument(
-    "-v", "--verbose", action="store_true", help="display verbose debugging"
-)
-parser.add_argument(
-    "-q", "--quit", action="store_true", help="quit on spooler complete"
-)
-parser.add_argument("-a", "--auto", action="store_true", help="start running laser")
-parser.add_argument(
-    "-s",
-    "--set",
-    action="append",
-    nargs="?",
-    type=pair,
-    metavar="key=value",
-    help="set a device variable",
-)
-parser.add_argument(
-    "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
-)
-parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument(
-    "-P", "--profile", type=int, default=None, help="Specify a settings profile index"
-)
-choices = ["Lhystudios", "Moshi"]
-parser.add_argument(
-    "-d",
-    "--device",
-    type=str,
-    choices=choices,
-    default="Lhystudios",
-    help="Specify a default boot device type",
-)
-parser.add_argument(
-    "-p",
-    "--no-plugins",
-    action="store_true",
-    help="Do not load meerk40t.plugins entrypoints",
-)
+        from .device.ch341 import ch341
+
+        plugins.append(ch341.plugin)
+
+        from .device import basedevice
+
+        plugins.append(basedevice.plugin)
+
+        from .lihuiyu import device as lhystudios_driver
+
+        plugins.append(lhystudios_driver.plugin)
+
+        from .moshi import device as moshi_driver
+
+        plugins.append(moshi_driver.plugin)
+
+        from .grbl.plugin import plugin as grbl_driver_plugin
+
+        plugins.append(grbl_driver_plugin)
+
+        from .ruida import device as ruida_driver
+
+        plugins.append(ruida_driver.plugin)
+
+        from .rotary import rotary
+
+        plugins.append(rotary.plugin)
+
+        from .core import spoolers
+
+        plugins.append(spoolers.plugin)
+
+        from .core import elements
+
+        plugins.append(elements.plugin)
+
+        from .core import bindalias
+
+        plugins.append(bindalias.plugin)
+
+        from .core import webhelp
+
+        plugins.append(webhelp.plugin)
+
+        from .core import planner
+
+        plugins.append(planner.plugin)
+
+        from .image import imagetools
+
+        plugins.append(imagetools.plugin)
+
+        from .core import svg_io
+
+        plugins.append(svg_io.plugin)
+
+        from .extra import vectrace
+
+        plugins.append(vectrace.plugin)
+
+        from .extra import inkscape
+
+        plugins.append(inkscape.plugin)
+
+        from .extra import embroider
+
+        plugins.append(embroider.plugin)
+
+        from .extra import pathoptimize
+
+        plugins.append(pathoptimize.plugin)
+
+        from .extra import updater
+
+        plugins.append(updater.plugin)
+
+        from .extra import winsleep
+
+        plugins.append(winsleep.plugin)
+
+        from meerk40t.camera import camera
+
+        plugins.append(camera.plugin)
+
+        from .dxf.plugin import plugin as dxf_io_plugin
+
+        plugins.append(dxf_io_plugin)
+
+        from .extra import cag
+
+        plugins.append(cag.plugin)
+
+        from .camera.gui import gui as cameragui
+
+        plugins.append(cameragui.plugin)
+
+        from .grbl.gui import gui as grblgui
+        plugins.append(grblgui.plugin)
+
+        from .gui import wxmeerk40t
+        plugins.append(wxmeerk40t.plugin)
+
+        from .gui.scene import scene
+        plugins.append(scene.plugin)
+
+        from .lihuiyu.gui import gui as lhygui
+        plugins.append(lhygui.plugin)
+
+        from .moshi.gui import gui as moshigui
+        plugins.append(moshigui.plugin)
+
+        from .rotary.gui import gui as rotarygui
+        plugins.append(rotarygui.plugin)
+
+        from .ruida.gui import gui as ruidagui
+        plugins.append(ruidagui.plugin)
+        return plugins
+    if lifecycle == "establish":
+        return False
 
 
 def run():
-    argv = sys.argv[1:]
-    args = parser.parse_args(argv)
-
-    if args.version:
-        print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
-        return
     python_version_required = (3, 6)
     if sys.version_info < python_version_required:
         print(
@@ -119,200 +166,6 @@ def run():
             )
         )
         return
-
-    if args.profile is not None:
-        path = "{appname}{profile}".format(
-            appname=APPLICATION_NAME, profile=args.profile
-        )
-    else:
-        path = APPLICATION_NAME
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, path)
-    kernel.args = args
-
-    """
-    These are frozen plugins. They are not dynamically found by entry points they are the configured accepted
-    hardcoded addons and plugins permitted by MeerK40t in a compiled bundle.
-    """
-    from . import kernelserver
-
-    kernel.add_plugin(kernelserver.plugin)
-
-    from .device.ch341 import ch341
-
-    kernel.add_plugin(ch341.plugin)
-
-    from .device import basedevice
-
-    kernel.add_plugin(basedevice.plugin)
-
-    from .lihuiyu import device as lhystudios_driver
-
-    kernel.add_plugin(lhystudios_driver.plugin)
-
-    from .moshi import device as moshi_driver
-
-    kernel.add_plugin(moshi_driver.plugin)
-
-    try:
-        from .grbl import device as grbl_driver
-
-        kernel.add_plugin(grbl_driver.plugin)
-    except Mk40tImportAbort as e:
-        print(
-            "Cannot install meerk40t 'grbl' plugin - prerequisite '%s' needs to be installed"
-            % e
-        )
-
-    from .ruida import device as ruida_driver
-
-    kernel.add_plugin(ruida_driver.plugin)
-
-    from .rotary import rotary
-
-    kernel.add_plugin(rotary.plugin)
-
-    from .core import spoolers
-
-    kernel.add_plugin(spoolers.plugin)
-
-    from .core import elements
-
-    kernel.add_plugin(elements.plugin)
-
-    from .core import bindalias
-
-    kernel.add_plugin(bindalias.plugin)
-
-    from .core import webhelp
-
-    kernel.add_plugin(webhelp.plugin)
-
-    from .core import planner
-
-    kernel.add_plugin(planner.plugin)
-
-    from .image import imagetools
-
-    kernel.add_plugin(imagetools.plugin)
-
-    from .core import svg_io
-
-    kernel.add_plugin(svg_io.plugin)
-
-    from .extra import vectrace
-
-    kernel.add_plugin(vectrace.plugin)
-
-    from .extra import inkscape
-
-    kernel.add_plugin(inkscape.plugin)
-
-    from .extra import embroider
-
-    kernel.add_plugin(embroider.plugin)
-
-    from .extra import pathoptimize
-
-    kernel.add_plugin(pathoptimize.plugin)
-
-    from .extra import updater
-
-    kernel.add_plugin(updater.plugin)
-
-    if platform.system() == "Windows":
-        # Windows only plugin.
-        try:
-            from .extra import winsleep
-
-            kernel.add_plugin(winsleep.plugin)
-        except ImportError:
-            pass
-
-    try:
-        from meerk40t.camera import camera
-    except Mk40tImportAbort as e:
-        print(
-            "Cannot install meerk40t 'camera' plugin - prerequisite '%s' needs to be installed"
-            % e
-        )
-    # except ImportError:
-    #     print(
-    #         "Cannot install external 'camera' plugin - see https://github.com/meerk40t/meerk40t-camera"
-    #     )
-    else:
-        kernel.add_plugin(camera.plugin)
-
-    try:
-        from .dxf import dxf_io
-    except Mk40tImportAbort as e:
-        print(
-            "Cannot install meerk40t 'dxf' plugin - prerequisite '%s' needs to be installed"
-            % e
-        )
-    else:
-        kernel.add_plugin(dxf_io.plugin)
-
-    try:
-        from .extra import cag
-    except Mk40tImportAbort as e:
-        print(
-            "Cannot install meerk40t 'cag' plugin - prerequisite '%s' needs to be installed"
-            % e
-        )
-    else:
-        kernel.add_plugin(cag.plugin)
-
-    if not args.gui_suppress:
-        try:
-            from .camera.gui import gui as cameragui
-            from .grbl.gui import gui as grblgui
-            from .gui import wxmeerk40t
-            from .gui.scene import scene
-            from .lihuiyu.gui import gui as lhygui
-            from .moshi.gui import gui as moshigui
-            from .rotary.gui import gui as rotarygui
-            from .ruida.gui import gui as ruidagui
-        except Mk40tImportAbort as e:
-            args.no_gui = True
-            print(
-                "Cannot install meerk40t gui - prerequisite '%s' needs to be installed"
-                % e
-            )
-        else:
-            kernel.add_plugin(wxmeerk40t.plugin)
-            kernel.add_plugin(scene.plugin)
-            kernel.add_plugin(cameragui.plugin)
-
-            kernel.add_plugin(lhygui.plugin)
-            kernel.add_plugin(moshigui.plugin)
-            kernel.add_plugin(grblgui.plugin)
-            kernel.add_plugin(ruidagui.plugin)
-            kernel.add_plugin(rotarygui.plugin)
-    else:
-        # Complete Gui Suppress implies no-gui.
-        args.no_gui = True
-
-    if not getattr(sys, "frozen", False) and not args.no_plugins:
-        """
-        These are dynamic plugins. They are dynamically found by entry points.
-        """
-        import pkg_resources
-
-        for entry_point in pkg_resources.iter_entry_points("meerk40t.plugin"):
-            try:
-                try:
-                    plugin = entry_point.load()
-                except ImportError:
-                    continue  # Registered plugin suffered import error.
-            except pkg_resources.DistributionNotFound:
-                pass
-            except pkg_resources.VersionConflict as e:
-                print(
-                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
-                        entrypoint=str(entry_point)
-                    )
-                )
-                print(e)
-            else:
-                kernel.add_plugin(plugin)
+    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME)
+    kernel.add_plugin(plugin)
     kernel()

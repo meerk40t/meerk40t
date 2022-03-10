@@ -228,18 +228,19 @@ class Kernel(Settings):
         if additional_plugins is not None:
             for p in additional_plugins:
                 self.add_plugin(p)
+        plugins = self._kernel_plugins
         service_path = plugin(self, "service")
-        module_path = plugin(self, "module")
         if service_path is not None:
             if service_path not in self._service_plugins:
                 self._service_plugins[service_path] = list()
             plugins = self._service_plugins[service_path]
-        elif module_path is not None:
-            if module_path not in self._module_plugins:
-                self._module_plugins[module_path] = list()
-            plugins = self._module_plugins[module_path]
         else:
-            plugins = self._kernel_plugins
+            module_path = plugin(self, "module")
+            if module_path is not None:
+                if module_path not in self._module_plugins:
+                    self._module_plugins[module_path] = list()
+                plugins = self._module_plugins[module_path]
+
         if plugin not in plugins:
             plugins.append(plugin)
 
@@ -511,10 +512,53 @@ class Kernel(Settings):
         """
         channel = self.channel("kernel-lifecycle")
         objects = self.get_linked_objects(kernel)
+
         klp = Kernel.kernel_lifecycle_position
         start = klp(kernel)
         end = position
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PRECLI <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PRECLI
+                if channel:
+                    channel("kernel-precli: {object}".format(object=str(k)))
+                if hasattr(k, "precli"):
+                    k.precli()
+        if start < LIFECYCLE_KERNEL_PRECLI <= end:
+            if channel:
+                channel("(plugin) kernel-precli")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "precli")
 
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_CLI <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_CLI
+                if channel:
+                    channel("kernel-cli: {object}".format(object=str(k)))
+                if hasattr(k, "cli"):
+                    k.cli()
+        if start < LIFECYCLE_KERNEL_CLI <= end:
+            if channel:
+                channel("(plugin) kernel-cli")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "cli")
+
+        objects = self.get_linked_objects(kernel)
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_INVALIDATE <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_INVALIDATE
+                if channel:
+                    channel("kernel-invalidate: {object}".format(object=str(k)))
+                if hasattr(k, "invalidate"):
+                    k.invalidate()
+        if start < LIFECYCLE_KERNEL_INVALIDATE <= end:
+            if channel:
+                channel("(plugin) kernel-establish")
+            for i in range(len(self._kernel_plugins)-1, -1, -1):
+                plugin = self._kernel_plugins[i]
+                if plugin(kernel, "invalidate"):
+                    del self._kernel_plugins[i]
+
+        objects = self.get_linked_objects(kernel)
         for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_PREREGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
