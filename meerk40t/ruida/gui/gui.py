@@ -2,7 +2,7 @@
 
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
-        return service.has_feature("wx")
+        return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/ruida"
     if lifecycle == "added":

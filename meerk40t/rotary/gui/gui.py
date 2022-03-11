@@ -3,8 +3,6 @@ ROTARY_VIEW = False
 
 
 def plugin(kernel, lifecycle):
-    # if lifecycle == "service":
-    #     return "provider/camera/mk"
     if lifecycle == "cli":
         kernel.set_feature("rotary")
     if lifecycle == "invalidate":

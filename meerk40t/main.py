@@ -33,10 +33,6 @@ def plugin(kernel, lifecycle):
 
         plugins.append(kernelserver.plugin)
 
-        from .device.ch341 import ch341
-
-        plugins.append(ch341.plugin)
-
         from .device import basedevice
 
         plugins.append(basedevice.plugin)
@@ -125,27 +121,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(cag.plugin)
 
-        from .camera.gui import gui as cameragui
-
-        plugins.append(cameragui.plugin)
-
-        from .grbl.gui import gui as grblgui
-        plugins.append(grblgui.plugin)
-
         from .gui.plugin import plugin as wxplugin
         plugins.append(wxplugin)
 
-        from .lihuiyu.gui import gui as lhygui
-        plugins.append(lhygui.plugin)
-
-        from .moshi.gui import gui as moshigui
-        plugins.append(moshigui.plugin)
-
-        from .rotary.gui import gui as rotarygui
-        plugins.append(rotarygui.plugin)
-
-        from .ruida.gui import gui as ruidagui
-        plugins.append(ruidagui.plugin)
         return plugins
     if lifecycle == "establish":
         return False

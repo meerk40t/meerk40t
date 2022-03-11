@@ -2,6 +2,10 @@
 
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
+        try:
+            import serial
+        except ImportError:
+            return True
         return service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/grbl"

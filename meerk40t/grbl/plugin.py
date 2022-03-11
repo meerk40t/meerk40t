@@ -1,5 +1,8 @@
 def plugin(kernel, lifecycle=None):
-    if lifecycle == "invalidate":
+    if lifecycle == "plugins":
+        from .gui import gui
+        return [gui.plugin]
+    elif lifecycle == "invalidate":
         try:
             import serial
             from serial import SerialException

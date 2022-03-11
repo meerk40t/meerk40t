@@ -1,10 +1,13 @@
 
 def plugin(kernel, lifecycle=None):
+    if lifecycle == "plugins":
+        from .gui import gui
+        return [gui.plugin]
     if lifecycle == "cli":
         try:
             import cv2
             import numpy as np
-        except ImportError as e:
+        except ImportError:
             return
         kernel.set_feature("camera")
     if lifecycle == "invalidate":
