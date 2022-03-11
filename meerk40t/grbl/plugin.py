@@ -4,6 +4,7 @@ def plugin(kernel, lifecycle=None):
             import serial
             from serial import SerialException
         except ImportError:
+            print("GRBL plugin could not load because pyserial is not installed.")
             return True
     elif lifecycle == "register":
         from .device import GRBLDevice, GRBLDriver, GCodeLoader
