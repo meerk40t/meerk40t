@@ -1,25 +1,21 @@
-from meerk40t.gui.icons import (
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_emergency_stop_button_50,
-    icons8_pause_50,
-)
 from meerk40t.kernel import signal_listener
-from meerk40t.moshi.gui.moshicontrollergui import MoshiControllerGui
-from meerk40t.moshi.gui.moshidrivergui import MoshiDriverGui
-
-try:
-    import wx
-except ImportError as e:
-    from meerk40t.core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
 
 
 def plugin(service, lifecycle):
+    if lifecycle == "invalidate":
+        return service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/moshi"
     if lifecycle == "added":
+        from meerk40t.gui.icons import (
+            icons8_computer_support_50,
+            icons8_connected_50,
+            icons8_emergency_stop_button_50,
+            icons8_pause_50,
+        )
+        from meerk40t.moshi.gui.moshicontrollergui import MoshiControllerGui
+        from meerk40t.moshi.gui.moshidrivergui import MoshiDriverGui
+
         service.register("window/Controller", MoshiControllerGui)
         service.register("window/Configuration", MoshiDriverGui)
         _ = service._
