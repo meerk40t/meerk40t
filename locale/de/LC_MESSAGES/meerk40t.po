@@ -7659,3 +7659,76 @@ msgstr " Der Status wird dabei umgekehrt!"
 #: meerk40t/core/elements.py:3245
 msgid "This is not a valid length"
 msgstr "Das ist keine gültige Längenangabe"
+
+#: meerk40t/core/elements.py:3218
+msgid "Position of original in matrix (e.g '2,2' or '4,3')"
+msgstr "Platzierung des Originals im neuen Gitter (z.B. '2,2' oder '4,3')"
+
+#: meerk40t/core/elements.py:3303
+msgid "Number of copies"
+msgstr "Anzahl der Kopien"
+
+#: meerk40t/core/elements.py:3304
+msgid "Start-Angle"
+msgstr "Winkel bei dem der Kreisbogen beginnt"
+
+#: meerk40t/core/elements.py:3305
+msgid "End-Angle"
+msgstr "Winkel bei dem der Kreisbogen endet"
+
+#: meerk40t/core/elements.py:3306
+msgid "Rotate copies towards center?"
+msgstr "Sollen Kopien zum Mittelpunkt hin rotiert werden?"
+
+#: meerk40t/core/elements.py:3404
+msgid "Delta-Angle (if omitted will take (end-start)/copies )"
+msgstr "Delta-Winkel (falls nicht angegeben, dann (endwinkel-startwinkel)/kopien )"
+
+#: meerk40t/core/elements.py:3245
+msgid "Please provide at least one additional value (which will act as radius then)"
+msgstr "Bitte geben Sie mindestens einen weiteren Wert an (der dann als Radius verwendet wird)"
+
+#: meerk40t/core/elements.py:3388
+msgid "Number of corners/vertices"
+msgstr "Anzahl der Eckpunkte"
+
+#: meerk40t/core/elements.py:3389
+msgid "X-Value of polygon's center"
+msgstr "X-Wert des Polygon-Mittelpunkts"
+
+#: meerk40t/core/elements.py:3390
+msgid "Y-Value of polygon's center"
+msgstr "Y-Wert des Polygon-Mittelpunkts"
+
+#: meerk40t/core/elements.py:3393
+msgid "Shall the polygon touch the inscribing circle?"
+msgstr "Soll das Polygon am innenliegenden Kreis ausgerichtet werden"
+
+#: meerk40t/core/elements.py:3404
+msgid "Alternating radius for every other vertex"
+msgstr "Alternativer Radius für alternierende Eckpunkte"
+
+#: meerk40t/core/elements.py:3404
+msgid "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
+msgstr "Wieviele Punkte sollen auf dem Außenkreis liegen bevor zum Innenkreis gewechselt wird (1=Stern-Figur, >=2 Zahnrad-Muster)"
+
+#: meerk40t/core/elements.py:3451
+msgid "Amount of vertices to skip"
+msgstr "Zahl der zu überspringenden Ecken"
+
+#: meerk40t/core/elements.py:3466
+msgid "Do you want to treat the length value for radius as the length of one edge instead?"
+msgstr "Soll der Wert für Radius stattdessen die Länge einer Seite definieren?"
+
+#: meerk40t/core/elements.py:3472
+msgid "You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"
+msgstr "Neben der --inscribed Option wurde auch --side_length verwendet, diese hat Vorrang, deswegen wird --inscribed ignoriert"
+
+#: meerk40t/core/elements.py:3684
+msgid "Just for info: we have missed %d vertices..."
+msgstr "Nur zur Info: es fehlen %d Eckpunkte gegenüber dem regulären Polygon..."
+
+#: meerk40t/core/elements.py:3684
+msgid "To hit all, the density parameters should be e.g. %s"
+msgstr "Um alle Eckpunkte zu 'erwischen', sollte eine der folgenden Kombinationen verwendet werden: %s"
+
