@@ -1285,7 +1285,7 @@ class Kernel:
             elif kind == "OPT":
                 value = match.group()
                 for letter in value[1:]:
-                    yield kind, letter, start, start + 1
+                    yield kind, letter, start, pos
                     start += 1
 
     def console_command(
