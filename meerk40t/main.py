@@ -30,6 +30,7 @@ def plugin(kernel, lifecycle):
         plugins = list()
 
         from . import kernelserver
+
         plugins.append(kernelserver.plugin)
 
         from .device.ch341 import ch341
@@ -112,9 +113,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(winsleep.plugin)
 
-        from meerk40t.camera import camera
+        from meerk40t.camera.plugin import plugin as camera_plugin
 
-        plugins.append(camera.plugin)
+        plugins.append(camera_plugin)
 
         from .dxf.plugin import plugin as dxf_io_plugin
 
@@ -131,11 +132,8 @@ def plugin(kernel, lifecycle):
         from .grbl.gui import gui as grblgui
         plugins.append(grblgui.plugin)
 
-        from .gui import wxmeerk40t
-        plugins.append(wxmeerk40t.plugin)
-
-        from .gui.scene import scene
-        plugins.append(scene.plugin)
+        from .gui.plugin import plugin as wxplugin
+        plugins.append(wxplugin)
 
         from .lihuiyu.gui import gui as lhygui
         plugins.append(lhygui.plugin)

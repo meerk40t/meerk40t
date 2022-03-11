@@ -552,11 +552,24 @@ class Kernel(Settings):
                     k.invalidate()
         if start < LIFECYCLE_KERNEL_INVALIDATE <= end:
             if channel:
-                channel("(plugin) kernel-establish")
-            for i in range(len(self._kernel_plugins)-1, -1, -1):
-                plugin = self._kernel_plugins[i]
+                channel("(plugin) kernel-invalidate")
+            plugin_list = self._kernel_plugins
+            for i in range(len(plugin_list)-1, -1, -1):
+                plugin = plugin_list[i]
                 if plugin(kernel, "invalidate"):
-                    del self._kernel_plugins[i]
+                    del plugin_list[i]
+            for domain in self._service_plugins:
+                plugin_list = self._service_plugins[domain]
+                for i in range(len(plugin_list) - 1, -1, -1):
+                    plugin = plugin_list[i]
+                if plugin(kernel, "invalidate"):
+                    del plugin_list[i]
+            for module_path in self._module_plugins:
+                plugin_list = self._module_plugins[module_path]
+                for i in range(len(plugin_list) - 1, -1, -1):
+                    plugin = plugin_list[i]
+                if plugin(kernel, "invalidate"):
+                    del plugin_list[i]
 
         objects = self.get_linked_objects(kernel)
         for k in objects:
@@ -1017,6 +1030,12 @@ class Kernel(Settings):
     def __call__(self):
         self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
+    def precli(self):
+        print("PreCLI called.")
+
+    def cli(self):
+        print("CLI Called.")
+
     def preboot(self):
         self.command_boot()
         self.choices_boot()
@@ -1313,6 +1332,19 @@ class Kernel(Settings):
             return self._registered[value]
         except KeyError:
             return None
+
+    def has_feature(self, *args):
+        for a in args:
+            try:
+                v = self._registered["feature/{feature}".format(feature=a)]
+            except KeyError:
+                return False
+            if not v:
+                return False
+        return True
+
+    def set_feature(self, feature):
+        self._registered["feature/{feature}".format(feature=feature)] = True
 
     def lookup_all(self, *args):
         """
