@@ -7705,11 +7705,7 @@ msgid "Shall the polygon touch the inscribing circle?"
 msgstr "Soll das Polygon am innenliegenden Kreis ausgerichtet werden"
 
 #: meerk40t/core/elements.py:3404
-msgid "A polyshape needs to have at least three corners"
-msgstr "Ein Polygon muss mindestens drei Eckpunkte haben"
-
-#: meerk40t/core/elements.py:3404
-msgid "Alternating radius for every other vertice"
+msgid "Alternating radius for every other vertex"
 msgstr "Alternativer Radius für alternierende Eckpunkte"
 
 #: meerk40t/core/elements.py:3404
@@ -7721,16 +7717,12 @@ msgid "Amount of vertices to skip"
 msgstr "Zahl der zu überspringenden Ecken"
 
 #: meerk40t/core/elements.py:3466
-msgid "A star needs to have at least 5 corners"
-msgstr "Ein Stern muss mindestens 5 Eckpunkte haben"
-
-#: meerk40t/core/elements.py:3469
-msgid "Please provide at least three parameters: corners, density and radius"
-msgstr "Bitte geben Sie mindestens drei Werte an: corners, density und radius"
+msgid "Do you want to treat the length value for radius as the length of one edge instead?"
+msgstr "Soll der Wert für Radius stattdessen die Länge einer Seite definieren?"
 
 #: meerk40t/core/elements.py:3472
-msgid "Hops needs to be greater than 1 and smaller than corners"
-msgstr "Der Wert für hops muss größer als 1 und kleiner als die Zahl der Ecken sein"
+msgid "You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"
+msgstr "Neben der --inscribed Option wurde auch --side_length verwendet, diese hat Vorrang, deswegen wird --inscribed ignoriert"
 
 #: meerk40t/core/elements.py:3684
 msgid "Just for info: we have missed %d vertices..."
@@ -7738,4 +7730,5 @@ msgstr "Nur zur Info: es fehlen %d Eckpunkte gegenüber dem regulären Polygon..
 
 #: meerk40t/core/elements.py:3684
 msgid "To hit all, the density parameters should be e.g. %s"
-msgstr "Um alle Eckpunkte zu 'erwischen', sollte einer der folgenden Kombination verwendet werden: %s"
+msgstr "Um alle Eckpunkte zu 'erwischen', sollte eine der folgenden Kombinationen verwendet werden: %s"
+

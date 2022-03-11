@@ -3318,7 +3318,7 @@ class Elemental(Modifier):
         )
         @context.console_command(
             "radial",
-            help=_("radial <repeats> <radius> <cx> <cy> <startangle> <endangle> <rotate>"),
+            help=_("radial <repeats> <radius> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3521,7 +3521,7 @@ class Elemental(Modifier):
         @context.console_argument(
             "cy", type=Length, help=_("Y-Value of polygon's center")
         )
-        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
         @context.console_option(
             "startangle", "s", type=Angle.parse, help=_("Start-Angle")
         )
@@ -3533,10 +3533,18 @@ class Elemental(Modifier):
             help=_("Shall the polygon touch the inscribing circle?"),
         )
         @context.console_option(
+            "side_length",
+            "l",
+            type=bool,
+            action="store_true",
+            help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
+        )
+
+        @context.console_option(
             "radius_inner",
             "r",
             type=Length,
-            help=_("Alternating radius for every other vertice"),
+            help=_("Alternating radius for every other vertex"),
         )
         @context.console_option(
             "alternate_seq",
@@ -3552,7 +3560,7 @@ class Elemental(Modifier):
         @context.console_command(
             "shape",
             help=_(
-                "shape <corners> <x> <y> <r> <startangle> <inscribed> or polyshape <corners> <r>"
+                "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"
             ),
             input_type=("elements", None),
             output_type="elements",
@@ -3567,6 +3575,7 @@ class Elemental(Modifier):
             radius,
             startangle=None,
             inscribed=None,
+            side_length=None,
             radius_inner=None,
             alternate_seq=None,
             density=None,
@@ -3595,6 +3604,7 @@ class Elemental(Modifier):
                 radius = radius.value(
                     ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 if startangle is None:
                     startangle = Angle.parse("0deg")
 
@@ -3627,29 +3637,6 @@ class Elemental(Modifier):
                     if not radius.is_valid_length:
                         raise SyntaxError("radius: " + _("This is not a valid length"))
 
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
-                if inscribed is None:  # Use circumscribed circle by default
-                    inscribed = False
-
-                if alternate_seq is None:
-                    if radius_inner is None:
-                        alternate_seq = 0
-                    else:
-                        alternate_seq = 1
-
-                if radius_inner is None:
-                    radius_inner = radius
-                else:
-                    if not radius_inner.is_valid_length:
-                        raise SyntaxError(
-                            "radius_inner: " + _("This is not a valid length")
-                        )
-                if density is None:
-                    density = 1
-                if density<1 or density > corners:
-                    density = 1
-
                 cx = cx.value(
                     ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
@@ -3659,18 +3646,51 @@ class Elemental(Modifier):
                 radius = radius.value(
                     ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
+
                 if (
                     isinstance(radius, Length)
                     or isinstance(cx, Length)
                     or isinstance(cy, Length)
                 ):
                     raise SyntaxError
-                if inscribed:
-                    radius = radius / cos(pi / corners)
 
-                radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
-                if isinstance(radius_inner, Length):
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                if alternate_seq is None:
+                    if radius_inner is None:
+                        alternate_seq = 0
+                    else:
+                        alternate_seq = 1
+
+                if density is None:
+                    density = 1
+                if density<1 or density > corners:
+                    density = 1
+
+                # Do we have to consider the radius value as the length of one corner?
+                if not side_length is None:
+                    # Let's recalculate the radius then...
+                    # d_oc = s * csc( pi / n)
+                    radius = 0.5 * radius / sin(pi / corners)
+
+                if radius_inner is None:
                     radius_inner = radius
+                else:
+                    radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
+                    if not radius_inner.is_valid_length:
+                        raise SyntaxError(
+                            "radius_inner: " + _("This is not a valid length")
+                    )
+                    if isinstance(radius_inner, Length):
+                        radius_inner = radius
+
+                if inscribed:
+                    if side_length is None:
+                        radius = radius / cos(pi / corners)
+                    else:
+                        channel(_("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
+
                 if alternate_seq < 1:
                     radius_inner = radius
 
