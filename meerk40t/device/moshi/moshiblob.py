@@ -584,7 +584,7 @@ class MoshiBlob:
 
     def debug(self, output=print):
         data = self.data
-        convert = MoshiBlob.reconvert
+        convert = MoshiBlob.convert
 
         pos = 0
         while pos < len(data):
