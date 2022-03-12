@@ -727,6 +727,7 @@ class MoshiController:
         context.setting(int, "rejected_count", 0)
 
         self.context.root.listen("lifecycle;ready", self.on_controller_ready)
+        self.context.root.listen("lifecycle;shutdown", self.finalize)
 
     def viewbuffer(self):
         """
@@ -741,9 +742,10 @@ class MoshiController:
 
     def on_controller_ready(self, origin, *args):
         self.start()
+        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
 
     def finalize(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
+        self.context.root.unlisten("lifecycle;shutdown", self.finalize)
         if self._thread is not None:
             self.is_shutdown = True
 
