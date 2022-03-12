@@ -581,3 +581,129 @@ class MoshiBlob:
         for m in range(5):
             q = MoshiBlob.convert(q)
         return q
+
+    def debug(self, output=print):
+        data = self.data
+        convert = MoshiBlob.reconvert
+
+        pos = 0
+        while pos < len(data):
+            cmd = data[pos]
+            cmd = convert(cmd)
+            cmd >>= 4
+            if cmd == 5:
+                output(
+                    "Vector Cut Speed: %d (%02x) mm/s Normal Speed: %d mm/s (%02x)"
+                    % (data[pos + 1] + 1, data[pos + 1], data[pos + 2] + 1, data[pos + 2])
+                )
+                pos += 3
+            elif cmd == 4:
+                output(
+                    "Raster Header Speed: %d cm/s (%02x)"
+                    % (data[pos + 1] + 1, data[pos + 1])
+                )
+                pos += 2
+            elif cmd == 0:
+                z = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                x = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                y = int.from_bytes(data[pos + 5: pos + 7], "little", signed=True)
+                output(
+                    "Set Location unknown: %d, x: %d, y: %d (%02x%02x,%02x%02x,%02x%02x) "
+                    % (
+                        z,
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                        data[pos + 5],
+                        data[pos + 6],
+                    )
+                )
+                pos += 7
+            elif cmd == 15:
+                x = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                y = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                if pos + 5 > len(data):
+                    output("Cut Off.")
+                    output(data[pos:])
+                    return
+                output(
+                    "cut x: %d, y: %d (%02x%02x,%02x%02x) "
+                    % (
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                    )
+                )
+                pos += 5
+            elif cmd == 7:
+                x = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                y = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                output(
+                    "move x: %d, y: %d (%02x%02x,%02x%02x) "
+                    % (
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                    )
+                )
+                pos += 5
+            elif cmd == 6:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "move horiz x: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 3:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "move vert y: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 14:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "cut horiz x: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 11:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "cut vert y: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 2:
+                output("Termination. (7 times)")
+                pos += 1
+            else:
+                output("UNKNOWN COMMAND: %d" % cmd)
+                raise ValueError
+                break
