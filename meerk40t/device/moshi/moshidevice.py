@@ -847,6 +847,8 @@ class MoshiController:
 
     def push_program(self, program):
         self.pipe_channel("Pushed: %s" % str(program.data))
+        if self.context.mock:
+            program.debug(self.pipe_channel)
         self._programs.append(program)
         self.start()
 
