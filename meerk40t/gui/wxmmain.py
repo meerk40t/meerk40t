@@ -1178,8 +1178,8 @@ class MeerK40t(MWindow):
 
             if pane.caption:
                 id_new = wx.NewId()
-                help = _("Show/Hide the {name} pane").format(name=pane.caption)
-                menu_item = menu_context.AppendCheckItem(id_new, pane.caption, help)
+                showhide = _("Show/Hide the {name} pane").format(name=pane.caption)
+                menu_item = menu_context.AppendCheckItem(id_new, pane.caption, showhide)
                 menu_context.Bind(
                     wx.EVT_MENU,
                     toggle_pane(pane),
