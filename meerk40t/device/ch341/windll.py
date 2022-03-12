@@ -1,4 +1,4 @@
-from ctypes import c_byte, WinDLL
+from ctypes import c_byte, windll
 
 from .ch341 import Connection as CH341Connection
 from .ch341 import Handler as CH341Handler
@@ -148,7 +148,7 @@ class Handler(CH341Handler):
     def __init__(self, channel, status):
         CH341Handler.__init__(self, channel=channel, status=status)
         try:
-            self.driver = WinDLL("CH341DLL.dll", winmode=0)
+            self.driver = windll.LoadLibrary("CH341DLL.dll")
         except FileNotFoundError as e:
             self.channel("%s: %s" % (str(type(e)), str(e)))
             raise ImportError(
