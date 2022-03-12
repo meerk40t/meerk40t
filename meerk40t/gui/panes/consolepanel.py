@@ -138,25 +138,44 @@ class ConsolePanel(wx.Panel):
             "",
             style=wx.richtext.RE_MULTILINE
             | wx.richtext.RE_READONLY
+            | wx.BG_STYLE_SYSTEM
         )
         self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
-        style = richtext.RichTextAttr(wx.TextAttr(wx.Colour("black")))
-        font = wx.Font(
-            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
-        )
-        style.SetBackgroundColour(wx.Colour("white"))
-        style.SetFont(font)
-        style.SetLineSpacing(0)
-        style.SetParagraphSpacingBefore(0)
-        style.SetParagraphSpacingAfter(0)
-        style.SetLeftIndent(0, 320)
-        self.text_main.SetBasicStyle(style)
-        self.text_main.SetDefaultStyle(style)
 
         self.text_entry = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
+
+        # style = richtext.RichTextAttr()
+        style = wx.TextAttr()
+        font = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
+        )
+        style.SetFont(font)
+        style.SetLineSpacing(0)
+        style.SetParagraphSpacingBefore(0)
+        style.SetParagraphSpacingAfter(0)
+        if self.is_dark:
+            fg = wx.Colour("white")
+            bg = wx.Colour("black")
+        else:
+            fg = wx.Colour("black")
+            bg = wx.Colour("white")
+        style.SetTextColour(fg)
+        style.SetBackgroundColour(bg)
+
+        self.text_main.SetForegroundColour(fg)
+        self.text_main.SetBackgroundColour(bg)
+        self.text_entry.SetForegroundColour(fg)
+        self.text_entry.SetBackgroundColour(bg)
+        self.text_entry.SetDefaultStyle(style)
+
+        style = richtext.RichTextAttr(style)
+        style.SetLeftIndent(0, 320)
+        self.text_main.SetBasicStyle(style)
+        self.text_main.SetDefaultStyle(style)
+        self.text_main.Update()  # Apply style to just opened window
 
         self.__set_properties()
         self.__do_layout()
@@ -168,6 +187,10 @@ class ConsolePanel(wx.Panel):
         # end wxGlade
         self.command_log = []
         self.command_position = 0
+
+    @property
+    def is_dark(self):
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
