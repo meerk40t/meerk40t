@@ -69,6 +69,9 @@ class CutPlan:
             raise CutPlanningFailedError("Raster too large.")
 
     def preprocess(self):
+        """"
+        Preprocess stage, all small functions from the settings to the job.
+        """
         context = self.context
         _ = context._
         rotary = context.rotary
@@ -132,12 +135,18 @@ class CutPlan:
         context = self.context
 
         grouped_plan = list()
+        last_type = ""
         group = [self.plan[0]]
         for c in self.plan[1:]:
-            if group[-1].type.startswith("op") != c.type.startswith("op"):
+            if hasattr(c, "type"):
+                c_type = c.type
+            else:
+                c_type = type(c).__name__
+            if c_type.startswith("op") != last_type.startswith("op"):
                 grouped_plan.append(group)
                 group = []
             group.append(c)
+            last_type = c_type
         grouped_plan.append(group)
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
@@ -150,6 +159,9 @@ class CutPlan:
                 burning = False
                 pass_idx += 1
                 for op in plan:
+                    if not hasattr(op, "type"):
+                        blob_plan.append(op)
+                        continue
                     if not op.type.startswith("op"):
                         blob_plan.append(op)
                         continue
@@ -242,6 +254,10 @@ class CutPlan:
                     self.plan.append(blob)
 
     def preopt(self):
+        """
+        Add commands for optimize stage.
+        @return:
+        """
         context = self.context
         has_cutcode = False
         for op in self.plan:
@@ -277,12 +293,20 @@ class CutPlan:
             pass
 
     def optimize_travel_2opt(self):
+        """
+        Optimize travel 2opt at optimize stage on cutcode
+        @return:
+        """
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 self.plan[i] = short_travel_cutcode_2opt(self.plan[i], channel=channel)
 
     def optimize_cuts(self):
+        """
+        Optimize cuts at optimize stage on cutcode
+        @return:
+        """
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
@@ -297,6 +321,10 @@ class CutPlan:
                 )
 
     def optimize_travel(self):
+        """
+        Optimize travel at optimize stage on cutcode.
+        @return:
+        """
         last = None
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
@@ -317,8 +345,14 @@ class CutPlan:
                 last = self.plan[i].end
 
     def strip_text(self):
+        """
+        Perform strip text on the current plan
+        @return:
+        """
         for k in range(len(self.plan) - 1, -1, -1):
             op = self.plan[k]
+            if not hasattr(op, "type"):
+                continue
             try:
                 if op.type in ("op cut", "op engrave"):
                     for i, e in enumerate(list(op.children)):
@@ -330,8 +364,15 @@ class CutPlan:
                 pass
 
     def strip_rasters(self):
+        """
+        Strip rasters if there is no method of converting vectors to rasters rasters must
+        be stripped at the validate stage.
+        @return:
+        """
         stripped = False
         for k, op in enumerate(self.plan):
+            if not hasattr(op, "type"):
+                continue
             if op.type == "op raster":
                 if len(op.children) == 1 and isinstance(op[0], SVGImage):
                     continue
@@ -342,7 +383,7 @@ class CutPlan:
             self.plan.clear()
             self.plan.extend(p)
 
-    def make_image_for_op(self, op):
+    def _make_image_for_op(self, op):
         subitems = list(op.flat(types=("elem", "ref elem")))
         reverse = self.context.elements.classify_reverse
         if reverse:
@@ -365,22 +406,30 @@ class CutPlan:
 
     def make_image(self):
         for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
             if op.type == "op raster":
                 if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                     continue
-                image_element = self.make_image_for_op(op)
+                image_element = self._make_image_for_op(op)
                 if image_element is None:
                     continue
                 if image_element.image_width == 1 and image_element.image_height == 1:
                     # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
                     #  around because the renderer is what sets the size of the text. If the size hasn't already
                     #  been set, the initial bounds are wrong.
-                    image_element = self.make_image_for_op(op)
+                    image_element = self._make_image_for_op(op)
                 op.children.clear()
                 op.add(image_element, type="ref elem")
 
     def actualize(self):
+        """
+        Actualize the image at validate stage on operations.
+        @return:
+        """
         for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
             if op.type == "op raster":
                 for elem in op.children:
                     elem = elem.object
@@ -393,6 +442,10 @@ class CutPlan:
                         make_actual(elem, None)
 
     def scale_to_device_native(self):
+        """
+        Scale to device native at validate stage on operations.
+        @return:
+        """
         matrix = Matrix(self.context.device.scene_to_device_matrix())
 
         # TODO: Correct rotary.
@@ -400,10 +453,11 @@ class CutPlan:
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
 
-        device = self.context.device
-        for o in self.plan:
-            if o.type.startswith("op"):
-                for node in o.children:
+        for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
+            if op.type.startswith("op"):
+                for node in op.children:
                     e = node.object
                     try:
                         ne = e * matrix
@@ -421,7 +475,13 @@ class CutPlan:
     # ==========
 
     def conditional_jobadd_strip_text(self):
+        """
+        Add strip_text command if conditions are met.
+        @return:
+        """
         for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
             if op.type in ("op cut", "op engrave"):
                 for e in op.children:
                     if not isinstance(e.object, SVGText):
@@ -431,7 +491,13 @@ class CutPlan:
         return False
 
     def conditional_jobadd_make_raster(self):
+        """
+        Add make_make raster command if conditions are met.
+        @return:
+        """
         for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
             if op.type == "op raster":
                 if len(op.children) == 0:
                     continue
@@ -447,7 +513,13 @@ class CutPlan:
         return False
 
     def conditional_jobadd_actualize_image(self):
+        """
+        Conditional actualize image if conditions are met.
+        @return:
+        """
         for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
             if op.type == "op raster":
                 for elem in op.children:
                     elem = elem.object
@@ -462,6 +534,10 @@ class CutPlan:
                         return
 
     def conditional_jobadd_scale(self):
+        """
+        Add scale to device native if conditions are met.
+        @return:
+        """
         self.commands.append(self.scale_to_device_native)
 
 

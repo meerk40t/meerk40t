@@ -224,6 +224,10 @@ class Kernel(Settings):
         @param plugin:
         @return:
         """
+        additional_plugins = plugin(self, "plugins")
+        if additional_plugins is not None:
+            for p in additional_plugins:
+                self.add_plugin(p)
         service_path = plugin(self, "service")
         module_path = plugin(self, "module")
         if service_path is not None:
