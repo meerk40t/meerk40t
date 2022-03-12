@@ -162,7 +162,7 @@ class ConsolePanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_enter, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         self.Bind(wx.EVT_TEXT_URL, self.on_text_uri)
         # end wxGlade
@@ -283,7 +283,7 @@ class ConsolePanel(wx.Panel):
         except IndexError:
             pass
 
-    def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
+    def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
         self.context(command + "\n")
         self.text_entry.SetValue("")
