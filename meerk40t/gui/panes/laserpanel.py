@@ -216,12 +216,14 @@ class LaserPanel(wx.Panel):
         self.context.listen("plan", self.plan_update)
         self.context.listen("active", self.active_update)
         self.context.listen("legacy_spooler_label", self.spooler_label_update)
+        self.context.listen("lifecycle;shutdown", self.finalize)
 
-    def finalize(self):
+    def finalize(self, *args):
         self.context.unlisten("laserpane_arm", self.check_laser_arm)
         self.context.unlisten("plan", self.plan_update)
         self.context.unlisten("active", self.active_update)
         self.context.unlisten("legacy_spooler_label", self.spooler_label_update)
+        self.context.unlisten("lifecycle;shutdown",  self.finalize)
 
     def spooler_label_update(self, origin, *message):
         """
