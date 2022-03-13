@@ -156,12 +156,11 @@ class ConsolePanel(wx.Panel):
         style.SetLineSpacing(0)
         style.SetParagraphSpacingBefore(0)
         style.SetParagraphSpacingAfter(0)
+        bg = self.background_color()
         if self.is_dark:
             fg = wx.Colour("white")
-            bg = wx.Colour("black")
         else:
             fg = wx.Colour("black")
-            bg = wx.Colour("white")
         style.SetTextColour(fg)
         style.SetBackgroundColour(bg)
 
@@ -188,9 +187,12 @@ class ConsolePanel(wx.Panel):
         self.command_log = []
         self.command_position = 0
 
+    def background_color(self):
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+
     @property
     def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW).GetLuminance() < 0.5
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
