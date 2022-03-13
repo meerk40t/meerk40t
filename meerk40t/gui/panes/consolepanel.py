@@ -228,8 +228,12 @@ class ConsolePanel(wx.Panel):
         lines = lines.split("\n") if "\n" in lines else [lines]
         basic_style = self.text_main.BasicStyle
         raw = negative = False
+        newline = not self.text_main.IsEmpty()
         self.text_main.SetInsertionPointEnd()
         for text in lines:
+            if newline:
+                self.text_main.Newline()
+            newline = True
             self.text_main.BeginStyle(basic_style)
             parts = RE_BBCODE.split(text)
             for part in parts:
@@ -264,7 +268,6 @@ class ConsolePanel(wx.Panel):
                         continue
                 self.text_main.WriteText(part)
             self.text_main.EndStyle()
-            self.text_main.Newline()
             self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
             self.text_main.Update()
 
