@@ -202,10 +202,10 @@ class ConsolePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: ConsolePanel.__do_layout
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2.Add(self.text_main, 20, wx.EXPAND, 0)
-        sizer_2.Add(self.text_entry, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.text_main, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.text_entry, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_2)
-        sizer_2.Fit(self)
+        sizer_2.FitInside(self)
         self.Layout()
         # end wxGlade
 
