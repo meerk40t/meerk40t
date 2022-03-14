@@ -553,7 +553,7 @@ class MoshiDriver(Driver):
         Move to a position x, y. This is an absolute position.
         """
         self.settings.raster_step = 0
-        self.ensure_program_or_raster_mode(x, y)
+        self.ensure_program_mode(x, y)
         oldx = self.current_x
         oldy = self.current_y
         self.program.move_abs(x, y)

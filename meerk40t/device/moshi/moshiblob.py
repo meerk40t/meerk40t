@@ -327,6 +327,7 @@ class MoshiBlob:
         self.offset_y = 0
 
         self._stage = 0
+        self._vector = None
 
     def __len__(self):
         return len(self.data)
@@ -390,6 +391,7 @@ class MoshiBlob:
             speed_mms = 1
         self.pipe_int8(speed_mms - 1)
         self.pipe_int8(normal_speed_mms - 1)
+        self._vector = True
 
     def raster_speed(self, speed_mms):
         """
@@ -404,6 +406,7 @@ class MoshiBlob:
         if speed_cms == 0:
             speed_cms = 1
         self.pipe_int8(speed_cms - 1)
+        self._vector = False
 
     def set_offset(self, z, x, y):
         """
@@ -442,7 +445,7 @@ class MoshiBlob:
         Laser will cut to this position from the current stored head position.
         Head position is stored on the Moshiboard
         """
-        assert 2 <= self._stage <= 3
+        assert (self._stage == 3 and self._vector) or self._stage == 2
         self._stage = 3
         if x < 0:
             x = 0
@@ -465,7 +468,7 @@ class MoshiBlob:
         Laser will move without cutting to this position from the current stored head position.
         Head position is stored on the Moshiboard
         """
-        assert 2 <= self._stage <= 3
+        assert (self._stage == 3 and self._vector) or self._stage == 2
         self._stage = 3
         if x < 0:
             x = 0
@@ -489,6 +492,7 @@ class MoshiBlob:
         stored in the Moshiboard.
         """
         assert 2 <= self._stage <= 3
+        assert not self._vector
         self._stage = 3
 
         self.last_y = y
@@ -506,6 +510,7 @@ class MoshiBlob:
         stored in the Moshiboard.
         """
         assert 2 <= self._stage <= 3
+        assert not self._vector
         self._stage = 3
         self.last_x = x
         x -= self.offset_x
@@ -522,6 +527,7 @@ class MoshiBlob:
         stored in the Moshiboard.
         """
         assert 2 <= self._stage <= 3
+        assert not self._vector
         self._stage = 3
         self.last_x = x
         x -= self.offset_x
@@ -538,6 +544,7 @@ class MoshiBlob:
         stored in the Moshiboard
         """
         assert 2 <= self._stage <= 3
+        assert not self._vector
         self._stage = 3
         self.last_y = y
         y -= self.offset_y
