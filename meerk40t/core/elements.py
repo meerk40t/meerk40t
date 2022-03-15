@@ -4145,18 +4145,14 @@ class Elemental(Modifier):
                 if area is None:
                     channel(_("resize: nothing selected"))
                     return
-                if not x_pos is None:
-                    if not x_pos.is_valid_length:
-                        raise SyntaxError("x_pos: " + _("This is not a valid length"))
-                if not y_pos is None:
-                    if not y_pos.is_valid_length:
-                        raise SyntaxError("y_pos: " + _("This is not a valid length"))
-                if not width is None:
-                    if not width.is_valid_length:
-                        raise SyntaxError("width: " + _("This is not a valid length"))
-                if not height is None:
-                    if not height.is_valid_length:
-                        raise SyntaxError("height: " + _("This is not a valid length"))
+                if not x_pos is None and not x_pos.is_valid_length:
+                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
+                if not y_pos is None and not y_pos.is_valid_length:
+                    raise SyntaxError("y_pos: " + _("This is not a valid length"))
+                if not width is None and not width.is_valid_length:
+                    raise SyntaxError("width: " + _("This is not a valid length"))
+                if not height is None and not height.is_valid_length:
+                    raise SyntaxError("height: " + _("This is not a valid length"))
 
                 x_pos = x_pos.value(
                     ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
@@ -4172,11 +4168,14 @@ class Elemental(Modifier):
                 )
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
-                if w == 0 or h == 0:  # dot
-                    channel(_("resize: cannot resize a dot"))
+                if (
+                    (w == 0. and width != 0.)
+                    or (h == 0. and height != 0.)
+                ):  # dot or line
+                    channel(_("resize: cannot resize a zero dimension"))
                     return
-                sx = width / w
-                sy = height / h
+                sx = width / w if w != 0. else 1.
+                sy = height / h if h != 0. else 1.
                 # Don't do anything if scale is 1
                 if sx == 1.0 and sy == 1.0:
                     channel(_("resize: nothing to do - scale factors 1"))

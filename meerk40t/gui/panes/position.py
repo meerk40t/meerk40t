@@ -7,6 +7,9 @@ from meerk40t.svgelements import Length
 _ = wx.GetTranslation
 
 MILS_IN_MM = 39.3701
+UNITS = (_("mm"), _("cm"), _("inch"), _("mil"), "%")
+CONVERSION = (39.37, 393.7, 1000.0, 1.0)
+PRECISION = ("%.3f", "%.4f", "%.4f", "%.1f", "%.2f")
 
 
 def register_panel_position(window, context):
@@ -47,7 +50,7 @@ class PositionPanel(wx.Panel):
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
-            choices=[_("mm"), _("cm"), _("inch"), _("mil"), "%"],
+            choices=UNITS,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_box_units.SetSelection(0)
@@ -73,7 +76,6 @@ class PositionPanel(wx.Panel):
         self.position_y = 0.0
         self.position_h = 0.0
         self.position_w = 0.0
-        self.position_units = 0
         self.position_name = None
         self.context.setting(int, "units_index", 0)
         self.position_units = self.context.units_index
@@ -159,33 +161,29 @@ class PositionPanel(wx.Panel):
             self.text_y.Enable(True)
             self.button_aspect_ratio.Enable(True)
 
+        self.combo_box_units.SetSelection(self.position_units)
+
         x0, y0, x1, y1 = bounds
-        conversion, name, index = (39.37, "mm", 0)
-        if self.position_units == 2:
-            conversion, name, index = (1000.0, "in", 2)
-        elif self.position_units == 3:
-            conversion, name, index = (1.0, "mil", 3)
-        elif self.position_units == 1:
-            conversion, name, index = (393.7, "cm", 1)
-        elif self.position_units == 0:
-            conversion, name, index = (39.37, "mm", 0)
-        self.position_name = name
+        units = UNITS[self.position_units]
+        self.position_name = UNITS[self.position_units % 4]  # % treated as mm
+        conversion = CONVERSION[self.position_units % 4]
+        precision = PRECISION[self.position_units]
+
         self.position_x = x0 / conversion
         self.position_y = y0 / conversion
         self.position_w = (x1 - x0) / conversion
         self.position_h = (y1 - y0) / conversion
 
-        if self.position_units == 4:
-            self.text_x.SetValue("%.2f" % 100)
-            self.text_y.SetValue("%.2f" % 100)
-            self.text_w.SetValue("%.2f" % 100)
-            self.text_h.SetValue("%.2f" % 100)
+        if units == "%":
+            self.text_x.SetValue(precision % 100)
+            self.text_y.SetValue(precision % 100)
+            self.text_w.SetValue(precision % 100)
+            self.text_h.SetValue(precision % 100)
         else:
-            self.text_x.SetValue("%.2f" % self.position_x)
-            self.text_y.SetValue("%.2f" % self.position_y)
-            self.text_w.SetValue("%.2f" % self.position_w)
-            self.text_h.SetValue("%.2f" % self.position_h)
-        self.combo_box_units.SetSelection(self.position_units)
+            self.text_x.SetValue(precision % self.position_x)
+            self.text_y.SetValue(precision % self.position_y)
+            self.text_w.SetValue(precision % self.position_w)
+            self.text_h.SetValue(precision % self.position_h)
 
     def space_changed(self, origin, *args):
         self.position_units = self.context.units_index
@@ -198,63 +196,60 @@ class PositionPanel(wx.Panel):
             self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
         self.position_aspect_ratio = not self.position_aspect_ratio
 
-    def on_text_w_enter(self, event):
-        event.Skip()
-        if self.position_units == 4:
-            ratio_w = float(self.text_w.GetValue()) / 100.0
-            w = self.position_w * ratio_w
-        else:
+    def text_to_measurement(self, value, oldvalue=None):
+        if UNITS[self.position_units] == "%":
             try:
-                w = float(self.text_w.GetValue())
+                ratio_w = float(value) / 100.0
             except ValueError:
-                if self.position_units == 0:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_mm(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
-                        )
-                        .amount
+                return None
+            return oldvalue * ratio_w
+        units = self.position_name
+        try:
+            return float(value)
+        except ValueError:
+            if units == "mm":
+                return round(
+                    Length(value)
+                    .to_mm(
+                        ppi=1000,
+                        relative_length=self.bed_dim.bed_width * MILS_IN_MM,
                     )
-                elif self.position_units == 1:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_cm(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
-                        )
-                        .amount
+                    .amount,
+                    3
+                )
+            if units == "cm":
+                return round(
+                    Length(value)
+                    .to_cm(
+                        ppi=1000,
+                        relative_length=self.bed_dim.bed_width * MILS_IN_MM,
                     )
-                elif self.position_units == 2:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .to_inch(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
-                        )
-                        .amount
+                    .amount,
+                    4
+                )
+            if units == "inch":
+                return round(
+                    Length(value)
+                    .to_inch(
+                        ppi=1000,
+                        relative_length=self.bed_dim.bed_width * MILS_IN_MM,
                     )
-                elif self.position_units == 3:
-                    w = (
-                        Length(self.text_w.GetValue())
-                        .value(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_width * MILS_IN_MM,
-                        )
-                        .amount
+                    .amount,
+                    5
+                )
+            if units == "mil":
+                return round(
+                    Length(value)
+                    .to_mil(
+                        ppi=1000,
+                        relative_length=self.bed_dim.bed_width * MILS_IN_MM,
                     )
-                else:
-                    return
-        if abs(w) < 1e-8 or abs(self.position_w - w) < 1e-1:
-            self._update_position()
-            return
-        original = self.position_w
-        self.position_w = w
-        if self.position_aspect_ratio:
-            if abs(original) < 1e-8:
-                self._update_position()
-                return
-            self.position_h *= self.position_w / original
+                    .amount,
+                    1
+                )
+            return None
+
+    def _position_resize(self)
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -269,167 +264,62 @@ class PositionPanel(wx.Panel):
             )
         )
         self._update_position()
+
+    def on_text_w_enter(self, event):
+        event.Skip()
+        w = self.text_to_measurement(self.text_w.GetValue(), self.position_w)
+        if w is None:
+            return
+        if abs(self.position_w - w) < 1e-5:
+            self._update_position()
+            return
+        if self.position_aspect_ratio:
+            if abs(self.position_w) < 1e-5:
+                self._update_position()
+                return
+            self.position_h *= w / self.position_w
+        original = self.position_w
+        self.position_w = w
+        self._position_resize()
 
     def on_text_h_enter(self, event):
         event.Skip()
-        if self.position_units == 4:
-            ratio_w = float(self.text_h.GetValue()) / 100.0
-            h = self.position_h * ratio_w
-        else:
-            try:
-                h = float(self.text_h.GetValue())
-            except ValueError:
-                if self.position_units == 0:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_mm(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 1:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_cm(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 2:
-                    h = (
-                        Length(self.text_h.GetValue())
-                        .to_inch(
-                            ppi=1000,
-                            relative_length=self.bed_dim.bed_height * MILS_IN_MM,
-                        )
-                        .amount
-                    )
-                elif self.position_units == 3:
-                    h = Length(self.text_h.GetValue()).value(
-                        ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
-                    )
-                else:
-                    return
-        if abs(h) < 1e-8 or abs(self.position_h - h) < 1e-1:
+        h = self.text_to_measurement(self.text_h.GetValue(), self.position_h)
+        if h is None:
+            return
+        if abs(self.position_h - h) < 1e-5:
             self._update_position()
             return
-        original = self.position_h
-        self.position_h = h
         if self.position_aspect_ratio:
-            if abs(original) < 1e-8:
+            if abs(self.position_h) < 1e-5:
                 self._update_position()
                 return
-            self.position_w *= self.position_h / original
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.position_x,
-                self.position_name,
-                self.position_y,
-                self.position_name,
-                self.position_w,
-                self.position_name,
-                self.position_h,
-                self.position_name,
-            )
-        )
-        self._update_position()
+            self.position_w *= h / self.position_h
+        original = self.position_h
+        self.position_h = h
+        self._position_resize()
 
     def on_text_x_enter(self, event=None):
         event.Skip()
-        try:
-            x = float(self.text_x.GetValue())
-        except ValueError:
-            if self.position_units == 0:
-                x = Length(self.text_x.GetValue()).to_mm(
-                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
-                )
-                x = x.amount
-            elif self.position_units == 1:
-                x = Length(self.text_x.GetValue()).to_cm(
-                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
-                )
-                x = x.amount
-            elif self.position_units == 2:
-                x = Length(self.text_x.GetValue()).to_inch(
-                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
-                )
-                self.position_x = x.amount
-            elif self.position_units == 3:
-                x = Length(self.text_x.GetValue()).value(
-                    ppi=1000, relative_length=self.bed_dim.bed_width * MILS_IN_MM
-                )
-                x = x.amount
-            elif self.position_units == 4:
-                ratio_x = float(self.text_x.GetValue()) / 100.0
-                x = self.position_x * ratio_x
-        if abs(x - self.position_x) < 1e-1:
+        x = self.text_to_measurement(self.text_x.GetValue(), self.position_x)
+        if x is None:
+            return
+        if abs(self.position_x - x) < 1e-5:
             self._update_position()
             return
         self.position_x = x
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.position_x,
-                self.position_name,
-                self.position_y,
-                self.position_name,
-                self.position_w,
-                self.position_name,
-                self.position_h,
-                self.position_name,
-            )
-        )
-        self._update_position()
+        self._position_resize()
 
     def on_text_y_enter(self, event=None):
         event.Skip()
-        try:
-            y = float(self.text_y.GetValue())
-        except ValueError:
-            if self.position_units == 0:
-                y = Length(self.text_y.GetValue()).to_mm(
-                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
-                )
-                y = y.amount
-            elif self.position_units == 1:
-                y = Length(self.text_y.GetValue()).to_cm(
-                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
-                )
-                y = y.amount
-            elif self.position_units == 2:
-                y = Length(self.text_y.GetValue()).to_inch(
-                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
-                )
-                y = y.amount
-            elif self.position_units == 3:
-                y = Length(self.text_y.GetValue()).value(
-                    ppi=1000, relative_length=self.bed_dim.bed_height * MILS_IN_MM
-                )
-                y = y.amount
-            elif self.position_units == 4:
-                ratio_y = float(self.text_y.GetValue()) / 100.0
-                y = self.position_y * ratio_y
-        if abs(y - self.position_y) < 1e-1:
+        y = self.text_to_measurement(self.text_y.GetValue(), self.position_y)
+        if x is None:
+            return
+        if abs(self.position_y - y) < 1e-5:
             self._update_position()
             return
         self.position_y = y
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.position_x,
-                self.position_name,
-                self.position_y,
-                self.position_name,
-                self.position_w,
-                self.position_name,
-                self.position_h,
-                self.position_name,
-            )
-        )
-        self._update_position()
+        self._position_resize()
 
     def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
         self.position_units = self.combo_box_units.GetSelection()
