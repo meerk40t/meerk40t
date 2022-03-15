@@ -125,6 +125,97 @@ ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
+class CustomStatusBar(wx.StatusBar):
+    panelct = 5
+    startup = True
+
+    def __init__(self, parent, panelct, *args, **kwds):
+        self.Startup = True
+        self.panelct = panelct
+        self.context = parent.context
+        wx.StatusBar.__init__(self, parent, -1)
+        self.SetFieldsCount(self.panelct)
+        self.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.panelct
+        )
+        sizes = [-2] * self.panelct
+        # Make the first Panel large
+        sizes[0] = -3
+        # Make the last Panel smaller
+        sizes[self.panelct-1] = -1
+        self.SetStatusWidths(sizes)
+        self.sizeChanged = False
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        # These will fall into the last field
+        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Handle"))
+        self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+        self.context.setting(bool, "enable_sel_handle", True)
+        self.context.setting(bool, "enable_sel_rotate", True)
+        self.context.setting(bool, "enable_sel_skew", False)
+        self.cb_handle.SetValue(self.context.enable_sel_handle)
+        self.cb_rotate.SetValue(self.context.enable_sel_rotate)
+        self.cb_skew.SetValue(self.context.enable_sel_skew)
+
+        # set the initial position of the checkboxes
+        self.Reposition()
+        self.startup = False
+
+    # the checkbox was clicked
+    def on_toggle_handle(self, event):
+        if not self.startup:
+            if self.cb_handle.GetValue():
+                valu = True
+            else:
+                valu = False
+            self.context.enable_sel_handle = valu
+            self.context.signal("refresh_scene", 0)
+
+    def on_toggle_rotate(self, event):
+        if not self.startup:
+            if self.cb_rotate.GetValue():
+                valu = True
+            else:
+                valu = False
+            self.context.enable_sel_rotate = valu
+            self.context.signal("refresh_scene", 0)
+
+    def on_toggle_skew(self, event):
+        if not self.startup:
+            if self.cb_skew.GetValue():
+                valu = True
+            else:
+                valu = False
+            self.context.enable_sel_skew = valu
+            self.context.signal("refresh_scene", 0)
+
+    def OnSize(self, evt):
+        evt.Skip()
+        self.Reposition()  # for normal size events
+        self.sizeChanged = True
+
+    def OnIdle(self, evt):
+        if self.sizeChanged:
+            self.Reposition()
+
+    # reposition the checkboxes
+    def Reposition(self):
+        rect = self.GetFieldRect(self.panelct-1)
+        wd = rect.width / 3
+        rect.x += 1
+        rect.y += 1
+        rect.width = wd
+        self.cb_handle.SetRect(rect)
+        rect.x += wd
+        self.cb_rotate.SetRect(rect)
+        rect.x += wd
+        self.cb_skew.SetRect(rect)
+        self.sizeChanged = False
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -174,13 +265,11 @@ class MeerK40t(MWindow):
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
 
-        self.main_statusbar = self.CreateStatusBar(4)
-        self.main_statusbar.SetStatusStyles(
-            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
-        )
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        self.main_statusbar = CustomStatusBar(self, 5)
+        self.SetStatusBar(self.main_statusbar)
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText(_("Status..."), 0)
+
         self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
         self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
@@ -199,6 +288,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
 
     def __set_commands(self):
         context = self.context

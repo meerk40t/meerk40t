@@ -85,6 +85,13 @@ class SelectionWidget(Widget):
     Selection Widget it tasked with drawing the selection box and managing the events
     dealing with moving, resizing and altering the selected object.
     """
+    # Size of rotation indicator area - will be multiplied by selbox_wx / selbox_wy respectively
+    rot_area = 2
+    use_handle_rotate = True
+    use_handle_skew = True
+    use_handle_size = True
+    selbox_wx = None
+    selbox_wy = None
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
@@ -139,6 +146,49 @@ class SelectionWidget(Widget):
             self.clear()
             return HITCHAIN_DELEGATE
 
+    def contains(self, x, y=None):
+        """
+        Query as to whether the current point is contained within the current widget.
+        Overloaded routine to allow for selection rectangle size
+        """
+        valu = False
+        if y is None:
+            y = x.y
+            x = x.x
+        if self.selbox_wx is None:
+            matrix = self.parent.matrix
+            self.selbox_wx = 10.0 / matrix.value_scale_x()
+            self.selbox_wy = 10.0 / matrix.value_scale_y()
+
+        checks = [[self.left, self.top, self.right, self.bottom]]
+        # The 4 side handles
+        if self.use_handle_size:
+            checks.append ([self.left - self.selbox_wx / 2, (self.top + self.bottom)/2 - self.selbox_wy / 2, self.left, (self.top + self.bottom)/2 + self.selbox_wy / 2])
+            checks.append ([self.right, (self.top + self.bottom)/2 - self.selbox_wy / 2, self.right + self.selbox_wx / 2, (self.top + self.bottom)/2 + self.selbox_wy / 2])
+            checks.append ([(self.left+self.right)/2 - self.selbox_wx / 2, self.top - self.selbox_wy / 2, (self.left+self.right)/2 + self.selbox_wx / 2, self.top])
+            checks.append ([(self.left+self.right)/2 - self.selbox_wx / 2, self.bottom, (self.left+self.right)/2 + self.selbox_wx / 2, self.bottom + self.selbox_wy / 2])
+
+        # The 4 corner handles incl. rotation indicator
+        if self.use_handle_rotate:
+            h_factor = self.rot_area
+        else:
+            h_factor = 0.5
+        checks.append ([self.left - h_factor * self.selbox_wx, self.top - h_factor * self.selbox_wy, self.left + h_factor * self.selbox_wx, self.top + h_factor * self.selbox_wy])
+        checks.append ([self.right - h_factor * self.selbox_wx, self.top - h_factor * self.selbox_wy, self.right + h_factor * self.selbox_wx, self.top + h_factor * self.selbox_wy])
+        checks.append ([self.left - h_factor * self.selbox_wx, self.bottom - h_factor * self.selbox_wy, self.left + h_factor * self.selbox_wx, self.bottom + h_factor * self.selbox_wy])
+        checks.append ([self.right - h_factor * self.selbox_wx, self.bottom - h_factor * self.selbox_wy, self.right + h_factor * self.selbox_wx, self.bottom + h_factor * self.selbox_wy])
+        if self.use_handle_skew:
+            # The two skew handles
+            checks.append ([self.left + 3/4 * (self.right-self.left) - 1/3 * self.selbox_wx, self.bottom - 1/3 * self.selbox_wy, self.left + 3/4 * (self.right-self.left) + 1/3 * self.selbox_wx, self.bottom + 1/3 * self.selbox_wy])
+            checks.append ([self.right - 1/3 * self.selbox_wx, self.top + 1/4 *(self.bottom - self.top) - 1/3 * self.selbox_wy, self.right + 1/3 * self.selbox_wx, self.top + 1/4 *(self.bottom - self.top) + 1/3 * self.selbox_wy])
+
+        # Check whether the given point lie within one of the relevant rectangles
+        for crn in checks:
+            if crn[0]  <= x <= crn[2] and crn[1] <= y <= crn[3]:
+                valu = True
+                break
+        return valu
+
     key_shift_pressed = False
     key_control_pressed = False
     key_alt_pressed = False
@@ -154,12 +204,19 @@ class SelectionWidget(Widget):
             sy = space_pos[1]
             # print ("left=%f, right=%f, top=%f, bottom=%f, x=%f, y=%f" % (self.left, self.right, self.top, self.bottom, sx, sy))
 
-            if (self.left <= sx <= self.right) and (self.top <= sy <= self.bottom):
+            if self.contains(sx, sy):
                 # print ("inside")
                 res = True
         return res
 
+    store_last_msg = ""
+    def update_statusmsg(self, value):
+        if value != self.store_last_msg:
+            self.store_last_msg = value
+            self.scene.context.signal("statusmsg", value)
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        _ = self.scene.context._
 
         elements = self.elements
 
@@ -220,31 +277,22 @@ class SelectionWidget(Widget):
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor("arrow")
             self.hovering = False
+            self.update_statusmsg(_("Status"))
+
             return RESPONSE_CHAIN
         elif event_type == "hover":
             if self.hovering:
                 matrix = self.parent.matrix
-                xin = space_pos[0] - self.left
-                yin = space_pos[1] - self.top
-                # Half size of equivalent in hit
-                xmin = 5 / matrix.value_scale_x()
-                ymin = 5 / matrix.value_scale_y()
-                # Adjust sizing of hover border as follows:
-                # 1. If object is very small so move area is smaller than 1/2 or even non-existent, prefer move to size by setting border to zero
-                # 2. Otherwise try to expand by up to 2 (to make it easier to hover) but never less than xmin and never expanded
-                #    to be more than 1/4 of the width or height
-                xmin = (
-                    min(xmin * 2.0, max(self.width / 4.0, xmin))
-                    if xmin <= self.width / 4.0
-                    else 0.0
-                )
-                ymin = (
-                    min(ymin * 2.0, max(self.height / 4.0, ymin))
-                    if ymin <= self.height / 4.0
-                    else 0.0
-                )
-                xmax = self.width - xmin
-                ymax = self.height - ymin
+
+                # No need for a minimum coverage check as we are testing for (a rather big) are in the center first, so if the handles overlap then move has priority
+                xmin = self.left
+                xmax = self.right
+                ymin = self.top
+                ymax = self.bottom
+                xin = space_pos[0]
+                yin = space_pos[1]
+
+                # If there is at least on element in the selection with a lock status, then the only manipulation we allow is a move operation
                 for e in elements.elems(emphasized=True):
                     try:
                         if e.lock:
@@ -253,33 +301,149 @@ class SelectionWidget(Widget):
                             return RESPONSE_CHAIN
                     except (ValueError, AttributeError):
                         pass
-                if xin >= xmax and yin >= ymax:
-                    self.scene.cursor("size_se")
-                    self.tool = self.tool_scalexy_se
-                elif xin <= xmin and yin <= ymin:
-                    self.scene.cursor("size_nw")
-                    self.tool = self.tool_scalexy_nw
-                elif xin >= xmax and yin <= ymin:
-                    self.scene.cursor("size_ne")
-                    self.tool = self.tool_scalexy_ne
-                elif xin <= xmin and yin >= ymax:
-                    self.scene.cursor("size_sw")
-                    self.tool = self.tool_scalexy_sw
-                elif xin <= xmin:
-                    self.scene.cursor("size_w")
-                    self.tool = self.tool_scalex_w
-                elif yin <= ymin:
-                    self.scene.cursor("size_n")
-                    self.tool = self.tool_scaley_n
-                elif xin >= xmax:
-                    self.scene.cursor("size_e")
-                    self.tool = self.tool_scalex_e
-                elif yin >= ymax:
-                    self.scene.cursor("size_s")
-                    self.tool = self.tool_scaley_s
+
+                if ( self.width < 3 *  self.selbox_wx ) or ( self.height < 3 *  self.selbox_wy ):
+                    center_size = 1
+                elif ( self.width < 5 *  self.selbox_wx ) or ( self.height < 5 *  self.selbox_wy ):
+                    center_size = 2
                 else:
+                    center_size = 3
+                # print("Ratio-Y: %.1f, X: %.1f, cs=%d" % (self.width / self.selbox_wx, self.height / self.selbox_wy, center_size))
+                # The centre for moving
+                checks = [[(xmin+xmax)/2 - center_size * self.selbox_wx,  (ymin+ymax)/2 - center_size * self.selbox_wy, (xmin+xmax)/2 + center_size * self.selbox_wx, (ymin+ymax)/2 + center_size * self.selbox_wy, "move"]]
+                # The 4 side handles for resizing
+                checks.append ([xmin - self.selbox_wx / 2, (ymin + ymax)/2 - self.selbox_wy / 2, xmin + self.selbox_wx / 2, (ymin + ymax)/2 + self.selbox_wy / 2, "size_l"])
+                checks.append ([xmax - self.selbox_wx / 2, (ymin + ymax)/2 - self.selbox_wy / 2, xmax + self.selbox_wx / 2, (ymin + ymax)/2 + self.selbox_wy / 2, "size_r"])
+                checks.append ([(xmin+xmax)/2 - self.selbox_wx / 2, ymin - self.selbox_wy / 2, (xmin+xmax)/2 + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_t"])
+                checks.append ([(xmin+xmax)/2 - self.selbox_wx / 2, ymax - self.selbox_wy / 2, (xmin+xmax)/2 + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_b"])
+                # The 4 corner handles (need to come before rotation)
+                checks.append ([xmin - self.selbox_wx / 2, ymin - self.selbox_wy / 2, xmin + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_tl"])
+                checks.append ([xmax - self.selbox_wx / 2, ymin - self.selbox_wy / 2, xmax + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_tr"])
+                checks.append ([xmin - self.selbox_wx / 2, ymax - self.selbox_wy / 2, xmin + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_bl"])
+                checks.append ([xmax - self.selbox_wx / 2, ymax - self.selbox_wy / 2, xmax + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_br"])
+
+                if self.use_handle_rotate:
+                    # The 4 rotation areas for inner coverage first
+                    checks.append ([xmin, ymin, xmin + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_inner_tl"])
+                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymin, xmax, ymin + self.rot_area * self.selbox_wy, "rotate_inner_tr"])
+                    checks.append ([xmin, ymax - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymax, "rotate_inner_bl"])
+                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmax, ymax, "rotate_inner_br"])
+                    # The 4 wider areas around the corner handles incl. rotation indicator
+                    checks.append ([xmin - self.rot_area * self.selbox_wx, ymin - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_outer_tl"])
+                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymin - self.rot_area * self.selbox_wy, xmax + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_outer_tr"])
+                    checks.append ([xmin - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymax + self.rot_area * self.selbox_wy, "rotate_outer_bl"])
+                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmax + self.rot_area * self.selbox_wx, ymax + self.rot_area * self.selbox_wy, "rotate_outer_br"])
+                if self.use_handle_skew:
+                    # The two skew handles
+                    checks.append ([xmin + 3/4 * (xmax - xmin) - 1/3 * self.selbox_wx, ymax - 1/3 * self.selbox_wy, xmin + 3/4 * (xmax - xmin) + 1/3 * self.selbox_wx, ymax + 1/3 * self.selbox_wy, "skew_x"])
+                    checks.append ([xmax - 1/3 * self.selbox_wx, ymin + 1/4 *(ymax - ymin) - 1/3 * self.selbox_wy, xmax + 1/3 * self.selbox_wx, ymin + 1/4 *(ymax - ymin) + 1/3 * self.selbox_wy, "skew_y"])
+
+                method = ""
+                # Check whether the given point lies within one of the relevant rectangles
+                for crn in checks:
+                    # print("Checking method: %s for (%.1f, %.1f) vs (%.1f, %.1f, %.1f, %.1f)" % ( crn[4], xin, yin, crn[0], crn[1], crn[2], crn[3]))
+                    if crn[0]  <= xin <= crn[2] and crn[1] <= yin <= crn[3]:
+                        method = crn[4]
+                        break
+                # print ("Method found: %s" % method)
+                if method == "move":
                     self.scene.cursor("sizing")
                     self.tool = self.tool_translate
+                    self.update_statusmsg(_("Move element"))
+                elif method == "size_tl":
+                    self.scene.cursor("size_nw")
+                    self.tool = self.tool_scalexy_nw
+                    self.update_statusmsg(_("Scale element"))
+                elif method == "size_tr":
+                    self.scene.cursor("size_ne")
+                    self.tool = self.tool_scalexy_ne
+                    self.update_statusmsg(_("Scale element"))
+                elif method == "size_bl":
+                    self.scene.cursor("size_sw")
+                    self.tool = self.tool_scalexy_sw
+                    self.update_statusmsg(_("Scale element"))
+                elif method == "size_br":
+                    self.scene.cursor("size_se")
+                    self.tool = self.tool_scalexy_se
+                    self.update_statusmsg(_("Scale element"))
+                elif method == "size_l":
+                    self.scene.cursor("size_w")
+                    self.tool = self.tool_scalex_w
+                    self.update_statusmsg(_("Scale element in X-direction"))
+                elif method == "size_r":
+                    self.scene.cursor("size_e")
+                    self.tool = self.tool_scalex_e
+                    self.update_statusmsg(_("Scale element in X-direction"))
+                elif method == "size_b":
+                    self.scene.cursor("size_s")
+                    self.tool = self.tool_scaley_s
+                    self.update_statusmsg(_("Scale element in Y-direction"))
+                elif method == "size_t":
+                    self.scene.cursor("size_n")
+                    self.tool = self.tool_scaley_n
+                    self.update_statusmsg(_("Scale element in Y-direction"))
+                elif method == "skew_x":
+                    self.scene.cursor("size_ew")
+                    self.tool = self.tool_skew_x
+                    self.update_statusmsg(_("Skew element in X-direction"))
+                elif method == "skew_y":
+                    self.scene.cursor("size_ns")
+                    self.tool = self.tool_skew_y
+                    self.update_statusmsg(_("Skew element in Y-direction"))
+                elif method == "rotate_outer_tl":
+                    self.rotate_cx = (self.right + self.left) / 2
+                    self.rotate_cy = (self.top + self.bottom) / 2
+                    self.scene.cursor("rotate1")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around center"))
+                elif method == "rotate_outer_tr":
+                    self.rotate_cx = (self.right + self.left) / 2
+                    self.rotate_cy = (self.top + self.bottom) / 2
+                    self.scene.cursor("rotate1")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around center"))
+                elif method == "rotate_outer_bl":
+                    self.rotate_cx = (self.right + self.left) / 2
+                    self.rotate_cy = (self.top + self.bottom) / 2
+                    self.scene.cursor("rotate1")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around center"))
+                elif method == "rotate_outer_br":
+                    self.rotate_cx = (self.right + self.left) / 2
+                    self.rotate_cy = (self.top + self.bottom) / 2
+                    self.scene.cursor("rotate1")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around center"))
+                elif method == "rotate_inner_tl":
+                    self.rotate_cx = self.right
+                    self.rotate_cy = self.bottom
+                    self.scene.cursor("rotate2")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around bottom-right-corner"))
+                elif method == "rotate_inner_tr":
+                    self.rotate_cx = self.left
+                    self.rotate_cy = self.bottom
+                    self.scene.cursor("rotate2")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around bottom-left-corner"))
+                elif method == "rotate_inner_bl":
+                    self.rotate_cx = self.right
+                    self.rotate_cy = self.top
+                    self.scene.cursor("rotate2")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around top-right-corner"))
+                elif method == "rotate_inner_br":
+                    # opposing corner
+                    self.rotate_cx = self.left
+                    self.rotate_cy = self.top
+                    self.scene.cursor("rotate2")
+                    self.tool = self.tool_rotate
+                    self.update_statusmsg(_("Rotate around top-left-corner"))
+                else:
+                    self.scene.cursor("arrow")
+                    self.tool = self.tool_none
+                    self.update_statusmsg(_("Status"))
+
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
@@ -361,6 +525,40 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], b[1], position[0], position[1]])
+            self.scene.request_refresh()
+
+    def tool_none(self, position, dx, dy, event=0):
+        return
+
+    def tool_scale(self, position, dx, dy, event=0):
+        elements = self.scene.context.elements
+        if event == 1:
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.node.modified()
+        if event == 0:
+            b = elements.selected_area()
+            scalex = (position[0] - self.left) / self.save_width
+            scaley = (position[1] - self.top) / self.save_height
+            if self.uniform:
+                scale = (scaley + scalex) / 2.0
+                scalex = scale
+                scaley = scale
+            self.save_width *= scalex
+            self.save_height *= scaley
+            for obj in elements.elems(emphasized=True):
+                try:
+                    if obj.lock:
+                        continue
+                except AttributeError:
+                    pass
+                obj.transform.post_scale(scalex, scaley, self.left, self.top)
+                obj.bounds_dirty = True
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
+            elements.update_bounds(
+                [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
+            )
             self.scene.request_refresh()
 
     def tool_scalexy_se(self, position, dx, dy, event=0):
@@ -590,6 +788,7 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(1, scaley, self.left, self.bottom)
+                obj._bounds_dirty = True
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             elements.update_bounds([b[0], position[1], b[2], b[3]])
@@ -609,11 +808,224 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
+                e._bounds_dirty = True
             for e in elements.flat(types=("group", "file")):
                 e._bounds_dirty = True
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
+
+    last_skew_x = 0
+    def tool_skew_x(self, position, dx, dy, event=0):
+        """
+        Change the skew of the selected elements.
+        THIS DOES NOT WORK FULLY YET, WORK IN PROGRESS
+        """
+        elements = self.scene.context.elements
+        if event == 1:
+            self.last_skew_x = 0
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.node.modified()
+        if event == 0:
+            if dx> 0 :
+                self.last_skew_x += math.tau / 180
+            else:
+                self.last_skew_x -= math.tau / 180
+            if (self.last_skew_x <= -0.5 * math.tau):
+                self.last_skew_x = -0.5 * math.tau
+            if (self.last_skew_x >= +0.5 * math.tau):
+                self.last_skew_x = +0.5 * math.tau
+            valu = self.last_skew_x / math.tau * 180
+            print ("Skew-X Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_x, valu))
+
+            b = elements.selected_area()
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                q = obj.bbox()
+                obj.transform.reset()
+                obj.transform.post_translate(q[0], q[1])
+                obj.transform.post_skew_x(self.last_skew_x, (q[0]+q[2])/2, (q[1]+q[3])/2)
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
+            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        self.scene.request_refresh()
+
+    last_skew_y = 0
+    def tool_skew_y(self, position, dx, dy, event=0):
+        """
+        Change the skew of the selected elements.
+        THIS DOES NOT WORK FULLY YET, WORK IN PROGRESS
+        """
+        elements = self.scene.context.elements
+        if event == 1:
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.node.modified()
+            self.last_skew_y = 0
+        if event == 0:
+            if dy> 0 :
+                self.last_skew_y += math.tau / 36
+            else:
+                self.last_skew_y -= math.tau / 36
+            if (self.last_skew_y <= -5/6 * math.tau):
+                self.last_skew_y = -5/6 * math.tau
+            if (self.last_skew_y >= +5/6 * math.tau):
+                self.last_skew_y = +5/6 * math.tau
+
+            valu = self.last_skew_y / math.tau * 180
+            print ("Skew-Y Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_y, valu))
+
+            b = elements.selected_area()
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                q = obj.bbox()
+                obj.transform.reset()
+                obj.transform.post_translate(q[0], q[1])
+                obj.transform.post_skew_y(self.last_skew_y, (q[0]+q[2])/2, (q[1]+q[3])/2)
+
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
+            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        self.scene.request_refresh()
+
+    def tool_rotate(self, position, dx, dy, event=0):
+        """
+        Change the rotation of the selected elements.
+        """
+        rot_angle = 0
+        elements = self.scene.context.elements
+        if event == 1:
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.node.modified()
+        if event == 0:
+            if self.rotate_cx is None:
+                self.rotate_cx = (self.right + self.left) / 2
+            if self.rotate_cy is None:
+                self.rotate_cy = (self.top + self.bottom) / 2
+
+            # Okay lets figure out whether the direction of travel was more CW or CCW
+            # Lets focus on the bigger movement
+            d_left = position[0] < self.rotate_cx
+            d_top = position[1] < self.rotate_cy
+            if abs(dx)>abs(dy):
+                if d_left and d_top: # LT
+                   cw = dx > 0
+                elif d_left and not d_top: # LB
+                    cw = dx < 0
+                elif not d_left and not d_top: # RB
+                    cw = dx < 0
+                elif not d_left and d_top: # TR
+                    cw = dx > 0
+            else:
+                if d_left and d_top: # LT
+                   cw = dy < 0
+                elif d_left and not d_top: # LB
+                    cw = dy < 0
+                elif not d_left and not d_top: # RB
+                    cw = dy > 0
+                elif not d_left and d_top: # TR
+                    cw = dy > 0
+
+            # print ("cw=%s, d_left=%s, d_top=%s, dx=%.1f, dy=%.1f, Pos=(%.1f, %.1f), Center=(%.1f, %.1f)" % ( cw, d_left, d_top, dx, dy, position[0], position[1], self.rotate_cx, self.rotate_cy))
+
+            if cw:
+                rot_angle = +1 * math.tau / 180
+            else:
+                rot_angle = -1 * math.tau / 180
+            self.last_cw = cw
+
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
+                e._bounds_dirty = True
+            for e in elements.flat(types=("group", "file")):
+                e._bounds_dirty = True
+            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+        self.scene.request_refresh()
+
+    def draw_rotation_corners(self, gc, wdx, wdy, x0, y0, x1, y1):
+        if self.use_handle_rotate:
+            for i in range(2):
+                for j in range(2):
+                    if (i==0):
+                        signx = +1
+                        xx = x0
+                    else:
+                        signx = -1
+                        xx = x1
+                    if (j==0):
+                        signy = +1
+                        yy = y0
+                    else:
+                        signy = -1
+                        yy = y1
+
+                    # Well, I would have liked to draw a poper arc via dc.DrawArc but the DeviceContext is not available here(?)
+                    segment = []
+                    # Start arrow
+                    x = xx + signx * 0.5 * wdx - signx * self.rot_area * wdx
+                    y = yy + signy * 0.5 * wdy
+                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
+                    segment += [(x, y)]
+                    segment += [(x + signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
+                    segment += [(x, y)]
+
+                    # Arc-Segment
+                    numpts = 8
+                    for k in range(numpts+1):
+                        radi = k*math.pi/(2*numpts)
+                        sy = math.sin(radi)
+                        sx = math.cos(radi)
+                        x = xx + signx * 0.5 * wdx - signx * sx * self.rot_area * wdx
+                        y = yy + signy * 0.5 * wdy - signy * sy * self.rot_area * wdy
+                        # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
+                        segment += [(x, y)]
+
+
+                    # End Arrow
+                    x = xx + signx * 0.5 * wdx
+                    y = yy + signy * 0.5 * wdy - signy * self.rot_area * wdy
+                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
+                    segment += [(x, y)]
+                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y + signy * self.rot_area * 1/4 * wdy)]
+
+                    pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 2, wx.SOLID )
+                    pen.SetWidth(0.75 * self.selection_pen.GetWidth())
+                    pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.StrokeLines(segment)
+
+    def draw_handles(self, gc, wdx, wdy, x0, y0, x1, y1):
+        corners = []
+        if self.use_handle_size:
+            corners += [
+                # corners
+                [x0 - wdx/2, y0 - wdy/2, wdx, wdy],
+                [x1 - wdx/2, y0 - wdy/2, wdx, wdy],
+                [x0 - wdx/2, y1 - wdy/2, wdx, wdy],
+                [x1 - wdx/2, y1 - wdy/2, wdx, wdy],
+                # Middle of sides
+                [x0 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy],
+                [x1 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy],
+                [(x0+x1)/2 - wdx/2, y0 - wdy/2, wdx, wdy],
+                [(x0+x1)/2 - wdx/2, y1 - wdy/2, wdx, wdy],
+                # Center
+                [(x0+x1)/2 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy]]
+        # Skew
+        if self.use_handle_skew:
+            corners.append([x0 + 3/4*(x1-x0) - wdx/3, y1 - wdy/3, 2/3*wdx, 2/3*wdy]) # skew x
+            corners.append([x1 - wdx/3, y0 + 1/4*(y1-y0) - wdy/3, 2/3*wdx, 2/3*wdy]) # skew y
+
+        if len(corners)>0:
+            pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 1, wx.SOLID )
+            pen.SetStyle(wx.PENSTYLE_SOLID)
+            brush = wx.Brush(wx.Colour(0x7F, 0x7F, 0x7F), wx.SOLID)
+            gc.SetPen(pen)
+            gc.SetBrush(brush)
+
+            for corn in corners:
+                gc.DrawRectangle(corn[0], corn[1], corn[2], corn[3])
 
     def process_draw(self, gc):
         """
@@ -626,6 +1038,16 @@ class SelectionWidget(Widget):
         elements = self.scene.context.elements
         bounds = elements.selected_area()
         matrix = self.parent.matrix
+        # get infos whether to draw handles or not
+        try:
+            self.use_handle_rotate = context.enable_sel_rotate
+            self.use_handle_skew = context.enable_sel_skew
+            self.use_handle_size = context.enable_sel_handle
+            # print("Handle-Handling: H=%s, R=%s, S=%s" % (self.use_handle_size, self.use_handle_rotate, self.use_handle_skew))
+        except AttributeError:
+            # Stuff has not yet been defined...
+            pass
+
         if bounds is not None:
             try:
                 linewidth = 2.0 / matrix.value_scale_x()
@@ -654,6 +1076,7 @@ class SelectionWidget(Widget):
             gc.StrokeLine(x1, y0, x1, y1)
             gc.StrokeLine(x1, y1, x0, y1)
             gc.StrokeLine(x0, y1, x0, y0)
+
             if draw_mode & DRAW_MODE_SELECTION == 0:
                 p = self.scene.context
                 conversion, name, marks, index = (
@@ -667,6 +1090,13 @@ class SelectionWidget(Widget):
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
+            self.selbox_wx = 5 * linewidth # 10.0 / matrix.value_scale_x()
+            self.selbox_wy = 5 * linewidth # 10.0 / matrix.value_scale_y()
+            # print("Selbox-width=(%.1f, %.1f) - linewidth=%.1f" % (self.selbox_wx, self.selbox_wy, self.selection_pen.GetWidth()))
+
+            self.draw_handles(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
+            self.draw_rotation_corners(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
+
     def create_duplicate(self):
         from copy import copy
 
@@ -679,6 +1109,18 @@ class SelectionWidget(Widget):
         elements.add_elems(adding_elements)
         elements.classify(adding_elements)
 
+    def init(self, context):
+        pass
+
+    def final(self, context):
+        pass
+
+    def on_update_params(self, origin, pos):
+        """
+        Update of driver adds and ensures the location of the d+origin position
+        """
+        self.reticles["d" + origin] = pos[2], pos[3]
+        self.scene.request_refresh_for_animation()
 
 class RectSelectWidget(Widget):
     """
