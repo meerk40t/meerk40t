@@ -87,6 +87,7 @@ class PositionPanel(wx.Panel):
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
+        self.channel = self.context.kernel._console_channel
 
     def finalize(self, *args):
         self.context.unlisten("units", self.space_changed)
@@ -249,9 +250,12 @@ class PositionPanel(wx.Panel):
                 )
             return None
 
-    def _position_resize(self)
+    def _position_resize(self):
+        resize = "resize {p}%s {p}%s {p}%s {p}%s\n".format(
+            p=PRECISION[self.position_units]
+        )
         self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
+            resize
             % (
                 self.position_x,
                 self.position_name,
@@ -267,35 +271,57 @@ class PositionPanel(wx.Panel):
 
     def on_text_w_enter(self, event):
         event.Skip()
-        w = self.text_to_measurement(self.text_w.GetValue(), self.position_w)
+        value = self.text_w.GetValue()
+        w = self.text_to_measurement(value, self.position_w)
         if w is None:
+            self.channel(_("[red]Position panel: invalid {f} value: {v}").format(
+                f=_("width"),
+                v=value
+            ))
+            self._update_position()
             return
-        if abs(self.position_w - w) < 1e-5:
+        if abs(self.position_w - w) < 1e-4:
+            self._update_position()
+            return
+        if abs(self.position_w) < 1e-5:
+            self.channel(
+                _("[red]Position panel: cannot resize zero {f}: {v}").format(
+                    f=_("width"),
+                    v=value
+                )
+            )
             self._update_position()
             return
         if self.position_aspect_ratio:
-            if abs(self.position_w) < 1e-5:
-                self._update_position()
-                return
             self.position_h *= w / self.position_w
-        original = self.position_w
         self.position_w = w
         self._position_resize()
 
     def on_text_h_enter(self, event):
         event.Skip()
-        h = self.text_to_measurement(self.text_h.GetValue(), self.position_h)
+        value = self.text_h.GetValue()
+        h = self.text_to_measurement(value, self.position_h)
         if h is None:
+            self.channel(_([red]"Position panel: invalid {f} value: {v}").format(
+                f=_("height"),
+                v=value
+            ))
+            self._update_position()
             return
-        if abs(self.position_h - h) < 1e-5:
+        if abs(self.position_h - h) < 1e-4:
+            self._update_position()
+            return
+        if abs(self.position_h) < 1e-5:
+            self.channel(
+                _("[red]Position panel: cannot resize zero {f}: {v}").format(
+                    f=_("height"),
+                    v=value
+                )
+            )
             self._update_position()
             return
         if self.position_aspect_ratio:
-            if abs(self.position_h) < 1e-5:
-                self._update_position()
-                return
             self.position_w *= h / self.position_h
-        original = self.position_h
         self.position_h = h
         self._position_resize()
 
@@ -304,7 +330,7 @@ class PositionPanel(wx.Panel):
         x = self.text_to_measurement(self.text_x.GetValue(), self.position_x)
         if x is None:
             return
-        if abs(self.position_x - x) < 1e-5:
+        if abs(self.position_x - x) < 1e-4:
             self._update_position()
             return
         self.position_x = x
@@ -313,9 +339,9 @@ class PositionPanel(wx.Panel):
     def on_text_y_enter(self, event=None):
         event.Skip()
         y = self.text_to_measurement(self.text_y.GetValue(), self.position_y)
-        if x is None:
+        if y is None:
             return
-        if abs(self.position_y - y) < 1e-5:
+        if abs(self.position_y - y) < 1e-4:
             self._update_position()
             return
         self.position_y = y

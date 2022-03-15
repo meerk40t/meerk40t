@@ -157,7 +157,7 @@ SVG_VALUE_CURRENT_COLOR = "currentColor"
 
 SVG_VALUE_NON_SCALING_STROKE = "non-scaling-stroke"
 
-PATTERN_WS = r"[\s\t\n]*"
+PATTERN_WS = r"[\s\t\n]"
 PATTERN_COMMA = r"(?:\s*,\s*|\s+|(?=-))"
 PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
@@ -201,10 +201,15 @@ REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
 )
 REGEX_TRANSFORM_TEMPLATE = re.compile(
-    r"(?u)(%s)%s\(([^)]+)\)" % (PATTERN_TRANSFORM, PATTERN_WS)
+    r"(?u)(%s)%s*\(([^)]+)\)" % (PATTERN_TRANSFORM, PATTERN_WS)
 )
 REGEX_TRANSFORM_PARAMETER = re.compile(
-    "^(%s)%s(%s)?$" % (PATTERN_FLOAT, PATTERN_WS, PATTERN_TRANSFORM_UNITS)
+    "(%s)%s*(%s)?(?:%s+|,|$)" % (
+        PATTERN_FLOAT,
+        PATTERN_WS,
+        PATTERN_TRANSFORM_UNITS,
+        PATTERN_WS,
+    )
 )
 REGEX_COLOR_HEX = re.compile(r"^#?([0-9A-Fa-f]{3,8})$")
 REGEX_COLOR_RGB = re.compile(
