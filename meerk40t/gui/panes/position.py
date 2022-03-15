@@ -302,7 +302,7 @@ class PositionPanel(wx.Panel):
         value = self.text_h.GetValue()
         h = self.text_to_measurement(value, self.position_h)
         if h is None:
-            self.channel(_([red]"Position panel: invalid {f} value: {v}").format(
+            self.channel(_("[red]Position panel: invalid {f} value: {v}").format(
                 f=_("height"),
                 v=value
             ))
