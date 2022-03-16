@@ -2,6 +2,7 @@ import os
 from copy import copy
 from os import path as ospath
 
+from meerk40t.kernel import CommandSyntaxError
 from ..core.planner import make_actual, needs_actualization
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
@@ -104,7 +105,7 @@ def plugin(kernel, lifecycle=None):
             obj.image_height = height
             images = [obj]
         else:
-            raise SyntaxError
+            raise CommandSyntaxError
         return "image", images
 
     @context.console_command(
@@ -191,7 +192,7 @@ def plugin(kernel, lifecycle=None):
     )
     def image_threshold(data, threshold_max=None, threshold_min=None, **kwargs):
         if threshold_min is None:
-            raise SyntaxError
+            raise CommandSyntaxError
         divide = (threshold_max - threshold_min) / 255.0
         for element in data:
             image_element = copy(element)
@@ -245,7 +246,7 @@ def plugin(kernel, lifecycle=None):
                 try:
                     element.image = dither(element.image, method)
                 except NotImplementedError:
-                    raise SyntaxError("Method not recognized.")
+                    raise CommandSyntaxError("Method not recognized.")
             element.image = img.convert("1")
             if hasattr(element, "node"):
                 element.node.altered()
@@ -269,7 +270,7 @@ def plugin(kernel, lifecycle=None):
     )
     def image_remove(data, color, distance=1, **kwargs):
         if color is None:
-            raise SyntaxError(_("Must specify a color"))
+            raise CommandSyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
 
         def dist(pixel):
@@ -361,11 +362,11 @@ def plugin(kernel, lifecycle=None):
             img = element.image
             try:
                 if left >= right:
-                    raise SyntaxError(
+                    raise CommandSyntaxError(
                         _("Right margin is to the left of the left margin.")
                     )
                 if upper >= lower:
-                    raise SyntaxError(
+                    raise CommandSyntaxError(
                         _("Lower margin is higher than the upper margin.")
                     )
                 element.image = img.crop((left, upper, right, lower))
@@ -374,7 +375,7 @@ def plugin(kernel, lifecycle=None):
                 if hasattr(element, "node"):
                     element.node.altered()
             except (KeyError, ValueError):
-                raise SyntaxError
+                raise CommandSyntaxError
         return "image", data
 
     @context.console_argument(
@@ -907,9 +908,9 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             if left >= right:
-                raise SyntaxError(_("Right margin is to the left of the left margin."))
+                raise CommandSyntaxError(_("Right margin is to the left of the left margin."))
             if upper >= lower:
-                raise SyntaxError(_("Lower margin is higher than the upper margin."))
+                raise CommandSyntaxError(_("Lower margin is higher than the upper margin."))
             image_pop = img.crop((left, upper, right, lower))
             image_remain = img.copy()
 
@@ -1021,7 +1022,7 @@ def plugin(kernel, lifecycle=None):
         So sample=1 will preserve the original image resolution, but scale must be >1 to allow variation in dot size.
         """
         if angle is None:
-            raise SyntaxError
+            raise CommandSyntaxError
         from PIL import Image, ImageDraw, ImageStat
 
         angle = angle.as_degrees

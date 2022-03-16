@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, U
 
 from .channel import Channel
 from .context import Context
-from .exceptions import CommandMatchRejected
+from .exceptions import CommandMatchRejected, CommandSyntaxError
 from .functions import (
     console_argument,
     console_command,
@@ -2090,12 +2090,12 @@ class Kernel(Settings):
                     )
                     command_executed = True
                     break
-                except SyntaxError as e:
+                except CommandSyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
 
                     # ToDo
                     # Don't use command help, which is or should be descriptive - use command syntax instead
-                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
+                    # If CommandSyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
@@ -2409,9 +2409,9 @@ class Kernel(Settings):
             try:
                 times = int(times)
             except (TypeError, ValueError):
-                raise SyntaxError
+                raise CommandSyntaxError
             if duration is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 timer_command = remainder
                 self.set_timer(
@@ -2608,7 +2608,7 @@ class Kernel(Settings):
         def service_activate(channel, _, data=None, index=None, **kwargs):
             domain, available, active = data
             if index is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.activate_service_index(domain, index)
 
         @self.console_argument("name", help="Name of service to start")
@@ -2630,11 +2630,11 @@ class Kernel(Settings):
         ):
             domain, available, active = data
             if name is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             provider_path = "provider/{domain}/{name}".format(domain=domain, name=name)
             provider = self.lookup(provider_path)
             if provider is None:
-                raise SyntaxError("Bad provider.")
+                raise CommandSyntaxError("Bad provider.")
             if path is None:
                 path = name
 
@@ -2686,7 +2686,7 @@ class Kernel(Settings):
             channel, _, data=None, index=None, origin="cmd", remainder=None, **kwargs
         ):
             if remainder is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.batch_add(remainder, origin, index)
 
         @self.console_argument("index", type=int, help="line to delete")
@@ -2697,11 +2697,11 @@ class Kernel(Settings):
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
             if index is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 self.batch_remove(index - 1)
             except IndexError:
-                raise SyntaxError(
+                raise CommandSyntaxError(
                     "Index out of bounds (1-{length})".format(length=len(data))
                 )
 
@@ -2754,7 +2754,7 @@ class Kernel(Settings):
         )
         def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
@@ -2772,7 +2772,7 @@ class Kernel(Settings):
         )
         def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
@@ -2790,7 +2790,7 @@ class Kernel(Settings):
         )
         def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             channel(_("Printing Channel: %s") % channel_name)
             self.channel(channel_name).watch(print)
@@ -2813,7 +2813,7 @@ class Kernel(Settings):
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             if filename is None:
                 filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(

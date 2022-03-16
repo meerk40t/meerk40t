@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import Module, Service
 
 from ..core.cutcode import CutCode, LineCut, PlotCut
@@ -519,7 +520,7 @@ class RuidaEmulator(Module, Parameters):
         for array in self.parse_commands(data):
             try:
                 self.process(array)
-            except SyntaxError:
+            except CommandSyntaxError:
                 self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
@@ -542,7 +543,7 @@ class RuidaEmulator(Module, Parameters):
             self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
-            raise SyntaxError
+            raise CommandSyntaxError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
