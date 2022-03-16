@@ -176,7 +176,7 @@ class SceneSpaceWidget(Widget):
             )
             p /= 250.0
             if self._previous_zoom is not None:
-                zoom_factor = e ** p
+                zoom_factor = e**p
                 zoom_change = zoom_factor / self._previous_zoom
                 self._previous_zoom = zoom_factor
                 self.scene_widget.matrix.post_scale(

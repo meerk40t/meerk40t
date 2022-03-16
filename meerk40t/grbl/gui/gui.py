@@ -1,5 +1,3 @@
-
-
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:

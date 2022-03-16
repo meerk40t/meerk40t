@@ -71,7 +71,7 @@ class CutPlan:
             raise CutPlanningFailedError("Raster too large.")
 
     def preprocess(self):
-        """"
+        """ "
         Preprocess stage, all small functions from the settings to the job.
         """
         context = self.context

@@ -1,7 +1,7 @@
-
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui
+
         return [gui.plugin]
     if lifecycle == "cli":
         try:
@@ -26,6 +26,7 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
 
         from meerk40t.camera.camera import Camera
+
         kernel.register("camera-enabled", True)
         _ = kernel.translation
 

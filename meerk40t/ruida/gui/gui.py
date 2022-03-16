@@ -1,13 +1,12 @@
-
-
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/ruida"
     if lifecycle == "added":
-        from meerk40t.gui.icons import icons8_info_50
         import wx
+
+        from meerk40t.gui.icons import icons8_info_50
 
         _ = service._
 

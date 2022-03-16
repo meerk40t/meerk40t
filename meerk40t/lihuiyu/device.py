@@ -75,6 +75,7 @@ REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui as lhygui
+
         return [lhygui.plugin]
 
     if lifecycle == "register":

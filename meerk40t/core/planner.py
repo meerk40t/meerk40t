@@ -734,15 +734,15 @@ class Planner(Service):
                 elif type(c_plan[-1]) == str:  # Rotary disabled
                     post_plan.insert(0, c_plan.pop())
 
-            # Sophist: Following try/except commented out as
-            # exceptions need to be narrow not global in scope.
-            # try:
+                # Sophist: Following try/except commented out as
+                # exceptions need to be narrow not global in scope.
+                # try:
                 if x_distance is None:
                     x_distance = "%f%%" % (100.0 / (cols + 1))
                 if y_distance is None:
                     y_distance = "%f%%" % (100.0 / (rows + 1))
             # except Exception:
-                # pass
+            # pass
             x_distance = self.device.length(x_distance, 1)
             y_distance = self.device.length(y_distance, 1)
             x_last = 0

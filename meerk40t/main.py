@@ -192,6 +192,7 @@ def plugin(kernel, lifecycle):
         plugins.append(cag.plugin)
 
         from .gui.plugin import plugin as wxplugin
+
         plugins.append(wxplugin)
 
         return plugins

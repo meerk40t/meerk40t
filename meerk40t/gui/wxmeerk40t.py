@@ -4,42 +4,37 @@ import sys
 import traceback
 from datetime import datetime
 
-from wx import aui
+# According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+# richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+# so we are doing it here even though we do not refer to it in this file
+# richtext is used for the Console panel.
+import wx
+from wx import aui, richtext
 
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import get_safe_path
+from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 
+from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from .about import About
+from .bufferview import BufferView
+from .consoleproperty import ConsoleProperty
 from .devicepanel import DeviceManager
+from .executejob import ExecuteJob
+from .groupproperties import GroupProperty
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .operationpropertymain import ParameterPanel
-
-# According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-# richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-# so we are doing it here even though we do not refer to it in this file
-# richtext is used for the Console panel.
-import wx
-from wx import richtext
-
-from meerk40t.gui.consolepanel import Console
-from meerk40t.gui.navigationpanels import Navigation
-from meerk40t.gui.spoolerpanel import JobSpooler
-from meerk40t.kernel import ConsoleFunction, Module
-
-from ..main import APPLICATION_NAME, APPLICATION_VERSION
-from .about import About
-from .bufferview import BufferView
-from .consoleproperty import ConsoleProperty
-from .executejob import ExecuteJob
-from .groupproperties import GroupProperty
 from .imageproperty import ImageProperty
 from .keymap import Keymap
 from .notes import Notes
 from .operationproperty import OperationProperty
+from .operationpropertymain import ParameterPanel
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard

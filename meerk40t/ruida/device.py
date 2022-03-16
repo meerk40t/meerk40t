@@ -26,6 +26,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui
+
         return [gui.plugin]
     if lifecycle == "register":
         kernel.register("provider/device/ruida", RuidaDevice)

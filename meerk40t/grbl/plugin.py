@@ -1,6 +1,7 @@
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui
+
         return [gui.plugin]
     elif lifecycle == "invalidate":
         try:
@@ -10,7 +11,7 @@ def plugin(kernel, lifecycle=None):
             print("GRBL plugin could not load because pyserial is not installed.")
             return True
     elif lifecycle == "register":
-        from .device import GRBLDevice, GRBLDriver, GCodeLoader
+        from .device import GCodeLoader, GRBLDevice, GRBLDriver
 
         kernel.register("provider/device/grbl", GRBLDevice)
 

@@ -30,12 +30,13 @@ def plugin(kernel, lifecycle):
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
+
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
         from meerk40t.gui.laserrender import LaserRender
-
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
+
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")
 
@@ -45,6 +46,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
 
         from meerk40t.gui.scene.scene import Scene
+
         kernel.register("module/Scene", Scene)
 
     elif lifecycle == "boot":
@@ -204,6 +206,7 @@ def plugin(kernel, lifecycle):
             Open Issue Page?"""
             caption = _("Release Candidate.")
             import wx
+
             style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
             dlg = wx.MessageDialog(
                 None,

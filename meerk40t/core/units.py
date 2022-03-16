@@ -1,7 +1,7 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import Matrix, PATTERN_LENGTH_UNITS, PATTERN_PERCENT
+from meerk40t.svgelements import PATTERN_LENGTH_UNITS, PATTERN_PERCENT, Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -248,19 +248,31 @@ class ViewPort:
             )
         elif new_units == "mm":
             return Length(value).to_mm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "inch":
             return Length(value).to_inch(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "cm":
             return Length(value).to_cm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "px":
             return Length(value).to_px(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float, scale=scale,
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "mil":
             return (
@@ -713,7 +725,7 @@ class Length(object):
             s = str(value)
             for m in REGEX_LENGTH.findall(s):
                 if len(m[1]) == 0 or m[1] in (
-                        PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
                 ):
                     return True
                 return False
@@ -721,7 +733,7 @@ class Length(object):
             try:
                 x = float(args[0])
                 if len(args[1]) == 0 or args[1] in (
-                        PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
                 ):
                     return True
             except ValueError:

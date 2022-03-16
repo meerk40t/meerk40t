@@ -273,7 +273,9 @@ def console_command_remove(
             registration.unregister(p)
 
 
-def _cmd_cli_parser(argv: List[str]) -> Generator[Tuple[str, str, int, int], None, None]:
+def _cmd_cli_parser(
+    argv: List[str],
+) -> Generator[Tuple[str, str, int, int], None, None]:
     """
     Parser for console command events.
 

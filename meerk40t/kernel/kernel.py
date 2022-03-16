@@ -554,7 +554,7 @@ class Kernel(Settings):
             if channel:
                 channel("(plugin) kernel-invalidate")
             plugin_list = self._kernel_plugins
-            for i in range(len(plugin_list)-1, -1, -1):
+            for i in range(len(plugin_list) - 1, -1, -1):
                 plugin = plugin_list[i]
                 if plugin(kernel, "invalidate"):
                     del plugin_list[i]
