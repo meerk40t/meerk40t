@@ -656,7 +656,6 @@ class SelectionWidget(Widget):
     def tool_skew_x(self, position, dx, dy, event=0):
         """
         Change the skew of the selected elements.
-        THIS DOES NOT WORK FULLY YET, WORK IN PROGRESS
         """
         elements = self.scene.context.elements
         if event == 1:
@@ -694,7 +693,6 @@ class SelectionWidget(Widget):
     def tool_skew_y(self, position, dx, dy, event=0):
         """
         Change the skew of the selected elements.
-        THIS DOES NOT WORK FULLY YET, WORK IN PROGRESS
         """
         elements = self.scene.context.elements
         if event == 1:
