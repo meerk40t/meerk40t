@@ -1,15 +1,20 @@
 # This workflow builds PyInstaller single-file executables
 # of Meerk40t for Windows
 
-name: Meerk40t (Windows)
-
+name: Meerk40t Pyinstaller Windows
 on:
   release:
     types: [published]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-windows-x86:
+    runs-on: windows-2019
+
+
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
@@ -48,7 +53,7 @@ jobs:
     - name: Build MeerK40t (wxPython 4.0.7-post2)
       run: |
         move meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/win-x86.spec
         move mk40t.py meerk40t.py
         move dist/meerk40t.exe dist/wx-meerk40t.exe
 
@@ -56,7 +61,7 @@ jobs:
       run: |
         pip install wxPython==4.1.1
         move meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
+        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/win-x86.spec
         move mk40t.py meerk40t.py
         move dist/meerk40t.exe dist/MeerK40t.exe
 
