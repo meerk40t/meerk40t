@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.10"
+SVGELEMENTS_VERSION = "1.6.11"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -157,12 +157,23 @@ SVG_VALUE_CURRENT_COLOR = "currentColor"
 
 SVG_VALUE_NON_SCALING_STROKE = "non-scaling-stroke"
 
-PATTERN_WS = r"[\s\t\n]"
+PATTERN_WS = r"[\s\t\r\n]"
 PATTERN_COMMA = r"(?:\s*,\s*|\s+|(?=-))"
 PATTERN_COMMAWSP = r"[ ,\t\n\x09\x0A\x0C\x0D]+"
-PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
-PATTERN_LENGTH_UNITS = "cm|mm|Q|in|pt|pc|px|em|cx|ch|rem|vw|vh|vmin|vmax|mil"
-PATTERN_ANGLE_UNITS = "deg|grad|rad|turn"
+PATTERN_FLOAT = (
+    r"[-+]?"
+    r"(?:[0-9]*\.?[0-9]+|[0-9]+\.?[0-9]*)"
+    r"(?:[eE][-+]?[0-9]+)?"
+)
+PATTERN_LENGTH_UNITS = (
+    r"cms?|"
+    r"mms?|"
+    r"ins?|inch(?:es)?|"
+    r"mils?|"
+    r"pts?|"
+    r"ch|cx|em|pc|px|Q|rem|vh|vw|vmin|vmax"
+)
+PATTERN_ANGLE_UNITS = r"degs?|degrees?|grads?|gradians?|rads?|radians?|turns?"
 PATTERN_TIME_UNITS = "s|ms"
 PATTERN_FREQUENCY_UNITS = "Hz|kHz"
 PATTERN_RESOLUTION_UNITS = "dpi|dpcm|dppx"
@@ -190,27 +201,56 @@ PATTERN_TRANSFORM = (
     + "|"
     + SVG_TRANSFORM_SKEW_Y
 )
-PATTERN_TRANSFORM_UNITS = (
-    PATTERN_LENGTH_UNITS + "|" + PATTERN_ANGLE_UNITS + "|" + PATTERN_PERCENT
+PATTERN_TRANSFORM_UNITS = r"|".join(
+    (PATTERN_LENGTH_UNITS, PATTERN_ANGLE_UNITS, PATTERN_PERCENT)
 )
+TRANSFORM_UNIT_SINGULARS = {
+    "": "",
+    "%": "%",
+    "cm": "cm",
+    "cms": "cm",
+    "mm": "mm",
+    "mms": "mm",
+    "in": "in",
+    "ins": "in",
+    "inch": "in",
+    "inches": "in",
+    "mil": "mil",
+    "mils": "mil",
+    "pt": "pt",
+    "pts": "pt",
+    "deg": "deg",
+    "degs": "deg",
+    "grad": "grad",
+    "grads": "grad",
+    "gradian": "grad",
+    "gradians": "grad",
+    "rad": "rad",
+    "rads": "rad",
+    "radian": "rad",
+    "radians": "rad",
+    "turn": "turn",
+    "turns": "turn",
+}
 
 REGEX_IRI = re.compile(r"url\(#?(.*)\)")
 REGEX_DATA_URL = re.compile(r"^data:([^,]*),(.*)")
-REGEX_FLOAT = re.compile(PATTERN_FLOAT)
+REGEX_FLOAT = re.compile(r"(%s)" % PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
-    "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
+    r"(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
 )
 REGEX_TRANSFORM_TEMPLATE = re.compile(
     r"(?u)(%s)%s*\(([^)]+)\)" % (PATTERN_TRANSFORM, PATTERN_WS)
 )
 REGEX_TRANSFORM_PARAMETER = re.compile(
-    "(%s)%s*(%s)?(?:%s+|,|$)" % (
+    r"(%s)(?:%s*)(%s)?(?:%s|,|$)" % (
         PATTERN_FLOAT,
         PATTERN_WS,
         PATTERN_TRANSFORM_UNITS,
         PATTERN_WS,
     )
 )
+
 REGEX_COLOR_HEX = re.compile(r"^#?([0-9A-Fa-f]{3,8})$")
 REGEX_COLOR_RGB = re.compile(
     r"rgba?\(\s*(%s)\s*,\s*(%s)\s*,\s*(%s)\s*(?:,\s*(%s)\s*)?\)"
@@ -2677,7 +2717,7 @@ class Matrix:
         for sub_element in REGEX_TRANSFORM_TEMPLATE.findall(transform_str.lower()):
             name = sub_element[0]
             params = tuple(REGEX_TRANSFORM_PARAMETER.findall(sub_element[1]))
-            params = [mag + units for mag, units in params]
+            params = [mag + TRANSFORM_UNIT_SINGULARS[units] for mag, units in params]
             if SVG_TRANSFORM_MATRIX == name:
                 params = map(float, params)
                 self.pre_cat(*params)
@@ -2703,6 +2743,7 @@ class Matrix:
             elif SVG_TRANSFORM_SCALE_Y == name:
                 self.pre_scale(1, float(params[0]))
             elif SVG_TRANSFORM_ROTATE == name:
+                # print("params",params)
                 angle = Angle.parse(params[0])
                 try:
                     x_param = Length(params[1]).value()
@@ -3415,7 +3456,9 @@ class Transformable:
 
     def __imul__(self, other):
         if isinstance(other, str):
+            # print("before",other)
             other = Matrix(other)
+            # print("after",other)
         if isinstance(other, Matrix):
             self.transform *= other
         return self
@@ -3859,7 +3902,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
                 values.append("%s=%s" % ("fill_opacity", str(self.fill.opacity)))
         if self.stroke_width is not None and self.stroke_width != 1.0:
             values.append("stroke_width=%s" % str(self.stroke_width))
-        if not self.transform.is_identity():
+        if not self.transform or not self.transform.is_identity():
             values.append("%s=%s" % (SVG_ATTR_TRANSFORM, repr(self.transform)))
         if self.apply is not None and not self.apply:
             values.append("apply=%s" % self.apply)
@@ -3882,7 +3925,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
                 values.append("%s=%s" % (SVG_ATTR_FILL_OPACITY, str(self.fill.opacity)))
         if self.stroke_width is not None and self.stroke_width != 1.0:
             values.append("%s=%s" % (SVG_ATTR_STROKE_WIDTH, str(self.stroke_width)))
-        if not self.transform.is_identity():
+        if not self.transform or not self.transform.is_identity():
             values.append("%s=%s" % (SVG_ATTR_TRANSFORM, repr(self.transform)))
         if self.apply is not None and not self.apply:
             values.append("apply=%s" % self.apply)
@@ -7802,7 +7845,7 @@ class Text(SVGElement, GraphicObject, Transformable):
             values.append("%s='%s'" % (SVG_ATTR_FILL, self.fill))
         if self.stroke_width is not None and self.stroke_width != 1.0:
             values.append("%s=%s" % (SVG_ATTR_STROKE_WIDTH, str(self.stroke_width)))
-        if not self.transform.is_identity():
+        if not self.transform or not self.transform.is_identity():
             values.append("%s=%s" % (SVG_ATTR_TRANSFORM, repr(self.transform)))
         if self.id is not None:
             values.append("%s='%s'" % (SVG_ATTR_ID, self.id))
@@ -7832,7 +7875,7 @@ class Text(SVGElement, GraphicObject, Transformable):
             values.append(
                 "stroke_width=%s" % str(self.stroke_width)
             )  # Cannot use SVG_ATTR_STROKE_WIDTH for repr because it contains a hyphen
-        if not self.transform.is_identity():
+        if not self.transform or not self.transform.is_identity():
             values.append("%s=%s" % (SVG_ATTR_TRANSFORM, repr(self.transform)))
         if self.id is not None:
             values.append("%s='%s'" % (SVG_ATTR_ID, self.id))
@@ -8108,8 +8151,8 @@ class Image(SVGElement, GraphicObject, Transformable):
             values.append("%s='%s'" % (SVG_ATTR_VIEWBOX, str(self.viewbox)))
         if self.url is not None:
             values.append("%s='%s'" % (SVG_HREF, self.url))
-        if not self.transform.is_identity():
-            values.append("transform=%s" % repr(self.transform))
+        if not self.transform or not self.transform.is_identity():
+            values.append("%s=%s" % (SVG_ATTR_TRANSFORM, repr(self.transform)))
         params = ", ".join(values)
         return "Image(%s)" % params
 
