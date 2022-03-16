@@ -1,54 +1,73 @@
 import wx
 from wx import aui
 
-from .icons import icon_meerk40t
-from .laserrender import LaserRender
-from .mwindow import MWindow
-from .scene.scene import ScenePanel
-from .scene.scenewidgets import (
-    MILS_IN_MM,
-    ElementsWidget,
-    GridWidget,
-    GuideWidget,
-    LaserPathWidget,
-    RectSelectWidget,
-    ReticleWidget,
-    SelectionWidget,
-)
-from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
-from .wxutils import get_key_name
-from ..svgelements import Angle, Length
-from ..core.bindalias import keymap_execute
+from meerk40t.gui.icons import icon_meerk40t
+from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
+from meerk40t.gui.scenewidgets.gridwidget import GridWidget
+from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
+from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
+from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
+from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
+from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.toolwidgets.toolcircle import CircleTool
+from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
+from meerk40t.gui.toolwidgets.tooldraw import DrawTool
+from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
+from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
+from meerk40t.gui.toolwidgets.toolrect import RectTool
+from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
+from meerk40t.gui.toolwidgets.tooltext import TextTool
+from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.wxutils import get_key_name
+from meerk40t.kernel import signal_listener
+from meerk40t.svgelements import Angle, Length
 
 _ = wx.GetTranslation
 
 
 def register_panel_scene(window, context):
-    # self.notebook = wx.aui.AuiNotebook(self, -1, size=(200, 150))
-    # self._mgr.AddPane(self.notebook, aui.AuiPaneInfo().CenterPane().Name("scene"))
-    # self.notebook.AddPage(self.scene, "scene")
+    # control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+    # panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
+    # control.AddPage(panel1, "scene1")
+    # panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
+    # control.AddPage(panel2, "scene2")
 
-    panel = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
+    control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
     pane = aui.AuiPaneInfo().CenterPane().Name("scene")
     pane.dock_proportion = 600
-    pane.control = panel
+    pane.control = control
+    pane.hide_menu = True
+
+    # def on_note_page_change(event=None):
+    #     if control.GetPageText(control.GetSelection()) == "scene1":
+    #         context.kernel.activate_service_path('elements', 'elements')
+    #     else:
+    #         context.kernel.activate_service_path('elements', "elements1")
+    #     context("refresh\n")
+    # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_add(pane)
-    context.register("pane/scene", pane)
+    context.register("pane/console", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwargs):
+    def __init__(self, *args, context=None, index=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.scene = ScenePanel(
-            self.context, self, scene_name="Scene", style=wx.EXPAND | wx.WANTS_CHARS
+            self.context,
+            self,
+            scene_name="Scene" if index is None else "Scene%d" % index,
+            style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.scene.scene
         context = self.context
-        self._rotary_view = False
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
@@ -68,7 +87,6 @@ class MeerK40tScenePanel(wx.Panel):
         sizer_2.Fit(self)
         self.Layout()
 
-        self.triggered_keys = dict()
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -78,6 +96,13 @@ class MeerK40tScenePanel(wx.Panel):
 
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
+        context.register("tool/polyline", PolylineTool)
+        context.register("tool/polygon", PolygonTool)
+        context.register("tool/circle", CircleTool)
+        context.register("tool/ellipse", EllipseTool)
+        context.register("tool/relocate", RelocateTool)
+        context.register("tool/text", TextTool)
+        context.register("tool/vector", VectorTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
@@ -117,10 +142,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.laserpath_widget.clear_laserpath()
             self.request_refresh()
 
-        @context.console_command("rotaryview", help=_("Rotary View of Scene"))
-        def toggle_rotary_view(*args, **kwargs):
-            self.toggle_rotary_view()
-
         @self.context.console_command("scene", output_type="scene")
         def scene(command, _, channel, **kwargs):
             channel("scene: %s" % str(self.widget_scene))
@@ -134,6 +155,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @self.context.console_command("aspect", input_type="scene")
         def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+            if zoom_x is None or zoom_y is None:
+                raise SyntaxError
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
@@ -186,26 +209,23 @@ class MeerK40tScenePanel(wx.Panel):
 
         @self.context.console_argument("x", type=Length, help="x position")
         @self.context.console_argument("y", type=Length, help="y position")
-        @self.context.console_argument("width", type=Length, help="width of view")
-        @self.context.console_argument("height", type=Length, help="height of view")
+        @self.context.console_argument("width", type=str, help="width of view")
+        @self.context.console_argument("height", type=str, help="height of view")
         @self.context.console_command("focus", input_type="scene")
         def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
-            bed_dim = self.context.root
-            x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-            y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
-            width = width.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            height = height.value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-            )
+            if height is None:
+                raise SyntaxError("x, y, width, height not specified")
+            x = self.context.device.length(x, 0)
+            y = self.context.device.length(y, 1)
+            width = self.context.device.length(width, 0)
+            height = self.context.device.length(height, 1)
             bbox = (x, y, width, height)
             data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
             data.request_refresh()
             channel(str(data.matrix))
             return "scene", data
 
-    def on_refresh_scene(self, origin, *args):
+    def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
@@ -213,9 +233,10 @@ class MeerK40tScenePanel(wx.Panel):
         :param args:
         :return:
         """
-        self.request_refresh()
+        if scene_name == "Scene":
+            self.request_refresh()
 
-    def initialize(self, *args):
+    def pane_show(self, *args):
         context = self.context
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
@@ -227,7 +248,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("units", self.space_changed)
         context("scene focus -4% -4% 104% 104%\n")
 
-    def finalize(self, *args):
+    def pane_hide(self, *args):
         context = self.context
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("refresh_scene", self.on_refresh_scene)
@@ -237,6 +258,11 @@ class MeerK40tScenePanel(wx.Panel):
         context.unlisten("modified", self.on_element_modified)
         context.unlisten("altered", self.on_element_modified)
         context.unlisten("units", self.space_changed)
+
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.request_refresh()
+        self.scene.signal("grid")
 
     def on_size(self, event):
         if self.context is None:
@@ -277,46 +303,22 @@ class MeerK40tScenePanel(wx.Panel):
     def on_element_modified(self, *args):
         self.widget_scene.request_refresh(*args)
 
-    def toggle_rotary_view(self):
-        if self._rotary_view:
-            self.widget_scene.rotary_stretch()
-        else:
-            self.widget_scene.rotary_unstretch()
-        self._rotary_view = not self._rotary_view
-
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        if not keyvalue:
+        if self.context.bind.trigger(keyvalue):
             event.Skip()
-            return
-        if keyvalue == "menu":
-            self.scene.on_right_mouse_down(event)
-            return
-        if keyvalue not in self.triggered_keys:
-            if keymap_execute(self.context, keyvalue, keydown=True):
-                self.triggered_keys[keyvalue] = 1
-                return
-        event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        if not keyvalue:
+        if self.context.bind.untrigger(keyvalue):
             event.Skip()
-            return
-        if keyvalue == "menu":
-            self.scene.on_right_mouse_up(event)
-            return
-        if keyvalue in self.triggered_keys:
-            del self.triggered_keys[keyvalue]
-        if keymap_execute(self.context, keyvalue, keydown=False):
-            return
-        event.Skip()
 
 
 class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
@@ -324,7 +326,7 @@ class SceneWindow(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

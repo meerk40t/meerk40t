@@ -17,8 +17,7 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
             e = kernel.root
-            e.load(filename)
-            e.signal("refresh_scene", 0)
+            e.elements.load(filename)
             return "inkscape", data
 
         @kernel.console_command(

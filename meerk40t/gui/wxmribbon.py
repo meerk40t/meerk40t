@@ -2,54 +2,14 @@ import copy
 
 import wx
 import wx.ribbon as RB
-from wx import ID_OPEN, ID_SAVE, aui
+from wx import aui
 
-from ..kernel import STATE_BUSY
-from .icons import (
-    icons8_administrative_tools_50,
-    icons8_camera_50,
-    icons8_comments_50,
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_console_50,
-    icons8_emergency_stop_button_50,
-    icons8_fantasy_50,
-    icons8_keyboard_50,
-    icons8_laser_beam_52,
-    icons8_laser_beam_hazard2_50,
-    icons8_manager_50,
-    icons8_move_50,
-    icons8_opened_folder_50,
-    icons8_pause_50,
-    icons8_roll_50,
-    icons8_route_50,
-    icons8_save_50,
-)
+from meerk40t.kernel import Job, lookup_listener
+
+from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
-
-ID_JOB = wx.NewId()
-ID_SIM = wx.NewId()
-ID_RASTER = wx.NewId()
-ID_NOTES = wx.NewId()
-ID_CONSOLE = wx.NewId()
-ID_NAV = wx.NewId()
-ID_CAMERA = wx.NewId()
-ID_CAMERA0 = wx.NewId()
-ID_CAMERA1 = wx.NewId()
-ID_CAMERA2 = wx.NewId()
-ID_CAMERA3 = wx.NewId()
-ID_CAMERA4 = wx.NewId()
-ID_SPOOLER = wx.NewId()
-ID_CONTROLLER = wx.NewId()
-ID_PAUSE = wx.NewId()
-ID_STOP = wx.NewId()
-ID_DEVICES = wx.NewId()
-ID_CONFIGURATION = wx.NewId()
-ID_PREFERENCES = wx.NewId()
-ID_KEYMAP = wx.NewId()
-ID_ROTARY = wx.NewId()
 
 
 def register_panel_ribbon(window, context):
@@ -61,8 +21,8 @@ def register_panel_ribbon(window, context):
         .Top()
         .RightDockable(False)
         .LeftDockable(False)
-        .MinSize(300, 100)
-        .FloatingSize(640, 100)
+        .MinSize(300, 150)
+        .FloatingSize(640, 150)
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
     )
@@ -78,6 +38,13 @@ class RibbonPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._job = Job(
+            process=self._perform_realization,
+            job_name="realize_ribbon_bar",
+            interval=0.1,
+            times=1,
+            run_main=True,
+        )
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
@@ -96,11 +63,90 @@ class RibbonPanel(wx.Panel):
         self.Layout()
         # self._ribbon
         self.pipe_state = None
-        self.ribbon_position_units = self.context.units_index
+        self._ribbon_dirty = False
+
+    def set_buttons(self, new_values, button_bar):
+        button_bar.ClearButtons()
+        buttons = []
+        for button, name, sname in new_values:
+            buttons.append(button)
+
+        def sort_priority(elem):
+            return elem["priority"] if "priority" in elem else 0
+
+        buttons.sort(key=sort_priority)
+
+        for button in buttons:
+            new_id = wx.NewId()
+            if "alt-action" in button:
+                button_bar.AddHybridButton(
+                    new_id,
+                    button["label"],
+                    button["icon"].GetBitmap(),
+                    button["tip"],
+                )
+
+                def drop_bind(alt_action):
+                    def on_dropdown(event):
+                        menu = wx.Menu()
+                        for act_label, act_func in alt_action:
+                            hybrid_id = wx.NewId()
+                            menu.Append(hybrid_id, act_label)
+                            button_bar.Bind(wx.EVT_MENU, act_func, id=hybrid_id)
+                        event.PopupMenu(menu)
+
+                    return on_dropdown
+
+                button_bar.Bind(
+                    RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                    drop_bind(button["alt-action"]),
+                    id=new_id,
+                )
+            else:
+                button_bar.AddButton(
+                    new_id,
+                    button["label"],
+                    button["icon"].GetBitmap(),
+                    button["tip"],
+                )
+            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button["action"], id=new_id)
+        self.ensure_realize()
+
+    @lookup_listener("button/project")
+    def set_project_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.project_button_bar)
+
+    @lookup_listener("button/control")
+    def set_control_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.control_button_bar)
+
+    @lookup_listener("button/config")
+    def set_config_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.config_button_bar)
+
+    @lookup_listener("button/modify")
+    def set_modify_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.modify_button_bar)
+
+    @lookup_listener("button/tool")
+    def set_tool_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.tool_button_bar)
+
+    @lookup_listener("button/geometry")
+    def set_geometry_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.geometry_button_bar)
 
     @property
     def is_dark(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+
+    def ensure_realize(self):
+        self._ribbon_dirty = True
+        self.context.schedule(self._job)
+
+    def _perform_realization(self, *args):
+        self._ribbon_dirty = False
+        self._ribbon.Realize()
 
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
@@ -110,12 +156,6 @@ class RibbonPanel(wx.Panel):
             _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
-        self.ribbon_position_x = 0.0
-        self.ribbon_position_y = 0.0
-        self.ribbon_position_h = 0.0
-        self.ribbon_position_w = 0.0
-        self.ribbon_position_units = 0
-        self.ribbon_position_name = None
 
         home = RB.RibbonPage(
             self._ribbon,
@@ -127,314 +167,81 @@ class RibbonPanel(wx.Panel):
             RB.EVT_RIBBONBAR_HELP_CLICK,
             lambda e: self.context("webhelp help\n"),
         )
-        # self.Bind(RB.EVT_RIBBONBAR_TOGGLED, self.ribbon_bar_toggle)
 
-        # ==========
-        # PROJECT PANEL
-        # ==========
-
-        self.toolbar_panel = RB.RibbonPanel(
+        self.project_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             "" if self.is_dark else _("Project"),
-            style=wx.ribbon.RIBBON_PANEL_NO_AUTO_MINIMISE | RB.RIBBON_PANEL_FLEXIBLE,
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
 
-        toolbar = RB.RibbonButtonBar(self.toolbar_panel)
-        self.toolbar_button_bar = toolbar
-        toolbar.AddButton(
-            ID_OPEN,
-            _("Open"),
-            icons8_opened_folder_50.GetBitmap(),
-            _("Clear existing elements and notes and open a new file")
-        )
-        toolbar.AddButton(
-            ID_SAVE,
-            _("Save"),
-            icons8_save_50.GetBitmap(),
-            _("Save the project as an SVG file (overwriting any existing file)")
-        )
-        toolbar.AddButton(
-            ID_JOB,
-            _("Execute"),
-            icons8_laser_beam_52.GetBitmap(),
-            _("Set execute options and burn the current project"),
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle ExecuteJob 0\n"),
-            id=ID_JOB,
-        )
-        toolbar.AddButton(
-            ID_SIM,
-            _("Simulate"),
-            icons8_laser_beam_hazard2_50.GetBitmap(),
-            _("Plan a burn and display a simulation"),
-        )
+        button_bar = RB.RibbonButtonBar(self.project_panel)
+        self.project_button_bar = button_bar
 
-        toolbar.AddButton(
-            ID_RASTER,
-            _("RasterWizard"),
-            icons8_fantasy_50.GetBitmap(),
-            _("Prepare the selected image by dithering to a smaller number of B/W pixels"),
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle RasterWizard\n"),
-            id=ID_RASTER,
-        )
-
-        toolbar.AddButton(
-            ID_NOTES,
-            _("Notes"),
-            icons8_comments_50.GetBitmap(),
-            _("Show/Hide the Notes window")
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Notes\n"),
-            id=ID_NOTES,
-        )
-        toolbar.AddButton(
-            ID_CONSOLE,
-            _("Console"),
-            icons8_console_50.GetBitmap(),
-            _("Show/Hide the Console window")
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Console\n"),
-            id=ID_CONSOLE,
-        )
-
-        def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                self.context(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
-                ),
-
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context(".dialog_load\n"),
-            id=ID_OPEN,
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda e: self.context(".dialog_save\n"),
-            id=ID_SAVE,
-        )
-        toolbar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            open_simulator,
-            id=ID_SIM,
-        )
-        # ==========
-        # CONTROL PANEL
-        # ==========
-
-        self.windows_panel = RB.RibbonPanel(
+        self.control_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             "" if self.is_dark else _("Control"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        button_bar = RB.RibbonButtonBar(self.windows_panel)
-        self.window_button_bar = button_bar
-        # So Navigation, Camera, Spooler, Controller, Terminal in one group,
-        # Settings, Keymap, Devices, Configuration, Rotary, USB in another.
-        # Raster Wizard and Notes should IMO be in the Main Group.
-        button_bar.AddButton(
-            ID_NAV,
-            _("Navigation"),
-            icons8_move_50.GetBitmap(),
-            _("Show/Hide the Navigation window")
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Navigation\n"),
-            id=ID_NAV,
-        )
-        if self.context.has_feature("modifier/Camera"):
-            button_bar.AddHybridButton(
-                ID_CAMERA,
-                _("Camera"),
-                icons8_camera_50.GetBitmap(),
-                _("Show/Hide the Camera window")
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
-            )
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                self.on_camera_dropdown,
-                id=ID_CAMERA,
-            )
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA0)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA1)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA2)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA3)
-            self.Bind(wx.EVT_MENU, self.on_camera_click, id=ID_CAMERA4)
+        button_bar = RB.RibbonButtonBar(self.control_panel)
+        self.control_button_bar = button_bar
 
-        button_bar.AddButton(
-            ID_SPOOLER,
-            _("Spooler"),
-            icons8_route_50.GetBitmap(),
-            _("Show/Hide the Spooler window")
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle JobSpooler\n"),
-            id=ID_SPOOLER,
-        )
-        button_bar.AddButton(
-            ID_CONTROLLER,
-            _("Controller"),
-            icons8_connected_50.GetBitmap(),
-            _("Show/Hide the Controller window")
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -o Controller\n"),
-            id=ID_CONTROLLER,
-        )
-        button_bar.AddToggleButton(
-            ID_PAUSE,
-            _("Pause"),
-            icons8_pause_50.GetBitmap(),
-            _("Pause/Resume the laser")
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
-        )
-        button_bar.AddButton(
-            ID_STOP,
-            _("Stop"),
-            icons8_emergency_stop_button_50.GetBitmap(),
-            _("Emergency stop the laser"),
-        )
-        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_stop, id=ID_STOP)
-
-        # ==========
-        # SETTINGS PANEL
-        # ==========
-        self.settings_panel = RB.RibbonPanel(
+        self.config_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             "" if self.is_dark else _("Configuration"),
             icons8_opened_folder_50.GetBitmap(),
             style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        button_bar = RB.RibbonButtonBar(self.settings_panel)
-        self.setting_button_bar = button_bar
+        button_bar = RB.RibbonButtonBar(self.config_panel)
+        self.config_button_bar = button_bar
 
-        button_bar.AddButton(
-            ID_DEVICES,
-            _("Devices"),
-            icons8_manager_50.GetBitmap(),
-            _("Show/Hide the Devices list"),
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle DeviceManager\n"),
-            id=ID_DEVICES,
+        tool = RB.RibbonPage(
+            self._ribbon,
+            wx.ID_ANY,
+            _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
         )
 
-        button_bar.AddButton(
-            ID_CONFIGURATION,
-            _("Config"),
-            icons8_computer_support_50.GetBitmap(),
-            _("Show/Hide the Device Configuration window"),
+        self.modify_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Modification"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle -d Configuration\n"),
-            id=ID_CONFIGURATION,
+        button_bar = RB.RibbonButtonBar(self.modify_panel)
+        self.modify_button_bar = button_bar
+
+        self.tool_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Tools"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
+        button_bar = RB.RibbonButtonBar(self.tool_panel)
+        self.tool_button_bar = button_bar
 
-        import platform
-
-        if platform.system() != "Darwin":
-            button_bar.AddButton(
-                ID_PREFERENCES,
-                _("Preferences"),
-                icons8_administrative_tools_50.GetBitmap(),
-                _("Show/Hide the Preferences window"),
-            )
-
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED,
-                lambda v: self.context("window toggle Preferences\n"),
-                id=ID_PREFERENCES,
-            )
-
-        button_bar.AddButton(
-            ID_KEYMAP,
-            _("Keymap"),
-            icons8_keyboard_50.GetBitmap(),
-            _("Show/Hide the Keymap window where you can set keyboard accelerators"),
+        self.geometry_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Geometry"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window toggle Keymap\n"),
-            id=ID_KEYMAP,
-        )
-        button_bar.AddButton(
-            ID_ROTARY,
-            _("Rotary"),
-            icons8_roll_50.GetBitmap(),
-            _("Show/Hide the Rotary Setttings window")
-        )
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED,
-            lambda v: self.context("window -p rotary/1 toggle Rotary\n"),
-            id=ID_ROTARY,
-        )
+        button_bar = RB.RibbonButtonBar(self.geometry_panel)
+        self.geometry_button_bar = button_bar
 
-        self._ribbon.Realize()
+        self.ensure_realize()
 
-    def on_click_stop(self, event=None):
-        self.context("estop\n")
+    def pane_show(self):
+        pass
 
-    def on_click_pause(self, event=None):
-        self.context("pause\n")
-
-    def on_camera_dropdown(self, event):
-        menu = wx.Menu()
-        menu.Append(ID_CAMERA0, _("Camera %d") % 0)
-        menu.Append(ID_CAMERA1, _("Camera %d") % 1)
-        menu.Append(ID_CAMERA2, _("Camera %d") % 2)
-        menu.Append(ID_CAMERA3, _("Camera %d") % 3)
-        menu.Append(ID_CAMERA4, _("Camera %d") % 4)
-        event.PopupMenu(menu)
-
-    def on_camera_click(self, event):
-        eid = event.GetId()
-        self.context.setting(int, "camera_default", 0)
-        if eid == ID_CAMERA0:
-            self.context.camera_default = 0
-        elif eid == ID_CAMERA1:
-            self.context.camera_default = 1
-        elif eid == ID_CAMERA2:
-            self.context.camera_default = 2
-        elif eid == ID_CAMERA3:
-            self.context.camera_default = 3
-        elif eid == ID_CAMERA4:
-            self.context.camera_default = 4
-
-        v = self.context.camera_default
-        self.context("window toggle -m {v} CameraInterface {v}\n".format(v=v))
-
-    def on_pipe_state(self, origin, state):
-        if state == self.pipe_state:
-            return
-        self.toolbar_button_bar.ToggleButton(ID_PAUSE, state == STATE_BUSY)
-
-    def initialize(self):
-        self.context.listen("pipe;thread", self.on_pipe_state)
-
-    def finalize(self):
-        self.context.unlisten("pipe;thread", self.on_pipe_state)
+    def pane_hide(self):
+        pass
 
 
 class Ribbon(MWindow):
@@ -442,6 +249,7 @@ class Ribbon(MWindow):
         super().__init__(423, 121, *args, **kwds)
 
         self.panel = RibbonPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -449,13 +257,13 @@ class Ribbon(MWindow):
 
     def window_open(self):
         try:
-            self.panel.initialize()
+            self.panel.pane_show()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.panel.finalize()
+            self.panel.pane_hide()
         except AttributeError:
             pass
 

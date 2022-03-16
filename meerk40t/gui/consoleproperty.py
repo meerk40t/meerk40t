@@ -19,6 +19,12 @@ class ConsoleProperty(MWindow):
         self.SetTitle(_("Console Properties"))
         self.Children[0].SetFocus()
 
+    def window_preserve(self):
+        return False
+
+    def window_menu(self):
+        return False
+
 
 class ConsolePropertiesPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -62,6 +68,8 @@ class ConsolePropertiesPanel(wx.Panel):
     # self.context.signal("element_property_update", self.console_operation)
 
     def on_change_command(self, event=None):
+        if self.console_operation is None:
+            return
         raw = self.command_text.GetValue()
         # Mac converts " to smart quotes, can't figure out
         # how to disable autocorrect in this textctrl 🙃

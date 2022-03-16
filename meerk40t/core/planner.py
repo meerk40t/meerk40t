@@ -1,55 +1,29 @@
 from copy import copy
+from os import times
+from time import time
+from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_POSITION,
-    COMMAND_UNLOCK,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
+from meerk40t.kernel import Service
+
+from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
+from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
+from ..tools.pathtools import VectorMontonizer
+from .cutplan import CutPlan, CutPlanningFailedError
+from .node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
 )
-from ..kernel import Modifier
-from ..svgelements import Length
-from .cutcode import CutCode, CutGroup, RasterCut
-from .cutplan import CutPlan
-from .elements import LaserOperation
-
-MILS_IN_MM = 39.3701
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel_root = kernel.root
-        kernel.register("modifier/Planner", Planner)
-
-        kernel.register("plan/physicalhome", physicalhome)
-        kernel.register("plan/home", home)
-        kernel.register("plan/origin", origin)
-        kernel.register("plan/unlock", unlock)
-        kernel.register("plan/wait", wait)
-        kernel.register("plan/beep", beep)
-        kernel.register("function/interrupt", interrupt_text)
-        kernel.register("plan/interrupt", interrupt)
-
-        def shutdown():
-            yield COMMAND_WAIT_FINISH
-
-            def shutdown_program():
-                kernel_root("quit\n")
-
-            yield COMMAND_FUNCTION, shutdown_program
-
-        kernel.register("plan/shutdown", shutdown)
+        kernel.add_service("planner", Planner(kernel))
 
     elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Planner")
-
-        context = kernel.root
+        context = kernel.get_context("planner")  # specifically get this planner context
         _ = context._
         choices = [
             {
@@ -138,16 +112,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register_choices("planner", choices)
 
         choices = [
-            {
-                "attr": "opt_rapid_between",
-                "object": context,
-                "default": True,
-                "type": bool,
-                "label": _("Rapid Moves Between Objects"),
-                "tip": _(
-                    "Travel between objects (laser off) at the default/rapid speed rather than at the current laser-on speed"
-                ),
-            },
             {
                 "attr": "opt_reduce_travel",
                 "object": context,
@@ -297,31 +261,51 @@ def plugin(kernel, lifecycle=None):
                 "type": int,
                 "label": _("Closed Distance"),
                 "tip": _(
-                    "How close (mils) do endpoints need to be to count as closed?"
-                ),
-            },
-            {
-                "attr": "opt_jog_minimum",
-                "object": context,
-                "default": 256,
-                "type": int,
-                "label": _("Minimum Jog Distance"),
-                "tip": _(
-                    "Distance (mils) at which a gap should be rapid-jog rather than moved at current speed."
+                    "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
             },
         ]
         kernel.register_choices("optimize", choices)
 
+        context.setting(bool, "opt_2opt", False)
+        context.setting(bool, "opt_nearest_neighbor", True)
+        context.setting(bool, "opt_reduce_directions", False)
+        context.setting(bool, "opt_remove_overlap", False)
+        context.setting(bool, "opt_start_from_position", False)
 
-class Planner(Modifier):
+        # context.setting(int, "opt_closed_distance", 15)
+        # context.setting(bool, "opt_merge_passes", False)
+        # context.setting(bool, "opt_merge_ops", False)
+        # context.setting(bool, "opt_inner_first", True)
+
+    elif lifecycle == "poststart":
+        if hasattr(kernel.args, "auto") and kernel.args.auto:
+            elements = kernel.elements
+            planner = kernel.planner
+            # Auto start does the planning and spooling of the data.
+            if hasattr(kernel.args, "speed") and kernel.args.speed is not None:
+                for o in elements.ops():
+                    o.speed = kernel.args.speed
+            planner("plan copy preprocess validate blob preopt optimize\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
+        else:
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                # Flag quitting on complete.
+                kernel.root._quit = True
+
+
+class Planner(Service):
     """
-    Planner is a modifier that adds 'plan' commands to the kernel. These are text based versions of the job preview and
+    Planner is a service that adds 'plan' commands to the kernel. These are text based versions of the job preview and
     should be permitted to control the job creation process.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
+    def __init__(self, kernel, *args, **kwargs):
+        Service.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
 
@@ -332,42 +316,37 @@ class Planner(Modifier):
         try:
             return self._plan[plan_name]
         except KeyError:
-            self._plan[plan_name] = CutPlan(plan_name, self.context)
+            self._plan[plan_name] = CutPlan(plan_name, self)
             return self._plan[plan_name]
 
+    @property
     def default_plan(self):
         return self.get_or_make_plan(self._default_plan)
 
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.planner = self
-        context.default_plan = self.default_plan
+    def service_attach(self, *args, **kwargs):
+        self.register("plan/physicalhome", physicalhome)
+        self.register("plan/home", home)
+        self.register("plan/origin", origin)
+        self.register("plan/unlock", unlock)
+        self.register("plan/wait", wait)
+        self.register("plan/beep", beep)
+        self.register("function/interrupt", interrupt_text)
+        self.register("plan/interrupt", interrupt)
 
-        _ = self.context._
-        elements = context.elements
-        rotary_context = self.context.get_context("rotary/1")
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
+        def shutdown():
+            yield "wait_finish"
 
-        rotary_context.setting(bool, "rotary", False)
-        rotary_context.setting(float, "scale_x", 1.0)
-        rotary_context.setting(float, "scale_y", 1.0)
+            def shutdown_program():
+                self("quit\n")
 
-        # Following settings are experimental and can only be set from the console
-        self.context.setting(bool, "opt_2opt", False)
-        self.context.setting(bool, "opt_nearest_neighbor", True)
-        self.context.setting(int, "opt_jog_mode", 0)
+            yield "function", shutdown_program
 
-        # Following three options seem to be obsolete as there is no meaningful code that uses it
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_start_from_position", False)
+        self.register("plan/shutdown", shutdown)
 
-        @self.context.console_argument(
-            "alias", type=str, help=_("plan command name to alias")
-        )
-        @self.context.console_command(
+        _ = self.kernel.translation
+
+        @self.console_argument("alias", type=str, help=_("plan command name to alias"))
+        @self.console_command(
             "plan-alias",
             help=_("Define a spoolable console command"),
             input_type=None,
@@ -386,17 +365,17 @@ class Planner(Modifier):
             if alias is None:
                 raise SyntaxError
             plan_command = "plan/%s" % alias
-            if plan_command in self.context.registered:
+            if self.lookup(plan_command) is not None:
                 raise SyntaxError(_("You may not overwrite an already used alias."))
 
             def user_defined_alias():
                 for s in remainder.split(";"):
-                    self.context(s + "\n")
+                    self(s + "\n")
 
             user_defined_alias.__name__ = remainder
-            self.context.registered[plan_command] = user_defined_alias
+            self.register(plan_command, user_defined_alias)
 
-        @self.context.console_command(
+        @self.console_command(
             "plan",
             help=_("plan<?> <command>"),
             regex=True,
@@ -406,9 +385,9 @@ class Planner(Modifier):
         def plan_base(command, channel, _, data=None, remainder=None, **kwgs):
             if len(command) > 4:
                 self._default_plan = command[4:]
-                self.context.signal("plan", self._default_plan, None)
+                self.signal("plan", self._default_plan, None)
 
-            cutplan = self.get_or_make_plan(self._default_plan)
+            cutplan = self.default_plan
             if data is not None:
                 # If ops data is in data, then we copy that and move on to next step.
                 for c in data:
@@ -425,7 +404,7 @@ class Planner(Modifier):
                     except AttributeError:
                         pass
                     cutplan.plan.append(copy_c)
-                self.context.signal("plan", self._default_plan, 1)
+                self.signal("plan", self._default_plan, 1)
                 return "plan", cutplan
             if remainder is None:
                 channel(_("----------"))
@@ -443,7 +422,7 @@ class Planner(Modifier):
 
             return "plan", cutplan
 
-        @self.context.console_command(
+        @self.console_command(
             "list",
             help=_("plan<?> list"),
             input_type="plan",
@@ -464,26 +443,26 @@ class Planner(Modifier):
             channel(_("----------"))
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "classify",
             help=_("plan<?> classify"),
             input_type="plan",
             output_type="plan",
         )
         def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
-            elements.classify(
-                list(elements.elems(emphasized=True)), data.plan, data.plan.append
+            self.elements.classify(
+                list(self.elements.elems(emphasized=True)), data.plan, data.plan.append
             )
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "copy-selected",
             help=_("plan<?> copy-selected"),
             input_type="plan",
             output_type="plan",
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
-            for c in elements.ops(emphasized=True):
+            for c in self.elements.ops(emphasized=True):
                 if c.type in ("cutcode", "blob"):
                     # CutNodes and BlobNodes are denuded into normal objects.
                     c = c.object
@@ -500,19 +479,30 @@ class Planner(Modifier):
                 data.plan.append(copy_c)
 
             channel(_("Copied Operations."))
-            self.context.signal("plan", data.name, 1)
+            self.signal("plan", data.name, 1)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "copy",
             help=_("plan<?> copy"),
             input_type="plan",
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
-            operations = elements.get(type="branch ops")
+            operations = self.elements.get(type="branch ops")
             for c in operations.flat(
-                types=("op", "cutcode", "cmdop", "consoleop", "lasercode", "blob"),
+                types=(
+                    "op cut",
+                    "op raster",
+                    "op image",
+                    "op engrave",
+                    "op dots",
+                    "cutcode",
+                    "cmdop",
+                    "consoleop",
+                    "lasercode",
+                    "blob",
+                ),
                 depth=1,
             ):
                 try:
@@ -535,16 +525,14 @@ class Planner(Modifier):
                     pass
                 data.plan.append(copy_c)
             channel(_("Copied Operations."))
-            self.context.signal("plan", data.name, 1)
+            self.signal("plan", data.name, 1)
             return data_type, data
 
-        @self.context.console_option(
+        @self.console_option(
             "index", "i", type=int, help=_("index of location to insert command")
         )
-        @self.context.console_option(
-            "op", "o", type=str, help=_("unlock, origin, home, etc.")
-        )
-        @self.context.console_command(
+        @self.console_option("op", "o", type=str, help=_("unlock, origin, home, etc."))
+        @self.console_command(
             "command",
             help=_("plan<?> command"),
             input_type="plan",
@@ -555,12 +543,11 @@ class Planner(Modifier):
         ):
             if op is None:
                 channel(_("Plan Commands:"))
-                for command_name in self.context.match("plan/.*", suffix=True):
+                for command_name in self.match("plan/.*", suffix=True):
                     channel(command_name)
                 return
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    cmd = self.context.registered[command_name]
+                for cmd, command_name, suffix in self.find("plan", op):
                     if index is None:
                         data.plan.append(cmd)
                     else:
@@ -569,15 +556,13 @@ class Planner(Modifier):
                         except ValueError:
                             channel(_("Invalid index for command insert."))
                     break
-                self.context.signal("plan", data.name, None)
+                self.signal("plan", data.name, None)
             except (KeyError, IndexError):
                 channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument(
-            "op", type=str, help=_("unlock, origin, home, etc")
-        )
-        @self.context.console_command(
+        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @self.console_command(
             "append",
             help=_("plan<?> append <op>"),
             input_type="plan",
@@ -589,20 +574,17 @@ class Planner(Modifier):
             if op is None:
                 raise SyntaxError
             try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
+                for plan_command, command_name, sname in self.find("plan", op):
                     data.plan.append(plan_command)
-                    self.context.signal("plan", data.name, None)
+                    self.signal("plan", data.name, None)
                     return data_type, data
             except (KeyError, IndexError):
                 pass
             channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_argument(
-            "op", type=str, help=_("unlock, origin, home, etc")
-        )
-        @self.context.console_command(
+        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @self.console_command(
             "prepend",
             help=_("plan<?> prepend <op>"),
             input_type="plan",
@@ -613,17 +595,14 @@ class Planner(Modifier):
         ):
             if op is None:
                 raise SyntaxError
-            try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
-                    data.plan.insert(0, plan_command)
-                    break
-                self.context.signal("plan", data.name, None)
-            except (KeyError, IndexError):
-                channel(_("No plan command found."))
+            for plan_command, command_name, sname in self.find("plan", op):
+                data.plan.insert(0, plan_command)
+                self.signal("plan", data.name, None)
+                return data_type, data
+            channel(_("No plan command found."))
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "preprocess",
             help=_("plan<?> preprocess"),
             input_type="plan",
@@ -631,21 +610,26 @@ class Planner(Modifier):
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
             data.preprocess()
-            self.context.signal("plan", data.name, 2)
+            self.signal("plan", data.name, 2)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "validate",
             help=_("plan<?> validate"),
             input_type="plan",
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
-            data.execute()
-            self.context.signal("plan", data.name, 3)
+            try:
+                data.execute()
+            except CutPlanningFailedError as e:
+                self.signal("cutplanning;failed", str(e))
+                data.clear()
+                return
+            self.signal("plan", data.name, 3)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "blob",
             help=_("plan<?> blob"),
             input_type="plan",
@@ -653,10 +637,10 @@ class Planner(Modifier):
         )
         def plan_blob(data_type=None, data=None, **kwgs):
             data.blob()
-            self.context.signal("plan", data.name, 4)
+            self.signal("plan", data.name, 4)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "preopt",
             help=_("plan<?> preopt"),
             input_type="plan",
@@ -664,10 +648,10 @@ class Planner(Modifier):
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
             data.preopt()
-            self.context.signal("plan", data.name, 5)
+            self.signal("plan", data.name, 5)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "optimize",
             help=_("plan<?> optimize"),
             input_type="plan",
@@ -675,10 +659,10 @@ class Planner(Modifier):
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
             data.execute()
-            self.context.signal("plan", data.name, 6)
+            self.signal("plan", data.name, 6)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "clear",
             help=_("plan<?> clear"),
             input_type="plan",
@@ -686,18 +670,18 @@ class Planner(Modifier):
         )
         def plan_clear(data_type=None, data=None, **kwgs):
             data.clear()
-            self.context.signal("plan", data.name, 0)
+            self.signal("plan", data.name, 0)
             return data_type, data
 
-        @self.context.console_argument("cols", type=int, help=_("columns for the grid"))
-        @self.context.console_argument("rows", type=int, help=_("rows for the grid"))
-        @self.context.console_argument(
-            "x_distance", type=Length, help=_("x_distance each column step")
+        @self.console_argument("cols", type=int, help=_("columns for the grid"))
+        @self.console_argument("rows", type=int, help=_("rows for the grid"))
+        @self.console_argument(
+            "x_distance", type=str, help=_("x_distance each column step")
         )
-        @self.context.console_argument(
-            "y_distance", type=Length, help=_("y_distance each row step")
+        @self.console_argument(
+            "y_distance", type=str, help=_("y_distance each row step")
         )
-        @self.context.console_command(
+        @self.console_command(
             "step_repeat",
             help=_("plan<?> step_repeat"),
             input_type="plan",
@@ -721,17 +705,17 @@ class Planner(Modifier):
                 raise SyntaxError
             # Following must be in same order as added in preprocess()
             pre_plan_items = (
-                (self.context.prephysicalhome, physicalhome),
-                (self.context.prehome, home),
+                (self.prephysicalhome, physicalhome),
+                (self.prehome, home),
             )
             # Following must be in reverse order as added in preprocess()
             post_plan_items = (
-                (self.context.autointerrupt, interrupt),
-                (self.context.autobeep, beep),
-                (self.context.postunlock, unlock),
-                (self.context.autoorigin, origin),
-                (self.context.autophysicalhome, physicalhome),
-                (self.context.autohome, home),
+                (self.autointerrupt, interrupt),
+                (self.autobeep, beep),
+                (self.postunlock, unlock),
+                (self.autoorigin, origin),
+                (self.autophysicalhome, physicalhome),
+                (self.autohome, home),
             )
             post_plan = []
 
@@ -750,19 +734,17 @@ class Planner(Modifier):
                 elif type(c_plan[-1]) == str:  # Rotary disabled
                     post_plan.insert(0, c_plan.pop())
 
-            try:
+            # Sophist: Following try/except commented out as
+            # exceptions need to be narrow not global in scope.
+            # try:
                 if x_distance is None:
-                    x_distance = Length("%f%%" % (100.0 / (cols + 1)))
+                    x_distance = "%f%%" % (100.0 / (cols + 1))
                 if y_distance is None:
-                    y_distance = Length("%f%%" % (100.0 / (rows + 1)))
-            except Exception:
-                pass
-            x_distance = x_distance.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            y_distance = y_distance.value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-            )
+                    y_distance = "%f%%" % (100.0 / (rows + 1))
+            # except Exception:
+                # pass
+            x_distance = self.device.length(x_distance, 1)
+            y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
             y_pos = 0
@@ -785,36 +767,38 @@ class Planner(Modifier):
             if x_pos != 0 or y_pos != 0:
                 data.plan.append(offset(-x_pos, -y_pos))
             data.plan.extend(post_plan)
-            self.context.signal("plan", data.name, None)
+            self.signal("plan", data.name, None)
             return data_type, data
 
-        @self.context.console_command(
+        @self.console_command(
             "return",
             help=_("plan<?> return"),
             input_type="plan",
             output_type="plan",
         )
         def plan_return(command, channel, _, data_type=None, data=None, **kwgs):
-            operations = elements.get(type="branch ops")
+            operations = self.elements.get(type="branch ops")
             operations.remove_all_children()
 
             for c in data.plan:
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
-                if isinstance(c, LaserOperation):
+                if isinstance(
+                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+                ):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
             channel(_("Returned Operations."))
-            self.context.signal("plan", data.name, None)
+            self.signal("plan", data.name, None)
             return data_type, data
 
-        @self.context.console_argument(
+        @self.console_argument(
             "start", help="start index for cutcode", type=int, default=0
         )
-        @self.context.console_argument(
+        @self.console_argument(
             "end", help="end index for cutcode (-1 is last value)", type=int, default=-1
         )
-        @self.context.console_command(
+        @self.console_command(
             "sublist",
             help=_("plan<?> sublist"),
             input_type="plan",
@@ -868,7 +852,7 @@ class Planner(Modifier):
                     c = CutCode(c[: end - pos])
                 data.plan.append(c)
 
-            self.context.signal("plan", data.name, None)
+            self.signal("plan", data.name, None)
             return data_type, data
 
     def plan(self, **kwargs):
@@ -876,43 +860,91 @@ class Planner(Modifier):
             yield item
 
 
+def needs_actualization(image_element, step_level=None):
+    if not isinstance(image_element, SVGImage):
+        return False
+    if step_level is None:
+        if "raster_step" in image_element.values:
+            step_level = float(image_element.values["raster_step"])
+        else:
+            step_level = 1.0
+    m = image_element.transform
+    # Transformation must be uniform to permit native rastering.
+    return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
+
+
+def make_actual(image_element, step_level=None):
+    """
+    Makes PIL image actual in that it manipulates the pixels to actually exist
+    rather than simply apply the transform on the image to give the resulting image.
+    Since our goal is to raster the images real pixels this is required.
+
+    SVG matrices are defined as follows.
+    [a c e]
+    [b d f]
+
+    Pil requires a, c, e, b, d, f accordingly.
+    """
+    if not isinstance(image_element, SVGImage):
+        return
+    from ..image.actualize import actualize
+
+    if step_level is None:
+        # If we are not told the step amount either draw it from the object or set it to default.
+        if "raster_step" in image_element.values:
+            step_level = float(image_element.values["raster_step"])
+        else:
+            step_level = 1.0
+    image_element.image, image_element.transform = actualize(
+        image_element.image, image_element.transform, step_level=step_level
+    )
+    image_element.image_width, image_element.image_height = (
+        image_element.image.width,
+        image_element.image.height,
+    )
+    image_element.width, image_element.height = (
+        image_element.image_width,
+        image_element.image_height,
+    )
+    image_element.cache = None
+
+
 def origin():
-    yield COMMAND_MODE_RAPID
-    yield COMMAND_SET_ABSOLUTE
-    yield COMMAND_MOVE, 0, 0
+    yield "rapid_mode"
+    yield "move_abs", 0, 0
 
 
 def unlock():
-    yield COMMAND_MODE_RAPID
-    yield COMMAND_UNLOCK
+    yield "rapid_mode"
+    yield "unlock"
 
 
 def home():
-    yield COMMAND_HOME
+    yield "home"
 
 
 def physicalhome():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_HOME, 0, 0
+    yield "wait_finish"
+    yield "home", 0, 0
 
 
 def offset(x, y):
     def offset_value():
-        yield COMMAND_WAIT_FINISH
-        yield COMMAND_SET_POSITION, -int(x), -int(y)
+        yield "wait_finish"
+        yield "set_position", -int(x), -int(y)
 
     return offset_value
 
 
 def wait():
     wait_amount = 5.0
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_WAIT, wait_amount
+    yield "wait_finish"
+    yield "wait", wait_amount
 
 
 def beep():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_BEEP
+    yield "wait_finish"
+    yield "beep"
 
 
 def interrupt_text():
@@ -921,26 +953,5 @@ def interrupt_text():
 
 
 def interrupt():
-    yield COMMAND_WAIT_FINISH
-    yield COMMAND_FUNCTION, interrupt_text
-
-
-def reify_matrix(self):
-    """Apply the matrix to the path and reset matrix."""
-    self.element = abs(self.element)
-    self.scene_bounds = None
-
-
-def correct_empty(context: CutGroup):
-    """
-    Iterate backwards deleting any entries that are empty.
-    """
-    for index in range(len(context) - 1, -1, -1):
-        c = context[index]
-        if isinstance(c, CutGroup):
-            correct_empty(c)
-        if c.inside:
-            for o in c.inside:
-                if o.contains and c in o.contains:
-                    o.contains.remove(c)
-        del context[index]
+    yield "wait_finish"
+    yield "function", interrupt_text

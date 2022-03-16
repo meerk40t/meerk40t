@@ -9,6 +9,17 @@ from math import ceil
 
 import wx
 
+from meerk40t.kernel import signal_listener
+
+from ..core.units import (
+    UNITS_CM,
+    UNITS_INCH,
+    UNITS_MM,
+    UNITS_PER_CM,
+    UNITS_PER_INCH,
+    UNITS_PER_MM,
+    UNITS_PERCENT,
+)
 from ..image.imagetools import RasterScripts
 from ..svgelements import Matrix, SVGImage
 from .icons import icons8_fantasy_50
@@ -54,6 +65,14 @@ class RasterWizardPanel(wx.Panel):
         self.sizer_operation_panels = None
 
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
+        # self.panel_preview = ScenePanel(
+        #     self.context,
+        #     self,
+        #     scene_name="rasterwizard",
+        #     style=wx.EXPAND | wx.WANTS_CHARS,
+        # )
+        # self.widget_scene = self.panel_preview.scene
+
         list_choices = []
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]
@@ -94,7 +113,7 @@ class RasterWizardPanel(wx.Panel):
                 return
             self.ops = ops
         else:
-            self.ops = deepcopy(self.context.registered["raster_script/%s" % name])
+            self.ops = deepcopy(self.context.lookup("raster_script", name))
         self.list_operation.Clear()
         if self.ops is not None:
             list_choices = [_(op["name"]) for op in self.ops]
@@ -106,33 +125,15 @@ class RasterWizardPanel(wx.Panel):
         self.Refresh()
         self.on_size()
 
-    def initialize(self):
+    def pane_show(self):
         if self.script is not None:
             self.set_wizard_script(self.script)
-
-        context_root = self.context.root
-        context_root.listen("emphasized", self.on_emphasis_change)
-        self.context.listen(
-            "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
-        )
-        self.context.listen("RasterWizard-Image", self.on_raster_wizard_image_signal)
         self.context.signal("RasterWizard-Image")
-        self.context.listen(
-            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
-        )
         if self.list_operation.GetCount() > 0:
             self.list_operation.SetSelection(0)
 
-    def finalize(self):
-        context_root = self.context.root
-        context_root.unlisten("emphasized", self.on_emphasis_change)
-        self.context.unlisten(
-            "RasterWizard-Refresh", self.on_raster_wizard_refresh_signal
-        )
-        self.context.unlisten("RasterWizard-Image", self.on_raster_wizard_image_signal)
-        self.context.unlisten(
-            "RasterWizard-Refocus", self.on_raster_wizard_refocus_signal
-        )
+    def pane_hide(self):
+        pass
 
     def __set_properties(self):
         self.panel_preview.SetToolTip(_("Processed image preview"))
@@ -203,6 +204,7 @@ class RasterWizardPanel(wx.Panel):
         with self.thread_update_lock:
             self.wizard_thread = None
 
+    @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
         for e in self.context.elements.elems(emphasized=True):
             if isinstance(e, SVGImage):
@@ -317,6 +319,7 @@ class RasterWizardPanel(wx.Panel):
         if self.wizard_thread is not None:
             gc.DrawText(_("Processing..."), 0, 0)
         gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
         del dc
 
     def convert_scene_to_window(self, position):
@@ -358,7 +361,7 @@ class RasterWizardPanel(wx.Panel):
         menu = wx.Menu()
         sub_menu = wx.Menu()
         try:
-            for script_name in self.context.match("raster_script", True):
+            for script_name in self.context.match("raster_script", suffix=True):
                 gui.Bind(
                     wx.EVT_MENU,
                     self.set_script(script_name),
@@ -378,20 +381,12 @@ class RasterWizardPanel(wx.Panel):
         return script
 
     def on_preview_mouse_left_down(self, event):
-        # Convert mac Control+left click into right click
-        if event.RawControlDown() and not event.ControlDown():
-            self.on_preview_mouse_right_down(event)
-            return
         self.previous_window_position = event.GetPosition()
         self.previous_scene_position = self.convert_window_to_scene(
             self.previous_window_position
         )
 
     def on_preview_mouse_left_up(self, event=None):
-        # Convert mac Control+left click into right click
-        if event.RawControlDown() and not event.ControlDown():
-            event.Skip()
-            return
         self.previous_window_position = None
         self.previous_scene_position = None
 
@@ -460,11 +455,13 @@ class RasterWizardPanel(wx.Panel):
         self.matrix.post_scale(sx, sy, ax, ay)
         self.context.signal("RasterWizard-Refresh")
 
+    @signal_listener("RasterWizard-Refocus")
     def on_raster_wizard_refocus_signal(self, origin, factor, *args):
         """Processes the image signal but flags this as needing refocusing."""
         self.focus_factor = factor
         self.on_raster_wizard_image_signal(origin, *args)
 
+    @signal_listener("RasterWizard-Image")
     def on_raster_wizard_image_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         with self.thread_update_lock:
@@ -473,6 +470,7 @@ class RasterWizardPanel(wx.Panel):
                 self.wizard_thread = self.context.threaded(self.wiz_img)
                 self.context.signal("RasterWizard-Refresh")
 
+    @signal_listener("RasterWizard-Refresh")
     def on_raster_wizard_refresh_signal(self, origin, *args):
         """Processes the refresh. Runs through a signal to prevent mass refresh stacking."""
         if wx.IsMainThread():
@@ -864,18 +862,19 @@ class ResamplePanel(wx.Panel):
         height = int(ceil(bbox[3] - bbox[1]))
 
         units = self.op["units"]
-        if units == 1:
+        # TODO: OP UNITS CONVERTS
+        if units == UNITS_PERCENT:
             width = 100
             height = 100
-        elif units == 2:
-            width /= 1000.0
-            height /= 1000.0
-        elif units == 3:
-            width /= MILS_IN_MM
-            height /= MILS_IN_MM
-        elif units == 4:
-            width /= 10 * MILS_IN_MM
-            height /= 10 * MILS_IN_MM
+        elif units == UNITS_INCH:
+            width /= UNITS_PER_INCH
+            height /= UNITS_PER_INCH
+        elif units == UNITS_MM:
+            width /= UNITS_PER_MM
+            height /= UNITS_PER_MM
+        elif units == UNITS_CM:
+            width /= UNITS_PER_CM
+            height /= UNITS_PER_CM
         self.text_resample_height.SetValue(str(width))
         self.text_resample_width.SetValue(str(height))
 
@@ -1960,11 +1959,23 @@ class RasterWizard(MWindow):
         self.panel = RasterWizardPanel(
             self, wx.ID_ANY, context=self.context, script=script
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_fantasy_50.GetBitmap())
         self.SetIcon(_icon)
-        # begin wxGlade: RasterWizard.__set_properties
         self.SetTitle(_("Raster Wizard"))
+
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/RasterWizard",
+            {
+                "label": _("RasterWizard"),
+                "icon": icons8_fantasy_50,
+                "tip": _("Run RasterWizard"),
+                "action": lambda v: kernel.console("window toggle RasterWizard\n"),
+            },
+        )
 
     def restore(self, *args, script=None, **kwargs):
         if script is not None:
@@ -1972,7 +1983,7 @@ class RasterWizard(MWindow):
             self.panel.set_wizard_script(script)
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

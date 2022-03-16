@@ -2,11 +2,10 @@ import os
 from copy import copy
 from os import path as ospath
 
-from ..core.cutplan import make_actual, needs_actualization
+from ..core.planner import make_actual, needs_actualization
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
 from .actualize import actualize
-
-MILS_IN_MM = 39.3701
 
 
 def plugin(kernel, lifecycle=None):
@@ -25,8 +24,27 @@ def plugin(kernel, lifecycle=None):
     kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
     kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
+
+    choices = [
+        {
+            "attr": "image_dpi",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Image DPI Scaling"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Use the image as if it were 1000 pixels per inch."),
+                    _(
+                        "Set: Use the DPI setting saved in the image to scale the image to the correct size."
+                    ),
+                )
+            ),
+        },
+    ]
+    kernel.register_choices("preferences", choices)
+
     context = kernel.root
-    bed_dim = context.root
 
     @context.console_command(
         "image",
@@ -122,15 +140,14 @@ def plugin(kernel, lifecycle=None):
     def image_wizard(command, channel, _, data, script, **kwargs):
         if script is None:
             try:
-                for script_name in context.match("raster_script", True):
+                for script_name in context.match("raster_script", suffix=True):
                     channel(_("Raster Script: %s") % script_name)
             except KeyError:
                 channel(_("No Raster Scripts Found."))
             return
 
-        try:
-            script = context.registered["raster_script/%s" % script]
-        except KeyError:
+        script = context.lookup("raster_script", script)
+        if script is None:
             channel(_("Raster Script %s is not registered.") % script)
             return
 
@@ -332,10 +349,10 @@ def plugin(kernel, lifecycle=None):
                 element.node.altered()
         return "image", data
 
-    @context.console_argument("left", help="left side of crop", type=Length)
-    @context.console_argument("upper", help="upper side of crop", type=Length)
-    @context.console_argument("right", help="right side of crop", type=Length)
-    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_argument("left", help="left side of crop", type=int)
+    @context.console_argument("upper", help="upper side of crop", type=int)
+    @context.console_argument("right", help="right side of crop", type=int)
+    @context.console_argument("lower", help="lower side of crop", type=int)
     @context.console_command(
         "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
@@ -343,30 +360,6 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             img = element.image
             try:
-                left = int(
-                    left.value(
-                        ppi=1000.0,
-                        relative_length=element.image_width,
-                    )
-                )
-                upper = int(
-                    upper.value(
-                        ppi=1000.0,
-                        relative_length=element.image_height,
-                    )
-                )
-                right = int(
-                    right.value(
-                        ppi=1000.0,
-                        relative_length=element.image_width,
-                    )
-                )
-                lower = int(
-                    lower.value(
-                        ppi=1000.0,
-                        relative_length=element.image_height,
-                    )
-                )
                 if left >= right:
                     raise SyntaxError(
                         _("Right margin is to the left of the left margin.")
@@ -809,7 +802,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument(
         "x",
-        type=Length,
+        type=int,
         help=_("X position at which to slice the image"),
     )
     @context.console_command(
@@ -820,12 +813,6 @@ def plugin(kernel, lifecycle=None):
     )
     def image_slice(command, channel, _, data, x, **kwargs):
         for element in data:
-            x = int(
-                x.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
             img = element.image
             image_left = img.crop((0, 0, x, element.image_height))
             image_right = img.crop((x, 0, element.image_width, element.image_height))
@@ -855,7 +842,7 @@ def plugin(kernel, lifecycle=None):
 
     @context.console_argument(
         "y",
-        type=Length,
+        type=int,
         help=_("Y position at which to slash the image"),
     )
     @context.console_command(
@@ -866,12 +853,6 @@ def plugin(kernel, lifecycle=None):
     )
     def image_slash(command, channel, _, data, y, **kwargs):
         for element in data:
-            y = int(
-                y.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
             img = element.image
             image_top = img.crop((0, 0, element.image_width, y))
             image_bottom = img.crop((0, y, element.image_width, element.image_height))
@@ -906,10 +887,10 @@ def plugin(kernel, lifecycle=None):
         action="store_true",
         type=bool,
     )
-    @context.console_argument("left", help="left side of crop", type=Length)
-    @context.console_argument("upper", help="upper side of crop", type=Length)
-    @context.console_argument("right", help="right side of crop", type=Length)
-    @context.console_argument("lower", help="lower side of crop", type=Length)
+    @context.console_argument("left", help="left side of crop", type=int)
+    @context.console_argument("upper", help="upper side of crop", type=int)
+    @context.console_argument("right", help="right side of crop", type=int)
+    @context.console_argument("lower", help="lower side of crop", type=int)
     @context.console_command(
         "pop",
         help=_("Pop pixels for more efficient rastering"),
@@ -922,31 +903,6 @@ def plugin(kernel, lifecycle=None):
         from PIL import Image
 
         for element in data:
-            left = int(
-                left.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
-            upper = int(
-                upper.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
-            right = int(
-                right.value(
-                    ppi=1000.0,
-                    relative_length=element.image_width,
-                )
-            )
-            lower = int(
-                lower.value(
-                    ppi=1000.0,
-                    relative_length=element.image_height,
-                )
-            )
-
             img = element.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -1823,7 +1779,15 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (1000.0 / dpi[0], 1000.0 / dpi[1])
+                    image *= "scale(%f,%f)" % (
+                        UNITS_PER_INCH / dpi[0],
+                        UNITS_PER_INCH / dpi[1],
+                    )
+                else:
+                    image *= "scale(%f,%f)" % (
+                        UNITS_PER_PIXEL / dpi[0],
+                        UNITS_PER_PIXEL / dpi[1],
+                    )
         except (KeyError, IndexError):
             pass
 

@@ -3,8 +3,13 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import CutCode, LaserSettings, LineCut, QuadCut, RasterCut
-from meerk40t.core.elements import LaserOperation
+from meerk40t.core.cutcode import CutCode, LineCut, Parameters, QuadCut, RasterCut
+from meerk40t.core.node.laserop import (
+    CutOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
+)
 from meerk40t.svgelements import Path, Point, SVGImage
 
 
@@ -16,7 +21,7 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         cutcode = CutCode()
-        settings = LaserSettings()
+        settings = dict()
         cutcode.append(LineCut(Point(0, 0), Point(100, 100), settings=settings))
         cutcode.append(LineCut(Point(100, 100), Point(0, 0), settings=settings))
         cutcode.append(LineCut(Point(50, -50), Point(100, -100), settings=settings))
@@ -36,9 +41,8 @@ class TestCutcode(unittest.TestCase):
         """
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop = LaserOperation()
-        laserop.operation = "Cut"
-        laserop.add(path, type="opnode")
+        laserop = CutOpNode()
+        laserop.add(path, type="ref elem")
         cutcode = CutCode(laserop.as_cutobjects())
         path = list(cutcode.as_elements())[0]
         self.assertEqual(path, initial)
@@ -51,27 +55,11 @@ class TestCutcode(unittest.TestCase):
         """
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop = LaserOperation()
-        laserop.operation = "Engrave"
-        laserop.add(path, type="opnode")
+        laserop = EngraveOpNode()
+        laserop.add(path, type="ref elem")
         cutcode = CutCode(laserop.as_cutobjects())
         path = list(cutcode.as_elements())[0]
         self.assertEqual(path, initial)
-
-    def test_cutcode_no_type(self):
-        """
-        Convert an Unknown operation into Cutcode and back.
-
-        :return:
-        """
-        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
-        path = Path(initial)
-        laserop = LaserOperation()
-        # Operation type is unset.
-        laserop.add(path, type="opnode")
-        cutcode = CutCode(laserop.as_cutobjects())
-
-        self.assertEqual(len(list(cutcode.flat())), 0)  # Unknown is blank.
 
     def test_cutcode_raster(self):
         """
@@ -79,13 +67,13 @@ class TestCutcode(unittest.TestCase):
 
         :return:
         """
-        laserop = LaserOperation()
+        laserop = RasterOpNode()
         laserop.operation = "Raster"
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add(path, type="opnode")
+        laserop.add(path, type="ref elem")
 
         # Add SVG Image
         svg_image = SVGImage()
@@ -94,12 +82,10 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add(svg_image, type="opnode")
+        laserop.add(svg_image, type="ref elem")
 
         # raster_step is default to 0 and not set.
-        self.assertRaises(AssertionError, CutCode, laserop.as_cutobjects())
-
-        laserop.settings.raster_step = 2
+        laserop.raster_step = 2
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 1)
         rastercut = cutcode[0]
@@ -119,13 +105,13 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         # Initialize with Raster Defaults, +crosshatch
-        laserop = LaserOperation(operation="Raster", raster_direction=4)
+        laserop = RasterOpNode(raster_direction=4)
         # Default step 2.
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add(path, type="opnode")
+        laserop.add(path, type="ref elem")
 
         # Add SVG Image
         svg_image = SVGImage()
@@ -134,7 +120,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add(svg_image, type="opnode")
+        laserop.add(svg_image, type="ref elem")
         for i in range(2):  # Check for knockon.
             cutcode = CutCode(laserop.as_cutobjects())
             self.assertEqual(len(cutcode), 2)
@@ -172,13 +158,12 @@ class TestCutcode(unittest.TestCase):
 
         :return:
         """
-        laserop = LaserOperation()
-        laserop.operation = "Image"
+        laserop = ImageOpNode()
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add(path, type="opnode")
+        laserop.add(path, type="ref elem")
 
         # Add SVG Image1
         svg_image1 = SVGImage()
@@ -187,7 +172,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image1.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add(svg_image1, type="opnode")
+        laserop.add(svg_image1, type="ref elem")
 
         # Add SVG Image2
         svg_image2 = SVGImage()
@@ -197,7 +182,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image2.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add(svg_image2, type="opnode")
+        laserop.add(svg_image2, type="ref elem")
         for i in range(2):  # Check for knockon
             cutcode = CutCode(laserop.as_cutobjects())
             self.assertEqual(len(cutcode), 3)
@@ -241,12 +226,12 @@ class TestCutcode(unittest.TestCase):
 
         :return:
         """
-        laserop = LaserOperation(operation="Image", raster_direction=4)
+        laserop = ImageOpNode(raster_direction=4)
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add(path, type="opnode")
+        laserop.add(path, type="ref elem")
 
         # Add SVG Image1
         svg_image1 = SVGImage()
@@ -255,7 +240,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image1.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add(svg_image1, type="opnode")
+        laserop.add(svg_image1, type="ref elem")
 
         # Add SVG Image2
         svg_image2 = SVGImage()
@@ -264,13 +249,13 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image2.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add(svg_image2, type="opnode")
+        laserop.add(svg_image2, type="ref elem")
 
         # Add SVG Image3
         svg_image3 = SVGImage()
         svg_image3.image = svg_image2.image
         svg_image3.values["raster_step"] = 3  # Step is 3.
-        laserop.add(svg_image3, type="opnode")
+        laserop.add(svg_image3, type="ref elem")
 
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 6)
@@ -343,12 +328,12 @@ class TestCutcode(unittest.TestCase):
 
         :return:
         """
-        laserop = LaserOperation(operation="Image")
+        laserop = ImageOpNode()
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add(path, type="opnode")
+        laserop.add(path, type="ref elem")
 
         # Add SVG Image1
         svg_image1 = SVGImage()
@@ -356,7 +341,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(svg_image1.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add(svg_image1, type="opnode")
+        laserop.add(svg_image1, type="ref elem")
 
         for i in range(4):
             cutcode = CutCode(laserop.as_cutobjects())
@@ -374,9 +359,7 @@ class TestCutcode(unittest.TestCase):
                 rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            laserop.settings.raster_step = (
-                i  # Raster_Step should be ignored, set for next loop
-            )
+            laserop.raster_step = i  # Raster_Step should be ignored, set for next loop
 
     def test_cutcode_direction_flags(self):
         """
@@ -395,9 +378,8 @@ class TestCutcode(unittest.TestCase):
                 path.line(path.current_point.x, path.current_point.y)
             else:
                 path.line((random.randint(0, 5000), random.randint(0, 5000)))
-        laserop = LaserOperation()
-        laserop.operation = "Cut"
-        laserop.add(path, type="opnode")
+        laserop = CutOpNode()
+        laserop.add(path, type="ref elem")
         cutcode = CutCode(laserop.as_cutobjects())
         for cut in cutcode.flat():
             major = cut.major_axis()

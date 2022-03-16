@@ -1,11 +1,4 @@
-import os
-import platform
 import time
-
-from ..core.cutcode import LaserSettings
-from ..device.lasercommandconstants import *
-from ..kernel import Modifier
-from .plotplanner import PlotPlanner
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
@@ -21,617 +14,267 @@ PLOT_AXIS = 64
 PLOT_DIRECTION = 32
 
 
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        kernel.register("modifier/Drivers", Drivers)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Drivers")
-    elif lifecycle == "boot":
-        pass
-
-
 class Driver:
     """
-    A driver takes spoolable commands and turns those commands into states and code in a language
-    agnostic fashion. This is intended to be overridden by a subclass or class with the required methods.
-
-    These drive hardware specific backend information from the reusable spoolers and server objects that may also be
-    common within devices.
+    A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
+    system. The spooled command consist of a method and some data. These are sent to the driver associated with that
+    spooler in linear order as the driver is ready to receive more data. If a method does not exist, it will
+    not be called; it will be as if the command didn't exist.
     """
 
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.root_context = context.root
-        self.settings = LaserSettings()
+        self.settings = dict()
 
-        self.next = None
-        self.prev = None
+        self.native_x = 0
+        self.native_y = 0
+        self.hold = False
+        self.paused = False
 
-        self.spooler = None
-        self.output = None
-
-        self.process_item = None
-        self.spooled_item = None
-        self.holds = []
-        self.temp_holds = []
-
-        self.current_x = 0
-        self.current_y = 0
-
-        context.setting(bool, "plot_shift", False)
-        self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = context.plot_shift
-        self.plot = None
-
-        self.state = DRIVER_STATE_RAPID
-        self.is_relative = False
-        self.laser = False
-        self.root_context.setting(bool, "opt_rapid_between", True)
-        self.root_context.setting(int, "opt_jog_mode", 0)
-        self.root_context.setting(int, "opt_jog_minimum", 127)
-        context._quit = False
-
-        self.rapid_override = False
-        self.rapid_override_speed_x = 50.0
-        self.rapid_override_speed_y = 50.0
-        self._thread = None
-        self._shutdown = False
-        self.context.kernel.listen("lifecycle;ready", "", self.start_driver)
-        self.context.kernel.listen("lifecycle;shutdown", "", self.shutdown)
-
-        self.last_fetch = None
-
-    def shutdown(self, *args, **kwargs):
-        self.context.kernel.unlisten("lifecycle;ready", "", self.start_driver)
-        self.context.kernel.unlisten("lifecycle;shutdown", "", self.shutdown)
-        self._shutdown = True
-
-    def start_driver(self, origin=None, *args):
-        if self._thread is None:
-
-            def clear_thread(*a):
-                self._shutdown = True
-
-            self._thread = self.context.threaded(
-                self._driver_threaded,
-                result=clear_thread,
-                thread_name="Driver(%s)" % self.context.path,
-            )
-            self._thread.stop = clear_thread
-
-    def _driver_threaded(self, *args):
+    def hold_work(self):
         """
-        Fetch and Execute.
+        Required.
 
-        :param args:
-        :return:
+        Spooler check. to see if the work cycle should be held.
+
+        @return: hold?
         """
-        while True:
-            if self._shutdown:
-                return
-            if self.spooled_item is None:
-                self._fetch_next_item_from_spooler()
-            if self.spooled_item is None:
-                # There is no data to interpret. Fetch Failed.
-                if self.context._quit:
-                    self.context("quit\n")
-                    self._shutdown = True
-                    return
-                time.sleep(0.1)
-            self._process_spooled_item()
+        return self.hold or self.paused
 
-    def _process_spooled_item(self):
+    def hold_idle(self):
         """
-        Default Execution Cycle. If Held, we wait. Otherwise we process the spooler.
+        Required.
 
-        Processes one item in the spooler. If the spooler item is a generator. Process one generated item.
-        """
-        if self.hold():
-            time.sleep(0.01)
-            return
-        if self.plotplanner_process():
-            return
-        if self.spooled_item is None:
-            return  # Fetch Next.
-
-        # We have a spooled item to process.
-        if self.command(self.spooled_item):
-            self.spooled_item = None
-            self.spooler.pop()
-            return
-
-        # We are dealing with an iterator/generator
-        try:
-            e = next(self.spooled_item)
-            if not self.command(e):
-                raise ValueError
-        except StopIteration:
-            # The spooled item is finished.
-            self.spooled_item = None
-            self.spooler.pop()
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        :return: if execute tick was processed.
+        Spooler check. Should the idle job be processed or held.
+        @return:
         """
         return False
 
-    def _fetch_next_item_from_spooler(self):
+    def move_abs(self, x, y):
         """
-        Fetches the next item from the spooler.
+        Requests laser move to absolute position x, y
 
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
-        if self.spooler is None:
-            return  # Spooler does not exist.
-        element = self.spooler.peek()
 
-        if self.last_fetch is not None:
-            self.context.channel("spooler")(
-                "Time between fetches: %f" % (time.time() - self.last_fetch)
-            )
-            self.last_fetch = None
-
-        if element is None:
-            return  # Spooler is empty.
-
-        self.last_fetch = time.time()
-
-        # self.spooler.pop()
-        if isinstance(element, int):
-            self.spooled_item = (element,)
-        elif isinstance(element, tuple):
-            self.spooled_item = element
-        else:
-            try:
-                self.spooled_item = element.generate()
-            except AttributeError:
-                try:
-                    self.spooled_item = element()
-                except TypeError:
-                    # This could be a text element, some unrecognized type.
-                    return
-
-    def command(self, command, *values):
-        """Commands are middle language LaserCommandConstants there values are given."""
-        if isinstance(command, tuple):
-            values = command[1:]
-            command = command[0]
-        if not isinstance(command, int):
-            return False  # Command type is not recognized.
-
-        try:
-            if command == COMMAND_LASER_OFF:
-                self.laser_off()
-            elif command == COMMAND_LASER_ON:
-                self.laser_on()
-            elif command == COMMAND_LASER_DISABLE:
-                self.laser_disable()
-            elif command == COMMAND_LASER_ENABLE:
-                self.laser_enable()
-            elif command == COMMAND_CUT:
-                x, y = values
-                self.cut(x, y)
-            elif command == COMMAND_MOVE:
-                x, y = values
-                self.move(x, y)
-            elif command == COMMAND_JOG:
-                x, y = values
-                self.jog(x, y, mode=0, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_SWITCH:
-                x, y = values
-                self.jog(x, y, mode=1, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_JOG_FINISH:
-                x, y = values
-                self.jog(x, y, mode=2, min_jog=self.context.opt_jog_minimum)
-            elif command == COMMAND_HOME:
-                self.home(*values)
-            elif command == COMMAND_LOCK:
-                self.lock_rail()
-            elif command == COMMAND_UNLOCK:
-                self.unlock_rail()
-            elif command == COMMAND_PLOT:
-                self.plot_plot(values[0])
-            elif command == COMMAND_BLOB:
-                self.send_blob(values[0], values[1])
-            elif command == COMMAND_PLOT_START:
-                self.plot_start()
-            elif command == COMMAND_SET_SPEED:
-                self.set_speed(values[0])
-            elif command == COMMAND_SET_POWER:
-                self.set_power(values[0])
-            elif command == COMMAND_SET_PPI:
-                self.set_ppi(values[0])
-            elif command == COMMAND_SET_PWM:
-                self.set_pwm(values[0])
-            elif command == COMMAND_SET_STEP:
-                self.set_step(values[0])
-            elif command == COMMAND_SET_OVERSCAN:
-                self.set_overscan(values[0])
-            elif command == COMMAND_SET_ACCELERATION:
-                self.set_acceleration(values[0])
-            elif command == COMMAND_SET_D_RATIO:
-                self.set_d_ratio(values[0])
-            elif command == COMMAND_SET_DIRECTION:
-                self.set_directions(values[0], values[1], values[2], values[3])
-            elif command == COMMAND_SET_INCREMENTAL:
-                self.set_incremental()
-            elif command == COMMAND_SET_ABSOLUTE:
-                self.set_absolute()
-            elif command == COMMAND_SET_POSITION:
-                self.set_position(values[0], values[1])
-            elif command == COMMAND_MODE_RAPID:
-                self.ensure_rapid_mode(*values)
-            elif command == COMMAND_MODE_PROGRAM:
-                self.ensure_program_mode(*values)
-            elif command == COMMAND_MODE_RASTER:
-                self.ensure_raster_mode(*values)
-            elif command == COMMAND_MODE_FINISHED:
-                self.ensure_finished_mode(*values)
-            elif command == COMMAND_WAIT:
-                self.wait(values[0])
-            elif command == COMMAND_WAIT_FINISH:
-                self.wait_finish()
-            elif command == COMMAND_BEEP:
-                OS_NAME = platform.system()
-                if OS_NAME == "Windows":
-                    try:
-                        import winsound
-
-                        for x in range(5):
-                            winsound.Beep(2000, 100)
-                    except Exception:
-                        pass
-                elif OS_NAME == "Darwin":  # Mac
-                    os.system("afplay /System/Library/Sounds/Ping.aiff")
-                else:  # Assuming other linux like system
-                    print("\a")  # Beep.
-            elif command == COMMAND_FUNCTION:
-                if len(values) >= 1:
-                    t = values[0]
-                    if callable(t):
-                        t()
-            elif command == COMMAND_CONSOLE:
-                if len(values) == 1:
-                    fn = self.context.console_function(values[0])
-                    fn()
-            elif command == COMMAND_SIGNAL:
-                if isinstance(values, str):
-                    self.context.signal(values, None)
-                elif len(values) >= 2:
-                    self.context.signal(values[0], *values[1:])
-        except AttributeError:
-            pass
-        return True
-
-    def realtime_command(self, command, *values):
-        """Asks for the execution of a realtime command. Unlike the spooled commands these
-        return False if rejected and something else if able to be performed. These will not
-        be queued. If rejected. They must be performed in realtime or cancelled.
+    def move_rel(self, dx, dy):
         """
-        try:
-            if command == REALTIME_PAUSE:
-                self.pause()
-            elif command == REALTIME_RESUME:
-                self.resume()
-            elif command == REALTIME_RESET:
-                self.reset()
-            elif command == REALTIME_STATUS:
-                self.status()
-            elif command == REALTIME_SAFETY_DOOR:
-                self.safety_door()
-            elif command == REALTIME_JOG_CANCEL:
-                self.jog_cancel(*values)
-            elif command == REALTIME_SPEED_PERCENT:
-                self.realtime_speed_percent(*values)
-            elif command == REALTIME_SPEED:
-                self.realtime_speed(*values)
-            elif command == REALTIME_RAPID_PERCENT:
-                self.realtime_rapid_percent(*values)
-            elif command == REALTIME_RAPID:
-                self.realtime_rapid(*values)
-            elif command == REALTIME_POWER_PERCENT:
-                self.realtime_power_percent(*values)
-            elif command == REALTIME_POWER:
-                self.realtime_power(*values)
-            elif command == REALTIME_OVERSCAN:
-                self.realtime_overscan(*values)
-            elif command == REALTIME_LASER_DISABLE:
-                self.realtime_laser_disable(*values)
-            elif command == REALTIME_LASER_ENABLE:
-                self.realtime_laser_enable(*values)
-            elif command == REALTIME_FLOOD_COOLANT:
-                self.realtime_flood_coolant(*values)
-            elif command == REALTIME_MIST_COOLANT:
-                self.realtime_mist_coolant(*values)
-        except AttributeError:
-            pass  # Method doesn't exist.
+        Requests laser move relative position dx, dy
 
-    def data_output(self, e):
-        self.output.write(e)
-
-    def hold(self):
+        @param dx:
+        @param dy:
+        @return:
         """
-        Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
-        criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
-        as soon as it does not hold the data.
 
-        :return: Whether data interpretation should hold.
+    def dwell(self, time_in_ms):
         """
-        temp_hold = False
-        fail_hold = False
-        for i, hold in enumerate(self.temp_holds):
-            if not hold():
-                self.temp_holds[i] = None
-                fail_hold = True
-            else:
-                temp_hold = True
-        if fail_hold:
-            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
-        if temp_hold:
-            return True
-        for hold in self.holds:
-            if hold():
-                return True
-        return False
+        Requests that the laser fire in place for the given time period.
+
+        @param time_in_ms:
+        @return:
+        """
 
     def laser_off(self, *values):
-        self.laser = False
+        """
+        Turn laser off in place.
+
+        @param values:
+        @return:
+        """
+        pass
 
     def laser_on(self, *values):
-        self.laser = True
-
-    def laser_disable(self, *values):
-        self.settings.laser_enabled = False
-
-    def laser_enable(self, *values):
-        self.settings.laser_enabled = True
-
-    def plot_plot(self, plot):
         """
-        :param plot:
-        :return:
+        Turn laser on in place.
+
+        @param values:
+        @return:
         """
-        self.plot_planner.push(plot)
+        pass
+
+    def plot(self, plot):
+        """
+        Gives the driver a bit of cutcode that should be plotted.
+        @param plot:
+        @return:
+        """
+        pass
 
     def plot_start(self):
-        if self.plot is None:
-            self.plot = self.plot_planner.gen()
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
 
-    def jog(self, x, y, mode=0, min_jog=127):
-        self.current_x = x
-        self.current_y = y
+        @return:
+        """
 
-    def move(self, x, y):
-        self.current_x = x
-        self.current_y = y
+    def blob(self, data_type, data):
+        """
+        Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
+        bunch of .rd code, or Lihuiyu device it could be egv code. It's a method of sending pre-chewed data to the
+        device.
 
-    def cut(self, x, y):
-        self.current_x = x
-        self.current_y = y
+        @param type:
+        @param data:
+        @return:
+        """
 
     def home(self, *values):
-        self.current_x = 0
-        self.current_y = 0
+        """
+        Home the laser.
 
-    def ensure_rapid_mode(self, *values):
-        if self.state == DRIVER_STATE_RAPID:
-            return
-        self.state = DRIVER_STATE_RAPID
-        self.context.signal("driver;mode", self.state)
+        @param values:
+        @return:
+        """
 
-    def ensure_finished_mode(self, *values):
-        if self.state == DRIVER_STATE_FINISH:
-            return
-        self.state = DRIVER_STATE_FINISH
-        self.context.signal("driver;mode", self.state)
+    def lock_rail(self):
+        """
+        For plotter-style lasers this should prevent the laser bar from moving.
+        @return:
+        """
 
-    def ensure_program_mode(self, *values):
-        if self.state == DRIVER_STATE_PROGRAM:
-            return
-        self.state = DRIVER_STATE_PROGRAM
-        self.context.signal("driver;mode", self.state)
+    def unlock_rail(self):
+        """
+        For plotter-style jobs this should free the laser head to be movable by the user.
 
-    def ensure_raster_mode(self, *values):
-        if self.state == DRIVER_STATE_RASTER:
-            return
-        self.state = DRIVER_STATE_RASTER
-        self.context.signal("driver;mode", self.state)
+        @return:
+        """
 
-    def set_speed(self, speed=None):
-        self.settings.speed = speed
+    def rapid_mode(self, *values):
+        """
+        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
+        batch of commands.
 
-    def set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        @param values:
+        @return:
+        """
 
-    def set_ppi(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+    def finished_mode(self, *values):
+        """
+        Finished mode is after a large batch of jobs is done.
 
-    def set_pwm(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        @param values:
+        @return:
+        """
 
-    def set_d_ratio(self, d_ratio=None):
-        self.settings.d_ratio = d_ratio
+    def program_mode(self, *values):
+        """
+        Program mode is the state lasers often use to send a large batch of commands.
+        @param values:
+        @return:
+        """
 
-    def set_acceleration(self, accel=None):
-        self.settings.acceleration = accel
+    def raster_mode(self, *values):
+        """
+        Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
+        many lasers have specialty values
+        @param values:
+        @return:
+        """
 
-    def set_step(self, step=None):
-        self.settings.raster_step = step
-
-    def set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
-
-    def set_incremental(self, *values):
-        self.is_relative = True
-
-    def set_absolute(self, *values):
-        self.is_relative = False
+    def set(self, key, value):
+        """
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
 
     def set_position(self, x, y):
-        self.current_x = x
-        self.current_y = y
+        """
+        This should set an offset position.
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        used in step-repeat.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        pass
 
     def wait(self, t):
+        """
+        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
+        called first this should pause the machine without current work acting as a dwell.
+
+        @param t:
+        @return:
+        """
         time.sleep(float(t))
 
     def wait_finish(self, *values):
-        """Adds an additional holding requirement if the pipe has any data."""
-        self.temp_holds.append(lambda: len(self.output) != 0)
+        """
+        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
+        from being sent with returning True for the until that criteria is met.
 
-    def reset(self):
-        if self.spooler is not None:
-            self.spooler.clear_queue()
-        self.plot_planner.clear()
-        self.spooled_item = None
-        self.temp_holds.clear()
+        @param values:
+        @return:
+        """
+        self.hold = True
+
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.context.signal(signal, *args)
+
+    def pause(self, *args):
+        """
+        Asks that the laser be paused.
+
+        @param args:
+        @return:
+        """
+        self.paused = True
+
+    def resume(self, *args):
+        """
+        Asks that the laser be resumed.
+
+        To work this command should usually be put into the realtime work queue for the laser.
+
+        @param args:
+        @return:
+        """
+        self.paused = False
+
+    def reset(self, *args):
+        """
+        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+        deleted.
+        Asks that the device resets, and clears all current work.
+
+        @param args:
+        @return:
+        """
 
     def status(self):
+        """
+        Asks that this device status be updated.
+
+        @return:
+        """
         parts = list()
-        parts.append("x=%f" % self.current_x)
-        parts.append("y=%f" % self.current_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append("x=%f" % self.native_x)
+        parts.append("y=%f" % self.native_y)
+        parts.append("speed=%f" % self.settings.get("speed", 0.0))
+        parts.append("power=%d" % self.settings.get("power", 0))
         status = ";".join(parts)
         self.context.signal("driver;status", status)
-
-
-class Drivers(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
-    def get_driver(self, driver_name, **kwargs):
-        dev = "device/%s" % driver_name
-        try:
-            return self.context.registered[dev][1]
-        except (KeyError, IndexError):
-            return None
-
-    def get_or_make_driver(self, device_name, driver_type=None, **kwargs):
-        dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
-            device = [None, None, None]
-            self.context.registered[dev] = device
-            self.context.signal("legacy_spooler_label", device_name)
-        if device[1] is not None and driver_type is None:
-            return device[1]
-        try:
-            for itype in self.context.match("driver/%s" % driver_type):
-                driver_class = self.context.registered[itype]
-                driver = driver_class(self.context, device_name, **kwargs)
-                device[1] = driver
-                self.context.signal("legacy_spooler_label", device_name)
-                return driver
-        except (KeyError, IndexError):
-            return None
-
-    def default_driver(self):
-        return self.get_driver(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.drivers = self
-
-        _ = self.context._
-
-        @context.console_option("new", "n", type=str, help=_("new driver type"))
-        @self.context.console_command(
-            "driver",
-            help=_("driver<?> <command>"),
-            regex=True,
-            input_type=(None, "spooler"),
-            output_type="driver",
-        )
-        def driver_base(
-            command, channel, _, data=None, new=None, remainder=None, **kwgs
-        ):
-            spooler = None
-            if data is None:
-                if len(command) > 6:
-                    device_name = command[6:]
-                    self.context.active = device_name
-                else:
-                    device_name = self.context.active
-            else:
-                spooler, device_name = data
-
-            driver = self.get_or_make_driver(device_name, new)
-            if driver is None:
-                raise SyntaxError("No Driver.")
-
-            if spooler is not None:
-                try:
-                    driver.spooler = spooler
-                    spooler.next = driver
-                    driver.prev = spooler
-                except AttributeError:
-                    pass
-            elif remainder is None:
-                channel(_("----------"))
-                channel(_("Driver:"))
-                for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                    channel("%d: %s" % (i, drv))
-                channel(_("----------"))
-                channel(_("Driver %s:" % device_name))
-                channel(str(driver))
-                channel(_("----------"))
-            return "driver", (driver, device_name)
-
-        @self.context.console_command(
-            "list",
-            help=_("driver<?> list"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_list(command, channel, _, data_type=None, data=None, **kwgs):
-            driver_obj, name = data
-            channel(_("----------"))
-            channel(_("Driver:"))
-            for i, drv in enumerate(self.context.root.match("device", suffix=True)):
-                channel("%d: %s" % (i, drv))
-            channel(_("----------"))
-            channel(_("Driver %s:" % name))
-            channel(str(driver_obj))
-            channel(_("----------"))
-            return data_type, data
-
-        @context.console_command(
-            "type",
-            help=_("list driver types"),
-            input_type="driver",
-        )
-        def list_type(channel, _, **kwgs):
-            channel(_("----------"))
-            channel(_("Drivers permitted:"))
-            for i, name in enumerate(context.match("driver/", suffix=True)):
-                channel("%d: %s" % (i + 1, name))
-            channel(_("----------"))
-
-        @self.context.console_command(
-            "reset",
-            help=_("driver<?> reset"),
-            input_type="driver",
-            output_type="driver",
-        )
-        def driver_reset(data_type=None, data=None, **kwargs):
-            driver_obj, name = data
-            driver_obj.reset()
-            return data_type, data

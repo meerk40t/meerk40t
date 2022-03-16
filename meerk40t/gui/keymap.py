@@ -1,4 +1,5 @@
 import platform
+
 import wx
 
 from .icons import icons8_keyboard_50
@@ -22,7 +23,9 @@ class KeymapPanel(wx.Panel):
         )
         self.button_add = wx.Button(self, wx.ID_ANY, _("Add Hotkey"))
         self.text_key_name = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_command_name = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_command_name = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -30,19 +33,17 @@ class KeymapPanel(wx.Panel):
         self.button_add.Bind(wx.EVT_BUTTON, self.on_button_add_hotkey)
         self.text_command_name.Bind(wx.EVT_TEXT_ENTER, self.on_button_add_hotkey)
         # end wxGlade
-        self.list_keymap.Bind(
-            wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick
-        )
+        self.list_keymap.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick)
         self.list_keymap.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_activated)
         self.text_key_name.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.text_key_name.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.key_pressed = False
 
-    def initialize(self):
+    def pane_show(self):
         self.reload_keymap()
         self.Children[0].SetFocus()
 
-    def finalize(self):
+    def pane_hide(self):
         pass
 
     def __set_properties(self):
@@ -71,7 +72,7 @@ class KeymapPanel(wx.Panel):
         element = event.Text
         self.text_key_name.SetValue(element)
         self.text_command_name.SetValue(
-            self.context.keymap[KeymapPanel.__translate_from_mac(element)]
+            self.context.bind.keymap[KeymapPanel.__translate_from_mac(element)]
         )
 
     def on_item_rightclick(self, event):
@@ -80,17 +81,17 @@ class KeymapPanel(wx.Panel):
         convert = menu.Append(
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
-        convert.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element))
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
         convert = menu.Append(
             wx.ID_ANY, _("Reset Keymap to defaults"), "", wx.ITEM_NORMAL
         )
-        convert.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element))
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
         menu.Destroy()
 
     def on_tree_popup_clear(self, element):
         def delete(event=None):
-            self.context.default_keymap()
+            self.context.bind.default_keymap()
             self.reload_keymap()
 
         return delete
@@ -98,13 +99,27 @@ class KeymapPanel(wx.Panel):
     def on_tree_popup_delete(self, element):
         def delete(event=None):
             try:
-                del self.context.keymap[element]
+                del self.context.bind.keymap[element]
                 self.list_keymap.DeleteAllItems()
                 self.reload_keymap()
             except KeyError:
                 pass
 
         return delete
+
+    def reload_keymap(self):
+        self.list_keymap.DeleteAllItems()
+        self.list_index.clear()
+        i = 0
+        for key, value in self.context.bind.keymap.items():
+            key = KeymapPanel.__translate_to_mac(key)
+            m = self.list_keymap.InsertItem(0, str(key))
+            if m != -1:
+                self.list_keymap.SetItem(m, 1, str(value))
+                self.list_keymap.SetItemData(m, i)
+                self.list_index.append(KeymapPanel.__split_modifiers(key))
+                i += 1
+        self.list_keymap.SortItems(self.__list_sort_compare)
 
     def on_button_add_hotkey(self, event=None):  # wxGlade: Keymap.<event_handler>
         keystroke = self.text_key_name.GetValue()
@@ -132,7 +147,7 @@ class KeymapPanel(wx.Panel):
             return
         origkey = self.text_key_name.GetValue()
         key = KeymapPanel.__translate_from_mac(origkey)
-        self.context.keymap[key] = self.text_command_name.GetValue()
+        self.context.bind.keymap[key] = self.text_command_name.GetValue()
         self.text_key_name.SetValue("")
         self.text_command_name.SetValue("")
         self.list_keymap.DeleteAllItems()
@@ -186,20 +201,6 @@ class KeymapPanel(wx.Panel):
         else:
             self.list_keymap.Select(i, False)
         return i
-
-    def reload_keymap(self):
-        self.list_keymap.DeleteAllItems()
-        self.list_index.clear()
-        i = 0
-        for key, value in self.context.keymap.items():
-            key = KeymapPanel.__translate_to_mac(key)
-            m = self.list_keymap.InsertItem(0, str(key))
-            if m != -1:
-                self.list_keymap.SetItem(m, 1, str(value))
-                self.list_keymap.SetItemData(m, i)
-                self.list_index.append(KeymapPanel.__split_modifiers(key))
-                i += 1
-        self.list_keymap.SortItems(self.__list_sort_compare)
 
     @staticmethod
     def __split_modifiers(key):
@@ -262,14 +263,27 @@ class Keymap(MWindow):
         super().__init__(500, 530, *args, **kwds)
 
         self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/config/Keymap",
+            {
+                "label": _("Keymap"),
+                "icon": icons8_keyboard_50,
+                "tip": _("Opens Keymap Window"),
+                "action": lambda v: kernel.console("window toggle Keymap\n"),
+            },
+        )
+
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

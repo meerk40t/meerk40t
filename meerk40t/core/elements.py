@@ -4,39 +4,19 @@ import re
 from copy import copy
 from math import sin, cos, pi, gcd, tau
 
-from ..device.lasercommandconstants import (
-    COMMAND_BEEP,
-    COMMAND_CONSOLE,
-    COMMAND_FUNCTION,
-    COMMAND_HOME,
-    COMMAND_LASER_OFF,
-    COMMAND_LASER_ON,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_WAIT,
-    COMMAND_WAIT_FINISH,
-)
-from ..image.actualize import actualize
-from ..kernel import Modifier
+from meerk40t.kernel import Service, Settings
+
 from ..svgelements import (
-    SVG_STRUCT_ATTRIB,
     Angle,
     Circle,
-    Close,
     Color,
-    CubicBezier,
     Ellipse,
     Group,
-    Length as SVGLength,
-    Line,
     Matrix,
-    Move,
     Path,
     Point,
     Polygon,
     Polyline,
-    QuadraticBezier,
     Rect,
     Shape,
     SimpleLine,
@@ -49,28 +29,78 @@ from ..svgelements import (
     PATTERN_FLOAT,
     REGEX_LENGTH,
 )
-from ..tools.rastergrouping import group_overlapped_rasters
-from .cutcode import (
-    CubicCut,
-    CutCode,
-    CutGroup,
-    LaserSettings,
-    LineCut,
-    QuadCut,
-    RasterCut,
+from .cutcode import CutCode
+from .node.commandop import CommandOperation
+from .node.consoleop import ConsoleOperation
+from .node.laserop import (
+    CutOpNode,
+    DotsOpNode,
+    EngraveOpNode,
+    ImageOpNode,
+    RasterOpNode,
 )
+from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
+from .node.rootnode import RootNode
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
-        kernel.register("modifier/Elemental", Elemental)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Elemental")
-    elif lifecycle == "ready":
-        context = kernel.root
-        context.signal("rebuild_tree")
-        context.signal("refresh_tree")
+        kernel.add_service("elements", Elemental(kernel))
+        # kernel.add_service("elements", Elemental(kernel,1))
+    elif lifecycle == "postboot":
+        _ = kernel.root._
+        elements = kernel.elements
+        choices = [
+            {
+                "attr": "operation_default_empty",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Default Operation Other/Red/Blue"),
+                "tip": _(
+                    "Sets Operations to Other/Red/Blue if loaded with no operations."
+                ),
+            },
+            {
+                "attr": "classify_reverse",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Classify Reversed"),
+                "tip": _(
+                    "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
+                ),
+            },
+            {
+                "attr": "legacy_classification",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Legacy Classify"),
+                "tip": _(
+                    "Use the legacy classification algorithm rather than the modern classification algorithm."
+                ),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
+    elif lifecycle == "prestart":
+        if hasattr(kernel.args, "input") and kernel.args.input is not None:
+            # Load any input file
+            from os.path import realpath
+
+            elements = kernel.elements
+
+            elements.load(realpath(kernel.args.input.name))
+            elements.classify(list(elements.elems()))
+    elif lifecycle == "poststart":
+        if hasattr(kernel.args, "output") and kernel.args.output is not None:
+            # output the file you have at this point.
+            from os.path import realpath
+
+            elements = kernel.elements
+
+            elements.save(realpath(kernel.args.output.name))
 
 
 MILS_IN_MM = 39.3701
@@ -92,6 +122,7 @@ image_simplify_re = re.compile(
 
 OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
 
+#TODO: MERGE with units.LENGTH info.
 # Overload svgelement Length class by adding a validity check
 class Length(SVGLength):
     is_valid_length = False
@@ -128,1640 +159,9 @@ def reversed_enumerate(collection: list):
         yield i, collection[i]
 
 
-def isDot(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Close):
-            return True
-        if isinstance(path[1], Line) and path[1].length() == 0:
-            return True
-    return False
-
-
-def isStraightLine(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Line) and path[1].length() > 0:
-            return True
-    return False
-
-
-"""
-The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
-particular class types and the interactions between these types and functions applied are registered in the kernel.
-
-Types:
-root: Root Tree element
-branch ops: Operation Branch
-branch elems: Elements Branch
-opnode: Element below op branch which stores specific data.
-op: LayerOperation within Operation Branch.
-opcmd: CommandOperation within Operation Branch.
-elem: Element with Element Branch or subgroup.
-file: File Group within Elements Branch
-group: Group type within Branch Elems or opnode.
-cutcode: CutCode type within Operation Branch and Element Branch.
-
-rasternode: theoretical: would store all the opnodes to be rastered. Such that we could store rasters in images.
-
-Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
-"""
-
-
-class Node:
+class Elemental(Service):
     """
-    Nodes are elements within the tree which stores most of the objects in Elements.
-    """
-
-    def __init__(self, data_object=None, type=None, *args, **kwargs):
-        super().__init__()
-        self._children = list()
-        self._root = None
-        self._parent = None
-        self._references = list()
-
-        self.object = data_object
-        self.type = type
-
-        self._selected = False
-        self._emphasized = False
-        self._highlighted = False
-        self._target = False
-
-        self._opened = False
-
-        self._bounds = None
-        self._bounds_dirty = True
-        self.label = None
-
-        self.item = None
-        self.icon = None
-        self.cache = None
-        self.last_transform = None
-
-    def __repr__(self):
-        return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
-
-    def __eq__(self, other):
-        return other is self
-
-    def is_movable(self):
-        return self.type not in ("branch elems", "branch ops", "root")
-
-    def drop(self, drag_node):
-        drop_node = self
-        if drag_node.type == "elem":
-            if drop_node.type == "op":
-                # Disallow drop of non-image elems onto an Image op.
-                # Disallow drop of image elems onto a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Dots"
-                ):
-                    return False
-                # Dragging element onto operation adds that element to the op.
-                drop_node.add(drag_node.object, type="opnode", pos=0)
-                return True
-            elif drop_node.type == "opnode":
-                op = drop_node.parent
-                # Disallow drop of non-image elems onto an opnode inside an Image op.
-                # Disallow drop of image elems onto an opnode inside a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and op.operation == "Image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
-                ):
-                    return False
-                # Dragging element onto existing opnode in operation adds that element to the op after the opnode.
-                drop_index = op.children.index(drop_node)
-                op.add(drag_node.object, type="opnode", pos=drop_index)
-                return True
-            elif drop_node.type == "group":
-                # Dragging element onto a group moves it to the group node.
-                drop_node.append_child(drag_node)
-                return True
-        elif drag_node.type == "opnode":
-            if drop_node.type == "op":
-                # Disallow drop of non-image opnodes onto an Image op.
-                # Disallow drop of image opnodes onto a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage)
-                    and drop_node.operation == "Dots"
-                ):
-                    return False
-                # Move an opnode to end of op.
-                drop_node.append_child(drag_node)
-                return True
-            if drop_node.type == "opnode":
-                op = drop_node.parent
-                # Disallow drop of non-image opnodes onto an opnode inside an Image op.
-                # Disallow drop of image opnodes onto an opnode inside a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and op.operation == "Image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage) and op.operation == "Dots"
-                ):
-                    return False
-                # Move an opnode to after another opnode.
-                drop_node.insert_sibling(drag_node)
-                return True
-        elif drag_node.type in ("op", "cmdop", "consoleop"):
-            if drop_node.type in ("op", "cmdop", "consoleop"):
-                # Move operation to a different position.
-                drop_node.insert_sibling(drag_node)
-                return True
-            elif drop_node.type == "branch ops":
-                # Dragging operation to op branch to effectively move to bottom.
-                drop_node.append_child(drag_node)
-                return True
-        elif drag_node.type in "file":
-            if drop_node.type == "op":
-                some_nodes = False
-                for e in drag_node.flat("elem"):
-                    # Disallow drop of non-image elems onto an Image op.
-                    # Disallow drop of image elems onto a Dot op.
-                    if (
-                        not isinstance(e.object, SVGImage)
-                        and drop_node.operation == "Image"
-                    ) or (
-                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
-                    ):
-                        continue
-                    # Add element to operation
-                    drop_node.add(e.object, type="opnode")
-                    some_nodes = True
-                return some_nodes
-        elif drag_node.type == "group":
-            if drop_node.type == "elem":
-                # Move a group
-                drop_node.insert_sibling(drag_node)
-                return True
-            elif drop_node.type in ("group", "file"):
-                # Move a group
-                drop_node.append_child(drag_node)
-                return True
-            elif drop_node.type == "op":
-                some_nodes = False
-                for e in drag_node.flat("elem"):
-                    # Disallow drop of non-image elems onto an Image op.
-                    # Disallow drop of image elems onto a Dot op.
-                    if (
-                        not isinstance(e.object, SVGImage)
-                        and drop_node.operation == "Image"
-                    ) or (
-                        isinstance(e.object, SVGImage) and drop_node.operation == "Dots"
-                    ):
-                        continue
-                    # Add element to operation
-                    drop_node.add(e.object, type="opnode")
-                    some_nodes = True
-                return some_nodes
-        return False
-
-    def reverse(self):
-        self._children.reverse()
-        self.notify_reorder()
-
-    @property
-    def children(self):
-        return self._children
-
-    @property
-    def targeted(self):
-        return self._target
-
-    @targeted.setter
-    def targeted(self, value):
-        self._target = value
-        self.notify_targeted(self)
-
-    @property
-    def highlighted(self):
-        return self._highlighted
-
-    @highlighted.setter
-    def highlighted(self, value):
-        self._highlighted = value
-        self.notify_highlighted(self)
-
-    @property
-    def emphasized(self):
-        return self._emphasized
-
-    @emphasized.setter
-    def emphasized(self, value):
-        self._emphasized = value
-        self.notify_emphasized(self)
-
-    @property
-    def selected(self):
-        return self._selected
-
-    @selected.setter
-    def selected(self, value):
-        self._selected = value
-        self.notify_selected(self)
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @property
-    def root(self):
-        return self._root
-
-    @staticmethod
-    def node_bbox(node):
-        for n in node._children:
-            Node.node_bbox(n)
-        # Recurse depth first. All children have been processed.
-        node._bounds_dirty = False
-        node._bounds = None
-        if node.type in ("file", "group"):
-            for c in node._children:
-                # Every child in n is already solved.
-                assert not c._bounds_dirty
-                if c._bounds is None:
-                    continue
-                if node._bounds is None:
-                    node._bounds = c._bounds
-                    continue
-                node._bounds = (
-                    min(node._bounds[0], c._bounds[0]),
-                    min(node._bounds[1], c._bounds[1]),
-                    max(node._bounds[2], c._bounds[2]),
-                    max(node._bounds[3], c._bounds[3]),
-                )
-        else:
-            e = node.object
-            if node.type == "elem" and hasattr(e, "bbox"):
-                node._bounds = e.bbox()
-
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self.node_bbox(self)
-        return self._bounds
-
-    def notify_created(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_created(node=node, **kwargs)
-
-    def notify_destroyed(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_destroyed(node=node, **kwargs)
-
-    def notify_attached(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_attached(node=node, **kwargs)
-
-    def notify_detached(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_detached(node=node, **kwargs)
-
-    def notify_changed(self, node, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_changed(node=node, **kwargs)
-
-    def notify_selected(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_selected(node=node, **kwargs)
-
-    def notify_emphasized(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_emphasized(node=node, **kwargs)
-
-    def notify_targeted(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_targeted(node=node, **kwargs)
-
-    def notify_highlighted(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_highlighted(node=node, **kwargs)
-
-    def notify_modified(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_modified(node=node, **kwargs)
-
-    def notify_altered(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_altered(node=node, **kwargs)
-
-    def notify_expand(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_expand(node=node, **kwargs)
-
-    def notify_collapse(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_collapse(node=node, **kwargs)
-
-    def notify_reorder(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_reorder(node=node, **kwargs)
-
-    def notify_update(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_update(node=node, **kwargs)
-
-    def notify_focus(self, node=None, **kwargs):
-        if self._root is not None:
-            if node is None:
-                node = self
-            self._root.notify_focus(node=node, **kwargs)
-
-    def focus(self):
-        self.notify_focus(self)
-
-    def invalidated_node(self):
-        """
-        Invalidation of the individual node.
-        """
-        self._bounds_dirty = True
-        self._bounds = None
-
-    def invalidated(self):
-        """
-        Invalidation occurs when the underlying data is altered or modified. This propagates up from children to
-        invalidate the entire parental line.
-        """
-        self.invalidated_node()
-        if self._parent is not None:
-            self._parent.invalidated()
-
-    def modified(self):
-        """
-        The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
-        data.
-        """
-        self.invalidated()
-        self.notify_modified(self)
-
-    def altered(self):
-        """
-        The data structure was changed. Any assumptions about what this object is/was are void.
-        """
-        try:
-            self.cache.UnGetNativePath(self.object.cache.NativePath)
-        except AttributeError:
-            pass
-        try:
-            del self.cache
-            del self.icon
-        except AttributeError:
-            pass
-        self.cache = None
-        self.icon = None
-        self.invalidated()
-        self.notify_altered(self)
-
-    def unregister_object(self):
-        try:
-            self.cache.UngetNativePath(self.cache.NativePath)
-        except AttributeError:
-            pass
-        try:
-            del self.cache
-        except AttributeError:
-            pass
-        try:
-            del self.icon
-        except AttributeError:
-            pass
-
-    def unregister(self):
-        self.unregister_object()
-        try:
-            self.targeted = False
-            self.emphasized = False
-            self.highlighted = False
-        except AttributeError:
-            pass
-
-    def add_all(self, objects, type=None, name=None, pos=None):
-        for obj in objects:
-            self.add(obj, type=type, label=name, pos=pos)
-            if pos is not None:
-                pos += 1
-
-    def add(self, data_object=None, type=None, label=None, pos=None):
-        """
-        Add a new node bound to the data_object of the type to the current node.
-        If the data_object itself is a node already it is merely attached.
-
-        :param data_object:
-        :param type:
-        :param label: display name for this node
-        :param pos:
-        :return:
-        """
-        if isinstance(data_object, Node):
-            node = data_object
-            if node._parent is not None:
-                raise ValueError("Cannot reparent node on add.")
-        else:
-            node_class = Node
-            if type is not None:
-                try:
-                    node_class = self._root.bootstrap[type]
-                except (KeyError, AttributeError):
-                    # AttributeError indicates that we are adding a node with a type to an object which is NOT part of the tree.
-                    # This should be treated as an exception, however when we run Execute Job (and possibly other tasks)
-                    # it adds nodes even though the object isn't part of the tree.
-                    pass
-                # except AttributeError:
-                #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
-            node = node_class(data_object)
-            node.set_label(label)
-            if self._root is not None:
-                self._root.notify_created(node)
-        node.type = type
-
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
-        return node
-
-    def label_from_source_cascade(self, element) -> str:
-        """
-        Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
-        node str. If something else provides a superior name it should be added in here.
-        """
-        element_type = element.__class__.__name__
-        if element_type == "SVGImage":
-            element_type = "Image"
-        elif element_type == "SVGText":
-            element_type = "Text"
-        elif element_type == "SimpleLine":
-            element_type = "Line"
-        elif isDot(element):
-            element_type = "Dot"
-
-        if element is not None:
-            desc = str(element)
-            if isinstance(element, Path):
-                desc = element_simplify_re.sub("", desc)
-                if len(desc) > 100:
-                    desc = desc[:100] + "…"
-                values = []
-                if element.stroke is not None:
-                    values.append("%s='%s'" % ("stroke", element.stroke))
-                if element.fill is not None:
-                    values.append("%s='%s'" % ("fill", element.fill))
-                if element.stroke_width is not None and element.stroke_width != 1.0:
-                    values.append(
-                        "%s=%s" % ("stroke-width", str(round(element.stroke_width, 2)))
-                    )
-                if not element.transform.is_identity():
-                    values.append("%s=%s" % ("transform", repr(element.transform)))
-                if element.id is not None:
-                    values.append("%s='%s'" % ("id", element.id))
-                if values:
-                    desc = "d='%s', %s" % (desc, ", ".join(values))
-                desc = element_type + "(" + desc + ")"
-            elif element_type == "Group":  # Group
-                desc = desc[1:-1]  # strip leading and trailing []
-                n = 1
-                while n:
-                    desc, n = group_simplify_re.subn("", desc)
-                n = 1
-                while n:
-                    desc, n = subgroup_simplify_re.subn("Group", desc)
-                desc = "%s(%s)" % (element_type, desc)
-            elif element_type == "Image":  # Image
-                desc = image_simplify_re.sub("", desc)
-            else:
-                desc = element_simplify_re.sub("", desc)
-        else:
-            desc = None
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["label"] + (": " + desc if desc else "")
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (
-                ": " + desc if desc else ""
-            )
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            if element.id is not None:
-                return str(element.id) + (": " + desc if desc else "")
-        except AttributeError:
-            pass
-
-        return desc if desc else str(element)
-
-    def set_label(self, name=None):
-        self.label = self.create_label(name)
-
-    def create_label(self, name=None):
-        """
-        Create a label for this node.
-        If a name is not specified either use a cascade (primarily for elements) or
-        use the string representation
-        :param name: Name to be set for this node.
-        :return: label
-        """
-        if name is not None:
-            return name
-        if self.object is not None:
-            return self.label_from_source_cascade(self.object)
-        return str(self)
-
-    def _flatten(self, node):
-        """
-        Yield this node and all descendants in a flat generation.
-
-        :param node: starting node
-        :return:
-        """
-        yield node
-        for c in self._flatten_children(node):
-            yield c
-
-    def _flatten_children(self, node):
-        """
-        Yield all descendants in a flat generation.
-
-        :param node: starting node
-        :return:
-        """
-        for child in node.children:
-            yield child
-            for c in self._flatten_children(child):
-                yield c
-
-    def flat(
-        self,
-        types=None,
-        cascade=True,
-        depth=None,
-        selected=None,
-        emphasized=None,
-        targeted=None,
-        highlighted=None,
-    ):
-        """
-        Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
-        of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
-        the criteria with respect to either the depth or the emphases.
-
-        :param types: types of nodes permitted to be returned
-        :param cascade: cascade all subitems if a group matches the criteria.
-        :param depth: depth to search within the tree.
-        :param selected: match only selected nodes
-        :param emphasized: match only emphasized nodes.
-        :param targeted: match only targeted nodes
-        :param highlighted: match only highlighted nodes
-        :return:
-        """
-        node = self
-        if (
-            (targeted is None or targeted == node.targeted)
-            and (emphasized is None or emphasized == node.emphasized)
-            and (selected is None or selected == node.selected)
-            and (highlighted is None or highlighted != node.highlighted)
-        ):
-            # Matches the emphases.
-            if cascade:
-                # Give every type-matched descendant.
-                for c in self._flatten(node):
-                    if types is None or c.type in types:
-                        yield c
-                # Do not recurse further. This node is end node.
-                return
-            else:
-                if types is None or node.type in types:
-                    yield node
-        if depth is not None:
-            if depth <= 0:
-                # Depth limit reached. Do not evaluate children.
-                return
-            depth -= 1
-        # Check all children.
-        for c in node.children:
-            yield from c.flat(
-                types, cascade, depth, selected, emphasized, targeted, highlighted
-            )
-
-    def count_children(self):
-        return len(self._children)
-
-    def objects_of_children(self, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self._children:
-            for o in q.objects_of_children(types):
-                yield o
-
-    def append_child(self, new_child):
-        """
-        Add the new_child node as the last child of the current node.
-        """
-        new_parent = self
-        source_siblings = new_child.parent.children
-        destination_siblings = new_parent.children
-
-        source_siblings.remove(new_child)  # Remove child
-        new_child.notify_detached(new_child)
-
-        destination_siblings.append(new_child)  # Add child.
-        new_child._parent = new_parent
-        new_child.notify_attached(new_child)
-
-    def insert_sibling(self, new_sibling):
-        """
-        Add the new_sibling node next to the current node.
-        """
-        reference_sibling = self
-        source_siblings = new_sibling.parent.children
-        destination_siblings = reference_sibling.parent.children
-
-        reference_position = destination_siblings.index(reference_sibling)
-
-        source_siblings.remove(new_sibling)
-
-        new_sibling.notify_detached(new_sibling)
-        destination_siblings.insert(reference_position, new_sibling)
-        new_sibling._parent = reference_sibling._parent
-        new_sibling.notify_attached(new_sibling, pos=reference_position)
-
-    def replace_object(self, new_object):
-        """
-        Replace this node's object with a new object.
-        """
-        if hasattr(self.object, "node"):
-            del self.object.node
-        for ref in list(self._references):
-            ref.object = new_object
-            ref.altered()
-        new_object.node = self
-        self.unregister_object()
-        self.object = new_object
-
-    def replace_node(self, *args, **kwargs):
-        """
-        Replace this current node with a bootstrapped replacement node.
-        """
-        parent = self._parent
-        index = parent._children.index(self)
-        parent._children.remove(self)
-        self.notify_detached(self)
-        node = parent.add(*args, **kwargs, pos=index)
-        self.notify_destroyed()
-        for ref in list(self._references):
-            ref.remove_node()
-        self.item = None
-        self._parent = None
-        self._root = None
-        self.type = None
-        self.unregister()
-        return node
-
-    def remove_node(self):
-        """
-        Remove the current node from the tree.
-
-        This function must iterate down and first remove all children from the bottom.
-        """
-        self.remove_all_children()
-        self._parent._children.remove(self)
-        self.notify_detached(self)
-        self.notify_destroyed(self)
-        for ref in list(self._references):
-            ref.remove_node()
-        self.item = None
-        self._parent = None
-        self._root = None
-        self.type = None
-        self.unregister()
-
-    def remove_all_children(self):
-        """
-        Removes all children of the current node.
-        """
-        for child in list(self.children):
-            child.remove_all_children()
-            child.remove_node()
-
-    def get(self, obj=None, type=None):
-        if (obj is None or obj == self.object) and (type is None or type == self.type):
-            return self
-        for n in self._children:
-            node = n.get(obj, type)
-            if node is not None:
-                return node
-
-    def move(self, dest, pos=None):
-        self._parent.remove(self)
-        dest.insert_node(self, pos=pos)
-
-
-class OpNode(Node):
-    """
-    OpNode is the bootstrapped node type for the opnode type.
-
-    OpNodes track referenced copies of vector element data.
-    """
-
-    def __init__(self, data_object):
-        super(OpNode, self).__init__(data_object)
-        data_object.node._references.append(self)
-
-    def __repr__(self):
-        return "OpNode('%s', %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self._parent),
-        )
-
-    def notify_destroyed(self, node=None, **kwargs):
-        self.object.node._references.remove(self)
-        super(OpNode, self).notify_destroyed()
-
-
-class ElemNode(Node):
-    """
-    ElemNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
-    """
-
-    def __init__(self, data_object):
-        super(ElemNode, self).__init__(data_object)
-        self.last_transform = None
-        data_object.node = self
-
-    def __repr__(self):
-        return "ElemNode('%s', %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self._parent),
-        )
-
-    def drop(self, drag_node):
-        drop_node = self
-        # Dragging element into element.
-        if drag_node.type == "elem":
-            drop_node.insert_sibling(drag_node)
-            return True
-        return False
-
-
-class GroupNode(Node):
-    """
-    GroupNode is the bootstrapped node type for the group type.
-    All group types are bootstrapped into this node object.
-    """
-
-    def __init__(self, data_object=None):
-        if data_object is None:
-            data_object = Group()
-        super(GroupNode, self).__init__(data_object)
-        self.last_transform = None
-        data_object.node = self
-
-    def __repr__(self):
-        return "GroupNode('%s', %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self._parent),
-        )
-
-    def drop(self, drag_node):
-        drop_node = self
-        # Dragging element into element.
-        if drag_node.type == "elem":
-            drop_node.insert_sibling(drag_node)
-            return True
-        return False
-
-
-class LaserOperation(Node):
-    """
-    Default object defining any operation done on the laser.
-
-    This is an Node type "op".
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self._operation = None
-        try:
-            self._operation = kwargs["operation"]
-        except KeyError:
-            self._operation = "Unknown"
-        self.color = None
-        self.output = True
-        self.show = True
-        self.default = False
-
-        self._status_value = "Queued"
-        self.settings = LaserSettings(*args, **kwargs)
-
-        try:
-            self.color = Color(kwargs["color"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.output = bool(kwargs["output"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.show = bool(kwargs["show"])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            self.default = bool(kwargs["default"])
-        except (ValueError, TypeError, KeyError):
-            pass
-
-        if len(args) == 1:
-            obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="opnode")
-            elif isinstance(obj, LaserOperation):
-                self._operation = obj.operation
-                self.color = Color(obj.color)
-                self.output = obj.output
-                self.show = obj.show
-                self.default = obj.default
-                self.settings = LaserSettings(obj.settings)
-
-        if self.operation == "Cut":
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("red")
-        elif self.operation == "Engrave":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("blue")
-        elif self.operation == "Raster":
-            if self.settings.raster_step == 0:
-                self.settings.raster_step = 2
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("black")
-        elif self.operation == "Image":
-            if self.settings.speed is None:
-                self.settings.speed = 150.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        elif self.operation == "Dots":
-            if self.settings.speed is None:
-                self.settings.speed = 35.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("transparent")
-        else:
-            if self.settings.speed is None:
-                self.settings.speed = 10.0
-            if self.settings.power is None:
-                self.settings.power = 1000.0
-            if self.color is None:
-                self.color = Color("white")
-
-    def __repr__(self):
-        return "LaserOperation('%s', %s)" % (self.type, str(self._operation))
-
-    def __str__(self):
-        op = self._operation
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if (
-            (self._operation in ("Raster", "Image") and self.settings.speed > 500)
-            or (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
-            or self.settings.power <= 100
-        ):
-            parts.append("❌")
-        if self.default:
-            parts.append("✓")
-        if self.settings.passes_custom and self.settings.passes != 1:
-            parts.append("%dX" % self.settings.passes)
-        if op is None:
-            op = "Unknown"
-        if self._operation == "Raster":
-            op += str(self.settings.raster_step)
-        parts.append(op)
-        if op == "Dots":
-            parts.append("%gms dwell" % self.settings.speed)
-            return " ".join(parts)
-        parts.append("%gmm/s" % self.settings.speed)
-        if self._operation in ("Raster", "Image"):
-            if self.settings.raster_swing:
-                raster_dir = "-"
-            else:
-                raster_dir = "="
-            if self.settings.raster_direction == 0:
-                raster_dir += "T2B"
-            elif self.settings.raster_direction == 1:
-                raster_dir += "B2T"
-            elif self.settings.raster_direction == 2:
-                raster_dir += "R2L"
-            elif self.settings.raster_direction == 3:
-                raster_dir += "L2R"
-            elif self.settings.raster_direction == 4:
-                raster_dir += "X"
-            else:
-                raster_dir += "%d" % self.settings.raster_direction
-            parts.append(raster_dir)
-        parts.append("%gppi" % self.settings.power)
-        if self._operation in ("Raster", "Image"):
-            if isinstance(self.settings.overscan, str):
-                parts.append("±%s" % self.settings.overscan)
-            else:
-                parts.append("±%d" % self.settings.overscan)
-        if (
-            self.operation in ("Cut", "Engrave", "Raster")
-            and not self.default
-            and self.color is not None
-        ):
-            parts.append("%s" % self.color.hex)
-        if self.settings.dratio_custom:
-            parts.append("d:%g" % self.settings.dratio)
-        if self.settings.acceleration_custom:
-            parts.append("a:%d" % self.settings.acceleration)
-        if self.settings.dot_length_custom:
-            parts.append("dot: %d" % self.settings.dot_length)
-        return " ".join(parts)
-
-    def __copy__(self):
-        return LaserOperation(self)
-
-    def copy_children(self, obj):
-        for element in obj.children:
-            self.add(element.object, type="opnode")
-
-    def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type="elem")
-
-    @property
-    def operation(self):
-        return self._operation
-
-    @operation.setter
-    def operation(self, v):
-        if self._operation != v:
-            self._operation = v
-            self.notify_update()
-
-    def time_estimate(self):
-        if self._operation in ("Cut", "Engrave"):
-            estimate = 0
-            for e in self.children:
-                e = e.object
-                if isinstance(e, Shape):
-                    try:
-                        length = e.length(error=1e-2, min_depth=2)
-                    except AttributeError:
-                        length = 0
-                    try:
-                        estimate += length / (MILS_IN_MM * self.settings.speed)
-                    except ZeroDivisionError:
-                        estimate = float("inf")
-            hours, remainder = divmod(estimate, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            return "%s:%s:%s" % (
-                int(hours),
-                str(int(minutes)).zfill(2),
-                str(int(seconds)).zfill(2),
-            )
-        elif self._operation in ("Raster", "Image"):
-            estimate = 0
-            for e in self.children:
-                e = e.object
-                if isinstance(e, SVGImage):
-                    try:
-                        step = e.raster_step
-                    except AttributeError:
-                        try:
-                            step = int(e.values["raster_step"])
-                        except (KeyError, ValueError):
-                            step = 1
-                    estimate += (e.image_width * e.image_height * step) / (
-                        MILS_IN_MM * self.settings.speed
-                    )
-            hours, remainder = divmod(estimate, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            return "%s:%s:%s" % (
-                int(hours),
-                str(int(minutes)).zfill(2),
-                str(int(seconds)).zfill(2),
-            )
-        return "Unknown"
-
-    def generate(self):
-        if self.operation == "Dots":
-            yield COMMAND_MODE_RAPID
-            yield COMMAND_SET_ABSOLUTE
-            for path_node in self.children:
-                try:
-                    obj = abs(path_node.object)
-                    first = obj.first_point
-                except (IndexError, AttributeError):
-                    continue
-                if first is None:
-                    continue
-                yield COMMAND_MOVE, first[0], first[1]
-                yield COMMAND_WAIT, 4.000  # I don't know how long the move will take to finish.
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON  # This can't be sent early since these are timed operations.
-                yield COMMAND_WAIT, (self.settings.speed / 1000.0)
-                yield COMMAND_LASER_OFF
-
-    def as_cutobjects(self, closed_distance=15, passes=1):
-        """
-        Generator of cutobjects for a particular operation.
-        """
-        settings = self.settings
-
-        if self._operation in ("Cut", "Engrave"):
-            for element in self.children:
-                object_path = element.object
-                if isinstance(object_path, SVGImage):
-                    box = object_path.bbox()
-                    path = Path(
-                        Polygon(
-                            (box[0], box[1]),
-                            (box[0], box[3]),
-                            (box[2], box[3]),
-                            (box[2], box[1]),
-                        )
-                    )
-                else:
-                    # Is a shape or path.
-                    if not isinstance(object_path, Path):
-                        path = abs(Path(object_path))
-                    else:
-                        path = abs(object_path)
-                    path.approximate_arcs_with_cubics()
-                settings.line_color = path.stroke
-                for subpath in path.as_subpaths():
-                    sp = Path(subpath)
-                    if len(sp) == 0:
-                        continue
-                    closed = (
-                        isinstance(sp[-1], Close)
-                        or abs(sp.z_point - sp.current_point) <= closed_distance
-                    )
-                    group = CutGroup(
-                        None,
-                        closed=closed,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    group.path = sp
-                    group.original_op = self._operation
-                    for seg in subpath:
-                        if isinstance(seg, Move):
-                            pass  # Move operations are ignored.
-                        elif isinstance(seg, Close):
-                            if seg.start != seg.end:
-                                group.append(
-                                    LineCut(
-                                        seg.start,
-                                        seg.end,
-                                        settings=settings,
-                                    )
-                                )
-                        elif isinstance(seg, Line):
-                            if seg.start != seg.end:
-                                group.append(
-                                    LineCut(
-                                        seg.start,
-                                        seg.end,
-                                        settings=settings,
-                                    )
-                                )
-                        elif isinstance(seg, QuadraticBezier):
-                            group.append(
-                                QuadCut(
-                                    seg.start,
-                                    seg.control,
-                                    seg.end,
-                                    settings=settings,
-                                )
-                            )
-                        elif isinstance(seg, CubicBezier):
-                            group.append(
-                                CubicCut(
-                                    seg.start,
-                                    seg.control1,
-                                    seg.control2,
-                                    seg.end,
-                                    settings=settings,
-                                )
-                            )
-                    if len(group) > 0:
-                        group[0].first = True
-                    for i, cut_obj in enumerate(group):
-                        cut_obj.closed = closed
-                        cut_obj.passes = passes
-                        cut_obj.parent = group
-                        try:
-                            cut_obj.next = group[i + 1]
-                        except IndexError:
-                            cut_obj.last = True
-                            cut_obj.next = group[0]
-                        cut_obj.previous = group[i - 1]
-                    yield group
-        elif self._operation == "Raster":
-            # By the time as_cutobject has been called, the elements in raster operations
-            # have already been converted to images.
-            step = settings.raster_step
-            assert step > 0
-            direction = settings.raster_direction
-            for element in self.children:
-                svg_image = element.object
-                if not isinstance(svg_image, SVGImage):
-                    continue
-
-                matrix = svg_image.transform
-                pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix, step)
-                box = (
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step,
-                )
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
-                    )
-                )
-                cut = RasterCut(
-                    pil_image,
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    settings=settings,
-                    passes=passes,
-                )
-                cut.path = path
-                cut.original_op = self._operation
-                yield cut
-                if direction == 4:
-                    cut = RasterCut(
-                        pil_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        crosshatch=True,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    cut.path = path
-                    cut.original_op = self._operation
-                    yield cut
-        elif self._operation == "Image":
-            for svg_image in self.children:
-                svg_image = svg_image.object
-                if not isinstance(svg_image, SVGImage):
-                    continue
-                settings = LaserSettings(self.settings)
-                try:
-                    settings.raster_step = int(svg_image.values["raster_step"])
-                except KeyError:
-                    # This overwrites any step that may have been defined in settings.
-                    settings.raster_step = (
-                        1  # If raster_step is not set image defaults to 1.
-                    )
-                if settings.raster_step <= 0:
-                    settings.raster_step = 1
-                try:
-                    settings.raster_direction = int(
-                        svg_image.values["raster_direction"]
-                    )
-                except KeyError:
-                    pass
-                step = settings.raster_step
-                matrix = svg_image.transform
-                pil_image = svg_image.image
-                pil_image, matrix = actualize(pil_image, matrix, step)
-                box = (
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    matrix.value_trans_x() + pil_image.width * step,
-                    matrix.value_trans_y() + pil_image.height * step,
-                )
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
-                    )
-                )
-                cut = RasterCut(
-                    pil_image,
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    settings=settings,
-                    passes=passes,
-                )
-                cut.path = path
-                cut.original_op = self._operation
-                yield cut
-
-                if settings.raster_direction == 4:
-                    cut = RasterCut(
-                        pil_image,
-                        matrix.value_trans_x(),
-                        matrix.value_trans_y(),
-                        crosshatch=True,
-                        settings=settings,
-                        passes=passes,
-                    )
-                    cut.path = path
-                    cut.original_op = self._operation
-                    yield cut
-
-
-class CutNode(Node):
-    """
-    Node type "cutcode"
-    Cutcode nodes store cutcode within the tree. When processing in a plan this should be converted to a normal cutcode
-    object.
-    """
-
-    def __init__(self, data_object, **kwargs):
-        super().__init__(data_object, type="cutcode", **kwargs)
-        self.output = True
-        self.operation = "Cutcode"
-
-    def __repr__(self):
-        return "CutNode('%s', %s, %s)" % (
-            self.type,
-            str(self.object),
-            str(self._parent),
-        )
-
-    def __copy__(self):
-        return CutNode(self.object)
-
-    def __len__(self):
-        return 1
-
-    def as_cutobjects(self, closed_distance=15):
-        yield from self.object
-
-
-class ConsoleOperation(Node):
-    """
-    ConsoleOperation contains a console command (as a string) to be run.
-
-    NOTE: This will eventually replace ConsoleOperation.
-
-    Node type "consoleop"
-    """
-
-    def __init__(self, command, **kwargs):
-        super().__init__(type="consoleop")
-        self.command = command
-        self.output = True
-        self.operation = "Console"
-
-    def set_command(self, command):
-        self.command = command
-        self.label = command
-
-    def __repr__(self):
-        return "ConsoleOperation('%s', '%s')" % (self.command)
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append(self.command)
-        return " ".join(parts)
-
-    def __copy__(self):
-        return ConsoleOperation(self.command)
-
-    def __len__(self):
-        return 1
-
-    def generate(self):
-        command = self.command
-        if not command.endswith("\n"):
-            command += "\n"
-        yield (COMMAND_CONSOLE, command)
-
-
-class CommandOperation(Node):
-    """
-    CommandOperation is a basic command operation. It contains nothing except a single command to be executed.
-
-    Node type "cmdop"
-    """
-
-    def __init__(self, name, command, *args, **kwargs):
-        super().__init__(type="cmdop")
-        self.label = self.name = name
-        self.command = command
-        self.args = args
-        self.output = True
-        self.operation = "Command"
-
-    def __repr__(self):
-        return "CommandOperation('%s', '%s')" % (self.label, str(self.command))
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append(self.name)
-        return " ".join(parts)
-
-    def __copy__(self):
-        return CommandOperation(self.label, self.command, *self.args)
-
-    def __len__(self):
-        return 1
-
-    def generate(self):
-        yield (self.command,) + self.args
-
-
-class LaserCodeNode(Node):
-    """
-    LaserCode is basic command operations. It contains nothing except a list of commands to be executed.
-
-    Node type "lasercode"
-    """
-
-    def __init__(self, commands, **kwargs):
-        super().__init__(commands, type="lasercode")
-        if "name" in kwargs:
-            self.name = kwargs["name"]
-        else:
-            self.name = "LaserCode"
-        self.commands = commands
-        self.output = True
-        self.operation = "LaserCode"
-
-    def __repr__(self):
-        return "LaserCode('%s', '%s')" % (self.name, str(self.commands))
-
-    def __str__(self):
-        return "LaserCode: %s, %s commands" % (self.name, str(len(self.commands)))
-
-    def __copy__(self):
-        return LaserCodeNode(self.commands, name=self.name)
-
-    def __len__(self):
-        return len(self.commands)
-
-    def generate(self):
-        for cmd in self.commands:
-            yield cmd
-
-
-class RootNode(Node):
-    """
-    RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
-
-    The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
-    """
-
-    def __init__(self, context):
-        _ = context._
-        super().__init__(None)
-        self._root = self
-        self.set_label("Project")
-        self.type = "root"
-        self.context = context
-        self.listeners = []
-
-        self.elements = context.elements
-        self.bootstrap = {
-            "op": LaserOperation,
-            "cmdop": CommandOperation,
-            "consoleop": ConsoleOperation,
-            "lasercode": LaserCodeNode,
-            "group": GroupNode,
-            "elem": ElemNode,
-            "opnode": OpNode,
-            "cutcode": CutNode,
-        }
-        self.add(type="branch ops", label=_("Operations"))
-        self.add(type="branch elems", label=_("Elements"))
-
-    def __repr__(self):
-        return "RootNode(%s)" % (str(self.context))
-
-    def listen(self, listener):
-        self.listeners.append(listener)
-
-    def unlisten(self, listener):
-        self.listeners.remove(listener)
-
-    def notify_created(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_created"):
-                listen.node_created(node, **kwargs)
-
-    def notify_destroyed(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_destroyed"):
-                listen.node_destroyed(node, **kwargs)
-
-    def notify_attached(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_attached"):
-                listen.node_attached(node, **kwargs)
-
-    def notify_detached(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_detached"):
-                listen.node_detached(node, **kwargs)
-
-    def notify_changed(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "node_changed"):
-                listen.node_changed(node, **kwargs)
-
-    def notify_selected(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "selected"):
-                listen.selected(node, **kwargs)
-
-    def notify_emphasized(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "emphasized"):
-                listen.emphasized(node, **kwargs)
-
-    def notify_targeted(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "targeted"):
-                listen.targeted(node, **kwargs)
-
-    def notify_highlighted(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "highlighted"):
-                listen.highlighted(node, **kwargs)
-
-    def notify_modified(self, node=None, **kwargs):
-        """
-        Notifies any listeners that a value in the tree has been changed such that the matrix or other property
-        values have changed. But that the underlying data object itself remains intact.
-        @param node: node that was modified.
-        @param kwargs:
-        @return:
-        """
-        if node is None:
-            node = self
-        self._bounds = None
-        for listen in self.listeners:
-            if hasattr(listen, "modified"):
-                listen.modified(node, **kwargs)
-
-    def notify_altered(self, node=None, **kwargs):
-        """
-        Notifies any listeners that a value in the tree has had it's underlying data fundamentally changed and while
-        this may not be reflected by the properties any assumptions about the content of this node are no longer
-        valid.
-
-        @param node:
-        @param kwargs:
-        @return:
-        """
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "altered"):
-                listen.altered(node, **kwargs)
-
-    def notify_expand(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "expand"):
-                listen.expand(node, **kwargs)
-
-    def notify_collapse(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "collapse"):
-                listen.collapse(node, **kwargs)
-
-    def notify_reorder(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "reorder"):
-                listen.reorder(node, **kwargs)
-
-    def notify_update(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "update"):
-                listen.update(node, **kwargs)
-
-    def notify_focus(self, node=None, **kwargs):
-        if node is None:
-            node = self
-        for listen in self.listeners:
-            if hasattr(listen, "focus"):
-                listen.focus(node, **kwargs)
-
-
-class Elemental(Modifier):
-    """
-    The elemental module is governs all the interactions with the various elements,
+    The elemental service is governs all the interactions with the various elements,
     operations, and filenodes. Handling structure change and selection, emphasis, and
     highlighting changes. The goal of this module is to make sure that the life cycle
     of the elements is strictly enforced. For example, every element that is removed
@@ -1769,237 +169,169 @@ class Elemental(Modifier):
     that information out to inform other interested modules.
     """
 
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
+    def __init__(self, kernel, index=None, *args, **kwargs):
+        Service.__init__(
+            self, kernel, "elements" if index is None else "elements%d" % index
+        )
         self._clipboard = {}
         self._clipboard_default = "0"
+        self.units = "nm"
+        self.unitless = UNITS_PER_PIXEL
 
         self.note = None
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
-        self._tree = None
+        self._tree = RootNode(self)
 
-    def tree_operations_for_node(self, node):
-        for m in self.context.match("tree/%s/.*" % node.type):
-            func = self.context.registered[m]
-            reject = False
-            for cond in func.conditionals:
-                if not cond(node):
-                    reject = True
-                    break
-            if reject:
-                continue
-            for cond in func.try_conditionals:
-                try:
-                    if not cond(node):
-                        reject = True
-                        break
-                except Exception:
-                    continue
-            if reject:
-                continue
-            func_dict = {
-                "name": label_truncate_re.sub("", str(node.label)),
-                "label": str(node.label),
-            }
+        self.setting(bool, "classify_reverse", False)
+        self.setting(bool, "legacy_classification", False)
+        self.setting(bool, "auto_note", True)
+        self.setting(bool, "uniform_svg", False)
+        self.setting(float, "svg_ppi", 96.0)
+        self.setting(bool, "operation_default_empty", True)
 
-            iterator = func.values
-            if iterator is None:
-                iterator = [0]
-            else:
-                try:
-                    iterator = list(iterator())
-                except TypeError:
-                    pass
-            for i, value in enumerate(iterator):
-                func_dict["iterator"] = i
-                func_dict["value"] = value
-                try:
-                    func_dict[func.value_name] = value
-                except AttributeError:
-                    pass
+        self.op_data = Settings(self.kernel.name, "operations.cfg")
 
-                for calc in func.calcs:
-                    key, c = calc
-                    value = c(value)
-                    func_dict[key] = value
-                if func.radio is not None:
-                    try:
-                        func.radio_state = func.radio(node, **func_dict)
-                    except:
-                        func.radio_state = False
-                else:
-                    func.radio_state = None
-                name = func.name.format_map(func_dict)
-                func.func_dict = func_dict
-                func.real_name = name
+        self._init_commands(kernel)
+        self._init_tree(kernel)
+        self.load_persistent_operations("previous")
 
-                yield func
+        ops = list(self.ops())
+        if not len(ops) and self.operation_default_empty:
+            self.load_default()
 
-    def flat(self, **kwargs):
-        yield from self._tree.flat(**kwargs)
+    def _init_commands(self, kernel):
 
-    @staticmethod
-    def tree_calc(value_name, calc_func):
-        def decor(func):
-            func.calcs.append((value_name, calc_func))
-            return func
+        _ = kernel.translation
 
-        return decor
+        @self.console_argument("filename")
+        @self.console_command(
+            "load",
+            help=_("loads file from working directory"),
+            input_type=None,
+            output_type="file",
+        )
+        def load(channel, _, filename=None, **kwargs):
+            import os
 
-    @staticmethod
-    def tree_values(value_name, values):
-        def decor(func):
-            func.value_name = value_name
-            func.values = values
-            return func
+            if filename is None:
+                channel(_("No file specified."))
+                return
+            new_file = os.path.join(self.kernel.current_directory, filename)
+            if not os.path.exists(new_file):
+                channel(_("No such file."))
+                return
+            try:
+                self.load(new_file)
+            except AttributeError:
+                raise SyntaxError(_("Loading files was not defined"))
+            channel(_("loading..."))
+            return "file", new_file
 
-        return decor
+        # ==========
+        # MATERIALS COMMANDS
+        # ==========
 
-    @staticmethod
-    def tree_iterate(value_name, start, stop, step=1):
-        def decor(func):
-            func.value_name = value_name
-            func.values = range(start, stop, step)
-            return func
+        @self.console_command(
+            "material",
+            help=_("material base operation"),
+            input_type=(None, "ops"),
+            output_type="materials",
+        )
+        def materials(command, channel, _, data=None, remainder=None, **kwargs):
+            if data is None:
+                data = list(self.ops(emphasized=True))
+            if remainder is None:
+                channel("----------")
+                channel(_("Materials:"))
+                secs = self.op_data.section_set()
+                for section in secs:
+                    channel(section)
+                channel("----------")
+            return "materials", data
 
-        return decor
+        @self.console_argument("name", help=_("Name to save the materials under"))
+        @self.console_command(
+            "save",
+            help=_("Save current materials to persistent settings"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def save_materials(command, channel, _, data=None, name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.save_persistent_operations(name)
+            return "materials", data
 
-    @staticmethod
-    def tree_radio(radio_function):
-        def decor(func):
-            func.radio = radio_function
-            return func
+        @self.console_argument("name", help=_("Name to load the materials from"))
+        @self.console_command(
+            "load",
+            help=_("Load materials from persistent settings"),
+            input_type="materials",
+            output_type="ops",
+        )
+        def load_materials(name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.load_persistent_operations(name)
+            return "ops", list(self.ops())
 
-        return decor
+        @self.console_argument("name", help=_("Name to delete the materials from"))
+        @self.console_command(
+            "delete",
+            help=_("Delete materials from persistent settings"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def load_materials(name=None, **kwargs):
+            if name is None:
+                raise SyntaxError
+            self.clear_persistent_operations(name)
+            return "materials", list(self.ops())
 
-    @staticmethod
-    def tree_submenu(submenu):
-        def decor(func):
-            func.submenu = submenu
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_conditional(conditional):
-        def decor(func):
-            func.conditionals.append(conditional)
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_conditional_try(conditional):
-        def decor(func):
-            func.try_conditionals.append(conditional)
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_reference(node):
-        def decor(func):
-            func.reference = node
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_separator_after():
-        def decor(func):
-            func.separate_after = True
-            return func
-
-        return decor
-
-    @staticmethod
-    def tree_separator_before():
-        def decor(func):
-            func.separate_before = True
-            return func
-
-        return decor
-
-    def tree_operation(self, name, node_type=None, help="", **kwargs):
-        def decorator(func):
-            @functools.wraps(func)
-            def inner(node, **ik):
-                returned = func(node, **ik, **kwargs)
-                return returned
-
-            kernel = self.context.kernel
-            if isinstance(node_type, tuple):
-                ins = node_type
-            else:
-                ins = (node_type,)
-
-            # inner.long_help = func.__doc__
-            inner.help = help
-            inner.node_type = ins
-            inner.name = name
-            inner.radio = None
-            inner.submenu = None
-            inner.reference = None
-            inner.separate_after = False
-            inner.separate_before = False
-            inner.conditionals = list()
-            inner.try_conditionals = list()
-            inner.calcs = list()
-            inner.values = [0]
-            registered_name = inner.__name__
-
-            for _in in ins:
-                p = "tree/%s/%s" % (_in, registered_name)
-                if p in kernel.registered:
-                    raise NameError(
-                        "A function of this name was already registered: %s" % p
+        @self.console_argument("name", help=_("Name to display the materials from"))
+        @self.console_command(
+            "list",
+            help=_("Show information about materials"),
+            input_type="materials",
+            output_type="materials",
+        )
+        def materials_list(channel, _, data=None, name=None, **kwargs):
+            channel("----------")
+            channel(_("Materials Current:"))
+            secs = self.op_data.section_set()
+            for section in secs:
+                subsection = self.op_data.derivable(section)
+                for subsect in subsection:
+                    label = self.op_data.read_persistent(str, subsect, "label", "-")
+                    channel(
+                        "{subsection}: {label}".format(
+                            section=section, subsection=subsect, label=label
+                        )
                     )
-                kernel.register(p, inner)
-            return inner
-
-        return decorator
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        _ = context._
-        context.elements = self
-        context.classify = self.classify
-        context.save = self.save
-        context.save_types = self.save_types
-        context.load = self.load
-        context.load_types = self.load_types
-        context = self.context
-        self._tree = RootNode(context)
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-        context.root.setting(bool, "classify_reverse", False)
-        context.root.setting(bool, "legacy_classification", False)
+            channel("----------")
 
         # ==========
         # OPERATION BASE
         # ==========
-        @context.console_command(
-            "operations", help=_("Show information about operations")
-        )
-        def element(**kwargs):
-            context(".operation* list\n")
 
-        @context.console_command(
+        @self.console_command("operations", help=_("Show information about operations"))
+        def element(**kwargs):
+            self(".operation* list\n")
+
+        @self.console_command(
             "operation.*", help=_("operation.*: selected operations"), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             "operation*", help=_("operation*: all operations"), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops())
 
-        @context.console_command(
+        @self.console_command(
             "operation~",
             help=_("operation~: non selected operations."),
             output_type="ops",
@@ -2007,13 +339,13 @@ class Elemental(Modifier):
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=False))
 
-        @context.console_command(
+        @self.console_command(
             "operation", help=_("operation: selected operations."), output_type="ops"
         )
         def operation(**kwargs):
             return "ops", list(self.ops(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             r"operation([0-9]+,?)+",
             help=_("operation0,2: operation #0 and #2"),
             regex=True,
@@ -2034,41 +366,7 @@ class Elemental(Modifier):
                     channel(_("index %d out of range") % value)
             return "ops", op_values
 
-        # ==========
-        # OPERATION SUBCOMMANDS
-        # ==========
-
-        @context.console_argument("name", help=_("Name to save the operation under"))
-        @context.console_command(
-            "save",
-            help=_("Save current operations to persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def save_operations(command, channel, _, data=None, name=None, **kwargs):
-            if name is None:
-                raise SyntaxError
-            if "/" in name:
-                raise SyntaxError
-            self.save_persistent_operations(name)
-            return "ops", list(self.ops())
-
-        @context.console_argument("name", help=_("Name to load the operation from"))
-        @context.console_command(
-            "load",
-            help=_("Load operations from persistent settings"),
-            input_type="ops",
-            output_type="ops",
-        )
-        def load_operations(name=None, **kwargs):
-            if name is None:
-                raise SyntaxError
-            if "/" in name:
-                raise SyntaxError
-            self.load_persistent_operations(name)
-            return "ops", list(self.ops())
-
-        @context.console_command(
+        @self.console_command(
             "select",
             help=_("Set these values as the selection."),
             input_type="ops",
@@ -2078,7 +376,7 @@ class Elemental(Modifier):
             self.set_emphasis(data)
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "select+",
             help=_("Add the input to the selection"),
             input_type="ops",
@@ -2090,7 +388,7 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_command(
+        @self.console_command(
             "select-",
             help=_("Remove the input data from the selection"),
             input_type="ops",
@@ -2106,7 +404,7 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_command(
+        @self.console_command(
             "select^",
             help=_("Toggle the input data in the selection"),
             input_type="ops",
@@ -2122,10 +420,10 @@ class Elemental(Modifier):
             self.set_emphasis(ops)
             return "ops", ops
 
-        @context.console_argument("start", type=int, help=_("operation start"))
-        @context.console_argument("end", type=int, help=_("operation end"))
-        @context.console_argument("step", type=int, help=_("operation step"))
-        @context.console_command(
+        @self.console_argument("start", type=int, help=_("operation start"))
+        @self.console_argument("end", type=int, help=_("operation end"))
+        @self.console_argument("step", type=int, help=_("operation step"))
+        @self.console_command(
             "range",
             help=_("Subset existing selection by begin and end indices and step"),
             input_type="ops",
@@ -2141,8 +439,8 @@ class Elemental(Modifier):
             self.set_emphasis(subops)
             return "ops", subops
 
-        @context.console_argument("filter", type=str, help=_("Filter to apply"))
-        @context.console_command(
+        @self.console_argument("filter", type=str, help=_("Filter to apply"))
+        @self.console_command(
             "filter",
             help=_("Filter data by given value"),
             input_type="ops",
@@ -2248,15 +546,15 @@ class Elemental(Modifier):
                         operand.append(Color(value))
                     elif kind == "VAL":
                         if value == "step":
-                            operand.append(e.settings.raster_step)
+                            operand.append(e.raster_step)
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
-                            operand.append(e.operation.lower())
+                            operand.append(e.type.remove("op").strip())
                         elif value == "len":
                             operand.append(len(e.children))
                         else:
-                            operand.append(getattr(e.settings, value))
+                            operand.append(e.settings.get(value))
 
                     elif kind == "NUM":
                         operand.append(float(value))
@@ -2276,7 +574,7 @@ class Elemental(Modifier):
             self.set_emphasis(subops)
             return "ops", subops
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("Show information about the chained data"),
             input_type="ops",
@@ -2315,14 +613,14 @@ class Elemental(Modifier):
                         channel(name)
             channel("----------")
 
-        @context.console_option("color", "c", type=Color)
-        @context.console_option("default", "d", type=bool)
-        @context.console_option("speed", "s", type=float)
-        @context.console_option("power", "p", type=float)
-        @context.console_option("step", "S", type=int)
-        @context.console_option("overscan", "o", type=Length)
-        @context.console_option("passes", "x", type=int)
-        @context.console_command(
+        @self.console_option("color", "c", type=Color)
+        @self.console_option("default", "d", type=bool)
+        @self.console_option("speed", "s", type=float)
+        @self.console_option("power", "p", type=float)
+        @self.console_option("step", "S", type=int)
+        @self.console_option("overscan", "o", type=str)
+        @self.console_option("passes", "x", type=int)
+        @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
             help=_(
                 "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
@@ -2342,72 +640,70 @@ class Elemental(Modifier):
             passes=None,
             **kwargs,
         ):
-            op = LaserOperation()
+            if command == "cut":
+                op = CutOpNode()
+            elif command == "engrave":
+                op = EngraveOpNode()
+            elif command == "raster":
+                op = RasterOpNode()
+            elif command == "imageop":
+                op = ImageOpNode()
+            elif command == "dots":
+                op = DotsOpNode()
+            else:
+                return
+
             if color is not None:
                 op.color = color
             if default is not None:
                 op.default = default
             if speed is not None:
-                op.settings.speed = speed
+                op.speed = speed
             if power is not None:
-                op.settings.power = power
+                op.power = power
             if passes is not None:
-                op.settings.passes_custom = True
-                op.settings.passes = passes
+                op.passes_custom = True
+                op.passes = passes
             if step is not None:
-                op.settings.raster_step = step
+                op.raster_step = step
             if overscan is not None:
-                op.settings.overscan = int(
-                    overscan.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                )
-            if command == "cut":
-                op.operation = "Cut"
-            elif command == "engrave":
-                op.operation = "Engrave"
-            elif command == "raster":
-                op.operation = "Raster"
-            elif command == "imageop":
-                op.operation = "Image"
-            elif command == "dots":
-                op.operation = "Dots"
+                op.overscan = self.device.length(overscan, -1)
             self.add_op(op)
             if data is not None:
                 for item in data:
-                    op.add(item, type="opnode")
+                    op.add(item, type="ref elem")
             return "ops", [op]
 
-        @context.console_argument("step_size", type=int, help=_("raster step size"))
-        @context.console_command(
+        @self.console_argument("step_size", type=int, help=_("raster step size"))
+        @self.console_command(
             "step", help=_("step <raster-step-size>"), input_type="ops"
         )
         def op_step(command, channel, _, data, step_size=None, **kwrgs):
             if step_size is None:
                 found = False
                 for op in data:
-                    if op.operation in ("Raster", "Image"):
-                        step = op.settings.raster_step
+                    if op.type in ("op raster", "op image"):
+                        step = op.raster_step
                         channel(_("Step for %s is currently: %d") % (str(op), step))
                         found = True
                 if not found:
                     channel(_("No raster operations selected."))
                 return
             for op in data:
-                if op.operation in ("Raster", "Image"):
-                    op.settings.raster_step = step_size
+                if op.type in ("op raster", "op image"):
+                    op.raster_step = step_size
                     op.notify_update()
             return "ops", data
 
-        @context.console_option(
+        @self.console_option(
             "difference",
             "d",
             type=bool,
             action="store_true",
             help=_("Change speed by this amount."),
         )
-        @context.console_argument("speed", type=str, help=_("operation speed in mm/s"))
-        @context.console_command(
+        @self.console_argument("speed", type=str, help=_("operation speed in mm/s"))
+        @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
         def op_speed(
@@ -2415,7 +711,7 @@ class Elemental(Modifier):
         ):
             if speed is None:
                 for op in data:
-                    old_speed = op.settings.speed
+                    old_speed = op.speed
                     channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
                 return
             if speed.endswith("%"):
@@ -2431,7 +727,7 @@ class Elemental(Modifier):
                 return
 
             for op in data:
-                old_speed = op.settings.speed
+                old_speed = op.speed
                 if percent and difference:
                     s = old_speed + old_speed * (new_speed / 100.0)
                 elif difference:
@@ -2440,7 +736,7 @@ class Elemental(Modifier):
                     s = old_speed * (new_speed / 100.0)
                 else:
                     s = new_speed
-                op.settings.speed = s
+                op.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f")
                     % (str(op), old_speed, new_speed)
@@ -2448,44 +744,44 @@ class Elemental(Modifier):
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument(
+        @self.console_argument(
             "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
         )
-        @context.console_command(
+        @self.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
         def op_power(command, channel, _, power=None, data=None, **kwrgs):
             if power is None:
                 for op in data:
-                    old_ppi = op.settings.power
+                    old_ppi = op.power
                     channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
                 return
             for op in data:
-                old_ppi = op.settings.power
-                op.settings.power = power
+                old_ppi = op.power
+                op.power = power
                 channel(
                     _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
                 )
                 op.notify_update()
             return "ops", data
 
-        @context.console_argument("passes", type=int, help=_("Set operation passes"))
-        @context.console_command(
+        @self.console_argument("passes", type=int, help=_("Set operation passes"))
+        @self.console_command(
             "passes", help=_("passes <passes>"), input_type="ops", output_type="ops"
         )
         def op_passes(command, channel, _, passes=None, data=None, **kwrgs):
             if passes is None:
                 for op in data:
-                    old_passes = op.settings.passes
+                    old_passes = op.passes
                     channel(
                         _("Passes for '%s' is currently: %d") % (str(op), old_passes)
                     )
                 return
             for op in data:
-                old_passes = op.settings.passes
-                op.settings.passes = passes
+                old_passes = op.passes
+                op.passes = passes
                 if passes >= 1:
-                    op.settings.passes_custom = True
+                    op.passes_custom = True
                 channel(
                     _("Passes for '%s' updated %d -> %d")
                     % (str(op), old_passes, passes)
@@ -2493,7 +789,7 @@ class Elemental(Modifier):
                 op.notify_update()
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "disable",
             help=_("Disable the given operations"),
             input_type="ops",
@@ -2506,7 +802,7 @@ class Elemental(Modifier):
                 op.notify_update()
             return "ops", data
 
-        @context.console_command(
+        @self.console_command(
             "enable",
             help=_("Enable the given operations"),
             input_type="ops",
@@ -2522,7 +818,7 @@ class Elemental(Modifier):
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
-        @context.console_command(
+        @self.console_command(
             "copy",
             help=_("Duplicate elements"),
             input_type=("elements", "ops"),
@@ -2536,7 +832,7 @@ class Elemental(Modifier):
                 self.add_elems(add_elem)
             return data_type, add_elem
 
-        @context.console_command(
+        @self.console_command(
             "delete", help=_("Delete elements"), input_type=("elements", "ops")
         )
         def e_delete(command, channel, _, data=None, data_type=None, **kwargs):
@@ -2545,20 +841,20 @@ class Elemental(Modifier):
                 self.remove_elements(data)
             else:
                 self.remove_operations(data)
-            self.context.signal("refresh_scene", 0)
+            self.signal("tree_changed")
 
         # ==========
         # ELEMENT BASE
         # ==========
 
-        @context.console_command(
+        @self.console_command(
             "elements",
             help=_("Show information about elements"),
         )
         def element(**kwargs):
-            context(".element* list\n")
+            self(".element* list\n")
 
-        @context.console_command(
+        @self.console_command(
             "element*",
             help=_("element*, all elements"),
             output_type="elements",
@@ -2566,7 +862,7 @@ class Elemental(Modifier):
         def element_star(**kwargs):
             return "elements", list(self.elems())
 
-        @context.console_command(
+        @self.console_command(
             "element~",
             help=_("element~, all non-selected elements"),
             output_type="elements",
@@ -2574,7 +870,7 @@ class Elemental(Modifier):
         def element_not(**kwargs):
             return "elements", list(self.elems(emphasized=False))
 
-        @context.console_command(
+        @self.console_command(
             "element",
             help=_("element, selected elements"),
             output_type="elements",
@@ -2582,7 +878,7 @@ class Elemental(Modifier):
         def element_base(**kwargs):
             return "elements", list(self.elems(emphasized=True))
 
-        @context.console_command(
+        @self.console_command(
             r"element([0-9]+,?)+",
             help=_("element0,3,4,5: chain a list of specific elements"),
             regex=True,
@@ -2607,8 +903,8 @@ class Elemental(Modifier):
         # ELEMENT SUBCOMMANDS
         # ==========
 
-        @context.console_argument("step_size", type=int, help=_("element step size"))
-        @context.console_command(
+        @self.console_argument("step_size", type=int, help=_("element step size"))
+        @self.console_command(
             "step",
             help=_("step <element step-size>"),
             input_type="elements",
@@ -2640,11 +936,10 @@ class Elemental(Modifier):
                 element.transform.post_translate(tx, ty)
                 if hasattr(element, "node"):
                     element.node.modified()
-                self.context.signal("element_property_reload", element)
-                self.context.signal("refresh_scene")
+                self.signal("element_property_reload", element)
             return ("elements",)
 
-        @context.console_command(
+        @self.console_command(
             "select",
             help=_("Set these values as the selection."),
             input_type="elements",
@@ -2654,7 +949,7 @@ class Elemental(Modifier):
             self.set_emphasis(data)
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "select+",
             help=_("Add the input to the selection"),
             input_type="elements",
@@ -2666,7 +961,7 @@ class Elemental(Modifier):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "select-",
             help=_("Remove the input data from the selection"),
             input_type="elements",
@@ -2682,7 +977,7 @@ class Elemental(Modifier):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "select^",
             help=_("Toggle the input data in the selection"),
             input_type="elements",
@@ -2698,7 +993,7 @@ class Elemental(Modifier):
             self.set_emphasis(elems)
             return "elements", elems
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("Show information about the chained data"),
             input_type="elements",
@@ -2720,10 +1015,10 @@ class Elemental(Modifier):
             channel("----------")
             return "elements", data
 
-        @context.console_argument("start", type=int, help=_("elements start"))
-        @context.console_argument("end", type=int, help=_("elements end"))
-        @context.console_argument("step", type=int, help=_("elements step"))
-        @context.console_command(
+        @self.console_argument("start", type=int, help=_("elements start"))
+        @self.console_argument("end", type=int, help=_("elements end"))
+        @self.console_argument("step", type=int, help=_("elements step"))
+        @self.console_command(
             "range",
             help=_("Subset selection by begin & end indices and step"),
             input_type="elements",
@@ -2739,7 +1034,7 @@ class Elemental(Modifier):
             self.set_emphasis(subelem)
             return "elements", subelem
 
-        @context.console_command(
+        @self.console_command(
             "merge",
             help=_("merge elements"),
             input_type="elements",
@@ -2760,7 +1055,7 @@ class Elemental(Modifier):
             self.classify([super_element])
             return "elements", [super_element]
 
-        @context.console_command(
+        @self.console_command(
             "subpath",
             help=_("break elements"),
             input_type="elements",
@@ -2792,7 +1087,7 @@ class Elemental(Modifier):
         # Align consist of top level node objects that can be manipulated within the scene.
         # ==========
 
-        @context.console_command(
+        @self.console_command(
             "align",
             help=_("align selected elements"),
             input_type=("elements", None),
@@ -2820,7 +1115,7 @@ class Elemental(Modifier):
             data = d
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "top",
             help=_("align elements at top"),
             input_type="align",
@@ -2845,7 +1140,7 @@ class Elemental(Modifier):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "bottom",
             help=_("align elements at bottom"),
             input_type="align",
@@ -2870,7 +1165,7 @@ class Elemental(Modifier):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "left",
             help=_("align elements at left"),
             input_type="align",
@@ -2895,7 +1190,7 @@ class Elemental(Modifier):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "right",
             help=_("align elements at right"),
             input_type="align",
@@ -2920,7 +1215,7 @@ class Elemental(Modifier):
                         q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "center",
             help=_("align elements at center"),
             input_type="align",
@@ -2948,7 +1243,7 @@ class Elemental(Modifier):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "centerv",
             help=_("align elements at center vertical"),
             input_type="align",
@@ -2973,7 +1268,7 @@ class Elemental(Modifier):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "centerh",
             help=_("align elements at center horizontal"),
             input_type="align",
@@ -2998,7 +1293,7 @@ class Elemental(Modifier):
                     q.modified()
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "spaceh",
             help=_("align elements across horizontal space"),
             input_type="align",
@@ -3035,7 +1330,7 @@ class Elemental(Modifier):
                 dim_pos += subbox[2] - subbox[0] + distributed_distance
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "spacev",
             help=_("align elements down vertical space"),
             input_type="align",
@@ -3072,7 +1367,7 @@ class Elemental(Modifier):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
-        @context.console_command(
+        @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
             input_type="align",
@@ -3089,26 +1384,26 @@ class Elemental(Modifier):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             for node in data:
-                bw = bed_dim.bed_width
-                bh = bed_dim.bed_height
-                dx = (bw * MILS_IN_MM - left_edge - right_edge) / 2.0
-                dy = (bh * MILS_IN_MM - top_edge - bottom_edge) / 2.0
+                device_width = self.device.width
+                device_height = self.device.height
+                dx = (device_width - left_edge - right_edge) / 2.0
+                dy = (device_height - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
                 for q in node.flat(types="elem"):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
                     q.modified()
-            self.context.signal("refresh_scene")
+            self.signal("tree_changed")
             return "align", data
 
-        @context.console_argument(
+        @self.console_argument(
             "preserve_aspect_ratio",
             type=str,
             default="none",
             help="preserve aspect ratio value",
         )
-        @context.console_command(
+        @self.console_command(
             "view",
             help=_("align elements within viewbox"),
             input_type="align",
@@ -3191,14 +1486,14 @@ class Elemental(Modifier):
                 "none",
             ):
                 for node in data:
-                    bw = bed_dim.bed_width
-                    bh = bed_dim.bed_height
+                    device_width = self.device.width
+                    device_height = self.device.height
 
                     matrix = Viewbox.viewbox_transform(
                         0,
                         0,
-                        bw * MILS_IN_MM,
-                        bh * MILS_IN_MM,
+                        device_width,
+                        device_height,
                         left_edge,
                         top_edge,
                         right_edge - left_edge,
@@ -3212,7 +1507,6 @@ class Elemental(Modifier):
                         q.modified()
                     for q in node.flat(types=("file", "group")):
                         q.modified()
-                self.context.signal("refresh_scene")
             return "align", data
 
         @context.console_argument("c", type=int, help=_("Number of columns"))
@@ -3252,26 +1546,19 @@ class Elemental(Modifier):
             if r is None:
                 raise SyntaxError
             if x is None:
-                x = Length("100%")
-            else:
-                if not x.is_valid_length:
-                    raise SyntaxError("x: " + _("This is not a valid length"))
+                x = "100%"
             if y is None:
-                y = Length("100%")
-            else:
-                if not y.is_valid_length:
-                    raise SyntaxError("y: " + _("This is not a valid length"))
-
+                y = "100%"
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
                 height = bounds[3] - bounds[1]
             except Exception:
                 raise SyntaxError
-            x = x.value(ppi=1000, relative_length=width)
-            y = y.value(ppi=1000, relative_length=height)
-            if isinstance(x, Length) or isinstance(y, Length):
-                raise SyntaxError
+            x = self.device.length(x, 0, relative_length=width)
+            y = self.device.length(y, 1, relative_length=height)
+            # TODO: Check lengths do not accept gibberish.
+            y_pos = 0
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -3539,7 +1826,6 @@ class Elemental(Modifier):
             action="store_true",
             help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
         )
-
         @context.console_option(
             "radius_inner",
             "r",
@@ -3555,7 +1841,7 @@ class Elemental(Modifier):
             ),
         )
         @context.console_option(
-            "density","d", type=int, help=_("Amount of vertices to skip")
+            "density", "d", type=int, help=_("Amount of vertices to skip")
         )
         @context.console_command(
             "shape",
@@ -3566,21 +1852,21 @@ class Elemental(Modifier):
             output_type="elements",
         )
         def element_shape(
-            command,
-            channel,
-            _,
-            corners,
-            cx,
-            cy,
-            radius,
-            startangle=None,
-            inscribed=None,
-            side_length=None,
-            radius_inner=None,
-            alternate_seq=None,
-            density=None,
-            data=None,
-            **kwargs,
+                command,
+                channel,
+                _,
+                corners,
+                cx,
+                cy,
+                radius,
+                startangle=None,
+                inscribed=None,
+                side_length=None,
+                radius_inner=None,
+                alternate_seq=None,
+                density=None,
+                data=None,
+                **kwargs,
         ):
             if corners is None:
                 raise SyntaxError
@@ -3609,7 +1895,7 @@ class Elemental(Modifier):
                     startangle = Angle.parse("0deg")
 
                 starpts = [(cx, cy)]
-                if corners==2:
+                if corners == 2:
                     starpts += [(cx + cos(startangle.as_radians) * radius, cy + sin(startangle.as_radians) * radius)]
 
             else:
@@ -3648,9 +1934,9 @@ class Elemental(Modifier):
                 )
 
                 if (
-                    isinstance(radius, Length)
-                    or isinstance(cx, Length)
-                    or isinstance(cy, Length)
+                        isinstance(radius, Length)
+                        or isinstance(cx, Length)
+                        or isinstance(cy, Length)
                 ):
                     raise SyntaxError
 
@@ -3665,7 +1951,7 @@ class Elemental(Modifier):
 
                 if density is None:
                     density = 1
-                if density<1 or density > corners:
+                if density < 1 or density > corners:
                     density = 1
 
                 # Do we have to consider the radius value as the length of one corner?
@@ -3681,7 +1967,7 @@ class Elemental(Modifier):
                     if not radius_inner.is_valid_length:
                         raise SyntaxError(
                             "radius_inner: " + _("This is not a valid length")
-                    )
+                        )
                     if isinstance(radius_inner, Length):
                         radius_inner = radius
 
@@ -3689,7 +1975,8 @@ class Elemental(Modifier):
                     if side_length is None:
                         radius = radius / cos(pi / corners)
                     else:
-                        channel(_("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
+                        channel(
+                            _("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
 
                 if alternate_seq < 1:
                     radius_inner = radius
@@ -3762,23 +2049,20 @@ class Elemental(Modifier):
                 data.append(poly_path)
                 return "elements", data
 
-
-        @context.console_option("step", "s", default=2.0, type=float)
-        @context.console_command(
+        @self.console_option("step", "s", default=2.0, type=float)
+        @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
         def make_raster_image(command, channel, _, step=2.0, data=None, **kwargs):
-            context = self.context
             if data is None:
                 data = list(self.elems(emphasized=True))
-            reverse = context.classify_reverse
+            reverse = self.classify_reverse
             if reverse:
                 data = list(reversed(data))
-            elements = context.elements
-            make_raster = self.context.registered.get("render-op/make_raster")
+            make_raster = self.lookup("render-op/make_raster")
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
@@ -3798,16 +2082,16 @@ class Elemental(Modifier):
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
+            self.add_elem(image_element)
             return "image", [image_element]
 
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("r_pos", type=Length)
-        @context.console_command(
+        @self.console_argument("x_pos", type=str)
+        @self.console_argument("y_pos", type=str)
+        @self.console_argument("r_pos", type=str)
+        @self.console_command(
             "circle",
             help=_("circle <x> <y> <r> or circle <r>"),
             input_type=("elements", None),
@@ -3821,12 +2105,11 @@ class Elemental(Modifier):
                     r_pos = x_pos
                     x_pos = 0
                     y_pos = 0
+
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            r_pos = self.device.length(r_pos, -1)
             circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
-            circ.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
             self.add_element(circ)
             if data is None:
                 return "elements", [circ]
@@ -3834,11 +2117,11 @@ class Elemental(Modifier):
                 data.append(circ)
                 return "elements", data
 
-        @context.console_argument("x_pos", type=Length)
-        @context.console_argument("y_pos", type=Length)
-        @context.console_argument("rx_pos", type=Length)
-        @context.console_argument("ry_pos", type=Length)
-        @context.console_command(
+        @self.console_argument("x_pos", type=str)
+        @self.console_argument("y_pos", type=str)
+        @self.console_argument("rx_pos", type=str)
+        @self.console_argument("ry_pos", type=str)
+        @self.console_command(
             "ellipse",
             help=_("ellipse <cx> <cy> <rx> <ry>"),
             input_type=("elements", None),
@@ -3847,12 +2130,11 @@ class Elemental(Modifier):
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
             if ry_pos is None:
                 raise SyntaxError
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            rx_pos = self.device.length(rx_pos, 0)
+            ry_pos = self.device.length(ry_pos, 1)
             ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
-            ellip.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
             self.add_element(ellip)
             if data is None:
                 return "elements", [ellip]
@@ -3860,25 +2142,17 @@ class Elemental(Modifier):
                 data.append(ellip)
                 return "elements", data
 
-        @context.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner of rectangle.")
+        @self.console_argument(
+            "x_pos", type=str, help=_("x position for top left corner of rectangle.")
         )
-        @context.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner of rectangle.")
+        @self.console_argument(
+            "y_pos", type=str, help=_("y position for top left corner of rectangle.")
         )
-        @context.console_argument(
-            "width", type=Length, help=_("width of the rectangle.")
-        )
-        @context.console_argument(
-            "height", type=Length, help=_("height of the rectangle.")
-        )
-        @context.console_option(
-            "rx", "x", type=Length, help=_("rounded rx corner value.")
-        )
-        @context.console_option(
-            "ry", "y", type=Length, help=_("rounded ry corner value.")
-        )
-        @context.console_command(
+        @self.console_argument("width", type=str, help=_("width of the rectangle."))
+        @self.console_argument("height", type=str, help=_("height of the rectangle."))
+        @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
+        @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
+        @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
             input_type=("elements", None),
@@ -3892,26 +2166,16 @@ class Elemental(Modifier):
             """
             if x_pos is None:
                 raise SyntaxError
-            else:
-                if not x_pos.is_valid_length:
-                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
-            if not y_pos is None:
-                if not y_pos.is_valid_length:
-                    raise SyntaxError("y-pos: " + _("This is not a valid length"))
-            if not rx is None:
-                if not rx.is_valid_length:
-                    raise SyntaxError("rx: " + _("This is not a valid length"))
-            if not ry is None:
-                if not ry.is_valid_length:
-                    raise SyntaxError("ry: " + _("This is not a valid length"))
-
-            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-            rect.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
+            x_pos = self.device.length(x_pos, 0)
+            y_pos = self.device.length(y_pos, 1)
+            rx_pos = self.device.length(rx, 0)
+            ry_pos = self.device.length(ry, 1)
+            width = self.device.length(width, 0)
+            height = self.device.length(height, 1)
+            rect = Rect(
+                x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos
             )
-            # rect = Path(rect)
+
             self.add_element(rect)
             if data is None:
                 return "elements", [rect]
@@ -3919,11 +2183,11 @@ class Elemental(Modifier):
                 data.append(rect)
                 return "elements", data
 
-        @context.console_argument("x0", type=Length, help=_("start x position"))
-        @context.console_argument("y0", type=Length, help=_("start y position"))
-        @context.console_argument("x1", type=Length, help=_("end x position"))
-        @context.console_argument("y1", type=Length, help=_("end y position"))
-        @context.console_command(
+        @self.console_argument("x0", type=str, help=_("start x position"))
+        @self.console_argument("y0", type=str, help=_("start y position"))
+        @self.console_argument("x1", type=str, help=_("end x position"))
+        @self.console_argument("y1", type=str, help=_("end y position"))
+        @self.console_command(
             "line",
             help=_("adds line to scene"),
             input_type=("elements", None),
@@ -3935,25 +2199,11 @@ class Elemental(Modifier):
             """
             if y1 is None:
                 raise SyntaxError
-            if not x0 is None:
-                if not x0.is_valid_length:
-                    raise SyntaxError("x0: " + _("This is not a valid length"))
-            if not y0 is None:
-                if not y0.is_valid_length:
-                    raise SyntaxError("y0: " + _("This is not a valid length"))
-            if not x1 is None:
-                if not x1.is_valid_length:
-                    raise SyntaxError("x1: " + _("This is not a valid length"))
-            if not y1 is None:
-                if not y1.is_valid_length:
-                    raise SyntaxError("y1: " + _("This is not a valid length"))
-
+            x0 = self.device.length(x0, 0)
+            y0 = self.device.length(y0, 1)
+            x1 = self.device.length(x1, 0)
+            y1 = self.device.length(y1, 1)
             simple_line = SimpleLine(x0, y0, x1, y1)
-            simple_line.render(
-                ppi=1000.0,
-                width="%fmm" % bed_dim.bed_width,
-                height="%fmm" % bed_dim.bed_height,
-            )
             self.add_element(simple_line)
             if data is None:
                 return "elements", [simple_line]
@@ -3961,9 +2211,9 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
-        @context.console_option("size", "s", type=float, help=_("font size to for object"))
-        @context.console_argument("text", type=str, help=_("quoted string of text"))
-        @context.console_command(
+        @self.console_option("size", "s", type=float, help=_("font size to for object"))
+        @self.console_argument("text", type=str, help=_("quoted string of text"))
+        @self.console_command(
             "text",
             help=_("text <text>"),
             input_type=(None, "elements"),
@@ -3976,6 +2226,7 @@ class Elemental(Modifier):
             svg_text = SVGText(text)
             if size is not None:
                 svg_text.font_size = size
+            svg_text *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             self.add_element(svg_text)
             if data is None:
                 return "elements", [svg_text]
@@ -3983,12 +2234,13 @@ class Elemental(Modifier):
                 data.append(svg_text)
                 return "elements", data
 
-        @context.console_command(
-            "polygon", help=_("polygon (Length Length)*"), input_type=("elements", None)
+        @self.console_command(
+            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
         )
         def element_polygon(args=tuple(), data=None, **kwargs):
             try:
                 mlist = list(map(str, args))
+                # TODO: Scale Physical to Scene.
                 for ct, e in enumerate(mlist):
                     ll = Length(e)
                     # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
@@ -4003,6 +2255,7 @@ class Elemental(Modifier):
                     mlist[ct] = x
                     ct += 1
                 element = Polygon(mlist)
+                # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
@@ -4014,7 +2267,7 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "polyline",
             help=_("polyline (Length Length)*"),
             input_type=("elements", None),
@@ -4050,7 +2303,7 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
         )
         def element_path_convert(data, **kwargs):
@@ -4062,10 +2315,10 @@ class Elemental(Modifier):
                 except AttributeError:
                     pass
 
-        @context.console_argument(
+        @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
-        @context.console_command(
+        @self.console_command(
             "path",
             help=_("path <svg path>"),
             output_type="elements",
@@ -4073,6 +2326,7 @@ class Elemental(Modifier):
         def element_path(path_d, data, **kwargs):
             try:
                 path = Path(path_d)
+                path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
                 raise SyntaxError(_("Not a valid path_d string (try quotes)"))
 
@@ -4083,10 +2337,10 @@ class Elemental(Modifier):
                 data.append(path)
                 return "elements", data
 
-        @context.console_argument(
-            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
+        @self.console_argument(
+            "stroke_width", type=str, help=_("Stroke-width for the given stroke")
         )
-        @context.console_command(
+        @self.console_command(
             "stroke-width",
             help=_("stroke-width <length>"),
             input_type=(
@@ -4117,30 +2371,23 @@ class Elemental(Modifier):
                 return
             else:
                 if not stroke_width.is_valid_length:
-                    raise SyntaxError(
-                        "stroke-width: " + _("This is not a valid length")
-                    )
+                    raise SyntaxError("stroke-width: " + _("This is not a valid length"))
 
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            stroke_width = stroke_width.value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            if isinstance(stroke_width, Length):
-                raise SyntaxError
+            stroke_width = self.device.length(stroke_width, -1)
             for e in data:
                 e.stroke_width = stroke_width
                 if hasattr(e, "node"):
                     e.node.altered()
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
         )
-        @context.console_command(
+        @self.console_command(
             "stroke",
             help=_("stroke <svg color>"),
             input_type=(
@@ -4191,14 +2438,11 @@ class Elemental(Modifier):
                     e.stroke = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_option("filter", "f", type=str, help="Filter indexes")
-        @context.console_argument(
-            "color", type=Color, help=_("Color to set the fill to")
-        )
-        @context.console_command(
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
+        @self.console_command(
             "fill",
             help=_("fill <svg color>"),
             input_type=(
@@ -4247,12 +2491,11 @@ class Elemental(Modifier):
                     e.fill = Color(color)
                     if hasattr(e, "node"):
                         e.node.altered()
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("x_offset", type=Length, help=_("x offset."))
-        @context.console_argument("y_offset", type=Length, help=_("y offset"))
-        @context.console_command(
+        @self.console_argument("x_offset", type=str, help=_("x offset."))
+        @self.console_argument("y_offset", type=str, help=_("y offset"))
+        @self.console_command(
             "outline",
             help=_("outline the current selected elements"),
             input_type=(
@@ -4268,7 +2511,6 @@ class Elemental(Modifier):
             x_offset=None,
             y_offset=None,
             data=None,
-            args=tuple(),
             **kwargs,
         ):
             """
@@ -4276,12 +2518,6 @@ class Elemental(Modifier):
             """
             if x_offset is None:
                 raise SyntaxError
-            elif not x_offset.is_valid_length:
-                raise SyntaxError("x-offset: " + _("This is not a valid length"))
-            if not y_offset is None:
-                if not y_offset.is_valid_length:
-                    raise SyntaxError("y-offset: " + _("This is not a valid length"))
-
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
@@ -4291,11 +2527,10 @@ class Elemental(Modifier):
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
 
-            offset_x = x_offset.value(ppi=1000.0, relative_length=width)
-            if y_offset is None:
-                offset_y = offset_x
-            else:
-                offset_y = y_offset.value(ppi=1000.0, relative_length=height)
+            offset_x = self.device.length(x_offset, 0) if x_offset is not None else 0
+            offset_y = (
+                self.device.length(y_offset, 1) if y_offset is not None else offset_x
+            )
 
             x_pos -= offset_x
             y_pos -= offset_y
@@ -4310,19 +2545,17 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
-        @context.console_argument(
-            "angle", type=Angle.parse, help=_("angle to rotate by")
-        )
-        @context.console_option("cx", "x", type=Length, help=_("center x"))
-        @context.console_option("cy", "y", type=Length, help=_("center y"))
-        @context.console_option(
+        @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
+        @self.console_option("cx", "x", type=str, help=_("center x"))
+        @self.console_option("cy", "y", type=str, help=_("center y"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("angle_to absolute angle"),
         )
-        @context.console_command(
+        @self.console_command(
             "rotate",
             help=_("rotate <angle>"),
             input_type=(
@@ -4370,21 +2603,11 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                if cx.is_valid_length:
-                    cx = cx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("cx: " + _("This is not a valid length"))
+                cx = self.device.length(cx, 0)
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                if cy.is_valid_length:
-                    cy = cy.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("cy: " + _("This is not a valid length"))
+                cy = self.device.length(cy, 1)
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -4412,21 +2635,20 @@ class Elemental(Modifier):
                             element.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @context.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @context.console_option("px", "x", type=Length, help=_("scale x origin point"))
-        @context.console_option("py", "y", type=Length, help=_("scale y origin point"))
-        @context.console_option(
+        @self.console_argument("scale_x", type=float, help=_("scale_x value"))
+        @self.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @self.console_option("px", "x", type=str, help=_("scale x origin point"))
+        @self.console_option("py", "y", type=str, help=_("scale y origin point"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("scale to absolute size"),
         )
-        @context.console_command(
+        @self.console_command(
             "scale",
             help=_("scale <scale> [<scale-y>]?"),
             input_type=(None, "elements"),
@@ -4473,21 +2695,11 @@ class Elemental(Modifier):
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
-                if px.is_valid_length:
-                    center_x = px.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("px: " + _("This is not a valid length"))
+                center_x = self.device.length(px, 0)
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                if py.is_valid_length:
-                    center_y = py.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("py: " + _("This is not a valid length"))
+                center_y = self.device.length(py, 1)
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
@@ -4519,26 +2731,25 @@ class Elemental(Modifier):
                         nsx = scale_x / osx
                         nsy = scale_y / osy
                         m = Matrix(
-                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_y)
+                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_x)
                         )
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument("tx", type=Length, help=_("translate x value"))
-        @context.console_argument("ty", type=Length, help=_("translate y value"))
-        @context.console_option(
+        @self.console_argument("tx", type=str, help=_("translate x value"))
+        @self.console_argument("ty", type=str, help=_("translate y value"))
+        @self.console_option(
             "absolute",
             "a",
             type=bool,
             action="store_true",
             help=_("translate to absolute position"),
         )
-        @context.console_command(
+        @self.console_command(
             "translate",
             help=_("translate <tx> <ty>"),
             input_type=(None, "elements"),
@@ -4573,21 +2784,11 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                if tx.is_valid_length:
-                    tx = tx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("tx: " + _("This is not a valid length"))
+                tx = self.device.length(tx, 0)
             else:
                 tx = 0
             if ty is not None:
-                if ty.is_valid_length:
-                    ty = ty.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
-                else:
-                    raise SyntaxError("ty: " + _("This is not a valid length"))
+                ty = self.device.length(ty, 0)
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -4609,32 +2810,21 @@ class Elemental(Modifier):
                             e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_translate(command, channel, _, data=None, **kwargs):
+        def element_move_to_laser(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            spooler, input_driver, output = context.registered[
-                "device/%s" % context.root.active
-            ]
-            try:
-                tx = input_driver.current_x
-            except AttributeError:
-                tx = 0
-            try:
-                ty = input_driver.current_y
-            except AttributeError:
-                ty = 0
+            tx, ty = self.device.current
             try:
                 bounds = Group.union_bbox([abs(e) for e in data])
                 otx = bounds[0]
@@ -4647,20 +2837,17 @@ class Elemental(Modifier):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_argument(
-            "x_pos", type=Length, help=_("x position for top left corner")
+        @self.console_argument(
+            "x_pos", type=str, help=_("x position for top left corner")
         )
-        @context.console_argument(
-            "y_pos", type=Length, help=_("y position for top left corner")
+        @self.console_argument(
+            "y_pos", type=str, help=_("y position for top left corner")
         )
-        @context.console_argument("width", type=Length, help=_("new width of selected"))
-        @context.console_argument(
-            "height", type=Length, help=_("new height of selected")
-        )
-        @context.console_command(
+        @self.console_argument("width", type=str, help=_("new width of selected"))
+        @self.console_argument("height", type=str, help=_("new height of selected"))
+        @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
             input_type=(None, "elements"),
@@ -4676,31 +2863,10 @@ class Elemental(Modifier):
                 if area is None:
                     channel(_("resize: nothing selected"))
                     return
-                if not x_pos is None:
-                    if not x_pos.is_valid_length:
-                        raise SyntaxError("x_pos: " + _("This is not a valid length"))
-                if not y_pos is None:
-                    if not y_pos.is_valid_length:
-                        raise SyntaxError("y_pos: " + _("This is not a valid length"))
-                if not width is None:
-                    if not width.is_valid_length:
-                        raise SyntaxError("width: " + _("This is not a valid length"))
-                if not height is None:
-                    if not height.is_valid_length:
-                        raise SyntaxError("height: " + _("This is not a valid length"))
-
-                x_pos = x_pos.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                y_pos = y_pos.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
-                width = width.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                height = height.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                x_pos = self.device.length(x_pos, 0)
+                y_pos = self.device.length(y_pos, 1)
+                width = self.device.length(width, 0)
+                height = self.device.length(height, 1)
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
                 if w == 0 or h == 0:  # dot
@@ -4730,18 +2896,17 @@ class Elemental(Modifier):
                     e *= m
                     if hasattr(e, "node"):
                         e.node.modified()
-                context.signal("refresh_scene")
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise SyntaxError
 
-        @context.console_argument("sx", type=float, help=_("scale_x value"))
-        @context.console_argument("kx", type=float, help=_("skew_x value"))
-        @context.console_argument("ky", type=float, help=_("skew_y value"))
-        @context.console_argument("sy", type=float, help=_("scale_y value"))
-        @context.console_argument("tx", type=Length, help=_("translate_x value"))
-        @context.console_argument("ty", type=Length, help=_("translate_y value"))
-        @context.console_command(
+        @self.console_argument("sx", type=float, help=_("scale_x value"))
+        @self.console_argument("kx", type=float, help=_("skew_x value"))
+        @self.console_argument("ky", type=float, help=_("skew_y value"))
+        @self.console_argument("sy", type=float, help=_("scale_y value"))
+        @self.console_argument("tx", type=str, help=_("translate_x value"))
+        @self.console_argument("ty", type=str, help=_("translate_y value"))
+        @self.console_command(
             "matrix",
             help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
             input_type=(None, "elements"),
@@ -4771,24 +2936,13 @@ class Elemental(Modifier):
                 # SVG 7.15.3 defines the matrix form as:
                 # [a c  e]
                 # [b d  f]
-                if not tx is None:
-                    if not tx.is_valid_length:
-                        raise SyntaxError("tx: " + _("This is not a valid length"))
-                if not ty is None:
-                    if not ty.is_valid_length:
-                        raise SyntaxError("ty: " + _("This is not a valid length"))
-
                 m = Matrix(
                     sx,
                     kx,
                     ky,
                     sy,
-                    tx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    ),
-                    ty.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    ),
+                    self.device.length(tx, 0),
+                    self.device.length(ty, 1),
                 )
                 for e in data:
                     try:
@@ -4802,10 +2956,9 @@ class Elemental(Modifier):
                         e.node.modified()
             except ValueError:
                 raise SyntaxError
-            context.signal("refresh_scene")
             return
 
-        @context.console_command(
+        @self.console_command(
             "reset",
             help=_("reset affine transformations"),
             input_type=(None, "elements"),
@@ -4828,10 +2981,9 @@ class Elemental(Modifier):
                 e.transform.reset()
                 if hasattr(e, "node"):
                     e.node.modified()
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "reify",
             help=_("reify affine transformations"),
             input_type=(None, "elements"),
@@ -4854,10 +3006,9 @@ class Elemental(Modifier):
                 e.reify()
                 if hasattr(e, "node"):
                     e.node.altered()
-            context.signal("refresh_scene")
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "classify",
             help=_("classify elements into operations"),
             input_type=(None, "elements"),
@@ -4872,7 +3023,7 @@ class Elemental(Modifier):
             self.classify(data)
             return "elements", data
 
-        @context.console_command(
+        @self.console_command(
             "declassify",
             help=_("declassify selected elements"),
             input_type=(None, "elements"),
@@ -4890,13 +3041,13 @@ class Elemental(Modifier):
         # ==========
         # TREE BASE
         # ==========
-        @context.console_command(
+        @self.console_command(
             "tree", help=_("access and alter tree elements"), output_type="tree"
         )
         def tree(**kwargs):
             return "tree", [self._tree]
 
-        @context.console_command(
+        @self.console_command(
             "bounds", help=_("view tree bounds"), input_type="tree", output_type="tree"
         )
         def tree_bounds(command, channel, _, data=None, **kwargs):
@@ -4930,7 +3081,7 @@ class Elemental(Modifier):
 
             return "tree", data
 
-        @context.console_command(
+        @self.console_command(
             "list", help=_("view tree"), input_type="tree", output_type="tree"
         )
         def tree_list(command, channel, _, data=None, **kwargs):
@@ -4966,9 +3117,9 @@ class Elemental(Modifier):
 
             return "tree", data
 
-        @context.console_argument("drag", help="Drag node address")
-        @context.console_argument("drop", help="Drop node address")
-        @context.console_command(
+        @self.console_argument("drag", help="Drag node address")
+        @self.console_argument("drop", help="Drop node address")
+        @self.console_command(
             "dnd", help=_("Drag and Drop Node"), input_type="tree", output_type="tree"
         )
         def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwargs):
@@ -4992,9 +3143,9 @@ class Elemental(Modifier):
                 raise SyntaxError
             return "tree", data
 
-        @context.console_argument("node", help="Node address for menu")
-        @context.console_argument("execute", help="Command to execute")
-        @context.console_command(
+        @self.console_argument("node", help="Node address for menu")
+        @self.console_argument("execute", help="Command to execute")
+        @self.console_command(
             "menu",
             help=_("Load menu for given node"),
             input_type="tree",
@@ -5079,7 +3230,7 @@ class Elemental(Modifier):
 
             return "tree", data
 
-        @context.console_command(
+        @self.console_command(
             "selected",
             help=_("delegate commands to focused value"),
             input_type="tree",
@@ -5091,7 +3242,7 @@ class Elemental(Modifier):
             """
             return "tree", list(self.flat(selected=True))
 
-        @context.console_command(
+        @self.console_command(
             "highlighted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -5103,7 +3254,7 @@ class Elemental(Modifier):
             """
             return "tree", list(self.flat(highlighted=True))
 
-        @context.console_command(
+        @self.console_command(
             "targeted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -5115,7 +3266,7 @@ class Elemental(Modifier):
             """
             return "tree", list(self.flat(targeted=True))
 
-        @context.console_command(
+        @self.console_command(
             "delete",
             help=_("delete the given nodes"),
             input_type="tree",
@@ -5133,7 +3284,7 @@ class Elemental(Modifier):
                         n.remove_node()
             return "tree", [self._tree]
 
-        @context.console_command(
+        @self.console_command(
             "delegate",
             help=_("delegate commands to focused value"),
             input_type="tree",
@@ -5143,10 +3294,8 @@ class Elemental(Modifier):
             """
             Delegate to either ops or elements depending on the current node emphasis
             """
-            for item in self.flat(
-                types=("op", "elem", "group", "file"), emphasized=True
-            ):
-                if item.type == "op":
+            for item in self.flat(emphasized=True):
+                if item.type.startswith("op"):
                     return "ops", list(self.ops(emphasized=True))
                 if item.type in ("elem", "group", "file"):
                     return "elements", list(self.elems(emphasized=True))
@@ -5154,8 +3303,8 @@ class Elemental(Modifier):
         # ==========
         # CLIPBOARD COMMANDS
         # ==========
-        @context.console_option("name", "n", type=str)
-        @context.console_command(
+        @self.console_option("name", "n", type=str)
+        @self.console_command(
             "clipboard",
             help=_("clipboard"),
             input_type=(None, "elements"),
@@ -5176,7 +3325,7 @@ class Elemental(Modifier):
             else:
                 return "clipboard", data
 
-        @context.console_command(
+        @self.console_command(
             "copy",
             help=_("clipboard copy"),
             input_type="clipboard",
@@ -5187,9 +3336,9 @@ class Elemental(Modifier):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @context.console_option("dx", "x", help=_("paste offset x"), type=Length)
-        @context.console_option("dy", "y", help=_("paste offset y"), type=Length)
-        @context.console_command(
+        @self.console_option("dx", "x", help=_("paste offset x"), type=str)
+        @self.console_option("dy", "y", help=_("paste offset y"), type=str)
+        @self.console_command(
             "paste",
             help=_("clipboard paste"),
             input_type="clipboard",
@@ -5206,21 +3355,11 @@ class Elemental(Modifier):
                 if dx is None:
                     dx = 0
                 else:
-                    if dx.is_valid_length:
-                        dx = dx.value(
-                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                        )
-                    else:
-                        raise SyntaxError("dx: " + _("This is not a valid length"))
+                    dx = self.device.length(dx, 0)
                 if dy is None:
                     dy = 0
                 else:
-                    if dy.is_valid_length:
-                        dy = dy.value(
-                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                        )
-                    else:
-                        raise SyntaxError("dy: " + _("This is not a valid length"))
+                    dy = self.device.length(dy, 1)
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
@@ -5230,7 +3369,7 @@ class Elemental(Modifier):
             self.set_emphasis([group])
             return "elements", pasted
 
-        @context.console_command(
+        @self.console_command(
             "cut",
             help=_("clipboard cut"),
             input_type="clipboard",
@@ -5242,7 +3381,7 @@ class Elemental(Modifier):
             self.remove_elements(data)
             return "elements", self._clipboard[destination]
 
-        @context.console_command(
+        @self.console_command(
             "clear",
             help=_("clipboard clear"),
             input_type="clipboard",
@@ -5254,7 +3393,7 @@ class Elemental(Modifier):
             self._clipboard[destination] = None
             return "elements", old
 
-        @context.console_command(
+        @self.console_command(
             "contents",
             help=_("clipboard contents"),
             input_type="clipboard",
@@ -5264,7 +3403,7 @@ class Elemental(Modifier):
             destination = self._clipboard_default
             return "elements", self._clipboard[destination]
 
-        @context.console_command(
+        @self.console_command(
             "list",
             help=_("clipboard list"),
             input_type="clipboard",
@@ -5277,10 +3416,10 @@ class Elemental(Modifier):
         # ==========
         # NOTES COMMANDS
         # ==========
-        @context.console_option(
+        @self.console_option(
             "append", "a", type=bool, action="store_true", default=False
         )
-        @context.console_command("note", help=_("note <note>"))
+        @self.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwargs):
             note = remainder
             if note is None:
@@ -5299,20 +3438,13 @@ class Elemental(Modifier):
         # ==========
         # TRACE OPERATIONS
         # ==========
-        @context.console_command(
+        @self.console_command(
             "trace_hull",
             help=_("trace the convex hull of current elements"),
             input_type=(None, "elements"),
         )
         def trace_trace_hull(command, channel, _, data=None, **kwargs):
-            active = self.context.active
-            try:
-                spooler, input_device, output = self.context.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
-                channel(_("No active device found."))
-                return
+            spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
             pts = []
@@ -5335,49 +3467,71 @@ class Elemental(Modifier):
             hull.append(hull[0])  # loop
 
             def trace_hull():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MODE_RAPID
+                yield "wait_finish"
+                yield "rapid_mode"
                 for p in hull:
-                    yield COMMAND_MOVE, p[0], p[1]
+                    yield (
+                        "move_abs",
+                        "{x}{units}".format(x=p[0], units=self.units),
+                        "{y}{units}".format(y=p[1], units=self.units),
+                    )
 
             spooler.job(trace_hull)
 
-        @context.console_command(
+        @self.console_command(
             "trace_quick", help=_("quick trace the bounding box of current elements")
         )
         def trace_trace_quick(command, channel, _, **kwargs):
-            active = self.context.active
-            try:
-                spooler, input_device, output = self.context.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
-                channel(_("No active device found."))
-                return
+            spooler = self.device.spooler
             bbox = self.selected_area()
             if bbox is None:
                 channel(_("No elements bounds to trace."))
                 return
 
             def trace_quick():
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, bbox[0], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[1]
-                yield COMMAND_MOVE, bbox[2], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[3]
-                yield COMMAND_MOVE, bbox[0], bbox[1]
+                yield "rapid_mode"
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[2], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[2], units=self.units),
+                    "{y}{units}".format(y=bbox[3], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[3], units=self.units),
+                )
+                yield (
+                    "move_abs",
+                    "{x}{units}".format(x=bbox[0], units=self.units),
+                    "{y}{units}".format(y=bbox[1], units=self.units),
+                )
 
             spooler.job(trace_quick)
 
         # --------------------------- END COMMANDS ------------------------------
 
+    def _init_tree(self, kernel):
+
+        _ = kernel.translation
         # --------------------------- TREE OPERATIONS ---------------------------
 
-        _ = self.context._
-
         non_structural_nodes = (
-            "op",
-            "opnode",
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "ref elem",
             "cmdop",
             "consoleop",
             "lasercode",
@@ -5387,12 +3541,34 @@ class Elemental(Modifier):
             "file",
             "group",
         )
+        operate_nodes = (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "cmdop",
+            "consoleop",
+        )
+        op_nodes = (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "cmdop",
+            "consoleop",
+        )
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(_("Operation properties"), node_type="op", help="")
+        @self.tree_operation(
+            _("Operation properties"), node_type=operate_nodes, help=""
+        )
         def operation_property(node, **kwargs):
-            self.context.open("window/OperationProperty", self.context.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_operation(_("Edit"), node_type="consoleop", help="")
@@ -5403,25 +3579,33 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
         @self.tree_operation(_("Element properties"), node_type="elem", help="")
         def path_property(node, **kwargs):
-            self.context.open("window/PathProperty", self.context.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Group))
         @self.tree_operation(_("Group properties"), node_type="group", help="")
         def group_property(node, **kwargs):
-            self.context.open("window/GroupProperty", self.context.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
         @self.tree_operation(_("Text properties"), node_type="elem", help="")
         def text_property(node, **kwargs):
-            self.context.open("window/TextProperty", self.context.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_operation(_("Image properties"), node_type="elem", help="")
         def image_property(node, **kwargs):
-            self.context.open("window/ImageProperty", self.context.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_operation(
             _("Ungroup elements"), node_type=("group", "file"), help=""
@@ -5439,132 +3623,136 @@ class Elemental(Modifier):
                 node = e.node
                 group_node.append_child(node)
 
-        @self.tree_operation(
-            _("Enable/Disable ops"), node_type=("op", "cmdop", "consoleop"), help=""
-        )
+        @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
                 n.output = not n.output
                 n.notify_update()
 
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Image"), node_type="op", help="")
-        def convert_operation_image(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Image"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Raster"), node_type="op", help="")
-        def convert_operation_raster(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Raster"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type="op", help="")
-        def convert_operation_engrave(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Engrave"
-
-        @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Cut"), node_type="op", help="")
-        def convert_operation_cut(node, **kwargs):
-            for n in self.ops(emphasized=True):
-                n.operation = "Cut"
+        # TODO: Restore convert node type ability
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        # def convert_operation_image(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Image"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        # def convert_operation_raster(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Raster"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        # def convert_operation_engrave(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Engrave"
+        #
+        # @self.tree_submenu(_("Convert operation"))
+        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        # def convert_operation_cut(node, **kwargs):
+        #     for n in self.ops(emphasized=True):
+        #         n.operation = "Cut"
 
         def radio_match(node, speed=0, **kwargs):
-            return node.settings.speed == float(speed)
+            return node.speed == float(speed)
 
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(
+            _("%smm/s") % "{speed}", node_type=("op raster", "op image"), help=""
+        )
         def set_speed_raster(node, speed=150, **kwargs):
-            node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
+            node.speed = float(speed)
+            self.signal("element_property_reload", node)
 
-        @self.tree_conditional(lambda node: node.operation in ("Cut", "Engrave"))
         @self.tree_submenu(_("Speed"))
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
-        @self.tree_operation(_("%smm/s") % "{speed}", node_type="op", help="")
+        @self.tree_operation(
+            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help=""
+        )
         def set_speed_vector(node, speed=35, **kwargs):
-            node.settings.speed = float(speed)
-            self.context.signal("element_property_reload", node)
+            node.speed = float(speed)
+            self.signal("element_property_reload", node)
 
         def radio_match(node, power=0, **kwargs):
-            return node.settings.power == float(power)
+            return node.power == float(power)
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
-        @self.tree_operation(_("%sppi") % "{power}", node_type="op", help="")
+        @self.tree_operation(
+            _("%sppi") % "{power}",
+            node_type=("op cut", "op raster", "op image", "op engrave"),
+            help="",
+        )
         def set_power(node, power=1000, **kwargs):
-            node.settings.power = float(power)
-            self.context.signal("element_property_reload", node)
+            node.power = float(power)
+            self.signal("element_property_reload", node)
 
         def radio_match(node, i=1, **kwargs):
-            return node.settings.raster_step == i
+            return node.raster_step == i
 
-        @self.tree_conditional(lambda node: node.operation == "Raster")
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
         @self.tree_operation(
             _("Step %s") % "{i}",
-            node_type="op",
+            node_type="op raster",
             help=_("Change raster step values of operation"),
         )
         def set_step_n(node, i=1, **kwargs):
-            settings = node.settings
-            settings.raster_step = i
-            self.context.signal("element_property_reload", node)
+            node.raster_step = i
+            self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwargs):
-            return (
-                node.settings.passes_custom and passvalue == node.settings.passes
-            ) or (not node.settings.passes_custom and passvalue == 1)
+            return (node.passes_custom and passvalue == node.passes) or (
+                not node.passes_custom and passvalue == 1
+            )
 
         @self.tree_submenu(_("Set operation passes"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
-        @self.tree_operation(_("Passes %s") % "{passvalue}", node_type="op", help="")
+        @self.tree_operation(
+            _("Passes %s") % "{passvalue}", node_type=operate_nodes, help=""
+        )
         def set_n_passes(node, passvalue=1, **kwargs):
-            node.settings.passes = passvalue
-            node.settings.passes_custom = passvalue != 1
-            self.context.signal("element_property_reload", node)
+            node.passes = passvalue
+            node.passes_custom = passvalue != 1
+            self.signal("element_property_reload", node)
 
         @self.tree_separator_after()
         @self.tree_operation(
             _("Execute operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
             node.emphasized = True
-            self.context("plan0 clear copy-selected\n")
-            self.context("window open ExecuteJob 0\n")
+            self("plan0 clear copy-selected\n")
+            self("window open ExecuteJob 0\n")
 
         @self.tree_separator_after()
         @self.tree_operation(
             _("Simulate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
             node.emphasized = True
-            self.context(
-                "plan0 copy-selected preprocess validate blob preopt optimize\n"
-            )
-            self.context("window open Simulation 0\n")
+            self("plan0 copy-selected preprocess validate blob preopt optimize\n")
+            self("window open Simulation 0\n")
 
         @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
-            self.context("operation* delete\n")
+            self("operation* delete\n")
 
         @self.tree_operation(_("Clear all"), node_type="branch elems", help="")
         def clear_all_ops(node, **kwargs):
-            self.context("element* delete\n")
+            self("element* delete\n")
             self.elem_branch.remove_all_children()
 
         # ==========
@@ -5637,11 +3825,22 @@ class Elemental(Modifier):
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
             _("Remove %s operations") % "{ecount}",
-            node_type=("op", "cmdop", "consoleop", "lasercode", "cutcode", "blob"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "cmdop",
+                "consoleop",
+                "lasercode",
+                "cutcode",
+                "blob",
+            ),
             help="",
         )
         def remove_n_ops(node, **kwargs):
-            self.context("operation delete\n")
+            self("operation delete\n")
 
         # ==========
         # REMOVE ELEMENTS
@@ -5658,7 +3857,7 @@ class Elemental(Modifier):
             help="",
         )
         def remove_n_elements(node, **kwargs):
-            self.context("element delete\n")
+            self("element delete\n")
 
         # ==========
         # CONVERT TREE OPERATIONS
@@ -5696,42 +3895,50 @@ class Elemental(Modifier):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="opnode", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type="ref elem", help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="opnode", help=""
+            _("Make %s copies") % "{copies}", node_type="ref elem", help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
             index = node.parent.children.index(node)
             for i in range(copies):
-                node.parent.add(node.object, type="opnode", pos=index)
+                node.parent.add(node.object, type="ref elem", pos=index)
             node.modified()
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
             _("Reverse subitems order"),
-            node_type=("op", "group", "branch elems", "file", "branch ops"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "group",
+                "branch elems",
+                "file",
+                "branch ops",
+            ),
             help=_("Reverse the items within this subitem"),
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.context.signal("rebuild_tree", 0)
+            self.signal("rebuild_tree")
 
         @self.tree_separator_after()
         @self.tree_operation(
             _("Refresh classification"), node_type="branch ops", help=""
         )
         def refresh_clasifications(node, **kwargs):
-            context = self.context
-            elements = context.elements
-            elements.remove_elements_from_operations(list(elements.elems()))
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("rebuild_tree")
 
         materials = [
             _("Wood"),
@@ -5750,88 +3957,101 @@ class Elemental(Modifier):
         def union_materials_saved():
             union = [
                 d
-                for d in self.context.get_context("operations").derivable()
+                for d in self.op_data.section_set()
                 if d not in materials and d != "previous"
             ]
             union.extend(materials)
             return union
 
-        @self.tree_submenu(_("Use"))
-        @self.tree_values(
-            "opname", values=self.context.get_context("operations").derivable
-        )
-        @self.tree_operation(
-            _("Load: %s") % "{opname}", node_type="branch ops", help=""
-        )
-        def load_ops(node, opname, **kwargs):
-            self.context("operation load %s\n" % opname)
+        def difference_materials_saved():
+            secs = self.op_data.section_set()
+            difference = [m for m in materials if m not in secs]
+            return difference
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
+        @self.tree_values("opname", values=self.op_data.section_set)
+        @self.tree_operation(_("%s") % "{opname}", node_type="branch ops", help="")
+        def load_ops(node, opname, **kwargs):
+            self("material load %s\n" % opname)
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
-            self.context.elements.load_default()
+            self.load_default()
 
-        @self.tree_submenu(_("Use"))
+        @self.tree_submenu(_("Load"))
+        @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
-            self.context.elements.load_default2()
+            self.load_default2()
 
         @self.tree_submenu(_("Save"))
-        @self.tree_values("opname", values=union_materials_saved)
+        @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
-        def save_ops(node, opname="saved", **kwargs):
-            self.context("operation save %s\n" % opname)
+        def save_materials(node, opname="saved", **kwargs):
+            self("material save %s\n" % opname)
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Save"))
+        @self.tree_prompt("opname", _("Name to store current operations under?"))
+        @self.tree_operation("New", node_type="branch ops", help="")
+        def save_material_custom(node, opname, **kwargs):
+            if opname is not None:
+                self("material save %s\n" % opname.replace(" ", "_"))
+
+        @self.tree_submenu(_("Delete"))
+        @self.tree_values("opname", values=self.op_data.section_set)
+        @self.tree_operation("{opname}", node_type="branch ops", help="")
+        def remove_ops(node, opname="saved", **kwargs):
+            self("material delete %s\n" % opname)
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Image"), node_type="branch ops", help="")
         def append_operation_image(node, pos=None, **kwargs):
-            self.context.elements.add_op(LaserOperation(operation="Image"), pos=pos)
+            self.add_op(ImageOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Raster"), node_type="branch ops", help="")
         def append_operation_raster(node, pos=None, **kwargs):
-            self.context.elements.add_op(LaserOperation(operation="Raster"), pos=pos)
+            self.add_op(RasterOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Engrave"), node_type="branch ops", help="")
         def append_operation_engrave(node, pos=None, **kwargs):
-            self.context.elements.add_op(LaserOperation(operation="Engrave"), pos=pos)
+            self.add_op(EngraveOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append operation"))
         @self.tree_operation(_("Append Cut"), node_type="branch ops", help="")
         def append_operation_cut(node, pos=None, **kwargs):
-            self.context.elements.add_op(LaserOperation(operation="Cut"), pos=pos)
+            self.add_op(CutOpNode(), pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Home", COMMAND_HOME), type="cmdop", pos=pos
-            )
+            self.op_branch.add(CommandOperation("Home", "home"), type="cmdop", pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
             _("Append Return to Origin"), node_type="branch ops", help=""
         )
         def append_operation_origin(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Origin", COMMAND_MOVE, 0, 0), type="cmdop", pos=pos
+            self.op_branch.add(
+                CommandOperation("Origin", "home", 0, 0), type="cmdop", pos=pos
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
-                CommandOperation("Beep", COMMAND_BEEP), type="cmdop", pos=pos
-            )
+            self.op_branch.add(CommandOperation("Beep", "beep"), type="cmdop", pos=pos)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
             _("Append Interrupt (console)"), node_type="branch ops", help=""
         )
         def append_operation_interrupt_console(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 ConsoleOperation('interrupt "Spooling was interrupted"'),
                 type="consoleop",
                 pos=pos,
@@ -5840,11 +4060,11 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation(
                     "Interrupt",
-                    COMMAND_FUNCTION,
-                    self.context.registered["function/interrupt"],
+                    "function",
+                    self.lookup("function/interrupt"),
                 ),
                 type="cmdop",
                 pos=pos,
@@ -5863,11 +4083,11 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
-            self.context.elements.op_branch.add(
+            self.op_branch.add(
                 CommandOperation(
                     "Shutdown",
-                    COMMAND_FUNCTION,
-                    self.context.console_function("quit\n"),
+                    "function",
+                    self.console_function("quit\n"),
                 ),
                 type="cmdop",
                 pos=pos,
@@ -5877,16 +4097,14 @@ class Elemental(Modifier):
             _("Reclassify operations"), node_type="branch elems", help=""
         )
         def reclassify_operations(node, **kwargs):
-            context = self.context
-            elements = context.elements
-            elems = list(elements.elems())
-            elements.remove_elements_from_operations(elems)
-            elements.classify(list(elements.elems()))
-            self.context.signal("rebuild_tree", 0)
+            elems = list(self.elems())
+            self.remove_elements_from_operations(elems)
+            self.classify(list(self.elems()))
+            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
-            node_type="op",
+            node_type=operate_nodes,
             help=_("duplicate operation element nodes"),
         )
         def duplicate_operation(node, **kwargs):
@@ -5896,30 +4114,30 @@ class Elemental(Modifier):
                     pos = operations.index(op) + 1
                 except ValueError:
                     pos = None
-                copy_op = LaserOperation(op)
+                copy_op = copy(op)
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
                     try:
-                        copy_op.add(child.object, type="opnode")
+                        copy_op.add(child.object, type="ref elem")
                     except AttributeError:
                         pass
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Passes"))
-        @self.tree_operation(_("Add 1 pass"), node_type="op", help="")
+        @self.tree_operation(
+            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut"), help=""
+        )
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(_("Add %s passes") % "{copies}", node_type="op", help="")
+        @self.tree_operation(
+            _("Add %s passes") % "{copies}",
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
+        )
         def add_n_passes(node, copies=1, **kwargs):
             add_elements = [
                 child.object for child in node.children if child.object is not None
@@ -5933,53 +4151,50 @@ class Elemental(Modifier):
             if removed:
                 add_elements = [c for c in add_elements if c is not None]
             add_elements *= copies
-            node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
+            node.add_all(add_elements, type="ref elem")
+            self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Duplicate elements 1 time"), node_type="op", help="")
+        @self.tree_operation(
+            _("Duplicate elements 1 time"),
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
+        )
         def dup_1_copy(node, **kwargs):
             dup_n_copies(node, copies=1, **kwargs)
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
-        @self.tree_conditional(
-            lambda node: node.operation in ("Image", "Engrave", "Cut")
-        )
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}", node_type="op", help=""
+            _("Duplicate elements %s times") % "{copies}",
+            node_type=("op image", "op engrave", "op cut"),
+            help="",
         )
         def dup_n_copies(node, copies=1, **kwargs):
             add_elements = [
                 child.object for child in node.children if child.object is not None
             ]
             add_elements *= copies
-            node.add_all(add_elements, type="opnode")
-            self.context.signal("rebuild_tree", 0)
+            node.add_all(add_elements, type="ref elem")
+            self.signal("rebuild_tree")
 
-        @self.tree_conditional(lambda node: node.operation in ("Raster", "Image"))
         @self.tree_operation(
             _("Make raster image"),
-            node_type="op",
+            node_type=("op image", "op raster"),
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            context = self.context
-            elements = context.elements
-            subitems = list(node.flat(types=("elem", "opnode")))
-            reverse = self.context.classify_reverse
+            subitems = list(node.flat(types=("elem", "ref elem")))
+            reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
-            make_raster = self.context.registered.get("render-op/make_raster")
+            make_raster = self.lookup("render-op/make_raster")
             bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
-            step = float(node.settings.raster_step)
+            step = float(node.raster_step)
             if step == 0:
                 step = 1
             xmin, ymin, xmax, ymax = bounds
@@ -5993,7 +4208,7 @@ class Elemental(Modifier):
             image_element.transform.post_scale(step, step)
             image_element.transform.post_translate(xmin, ymin)
             image_element.values["raster_step"] = step
-            elements.add_elem(image_element)
+            self.add_elem(image_element)
 
         def add_after_index(self):
             try:
@@ -6004,54 +4219,54 @@ class Elemental(Modifier):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type="op", help="")
+        @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type="op", help="")
+        @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type="op", help="")
+        @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type="op", help="")
+        @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home"), node_type="op", help="")
+        @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
             append_operation_home(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Return to Origin"), node_type="op", help="")
+        @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
             append_operation_origin(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Beep"), node_type="op", help="")
+        @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
+        @self.tree_operation(_("Add Interrupt (console)"), node_type=op_nodes, help="")
         def add_operation_interrupt_console(node, **kwargs):
             append_operation_interrupt_console(
                 node, pos=add_after_index(self), **kwargs
             )
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
+        @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self)
             append_operation_home(node, pos=pos, **kwargs)
@@ -6095,6 +4310,24 @@ class Elemental(Modifier):
 
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
+        def duplicate_element_1(node, **kwargs):
+            duplicate_element_n(node, copies=1, **kwargs)
+
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type="elem", help=""
+        )
+        def duplicate_element_n(node, copies, **kwargs):
+            adding_elements = [
+                copy(e) for e in list(self.elems(emphasized=True)) * copies
+            ]
+            self.add_elems(adding_elements)
+            self.classify(adding_elements)
+            self.set_emphasis(None)
+
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
             and not isinstance(node.object, Path)
@@ -6120,7 +4353,7 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale -1 1 %f %f\n" % (center_x, center_y))
+            self("scale -1 1 %f %f\n" % (center_x, center_y))
 
         @self.tree_submenu(_("Flip"))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -6137,7 +4370,7 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale 1 -1 %f %f\n" % (center_x, center_y))
+            self("scale 1 -1 %f %f\n" % (center_x, center_y))
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -6158,7 +4391,7 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
+            self("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -6219,51 +4452,28 @@ class Elemental(Modifier):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self.context("rotate %fturn %f %f\n" % (turns, center_x, center_y))
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
-        def duplicate_element_1(node, **kwargs):
-            duplicate_element_n(node, copies=1, **kwargs)
-
-        @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="elem", help=""
-        )
-        # TODO Make this duplicate elements in the group hierarchy
-        def duplicate_element_n(node, copies, **kwargs):
-            context = self.context
-            elements = context.elements
-            adding_elements = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
-            elements.add_elems(adding_elements)
-            elements.classify(adding_elements)
-            elements.set_emphasis(None)
+            self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
 
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify user changes"), node_type=("elem", "group", "file"), help=""
+            _("Reify User Changes"), node_type=("elem", "group", "file"), help=""
         )
         def reify_elem_changes(node, **kwargs):
-            self.context("reify\n")
+            self("reify\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
         def break_subpath_elem(node, **kwargs):
-            self.context("element subpath\n")
+            self("element subpath\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reset user changes"),
-            node_type=("branch elem", "elem", "group", "file"),
-            help="",
+            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
         )
         def reset_user_changes(node, copies=1, **kwargs):
-            self.context("reset\n")
+            self("reset\n")
 
         @self.tree_operation(
             _("Merge items"),
@@ -6271,7 +4481,7 @@ class Elemental(Modifier):
             help=_("Merge this node's children into 1 path."),
         )
         def merge_elements(node, **kwargs):
-            self.context("element merge\n")
+            self("element merge\n")
 
         def radio_match(node, i=0, **kwargs):
             if "raster_step" in node.object.values:
@@ -6301,14 +4511,13 @@ class Elemental(Modifier):
             element.transform.post_translate(tx, ty)
             if hasattr(element, "node"):
                 element.node.modified()
-            self.context.signal("element_property_reload", node.object)
-            self.context.signal("refresh_scene")
+            self.signal("element_property_reload", node.object)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
         def image_actualize_pixels(node, **kwargs):
-            self.context("image resample\n")
+            self("image resample\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Z-depth divide"))
@@ -6326,7 +4535,7 @@ class Elemental(Modifier):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self.context("image threshold %f %f\n" % (threshold_min, threshold_max))
+                self("image threshold %f %f\n" % (threshold_min, threshold_max))
 
         def is_locked(node):
             try:
@@ -6340,85 +4549,96 @@ class Elemental(Modifier):
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock manipulations"), node_type="elem", help="")
         def image_unlock_manipulations(node, **kwargs):
-            self.context("image unlock\n")
+            self("image unlock\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
         def image_dither(node, **kwargs):
-            self.context("image dither\n")
+            self("image dither\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert image"), node_type="elem", help="")
         def image_invert(node, **kwargs):
-            self.context("image invert\n")
+            self("image invert\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror horizontal"), node_type="elem", help="")
         def image_mirror(node, **kwargs):
-            context("image mirror\n")
+            self("image mirror\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip vertical"), node_type="elem", help="")
         def image_flip(node, **kwargs):
-            self.context("image flip\n")
+            self("image flip\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CW"), node_type="elem", help="")
         def image_cw(node, **kwargs):
-            self.context("image cw\n")
+            self("image cw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CCW"), node_type="elem", help="")
         def image_ccw(node, **kwargs):
-            self.context("image ccw\n")
+            self("image ccw\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Save output.png"), node_type="elem", help="")
         def image_save(node, **kwargs):
-            self.context("image save output.png\n")
+            self("image save output.png\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
+            "script", values=list(self.match("raster_script", suffix=True))
         )
         @self.tree_operation(
             _("RasterWizard: %s") % "{script}", node_type="elem", help=""
         )
         def image_rasterwizard_open(node, script=None, **kwargs):
-            self.context("window open RasterWizard %s\n" % script)
+            self("window open RasterWizard %s\n" % script)
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
-            "script", values=list(self.context.match("raster_script", suffix=True))
+            "script", values=list(self.match("raster_script", suffix=True))
         )
         @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
-            self.context("image wizard %s\n" % script)
+            self("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
         def cutcode_convert_svg(node, **kwargs):
-            self.context.elements.add_elems(list(node.object.as_elements()))
+            self.add_elems(list(node.object.as_elements()))
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
         @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
         def cutcode_operation(node, **kwargs):
-            self.context.elements.add_op(node.object)
+            self.add_op(node.object)
 
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()
         @self.tree_operation(
             _("Expand all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "branch elems",
+                "branch ops",
+                "group",
+                "file",
+                "root",
+            ),
             help="Expand all children of this given node.",
         )
         def expand_all_children(node, **kwargs):
@@ -6427,109 +4647,68 @@ class Elemental(Modifier):
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_operation(
             _("Collapse all children"),
-            node_type=("op", "branch elems", "branch ops", "group", "file", "root"),
+            node_type=(
+                "op cut",
+                "op raster",
+                "op image",
+                "op engrave",
+                "op dots",
+                "branch elems",
+                "branch ops",
+                "group",
+                "file",
+                "root",
+            ),
             help="Collapse all children of this given node.",
         )
         def collapse_all_children(node, **kwargs):
             node.notify_collapse()
 
         @self.tree_reference(lambda node: node.object.node)
-        @self.tree_operation(_("Element"), node_type="opnode", help="")
-        def reference_opnode(node, **kwargs):
+        @self.tree_operation(_("Element"), node_type="ref elem", help="")
+        def reference_refelem(node, **kwargs):
             pass
 
-        self.listen(self)
+    def service_detach(self, *args, **kwargs):
+        self.unlisten_tree(self)
 
-    def detach(self, *a, **kwargs):
+    def service_attach(self, *args, **kwargs):
+        self.listen_tree(self)
+
+    def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
-        self.unlisten(self)
-
-    def boot(self, *a, **kwargs):
-        self.context.setting(bool, "operation_default_empty", True)
-        try:
-            self.load_persistent_operations("previous")
-        except ValueError:
-            print("elements: Previous operation settings invalid: ValueError")
-        ops = list(self.ops())
-        if not len(ops) and self.context.operation_default_empty:
-            self.load_default()
-            return
+        self.op_data.write_configuration()
+        for e in self.flat():
+            e.unregister()
 
     def save_persistent_operations(self, name):
-        context = self.context
-        settings = context.derive("operations/" + name)
-        settings.clear_persistent()
-
+        settings = self.op_data
+        settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
-            op_set = settings.derive("%06i" % i)
-            if isinstance(op, LaserOperation):
-                sets = op.settings
-                for q in (op, sets):
-                    for key in dir(q):
-                        if key.startswith("_"):
-                            continue
-                        if key in [
-                            "emphasized",
-                            "highlighted",
-                            "selected",
-                            "targeted",
-                        ]:
-                            continue
-                        if key.startswith("implicit"):
-                            continue
-                        value = getattr(q, key)
-                        if value is None:
-                            continue
-                        if isinstance(value, Color):
-                            value = value.argb
-                        op_set.write_persistent(key, value)
-            elif isinstance(op, CommandOperation) or isinstance(op, ConsoleOperation):
-                for key in dir(op):
-                    value = getattr(op, key)
-                    if key.startswith("_"):
-                        continue
-                    if key in [
-                        "emphasized",
-                        "highlighted",
-                        "selected",
-                        "targeted",
-                    ]:
-                        continue
-                    if value is None:
-                        continue
-                    op_set.write_persistent(key, value)
-        settings.close_subpaths()
+            section = "%s %06i" % (name, i)
+            settings.write_persistent(section, "type", op.type)
+            op.save(settings, section)
+
+        settings.write_configuration()
+
+    def clear_persistent_operations(self, name):
+        settings = self.op_data
+        subitems = list(settings.derivable(name))
+        for section in subitems:
+            settings.clear_persistent(section)
+        settings.write_configuration()
 
     def load_persistent_operations(self, name):
         self.clear_operations()
-        settings = self.context.get_context("operations/" + name)
-        subitems = list(settings.derivable())
-        ops = [None] * len(subitems)
-        for i, v in enumerate(subitems):
-            op_setting_context = settings.derive(v)
-            op_type = op_setting_context.get_persistent_value(str, "type")
-            if op_type in ["op", ""]:
-                op = LaserOperation()
-                op_set = op.settings
-                op_setting_context.load_persistent_object(op)
-                op_setting_context.load_persistent_object(op_set)
-                op.type = "op"
-            elif op_type == "cmdop":
-                name = op_setting_context.get_persistent_value(str, "label")
-                command = op_setting_context.get_persistent_value(int, "command")
-                op = CommandOperation(name, command)
-                op_setting_context.load_persistent_object(op)
-            elif op_type == "consoleop":
-                command = op_setting_context.get_persistent_value(str, "command")
-                op = ConsoleOperation(command)
-                op_setting_context.load_persistent_object(op)
-            else:
+        settings = self.op_data
+        subitems = list(settings.derivable(name))
+        operation_branch = self._tree.get(type="branch ops")
+        for section in subitems:
+            op_type = settings.read_persistent(str, section, "type")
+            if op_type in ("op", "ref elem"):
                 continue
-            try:
-                ops[i] = op
-            except (ValueError, IndexError):
-                ops.append(op)
-        self.add_ops([o for o in ops if o is not None])
+            op = operation_branch.add(None, type=op_type)
+            op.load(settings, section)
         self.classify(list(self.elems()))
 
     def emphasized(self, *args):
@@ -6544,10 +4723,10 @@ class Elemental(Modifier):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
 
-    def listen(self, listener):
+    def listen_tree(self, listener):
         self._tree.listen(listener)
 
-    def unlisten(self, listener):
+    def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
     def add_element(self, element, stroke="black"):
@@ -6557,49 +4736,240 @@ class Elemental(Modifier):
             and len(element) == 0
         ):
             return  # No empty elements.
-        context_root = self.context.root
         if hasattr(element, "stroke") and element.stroke is None:
             element.stroke = Color(stroke)
-        node = context_root.elements.add_elem(element)
-        context_root.elements.set_emphasis([element])
+        node = self.add_elem(element)
+        self.set_emphasis([element])
         node.focus()
         return node
 
     def load_default(self):
         self.clear_operations()
         self.add_op(
-            LaserOperation(
-                operation="Image",
+            ImageOpNode(
                 color="black",
                 speed=140.0,
                 power=1000.0,
                 raster_step=3,
             )
         )
-        self.add_op(LaserOperation(operation="Raster"))
-        self.add_op(LaserOperation(operation="Engrave"))
-        self.add_op(LaserOperation(operation="Cut"))
+        self.add_op(RasterOpNode())
+        self.add_op(EngraveOpNode())
+        self.add_op(CutOpNode())
         self.classify(list(self.elems()))
 
     def load_default2(self):
         self.clear_operations()
         self.add_op(
-            LaserOperation(
-                operation="Image",
+            ImageOpNode(
                 color="black",
                 speed=140.0,
                 power=1000.0,
                 raster_step=3,
             )
         )
-        self.add_op(LaserOperation(operation="Raster"))
-        self.add_op(LaserOperation(operation="Engrave", color="blue"))
-        self.add_op(LaserOperation(operation="Engrave", color="green"))
-        self.add_op(LaserOperation(operation="Engrave", color="magenta"))
-        self.add_op(LaserOperation(operation="Engrave", color="cyan"))
-        self.add_op(LaserOperation(operation="Engrave", color="yellow"))
-        self.add_op(LaserOperation(operation="Cut"))
+        self.add_op(RasterOpNode())
+        self.add_op(EngraveOpNode(color="blue"))
+        self.add_op(EngraveOpNode(color="green"))
+        self.add_op(EngraveOpNode(color="magenta"))
+        self.add_op(EngraveOpNode(color="cyan"))
+        self.add_op(EngraveOpNode(color="yellow"))
+        self.add_op(CutOpNode())
         self.classify(list(self.elems()))
+
+    def tree_operations_for_node(self, node):
+        for func, m, sname in self.find("tree", node.type, ".*"):
+            reject = False
+            for cond in func.conditionals:
+                if not cond(node):
+                    reject = True
+                    break
+            if reject:
+                continue
+            for cond in func.try_conditionals:
+                try:
+                    if not cond(node):
+                        reject = True
+                        break
+                except Exception:
+                    continue
+            if reject:
+                continue
+            func_dict = {
+                "name": label_truncate_re.sub("", str(node.label)),
+                "label": str(node.label),
+            }
+
+            iterator = func.values
+            if iterator is None:
+                iterator = [0]
+            else:
+                try:
+                    iterator = list(iterator())
+                except TypeError:
+                    pass
+            for i, value in enumerate(iterator):
+                func_dict["iterator"] = i
+                func_dict["value"] = value
+                try:
+                    func_dict[func.value_name] = value
+                except AttributeError:
+                    pass
+
+                for calc in func.calcs:
+                    key, c = calc
+                    value = c(value)
+                    func_dict[key] = value
+                if func.radio is not None:
+                    try:
+                        func.radio_state = func.radio(node, **func_dict)
+                    except:
+                        func.radio_state = False
+                else:
+                    func.radio_state = None
+                name = func.name.format_map(func_dict)
+                func.func_dict = func_dict
+                func.real_name = name
+
+                yield func
+
+    def flat(self, **kwargs):
+        yield from self._tree.flat(**kwargs)
+
+    @staticmethod
+    def tree_calc(value_name, calc_func):
+        def decor(func):
+            func.calcs.append((value_name, calc_func))
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_values(value_name, values):
+        def decor(func):
+            func.value_name = value_name
+            func.values = values
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_iterate(value_name, start, stop, step=1):
+        def decor(func):
+            func.value_name = value_name
+            func.values = range(start, stop, step)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_radio(radio_function):
+        def decor(func):
+            func.radio = radio_function
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_submenu(submenu):
+        def decor(func):
+            func.submenu = submenu
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_prompt(attr, prompt, data_type=str):
+        def decor(func):
+            func.user_prompt.append(
+                {
+                    "attr": attr,
+                    "prompt": prompt,
+                    "type": data_type,
+                }
+            )
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_conditional(conditional):
+        def decor(func):
+            func.conditionals.append(conditional)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_conditional_try(conditional):
+        def decor(func):
+            func.try_conditionals.append(conditional)
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_reference(node):
+        def decor(func):
+            func.reference = node
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_separator_after():
+        def decor(func):
+            func.separate_after = True
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_separator_before():
+        def decor(func):
+            func.separate_before = True
+            return func
+
+        return decor
+
+    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+        def decorator(func):
+            @functools.wraps(func)
+            def inner(node, **ik):
+                returned = func(node, **ik, **kwargs)
+                return returned
+
+            if isinstance(node_type, tuple):
+                ins = node_type
+            else:
+                ins = (node_type,)
+
+            # inner.long_help = func.__doc__
+            inner.help = help
+            inner.node_type = ins
+            inner.name = name
+            inner.radio = None
+            inner.submenu = None
+            inner.reference = None
+            inner.separate_after = False
+            inner.separate_before = False
+            inner.conditionals = list()
+            inner.try_conditionals = list()
+            inner.user_prompt = list()
+            inner.calcs = list()
+            inner.values = [0]
+            registered_name = inner.__name__
+
+            for _in in ins:
+                p = "tree/%s/%s" % (_in, registered_name)
+                if p in self._registered:
+                    raise NameError(
+                        "A function of this name was already registered: %s" % p
+                    )
+                self.register(p, inner)
+            return inner
+
+        return decorator
 
     @property
     def op_branch(self):
@@ -6611,9 +4981,9 @@ class Elemental(Modifier):
 
     def ops(self, **kwargs):
         operations = self._tree.get(type="branch ops")
-        for item in operations.flat(
-            types=("op", "cmdop", "consoleop"), depth=1, **kwargs
-        ):
+        for item in operations.flat(depth=1, **kwargs):
+            if item.type.startswith("branch") or item.type.startswith("ref"):
+                continue
             yield item
 
     def elems(self, **kwargs):
@@ -6689,7 +5059,7 @@ class Elemental(Modifier):
         """
         operation_branch = self._tree.get(type="branch ops")
         op.set_label(str(op))
-        operation_branch.add(op, type="op", pos=pos)
+        operation_branch.add(op, type=op.type, pos=pos)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
@@ -6710,7 +5080,7 @@ class Elemental(Modifier):
         """
         element_branch = self._tree.get(type="branch elems")
         node = element_branch.add(element, type="elem")
-        self.context.signal("element_added", element)
+        self.signal("element_added", element)
         if classify:
             self.classify([element])
         return node
@@ -6720,7 +5090,7 @@ class Elemental(Modifier):
         items = []
         for element in adding_elements:
             items.append(element_branch.add(element, type="elem"))
-        self.context.signal("element_added", adding_elements)
+        self.signal("element_added", adding_elements)
         return items
 
     def clear_operations(self):
@@ -6761,7 +5131,7 @@ class Elemental(Modifier):
             for i, o in enumerate(list(self.ops())):
                 if o is op:
                     o.remove_node()
-            self.context.signal("operation_removed", op)
+            self.signal("operation_removed", op)
 
     def remove_elements_from_operations(self, elements_list):
         for i, op in enumerate(self.ops()):
@@ -6805,7 +5175,7 @@ class Elemental(Modifier):
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
-            self.context.signal("selected_bounds", self._emphasized_bounds)
+            self.signal("selected_bounds", self._emphasized_bounds)
 
     def highlight_children(self, node_context):
         """
@@ -6897,11 +5267,11 @@ class Elemental(Modifier):
             max(b[0], b[2]),
             max(b[1], b[3]),
         ]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
-        self.context.signal("selected_bounds", self._emphasized_bounds)
+        self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
         for obj in self.elems(emphasized=True):
@@ -6954,7 +5324,7 @@ class Elemental(Modifier):
         # Use of Classify in reverse is new functionality in 0.7.1
         # So using it is incompatible, but not using it would be inconsistent
         # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
         if operations is None:
@@ -6972,33 +5342,33 @@ class Elemental(Modifier):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
-                if op.operation == "Raster" and not op.default:
+                if op.type == "op raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add(element, type="opnode")
+                        op.add(element, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.add(element, type="opnode")
+                        op.add(element, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGText):
                         op.add(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.argb is not None:
-                        op.add(element, type="opnode")
+                        op.add(element, type="ref elem")
                         was_classified = True
                 elif (
-                    op.operation in ("Engrave", "Cut")
+                    op.type in ("op engrave", "op cut")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                     and not op.default
                 ):
-                    op.add(element, type="opnode")
+                    op.add(element, type="ref elem")
                     was_classified = True
-                elif op.operation == "Image" and isinstance(element, SVGImage):
-                    op.add(element, type="opnode")
+                elif op.type == "op image" and isinstance(element, SVGImage):
+                    op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in one image operation.
-                elif op.operation == "Dots" and isDot(element):
-                    op.add(element, type="opnode")
+                elif op.type == "op dots" and is_dot(element):
+                    op.add(element, type="ref elem")
                     was_classified = True
                     break  # May only classify in Dots.
 
@@ -7009,9 +5379,9 @@ class Elemental(Modifier):
                 # it is not guaranteed to classify all elements as this is not explicitly checked.
                 op = None
                 if isinstance(element, SVGImage):
-                    op = LaserOperation(operation="Image", output=False)
-                elif isDot(element):
-                    op = LaserOperation(operation="Dots", output=False)
+                    op = ImageOpNode(output=False)
+                elif is_dot(element):
+                    op = DotsOpNode(output=False)
                 elif (
                     # test for Shape or SVGText instance is probably unnecessary,
                     # but we should probably not test for stroke without ensuring
@@ -7020,13 +5390,11 @@ class Elemental(Modifier):
                     and element.stroke is not None
                     and element.stroke.value is not None
                 ):
-                    op = LaserOperation(
-                        operation="Engrave", color=element.stroke, speed=35.0
-                    )
+                    op = EngraveOpNode(color=element.stroke, speed=35.0)
                 # This code is separated out to avoid duplication
                 if op is not None:
                     add_op_function(op)
-                    op.add(element, type="opnode")
+                    op.add(element, type="ref elem")
                     operations.append(op)
 
                 # Seperate code for Raster ops because we might add a Raster op
@@ -7035,11 +5403,11 @@ class Elemental(Modifier):
                     isinstance(element, (Shape, SVGText))
                     and element.fill is not None
                     and element.fill.argb is not None
-                    and not isDot(element)
+                    and not is_dot(element)
                 ):
-                    op = LaserOperation(operation="Raster", color=0, output=False)
+                    op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add(element, type="opnode")
+                    op.add(element, type="ref elem")
                     operations.append(op)
 
     def add_classify_op(self, op):
@@ -7053,18 +5421,18 @@ class Elemental(Modifier):
         """
         operations = self._tree.get(type="branch ops").children
         for pos, old_op in reversed_enumerate(operations):
-            if op.operation == old_op.operation:
+            if op.type == old_op.type:
                 return self.add_op(op, pos=pos + 1)
 
         # No operation of same type found. So we will look for last operation of a lower priority and add after it.
         try:
-            priority = OP_PRIORITIES.index(op.operation)
+            priority = OP_PRIORITIES.index(op.type)
         except ValueError:
             return self.add_op(op)
 
         for pos, old_op in reversed_enumerate(operations):
             try:
-                if OP_PRIORITIES.index(old_op.operation) < priority:
+                if OP_PRIORITIES.index(old_op.type) < priority:
                     return self.add_op(op, pos=pos + 1)
             except ValueError:
                 pass
@@ -7073,32 +5441,62 @@ class Elemental(Modifier):
     def classify(self, elements, operations=None, add_op_function=None):
         """
         Classify does the placement of elements within operations.
+        In the future, we expect to be able to save and reload the mapping of
+        elements to operations, but at present classification is the only means
+        of assigning elements to operations.
+
+        This classification routine ensures that every element is assigned
+        to at least one operation - the user does NOT have to check whether
+        some elements have not been assigned (which was an issue with 0.6.x).
+
+        Because of how overlaying raster elements can have white areas masking
+        underlying non-white areas, the classification of raster elements is complex,
+        and indeed deciding whether elements should be classified as vector or raster
+        has edge case complexities.
 
         SVGImage is classified as Image.
         Dots are a special type of Path
         All other SVGElement types are Shapes / Text
 
-        Paths consisting of a move followed by a single stright line segment are never Raster (since no width) -
-            testing for more complex stright line elements is too difficult
-        Shapes/Text with Fill are raster by default
-        Shapes/Text with Black strokes are raster by default regardless of fill
-        All other Shapes/Text with no fill are vector by default
+        Paths consisting of a move followed by a single stright line segment
+        are never Raster (since no width) - testing for more complex stright line
+        path-segments and that multiple-such-segments are also straight-line is complex,
+
+        Shapes/Text with grey (R=G=B) strokes are raster by default regardless of fill
+
+        Shapes/Text with non-transparent Fill are raster by default - except for one
+        edge case: Elements with white fill, non-grey stroke and no raster elements behind
+        them are considered vector elements.
+
+        Shapes/Text with no fill and non-grey strokes are vector by default - except
+        for one edge case: Elements with strokes that have other raster elements
+        overlaying the stroke should in some cases be considered raster elements,
+        but there are serveral use cases and counter examples are likely easy to create.
+        The algorithm below tries to be conservative in deciding whether to switch a default
+        vector to a raster due to believing it is part of raster combined with elements on top.
+        In essence, if there are raster elements on top (later in the list of elements) that
+        have the given vector element's stroke colour as either a stroke or fill colour, then the
+        probability is that this vector element should be considered a raster instead.
 
         RASTER ELEMENTS
         Because rastering of overlapping elements depends on the sequence of the elements
         (think of the difference between a white fill above or below a black fill)
-        it is essential that raster elements are added to operations in the same order that they exist
-        in the file/elements branch.
+        it is essential that raster elements are added to operations in the same order
+        that they exist in the file/elements branch.
 
-        Raster elements are handled differently depending on whether existing Raster operations are simple or complex:
-            1. Simple - all existing raster ops have the same color (default being a different colour to any other); or
-            2. Complex - there are existing raster ops of two different colors (default being a different colour to any other)
+        Raster elements are handled differently depending on whether existing
+        Raster operations are simple or complex:
+            1.  Simple - all existing raster ops have the same color
+                (default being a different colour to any other); or
+            2.  Complex - there are existing raster ops of two different colors
+                (default being a different colour to any other)
 
-        Simple - Raster elements are matched immediately to all Raster operations in the correct sequence.
-        Complex - Raster elements are saved for processing in a more complex second pass (see below)
+        Simple - Raster elements are matched immediately to all Raster operations.
+        Complex - Raster elements are processed in a more complex second pass (see below)
 
         VECTOR ELEMENTS
-        Vector Shapes/Text are attempted to match to Cut/Engrave/Raster operations of exact same color (regardless of default raster or vector)
+        Vector Shapes/Text are attempted to match to Cut/Engrave/Raster operations of
+        exact same color (regardless of default raster or vector)
 
         If not matched to exact colour, vector elements are classified based on colour:
             1. Redish strokes are considered cuts
@@ -7114,30 +5512,38 @@ class Elemental(Modifier):
             A. all existing raster ops (if there are any); or
             B. to a new Default Raster operation we create in a similar way as vector elements
 
-        Because raster elements are all added to the same operations in pass 1 and without being grouped,
-        retaining the sequence of elements happens by default, and no special handling is needed.
-
-        (Note: Not true for later classification of single elements due to e.g. colour change. See below.)
+        Because raster elements are all added to the same operations in pass 1 and without being
+        grouped, the sequence of elements is retained by default, and no special handling is needed.
 
         COMPLEX RASTER CLASSIFICATION
         There are existing raster ops of at least 2 different colours.
 
         In this case we are going to try to match raster elements to raster operations by colour.
-        But this is complicated becausewe need to keep overlapping raster elements together.
+        But this is complicated as we need to keep overlapping raster elements together in the
+        sae operations because raster images are generated within each operation.
 
         So in this case we classify vector and special elements in a first pass,
         and then analyse and classify raster operations in a special second pass.
 
         Because we have to analyse all raster elements together, when you load a new file
-        classify has to be called once with all elements in the file rather than on an element-by-element basis.
+        Classify has to be called once with all elements in the file
+        rather than on an element-by-element basis.
 
         In the second pass, we do the following:
 
         1.  Group rasters by whether they have overlapping bounding boxes.
-            After this, if rasters are in separate groups then they are in entirely separate areas of the burn which do not overlap.
+            After this, if rasters are in separate groups then they are in entirely separate
+            areas of the burn which do not overlap. Consequently they can be allocated
+            to different operations without causing incorrect results.
 
-            Note: It is difficult to ensure that elements are retained in the sequence when doing iterative grouping.
-            To avoid the complexities, before adding to the raster operations, we sort back into the original element sequence.
+            Note 1: It is difficult to ensure that elements are retained in sequence when doing
+            grouping. Before adding to the raster operations, we sort back into the
+            original element sequence.
+
+            Note 2: The current algorithm uses bounding-boxes. One edge case is to have two
+            separate raster patterns of different colours that do NOT overlap but whose
+            bounding-boxes DO overlap. In these cases they will both be allocated to the same
+            raster Operations whereas they potentially could be allocated to different Operations.
 
         2.  For each group of raster objects, determine whether there are existing Raster operations
             of the same colour as at least one element in the group.
@@ -7145,24 +5551,31 @@ class Elemental(Modifier):
             all the raster elements of the group will be added to that operation.
 
         3.  If there are any raster elements that are not classified in this way, then:
-            A)  If there are Default Raster Operation(s), then the remaining raster elements are allocated to those.
-            B)  Otherwise, if there are any non-default raster operations that are empty and those raster operations are all of the same colour,
-                then the remaining raster operations will be allocated to those Raster operations.
-            C)  Otherwise, a new Default Raster operation will be created and remaining Raster elements will be added to that.
+            A)  If there are Default Raster Operation(s), then the remaining raster elements are
+                allocated to those.
+            B)  Otherwise, if there are any non-default raster operations that are empty and those
+                raster operations are all of the same colour, then the remaining raster operations
+                will be allocated to those Raster operations.
+            C)  Otherwise, a new Default Raster operation will be created and remaining
+                Raster elements will be added to that.
 
-        The current code does NOT do the following:
+        LIMITATIONS: The current code does NOT do the following:
 
-        a.  Handle rasters in second or later files which overlap elements from earlier files which have already been classified into operations.
-            It is assumed that if they happen to overlap that is coincidence. After all the files could have been added in a different order and
-            then would have a different result.
-        b.  Handle the reclassifications of single elements which have e.g. had their colour changed any differently.
-            (The multitude of potential use cases are many and varied, and difficult or impossible comprehensively to predict.)
+        a.  Handle rasters in second or later files which overlap elements from earlier files which
+            have already been classified into operations. It is assumed that if they happen to
+            overlap that is coincidence. After all the files could have been added in a different
+            order and then would have a different result.
+        b.  Handle the reclassifications of single elements which have e.g. had their colour
+            changed. (The multitude of potential use cases are many and varied, and difficult or
+            impossible comprehensively to predict.)
 
         It may be that we will need to:
 
-        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence to keep elements in the correct sequence in an operation.
-        2.  Handle cases where the user resequences elements by ensuring that a drag and drop of elements in the Elements branch of the tree
-            are reflected in the sequence in Operations and vice versa. This could, however, get messy.
+        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence
+            to keep elements in the correct sequence in an operation.
+        2.  Handle cases where the user resequences elements by ensuring that a drag and drop
+            of elements in the Elements branch of the tree is reflected in the sequence in Operations
+            and vice versa. This could, however, get messy.
 
 
         :param elements: list of elements to classify.
@@ -7170,18 +5583,22 @@ class Elemental(Modifier):
         :param add_op_function: function to add a new operation, because of a lack of classification options.
         :return:
         """
-        if self.context.legacy_classification:
+        debug = self.kernel.channel("classify", timestamp=True)
+
+        if self.legacy_classification:
+            debug("classify: legacy")
             self.classify_legacy(elements, operations, add_op_function)
             return
 
         if elements is None:
             return
+
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
             add_op_function = self.add_classify_op
 
-        reverse = self.context.classify_reverse
+        reverse = self.classify_reverse
         # If reverse then we insert all elements into operations at the beginning rather than appending at the end
         # EXCEPT for Rasters which have to be in the correct sequence.
         element_pos = 0 if reverse else None
@@ -7196,18 +5613,18 @@ class Elemental(Modifier):
         rasters_one_pass = None
 
         for op in operations:
-            if not isinstance(op, LaserOperation):
+            if not op.type.startswith("op "):
                 continue
             if op.default:
-                if op.operation == "Cut":
+                if op.type == "op cut":
                     default_cut_ops.append(op)
-                if op.operation == "Engrave":
+                if op.type == "op engrave":
                     default_engrave_ops.append(op)
-                if op.operation == "Raster":
+                if op.type == "op raster":
                     default_raster_ops.append(op)
-            if op.operation in ("Cut", "Engrave"):
+            if op.type in ("op cut", "op engrave"):
                 vector_ops.append(op)
-            elif op.operation == "Raster":
+            elif op.type == "op raster":
                 raster_ops.append(op)
                 op_color = op.color.rgb if not op.default else "default"
                 if rasters_one_pass is not False:
@@ -7221,69 +5638,216 @@ class Elemental(Modifier):
         if rasters_one_pass is not False:
             rasters_one_pass = True
 
-        raster_elements = []
+        debug(
+            "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
+                passes="one pass" if rasters_one_pass else "two passes",
+                v=len(vector_ops),
+                r=len(raster_ops),
+                s=len(special_ops),
+            )
+        )
+
+        elements_to_classify = []
         for element in elements:
             if element is None:
+                debug("classify: not classifying -  element is None")
                 continue
             if hasattr(element, "operation"):
                 add_op_function(element)
+                debug(
+                    "classify: added element as op: {op}".format(
+                        op=str(op),
+                    )
+                )
                 continue
 
-            element_color = self.element_classify_color(element)
-            if isinstance(element, (Shape, SVGText)) and (
-                element_color is None or element_color.rgb is None
-            ):
-                continue
-            is_dot = isDot(element)
-            is_straight_line = isStraightLine(element)
+            dot = is_dot(element)
+            straight_line = is_straight_line(element)
+            # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
 
             # Check for default vector operations
             element_vector = False
-            # print(element.stroke, element.fill, element.fill.alpha, is_straight_line, is_dot)
-            if isinstance(element, (Shape, SVGText)) and not is_dot:
+            if isinstance(element, (Shape, SVGText)) and not dot:
                 # Vector if not filled
                 if (
                     element.fill is None
                     or element.fill.rgb is None
                     or (element.fill.alpha is not None and element.fill.alpha == 0)
-                    or is_straight_line
+                    or straight_line
                 ):
                     element_vector = True
 
-                # Not vector if black stroke or stroke same color as fill
+                # Not vector if grey stroke
                 if (
                     element_vector
-                    and not is_straight_line
                     and element.stroke is not None
                     and element.stroke.rgb is not None
-                    and (
-                        # Grey
-                        (
-                            element.stroke.red == element.stroke.green
-                            and element.stroke.red == element.stroke.blue
-                        )
-                        # Same color as fill
-                        or (
-                            element.fill is not None
-                            and element.fill.rgb is not None
-                            and element.fill.alpha is not None
-                            and element.fill.alpha > 0
-                            and element.fill.rgb != element.stroke.rgb
-                        )
-                    )
+                    and element.stroke.red == element.stroke.green
+                    and element.stroke.red == element.stroke.blue
                 ):
                     element_vector = False
 
-            element_added = False
-            if is_dot or isinstance(element, SVGImage):
-                for op in special_ops:
-                    if (is_dot and op.operation == "Dots") or (
-                        isinstance(element, SVGImage) and op.operation == "Image"
+            elements_to_classify.append(
+                (
+                    element,
+                    element_vector,
+                    dot,
+                    straight_line,
+                )
+            )
+
+        debug(
+            "classify: elements: {e} elements to classify".format(
+                e=len(elements_to_classify),
+            )
+        )
+
+        # Handle edge cases
+        # Convert raster elements with white fill and no raster elements behind to vector
+        # Because the white fill is not hiding anything.
+        for i, (
+            element,
+            element_vector,
+            dot,
+            straight_line,
+        ) in enumerate(elements_to_classify):
+            if (
+                # Raster?
+                not element_vector
+                and isinstance(element, (Shape, SVGText))
+                and not dot
+                # White non-transparent fill?
+                and element.fill is not None
+                and element.fill.rgb is not None
+                and element.fill.rgb == 0xFFFFFF
+                and element.fill.alpha is not None
+                and element.fill.alpha != 0
+                # But not grey stroke?
+                and (
+                    element.stroke is None
+                    or element.stroke.rgb is None
+                    or element.stroke.red != element.stroke.green
+                    or element.stroke.red != element.stroke.blue
+                )
+            ):
+                bbox = element.bbox()
+                # Now check for raster elements behind
+                for e2 in elements_to_classify[:i]:
+                    # Ignore vectors
+                    if e2[1]:
+                        continue
+                    # If underneath then stick with raster?
+                    if self.bbox_overlap(bbox, e2[0].bbox()):
+                        break
+                else:
+                    # No rasters underneath - convert to vector
+                    debug(
+                        "classify: edge-case: treating raster as vector: {label}".format(
+                            label=self.element_label_id(element),
+                        )
+                    )
+
+                    element_vector = True
+                    elements_to_classify[i] = (
+                        element,
+                        element_vector,
+                        dot,
+                        straight_line,
+                    )
+
+        # Convert vector elements with element in front crossing the stroke to raster
+        for i, (
+            element,
+            element_vector,
+            dot,
+            straight_line,
+        ) in reversed_enumerate(elements_to_classify):
+            if (
+                element_vector
+                and element.stroke is not None
+                and element.stroke.rgb is not None
+                and element.stroke.rgb != 0xFFFFFF
+            ):
+                bbox = element.bbox()
+                color = element.stroke.rgb
+                # Now check for raster elements in front whose path crosses over this path
+                for e in elements_to_classify[i + 1 :]:
+                    # Raster?
+                    if e[1]:
+                        continue
+                    # Stroke or fill same colour?
+                    if (
+                        e[0].stroke is None
+                        or e[0].stroke.rgb is None
+                        or e[0].stroke.rgb != color
+                    ) and (
+                        e[0].fill is None
+                        or e[0].fill.alpha is None
+                        or e[0].fill.alpha == 0
+                        or e[0].fill.rgb is None
+                        or e[0].fill.rgb != color
                     ):
-                        op.add(element, type="opnode", pos=element_pos)
+                        continue
+                    # We have an element with a matching color
+                    if self.bbox_overlap(bbox, e[0].bbox()):
+                        # Rasters on top - convert to raster
+                        debug(
+                            "classify: edge-case: treating vector as raster: {label}".format(
+                                label=self.element_label_id(element),
+                            )
+                        )
+
+                        element_vector = False
+                        elements_to_classify[i] = (
+                            element,
+                            element_vector,
+                            dot,
+                            straight_line,
+                        )
+                        break
+
+        raster_elements = []
+        for (
+            element,
+            element_vector,
+            dot,
+            straight_line,
+        ) in elements_to_classify:
+
+            element_color = self.element_classify_color(element)
+            if isinstance(element, (Shape, SVGText)) and (
+                element_color is None or element_color.rgb is None
+            ):
+                debug(
+                    "classify: not classifying -  no stroke or fill color: {e}".format(
+                        e=self.element_label_id(element, short=False),
+                    )
+                )
+                continue
+
+            element_added = False
+            if dot or isinstance(element, SVGImage):
+                for op in special_ops:
+                    if (dot and op.type == "op dots") or (
+                        isinstance(element, SVGImage) and op.type == "op image"
+                    ):
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
                         break  # May only classify in one Dots or Image operation and indeed in one operation
             elif element_vector:
+                # Vector op (i.e. no fill) with exact colour match to Raster Op will be rastered
+                for op in raster_ops:
+                    if (
+                        op.color is not None
+                        and op.color.rgb == element_color.rgb
+                        and op not in default_raster_ops
+                    ):
+                        if not rasters_one_pass:
+                            op.add(element, type="ref elem", pos=element_pos)
+                        elif not element_added:
+                            raster_elements.append((element, element.bbox()))
+                        element_added = True
+
                 for op in vector_ops:
                     if (
                         op.color is not None
@@ -7291,49 +5855,50 @@ class Elemental(Modifier):
                         and op not in default_cut_ops
                         and op not in default_engrave_ops
                     ):
-                        op.add(element, type="opnode", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
-                # Vector op (i.e. no fill) with exact colour match can be added out of sequence
-                for op in raster_ops:
-                    if (
-                        op.color is not None
-                        and op.color.rgb == element_color.rgb
-                        and op not in default_raster_ops
-                    ):
-                        op.add(element, type="opnode", pos=element_pos)
-                        element_added = True
+                if (
+                    element.stroke is None
+                    or element.stroke.rgb is None
+                    or element.stroke.rgb == 0xFFFFFF
+                ):
+                    debug(
+                        "classify: not classifying - white element at back: {e}".format(
+                            e=self.element_label_id(element, short=False),
+                        )
+                    )
+                    continue
+
             elif rasters_one_pass:
                 for op in raster_ops:
-                    # New Raster ops are always default so excluded
-                    if (
-                        op.color is not None
-                        and op.color.rgb == element_color.rgb
-                        and op not in default_raster_ops
-                    ):
-                        op.add(element, type="opnode", pos=element_pos)
+                    if op.color is not None and op.color.rgb == element_color.rgb:
+                        op.add(element, type="ref elem", pos=element_pos)
                         element_added = True
+            else:
+                raster_elements.append((element, element.bbox()))
+                continue
 
             if element_added:
                 continue
 
             if element_vector:
                 is_cut = Color.distance_sq("red", element_color) <= 18825
-                if is_cut and default_cut_ops:
+                if is_cut:
                     for op in default_cut_ops:
-                        op.add(element, type="opnode", pos=element_pos)
-                    element_added = True
-                elif not is_cut and default_engrave_ops:
+                        op.add(element, type="ref elem", pos=element_pos)
+                        element_added = True
+                else:
                     for op in default_engrave_ops:
-                        op.add(element, type="opnode", pos=element_pos)
-                    element_added = True
+                        op.add(element, type="ref elem", pos=element_pos)
+                        element_added = True
             elif (
                 rasters_one_pass
                 and isinstance(element, (Shape, SVGText))
-                and not is_dot
+                and not dot
                 and raster_ops
             ):
                 for op in raster_ops:
-                    op.add(element, type="opnode", pos=element_pos)
+                    op.add(element, type="ref elem", pos=element_pos)
                 element_added = True
 
             if element_added:
@@ -7341,39 +5906,39 @@ class Elemental(Modifier):
 
             # Need to add a new operation to classify into
             op = None
-            if is_dot:
-                op = LaserOperation(operation="Dots", default=True)
+            if dot:
+                op = DotsOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, SVGImage):
-                op = LaserOperation(operation="Image", default=True)
+                op = ImageOpNode(default=True)
                 special_ops.append(op)
             elif isinstance(element, (Shape, SVGText)):
                 if element_vector:
                     if (
                         is_cut
                     ):  # This will be initialised because criteria are same as above
-                        op = LaserOperation(operation="Cut", color=abs(element_color))
+                        op = CutOpNode(color=abs(element_color))
                     else:
-                        op = LaserOperation(
+                        op = EngraveOpNode(
                             operation="Engrave", color=abs(element_color)
                         )
                         if element_color == Color("white"):
                             op.output = False
                     vector_ops.append(op)
                 elif rasters_one_pass:
-                    op = LaserOperation(
-                        operation="Raster", color="Transparent", default=True
-                    )
+                    op = RasterOpNode(color="Transparent", default=True)
                     default_raster_ops.append(op)
                     raster_ops.append(op)
-                else:
-                    raster_elements.append(element)
-            if op:
+            if op is not None:
                 new_ops.append(op)
                 add_op_function(op)
-                # element cannot be added to op before op is added to operations - otherwise opnode is not created.
-                op.add(element, type="opnode", pos=element_pos)
-                continue
+                # element cannot be added to op before op is added to operations - otherwise refelem is not created.
+                op.add(element, type="ref elem", pos=element_pos)
+                debug(
+                    "classify: added op: {op}".format(
+                        op=str(op),
+                    )
+                )
 
         # End loop "for element in elements"
 
@@ -7384,14 +5949,43 @@ class Elemental(Modifier):
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
+        debug(
+            "classify: raster pass two: {n} elements".format(
+                n=len(raster_elements),
+            )
+        )
 
         # Debugging print statements have been left in as comments as this code can
         # be complex to debug and even print statements can be difficult to craft
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = group_overlapped_rasters(
-            [(e, e.bbox()) for e in raster_elements]
+        raster_groups = [[e] for e in raster_elements]
+        raster_elements = [e[0] for e in raster_elements]
+        # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+
+        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
+        for i in range(len(raster_groups) - 2, -1, -1):
+            g1 = raster_groups[i]
+            for j in range(len(raster_groups) - 1, i, -1):
+                g2 = raster_groups[j]
+                if self.group_elements_overlap(g1, g2):
+                    # print("g1", list(map(lambda e: e[0].id,g1)))
+                    # print("g2", list(map(lambda e: e[0].id,g2)))
+
+                    # if elements in the group overlap
+                    # add the element tuples from group 2 to group 1
+                    g1.extend(g2)
+                    # and remove group 2
+                    del raster_groups[j]
+
+                    # print("g1+g2", list(map(lambda e: e[0].id,g1)))
+                    # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+
+        debug(
+            "classify: condensed to {n} raster groups".format(
+                n=len(raster_groups),
+            )
         )
 
         # Remove bbox and add element colour from groups
@@ -7416,22 +6010,31 @@ class Elemental(Modifier):
             ):
                 # Make a list of elements to add (same tupes)
                 elements_to_add = []
+                groups_count = 0
                 for group in raster_groups:
                     for e in group:
-                        if e[1].hex == op.color.hex:
+                        if e[1].rgb == op.color.rgb:
                             # An element in this group matches op color
                             # So add elements to list
                             elements_to_add.extend(group)
                             if group not in groups_added:
                                 groups_added.append(group)
+                            groups_count += 1
                             break  # to next group
                 if elements_to_add:
+                    debug(
+                        "classify: adding {e} elements in {g} groups to {label}".format(
+                            e=len(elements_to_add),
+                            g=groups_count,
+                            label=str(op),
+                        )
+                    )
                     # Create simple list of elements sorted by original element order
                     elements_to_add = sorted(
-                        (e[0] for e in elements_to_add), key=raster_elements.index
+                        [e[0] for e in elements_to_add], key=raster_elements.index
                     )
                     for element in elements_to_add:
-                        op.add(element, type="opnode", pos=element_pos)
+                        op.add(element, type="ref elem", pos=element_pos)
 
         # Now remove groups added to at least one op
         for group in groups_added:
@@ -7445,7 +6048,14 @@ class Elemental(Modifier):
         for g in raster_groups:
             elements_to_add.extend(g)
         elements_to_add = sorted(
-            (e[0] for e in elements_to_add), key=raster_elements.index
+            [e[0] for e in elements_to_add], key=raster_elements.index
+        )
+
+        debug(
+            "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
+                e=len(elements_to_add),
+                g=len(raster_groups),
+            )
         )
 
         # Remaining elements are added to one of the following groups of operations:
@@ -7468,51 +6078,83 @@ class Elemental(Modifier):
                     default_raster_ops = []
                     break
         if not default_raster_ops:
-            op = LaserOperation(operation="Raster", color="Transparent", default=True)
+            op = RasterOpNode(color="Transparent", default=True)
             default_raster_ops.append(op)
             add_op_function(op)
+            debug(
+                "classify: default raster op added: {op}".format(
+                    op=str(op),
+                )
+            )
+        else:
+            for op in default_raster_ops:
+                debug("classify: default raster op selected: {op}".format(op=str(op)))
+
         for element in elements_to_add:
             for op in default_raster_ops:
-                op.add(element, type="opnode", pos=element_pos)
+                op.add(element, type="ref elem", pos=element_pos)
 
-    def element_classify_color(self, element: SVGElement):
+    @staticmethod
+    def element_label_id(element, short=True):
+        if element.node is None:
+            if short:
+                return element.id
+            return "{id}: {path}".format(id=element.id, path=str(element))
+        elif ":" in element.node.label and short:
+            return element.node.label.split(":", 1)[0]
+        else:
+            return element.node.label
+
+    @staticmethod
+    def bbox_overlap(b1, b2):
+        if b1[0] <= b2[2] and b1[2] >= b2[0] and b1[1] <= b2[3] and b1[3] >= b2[1]:
+            return True
+        return False
+
+    def group_elements_overlap(self, g1, g2):
+        for e1 in g1:
+            for e2 in g2:
+                if self.bbox_overlap(e1[1], e2[1]):
+                    return True
+        return False
+
+    @staticmethod
+    def element_classify_color(element: SVGElement):
         element_color = element.stroke
         if element_color is None or element_color.rgb is None:
             element_color = element.fill
         return element_color
 
     def load(self, pathname, **kwargs):
-        kernel = self.context.kernel
-        for loader_name in kernel.match("load"):
-            loader = kernel.registered[loader_name]
+        kernel = self.kernel
+        for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
-                        results = loader.load(self.context, self, pathname, **kwargs)
+                        results = loader.load(self, self, pathname, **kwargs)
                     except FileNotFoundError:
                         return False
                     except OSError:
                         return False
                     if results:
-                        self.context("scene focus -4% -4% 104% 104%\n")
+                        self.signal("tree_changed\n")
+                        self("scene focus -4% -4% 104% 104%\n")
                         return True
         return False
 
     def load_types(self, all=True):
-        kernel = self.context.kernel
+        kernel = self.kernel
         _ = kernel.translation
         filetypes = []
         if all:
             filetypes.append(_("All valid types"))
             exts = []
-            for loader_name in kernel.match("load"):
-                loader = kernel.registered[loader_name]
+            for loader, loader_name, sname in kernel.find("load"):
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
                         exts.append("*.%s" % ext)
             filetypes.append(";".join(exts))
-        for loader_name in kernel.match("load"):
-            loader = kernel.registered[loader_name]
+        for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
@@ -7522,20 +6164,18 @@ class Elemental(Modifier):
         return "|".join(filetypes)
 
     def save(self, pathname):
-        kernel = self.context.kernel
-        for save_name in kernel.match("save"):
-            saver = kernel.registered[save_name]
+        kernel = self.kernel
+        for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype in saver.save_types():
                 if pathname.lower().endswith(extension):
-                    saver.save(self.context, pathname, "default")
+                    saver.save(self, pathname, "default")
                     return True
         return False
 
     def save_types(self):
-        kernel = self.context.kernel
+        kernel = self.kernel
         filetypes = []
-        for save_name in kernel.match("save"):
-            saver = kernel.registered[save_name]
+        for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype in saver.save_types():
                 filetypes.append("%s (%s)" % (description, extension))
                 filetypes.append("*.%s" % extension)

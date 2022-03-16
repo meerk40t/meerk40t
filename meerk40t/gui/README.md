@@ -1,6 +1,6 @@
 # GUI
 
-![meerk40t7](https://user-images.githubusercontent.com/3302478/132944749-c40ad085-76ed-4236-b7bb-e97abdc578bf.png)
+![meerk40t](https://user-images.githubusercontent.com/3302478/132944749-c40ad085-76ed-4236-b7bb-e97abdc578bf.png)
 
 The wxMeerK40t is the GUI and is written in wxPython, using AUI to perform advanced user interface commands.
 

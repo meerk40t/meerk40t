@@ -2,8 +2,9 @@ import math
 
 import wx
 
+from meerk40t.kernel import Job, signal_listener
+
 from ..core.cutcode import CutCode, LineCut
-from ..kernel import Job
 from ..svgelements import Matrix
 from .icons import (
     icons8_laser_beam_hazard2_50,
@@ -13,8 +14,10 @@ from .icons import (
 )
 from .laserrender import LaserRender
 from .mwindow import MWindow
-from .scene.scene import ScenePanel, Widget
-from .scene.scenewidgets import GridWidget
+from .scene.scenepanel import ScenePanel
+from .scene.widget import Widget
+from .scenewidgets.gridwidget import GridWidget
+from .wxutils import disable_window
 
 _ = wx.GetTranslation
 
@@ -35,9 +38,9 @@ class SimulationPanel(wx.Panel, Job):
         self.process = self.animate_sim
         self.interval = 0.1
         if plan_name:
-            cutplan = self.context.root.planner.get_or_make_plan(plan_name)
+            cutplan = self.context.planner.get_or_make_plan(plan_name)
         else:
-            cutplan = self.context.root.default_plan()
+            cutplan = self.context.planner.default_plan
         self.plan_name = cutplan.name
         self.operations = cutplan.plan
         self.cutcode = CutCode()
@@ -48,10 +51,6 @@ class SimulationPanel(wx.Panel, Job):
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
-
-        self.bed_dim = self.context.root
-        self.bed_dim.setting(int, "bed_width", 310)
-        self.bed_dim.setting(int, "bed_height", 210)
 
         self.view_pane = ScenePanel(
             self.context,
@@ -82,32 +81,14 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
 
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
-        selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
-            index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        self.available_devices = list(self.context.kernel.services("device"))
+        self.selected_device = self.context.device
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -129,7 +110,6 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
-        self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
@@ -141,6 +121,8 @@ class SimulationPanel(wx.Panel, Job):
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
+        if index == -1:
+            disable_window(self)
 
     def __set_properties(self):
         self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))
@@ -225,13 +207,6 @@ class SimulationPanel(wx.Panel, Job):
         self.Layout()
         # end wxGlade
 
-    def on_mouse_left_down(self, event):
-        # Convert mac Control+left click into right click
-        if event.RawControlDown() and not event.ControlDown():
-            self.on_mouse_right_down(event)
-        else:
-            event.Skip()
-
     def on_mouse_right_down(self, event=None):
         gui = self
         menu = wx.Menu()
@@ -261,6 +236,7 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
+    @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
             # Refresh cutcode
@@ -277,20 +253,10 @@ class SimulationPanel(wx.Panel, Job):
             self.slider_progress.SetValue(self.max)
             self.request_refresh()
 
-    def initialize(self):
+    def pane_show(self):
         self.context.setting(str, "units_name", "mm")
-        self.context.setting(int, "units_marks", 10)
-        self.context.setting(int, "units_index", 0)
-        self.context.setting(float, "units_convert", MILS_IN_MM)
-        self.context.listen("refresh_scene", self.on_refresh_scene)
-        self.context.listen("plan", self.on_plan_change)
 
-        bbox = (
-            0,
-            0,
-            self.bed_dim.bed_width * MILS_IN_MM,
-            self.bed_dim.bed_height * MILS_IN_MM,
-        )
+        bbox = self.context.device.bbox()
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
@@ -325,30 +291,30 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             pass
 
-    def finalize(self):
-        self.context.unlisten("refresh_scene", self.on_refresh_scene)
-        self.context.unlisten("plan", self.on_plan_change)
+    def pane_hide(self):
         if self.auto_clear:
             self.context("plan%s clear\n" % self.plan_name)
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
 
-    def on_refresh_scene(self, origin, *args):
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
         :param origin: the path of the originating signal
         :param args:
         :return:
         """
-        self.request_refresh()
+        if scene_name == "SimScene":
+            self.request_refresh()
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.progress = min(self.slider_progress.GetValue(), self.max)
-        self.context.signal("refresh_scene")
+        self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
         self.button_play.SetBitmap(icons8_pause_50.GetBitmap())
@@ -375,7 +341,7 @@ class SimulationPanel(wx.Panel, Job):
             self.progress = self.max
             self._stop()
         else:
-            self.context.signal("refresh_scene")
+            self.context.signal("refresh_scene", self.widget_scene.name)
         self.slider_progress.SetValue(self.progress)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
@@ -388,21 +354,11 @@ class SimulationPanel(wx.Panel, Job):
         self.text_playback_speed.SetValue("%d%%" % value)
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
         index = self.combo_device.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.connected_name = [
-            str(i) for i in self.context.match("device", suffix=True)
-        ][index]
+        self.selected_device = self.available_devices[index]
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+        self.context("plan%s spool\n" % self.plan_name)
         self.context("window close Simulation\n")
 
 
@@ -416,6 +372,7 @@ class SimulationWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.renderer = LaserRender(self.scene.context)
         self.sim = sim
+        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.sim.progress > 1:
@@ -435,6 +392,7 @@ class SimulationTravelWidget(Widget):
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
+        self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
         self.starts = list()
         self.ends = list()
         self.pos = list()
@@ -443,9 +401,9 @@ class SimulationTravelWidget(Widget):
         prev = None
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
-                if prev.end() != curr.start():
-                    start = wx.Point2D(*prev.end())
-                    end = wx.Point2D(*curr.start())
+                if prev.end != curr.start:
+                    start = wx.Point2D(*prev.end)
+                    end = wx.Point2D(*curr.start)
                     self.starts.append(start)
                     self.ends.append(end)
                     s = complex(start[0], start[1])
@@ -495,6 +453,7 @@ class SimReticleWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
+        self.sim_matrix = scene.context.device.device_to_scene_matrix()
         self.sim = sim
 
     def process_draw(self, gc):
@@ -506,11 +465,12 @@ class SimReticleWidget(Widget):
             and len(self.sim.cutcode)
         ):
             if self.sim.progress != self.sim.max:
-                pos = self.sim.cutcode[self.sim.progress - 1].start()
+                pos = self.sim.cutcode[self.sim.progress - 1].start
             else:
-                pos = self.sim.cutcode[self.sim.progress - 2].end()
+                pos = self.sim.cutcode[self.sim.progress - 2].end
             x = pos[0]
             y = pos[1]
+            x, y = self.sim_matrix.point_in_matrix_space((x, y))
 
         try:
             # Draw Reticle
@@ -543,13 +503,32 @@ class Simulation(MWindow):
             plan_name=plan_name,
             auto_clear=auto_clear,
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
 
+    @staticmethod
+    def sub_register(kernel):
+        def open_simulator(v=None):
+            with wx.BusyInfo(_("Preparing simulation...")):
+                kernel.console(
+                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+                ),
+
+        kernel.register(
+            "button/project/Simulation",
+            {
+                "label": _("Simulate"),
+                "icon": icons8_laser_beam_hazard2_50,
+                "tip": _("Simulate the current laser job"),
+                "action": open_simulator,
+            },
+        )
+
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

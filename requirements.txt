@@ -1,3 +1,5 @@
+wheel
 Pillow
 pyusb
+pyserial
 wxPython

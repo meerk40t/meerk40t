@@ -1,22 +1,278 @@
+import time
 from threading import Lock
 
 from meerk40t.svgelements import Length
 
-from ..device.lasercommandconstants import *
-from ..kernel import Modifier
-from .elements import MILS_IN_MM
 
-
-def plugin(kernel, lifecycle=None):
+def plugin(kernel, lifecycle):
     if lifecycle == "register":
-        kernel.register("modifier/Spoolers", Spoolers)
-        kernel_root = kernel.root
-        kernel_root.activate("modifier/Spoolers")
+        _ = kernel.translation
+
+        @kernel.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
+        @kernel.console_command(
+            "send",
+            help=_("send a plan-command to the spooler"),
+            input_type="spooler",
+            output_type="spooler",
+        )
+        def spooler_send(
+            command, channel, _, data_type=None, op=None, data=None, **kwgs
+        ):
+            spooler = data
+            if op is None:
+                raise SyntaxError
+            try:
+                for plan_command, command_name, suffix in kernel.find("plan", op):
+                    spooler.job(plan_command)
+                    return data_type, spooler
+            except (KeyError, IndexError):
+                pass
+            channel(_("No plan command found."))
+            return data_type, spooler
+
+        @kernel.console_command(
+            "list",
+            help=_("spool<?> list"),
+            input_type="spooler",
+            output_type="spooler",
+        )
+        def spooler_list(command, channel, _, data_type=None, data=None, **kwgs):
+            spooler = data
+            channel(_("----------"))
+            channel(_("Spoolers:"))
+            for d, d_name in enumerate(kernel.match("device", suffix=True)):
+                channel("%d: %s" % (d, d_name))
+            channel(_("----------"))
+            channel(_("Spooler on device %s:" % str(kernel.device.label)))
+            for s, op_name in enumerate(spooler.queue):
+                channel("%d: %s" % (s, op_name))
+            channel(_("----------"))
+            return data_type, spooler
+
+        @kernel.console_command(
+            "clear",
+            help=_("spooler<?> clear"),
+            input_type="spooler",
+            output_type="spooler",
+        )
+        def spooler_clear(command, channel, _, data_type=None, data=None, **kwgs):
+            spooler = data
+            spooler.clear_queue()
+            return data_type, spooler
+
+        @kernel.console_command(
+            "+laser",
+            hidden=True,
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("turn laser on in place"),
+        )
+        def plus_laser(data, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.job("laser_on")
+            return "spooler", spooler
+
+        @kernel.console_command(
+            "-laser",
+            hidden=True,
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("turn laser off in place"),
+        )
+        def minus_laser(data, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.job("laser_off")
+            return "spooler", spooler
+
+        @kernel.console_argument(
+            "amount", type=str, help=_("amount to move in the set direction.")
+        )
+        @kernel.console_command(
+            ("left", "right", "up", "down"),
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("cmd <amount>"),
+        )
+        def direction(command, channel, _, data=None, amount=None, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            if amount is None:
+                amount = Length("1mm")
+            if not hasattr(spooler, "_dx"):
+                spooler._dx = 0
+            if not hasattr(spooler, "_dy"):
+                spooler._dy = 0
+            if command.endswith("right"):
+                spooler._dx += kernel.device.length(amount, 0)
+            elif command.endswith("left"):
+                spooler._dx -= kernel.device.length(amount, 0)
+            elif command.endswith("up"):
+                spooler._dy -= kernel.device.length(amount, 1)
+            elif command.endswith("down"):
+                spooler._dy += kernel.device.length(amount, 1)
+            kernel.console(".timer 1 0 spool jog\n")
+            return "spooler", spooler
+
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_command(
+            "jog",
+            hidden=True,
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("executes outstanding jog buffer"),
+        )
+        def jog(command, channel, _, data, force=False, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            try:
+                idx = int(spooler._dx)
+                idy = int(spooler._dy)
+            except AttributeError:
+                return
+            if idx == 0 and idy == 0:
+                return
+            sidx = "{dx}nm".format(dx=idx)
+            sidy = "{dy}nm".format(dy=idy)
+            if force:
+                spooler.job("move_rel", sidx, sidy)
+            else:
+                if spooler.job_if_idle("move_rel", sidx, sidy):
+                    channel(_("Position moved: %d %d") % (idx, idy))
+                    spooler._dx -= idx
+                    spooler._dy -= idy
+                else:
+                    channel(_("Busy Error"))
+            return "spooler", spooler
+
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_argument("x", type=Length, help=_("change in x"))
+        @kernel.console_argument("y", type=Length, help=_("change in y"))
+        @kernel.console_command(
+            ("move", "move_absolute"),
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("move <x> <y>: move to position."),
+        )
+        def move(channel, _, x, y, data=None, force=False, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            if y is None:
+                raise SyntaxError
+            if force:
+                spooler.job("move_abs", x, y)
+            else:
+                if not spooler.job_if_idle("move_abs", x, y):
+                    channel(_("Busy Error"))
+            return "spooler", spooler
+
+        @kernel.console_option("force", "f", type=bool, action="store_true")
+        @kernel.console_argument("dx", type=Length, help=_("change in x"))
+        @kernel.console_argument("dy", type=Length, help=_("change in y"))
+        @kernel.console_command(
+            "move_relative",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("move_relative <dx> <dy>"),
+        )
+        def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            if dy is None:
+                raise SyntaxError
+            if force:
+                spooler.job("move_rel", dx, dy)
+            else:
+                if not spooler.job_if_idle("move_rel", dx, dy):
+                    channel(_("Busy Error"))
+            return "spooler", spooler
+
+        @kernel.console_argument("x", type=Length, help=_("x offset"))
+        @kernel.console_argument("y", type=Length, help=_("y offset"))
+        @kernel.console_command(
+            "home",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("home the laser"),
+        )
+        def home(x=None, y=None, data=None, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            if x is not None and y is not None:
+                spooler.job("home", x, y)
+                return "spooler", spooler
+            spooler.job("home")
+            return "spooler", spooler
+
+        @kernel.console_command(
+            "unlock",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("unlock the rail"),
+        )
+        def unlock(data=None, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.job("unlock_rail")
+            return "spooler", spooler
+
+        @kernel.console_command(
+            "lock",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("lock the rail"),
+        )
+        def lock(data, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.job("lock_rail")
+            return "spooler", spooler
+
+        @kernel.console_command(
+            "test_dot_and_home",
+            input_type=("spooler", None),
+            hidden=True,
+        )
+        def run_home_and_dot_test(data, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+
+            def home_dot_test():
+                for i in range(25):
+                    yield "rapid_mode"
+                    yield "home"
+                    yield "laser_off"
+                    yield "wait_finish"
+                    yield "move_abs", 3000, 3000
+                    yield "wait_finish"
+                    yield "laser_on"
+                    yield "wait", 0.05
+                    yield "laser_off"
+                    yield "wait_finish"
+                yield "home"
+                yield "wait_finish"
+
+            spooler.job(home_dot_test)
+            return "spooler", spooler
 
 
 class Spooler:
     """
-    A spooler stores spoolable lasercode events as a synchronous queue.
+    Stores spoolable lasercode events as a synchronous queue.
+    Stores an idle job operation for running constantly.
+
+    Spooler should be registered as a service_delegate of the service running the driver to process data.
 
     * peek()
     * pop()
@@ -27,32 +283,139 @@ class Spooler:
     * remove(job)
     """
 
-    def __init__(self, context, spooler_name, *args, **kwargs):
+    def __init__(self, context, driver=None, **kwargs):
         self.context = context
-        self.name = spooler_name
-        self.queue_lock = Lock()
+        self.driver = driver
+        self.foreground_only = True
+        self._realtime_lock = Lock()
+        self._realtime_queue = []
+        self._lock = Lock()
         self._queue = []
-        self.next = None
+        self._idle = None
+        self._shutdown = False
+        self._thread = None
 
     def __repr__(self):
-        return "Spooler(%s)" % str(self.name)
+        return "Spooler(%s)" % str(self.context)
 
     def __del__(self):
         self.name = None
-        self.queue_lock = None
+        self._lock = None
         self._queue = None
-        self.next = None
 
     def __len__(self):
         return len(self._queue)
 
-    def as_device(self):
-        links = []
-        obj = self
-        while obj is not None:
-            links.append(str(obj))
-            obj = obj.next
-        return " -> ".join(links)
+    def added(self, *args, **kwargs):
+        self.restart()
+
+    def service_attach(self, *args, **kwargs):
+        if self.foreground_only:
+            self.restart()
+
+    def service_detach(self):
+        if self.foreground_only:
+            self.shutdown()
+
+    def shutdown(self, *args, **kwargs):
+        self._shutdown = True
+
+    def restart(self):
+        self._shutdown = False
+        if self._thread is None:
+
+            def clear_thread(*a):
+                self._shutdown = True
+                self._thread = None
+
+            self._thread = self.context.threaded(
+                self.run,
+                result=clear_thread,
+                thread_name="Spooler(%s)" % self.context.path,
+            )
+            self._thread.stop = clear_thread
+
+    def _execute_program(self, program):
+        """
+        This executes the different classes of spoolable object.
+
+        (str, attribute, ...) calls self.driver.str(*attributes)
+        str, calls self.driver.str()
+        callable, callable()
+        has_attribute(generator), recursive call to list of lines produced by generator
+        generator, recursive call to list of lines produced by generator
+
+        @param program: line to be executed.
+        @return:
+        """
+        if self._shutdown:
+            return
+        # TUPLE[str, Any,...]
+        if isinstance(program, tuple):
+            attr = program[0]
+
+            if hasattr(self.driver, attr):
+                function = getattr(self.driver, attr)
+                function(*program[1:])
+            return
+
+        # STRING
+        if isinstance(program, str):
+            attr = program
+
+            if hasattr(self.driver, attr):
+                function = getattr(self.driver, attr)
+                function()
+            return
+
+        # .generator is a Generator
+        if hasattr(program, "generate"):
+            program = getattr(program, "generate")
+
+        # GENERATOR
+        for p in program():
+            if self._shutdown:
+                return
+            self._execute_program(p)
+        # print("Unspoolable object: {s}".format(s=str(program)))
+
+    def run(self):
+        while True:
+            # Forever Looping.
+            if self._shutdown:
+                # We have been told to stop.
+                break
+            if len(self._realtime_queue):
+                # There is realtime work.
+                with self._lock:
+                    # threadsafe
+                    program = self._realtime_queue.pop(0)
+                if program is not None:
+                    # Process all data in the program.
+                    self._execute_program(program)
+            # Check if driver is holding work.
+            if self.driver.hold_work():
+                time.sleep(0.01)
+                continue
+            if len(self._queue):
+                # There is active work to do.
+                with self._lock:
+                    # threadsafe
+                    program = self._queue.pop(0)
+                if program is not None:
+                    # Process all data in the program.
+                    self._execute_program(program)
+            # Check if driver is holding idle.
+            if self.driver.hold_idle():
+                time.sleep(0.01)
+                continue
+            if self._idle is not None:
+                self._execute_program(self._idle)
+                # Finished idle cycle.
+                continue
+            else:
+                # There is nothing to send or do.
+                time.sleep(0.1)
 
     @property
     def queue(self):
@@ -68,524 +431,91 @@ class Spooler:
 
     def pop(self):
         if len(self._queue) == 0:
-            self.context.signal("spooler;queue", len(self._queue), self.name)
+            self.context.signal("spooler;queue", len(self._queue))
             return None
-        self.queue_lock.acquire(True)
-        queue_head = self._queue[0]
-        del self._queue[0]
-        self.queue_lock.release()
-        self.context.signal("spooler;queue", len(self._queue), self.name)
+        with self._lock:
+            queue_head = self._queue[0]
+            del self._queue[0]
+        self.context.signal("spooler;queue", len(self._queue))
         return queue_head
+
+    def realtime(self, *job):
+        """
+        Enqueues a job into the realtime buffer. This preempts the regular work and is checked before hold_work.
+        @param job:
+        @return:
+        """
+        with self._realtime_lock:
+            if len(job) == 1:
+                self._realtime_queue.extend(job)
+            else:
+                self._realtime_queue.append(job)
 
     def job(self, *job):
         """
         Send a single job event with parameters as needed.
 
-        The job can be a single command with (COMMAND_MOVE 20 20) or without parameters (COMMAND_HOME), or a generator
+        The job can be a single command with ("move" 20 20) or without parameters ("home"), or a generator
         which can yield many lasercode commands.
 
         :param job: job to send to the spooler.
         :return:
         """
-        self.queue_lock.acquire(True)
-
-        if len(job) == 1:
-            self._queue.extend(job)
-        else:
-            self._queue.append(job)
-        self.queue_lock.release()
+        with self._lock:
+            if len(job) == 1:
+                self._queue.extend(job)
+            else:
+                self._queue.append(job)
         self.context.signal("spooler;queue", len(self._queue))
 
     def jobs(self, jobs):
         """
-        Send several jobs generators to be appended to the end of the queue.
+        Send several jobs be appended to the end of the queue.
 
         The jobs parameter must be suitable to be .extended to the end of the queue list.
+
         :param jobs: jobs to extend
         :return:
         """
-        self.queue_lock.acquire(True)
-        if isinstance(jobs, (list, tuple)):
-            self._queue.extend(jobs)
-        else:
-            self._queue.append(jobs)
-        self.queue_lock.release()
+        with self._lock:
+            if isinstance(jobs, (list, tuple)):
+                self._queue.extend(jobs)
+            else:
+                self._queue.append(jobs)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def job_if_idle(self, element):
+    def set_idle(self, job):
+        """
+        Sets the idle job.
+
+        @param job:
+        @return:
+        """
+        self._idle = job
+
+    def job_if_idle(self, *element):
+        """
+        Deprecated.
+
+        This should be fed into various forms of idle job.
+        @param element:
+        @return:
+        """
         if len(self._queue) == 0:
-            self.job(element)
+            self.job(*element)
             return True
         else:
             return False
 
     def clear_queue(self):
-        self.queue_lock.acquire(True)
-        self._queue = []
-        self.queue_lock.release()
+        with self._lock:
+            self._queue.clear()
         self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
-        self.queue_lock.acquire(True)
-        if index is None:
-            self._queue.remove(element)
-        else:
-            del self._queue[index]
-        self.queue_lock.release()
+        with self._lock:
+            if index is None:
+                self._queue.remove(element)
+            else:
+                del self._queue[index]
         self.context.signal("spooler;queue", len(self._queue))
-
-
-class Spoolers(Modifier):
-    def __init__(self, context, name=None, channel=None, *args, **kwargs):
-        Modifier.__init__(self, context, name, channel)
-
-    def get_or_make_spooler(self, device_name):
-        dev = "device/%s" % device_name
-        try:
-            device = self.context.registered[dev]
-        except KeyError:
-            device = [None, None, None]
-            self.context.registered[dev] = device
-            self.context.signal("legacy_spooler_label", device_name)
-        if device[0] is None:
-            device[0] = Spooler(self.context, device_name)
-        return device[0]
-
-    def default_spooler(self):
-        return self.get_or_make_spooler(self.context.root.active)
-
-    def attach(self, *a, **kwargs):
-        context = self.context
-        context.spoolers = self
-        bed_dim = context.root
-        self.context.root.setting(str, "active", "0")
-
-        kernel = self.context._kernel
-        _ = kernel.translation
-
-        @context.console_option(
-            "register",
-            "r",
-            type=bool,
-            action="store_true",
-            help=_("Register this device"),
-        )
-        @context.console_command(
-            "spool",
-            help=_("spool<?> <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(
-            command, channel, _, data=None, register=False, remainder=None, **kwgs
-        ):
-            root = self.context.root
-            if len(command) > 5:
-                device_name = command[5:]
-            else:
-                if register:
-                    device_context = kernel.get_context("devices")
-                    index = 0
-                    while hasattr(device_context, "device_%d" % index):
-                        index += 1
-                    device_name = str(index)
-                else:
-                    device_name = root.active
-            if register:
-                device_context = kernel.get_context("devices")
-                setattr(
-                    device_context,
-                    "device_%s" % device_name,
-                    ("spool%s -r " % device_name) + remainder + "\n",
-                )
-
-            spooler = self.get_or_make_spooler(device_name)
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.context.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.context.match("device", True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler %s:" % device_name))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", (spooler, device_name)
-
-        @context.console_command(
-            "list",
-            help=_("spool<?> list"),
-            input_type="spooler",
-            output_type="spooler",
-        )
-        def spooler_list(command, channel, _, data_type=None, data=None, **kwgs):
-            spooler, device_name = data
-            channel(_("----------"))
-            channel(_("Spoolers:"))
-            for d, d_name in enumerate(self.context.match("device", True)):
-                channel("%d: %s" % (d, d_name))
-            channel(_("----------"))
-            channel(_("Spooler %s:" % device_name))
-            for s, op_name in enumerate(spooler.queue):
-                channel("%d: %s" % (s, op_name))
-            channel(_("----------"))
-            return data_type, data
-
-        @context.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
-        @context.console_command(
-            "send",
-            help=_("send a plan-command to the spooler"),
-            input_type="spooler",
-            output_type="spooler",
-        )
-        def spooler_send(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
-        ):
-            spooler, device_name = data
-            if op is None:
-                raise SyntaxError
-            try:
-                for command_name in self.context.match("plan/%s" % op):
-                    plan_command = self.context.registered[command_name]
-                    spooler.job(plan_command)
-                    return data_type, data
-            except (KeyError, IndexError):
-                pass
-            channel(_("No plan command found."))
-            return data_type, data
-
-        @context.console_command(
-            "clear",
-            help=_("spooler<?> clear"),
-            input_type="spooler",
-            output_type="spooler",
-        )
-        def spooler_clear(command, channel, _, data_type=None, data=None, **kwgs):
-            spooler, device_name = data
-            spooler.clear_queue()
-            return data_type, data
-
-        def execute_absolute_position(position_x, position_y):
-            x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-            )
-
-            def move():
-                yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, int(x_pos), int(y_pos)
-
-            return move
-
-        def execute_relative_position(position_x, position_y):
-            x_pos = Length(position_x).value(
-                ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-            )
-            y_pos = Length(position_y).value(
-                ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-            )
-
-            def move():
-                yield COMMAND_SET_INCREMENTAL
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_MOVE, int(x_pos), int(y_pos)
-                yield COMMAND_SET_ABSOLUTE
-
-            return move
-
-        @context.console_command(
-            "+laser",
-            hidden=True,
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("turn laser on in place"),
-        )
-        def plus_laser(data, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            spooler.job(COMMAND_LASER_ON)
-            return "spooler", data
-
-        @context.console_command(
-            "-laser",
-            hidden=True,
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("turn laser off in place"),
-        )
-        def minus_laser(data, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            spooler.job(COMMAND_LASER_OFF)
-            return "spooler", data
-
-        @context.console_argument(
-            "amount", type=Length, help=_("amount to move in the set direction.")
-        )
-        @context.console_command(
-            ("left", "right", "up", "down"),
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("cmd <amount>"),
-        )
-        def direction(command, channel, _, data=None, amount=None, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            if amount is None:
-                amount = Length("1mm")
-            max_bed_height = bed_dim.bed_height * MILS_IN_MM
-            max_bed_width = bed_dim.bed_width * MILS_IN_MM
-            if not hasattr(spooler, "_dx"):
-                spooler._dx = 0
-            if not hasattr(spooler, "_dy"):
-                spooler._dy = 0
-            if command.endswith("right"):
-                spooler._dx += amount.value(ppi=1000.0, relative_length=max_bed_width)
-            elif command.endswith("left"):
-                spooler._dx -= amount.value(ppi=1000.0, relative_length=max_bed_width)
-            elif command.endswith("up"):
-                spooler._dy -= amount.value(ppi=1000.0, relative_length=max_bed_height)
-            elif command.endswith("down"):
-                spooler._dy += amount.value(ppi=1000.0, relative_length=max_bed_height)
-            context(".timer 1 0 .spool%s jog\n" % device_name)
-            return "spooler", data
-
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_command(
-            "jog",
-            hidden=True,
-            input_type="spooler",
-            output_type="spooler",
-            help=_("executes outstanding jog buffer"),
-        )
-        def jog(command, channel, _, data, force=False, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            try:
-                idx = int(spooler._dx)
-                idy = int(spooler._dy)
-            except AttributeError:
-                return
-            if idx == 0 and idy == 0:
-                return
-            if force:
-                spooler.job(execute_relative_position(idx, idy))
-            else:
-                if spooler.job_if_idle(execute_relative_position(idx, idy)):
-                    channel(_("Position moved: %d %d") % (idx, idy))
-                    spooler._dx -= idx
-                    spooler._dy -= idy
-                else:
-                    channel(_("Busy Error"))
-            return "spooler", data
-
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_argument("x", type=Length, help=_("change in x"))
-        @context.console_argument("y", type=Length, help=_("change in y"))
-        @context.console_command(
-            ("move", "move_absolute"),
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("move <x> <y>: move to position."),
-        )
-        def move(channel, _, x, y, data=None, force=False, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            if y is None:
-                raise SyntaxError
-            if force:
-                spooler.job(execute_absolute_position(x, y))
-            else:
-                if not spooler.job_if_idle(execute_absolute_position(x, y)):
-                    channel(_("Busy Error"))
-            return "spooler", data
-
-        @context.console_option("force", "f", type=bool, action="store_true")
-        @context.console_argument("dx", type=Length, help=_("change in x"))
-        @context.console_argument("dy", type=Length, help=_("change in y"))
-        @context.console_command(
-            "move_relative",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("move_relative <dx> <dy>"),
-        )
-        def move_relative(channel, _, dx, dy, data=None, force=False, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            if dy is None:
-                raise SyntaxError
-            if force:
-                spooler.job(execute_relative_position(dx, dy))
-            else:
-                if not spooler.job_if_idle(execute_relative_position(dx, dy)):
-                    channel(_("Busy Error"))
-            return "spooler", data
-
-        @context.console_argument("x", type=Length, help=_("x offset"))
-        @context.console_argument("y", type=Length, help=_("y offset"))
-        @context.console_command(
-            "home",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("home the laser"),
-        )
-        def home(x=None, y=None, data=None, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            if x is not None and y is not None:
-                x = x.value(ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM)
-                y = y.value(ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM)
-                spooler.job(COMMAND_HOME, int(x), int(y))
-                return "spooler", data
-            spooler.job(COMMAND_HOME)
-            return "spooler", data
-
-        @context.console_command(
-            "unlock",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("unlock the rail"),
-        )
-        def unlock(data=None, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            spooler.job(COMMAND_UNLOCK)
-            return "spooler", data
-
-        @context.console_command(
-            "lock",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("lock the rail"),
-        )
-        def lock(data, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-            spooler.job(COMMAND_LOCK)
-            return "spooler", data
-
-        for i in range(5):
-            self.get_or_make_spooler(str(i))
-
-        @context.console_command(
-            "test_dot_and_home",
-            input_type=("spooler", None),
-            hidden=True,
-        )
-        def run_home_and_dot_test(data, **kwgs):
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-
-            def home_dot_test():
-                for i in range(25):
-                    yield COMMAND_SET_ABSOLUTE
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_HOME
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_MOVE, 3000, 3000
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_LASER_ON
-                    yield COMMAND_WAIT, 0.05
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
-                yield COMMAND_HOME
-                yield COMMAND_WAIT_FINISH
-
-            spooler.job(home_dot_test)
-
-        @context.console_argument("transition_type", type=str)
-        @context.console_command(
-            "test_jog_transition",
-            help="test_jog_transition <finish,jog,switch>",
-            hidden=True,
-        )
-        def run_jog_transition_test(data, transition_type, **kwgs):
-            """ "
-            The Jog Transition Test is intended to test the jogging
-            """
-            if transition_type == "jog":
-                command = COMMAND_JOG
-            elif transition_type == "finish":
-                command = COMMAND_JOG_FINISH
-            elif transition_type == "switch":
-                command = COMMAND_JOG_SWITCH
-            else:
-                raise SyntaxError
-            if data is None:
-                data = self.default_spooler(), self.context.root.active
-            spooler, device_name = data
-
-            def jog_transition_test():
-                yield COMMAND_SET_ABSOLUTE
-                yield COMMAND_MODE_RAPID
-                yield COMMAND_HOME
-                yield COMMAND_LASER_OFF
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MOVE, 3000, 3000
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_LASER_ON
-                yield COMMAND_WAIT, 0.05
-                yield COMMAND_LASER_OFF
-                yield COMMAND_WAIT_FINISH
-
-                yield COMMAND_SET_SPEED, 10.0
-
-                def pos(i):
-                    if i < 3:
-                        x = 200
-                    elif i < 6:
-                        x = -200
-                    else:
-                        x = 0
-                    if i % 3 == 0:
-                        y = 200
-                    elif i % 3 == 1:
-                        y = -200
-                    else:
-                        y = 0
-                    return x, y
-
-                for q in range(8):
-                    top = q & 1
-                    left = q & 2
-                    x_val = q & 3
-                    yield COMMAND_SET_DIRECTION, top, left, x_val, not x_val
-                    yield COMMAND_MODE_PROGRAM
-                    for j in range(9):
-                        jx, jy = pos(j)
-                        for k in range(9):
-                            kx, ky = pos(k)
-                            yield COMMAND_MOVE, 3000, 3000
-                            yield COMMAND_MOVE, 3000 + jx, 3000 + jy
-                            yield command, 3000 + jx + kx, 3000 + jy + ky
-                    yield COMMAND_MOVE, 3000, 3000
-                    yield COMMAND_MODE_RAPID
-                    yield COMMAND_WAIT_FINISH
-                    yield COMMAND_LASER_ON
-                    yield COMMAND_WAIT, 0.05
-                    yield COMMAND_LASER_OFF
-                    yield COMMAND_WAIT_FINISH
-
-            spooler.job(jog_transition_test)
