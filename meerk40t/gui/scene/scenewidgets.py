@@ -94,6 +94,7 @@ class SelectionWidget(Widget):
     selbox_wy = None
     rotate_cx = None
     rotate_cy = None
+    rotated_angle = 0
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
@@ -456,6 +457,7 @@ class SelectionWidget(Widget):
             create_menu(
                 self.scene.context.gui, elements.top_element(emphasized=True), elements
             )
+            self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             elements.set_emphasized_by_position(space_pos)
@@ -504,30 +506,6 @@ class SelectionWidget(Widget):
                 return RESPONSE_CONSUME
         return RESPONSE_CHAIN
 
-    def tool_scalexy(self, position, dx, dy, event=0):
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (position[0] - self.left) / self.save_width
-            scaley = (position[1] - self.top) / self.save_height
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.left, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds([b[0], b[1], position[0], position[1]])
-            self.scene.request_refresh()
-
     def tool_none(self, position, dx, dy, event=0):
         return
 
@@ -535,233 +513,121 @@ class SelectionWidget(Widget):
         """
         Change scale vs the bottom right corner.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (position[0] - self.left) / self.save_width
-            scaley = (position[1] - self.top) / self.save_height
-            if self.uniform:
-                scale = (scaley + scalex) / 2.0
-                scalex = scale
-                scaley = scale
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.left, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds(
-                [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
-            )
-            self.scene.request_refresh()
+        self.tool_scale_general("se", position, dx, dy, event)
 
     def tool_scalexy_nw(self, position, dx, dy, event=0):
         """
         Change scale from the top left corner.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (self.right - position[0]) / self.save_width
-            scaley = (self.bottom - position[1]) / self.save_height
-            if self.uniform:
-                scale = (scaley + scalex) / 2.0
-                scalex = scale
-                scaley = scale
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.right, self.bottom)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds(
-                [b[2] - self.save_width, b[3] - self.save_height, b[2], b[3]]
-            )
-            self.scene.request_refresh()
+        self.tool_scale_general("nw", position, dx, dy, event)
 
     def tool_scalexy_ne(self, position, dx, dy, event=0):
         """
         Change scale from the top right corner.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (position[0] - self.left) / self.save_width
-            scaley = (self.bottom - position[1]) / self.save_height
-            if self.uniform:
-                scale = (scaley + scalex) / 2.0
-                scalex = scale
-                scaley = scale
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.left, self.bottom)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds(
-                [b[0], b[3] - self.save_height, b[0] + self.save_width, b[3]]
-            )
-            self.scene.request_refresh()
+        self.tool_scale_general("ne", position, dx, dy, event)
 
     def tool_scalexy_sw(self, position, dx, dy, event=0):
         """
         Change scale from the bottom left corner.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (self.right - position[0]) / self.save_width
-            scaley = (position[1] - self.top) / self.save_height
-            if self.uniform:
-                scale = (scaley + scalex) / 2.0
-                scalex = scale
-                scaley = scale
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.right, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds(
-                [b[2] - self.save_width, b[1], b[2], b[1] + self.save_height]
-            )
-            self.scene.request_refresh()
+        self.tool_scale_general("sw", position, dx, dy, event)
 
     def tool_scalex_e(self, position, dx, dy, event=0):
         """
         Change scale from the right side.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (position[0] - self.left) / self.save_width
-            self.save_width *= scalex
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, 1, self.left, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds([b[0], b[1], position[0], b[3]])
-            self.scene.request_refresh()
+        self.tool_scale_general("e", position, dx, dy, event)
 
     def tool_scalex_w(self, position, dx, dy, event=0):
         """
         Change scale from the left side.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (self.right - position[0]) / self.save_width
-            self.save_width *= scalex
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, 1, self.right, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds([position[0], b[1], b[2], b[3]])
-            self.scene.request_refresh()
+        self.tool_scale_general("w", position, dx, dy, event)
 
     def tool_scaley_s(self, position, dx, dy, event=0):
         """
         Change scale from the bottom side.
         """
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scaley = (position[1] - self.top) / self.save_height
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(1, scaley, self.left, self.top)
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds([b[0], b[1], b[2], position[1]])
-            self.scene.request_refresh()
+        self.tool_scale_general("s", position, dx, dy, event)
 
     def tool_scaley_n(self, position, dx, dy, event=0):
         """
         Change scale from the top side.
         """
+        self.tool_scale_general("n", position, dx, dy, event)
+
+    def tool_scale_general(self, method, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.node.modified()
         if event == 0:
-            b = elements.selected_area()
-            scaley = (self.bottom - position[1]) / self.save_height
+            # Establish origin
+            if "n" in method:
+                orgy = self.bottom
+            else:
+                orgy = self.top
+
+            if "e" in method:
+                orgx = self.right
+            else:
+                orgx = self.left
+
+            # Establish scales
+            scalex = 1
+            scaley = 1
+            if "n" in method:
+                scaley = (self.bottom - position[1]) / self.save_height
+            elif "s" in method:
+                scaley = (position[1] - self.top) / self.save_height
+
+            if "w" in method:
+                scalex = (self.right - position[0]) / self.save_width
+            elif "e" in method:
+                scalex = (position[0] - self.left) / self.save_width
+
+            if len(method)>1 and self.uniform: # from corner
+                scale = (scaley + scalex) / 2.0
+                scalex = scale
+                scaley = scale
+
+            self.save_width *= scalex
             self.save_height *= scaley
+
+            b = elements.selected_area()
+            if "n" in method:
+                orgy = self.bottom
+            else:
+                orgy = self.top
+
+            if "w" in method:
+                orgx = self.right
+            else:
+                orgx = self.left
+
+            if "n" in method:
+                b[1] = b[3] - self.save_height
+            elif "s" in method:
+                b[3] = b[1] + self.save_height
+
+            if "e" in method:
+                b[2] = b[0] + self.save_width
+            elif "w" in method:
+                b[0] = b[2] - self.save_width
+
             for obj in elements.elems(emphasized=True):
                 try:
                     if obj.lock:
                         continue
                 except AttributeError:
                     pass
-                obj.transform.post_scale(1, scaley, self.left, self.bottom)
-                obj._bounds_dirty = True
+                obj.transform.post_scale(scalex, scaley, orgx, orgy)
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds([b[0], position[1], b[2], b[3]])
+                obj = e.object
+                obj.node.modified()
+            elements.update_bounds([b[0], b[1], b[2], b[3]])
             self.scene.request_refresh()
 
     def tool_translate(self, position, dx, dy, event=0):
@@ -778,9 +644,10 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-                e._bounds_dirty = True
+                obj.node.modified()
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
+                obj = e.object
+                obj.node.modified()
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -799,25 +666,27 @@ class SelectionWidget(Widget):
                 obj.node.modified()
         if event == 0:
             if dx> 0 :
-                self.last_skew_x += math.tau / 180
+                self.last_skew_x += math.tau / 360
             else:
-                self.last_skew_x -= math.tau / 180
-            if self.last_skew_x <= -0.5 * math.tau:
-                self.last_skew_x = -0.5 * math.tau
-            if self.last_skew_x >= +0.5 * math.tau:
-                self.last_skew_x = +0.5 * math.tau
-            valu = self.last_skew_x / math.tau * 180
-            # print ("Skew-X Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_x, valu))
+                self.last_skew_x -= math.tau / 360
+
+            if self.last_skew_x <= -0.99 * math.pi / 2:
+                self.last_skew_x = -0.99 * math.pi / 2
+            if self.last_skew_x >= +0.99 * math.pi / 2:
+                self.last_skew_x = +0.99 * math.pi / 2
+            # valu = self.last_skew_x / math.tau * 360
+            # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew_x, valu, self.last_skew_x / math.pi))
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                q = obj.bbox()
-                obj.transform.reset()
-                obj.transform.post_translate(q[0], q[1])
-                obj.transform.post_skew_x(self.last_skew_x, (q[0]+q[2])/2, (q[1]+q[3])/2)
+                mat = obj.transform
+                mat[2] = math.tan(self.last_skew_x)
+                obj.transform = mat
+                obj.node.modified()
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
+                obj = e.object
+                obj.node.modified()
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -834,28 +703,30 @@ class SelectionWidget(Widget):
                 obj.node.modified()
             self.last_skew_y = 0
         if event == 0:
-            if dy> 0 :
-                self.last_skew_y += math.tau / 36
-            else:
-                self.last_skew_y -= math.tau / 36
-            if self.last_skew_y <= -5/6 * math.tau:
-                self.last_skew_y = -5/6 * math.tau
-            if self.last_skew_y >= +5/6 * math.tau:
-                self.last_skew_y = +5/6 * math.tau
 
-            valu = self.last_skew_y / math.tau * 180
-            # print ("Skew-Y Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_y, valu))
+            if dy> 0 :
+                self.last_skew_y += math.tau / 360
+            else:
+                self.last_skew_y -= math.tau / 360
+
+            if self.last_skew_y <= -0.99 * math.pi / 2:
+                self.last_skew_y = -0.99 * math.pi / 2
+            if self.last_skew_y >= +0.99 * math.pi / 2:
+                self.last_skew_y = +0.99 * math.pi / 2
+
+            # valu = self.last_skew_y / math.tau * 360
+            # print ("Skew-Y, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew_x, valu, self.last_skew_y / math.pi))
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                q = obj.bbox()
-                obj.transform.reset()
-                obj.transform.post_translate(q[0], q[1])
-                obj.transform.post_skew_y(self.last_skew_y, (q[0]+q[2])/2, (q[1]+q[3])/2)
-
+                mat = obj.transform
+                mat[1] = math.tan(self.last_skew_y)
+                obj.transform = mat
+                obj.node.modified()
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
+                obj = e.object
+                obj.node.modified()
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -869,6 +740,7 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.node.modified()
+            self.rotated_angle = 0
         if event == 0:
             if self.rotate_cx is None:
                 self.rotate_cx = (self.right + self.left) / 2
@@ -901,16 +773,24 @@ class SelectionWidget(Widget):
             # print ("cw=%s, d_left=%s, d_top=%s, dx=%.1f, dy=%.1f, Pos=(%.1f, %.1f), Center=(%.1f, %.1f)" % ( cw, d_left, d_top, dx, dy, position[0], position[1], self.rotate_cx, self.rotate_cy))
 
             if cw:
-                rot_angle = +1 * math.tau / 180
+                rot_angle = +1 * math.tau / 360
             else:
-                rot_angle = -1 * math.tau / 180
+                rot_angle = -1 * math.tau / 360
+            #Update Rotation angle...
+            self.rotated_angle += rot_angle
+            # Bring back to 'regular' radians
+            while (self.rotated_angle >= 2 * math.tau):
+                self.rotated_angle -= 2 * math.tau
+            while (self.rotated_angle <= -2 * math.tau):
+                self.rotated_angle += 2 * math.tau
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
-                e._bounds_dirty = True
+                obj.node.modified()
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
+                obj = e.object
+                obj.node.modified()
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -1066,6 +946,9 @@ class SelectionWidget(Widget):
 
             self.draw_handles(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
             self.draw_rotation_corners(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
+            if abs(self.rotated_angle)>0.001:
+                gc.DrawText("%.0f°" % (360 * self.rotated_angle / math.tau), center_x, center_y)
+
 
     def create_duplicate(self):
         from copy import copy
