@@ -246,7 +246,7 @@ class RibbonPanel(wx.Panel):
 
 class Ribbon(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(423, 131, *args, **kwds)
+        super().__init__(423, 121, *args, **kwds)
 
         self.panel = RibbonPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)

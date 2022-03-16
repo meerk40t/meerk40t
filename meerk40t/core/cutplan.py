@@ -43,6 +43,8 @@ class CutPlan:
         self.plan = list()
         self.original = list()
         self.commands = list()
+        self.channel = context.channel("optimize", timestamp=True)
+        self.context.setting(bool, "opt_rasters_split", True)
 
     def __str__(self):
         parts = list()

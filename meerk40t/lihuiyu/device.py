@@ -197,7 +197,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(str, "address", "localhost")
         self.setting(str, "label", "m2nano")
 
-        self.setting(bool, "twitchless", False)
+        self.setting(bool, "twitches", False)
         self.setting(bool, "nse_raster", False)
         self.setting(bool, "nse_stepraster", False)
 
@@ -1345,7 +1345,7 @@ class LhystudiosDriver(Parameters):
             instance_step = self.step_value_set
 
         suffix_c = None
-        if (self.service.twitchless or self.force_twitchless) and not self.step:
+        if (not self.service.twitches or self.force_twitchless) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward
