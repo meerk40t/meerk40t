@@ -89,6 +89,7 @@ class ScenePanel(wx.Panel):
                 self.isAltPressed = True
                 self.scene.event(self.scene.last_position, "kb_alt_press")
                 # self.scene.event(self.scene.last_position, "kb_alt_press")
+        evt.Skip()
 
     def on_key_up(self, evt):
         keycode = evt.GetKeyCode()
@@ -105,6 +106,7 @@ class ScenePanel(wx.Panel):
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
                 self.scene.event(self.scene.last_position, "kb_alt_release")
+        evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:
