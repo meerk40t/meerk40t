@@ -777,10 +777,10 @@ class SelectionWidget(Widget):
             #Update Rotation angle...
             self.rotated_angle += rot_angle
             # Bring back to 'regular' radians
-            while (self.rotated_angle >= 2 * math.tau):
-                self.rotated_angle -= 2 * math.tau
-            while (self.rotated_angle <= -2 * math.tau):
-                self.rotated_angle += 2 * math.tau
+            while (self.rotated_angle >= 1 * math.tau):
+                self.rotated_angle -= 1 * math.tau
+            while (self.rotated_angle <= -1 * math.tau):
+                self.rotated_angle += 1 * math.tau
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
