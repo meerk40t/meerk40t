@@ -146,6 +146,8 @@ class ConsolePanel(wx.Panel):
             style=wx.richtext.RE_MULTILINE
             | wx.richtext.RE_READONLY
             | wx.BG_STYLE_SYSTEM
+            | wx.VSCROLL
+            | wx.ALWAYS_SHOW_SB
         )
         self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
