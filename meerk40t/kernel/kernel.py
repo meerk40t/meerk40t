@@ -2535,6 +2535,8 @@ class Kernel(Settings):
             if path is None:
                 path = "/"
             path_context = self.get_context(path)
+            if len(args) == 0:
+                return
             value = args[0]
             if value == "open":
                 index = args[1]
