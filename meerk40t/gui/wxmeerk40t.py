@@ -1,57 +1,45 @@
-# -*- coding: utf-8 -*-
-
 import os
 import platform
 import sys
 import traceback
+from datetime import datetime
 
+# According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+# richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+# so we are doing it here even though we do not refer to it in this file
+# richtext is used for the Console panel.
+import wx
+from wx import aui, richtext
+
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
+from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 
-try:
-    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-    # so we are doing it here even though we do not refer to it in this file
-    # richtext is used for the Console panel.
-    from wx import richtext
-    import wx
-except ImportError as e:
-    from ..core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
-
-from ..kernel import Module
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .configuration import Configuration
 from .consoleproperty import ConsoleProperty
-from .controller import Controller
+from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .file.fileoutput import FileOutput
 from .groupproperties import GroupProperty
+from .icons import (
+    icons8_emergency_stop_button_50,
+    icons8_gas_industry_50,
+    icons8_home_filled_50,
+    icons8_pause_50,
+)
 from .imageproperty import ImageProperty
 from .keymap import Keymap
-from .laserrender import LaserRender
-from .lhystudios.lhystudiosaccel import LhystudiosAccelerationChart
-from .lhystudios.lhystudioscontrollergui import LhystudiosControllerGui
-from .lhystudios.lhystudiosdrivergui import LhystudiosDriverGui
-from .moshi.moshicontrollergui import MoshiControllerGui
-from .moshi.moshidrivergui import MoshiDriverGui
 from .notes import Notes
 from .operationproperty import OperationProperty
-from .panes.camerapanel import CameraInterface
-from .panes.consolepanel import Console
-from .panes.devicespanel import DeviceManager
-from .panes.navigationpanels import Navigation
-from .panes.spoolerpanel import JobSpooler
+from .operationpropertymain import ParameterPanel
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
-from .rotarysettings import RotarySettings
 from .simulation import Simulation
-from .tcp.tcpcontroller import TCPController
 from .textproperty import TextProperty
-from .usbconnect import UsbConnect
 from .wxmmain import MeerK40t
 
 """
@@ -66,81 +54,136 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 """
 
-MILS_IN_MM = 39.3701
-
-GUI_START = True
-
-
-def plugin(kernel, lifecycle):
-    # pylint: disable=global-statement
-    global GUI_START
-    kernel_root = kernel.root
-    if lifecycle == "console":
-        GUI_START = False
-
-        @kernel.console_command("gui", help=_("starts the gui"))
-        def gui_start(**kwargs):
-            del kernel.registered["command/None/gui"]
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            meerk40tgui.MainLoop()
-
-    elif lifecycle == "preregister":
-        kernel.register("module/wxMeerK40t", wxMeerK40t)
-        kernel_root.open("module/wxMeerK40t")
-
-        # Registers the render-op make_raster. This is used to do cut planning.
-        renderer = LaserRender(kernel_root)
-        kernel_root.register("render-op/make_raster", renderer.make_raster)
-    elif lifecycle == "mainloop":
-
-        def interrupt_popup():
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        kernel_root.register("function/interrupt", interrupt_popup)
-
-        def interrupt():
-            from ..device.lasercommandconstants import (
-                COMMAND_FUNCTION,
-                COMMAND_WAIT_FINISH,
-            )
-
-            yield COMMAND_WAIT_FINISH
-            yield COMMAND_FUNCTION, kernel_root.registered["function/interrupt"]
-
-        kernel_root.register("plan/interrupt", interrupt)
-
-        if GUI_START:
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
-                wsplit = window.split(":")
-                window_name = wsplit[0]
-                window_index = wsplit[-1] if len(wsplit) > 1 else None
-                if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window, False
-                ):
-                    if window_index is not None:
-                        kernel.console(
-                            "window open -m {index} {window} {index}\n".format(
-                                index=window_index, window=window_name
-                            )
-                        )
-                    else:
-                        kernel.console(
-                            "window open {window}\n".format(window=window_name)
-                        )
-            meerk40tgui.MainLoop()
-
-
 _ = wx.GetTranslation
+
+
+def register_panel_go(window, context):
+    # Define Go
+    go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
+
+    def busy_go_plan(*args):
+        with wx.BusyInfo(_("Processing and sending...")):
+            context(
+                "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+            )
+
+    window.Bind(
+        wx.EVT_BUTTON,
+        busy_go_plan,
+        go,
+    )
+    go.SetBackgroundColour(wx.Colour(0, 127, 0))
+    go.SetToolTip(_("One Touch: Send Job To Laser "))
+    go.SetSize(go.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Caption(_("Go"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("go")
+        .CaptionVisible(not context.pane_lock)
+        .Hide()
+    )
+    pane.dock_proportion = 98
+    pane.control = go
+
+    window.on_pane_add(pane)
+    context.register("pane/go", pane)
+
+
+def register_panel_stop(window, context):
+    # Define Stop.
+    stop = wx.BitmapButton(
+        window, wx.ID_ANY, icons8_emergency_stop_button_50.GetBitmap()
+    )
+    window.Bind(
+        wx.EVT_BUTTON,
+        ConsoleFunction(context, "estop\n"),
+        stop,
+    )
+    stop.SetBackgroundColour(wx.Colour(127, 0, 0))
+    stop.SetToolTip(_("Emergency stop/reset the controller."))
+    stop.SetSize(stop.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Caption(_("Stop"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("stop")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = stop
+
+    window.on_pane_add(pane)
+    context.register("pane/stop", pane)
+
+
+def register_panel_home(window, context):
+    # Define Home.
+    home = wx.BitmapButton(window, wx.ID_ANY, icons8_home_filled_50.GetBitmap())
+    # home.SetBackgroundColour((200, 225, 250))
+    window.Bind(wx.EVT_BUTTON, lambda e: context("home\n"), home)
+    pane = (
+        aui.AuiPaneInfo()
+        .Bottom()
+        .Caption(_("Home"))
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("home")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = home
+    window.on_pane_add(pane)
+    context.register("pane/home", pane)
+
+
+def register_panel_pause(window, context):
+    # Define Pause.
+    pause = wx.BitmapButton(
+        window, wx.ID_ANY, icons8_pause_50.GetBitmap(use_theme=False)
+    )
+
+    def on_pause_button(event=None):
+        try:
+            context("pause\n")
+            # if self.pipe_state != 3:
+            #     pause.SetBitmap(icons8_play_50.GetBitmap())
+            # else:
+            # pause.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
+        except AttributeError:
+            pass
+
+    window.Bind(
+        wx.EVT_BUTTON,
+        on_pause_button,
+        pause,
+    )
+    pause.SetBackgroundColour(wx.Colour(255, 255, 0))
+    pause.SetToolTip(_("Pause/Resume the controller"))
+    pause.SetSize(pause.GetBestSize())
+    pane = (
+        aui.AuiPaneInfo()
+        .Caption(_("Pause"))
+        .Bottom()
+        .MinSize(40, 40)
+        .FloatingSize(98, 98)
+        .Name("pause")
+        .Hide()
+        .CaptionVisible(not context.pane_lock)
+    )
+    pane.dock_proportion = 98
+    pane.control = pause
+
+    window.on_pane_add(pane)
+    context.register("pane/pause", pane)
+
+
 supported_languages = (
     ("en", "English", wx.LANGUAGE_ENGLISH),
     ("it", "italiano", wx.LANGUAGE_ITALIAN),
@@ -237,7 +280,7 @@ class wxMeerK40t(wx.App, Module):
     def MacOpenFile(self, filename):
         try:
             if self.context is not None:
-                self.context.load(os.path.realpath(filename))
+                self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
@@ -245,7 +288,7 @@ class wxMeerK40t(wx.App, Module):
         try:
             if self.context is not None:
                 for filename in filenames:
-                    self.context.load(os.path.realpath(filename))
+                    self.context.elements.load(os.path.realpath(filename))
         except AttributeError:
             pass
 
@@ -257,16 +300,12 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
         kernel.register("window/OperationProperty", OperationProperty)
+        kernel.register("operationproperty/Main", ParameterPanel)
         kernel.register("window/GroupProperty", GroupProperty)
-        kernel.register("window/CameraInterface", CameraInterface)
-        kernel.register("window/Terminal", Console)
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
-        kernel.register("window/Rotary", RotarySettings)
         kernel.register("window/About", About)
-        kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Keymap", Keymap)
-        kernel.register("window/UsbConnect", UsbConnect)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)
@@ -275,18 +314,41 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
+        kernel.register("window/DeviceManager", DeviceManager)
 
-        kernel.register("window/default/Controller", Controller)
-        kernel.register("window/default/Configuration", Configuration)
-        kernel.register("window/tcp/Controller", TCPController)
-        kernel.register("window/file/Controller", FileOutput)
-        kernel.register("window/lhystudios/Configuration", LhystudiosDriverGui)
-        kernel.register("window/lhystudios/Controller", LhystudiosControllerGui)
-        kernel.register(
-            "window/lhystudios/AccelerationChart", LhystudiosAccelerationChart
-        )
-        kernel.register("window/moshi/Configuration", MoshiDriverGui)
-        kernel.register("window/moshi/Controller", MoshiControllerGui)
+        from meerk40t.gui.wxmribbon import register_panel_ribbon
+
+        kernel.register("wxpane/Ribbon", register_panel_ribbon)
+
+        from meerk40t.gui.wxmscene import register_panel_scene
+
+        kernel.register("wxpane/ScenePane", register_panel_scene)
+
+        from meerk40t.gui.wxmtree import register_panel_tree
+
+        kernel.register("wxpane/Tree", register_panel_tree)
+
+        from meerk40t.gui.laserpanel import register_panel_laser
+
+        kernel.register("wxpane/LaserPanel", register_panel_laser)
+
+        from meerk40t.gui.position import register_panel_position
+
+        kernel.register("wxpane/Position", register_panel_position)
+        #
+        # if kernel.root.setting(bool, "developer_mode", False):
+        from meerk40t.gui.auitoolbars import register_toolbars
+
+        kernel.register("wxpane/Toolbars", register_toolbars)
+
+        from meerk40t.gui.toolbaralign import register_align_tools
+
+        kernel.register("wxpane/Tool-Align", register_align_tools)
+
+        kernel.register("wxpane/Go", register_panel_go)
+        kernel.register("wxpane/Stop", register_panel_stop)
+        kernel.register("wxpane/Home", register_panel_home)
+        kernel.register("wxpane/Pause", register_panel_pause)
 
         context = kernel.root
 
@@ -305,7 +367,8 @@ class wxMeerK40t(wx.App, Module):
             Opens a MeerK40t window or provides information. This command is restricted to use with the wxMeerK40t gui.
             This also allows use of a -p flag that sets the context path for this window to operate at. This should
             often be restricted to where the windows are typically opened since their function and settings usually
-            depend on the context used. The default root path is "/". Eg. "window -p / open Settings"
+            depend on the context used. Windows often cannot open multiple copies of the same window at the same context
+            The default root path is "/". Eg. "window -p / open Preferences"
             """
             context = kernel.root
             if path is None:
@@ -344,10 +407,7 @@ class wxMeerK40t(wx.App, Module):
             channel(_("Windows Registered:"))
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
-                if "/" in name:
-                    channel("%d: Specific Window: %s" % (i + 1, name))
-                else:
-                    channel("%d: %s" % (i + 1, name))
+                channel("%d: %s" % (i + 1, name))
             return "window", data
 
         @kernel.console_option(
@@ -356,26 +416,6 @@ class wxMeerK40t(wx.App, Module):
             type=int,
             help=_("Multi window flag for launching multiple copies of this window."),
         )
-        @kernel.console_option(
-            "driver",
-            "d",
-            type=bool,
-            action="store_true",
-            help=_("Load Driver Specific Window"),
-        )
-        @kernel.console_option(
-            "output",
-            "o",
-            type=bool,
-            action="store_true",
-            help=_("Load Output Specific Window"),
-        )
-        @kernel.console_option(
-            "source",
-            "s",
-            type=str,
-            help=_("Specify source window type"),
-        )
         @kernel.console_argument("window", type=str, help=_("window to be opened"))
         @kernel.console_command(
             ("open", "toggle"),
@@ -383,17 +423,7 @@ class wxMeerK40t(wx.App, Module):
             help=_("open/toggle the supplied window"),
         )
         def window_open(
-            command,
-            channel,
-            _,
-            data,
-            window=None,
-            driver=False,
-            output=False,
-            source=None,
-            multi=None,
-            args=(),
-            **kwargs,
+            command, channel, _, data, multi=None, window=None, args=(), **kwargs
         ):
             path = data
             try:
@@ -401,38 +431,13 @@ class wxMeerK40t(wx.App, Module):
             except AttributeError:
                 parent = None
             window_uri = "window/%s" % window
-            context.root.setting(str, "active", "0")
-            active = context.root.active
-            if source is not None:
-                active = source
-            if output or driver:
-                # Specific class subwindow
-                try:
-                    _spooler, _input_driver, _output = context.registered[
-                        "device/%s" % active
-                    ]
-                except KeyError:
-                    channel(_("Device not found."))
-                    return
-                if output:
-                    q = _output
-                elif driver:
-                    q = _input_driver
-                else:
-                    q = _input_driver
-                t = "default"
-                m = "/"
-                if q is not None:
-                    obj = q
-                    try:
-                        t = obj.type
-                        m = obj.context.path
-                    except AttributeError:
-                        pass
-                path = context.get_context(m)
-                window_uri = "window/%s/%s" % (t, window)
-                if window_uri not in context.registered:
-                    window_uri = "window/%s/%s" % ("default", window)
+            window_class = context.lookup(window_uri)
+            if isinstance(window_class, str):
+                window_uri = window_class
+                window_class = context.lookup(window_uri)
+
+            if hasattr(window_class, "required_path"):
+                path = context.get_context(window_class.required_path)
 
             window_name = (
                 "{window}:{multi}".format(window=window_uri, multi=multi)
@@ -449,17 +454,16 @@ class wxMeerK40t(wx.App, Module):
                 channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
-                if window_uri in context.registered:
+                if context.lookup(window_uri) is not None:
                     kernel.run_later(window_open, None)
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
-            else:
-                if window_uri in context.registered:
-                    try:
-                        w = path.opened[window_name]
+            else:  # Toggle
+                if window_class is not None:
+                    if window_name in path.opened:
                         kernel.run_later(window_close, None)
-                    except KeyError:
+                    else:
                         kernel.run_later(window_open, None)
                 else:
                     channel(_("No such window as %s" % window))
@@ -493,15 +497,17 @@ class wxMeerK40t(wx.App, Module):
             help=_("reset the supplied window, or '*' for all windows"),
         )
         def window_reset(channel, _, data, window=None, **kwargs):
-            if kernel._config is not None:
-                for context in list(kernel.contexts):
-                    if context.startswith("window"):
-                        del kernel.contexts[context]
-                kernel._config.DeleteGroup("window")
+            for section in list(kernel.derivable("")):
+                if section.startswith("window"):
+                    kernel.clear_persistent(section)
+                    try:
+                        del kernel.contexts[section]
+                    except KeyError:
+                        pass  # No open context for that window, nothing will save out.
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
-            context.signal("refresh_scene")
+            context.signal("refresh_scene", "Scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
 
@@ -517,7 +523,7 @@ class wxMeerK40t(wx.App, Module):
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         context = self.context
         kernel = context.kernel
 
@@ -542,7 +548,7 @@ class wxMeerK40t(wx.App, Module):
         wx.Locale.AddCatalogLookupPathPrefix(localedir)
 
         kernel.translation = wx.GetTranslation
-        kernel.set_config(wx.FileConfig(kernel.profile))
+
         context.app = self  # Registers self as kernel.app
 
         context.setting(int, "language", None)
@@ -555,10 +561,8 @@ class wxMeerK40t(wx.App, Module):
         def nuke_settings(command, channel, _, sure=None, **kwargs):
             if sure == "yes":
                 kernel = self.context.kernel
-                if kernel._config is not None:
-                    kernel._config.DeleteAll()
-                    kernel._config = None
-                    kernel.shutdown()
+                kernel.delete_all_persistent()
+                kernel.shutdown()
             else:
                 channel(
                     'Argument "sure" is required. Requires typing: "nuke_settings yes"'
@@ -703,11 +707,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     print("\n")
     print(error_log)
     try:
-        import datetime
-
-        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            date=datetime.datetime.now()
-        )
+        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
     except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 
@@ -717,8 +717,6 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
                 file.write(error_log)
                 print(file)
         except PermissionError:
-            from meerk40t.kernel import get_safe_path
-
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
             with open(filename, "w") as file:
                 file.write(error_log)
@@ -746,7 +744,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix) :].strip("\n")
 
-    if git and branch and branch != "main":
+    if git and branch and branch not in ("main", "tatarize-services"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
             """It appears that you are running Meerk40t from source managed by Git,

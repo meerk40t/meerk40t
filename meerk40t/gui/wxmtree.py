@@ -1,8 +1,7 @@
 import wx
 from wx import aui
 
-from ..core.cutcode import CutCode
-from ..core.elements import ConsoleOperation, LaserOperation, isDot
+from ..core.node.node import is_dot
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -24,10 +23,9 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
-from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 
@@ -79,12 +77,13 @@ class TreePanel(wx.Panel):
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
 
-        self.on_rebuild_tree_request()
+        self.context.signal("rebuild_tree")
 
     def __set_tree(self):
         self.shadow_tree = ShadowTree(
-            self.context, self.GetParent(), self.context.elements._tree, self.wxtree
+            self.context.elements, self.GetParent(), self.wxtree
         )
+
         self.Bind(
             wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
         )
@@ -107,19 +106,16 @@ class TreePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        if keymap_execute(self.context, keyvalue, keydown=True):
-            return
-        event.Skip()
+        if self.context.bind.trigger(keyvalue):
+            event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        if keymap_execute(self.context, keyvalue, keydown=False):
-            return
-        event.Skip()
+        if self.context.bind.untrigger(keyvalue):
+            event.Skip()
 
-    def initialize(self):
+    def pane_show(self):
         self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.listen("refresh_tree", self.request_refresh)
         self.context.listen("element_property_update", self.on_element_update)
         self.context.listen("element_property_reload", self.on_force_element_update)
         self.context.listen(
@@ -129,9 +125,8 @@ class TreePanel(wx.Panel):
             "activate_selected_nodes", self.shadow_tree.activate_selected_node
         )
 
-    def finalize(self):
+    def pane_hide(self):
         self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.unlisten("refresh_tree", self.request_refresh)
         self.context.unlisten("element_property_update", self.on_element_update)
         self.context.unlisten("element_property_reload", self.on_force_element_update)
         self.context.unlisten(
@@ -163,19 +158,6 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
-    def on_rebuild_tree_request(self, *args):
-        """
-        Called by various functions, sends a rebuild_tree signal.
-        This is to prevent multiple events from overtaxing the rebuild.
-
-        :param args:
-        :return:
-        """
-        self.context.signal("rebuild_tree")
-
-    def on_refresh_tree_signal(self, *args):
-        self.request_refresh()
-
     def on_rebuild_tree_signal(self, origin, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
@@ -184,16 +166,7 @@ class TreePanel(wx.Panel):
         :param args:
         :return:
         """
-        if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.wxtree.Hide()
-            return
-        else:
-            self.wxtree.Show()
         self.shadow_tree.rebuild_tree()
-        self.request_refresh()
-
-    def request_refresh(self, *args):
-        pass
 
 
 class ElementsTree(MWindow):
@@ -201,6 +174,7 @@ class ElementsTree(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
         self.SetIcon(_icon)
@@ -208,13 +182,13 @@ class ElementsTree(MWindow):
 
     def window_open(self):
         try:
-            self.panel.initialize()
+            self.panel.pane_show()
         except AttributeError:
             pass
 
     def window_close(self):
         try:
-            self.panel.finalize()
+            self.panel.pane_hide()
         except AttributeError:
             pass
 
@@ -227,20 +201,24 @@ class ShadowTree:
     reflected in the tree, the shadow tree is updated accordingly.
     """
 
-    def __init__(self, context, gui, root, wxtree):
-        self.context = context
-        self.element_root = root
+    def __init__(self, service, gui, wxtree):
+        self.context = service
         self.gui = gui
         self.wxtree = wxtree
-        self.renderer = gui.renderer
+        self.renderer = LaserRender(service.root)
         self.dragging_nodes = None
         self.tree_images = None
         self.object = "Project"
         self.name = "Project"
-        self.context = context
-        self.elements = context.elements
-        self.elements.listen(self)
+
         self.do_not_select = False
+        service.add_service_delegate(self)
+
+    def service_attach(self, *args):
+        self.context.listen_tree(self)
+
+    def service_detach(self, *args):
+        self.context.unlisten_tree(self)
 
     def node_created(self, node, **kwargs):
         """
@@ -487,7 +465,8 @@ class ShadowTree:
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
         if node is None:
-            node = self.element_root.item
+            elemtree = self.context._tree
+            node = elemtree.item
         if node is None:
             return
         tree = self.wxtree
@@ -505,6 +484,7 @@ class ShadowTree:
 
         @return:
         """
+        elemtree = self.context._tree
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
 
@@ -512,22 +492,20 @@ class ShadowTree:
         self.tree_images.Create(width=20, height=20)
 
         self.wxtree.SetImageList(self.tree_images)
-        self.element_root.item = self.wxtree.AddRoot(self.name)
+        elemtree.item = self.wxtree.AddRoot(self.name)
 
-        self.wxtree.SetItemData(self.element_root.item, self.element_root)
+        self.wxtree.SetItemData(elemtree.item, elemtree)
 
-        self.set_icon(
-            self.element_root, icon_meerk40t.GetBitmap(False, resize=(20, 20))
-        )
-        self.register_children(self.element_root)
+        self.set_icon(elemtree, icon_meerk40t.GetBitmap(False, resize=(20, 20)))
+        self.register_children(elemtree)
 
-        node_operations = self.element_root.get(type="branch ops")
+        node_operations = elemtree.get(type="branch ops")
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
 
         for n in node_operations.children:
             self.set_icon(n)
 
-        node_elements = self.element_root.get(type="branch elems")
+        node_elements = elemtree.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
         # Expand Ops and Element nodes only
@@ -602,7 +580,6 @@ class ShadowTree:
         except TypeError:
             pass
         self.set_icon(node)
-        self.context.signal("refresh_tree")
 
     def set_enhancements(self, node):
         """
@@ -649,7 +626,7 @@ class ShadowTree:
         @return:
         """
         root = self
-        drawmode = self.context.draw_mode
+        drawmode = self.context.root.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
             return
         try:
@@ -668,7 +645,7 @@ class ShadowTree:
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif isinstance(data_object, (Shape, SVGText)):
-                if isDot(data_object):
+                if is_dot(data_object):
                     if (
                         data_object.stroke is not None
                         and data_object.stroke.rgb is not None
@@ -684,25 +661,35 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-                    self.context.signal("refresh_tree")
-            elif isinstance(node, LaserOperation):
-                try:
-                    op = node.operation
-                except AttributeError:
-                    op = None
+
+            if node.type in ("op raster", "op image"):
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                if op in ("Raster", "Image"):
-                    self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
-                elif op in ("Engrave", "Cut"):
-                    self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
-                elif op == "Dots":
-                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-                else:
-                    self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
+                self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
+            elif node.type in ("op engrave", "op cut"):
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
+            elif node.type == "op dots":
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+            elif node.type == "op":
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
             elif node.type == "file":
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
@@ -817,7 +804,7 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
 
-        create_menu(self.gui, node, self.elements)
+        create_menu(self.gui, node, self.context)
 
     def on_item_activated(self, event):
         """
@@ -828,7 +815,9 @@ class ShadowTree:
         """
         item = event.GetItem()
         node = self.wxtree.GetItemData(item)
-        self.activated_node(node)
+        activate = self.context.lookup("function/open_property_window_for_node")
+        if activate is not None:
+            activate(node)
 
     def activate_selected_node(self, *args):
         """
@@ -837,40 +826,11 @@ class ShadowTree:
         @param args:
         @return:
         """
-        first_element = self.elements.first_element(emphasized=True)
+        first_element = self.context.first_element(emphasized=True)
         if hasattr(first_element, "node"):
-            self.activated_node(first_element.node)
-
-    def activated_node(self, node):
-        """
-        Activate the node in question.
-
-        @param node:
-        @return:
-        """
-        if isinstance(node, LaserOperation):
-            self.context.open("window/OperationProperty", self.gui, node=node)
-            return
-        if isinstance(node, ConsoleOperation):
-            self.context.open("window/ConsoleProperty", self.gui, node=node)
-            return
-        if node is None:
-            return
-        obj = node.object
-        if obj is None:
-            return
-        elif isinstance(obj, Path):
-            self.context.open("window/PathProperty", self.gui, node=node)
-        elif isinstance(obj, SVGText):
-            self.context.open("window/TextProperty", self.gui, node=node)
-        elif isinstance(obj, SVGImage):
-            self.context.open("window/ImageProperty", self.gui, node=node)
-        elif isinstance(obj, Group):
-            self.context.open("window/GroupProperty", self.gui, node=node)
-        elif isinstance(obj, SVGElement):
-            self.context.open("window/PathProperty", self.gui, node=node)
-        elif isinstance(obj, CutCode):
-            self.context.open("window/Simulation", self.gui, node=node)
+            activate = self.context.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(first_element.node)
 
     def on_item_selection_changed(self, event):
         """
@@ -886,21 +846,21 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        self.elements.set_selected(selected)
+        self.context.set_selected(selected)
 
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "opnode":
+            if node.type == "ref elem":
                 emphasized[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=("opnode",), cascade=False):
+                for n in node.flat(types=("ref elem",), cascade=False):
                     try:
                         emphasized.append(n.object.node)
                     except Exception:
                         pass
 
-        self.elements.set_emphasis(emphasized)
+        self.context.set_emphasis(emphasized)
         self.refresh_tree()
         event.Allow()
 
@@ -911,6 +871,6 @@ class ShadowTree:
         :return:
         """
         self.do_not_select = True
-        for e in self.elements.elems_nodes(emphasized=True):
+        for e in self.context.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False

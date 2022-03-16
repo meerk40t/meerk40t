@@ -9,8 +9,7 @@ class TestKernel(unittest.TestCase):
         """
         kernel = bootstrap.bootstrap()
         try:
-            for command in kernel.match("command/.*"):
-                cmd = kernel.registered[command]
+            for cmd, path, command in kernel.find("command/.*"):
                 if "server" in command:
                     continue
                 if "ruida" in command:

@@ -5,8 +5,8 @@ This ReadMe page describes how the Meerk40t python code is structured and provid
 ## Kernel
 The Kernel serves as the central code that binds modules together within Meerk40t.
 It is intended to be useful for other such ecosystems and agnostic with regard to the plugins used.
-It provides several different methods of interactions including signals, channels, persistent settings,
-timers, schedulers, console commands, contexts, and registered values.
+It provides several methods of interactions including signals, channels, persistent settings,
+timers, schedulers, console commands, contexts, services and registered values.
 
 The Kernel is responsible for booting / bootstrapping the application and providing core basic services
 for use by plugins, including registering functionality, signalling events to other plugins, handling settings,

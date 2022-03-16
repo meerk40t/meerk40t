@@ -1,6 +1,7 @@
 import unittest
 from test import bootstrap
 
+from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Circle, Rect
 
 
@@ -18,7 +19,12 @@ class TestElements(unittest.TestCase):
             for element in kernel_root.elements.elems():
                 # print(element)
                 self.assertEqual(
-                    element, Circle(center=(1000, 1000), r=1000, stroke="black")
+                    element,
+                    Circle(
+                        center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
+                        r=1000 * UNITS_PER_MIL,
+                        stroke="black",
+                    ),
                 )
         finally:
             kernel.shutdown()
@@ -35,7 +41,15 @@ class TestElements(unittest.TestCase):
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
             for element in kernel_root.elements.elems():
                 self.assertEqual(
-                    element, Rect(1000, 1000, 1000, 1000, stroke="red", fill="blue")
+                    element,
+                    Rect(
+                        1000 * UNITS_PER_MIL,
+                        1000 * UNITS_PER_MIL,
+                        1000 * UNITS_PER_MIL,
+                        1000 * UNITS_PER_MIL,
+                        stroke="red",
+                        fill="blue",
+                    ),
                 )
                 self.assertEqual(element.stroke, "red")
                 self.assertEqual(element.fill, "blue")

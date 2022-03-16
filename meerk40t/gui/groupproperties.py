@@ -80,7 +80,7 @@ class GroupPropertiesPanel(wx.Panel):
                 del self.element.values["label"]
             except KeyError:
                 pass
-        self.context.signal("element_property_update", self.element)
+        self.context.elements.signal("element_property_update", self.element)
 
 
 class GroupProperty(MWindow):
@@ -90,10 +90,14 @@ class GroupProperty(MWindow):
         self.panel = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
 
     def window_preserve(self):
+        return False
+
+    def window_menu(self):
         return False

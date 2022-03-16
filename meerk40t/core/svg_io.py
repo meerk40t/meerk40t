@@ -42,13 +42,25 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .elements import LaserOperation
-
-MILS_IN_MM = 39.3701
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
+        _ = kernel.translation
+        choices = [
+            {
+                "attr": "uniform_svg",
+                "object": kernel.elements,
+                "default": False,
+                "type": bool,
+                "label": _("SVG Uniform Save"),
+                "tip": _(
+                    "Do not treat overwriting SVG differently if they are MeerK40t files"
+                ),
+            },
+        ]
+        kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
         kernel.register("save/SVGWriter", SVGWriter)
 
@@ -73,21 +85,15 @@ class SVGWriter:
             "xmlns:meerK40t",
             "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
         )
-        # Native unit is mils, these must convert to mm and to px
-        # mils_per_px = 1000.0 / 96.0
-        px_per_mils = 96.0 / 1000.0
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-        mm_width = bed_dim.bed_width
-        mm_height = bed_dim.bed_height
-        root.set(SVG_ATTR_WIDTH, "%fmm" % mm_width)
-        root.set(SVG_ATTR_HEIGHT, "%fmm" % mm_height)
-        px_width = mm_width * MILS_IN_MM * px_per_mils
-        px_height = mm_height * MILS_IN_MM * px_per_mils
+        scene_width = context.device.width_as_inch
+        scene_height = context.device.height_as_inch
+        root.set(SVG_ATTR_WIDTH, str(scene_width))
+        root.set(SVG_ATTR_HEIGHT, str(scene_height))
+        px_width = scene_width.value(ppi=96.0)
+        px_height = scene_height.value(ppi=96.0)
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % px_per_mils
+        scale = "scale(%f)" % (1.0 / UNITS_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         for operation in elements.ops():
@@ -119,15 +125,14 @@ class SVGWriter:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
         for element in elements.elems():
-
             if isinstance(element, Shape) and not isinstance(element, Path):
                 element = Path(element)
 
             if isinstance(element, Path):
-                element = abs(element)
+                element = abs(element * scale)
                 subelement = SubElement(root, SVG_TAG_PATH)
+
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
 
                 for key, val in element.values.items():
                     if key in (
@@ -177,7 +182,7 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-                subelement.set(SVG_ATTR_TRANSFORM, scale)
+                # subelement.set(SVG_ATTR_TRANSFORM, scale)
                 t = Matrix(element.transform)
                 t *= scale
                 subelement.set(
@@ -259,26 +264,22 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        # context.root.setting(bool, "classify_reverse", False)
         reverse = False
-        bed_dim = context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
             ppi = 96.0
         if ppi == 0:
             ppi = 96.0
-        scale_factor = 1000.0 / ppi
+        scale_factor = UNITS_PER_INCH / ppi
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
         svg = SVG.parse(
             source=source,
             reify=True,
-            width="%fmm" % bed_dim.bed_width,
-            height="%fmm" % bed_dim.bed_height,
+            width=context.device.width_as_mm,
+            height=context.device.height_as_mm,
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,
@@ -362,61 +363,65 @@ class SVGLoader:
                     if str(element.values[SVG_ATTR_TAG]).lower() == "note":
                         try:
                             elements_modifier.note = element.values[SVG_TAG_TEXT]
-                            elements_modifier.context.signal("note", pathname)
+                            elements_modifier.signal("note", pathname)
                         except (KeyError, AttributeError):
                             pass
                 except KeyError:
                     pass
                 try:
-                    if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
-                        if not operations_cleared:
-                            elements_modifier.clear_operations()
-                            operations_cleared = True
-                        op = LaserOperation()
-                        for key in dir(op):
-                            if key.startswith("_") or key.startswith("implicit"):
-                                continue
-                            v = getattr(op, key)
-                            if key in element.values:
-                                type_v = type(v)
-                                if type_v in (str, int, float, Color):
-                                    try:
-                                        setattr(op, key, type_v(element.values[key]))
-                                    except (ValueError, KeyError):
-                                        pass
-                                elif type_v == bool:
-                                    setattr(
-                                        op,
-                                        key,
-                                        str(element.values[key]).lower()
-                                        in ("true", "1"),
-                                    )
-                        for key in dir(op.settings):
-                            if key.startswith("_") or key.startswith("implicit"):
-                                continue
-                            v = getattr(op.settings, key)
-                            if key in element.values:
-                                type_v = type(v)
-                                if type_v in (str, int, float, Color):
-                                    try:
-                                        setattr(
-                                            op.settings,
-                                            key,
-                                            type_v(element.values[key]),
-                                        )
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                                elif type_v == bool:
-                                    try:
-                                        setattr(
-                                            op.settings,
-                                            key,
-                                            str(element.values[key]).lower()
-                                            in ("true", "1"),
-                                        )
-                                    except (ValueError, KeyError, AttributeError):
-                                        pass
-                        elements_modifier.add_op(op)
+                    pass
+                    # if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
+                    #     if not operations_cleared:
+                    #         elements_modifier.clear_operations()
+                    #         operations_cleared = True
+                    #     op = LaserOperation()
+                    #     for key in dir(op):
+                    #         if key.startswith("_") or key.startswith("implicit"):
+                    #             continue
+                    #         v = getattr(op, key)
+                    #         if key in element.values:
+                    #             type_v = type(v)
+                    #             if type_v in (str, int, float, Color):
+                    #                 try:
+                    #                     setattr(op, key, type_v(element.values[key]))
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #             elif type_v == bool:
+                    #                 try:
+                    #                     setattr(
+                    #                         op,
+                    #                         key,
+                    #                         str(element.values[key]).lower()
+                    #                         in ("true", "1"),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #     for key in dir(op.settings):
+                    #         if key.startswith("_") or key.startswith("implicit"):
+                    #             continue
+                    #         v = getattr(op.settings, key)
+                    #         if key in element.values:
+                    #             type_v = type(v)
+                    #             if type_v in (str, int, float, Color):
+                    #                 try:
+                    #                     setattr(
+                    #                         op.settings,
+                    #                         key,
+                    #                         type_v(element.values[key]),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #             elif type_v == bool:
+                    #                 try:
+                    #                     setattr(
+                    #                         op.settings,
+                    #                         key,
+                    #                         str(element.values[key]).lower()
+                    #                         in ("true", "1"),
+                    #                     )
+                    #                 except (ValueError, KeyError, AttributeError):
+                    #                     pass
+                    #     elements_modifier.add_op(op)
                 except KeyError:
                     pass
 

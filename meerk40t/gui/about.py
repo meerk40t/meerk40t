@@ -20,8 +20,8 @@ class AboutPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        name = self.context.device_name
-        version = self.context.device_version
+        name = self.context.kernel.name
+        version = self.context.kernel.version
         self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
 
     def __set_properties(self):
@@ -144,11 +144,12 @@ class About(MWindow):
             **kwds,
         )
         self.panel = AboutPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("About"))
 
-        name = self.context.device_name
-        version = self.context.device_version
+        name = self.context.kernel.name
+        version = self.context.kernel.version
         self.SetTitle(_("About %s v%s" % (name, version)))

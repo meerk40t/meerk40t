@@ -1,13 +1,9 @@
 import os
 
-from ..core.exceptions import Mk40tImportAbort
-
-try:
-    import ezdxf
-except ImportError as e:
-    raise Mk40tImportAbort("ezdxf")
-
+import ezdxf
 from ezdxf import units
+
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
     # ezdxf <= 0.6.14
@@ -42,11 +38,6 @@ from ..svgelements import (
 MILS_PER_MM = 39.3701
 
 
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        kernel.register("load/DxfLoader", DxfLoader)
-
-
 class DxfLoader:
     @staticmethod
     def load_types():
@@ -54,28 +45,24 @@ class DxfLoader:
 
     @staticmethod
     def load(kernel, elements_modifier, pathname, **kwargs):
-        """ "
+        """
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        bed_dim = kernel.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-
         dxf = ezdxf.readfile(pathname)
         elements = []
         unit = dxf.header.get("$INSUNITS")
 
         if unit is not None and unit != 0:
-            du = units.DrawingUnits(1000.0, unit="in")
+            du = units.DrawingUnits(UNITS_PER_INCH, unit="in")
             scale = du.factor(decode(unit))
         else:
-            scale = MILS_PER_MM
+            scale = UNITS_PER_MM
 
         for entity in dxf.entities:
             DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, bed_dim.bed_height * MILS_PER_MM
+                elements, dxf, entity, scale, kernel.device.unit_height
             )
 
         kernel.setting(bool, "dxf_center", True)
@@ -84,21 +71,21 @@ class DxfLoader:
             g.extend(elements)
             bbox = g.bbox()
             if bbox is not None:
-                bw = bed_dim.bed_width * MILS_PER_MM
-                bh = bed_dim.bed_height * MILS_PER_MM
+                viewport = kernel.device
+                bw = viewport.unit_width
+                bh = viewport.unit_height
                 bx = 0
                 by = 0
                 x = bbox[0]
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
-                if w > bw or h > bh:
+                if w > viewport.unit_width or h > viewport.unit_height:
                     # Cannot fit to bed. Scale.
-                    vb = Viewbox("%f %f %f %f" % (bx, by, bw, bh))
                     bb = Viewbox(
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
                     )
-                    matrix = bb.transform(vb)
+                    matrix = bb.transform(Viewbox(bx, by, bw, bh))
                     for e in elements:
                         e *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:

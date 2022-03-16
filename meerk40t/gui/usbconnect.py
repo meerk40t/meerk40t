@@ -1,7 +1,7 @@
 import wx
 
-from .icons import icons8_usb_connector_50
-from .mwindow import MWindow
+from meerk40t.gui.icons import icons8_usb_connector_50
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -27,12 +27,12 @@ class UsbConnectPanel(wx.Panel):
         self.pipe = None
         self._active_when_loaded = None
 
-    def initialize(self):
-        active = self.context.root.active
+    def pane_show(self):
+        active = self.context.device.active
         self._active_when_loaded = active
         self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
 
-    def finalize(self):
+    def pane_hide(self):
         active = self._active_when_loaded
         self.context.channel("%s/usb" % active).unwatch(self.update_text)
 
@@ -73,6 +73,7 @@ class UsbConnect(MWindow):
         super().__init__(915, 424, *args, **kwds)
 
         self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
@@ -80,7 +81,7 @@ class UsbConnect(MWindow):
         self.SetTitle(_("UsbConnect"))
 
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

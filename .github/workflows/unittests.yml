@@ -51,7 +51,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
+        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-gui.txt') }}
 
     - name: Install Python dependencies
       run: |
@@ -61,7 +61,7 @@ jobs:
         else
             pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
         fi
-        if [ -f requireoptions.txt ]; then pip install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+        if [ -f requirements-gui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-gui.txt; fi
 
     - name: List environment
       env:
@@ -72,7 +72,7 @@ jobs:
         STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
-        pip3 list
+        pip list
         env
 
     - name: Run Unittests

@@ -171,8 +171,7 @@ class ImagePropertyPanel(wx.Panel):
         element.transform.post_translate(tx, ty)
         element.node.modified()
         if self.context is not None:
-            self.context.signal("element_property_reload", element)
-            self.context.signal("refresh_scene")
+            self.context.elements.signal("element_property_reload", element)
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()
@@ -194,6 +193,7 @@ class ImageProperty(MWindow):
         self.panel = ImagePropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
+        self.add_module_delegate(self.panel)
         # begin wxGlade: ImageProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
@@ -206,4 +206,7 @@ class ImageProperty(MWindow):
         self.panel.set_widgets()
 
     def window_preserve(self):
+        return False
+
+    def window_menu(self):
         return False
