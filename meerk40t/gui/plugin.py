@@ -14,13 +14,13 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return
         kernel.set_feature("wx")
-    if lifecycle == "establish":
+    if lifecycle == "invalidate":
         try:
             import wx
         except ImportError:
             print("wxMeerK40t plugin could not load because wx is not installed.")
-            return False
-        return True
+            return True
+        return False
     if lifecycle == "init" and kernel.args.no_gui:
         GUI_START = False
 

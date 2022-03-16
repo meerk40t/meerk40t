@@ -195,8 +195,8 @@ def plugin(kernel, lifecycle):
         plugins.append(wxplugin)
 
         return plugins
-    if lifecycle == "establish":
-        return False
+    if lifecycle == "invalidate":
+        return True
 
 
 def run():
