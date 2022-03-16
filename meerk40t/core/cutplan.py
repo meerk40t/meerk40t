@@ -44,6 +44,7 @@ class CutPlan:
         self.original = []
         self.commands = []
         self.channel = context.channel("optimize", timestamp=True)
+        self.context.setting(bool, "opt_rasters_split", True)
 
     def __str__(self):
         parts = []
@@ -399,7 +400,7 @@ class CutPlan:
         h_sweep = direction in (0, 1, 4)
         v_sweep = direction in (2, 3, 4)
 
-        # set minimum margins
+        # set minimum margins for inners_grouped
         dx = op_settings.overscan if h_sweep else 0
         dy = op_settings.overscan if v_sweep else 0
 
@@ -408,6 +409,10 @@ class CutPlan:
         root = context.root
         if smallest and context.opt_inner_first and context.opt_inners_grouped:
             return dx, dy
+
+        # set minimum margins otherwise
+        dx = 500 if h_sweep else 0
+        dy = 500 if v_sweep else 0
 
         # Get device and check for lhystudios
         try:
@@ -465,15 +470,19 @@ class CutPlan:
         if reverse:
             nodes = list(reversed(nodes))
 
-        dx, dy = self.get_raster_margins(op.settings)
+        raster_opt = self.context.opt_rasters_split
+        if raster_opt:
+            dx, dy = self.get_raster_margins(op.settings)
 
-        def adjust_bbox(bbox):
-            x1, y1, x2, y2 = bbox
-            return x1 - dx, y1 - dy, x2 + dx, y2 + dy
+            def adjust_bbox(bbox):
+                x1, y1, x2, y2 = bbox
+                return x1 - dx, y1 - dy, x2 + dx, y2 + dy
 
-        groups = group_overlapped_rasters(
-            [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
-        )
+            groups = group_overlapped_rasters(
+                [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
+            )
+        else:
+            groups = [[(node, None) for node in nodes]]
 
         step = max(1, op.settings.raster_step)
         images = []

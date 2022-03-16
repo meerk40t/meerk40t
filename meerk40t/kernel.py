@@ -1285,7 +1285,7 @@ class Kernel:
             elif kind == "OPT":
                 value = match.group()
                 for letter in value[1:]:
-                    yield kind, letter, start, start + 1
+                    yield kind, letter, start, pos
                     start += 1
 
     def console_command(
@@ -1364,8 +1364,10 @@ class Kernel:
                         for pk in options:
                             if value == pk["short"]:
                                 if pk.get("action") != "store_true":
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
+                                    count = pk.get("nargs", 1)
+                                    for n in range(count):
+                                        stack.insert(opt_index, pk)
+                                        opt_index += 1
                                 kwargs[pk["name"]] = True
                                 break
 
@@ -2162,6 +2164,8 @@ class Kernel:
                         opt_name = b.get("name", "")
                         opt_short = b.get("short", "")
                         opt_type = b.get("type", type(None)).__name__
+                        opt_nargs = int(b.get("nargs", 1))
+                        opt_type = ",".join([opt_type] * opt_nargs)
                         opt_help = b.get("help")
                         opt_help = (
                             ":\n\t\t%s" % opt_help if opt_help is not None else ""
