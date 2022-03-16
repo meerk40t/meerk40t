@@ -729,7 +729,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     # Ask to send file.
     git = branch = False
     if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
         git = exec_type == "git"
 
     if git:
@@ -745,7 +745,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix) :].strip("\n")
 
-    if git and branch and branch not in ("main", "tatarize-services"):
+    if git and branch and branch not in ("main", "legacy6", "legacy7"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
             """It appears that you are running Meerk40t from source managed by Git,
