@@ -355,6 +355,7 @@ class PlannerPanel(wx.Panel):
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_rapid_between", True)
+        self.context.setting(bool, "opt_rasters_split", True)
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 
@@ -458,12 +459,19 @@ class ExecuteJob(MWindow):
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
-        self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
+        self.panel.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel)
+        self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel)
         self.panel.list_operations.Bind(
-            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
+            wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_operations
+        )
+        self.panel.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_operations
         )
         self.panel.list_command.Bind(
-            wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command
+            wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self.panel.list_command
+        )
+        self.panel.list_command.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_menu_request, self.panel.list_command
         )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
@@ -483,7 +491,14 @@ class ExecuteJob(MWindow):
         # MENUBAR END
         # ==========
 
-    def on_menu(self, event):
+    def on_mouse_left_down(self, event):
+        # Convert mac Control+left click into right click
+        if event.RawControlDown() and not event.ControlDown():
+            self.on_menu_request(event)
+        else:
+            event.Skip()
+
+    def on_menu_request(self, event):
         from .wxutils import create_menu_for_choices
 
         menu = create_menu_for_choices(self, self.context.registered["choices/planner"])

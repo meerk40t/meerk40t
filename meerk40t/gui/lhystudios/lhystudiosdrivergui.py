@@ -28,8 +28,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
         )
-        self.checkbox_twitchless = wx.CheckBox(
-            self, wx.ID_ANY, _("Reduce vector twitching (BETA)")
+        self.checkbox_twitchfull = wx.CheckBox(
+            self, wx.ID_ANY, _("Revert to legacy vector twitching")
         )
         self.checkbox_alternative_raster = wx.CheckBox(
             self, wx.ID_ANY, _("Alternative Rastering (BETA)")
@@ -73,7 +73,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.checkbox_strict)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchless, self.checkbox_twitchless)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchfull, self.checkbox_twitchfull)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_alt_raster, self.checkbox_alternative_raster
         )
@@ -158,18 +158,13 @@ class LhystudiosConfigurationPanel(wx.Panel):
                 + "if you could leave a comment on Github issue #{issue}."
             ).format(issue=773)
         )
-        self.checkbox_twitchless.SetToolTip(
+        self.checkbox_twitchfull.SetToolTip(
             _(
                 "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
-                + "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
-                + "This option changes how travel moves are performed and result in a noticeable faster travel time. "
+                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                "A revised twitchless mode is now default in 0.7.6 or later which results in a noticeable faster travel time. "
+                "This option allows you to revert to the previous mode if you experience problems."
             )
-            + "\n\n"
-            + _(
-                "If this works OK for you please leave it on. "
-                + "If you have any problems, we would very much appreciate it "
-                + "if you could leave a comment on Github issue #{issue}."
-            ).format(issue=772)
         )
         self.spin_home_x.SetMinSize((80, 23))
         self.spin_home_x.SetToolTip(_("Translate Home X"))
@@ -262,8 +257,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
         sizer_board_1.Add(self.checkbox_fix_speeds, 0, *checkbox_border)
         sizer_board_1.Add(self.checkbox_strict, 0, *checkbox_border)
 
+        sizer_board_2.Add(self.checkbox_twitchfull, 0, *checkbox_border)
         sizer_board_2.Add(self.checkbox_alternative_raster, 0, *checkbox_border)
-        sizer_board_2.Add(self.checkbox_twitchless, 0, *checkbox_border)
 
         sizer_board.Add(sizer_board_1, 1, 0, 0)
         sizer_board.Add(sizer_board_2, 1, wx.EXPAND | wx.LEFT, 10)
@@ -330,7 +325,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         context.setting(bool, "home_bottom", False)
         context.setting(bool, "strict", False)
         context.setting(bool, "nse_raster", False)
-        context.setting(bool, "twitchless", False)
+        context.setting(bool, "twitchfull", False)
 
         context.setting(int, "home_adjust_x", 0)
         context.setting(int, "home_adjust_y", 0)
@@ -350,7 +345,7 @@ class LhystudiosConfigurationPanel(wx.Panel):
         self.checkbox_home_right.SetValue(context.home_right)
         self.checkbox_home_bottom.SetValue(context.home_bottom)
         self.checkbox_strict.SetValue(context.strict)
-        self.checkbox_twitchless.SetValue(context.twitchless)
+        self.checkbox_twitchfull.SetValue(context.twitchfull)
         self.checkbox_alternative_raster.SetValue(context.nse_raster)
 
         self.spin_home_x.SetValue(context.home_adjust_x)
@@ -385,8 +380,8 @@ class LhystudiosConfigurationPanel(wx.Panel):
     def on_check_strict(self, event=None):
         self.context.strict = self.checkbox_strict.GetValue()
 
-    def on_check_twitchless(self, event=None):
-        self.context.twitchless = self.checkbox_twitchless.GetValue()
+    def on_check_twitchfull(self, event=None):
+        self.context.twitchfull = self.checkbox_twitchfull.GetValue()
 
     def on_check_alt_raster(self, event=None):
         self.context.nse_raster = self.checkbox_alternative_raster.GetValue()

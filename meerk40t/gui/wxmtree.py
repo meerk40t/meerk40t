@@ -24,9 +24,10 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
+from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 
@@ -106,24 +107,15 @@ class TreePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            self.context(action + "\n")
-        else:
-            event.Skip()
+        if keymap_execute(self.context, keyvalue, keydown=True):
+            return
+        event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
-        keymap = self.context.keymap
-        if keyvalue in keymap:
-            action = keymap[keyvalue]
-            if action.startswith("+"):
-                # Keyup commands only trigger if the down command started with +
-                action = "-" + action[1:]
-                self.context(action + "\n")
-        else:
-            event.Skip()
+        if keymap_execute(self.context, keyvalue, keydown=False):
+            return
+        event.Skip()
 
     def initialize(self):
         self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
@@ -192,11 +184,7 @@ class TreePanel(wx.Panel):
         :param args:
         :return:
         """
-        if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.wxtree.Hide()
-            return
-        else:
-            self.wxtree.Show()
+        # self.wxtree.Show()
         self.shadow_tree.rebuild_tree()
         self.request_refresh()
 

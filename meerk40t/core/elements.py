@@ -2,6 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
+from math import sin, cos, pi, gcd, tau
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -27,7 +28,7 @@ from ..svgelements import (
     CubicBezier,
     Ellipse,
     Group,
-    Length,
+    Length as SVGLength,
     Line,
     Matrix,
     Move,
@@ -43,7 +44,12 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+    PATTERN_LENGTH_UNITS,
+    PATTERN_PERCENT,
+    PATTERN_FLOAT,
+    REGEX_LENGTH,
 )
+from ..tools.rastergrouping import group_overlapped_rasters
 from .cutcode import (
     CubicCut,
     CutCode,
@@ -85,6 +91,36 @@ image_simplify_re = re.compile(
 )
 
 OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
+
+# Overload svgelement Length class by adding a validity check
+class Length(SVGLength):
+    is_valid_length = False
+
+    def __init__(self, *args, **kwargs):
+        # Call super_init...
+        super().__init__(*args, **kwargs)
+        self.is_valid_length = False
+        if len(args) == 1:
+            value = args[0]
+            if value is None:
+                return
+            s = str(value)
+            for m in REGEX_LENGTH.findall(s):
+                if len(m[1]) == 0 or m[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    self.is_valid_length = True
+                return
+        elif len(args) == 2:
+            try:
+                x = float(args[0])
+                if len(args[1]) == 0 or args[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    self.is_valid_length = True
+            except ValueError:
+                pass
+            return
 
 
 def reversed_enumerate(collection: list):
@@ -3183,9 +3219,16 @@ class Elemental(Modifier):
         @context.console_argument("r", type=int, help=_("Number of rows"))
         @context.console_argument("x", type=Length, help=_("x distance"))
         @context.console_argument("y", type=Length, help=_("y distance"))
+        @context.console_option(
+            "origin",
+            "o",
+            type=int,
+            nargs=2,
+            help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
+        )
         @context.console_command(
             "grid",
-            help=_("grid <columns> <rows> <x_distance> <y_distance>"),
+            help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
             input_type=(None, "elements"),
             output_type="elements",
         )
@@ -3197,6 +3240,7 @@ class Elemental(Modifier):
             r: int,
             x: Length,
             y: Length,
+            origin=None,
             data=None,
             **kwargs,
         ):
@@ -3209,8 +3253,15 @@ class Elemental(Modifier):
                 raise SyntaxError
             if x is None:
                 x = Length("100%")
+            else:
+                if not x.is_valid_length:
+                    raise SyntaxError("x: " + _("This is not a valid length"))
             if y is None:
                 y = Length("100%")
+            else:
+                if not y.is_valid_length:
+                    raise SyntaxError("y: " + _("This is not a valid length"))
+
             try:
                 bounds = self._emphasized_bounds
                 width = bounds[2] - bounds[0]
@@ -3221,12 +3272,22 @@ class Elemental(Modifier):
             y = y.value(ppi=1000, relative_length=height)
             if isinstance(x, Length) or isinstance(y, Length):
                 raise SyntaxError
-            y_pos = 0
+            if origin is None:
+                origin = (1, 1)
+            cx, cy = origin
             data_out = list(data)
+            if cx is None:
+                cx = 1
+            if cy is None:
+                cy = 1
+            # Tell whether original is at the left / middle / or right
+            start_x = -1 * x * (cx - 1)
+            start_y = -1 * y * (cy - 1)
+            y_pos = start_y
             for j in range(r):
-                x_pos = 0
+                x_pos = start_x
                 for k in range(c):
-                    if j != 0 or k != 0:
+                    if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
                             e *= "translate(%f, %f)" % (x_pos, y_pos)
@@ -3234,7 +3295,473 @@ class Elemental(Modifier):
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
+
+            self.context.signal("refresh_scene")
             return "elements", data_out
+
+        @context.console_argument("repeats", type=int, help=_("Number of repeats"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @context.console_option(
+            "rotate",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Rotate copies towards center?"),
+        )
+        @context.console_option(
+            "deltaangle",
+            "d",
+            type=Angle.parse,
+            help=_("Delta-Angle (if omitted will take (end-start)/repeats )"),
+        )
+        @context.console_command(
+            "radial",
+            help=_("radial <repeats> <radius> <startangle> <endangle> <rotate>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_radial(
+            command,
+            channel,
+            _,
+            repeats: int,
+            radius=None,
+            startangle=None,
+            endangle=None,
+            rotate=None,
+            deltaangle=None,
+            data=None,
+            **kwargs,
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0 and self._emphasized_bounds is None:
+                channel(_("No item selected."))
+                return
+
+            if repeats is None:
+                raise SyntaxError
+            if repeats <= 1:
+                raise SyntaxError (_("repeats should be greater or equal to 2"))
+            if radius is None:
+                radius = Length(0)
+            else:
+                if not radius.is_valid_length:
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
+            if startangle is None:
+                startangle = Angle.parse("0deg")
+            if endangle is None:
+                endangle = Angle.parse("360deg")
+            if rotate is None:
+                rotate = False
+
+            # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
+            bounds = Group.union_bbox(data, with_stroke=True)
+            if bounds is None:
+                return
+            width = bounds[2] - bounds[0]
+            radius = radius.value(ppi=1000, relative_length=width)
+            if isinstance(radius, Length):
+                raise SyntaxError
+
+            data_out = list(data)
+            if deltaangle is None:
+                segment_len = (endangle.as_radians - startangle.as_radians) / repeats
+            else:
+                segment_len = deltaangle.as_radians
+            # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
+            # the perceived angle travel is CCW (which is counter-intuitive)
+            currentangle = startangle.as_radians
+            # bounds = self._emphasized_bounds
+            center_x = (bounds[2] + bounds[0]) / 2.0 - radius
+            center_y = (bounds[3] + bounds[1]) / 2.0
+
+            # print ("repeats: %d, Radius: %.1f" % (repeats, radius))
+            # print ("Center: %.1f, %.1f" % (center_x, center_y))
+            # print ("Startangle, Endangle, segment_len: %.1f, %.1f, %.1f" % (180 * startangle.as_radians / pi, 180 * endangle.as_radians / pi, 180 * segment_len / pi))
+
+            currentangle = segment_len
+            for cc in range(1, repeats):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate:
+                        x_pos = -1 * radius
+                        y_pos = 0
+                        # e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= "rotate(%frad, %f, %f)" % (
+                            currentangle,
+                            center_x,
+                            center_y,
+                        )
+                    else:
+                        x_pos = -1 * radius + radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+
+                self.add_elems(add_elem)
+                data_out.extend(add_elem)
+
+                currentangle += segment_len
+
+            self.context.signal("refresh_scene")
+            return "elements", data_out
+
+        @context.console_argument("copies", type=int, help=_("Number of copies"))
+        @context.console_argument("radius", type=Length, help=_("Radius"))
+        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @context.console_option(
+            "rotate",
+            "r",
+            type=bool,
+            action="store_true",
+            help=_("Rotate copies towards center?"),
+        )
+        @context.console_option(
+            "deltaangle",
+            "d",
+            type=Angle.parse,
+            help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
+        )
+        @context.console_command(
+            "circ_copy",
+            help=_("circ_copy <copies> <radius> <startangle> <endangle> <rotate>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_circularcopies(
+            command,
+            channel,
+            _,
+            copies: int,
+            radius=None,
+            startangle=None,
+            endangle=None,
+            rotate=None,
+            deltaangle=None,
+            data=None,
+            **kwargs,
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0 and self._emphasized_bounds is None:
+                channel(_("No item selected."))
+                return
+
+            if copies is None:
+                raise SyntaxError
+            if copies <= 0:
+                copies = 1
+            if radius is None:
+                radius = Length(0)
+            else:
+                if not radius.is_valid_length:
+                    raise SyntaxError("radius: " + _("This is not a valid length"))
+            if startangle is None:
+                startangle = Angle.parse("0deg")
+            if endangle is None:
+                endangle = Angle.parse("360deg")
+            if rotate is None:
+                rotate = False
+
+            # print ("Segment to cover: %f - %f" % (startangle.as_degrees, endangle.as_degrees))
+            bounds = Group.union_bbox(data, with_stroke=True)
+            if bounds is None:
+                return
+            width = bounds[2] - bounds[0]
+            radius = radius.value(ppi=1000, relative_length=width)
+            if isinstance(radius, Length):
+                raise SyntaxError
+
+            data_out = list(data)
+            if deltaangle is None:
+                segment_len = (endangle.as_radians - startangle.as_radians) / copies
+            else:
+                segment_len = deltaangle.as_radians
+            # Notabene: we are following the cartesian system here, but as the Y-Axis is top screen to bottom screen,
+            # the perceived angle travel is CCW (which is counter-intuitive)
+            currentangle = startangle.as_radians
+            # bounds = self._emphasized_bounds
+            center_x = (bounds[2] + bounds[0]) / 2.0
+            center_y = (bounds[3] + bounds[1]) / 2.0
+            for cc in range(copies):
+                # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
+                add_elem = list(map(copy, data))
+                for e in add_elem:
+                    if rotate:
+                        x_pos = radius
+                        y_pos = 0
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= "rotate(%frad, %f, %f)" % (
+                            currentangle,
+                            center_x,
+                            center_y,
+                        )
+                    else:
+                        x_pos = radius * cos(currentangle)
+                        y_pos = radius * sin(currentangle)
+                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+
+                self.add_elems(add_elem)
+                data_out.extend(add_elem)
+                currentangle += segment_len
+
+            self.context.signal("refresh_scene")
+            return "elements", data_out
+
+        @context.console_argument(
+            "corners", type=int, help=_("Number of corners/vertices")
+        )
+        @context.console_argument(
+            "cx", type=Length, help=_("X-Value of polygon's center")
+        )
+        @context.console_argument(
+            "cy", type=Length, help=_("Y-Value of polygon's center")
+        )
+        @context.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
+        @context.console_option(
+            "startangle", "s", type=Angle.parse, help=_("Start-Angle")
+        )
+        @context.console_option(
+            "inscribed",
+            "i",
+            type=bool,
+            action="store_true",
+            help=_("Shall the polygon touch the inscribing circle?"),
+        )
+        @context.console_option(
+            "side_length",
+            "l",
+            type=bool,
+            action="store_true",
+            help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
+        )
+
+        @context.console_option(
+            "radius_inner",
+            "r",
+            type=Length,
+            help=_("Alternating radius for every other vertex"),
+        )
+        @context.console_option(
+            "alternate_seq",
+            "a",
+            type=int,
+            help=_(
+                "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
+            ),
+        )
+        @context.console_option(
+            "density","d", type=int, help=_("Amount of vertices to skip")
+        )
+        @context.console_command(
+            "shape",
+            help=_(
+                "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"
+            ),
+            input_type=("elements", None),
+            output_type="elements",
+        )
+        def element_shape(
+            command,
+            channel,
+            _,
+            corners,
+            cx,
+            cy,
+            radius,
+            startangle=None,
+            inscribed=None,
+            side_length=None,
+            radius_inner=None,
+            alternate_seq=None,
+            density=None,
+            data=None,
+            **kwargs,
+        ):
+            if corners is None:
+                raise SyntaxError
+            if corners <= 2:
+                if cx is None:
+                    cx = Length(0)
+                elif not cx.is_valid_length:
+                    raise SyntaxError("cx: " + _("This is not a valid length"))
+                if cy is None:
+                    cy = Length(0)
+                elif not cy.is_valid_length:
+                    raise SyntaxError("cy: " + _("This is not a valid length"))
+                cx = cx.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                cy = cy.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                if radius is None:
+                    radius = Length(0)
+                radius = radius.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                starpts = [(cx, cy)]
+                if corners==2:
+                    starpts += [(cx + cos(startangle.as_radians) * radius, cy + sin(startangle.as_radians) * radius)]
+
+            else:
+                if cx is None:
+                    raise SyntaxError(
+                        _(
+                            "Please provide at least one additional value (which will act as radius then)"
+                        )
+                    )
+                else:
+                    if not cx.is_valid_length:
+                        raise SyntaxError("cx: " + _("This is not a valid length"))
+
+                if cy is None:
+                    cy = Length(0)
+                else:
+                    if not cy.is_valid_length:
+                        raise SyntaxError("cy: " + _("This is not a valid length"))
+                # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
+                if radius is None:
+                    radius = cx
+                    cx = Length(0)
+                    cy = Length(0)
+                else:
+                    if not radius.is_valid_length:
+                        raise SyntaxError("radius: " + _("This is not a valid length"))
+
+                cx = cx.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                cy = cy.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+                radius = radius.value(
+                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
+                )
+
+                if (
+                    isinstance(radius, Length)
+                    or isinstance(cx, Length)
+                    or isinstance(cy, Length)
+                ):
+                    raise SyntaxError
+
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
+
+                if alternate_seq is None:
+                    if radius_inner is None:
+                        alternate_seq = 0
+                    else:
+                        alternate_seq = 1
+
+                if density is None:
+                    density = 1
+                if density<1 or density > corners:
+                    density = 1
+
+                # Do we have to consider the radius value as the length of one corner?
+                if not side_length is None:
+                    # Let's recalculate the radius then...
+                    # d_oc = s * csc( pi / n)
+                    radius = 0.5 * radius / sin(pi / corners)
+
+                if radius_inner is None:
+                    radius_inner = radius
+                else:
+                    radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
+                    if not radius_inner.is_valid_length:
+                        raise SyntaxError(
+                            "radius_inner: " + _("This is not a valid length")
+                    )
+                    if isinstance(radius_inner, Length):
+                        radius_inner = radius
+
+                if inscribed:
+                    if side_length is None:
+                        radius = radius / cos(pi / corners)
+                    else:
+                        channel(_("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
+
+                if alternate_seq < 1:
+                    radius_inner = radius
+
+                # print("These are your parameters:")
+                # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
+                # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
+                # print("Inscribe: %s" % inscribed)
+                # print(
+                #    "Startangle: %.2f, Alternate-Seq: %d"
+                #    % (startangle.as_degrees, alternate_seq)
+                # )
+
+                pts = []
+                myangle = startangle.as_radians
+                deltaangle = tau / corners
+                ct = 0
+                for j in range(corners):
+                    if ct < alternate_seq:
+                        # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
+                        thisx = cx + radius * cos(myangle)
+                        thisy = cy + radius * sin(myangle)
+                    else:
+                        # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
+                        thisx = cx + radius_inner * cos(myangle)
+                        thisy = cy + radius_inner * sin(myangle)
+                    ct += 1
+                    if ct >= 2 * alternate_seq:
+                        ct = 0
+                    if j == 0:
+                        firstx = thisx
+                        firsty = thisy
+                    myangle += deltaangle
+                    pts += [(thisx, thisy)]
+                # Close the path
+                pts += [(firstx, firsty)]
+
+                starpts = [(pts[0][0], pts[0][1])]
+                idx = density
+                while idx != 0:
+                    starpts += [(pts[idx][0], pts[idx][1])]
+                    idx += density
+                    if idx >= corners:
+                        idx -= corners
+                if len(starpts) < corners:
+                    ct = 0
+                    possible_combinations = ""
+                    for i in range(corners - 1):
+                        j = i + 2
+                        if gcd(j, corners) == 1:
+                            if ct % 3 == 0:
+                                possible_combinations += "\n shape %d ... -d %d" % (corners, j)
+                            else:
+                                possible_combinations += ", shape %d ... -d %d " % (corners, j)
+                            ct += 1
+                    channel(
+                        _("Just for info: we have missed %d vertices...")
+                        % (corners - len(starpts))
+                    )
+                    channel(
+                        _("To hit all, the density parameters should be e.g. %s")
+                        % possible_combinations
+                    )
+
+            poly_path = Polygon(starpts)
+            self.add_element(poly_path)
+            if data is None:
+                return "elements", [poly_path]
+            else:
+                data.append(poly_path)
+                return "elements", data
+
 
         @context.console_option("step", "s", default=2.0, type=float)
         @context.console_command(
@@ -3365,6 +3892,19 @@ class Elemental(Modifier):
             """
             if x_pos is None:
                 raise SyntaxError
+            else:
+                if not x_pos.is_valid_length:
+                    raise SyntaxError("x_pos: " + _("This is not a valid length"))
+            if not y_pos is None:
+                if not y_pos.is_valid_length:
+                    raise SyntaxError("y-pos: " + _("This is not a valid length"))
+            if not rx is None:
+                if not rx.is_valid_length:
+                    raise SyntaxError("rx: " + _("This is not a valid length"))
+            if not ry is None:
+                if not ry.is_valid_length:
+                    raise SyntaxError("ry: " + _("This is not a valid length"))
+
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             rect.render(
                 ppi=1000.0,
@@ -3395,6 +3935,19 @@ class Elemental(Modifier):
             """
             if y1 is None:
                 raise SyntaxError
+            if not x0 is None:
+                if not x0.is_valid_length:
+                    raise SyntaxError("x0: " + _("This is not a valid length"))
+            if not y0 is None:
+                if not y0.is_valid_length:
+                    raise SyntaxError("y0: " + _("This is not a valid length"))
+            if not x1 is None:
+                if not x1.is_valid_length:
+                    raise SyntaxError("x1: " + _("This is not a valid length"))
+            if not y1 is None:
+                if not y1.is_valid_length:
+                    raise SyntaxError("y1: " + _("This is not a valid length"))
+
             simple_line = SimpleLine(x0, y0, x1, y1)
             simple_line.render(
                 ppi=1000.0,
@@ -3408,6 +3961,7 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
+        @context.console_option("size", "s", type=float, help=_("font size to for object"))
         @context.console_argument("text", type=str, help=_("quoted string of text"))
         @context.console_command(
             "text",
@@ -3415,11 +3969,13 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, **kwargs):
+        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
             if text is None:
                 channel(_("No text specified"))
                 return
             svg_text = SVGText(text)
+            if size is not None:
+                svg_text.font_size = size
             self.add_element(svg_text)
             if data is None:
                 return "elements", [svg_text]
@@ -3428,34 +3984,71 @@ class Elemental(Modifier):
                 return "elements", data
 
         @context.console_command(
-            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
+            "polygon", help=_("polygon (Length Length)*"), input_type=("elements", None)
         )
-        def element_polygon(args=tuple(), **kwargs):
+        def element_polygon(args=tuple(), data=None, **kwargs):
             try:
-                element = Polygon(list(map(float, args)))
+                mlist = list(map(str, args))
+                for ct, e in enumerate(mlist):
+                    ll = Length(e)
+                    # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
+                    if ct % 2 == 0:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                        )
+                    mlist[ct] = x
+                    ct += 1
+                element = Polygon(mlist)
             except ValueError:
                 raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
+                    _("Must be a list of spaced delimited length pairs.")
                 )
             self.add_element(element)
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_command(
             "polyline",
-            help=_("polyline (float float)*"),
+            help=_("polyline (Length Length)*"),
             input_type=("elements", None),
         )
-        def element_polyline(command, channel, _, args=tuple(), **kwargs):
+        def element_polyline(command, channel, _, args=tuple(), data=None, **kwargs):
+            pcol = None
+            pstroke = Color()
             try:
-                element = Polyline(list(map(float, args)))
+                mlist = list(map(str, args))
+                for ct, e in enumerate(mlist):
+                    ll = Length(e)
+                    if ct % 2 == 0:
+                        x = ll.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        x = ll.value(
+                            ppi=1000.0,
+                            relative_length=bed_dim.bed_height * MILS_IN_MM,
+                        )
+                    mlist[ct] = x
+
+                    ct += 1
+
+                element = Polyline(mlist)
+                element.fill = pcol
             except ValueError:
-                raise SyntaxError(
-                    _(
-                        "Must be a list of spaced delimited floating point numbers values."
-                    )
-                )
+                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
+            if data is None:
+                return "elements", [element]
+            else:
+                data.append(element)
+                return "elements", data
 
         @context.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
@@ -3522,6 +4115,11 @@ class Elemental(Modifier):
                     i += 1
                 channel("----------")
                 return
+            else:
+                if not stroke_width.is_valid_length:
+                    raise SyntaxError(
+                        "stroke-width: " + _("This is not a valid length")
+                    )
 
             if len(data) == 0:
                 channel(_("No selected elements."))
@@ -3678,6 +4276,12 @@ class Elemental(Modifier):
             """
             if x_offset is None:
                 raise SyntaxError
+            elif not x_offset.is_valid_length:
+                raise SyntaxError("x-offset: " + _("This is not a valid length"))
+            if not y_offset is None:
+                if not y_offset.is_valid_length:
+                    raise SyntaxError("y-offset: " + _("This is not a valid length"))
+
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
@@ -3766,15 +4370,21 @@ class Elemental(Modifier):
             rot = angle.as_degrees
 
             if cx is not None:
-                cx = cx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if cx.is_valid_length:
+                    cx = cx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("cx: " + _("This is not a valid length"))
             else:
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is not None:
-                cy = cy.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if cy.is_valid_length:
+                    cy = cy.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("cy: " + _("This is not a valid length"))
             else:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
@@ -3863,15 +4473,21 @@ class Elemental(Modifier):
             if scale_y is None:
                 scale_y = scale_x
             if px is not None:
-                center_x = px.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if px.is_valid_length:
+                    center_x = px.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("px: " + _("This is not a valid length"))
             else:
                 center_x = (bounds[2] + bounds[0]) / 2.0
             if py is not None:
-                center_y = py.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if py.is_valid_length:
+                    center_y = py.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("py: " + _("This is not a valid length"))
             else:
                 center_y = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
@@ -3957,15 +4573,21 @@ class Elemental(Modifier):
                 channel(_("No selected elements."))
                 return
             if tx is not None:
-                tx = tx.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                if tx.is_valid_length:
+                    tx = tx.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("tx: " + _("This is not a valid length"))
             else:
                 tx = 0
             if ty is not None:
-                ty = ty.value(
-                    ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                )
+                if ty.is_valid_length:
+                    ty = ty.value(
+                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                    )
+                else:
+                    raise SyntaxError("ty: " + _("This is not a valid length"))
             else:
                 ty = 0
             m = Matrix("translate(%f,%f)" % (tx, ty))
@@ -4054,6 +4676,19 @@ class Elemental(Modifier):
                 if area is None:
                     channel(_("resize: nothing selected"))
                     return
+                if not x_pos is None:
+                    if not x_pos.is_valid_length:
+                        raise SyntaxError("x_pos: " + _("This is not a valid length"))
+                if not y_pos is None:
+                    if not y_pos.is_valid_length:
+                        raise SyntaxError("y_pos: " + _("This is not a valid length"))
+                if not width is None:
+                    if not width.is_valid_length:
+                        raise SyntaxError("width: " + _("This is not a valid length"))
+                if not height is None:
+                    if not height.is_valid_length:
+                        raise SyntaxError("height: " + _("This is not a valid length"))
+
                 x_pos = x_pos.value(
                     ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
@@ -4136,6 +4771,13 @@ class Elemental(Modifier):
                 # SVG 7.15.3 defines the matrix form as:
                 # [a c  e]
                 # [b d  f]
+                if not tx is None:
+                    if not tx.is_valid_length:
+                        raise SyntaxError("tx: " + _("This is not a valid length"))
+                if not ty is None:
+                    if not ty.is_valid_length:
+                        raise SyntaxError("ty: " + _("This is not a valid length"))
+
                 m = Matrix(
                     sx,
                     kx,
@@ -4564,15 +5206,21 @@ class Elemental(Modifier):
                 if dx is None:
                     dx = 0
                 else:
-                    dx = dx.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                    )
+                    if dx.is_valid_length:
+                        dx = dx.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
+                        )
+                    else:
+                        raise SyntaxError("dx: " + _("This is not a valid length"))
                 if dy is None:
                     dy = 0
                 else:
-                    dy = dy.value(
-                        ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                    )
+                    if dy.is_valid_length:
+                        dy = dy.value(
+                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
+                        )
+                    else:
+                        raise SyntaxError("dy: " + _("This is not a valid length"))
                 m = Matrix("translate(%s, %s)" % (dx, dy))
                 for e in pasted:
                     e *= m
@@ -6742,26 +7390,9 @@ class Elemental(Modifier):
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = [[(e, e.bbox())] for e in raster_elements]
-        # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
-
-        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
-        for i in range(len(raster_groups) - 2, -1, -1):
-            g1 = raster_groups[i]
-            for j in range(len(raster_groups) - 1, i, -1):
-                g2 = raster_groups[j]
-                if self.group_elements_overlap(g1, g2):
-                    # print("g1", list(map(lambda e: e[0].id,g1)))
-                    # print("g2", list(map(lambda e: e[0].id,g2)))
-
-                    # if elements in the group overlap
-                    # add the element tuples from group 2 to group 1
-                    g1.extend(g2)
-                    # and remove group 2
-                    del raster_groups[j]
-
-                    # print("g1+g2", list(map(lambda e: e[0].id,g1)))
-                    # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+        raster_groups = group_overlapped_rasters(
+            [(e, e.bbox()) for e in raster_elements]
+        )
 
         # Remove bbox and add element colour from groups
         # Change list to groups which are a list of tuples, each tuple being element and its classification color
@@ -6843,20 +7474,6 @@ class Elemental(Modifier):
         for element in elements_to_add:
             for op in default_raster_ops:
                 op.add(element, type="opnode", pos=element_pos)
-
-    def group_elements_overlap(self, g1, g2):
-        for e1 in g1:
-            e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
-            for e2 in g2:
-                e2xmin, e2ymin, e2xmax, e2ymax = e2[1]
-                if (
-                    e1xmin <= e2xmax
-                    and e1xmax >= e2xmin
-                    and e1ymin <= e2ymax
-                    and e1ymax >= e2ymin
-                ):
-                    return True
-        return False
 
     def element_classify_color(self, element: SVGElement):
         element_color = element.stroke

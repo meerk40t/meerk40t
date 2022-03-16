@@ -715,7 +715,7 @@ class LhystudiosDriver(Driver):
         context.setting(bool, "autolock", True)
 
         context.setting(str, "board", "M2")
-        context.setting(bool, "twitchless", False)
+        context.setting(bool, "twitchfull", False)
         context.setting(bool, "nse_raster", False)
         context.setting(bool, "nse_stepraster", False)
         context.setting(bool, "fix_speeds", False)
@@ -1173,7 +1173,7 @@ class LhystudiosDriver(Driver):
 
     def ensure_program_mode(self, *values, dx=0, dy=0):
         """
-        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
+        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchfull is set to True.
 
         @param values:
         @return:
@@ -1196,7 +1196,7 @@ class LhystudiosDriver(Driver):
 
         suffix_c = None
         if (
-            self.context.twitchless or self.settings.force_twitchless
+            not self.context.twitchfull or self.settings.force_twitchless
         ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
