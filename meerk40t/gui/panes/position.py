@@ -36,6 +36,7 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.channel = self.context.kernel._console_channel
         self.text_x = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_w = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
@@ -87,7 +88,6 @@ class PositionPanel(wx.Panel):
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
         self.context.kernel.listen("lifecycle;shutdown", "", self.finalize)
-        self.channel = self.context.kernel._console_channel
 
     def finalize(self, *args):
         self.context.unlisten("units", self.space_changed)
