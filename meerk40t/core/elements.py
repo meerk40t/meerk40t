@@ -103,57 +103,6 @@ def plugin(kernel, lifecycle=None):
             elements.save(realpath(kernel.args.output.name))
 
 
-MILS_IN_MM = 39.3701
-
-# Regex expressions
-label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
-group_simplify_re = re.compile(
-    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
-)
-subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
-# I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
-# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile(
-    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
-    re.IGNORECASE,
-)
-
-OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
-
-#TODO: MERGE with units.LENGTH info.
-# Overload svgelement Length class by adding a validity check
-class Length(SVGLength):
-    is_valid_length = False
-
-    def __init__(self, *args, **kwargs):
-        # Call super_init...
-        super().__init__(*args, **kwargs)
-        self.is_valid_length = False
-        if len(args) == 1:
-            value = args[0]
-            if value is None:
-                return
-            s = str(value)
-            for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self.is_valid_length = True
-                return
-        elif len(args) == 2:
-            try:
-                x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self.is_valid_length = True
-            except ValueError:
-                pass
-            return
-
-
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
@@ -1509,18 +1458,18 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_argument("c", type=int, help=_("Number of columns"))
-        @context.console_argument("r", type=int, help=_("Number of rows"))
-        @context.console_argument("x", type=Length, help=_("x distance"))
-        @context.console_argument("y", type=Length, help=_("y distance"))
-        @context.console_option(
+        @self.console_argument("c", type=int, help=_("Number of columns"))
+        @self.console_argument("r", type=int, help=_("Number of rows"))
+        @self.console_argument("x", type=Length, help=_("x distance"))
+        @self.console_argument("y", type=Length, help=_("y distance"))
+        @self.console_option(
             "origin",
             "o",
             type=int,
             nargs=2,
             help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
         )
-        @context.console_command(
+        @self.console_command(
             "grid",
             help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
             input_type=(None, "elements"),
@@ -1583,27 +1532,27 @@ class Elemental(Service):
                     x_pos += x
                 y_pos += y
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("repeats", type=int, help=_("Number of repeats"))
-        @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
-        @context.console_option(
+        @self.console_argument("repeats", type=int, help=_("Number of repeats"))
+        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @self.console_option(
             "rotate",
             "r",
             type=bool,
             action="store_true",
             help=_("Rotate copies towards center?"),
         )
-        @context.console_option(
+        @self.console_option(
             "deltaangle",
             "d",
             type=Angle.parse,
             help=_("Delta-Angle (if omitted will take (end-start)/repeats )"),
         )
-        @context.console_command(
+        @self.console_command(
             "radial",
             help=_("radial <repeats> <radius> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
@@ -1693,27 +1642,27 @@ class Elemental(Service):
 
                 currentangle += segment_len
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("copies", type=int, help=_("Number of copies"))
-        @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
-        @context.console_option(
+        @self.console_argument("copies", type=int, help=_("Number of copies"))
+        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @self.console_option(
             "rotate",
             "r",
             type=bool,
             action="store_true",
             help=_("Rotate copies towards center?"),
         )
-        @context.console_option(
+        @self.console_option(
             "deltaangle",
             "d",
             type=Angle.parse,
             help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
         )
-        @context.console_command(
+        @self.console_command(
             "circ_copy",
             help=_("circ_copy <copies> <radius> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
@@ -1796,43 +1745,43 @@ class Elemental(Service):
                 data_out.extend(add_elem)
                 currentangle += segment_len
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument(
+        @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @context.console_argument(
+        @self.console_argument(
             "cx", type=Length, help=_("X-Value of polygon's center")
         )
-        @context.console_argument(
+        @self.console_argument(
             "cy", type=Length, help=_("Y-Value of polygon's center")
         )
-        @context.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
-        @context.console_option(
+        @self.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
+        @self.console_option(
             "startangle", "s", type=Angle.parse, help=_("Start-Angle")
         )
-        @context.console_option(
+        @self.console_option(
             "inscribed",
             "i",
             type=bool,
             action="store_true",
             help=_("Shall the polygon touch the inscribing circle?"),
         )
-        @context.console_option(
+        @self.console_option(
             "side_length",
             "l",
             type=bool,
             action="store_true",
             help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
         )
-        @context.console_option(
+        @self.console_option(
             "radius_inner",
             "r",
             type=Length,
             help=_("Alternating radius for every other vertex"),
         )
-        @context.console_option(
+        @self.console_option(
             "alternate_seq",
             "a",
             type=int,
@@ -1840,10 +1789,10 @@ class Elemental(Service):
                 "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
             ),
         )
-        @context.console_option(
+        @self.console_option(
             "density", "d", type=int, help=_("Amount of vertices to skip")
         )
-        @context.console_command(
+        @self.console_command(
             "shape",
             help=_(
                 "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"

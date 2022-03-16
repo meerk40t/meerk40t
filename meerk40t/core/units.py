@@ -1,7 +1,7 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import Matrix, PATTERN_LENGTH_UNITS, PATTERN_PERCENT
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -703,6 +703,30 @@ class Length(object):
             if abs(s - o) <= ERROR:
                 return True
         return False
+
+    @staticmethod
+    def is_valid_length(*args):
+        if len(args) == 1:
+            value = args[0]
+            if value is None:
+                return False
+            s = str(value)
+            for m in REGEX_LENGTH.findall(s):
+                if len(m[1]) == 0 or m[1] in (
+                        PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    return True
+                return False
+        elif len(args) == 2:
+            try:
+                x = float(args[0])
+                if len(args[1]) == 0 or args[1] in (
+                        PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    return True
+            except ValueError:
+                pass
+            return False
 
     @property
     def value_in_units(self):

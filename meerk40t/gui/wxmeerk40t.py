@@ -18,17 +18,12 @@ from .icons import (
 )
 from .operationpropertymain import ParameterPanel
 
-try:
-    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-    # so we are doing it here even though we do not refer to it in this file
-    # richtext is used for the Console panel.
-    import wx
-    from wx import richtext
-except ImportError as e:
-    from ..core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
+# According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+# richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+# so we are doing it here even though we do not refer to it in this file
+# richtext is used for the Console panel.
+import wx
+from wx import richtext
 
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
@@ -43,7 +38,6 @@ from .executejob import ExecuteJob
 from .groupproperties import GroupProperty
 from .imageproperty import ImageProperty
 from .keymap import Keymap
-from .laserrender import LaserRender
 from .notes import Notes
 from .operationproperty import OperationProperty
 from .pathproperty import PathProperty
