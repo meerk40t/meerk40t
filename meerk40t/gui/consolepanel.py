@@ -208,7 +208,7 @@ class ConsolePanel(wx.Panel):
         # is the minimum wxP release supported by MK.
         # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW).GetLuminance() < 0.5
         bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue)
+        luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue) / 255.0
         return luminance < 0.5
 
     def __set_properties(self):
