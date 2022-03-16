@@ -1031,10 +1031,10 @@ class Kernel(Settings):
         self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
     def precli(self):
-        print("PreCLI called.")
+        pass
 
     def cli(self):
-        print("CLI Called.")
+        pass
 
     def preboot(self):
         self.command_boot()
