@@ -20,6 +20,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             print("wxMeerK40t plugin could not load because wx is not installed.")
             return True
+        return False
     if lifecycle == "init" and kernel.args.no_gui:
         GUI_START = False
 
@@ -30,10 +31,12 @@ def plugin(kernel, lifecycle):
             kernel.console("window open MeerK40t\n")
             meerk40tgui.MainLoop()
 
-    elif lifecycle == "preregister":
+    if not kernel.has_feature("wx"):
+        return
+    if lifecycle == "preregister":
         from meerk40t.gui.laserrender import LaserRender
-
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
+
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")
 
@@ -43,6 +46,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
 
         from meerk40t.gui.scene.scene import Scene
+
         kernel.register("module/Scene", Scene)
 
     elif lifecycle == "boot":
@@ -142,7 +146,6 @@ def plugin(kernel, lifecycle):
 
     elif lifecycle == "mainloop":
         # Replace the default kernel data prompt for a wx Popup.
-
         def prompt_popup(data_type, prompt):
             with wx.TextEntryDialog(
                 None, prompt, _("Information Required:"), ""
@@ -177,6 +180,7 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("plan/interrupt", interrupt)
 
         if GUI_START:
+
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
@@ -196,4 +200,26 @@ def plugin(kernel, lifecycle):
                         kernel.console(
                             "window open {window}\n".format(window=window_name)
                         )
+            # RC-REMOVE
+            message = """This version of MeerK40t is unstable. It is intended primarily for testing purposes. Please report all problems, even small ones to the github issue opened for this version. Do not continue using this version if it is not the latest RC or if your work requires a more stable version.
+            
+            Open Issue Page?"""
+            caption = _("Release Candidate.")
+            import wx
+
+            style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
+            dlg = wx.MessageDialog(
+                None,
+                message,
+                caption=caption,
+                style=style,
+            )
+            answer = dlg.ShowModal()
+            if answer in (wx.YES, wx.ID_YES):
+                issue_page = "https://github.com/meerk40t/meerk40t/issues/886"
+                import webbrowser
+
+                webbrowser.open(issue_page, new=0, autoraise=True)
+            # END RC-REMOVE
+
             meerk40tgui.MainLoop()

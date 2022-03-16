@@ -1,4 +1,3 @@
-
 ROTARY_VIEW = False
 
 

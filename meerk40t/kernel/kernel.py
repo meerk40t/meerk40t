@@ -554,7 +554,7 @@ class Kernel(Settings):
             if channel:
                 channel("(plugin) kernel-invalidate")
             plugin_list = self._kernel_plugins
-            for i in range(len(plugin_list)-1, -1, -1):
+            for i in range(len(plugin_list) - 1, -1, -1):
                 plugin = plugin_list[i]
                 if plugin(kernel, "invalidate"):
                     del plugin_list[i]
@@ -562,14 +562,14 @@ class Kernel(Settings):
                 plugin_list = self._service_plugins[domain]
                 for i in range(len(plugin_list) - 1, -1, -1):
                     plugin = plugin_list[i]
-                if plugin(kernel, "invalidate"):
-                    del plugin_list[i]
+                    if plugin(kernel, "invalidate"):
+                        del plugin_list[i]
             for module_path in self._module_plugins:
                 plugin_list = self._module_plugins[module_path]
                 for i in range(len(plugin_list) - 1, -1, -1):
                     plugin = plugin_list[i]
-                if plugin(kernel, "invalidate"):
-                    del plugin_list[i]
+                    if plugin(kernel, "invalidate"):
+                        del plugin_list[i]
 
         objects = self.get_linked_objects(kernel)
         for k in objects:
@@ -1031,10 +1031,10 @@ class Kernel(Settings):
         self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
     def precli(self):
-        print("PreCLI called.")
+        pass
 
     def cli(self):
-        print("CLI Called.")
+        pass
 
     def preboot(self):
         self.command_boot()
@@ -2535,6 +2535,8 @@ class Kernel(Settings):
             if path is None:
                 path = "/"
             path_context = self.get_context(path)
+            if len(args) == 0:
+                return
             value = args[0]
             if value == "open":
                 index = args[1]

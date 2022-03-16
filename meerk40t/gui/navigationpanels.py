@@ -35,7 +35,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Group, Angle
+from meerk40t.svgelements import Angle, Group
 
 _ = wx.GetTranslation
 
@@ -411,7 +411,9 @@ class Drag(wx.Panel):
         self.drag_ready(True)
 
     def drag_relative(self, dx, dy):
-        self.context("move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=dx, dy=dy))
+        self.context(
+            "move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=dx, dy=dy)
+        )
 
     def on_button_align_drag_down(
         self, event=None
@@ -896,7 +898,9 @@ class SizePanel(wx.Panel):
         self.text_height.Enable(v)
 
         if v:
-            width, height = self.context.device.scene_to_device_position(x=self.object_width, y=self.object_height, vector=True)
+            width, height = self.context.device.scene_to_device_position(
+                x=self.object_width, y=self.object_height, vector=True
+            )
             self.text_width.SetValue(str(width))
             self.text_height.SetValue(str(height))
         else:
@@ -907,19 +911,42 @@ class SizePanel(wx.Panel):
         x = self.context.device.length(self.object_x, 0, new_units="mm")
         y = self.context.device.length(self.object_y, 1, new_units="mm")
 
-        width = self.context.device.length(self.text_width.Value, 0, relative_length=self.object_width, new_units="mm")
-        height = self.context.device.length(self.text_height.Value, 1, relative_length=self.object_height, new_units="mm")
-        self.context("resize {x} {y} {width} {height}".format(x=x, y=y, width=width, height=height))
+        width = self.context.device.length(
+            self.text_width.Value, 0, relative_length=self.object_width, new_units="mm"
+        )
+        height = self.context.device.length(
+            self.text_height.Value,
+            1,
+            relative_length=self.object_height,
+            new_units="mm",
+        )
+        self.context(
+            "resize {x} {y} {width} {height}".format(
+                x=x, y=y, width=width, height=height
+            )
+        )
 
     def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            width = self.device.length(self.text_width.Value, 0, relative_length=self.object_width, new_units="mm", scale=1.0/self.object_ratio)
+            width = self.device.length(
+                self.text_width.Value,
+                0,
+                relative_length=self.object_width,
+                new_units="mm",
+                scale=1.0 / self.object_ratio,
+            )
             self.text_height.SetValue(width)
         event.Skip()
 
     def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            height = self.device.length(self.text_height.Value, 1, relative_length=self.object_height, new_units="mm", scale=self.object_ratio)
+            height = self.device.length(
+                self.text_height.Value,
+                1,
+                relative_length=self.object_height,
+                new_units="mm",
+                scale=self.object_ratio,
+            )
             self.text_width.SetValue(height)
 
         event.Skip()
@@ -1212,8 +1239,12 @@ class Transform(wx.Panel):
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
-        dx = self.context.device.length(dx, 0, scale=scale, new_units=self.context.units_name)
-        dy = self.context.device.length(dy, 1, scale=scale, new_units=self.context.units_name)
+        dx = self.context.device.length(
+            dx, 0, scale=scale, new_units=self.context.units_name
+        )
+        dy = self.context.device.length(
+            dy, 1, scale=scale, new_units=self.context.units_name
+        )
         self.context("translate {dx} {dy}\n".format(dx=dx, dy=dy))
         self.matrix_updated()
 

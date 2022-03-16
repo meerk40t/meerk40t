@@ -23,6 +23,7 @@ def plugin(service, lifecycle):
         from meerk40t.lihuiyu.gui.lhystudioscontrollergui import LhystudiosControllerGui
         from meerk40t.lihuiyu.gui.lhystudiosdrivergui import LhystudiosDriverGui
         from meerk40t.lihuiyu.gui.tcpcontroller import TCPController
+
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)

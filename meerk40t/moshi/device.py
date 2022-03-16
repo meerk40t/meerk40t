@@ -50,6 +50,7 @@ STATUS_RESET = 239  # Seen during reset
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui
+
         return [gui.plugin]
 
     if lifecycle == "register":

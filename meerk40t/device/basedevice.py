@@ -18,6 +18,7 @@ PLOT_RIGHT_LOWER = 1024
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .ch341 import ch341
+
         return [ch341.plugin]
 
     if lifecycle == "boot":

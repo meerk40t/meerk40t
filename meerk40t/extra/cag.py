@@ -1,4 +1,3 @@
-
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -10,6 +9,7 @@ def plugin(kernel, lifecycle):
             return True
     elif lifecycle == "register":
         from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
+
         _ = kernel.translation
         context = kernel.root
 

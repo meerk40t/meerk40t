@@ -1,9 +1,9 @@
 import os
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
-
 import ezdxf
 from ezdxf import units
+
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
     # ezdxf <= 0.6.14

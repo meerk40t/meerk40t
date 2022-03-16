@@ -2,11 +2,15 @@ import functools
 import os.path
 import re
 from copy import copy
-from math import sin, cos, pi, gcd, tau
+from math import cos, gcd, pi, sin, tau
 
 from meerk40t.kernel import Service, Settings
 
 from ..svgelements import (
+    PATTERN_FLOAT,
+    PATTERN_LENGTH_UNITS,
+    PATTERN_PERCENT,
+    REGEX_LENGTH,
     Angle,
     Circle,
     Color,
@@ -24,10 +28,6 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
-    PATTERN_LENGTH_UNITS,
-    PATTERN_PERCENT,
-    PATTERN_FLOAT,
-    REGEX_LENGTH,
 )
 from .cutcode import CutCode
 from .node.commandop import CommandOperation
@@ -101,57 +101,6 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.elements
 
             elements.save(realpath(kernel.args.output.name))
-
-
-MILS_IN_MM = 39.3701
-
-# Regex expressions
-label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
-group_simplify_re = re.compile(
-    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
-)
-subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
-# I deally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
-# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile(
-    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
-    re.IGNORECASE,
-)
-
-OP_PRIORITIES = ["Dots", "Image", "Raster", "Engrave", "Cut"]
-
-#TODO: MERGE with units.LENGTH info.
-# Overload svgelement Length class by adding a validity check
-class Length(SVGLength):
-    is_valid_length = False
-
-    def __init__(self, *args, **kwargs):
-        # Call super_init...
-        super().__init__(*args, **kwargs)
-        self.is_valid_length = False
-        if len(args) == 1:
-            value = args[0]
-            if value is None:
-                return
-            s = str(value)
-            for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self.is_valid_length = True
-                return
-        elif len(args) == 2:
-            try:
-                x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self.is_valid_length = True
-            except ValueError:
-                pass
-            return
 
 
 def reversed_enumerate(collection: list):
@@ -1509,18 +1458,18 @@ class Elemental(Service):
                         q.modified()
             return "align", data
 
-        @context.console_argument("c", type=int, help=_("Number of columns"))
-        @context.console_argument("r", type=int, help=_("Number of rows"))
-        @context.console_argument("x", type=Length, help=_("x distance"))
-        @context.console_argument("y", type=Length, help=_("y distance"))
-        @context.console_option(
+        @self.console_argument("c", type=int, help=_("Number of columns"))
+        @self.console_argument("r", type=int, help=_("Number of rows"))
+        @self.console_argument("x", type=Length, help=_("x distance"))
+        @self.console_argument("y", type=Length, help=_("y distance"))
+        @self.console_option(
             "origin",
             "o",
             type=int,
             nargs=2,
             help=_("Position of original in matrix (e.g '2,2' or '4,3')"),
         )
-        @context.console_command(
+        @self.console_command(
             "grid",
             help=_("grid <columns> <rows> <x_distance> <y_distance> <origin>"),
             input_type=(None, "elements"),
@@ -1583,27 +1532,27 @@ class Elemental(Service):
                     x_pos += x
                 y_pos += y
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("repeats", type=int, help=_("Number of repeats"))
-        @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
-        @context.console_option(
+        @self.console_argument("repeats", type=int, help=_("Number of repeats"))
+        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @self.console_option(
             "rotate",
             "r",
             type=bool,
             action="store_true",
             help=_("Rotate copies towards center?"),
         )
-        @context.console_option(
+        @self.console_option(
             "deltaangle",
             "d",
             type=Angle.parse,
             help=_("Delta-Angle (if omitted will take (end-start)/repeats )"),
         )
-        @context.console_command(
+        @self.console_command(
             "radial",
             help=_("radial <repeats> <radius> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
@@ -1631,7 +1580,7 @@ class Elemental(Service):
             if repeats is None:
                 raise SyntaxError
             if repeats <= 1:
-                raise SyntaxError (_("repeats should be greater or equal to 2"))
+                raise SyntaxError(_("repeats should be greater or equal to 2"))
             if radius is None:
                 radius = Length(0)
             else:
@@ -1693,27 +1642,27 @@ class Elemental(Service):
 
                 currentangle += segment_len
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument("copies", type=int, help=_("Number of copies"))
-        @context.console_argument("radius", type=Length, help=_("Radius"))
-        @context.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
-        @context.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
-        @context.console_option(
+        @self.console_argument("copies", type=int, help=_("Number of copies"))
+        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
+        @self.console_option(
             "rotate",
             "r",
             type=bool,
             action="store_true",
             help=_("Rotate copies towards center?"),
         )
-        @context.console_option(
+        @self.console_option(
             "deltaangle",
             "d",
             type=Angle.parse,
             help=_("Delta-Angle (if omitted will take (end-start)/copies )"),
         )
-        @context.console_command(
+        @self.console_command(
             "circ_copy",
             help=_("circ_copy <copies> <radius> <startangle> <endangle> <rotate>"),
             input_type=(None, "elements"),
@@ -1796,43 +1745,43 @@ class Elemental(Service):
                 data_out.extend(add_elem)
                 currentangle += segment_len
 
-            self.context.signal("refresh_scene")
+            self.signal("refresh_scene")
             return "elements", data_out
 
-        @context.console_argument(
+        @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @context.console_argument(
-            "cx", type=Length, help=_("X-Value of polygon's center")
+        @self.console_argument("cx", type=Length, help=_("X-Value of polygon's center"))
+        @self.console_argument("cy", type=Length, help=_("Y-Value of polygon's center"))
+        @self.console_argument(
+            "radius",
+            type=Length,
+            help=_("Radius (length of side if --side_length is used)"),
         )
-        @context.console_argument(
-            "cy", type=Length, help=_("Y-Value of polygon's center")
-        )
-        @context.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
-        @context.console_option(
-            "startangle", "s", type=Angle.parse, help=_("Start-Angle")
-        )
-        @context.console_option(
+        @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
+        @self.console_option(
             "inscribed",
             "i",
             type=bool,
             action="store_true",
             help=_("Shall the polygon touch the inscribing circle?"),
         )
-        @context.console_option(
+        @self.console_option(
             "side_length",
             "l",
             type=bool,
             action="store_true",
-            help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
+            help=_(
+                "Do you want to treat the length value for radius as the length of one edge instead?"
+            ),
         )
-        @context.console_option(
+        @self.console_option(
             "radius_inner",
             "r",
             type=Length,
             help=_("Alternating radius for every other vertex"),
         )
-        @context.console_option(
+        @self.console_option(
             "alternate_seq",
             "a",
             type=int,
@@ -1840,10 +1789,10 @@ class Elemental(Service):
                 "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
             ),
         )
-        @context.console_option(
+        @self.console_option(
             "density", "d", type=int, help=_("Amount of vertices to skip")
         )
-        @context.console_command(
+        @self.console_command(
             "shape",
             help=_(
                 "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"
@@ -1852,21 +1801,21 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_shape(
-                command,
-                channel,
-                _,
-                corners,
-                cx,
-                cy,
-                radius,
-                startangle=None,
-                inscribed=None,
-                side_length=None,
-                radius_inner=None,
-                alternate_seq=None,
-                density=None,
-                data=None,
-                **kwargs,
+            command,
+            channel,
+            _,
+            corners,
+            cx,
+            cy,
+            radius,
+            startangle=None,
+            inscribed=None,
+            side_length=None,
+            radius_inner=None,
+            alternate_seq=None,
+            density=None,
+            data=None,
+            **kwargs,
         ):
             if corners is None:
                 raise SyntaxError
@@ -1879,12 +1828,8 @@ class Elemental(Service):
                     cy = Length(0)
                 elif not cy.is_valid_length:
                     raise SyntaxError("cy: " + _("This is not a valid length"))
-                cx = cx.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                cy = cy.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 if radius is None:
                     radius = Length(0)
                 radius = radius.value(
@@ -1896,7 +1841,12 @@ class Elemental(Service):
 
                 starpts = [(cx, cy)]
                 if corners == 2:
-                    starpts += [(cx + cos(startangle.as_radians) * radius, cy + sin(startangle.as_radians) * radius)]
+                    starpts += [
+                        (
+                            cx + cos(startangle.as_radians) * radius,
+                            cy + sin(startangle.as_radians) * radius,
+                        )
+                    ]
 
             else:
                 if cx is None:
@@ -1923,20 +1873,16 @@ class Elemental(Service):
                     if not radius.is_valid_length:
                         raise SyntaxError("radius: " + _("This is not a valid length"))
 
-                cx = cx.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                cy = cy.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 radius = radius.value(
                     ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
 
                 if (
-                        isinstance(radius, Length)
-                        or isinstance(cx, Length)
-                        or isinstance(cy, Length)
+                    isinstance(radius, Length)
+                    or isinstance(cx, Length)
+                    or isinstance(cy, Length)
                 ):
                     raise SyntaxError
 
@@ -1976,7 +1922,10 @@ class Elemental(Service):
                         radius = radius / cos(pi / corners)
                     else:
                         channel(
-                            _("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
+                            _(
+                                "You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"
+                            )
+                        )
 
                 if alternate_seq < 1:
                     radius_inner = radius
@@ -2028,9 +1977,15 @@ class Elemental(Service):
                         j = i + 2
                         if gcd(j, corners) == 1:
                             if ct % 3 == 0:
-                                possible_combinations += "\n shape %d ... -d %d" % (corners, j)
+                                possible_combinations += "\n shape %d ... -d %d" % (
+                                    corners,
+                                    j,
+                                )
                             else:
-                                possible_combinations += ", shape %d ... -d %d " % (corners, j)
+                                possible_combinations += ", shape %d ... -d %d " % (
+                                    corners,
+                                    j,
+                                )
                             ct += 1
                     channel(
                         _("Just for info: we have missed %d vertices...")
@@ -2219,7 +2174,9 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
+        def element_text(
+            command, channel, _, data=None, text=None, size=None, **kwargs
+        ):
             if text is None:
                 channel(_("No text specified"))
                 return
@@ -2257,9 +2214,7 @@ class Elemental(Service):
                 element = Polygon(mlist)
                 # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
-                raise SyntaxError(
-                    _("Must be a list of spaced delimited length pairs.")
-                )
+                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -2371,7 +2326,9 @@ class Elemental(Service):
                 return
             else:
                 if not stroke_width.is_valid_length:
-                    raise SyntaxError("stroke-width: " + _("This is not a valid length"))
+                    raise SyntaxError(
+                        "stroke-width: " + _("This is not a valid length")
+                    )
 
             if len(data) == 0:
                 channel(_("No selected elements."))

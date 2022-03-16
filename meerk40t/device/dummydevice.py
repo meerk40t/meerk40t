@@ -1,7 +1,7 @@
 from meerk40t.core.spoolers import Spooler
 from meerk40t.kernel import Service
 
-from ..core.units import ViewPort
+from ..core.units import UNITS_PER_MIL, ViewPort
 
 
 def plugin(kernel, lifecycle=None):
@@ -41,7 +41,7 @@ class DummyDevice(Service, ViewPort):
                 "attr": "bedheight",
                 "object": self,
                 "default": "220mm",
-                "type": float,
+                "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
@@ -67,7 +67,15 @@ class DummyDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
-        ViewPort.__init__(self, 0, 0, self.width, self.height)
+        ViewPort.__init__(
+            self,
+            width=self.bedwidth,
+            height=self.bedheight,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
 
         @self.console_command(
             "spool",

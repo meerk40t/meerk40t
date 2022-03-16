@@ -43,8 +43,8 @@ class CutPlan:
         self.plan = list()
         self.original = list()
         self.commands = list()
-        self.channel = context.channel("optimize", timestamp=True)
-        self.context.setting(bool, "opt_rasters_split", True)
+        self.channel = self.context.channel("optimize", timestamp=True)
+        # self.setting(bool, "opt_rasters_split", True)
 
     def __str__(self):
         parts = list()
@@ -71,7 +71,7 @@ class CutPlan:
             raise CutPlanningFailedError("Raster too large.")
 
     def preprocess(self):
-        """"
+        """ "
         Preprocess stage, all small functions from the settings to the job.
         """
         context = self.context
