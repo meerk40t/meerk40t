@@ -745,8 +745,8 @@ class ConfigurationSetupPanel(wx.Panel):
         )
         sizer_general.Add(self.check_alternative_raster, 0, 0, 0)
 
-        self.check_twitchless = wx.CheckBox(self, wx.ID_ANY, _("Twitchless Vectors"))
-        sizer_general.Add(self.check_twitchless, 0, 0, 0)
+        self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Legacy vector protocol (twitches)"))
+        sizer_general.Add(self.check_twitches, 0, 0, 0)
 
         sizer_jog = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Rapid Jog")), wx.VERTICAL
@@ -907,7 +907,7 @@ class ConfigurationSetupPanel(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_alt_raster, self.check_alternative_raster
         )
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitchless, self.check_twitchless)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitches, self.check_twitches)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
         )
@@ -941,7 +941,7 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_plot_shift.SetValue(self.context.plot_shift)
         self.check_strict.SetValue(self.context.strict)
         self.check_alternative_raster.SetValue(self.context.nse_raster)
-        self.check_twitchless.SetValue(self.context.twitchless)
+        self.check_twitches.SetValue(self.context.twitches)
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
         self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
         self.radio_box_jog_method.SetSelection(self.context.opt_jog_mode)
@@ -996,10 +996,10 @@ class ConfigurationSetupPanel(wx.Panel):
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
         self.context.nse_raster = self.check_alternative_raster.GetValue()
 
-    def on_check_twitchless(
+    def on_check_twitches(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.twitchless = self.check_twitchless.GetValue()
+        self.context.twitches = self.check_twitches.GetValue()
 
     def on_check_rapid_between(
         self, event
