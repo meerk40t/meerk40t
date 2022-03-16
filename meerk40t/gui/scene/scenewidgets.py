@@ -92,6 +92,8 @@ class SelectionWidget(Widget):
     use_handle_size = True
     selbox_wx = None
     selbox_wy = None
+    rotate_cx = None
+    rotate_cy = None
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
@@ -229,7 +231,6 @@ class SelectionWidget(Widget):
         #        "Selection-Event: %s (current state: %s)"
         #        % (event_type, self.was_lb_raised)
         #    )
-
         if event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False
@@ -530,37 +531,6 @@ class SelectionWidget(Widget):
     def tool_none(self, position, dx, dy, event=0):
         return
 
-    def tool_scale(self, position, dx, dy, event=0):
-        elements = self.scene.context.elements
-        if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.node.modified()
-        if event == 0:
-            b = elements.selected_area()
-            scalex = (position[0] - self.left) / self.save_width
-            scaley = (position[1] - self.top) / self.save_height
-            if self.uniform:
-                scale = (scaley + scalex) / 2.0
-                scalex = scale
-                scaley = scale
-            self.save_width *= scalex
-            self.save_height *= scaley
-            for obj in elements.elems(emphasized=True):
-                try:
-                    if obj.lock:
-                        continue
-                except AttributeError:
-                    pass
-                obj.transform.post_scale(scalex, scaley, self.left, self.top)
-                obj.bounds_dirty = True
-            for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
-            elements.update_bounds(
-                [b[0], b[1], b[0] + self.save_width, b[1] + self.save_height]
-            )
-            self.scene.request_refresh()
-
     def tool_scalexy_se(self, position, dx, dy, event=0):
         """
         Change scale vs the bottom right corner.
@@ -832,12 +802,12 @@ class SelectionWidget(Widget):
                 self.last_skew_x += math.tau / 180
             else:
                 self.last_skew_x -= math.tau / 180
-            if (self.last_skew_x <= -0.5 * math.tau):
+            if self.last_skew_x <= -0.5 * math.tau:
                 self.last_skew_x = -0.5 * math.tau
-            if (self.last_skew_x >= +0.5 * math.tau):
+            if self.last_skew_x >= +0.5 * math.tau:
                 self.last_skew_x = +0.5 * math.tau
             valu = self.last_skew_x / math.tau * 180
-            print ("Skew-X Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_x, valu))
+            # print ("Skew-X Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_x, valu))
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
@@ -868,13 +838,13 @@ class SelectionWidget(Widget):
                 self.last_skew_y += math.tau / 36
             else:
                 self.last_skew_y -= math.tau / 36
-            if (self.last_skew_y <= -5/6 * math.tau):
+            if self.last_skew_y <= -5/6 * math.tau:
                 self.last_skew_y = -5/6 * math.tau
-            if (self.last_skew_y >= +5/6 * math.tau):
+            if self.last_skew_y >= +5/6 * math.tau:
                 self.last_skew_y = +5/6 * math.tau
 
             valu = self.last_skew_y / math.tau * 180
-            print ("Skew-Y Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_y, valu))
+            # print ("Skew-Y Event==0, dx=%.1f, rad=%.2f, deg=%.2f" % (dx, self.last_skew_y, valu))
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
@@ -911,7 +881,7 @@ class SelectionWidget(Widget):
             d_top = position[1] < self.rotate_cy
             if abs(dx)>abs(dy):
                 if d_left and d_top: # LT
-                   cw = dx > 0
+                    cw = dx > 0
                 elif d_left and not d_top: # LB
                     cw = dx < 0
                 elif not d_left and not d_top: # RB
@@ -920,7 +890,7 @@ class SelectionWidget(Widget):
                     cw = dx > 0
             else:
                 if d_left and d_top: # LT
-                   cw = dy < 0
+                    cw = dy < 0
                 elif d_left and not d_top: # LB
                     cw = dy < 0
                 elif not d_left and not d_top: # RB
@@ -934,7 +904,6 @@ class SelectionWidget(Widget):
                 rot_angle = +1 * math.tau / 180
             else:
                 rot_angle = -1 * math.tau / 180
-            self.last_cw = cw
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
@@ -949,13 +918,13 @@ class SelectionWidget(Widget):
         if self.use_handle_rotate:
             for i in range(2):
                 for j in range(2):
-                    if (i==0):
+                    if i==0:
                         signx = +1
                         xx = x0
                     else:
                         signx = -1
                         xx = x1
-                    if (j==0):
+                    if j==0:
                         signy = +1
                         yy = y0
                     else:
@@ -1049,6 +1018,7 @@ class SelectionWidget(Widget):
             pass
 
         if bounds is not None:
+            # Make sure the checkboxes are shown
             try:
                 linewidth = 2.0 / matrix.value_scale_x()
                 font_size = 14.0 / matrix.value_scale_x()
@@ -1109,18 +1079,13 @@ class SelectionWidget(Widget):
         elements.add_elems(adding_elements)
         elements.classify(adding_elements)
 
+    # Just to make sure weh have these
     def init(self, context):
         pass
 
     def final(self, context):
         pass
 
-    def on_update_params(self, origin, pos):
-        """
-        Update of driver adds and ensures the location of the d+origin position
-        """
-        self.reticles["d" + origin] = pos[2], pos[3]
-        self.scene.request_refresh_for_animation()
 
 class RectSelectWidget(Widget):
     """

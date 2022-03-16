@@ -126,10 +126,11 @@ ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
 class CustomStatusBar(wx.StatusBar):
+    """Overloading of Statusbar to allow some checkboxes on it"""
     panelct = 5
     startup = True
 
-    def __init__(self, parent, panelct, *args, **kwds):
+    def __init__(self, parent, panelct):
         self.Startup = True
         self.panelct = panelct
         self.context = parent.context
@@ -161,36 +162,43 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle.SetValue(self.context.enable_sel_handle)
         self.cb_rotate.SetValue(self.context.enable_sel_rotate)
         self.cb_skew.SetValue(self.context.enable_sel_skew)
+        self.cb_enabled = False
 
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
 
+    @property
+    def cb_enabled(self):
+        return self._cb_enabled
+    @cb_enabled.setter
+    def cb_enabled(self, cb_enabled):
+        if cb_enabled:
+            self.cb_handle.Show()
+            self.cb_rotate.Show()
+            self.cb_skew.Show()
+        else:
+            self.cb_handle.Hide()
+            self.cb_rotate.Hide()
+            self.cb_skew.Hide()
+        self._cb_enabled = cb_enabled
+
     # the checkbox was clicked
     def on_toggle_handle(self, event):
         if not self.startup:
-            if self.cb_handle.GetValue():
-                valu = True
-            else:
-                valu = False
+            valu = self.cb_handle.GetValue()
             self.context.enable_sel_handle = valu
             self.context.signal("refresh_scene", 0)
 
     def on_toggle_rotate(self, event):
         if not self.startup:
-            if self.cb_rotate.GetValue():
-                valu = True
-            else:
-                valu = False
+            valu = self.cb_rotate.GetValue()
             self.context.enable_sel_rotate = valu
             self.context.signal("refresh_scene", 0)
 
     def on_toggle_skew(self, event):
         if not self.startup:
-            if self.cb_skew.GetValue():
-                valu = True
-            else:
-                valu = False
+            valu = self.cb_skew.GetValue()
             self.context.enable_sel_skew = valu
             self.context.signal("refresh_scene", 0)
 
@@ -1012,6 +1020,9 @@ class MeerK40t(MWindow):
         context.listen("modified", self.on_invalidate_save)
         context.listen("altered", self.on_invalidate_save)
         context.listen("statusmsg", self.on_update_statusmsg)
+        # context.listen("select_emphasized_tree", self.on_update_selwidget)
+        context.listen("emphasized", self.on_update_selwidget)
+
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -1709,6 +1720,8 @@ class MeerK40t(MWindow):
         context.unlisten("modified", self.on_invalidate_save)
         context.unlisten("altered", self.on_invalidate_save)
         context.unlisten("statusmsg", self.on_update_statusmsg)
+        # context.unlisten("select_emphasized_tree", self.on_update_selwidget)
+        context.unlisten("emphasized", self.on_update_selwidget)
 
         self.context("quit\n")
 
@@ -1795,6 +1808,11 @@ class MeerK40t(MWindow):
 
     def on_update_statusmsg(self, origin, value):
         self.main_statusbar.SetStatusText(value, 0)
+
+    def on_update_selwidget(self, origin, *args):
+        elements = self.context.elements
+        valu = elements.has_emphasis()
+        self.main_statusbar.cb_enabled = valu
 
     def __set_titlebar(self):
         device_name = ""
