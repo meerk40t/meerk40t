@@ -204,7 +204,10 @@ def console_command(
             remainder = remainder[pos:]
             if len(remainder) > 0:
                 kwargs["remainder"] = remainder
-                kwargs["args"] = remainder.split()
+                try:
+                    kwargs["args"] = remainder.split()
+                except AttributeError:
+                    kwargs["args"] = remainder
             if output_type is None:
                 remainder = ""  # not chaining
             returned = func(command=command, channel=channel, **ik, **kwargs)
@@ -268,6 +271,41 @@ def console_command_remove(
             registration.unregister(p)
 
 
+def _cmd_cli_parser(argv: List[str]) -> Generator[Tuple[str, str, int, int], None, None]:
+    """
+    Parser for console command events.
+
+    @param text:
+    @return:
+    """
+    for text in argv:
+        pos = 0
+        limit = len(text)
+        while pos < limit:
+            match = _CMD_RE.match(text, pos)
+            if match is None:
+                break  # No more matches.
+            kind = match.lastgroup
+            start = pos
+            pos = match.end()
+            if kind == "SKIP":
+                continue
+            elif kind == "PARAM":
+                value = match.group()
+                yield kind, value, start, pos
+            elif kind == "QPARAM":
+                value = match.group()
+                yield "PARAM", value[1:-1], start, pos
+            elif kind == "LONG":
+                value = match.group()
+                yield kind, value[2:], start, pos
+            elif kind == "OPT":
+                value = match.group()
+                for letter in value[1:]:
+                    yield kind, letter, start, start + 1
+                    start += 1
+
+
 def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
     """
     Parser for console command events.
@@ -275,6 +313,9 @@ def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
     @param text:
     @return:
     """
+    if isinstance(text, list):
+        yield from _cmd_cli_parser(text)
+        return
     pos = 0
     limit = len(text)
     while pos < limit:

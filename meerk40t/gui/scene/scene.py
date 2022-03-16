@@ -30,22 +30,6 @@ from meerk40t.svgelements import Matrix, Point, Viewbox
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 
-def plugin(kernel, lifecycle):
-    if lifecycle == "register":
-        kernel.register("module/Scene", Scene)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        choices = [
-            {
-                "attr": "units_name",
-                "object": kernel_root,
-                "default": "mm",
-                "type": str,
-            },
-        ]
-        kernel.register_choices("units", choices)
-
-
 class Scene(Module, Job):
     """
     The Scene Module holds all the needed references to widgets and catches the events from the ScenePanel which

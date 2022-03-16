@@ -3,6 +3,9 @@ from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle=None):
+    if lifecycle == "plugins":
+        from .gui import gui
+        return [gui.plugin]
     if lifecycle == "register":
         kernel.add_service("rotary", Rotary(kernel, 0))
     elif lifecycle == "boot":
