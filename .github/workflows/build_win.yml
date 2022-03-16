@@ -14,7 +14,6 @@ jobs:
   build-windows-x86:
     runs-on: windows-2019
 
-
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
