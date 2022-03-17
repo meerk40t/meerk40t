@@ -50,7 +50,9 @@ jobs:
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
-        move dist/meerk40t.exe dist/wx-meerk40t.exe
+        cd dist
+        move Meerk40t.exe wx4.0.7-meerk40t.exe
+        cd ..
 
     - name: Build MeerK40t (wxPython 4.1.1)
       run: |
@@ -58,7 +60,6 @@ jobs:
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
-        move dist/meerk40t.exe dist/MeerK40t.exe
 
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.
@@ -69,4 +70,4 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           dist/MeerK40t.exe
-          dist/wx-meerk40t.exe
+          dist/wx4.0.7-meerk40t.exe
