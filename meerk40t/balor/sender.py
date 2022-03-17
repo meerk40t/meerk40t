@@ -18,7 +18,7 @@ import usb.util
 import time
 import threading
 
-from balor.command_list import CommandSource, CommandList
+from meerk40t.balor.command_list import CommandSource, CommandList
 
 class BalorException(Exception): pass
 class BalorMachineException(BalorException): pass

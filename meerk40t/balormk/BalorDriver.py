@@ -3,9 +3,9 @@ import time
 
 from meerk40t.core.parameters import Parameters
 
-from balor.Cal import Cal
-from balor.command_list import CommandList
-from balor.sender import Sender, BalorMachineException
+from meerk40t.balor.Cal import Cal
+from meerk40t.balor.command_list import CommandList
+from meerk40t.balor.sender import Sender, BalorMachineException
 
 
 class BalorDriver(Parameters):
