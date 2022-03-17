@@ -1,7 +1,4 @@
 import numpy as np
-import scipy
-import scipy.interpolate
-import gc
 from . import RBFInterpolator
 import sys
 from functools import lru_cache

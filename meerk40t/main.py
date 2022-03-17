@@ -191,8 +191,8 @@ def plugin(kernel, lifecycle):
 
         plugins.append(cag.plugin)
 
-        from balormk import main
-        kernel.add_plugin(main.plugin)
+        from .balormk.plugin import plugin as balorplugin
+        kernel.add_plugin(balorplugin)
 
         from .gui.plugin import plugin as wxplugin
         plugins.append(wxplugin)

@@ -6,38 +6,12 @@ from meerk40t.kernel import Service
 
 from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
 
-import balor
-from balor.Cal import Cal
-from balor.command_list import CommandList
-from balormk.BalorDriver import BalorDriver
-
-import numpy as np
-import scipy
-import scipy.interpolate
-
-from balormk.gui import gui
-from balormk.pathtools import EulerianFill
+from meerk40t.balor.Cal import Cal
+from meerk40t.balor.command_list import CommandList
+from meerk40t.balormk.BalorDriver import BalorDriver
 
 
-def plugin(kernel, lifecycle):
-    if lifecycle == "plugins":
-        return [gui.plugin]
-    if lifecycle == "invalidate":
-        try:
-            import numpy
-            import scipy
-        except ImportError:
-            return True
-    if lifecycle == "register":
-        kernel.register("provider/device/balor", BalorDevice)
-    elif lifecycle == "preboot":
-        suffix = "balor"
-        for d in kernel.settings.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+from meerk40t.balormk.pathtools import EulerianFill
 
 
 class BalorDevice(Service, ViewPort):
