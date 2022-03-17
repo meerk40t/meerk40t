@@ -2,12 +2,13 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.kernel import Module, Service
+
 from ..core.cutcode import CutCode, LineCut, PlotCut
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
-from meerk40t.kernel.module import Module
-from meerk40t.kernel.service import Service
 from ..svgelements import Color, Point
 
 UNITS_PER_uM = UNITS_PER_uM
@@ -24,6 +25,10 @@ ruida files (*.rd) and turn them likewise into cutcode.
 
 
 def plugin(kernel, lifecycle=None):
+    if lifecycle == "plugins":
+        from .gui import gui
+
+        return [gui.plugin]
     if lifecycle == "register":
         kernel.register("provider/device/ruida", RuidaDevice)
 
@@ -515,7 +520,7 @@ class RuidaEmulator(Module, Parameters):
         for array in self.parse_commands(data):
             try:
                 self.process(array)
-            except SyntaxError:
+            except CommandSyntaxError:
                 self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
@@ -538,7 +543,7 @@ class RuidaEmulator(Module, Parameters):
             self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
-            raise SyntaxError
+            raise CommandSyntaxError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:

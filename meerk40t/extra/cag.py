@@ -1,17 +1,15 @@
-from meerk40t.core.exceptions import Mk40tImportAbort
-
-try:
-    import numpy as np
-except ImportError as e:
-    raise Mk40tImportAbort("numpy")
-
-
 from meerk40t.svgelements import Path, Point, Polygon
-from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
 
 
 def plugin(kernel, lifecycle):
-    if lifecycle == "register":
+    if lifecycle == "invalidate":
+        try:
+            import numpy as np
+        except ImportError:
+            return True
+    elif lifecycle == "register":
+        from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
+
         _ = kernel.translation
         context = kernel.root
 

@@ -1,17 +1,13 @@
-from meerk40t.gui.icons import icons8_info_50
-
-try:
-    import wx
-except ImportError as e:
-    from meerk40t.core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
-
-
 def plugin(service, lifecycle):
+    if lifecycle == "invalidate":
+        return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/ruida"
     if lifecycle == "added":
+        import wx
+
+        from meerk40t.gui.icons import icons8_info_50
+
         _ = service._
 
         def popup_info(event):

@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, U
 
 from .functions import get_safe_path
 
+
 class Settings:
     def __init__(self, directory, filename):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(

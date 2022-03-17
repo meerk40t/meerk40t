@@ -1,14 +1,9 @@
 import os
 
-from ..core.exceptions import Mk40tImportAbort
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
-
-try:
-    import ezdxf
-except ImportError as e:
-    raise Mk40tImportAbort("ezdxf")
-
+import ezdxf
 from ezdxf import units
+
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
     # ezdxf <= 0.6.14
@@ -41,25 +36,6 @@ from ..svgelements import (
 )
 
 MILS_PER_MM = 39.3701
-
-
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "register":
-        kernel.register("load/DxfLoader", DxfLoader)
-        _ = kernel.translation
-        choices = [
-            {
-                "attr": "dxf_center",
-                "object": kernel.elements,
-                "default": True,
-                "type": bool,
-                "label": _("DXF Centering"),
-                "tip": _(
-                    "Fit (scale down if necessary) and center a DXF file within the bed"
-                ),
-            },
-        ]
-        kernel.register_choices("preferences", choices)
 
 
 class DxfLoader:

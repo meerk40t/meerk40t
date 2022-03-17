@@ -1,7 +1,7 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import PATTERN_LENGTH_UNITS, PATTERN_PERCENT, Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -214,6 +214,7 @@ class ViewPort:
         relative_length=None,
         as_float=False,
         unitless=UNITS_PER_PIXEL,
+        scale=None,
     ):
         """
         Axis 0 is X
@@ -229,6 +230,7 @@ class ViewPort:
         @param relative_length:
         @param as_float:
         @param unitless: factor for units with no units sets.
+        @param scale: scale length by given factor.
         @return:
         """
         if axis == 0:
@@ -238,29 +240,49 @@ class ViewPort:
             if relative_length is None:
                 relative_length = self.height
         if new_units is None:
-            return Length(value).value(
+            length = Length(value)
+            if scale is not None:
+                length *= scale
+            return length.value(
                 ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
             )
         elif new_units == "mm":
             return Length(value).to_mm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "inch":
             return Length(value).to_inch(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "cm":
             return Length(value).to_cm(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "px":
             return Length(value).to_px(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
+                ppi=UNITS_PER_INCH,
+                relative_length=relative_length,
+                as_float=as_float,
+                scale=scale,
             )
         elif new_units == "mil":
-            return Length(value).to_inch(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, as_float=as_float
-            ) / 1000.0
+            return (
+                Length(value).to_inch(
+                    ppi=UNITS_PER_INCH,
+                    relative_length=relative_length,
+                    as_float=as_float,
+                )
+                / 1000.0
+            )
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -694,6 +716,30 @@ class Length(object):
                 return True
         return False
 
+    @staticmethod
+    def is_valid_length(*args):
+        if len(args) == 1:
+            value = args[0]
+            if value is None:
+                return False
+            s = str(value)
+            for m in REGEX_LENGTH.findall(s):
+                if len(m[1]) == 0 or m[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    return True
+                return False
+        elif len(args) == 2:
+            try:
+                x = float(args[0])
+                if len(args[1]) == 0 or args[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    return True
+            except ValueError:
+                pass
+            return False
+
     @property
     def value_in_units(self):
         return self.amount
@@ -724,6 +770,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -733,6 +780,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.0393701)
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%smm" % (Length.str(v)))
@@ -745,6 +794,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -754,6 +804,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / (ppi * 0.393701)
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%scm" % (Length.str(v)))
@@ -766,6 +818,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -775,6 +828,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = value / ppi
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%sin" % (Length.str(v)))
@@ -787,6 +842,7 @@ class Length(object):
         font_height=None,
         viewbox=None,
         as_float=False,
+        scale=None,
     ):
         value = self.value(
             ppi=ppi,
@@ -796,6 +852,8 @@ class Length(object):
             viewbox=viewbox,
         )
         v = (value / ppi) / DEFAULT_PPI
+        if scale is not None:
+            v *= scale
         if as_float:
             return v
         return Length("%sin" % (Length.str(v)))

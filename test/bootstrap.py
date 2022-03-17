@@ -56,13 +56,10 @@ def bootstrap():
 
     kernel.add_plugin(svg_io.plugin)
 
-    try:
-        from meerk40t.dxf import dxf_io
+    from meerk40t.dxf.plugin import plugin as dxf_io_plugin
 
-        kernel.add_plugin(dxf_io.plugin)
-    except ImportError:
-        # This module cannot be loaded. ezdxf missing.
-        pass
+    kernel.add_plugin(dxf_io_plugin)
+
     kernel()
     kernel.console("channel print console\n")
     kernel.console("service device start dummy 0\n")

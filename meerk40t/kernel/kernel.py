@@ -1,4 +1,3 @@
-from datetime import datetime
 import functools
 import inspect
 import os
@@ -6,42 +5,32 @@ import platform
 import re
 import threading
 import time
+from datetime import datetime
 from threading import Thread
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from .lifecycles import *
-from .states import *
 from .channel import Channel
 from .context import Context
-from .functions import get_safe_path
-from .jobs import Job, ConsoleFunction
+from .exceptions import CommandMatchRejected, CommandSyntaxError
+from .functions import (
+    console_argument,
+    console_command,
+    console_command_remove,
+    console_option,
+    get_safe_path,
+)
+from .jobs import ConsoleFunction, Job
+from .lifecycles import *
 from .module import Module
 from .service import Service
 from .settings import Settings
+from .states import *
 
 KERNEL_VERSION = "0.0.1"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
 
-_cmd_parse = [
-    ("OPT", r"-([a-zA-Z]+)"),
-    ("LONG", r"--([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
-    ("QPARAM", r"\"(.*?)\""),
-    ("PARAM", r"([^ ,\t\n\x09\x0A\x0C\x0D]+)"),
-    ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
-]
-_CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
-
-class CommandMatchRejected(Exception):
-    """
-    Exception to be raised by a registered console command if the match to the command was erroneous
-    """
-
-class MalformedCommandRegistration(Exception):
-    """
-    Exception raised by the Kernel if the registration of the console command is malformed.
-    """
 
 class Kernel(Settings):
     """
@@ -235,18 +224,23 @@ class Kernel(Settings):
         @param plugin:
         @return:
         """
+        additional_plugins = plugin(self, "plugins")
+        if additional_plugins is not None:
+            for p in additional_plugins:
+                self.add_plugin(p)
+        plugins = self._kernel_plugins
         service_path = plugin(self, "service")
-        module_path = plugin(self, "module")
         if service_path is not None:
             if service_path not in self._service_plugins:
                 self._service_plugins[service_path] = list()
             plugins = self._service_plugins[service_path]
-        elif module_path is not None:
-            if module_path not in self._module_plugins:
-                self._module_plugins[module_path] = list()
-            plugins = self._module_plugins[module_path]
         else:
-            plugins = self._kernel_plugins
+            module_path = plugin(self, "module")
+            if module_path is not None:
+                if module_path not in self._module_plugins:
+                    self._module_plugins[module_path] = list()
+                plugins = self._module_plugins[module_path]
+
         if plugin not in plugins:
             plugins.append(plugin)
 
@@ -518,10 +512,66 @@ class Kernel(Settings):
         """
         channel = self.channel("kernel-lifecycle")
         objects = self.get_linked_objects(kernel)
+
         klp = Kernel.kernel_lifecycle_position
         start = klp(kernel)
         end = position
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_PRECLI <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_PRECLI
+                if channel:
+                    channel("kernel-precli: {object}".format(object=str(k)))
+                if hasattr(k, "precli"):
+                    k.precli()
+        if start < LIFECYCLE_KERNEL_PRECLI <= end:
+            if channel:
+                channel("(plugin) kernel-precli")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "precli")
 
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_CLI <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_CLI
+                if channel:
+                    channel("kernel-cli: {object}".format(object=str(k)))
+                if hasattr(k, "cli"):
+                    k.cli()
+        if start < LIFECYCLE_KERNEL_CLI <= end:
+            if channel:
+                channel("(plugin) kernel-cli")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "cli")
+
+        objects = self.get_linked_objects(kernel)
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_INVALIDATE <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_INVALIDATE
+                if channel:
+                    channel("kernel-invalidate: {object}".format(object=str(k)))
+                if hasattr(k, "invalidate"):
+                    k.invalidate()
+        if start < LIFECYCLE_KERNEL_INVALIDATE <= end:
+            if channel:
+                channel("(plugin) kernel-invalidate")
+            plugin_list = self._kernel_plugins
+            for i in range(len(plugin_list) - 1, -1, -1):
+                plugin = plugin_list[i]
+                if plugin(kernel, "invalidate"):
+                    del plugin_list[i]
+            for domain in self._service_plugins:
+                plugin_list = self._service_plugins[domain]
+                for i in range(len(plugin_list) - 1, -1, -1):
+                    plugin = plugin_list[i]
+                    if plugin(kernel, "invalidate"):
+                        del plugin_list[i]
+            for module_path in self._module_plugins:
+                plugin_list = self._module_plugins[module_path]
+                for i in range(len(plugin_list) - 1, -1, -1):
+                    plugin = plugin_list[i]
+                    if plugin(kernel, "invalidate"):
+                        del plugin_list[i]
+
+        objects = self.get_linked_objects(kernel)
         for k in objects:
             if klp(k) < LIFECYCLE_KERNEL_PREREGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
@@ -980,6 +1030,12 @@ class Kernel(Settings):
     def __call__(self):
         self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
 
+    def precli(self):
+        pass
+
+    def cli(self):
+        pass
+
     def preboot(self):
         self.command_boot()
         self.choices_boot()
@@ -1276,6 +1332,19 @@ class Kernel(Settings):
             return self._registered[value]
         except KeyError:
             return None
+
+    def has_feature(self, *args):
+        for a in args:
+            try:
+                v = self._registered["feature/{feature}".format(feature=a)]
+            except KeyError:
+                return False
+            if not v:
+                return False
+        return True
+
+    def set_feature(self, feature):
+        self._registered["feature/{feature}".format(feature=feature)] = True
 
     def lookup_all(self, *args):
         """
@@ -2021,12 +2090,12 @@ class Kernel(Settings):
                     )
                     command_executed = True
                     break
-                except SyntaxError as e:
+                except CommandSyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
 
                     # ToDo
                     # Don't use command help, which is or should be descriptive - use command syntax instead
-                    # If SyntaxError has a msg then that needs to be provided AS WELL as the syntax.
+                    # If CommandSyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
@@ -2340,9 +2409,9 @@ class Kernel(Settings):
             try:
                 times = int(times)
             except (TypeError, ValueError):
-                raise SyntaxError
+                raise CommandSyntaxError
             if duration is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 timer_command = remainder
                 self.set_timer(
@@ -2466,6 +2535,8 @@ class Kernel(Settings):
             if path is None:
                 path = "/"
             path_context = self.get_context(path)
+            if len(args) == 0:
+                return
             value = args[0]
             if value == "open":
                 index = args[1]
@@ -2537,11 +2608,13 @@ class Kernel(Settings):
         def service_activate(channel, _, data=None, index=None, **kwargs):
             domain, available, active = data
             if index is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.activate_service_index(domain, index)
 
         @self.console_argument("name", help="Name of service to start")
-        @self.console_option("path", "p", help="optional forced path initialize location")
+        @self.console_option(
+            "path", "p", help="optional forced path initialize location"
+        )
         @self.console_option(
             "init",
             "i",
@@ -2557,11 +2630,11 @@ class Kernel(Settings):
         ):
             domain, available, active = data
             if name is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             provider_path = "provider/{domain}/{name}".format(domain=domain, name=name)
             provider = self.lookup(provider_path)
             if provider is None:
-                raise SyntaxError("Bad provider.")
+                raise CommandSyntaxError("Bad provider.")
             if path is None:
                 path = name
 
@@ -2613,7 +2686,7 @@ class Kernel(Settings):
             channel, _, data=None, index=None, origin="cmd", remainder=None, **kwargs
         ):
             if remainder is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.batch_add(remainder, origin, index)
 
         @self.console_argument("index", type=int, help="line to delete")
@@ -2624,11 +2697,11 @@ class Kernel(Settings):
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
             if index is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 self.batch_remove(index - 1)
             except IndexError:
-                raise SyntaxError(
+                raise CommandSyntaxError(
                     "Index out of bounds (1-{length})".format(length=len(data))
                 )
 
@@ -2681,7 +2754,7 @@ class Kernel(Settings):
         )
         def channel_open(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
@@ -2699,7 +2772,7 @@ class Kernel(Settings):
         )
         def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
@@ -2717,7 +2790,7 @@ class Kernel(Settings):
         )
         def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             channel(_("Printing Channel: %s") % channel_name)
             self.channel(channel_name).watch(print)
@@ -2740,7 +2813,7 @@ class Kernel(Settings):
             Save a particular channel to disk. Any data sent to that channel within Meerk40t will write out a log.
             """
             if channel_name is None:
-                raise SyntaxError(_("channel_name is not specified."))
+                raise CommandSyntaxError(_("channel_name is not specified."))
 
             if filename is None:
                 filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
@@ -2923,258 +2996,37 @@ class Kernel(Settings):
     # CONSOLE DECORATORS
     # ==========
 
-    @staticmethod
-    def console_option(name: str, short: str = None, **kwargs) -> Callable:
+    def console_argument(self, *args, **kwargs) -> Callable:
         """
-        Adds an option for a console_command.
+        Delegate to Kernel
 
-        @param name: option name
-        @param short: short flag of option name.
-        @param kwargs:
-        @return:
+        Uses current context to be passed to the console_argument being registered.
         """
-        try:
-            if short.startswith("-"):
-                short = short[1:]
-        except Exception:
-            pass
+        return console_argument(*args, **kwargs)
 
-        def decor(func):
-            kwargs["name"] = name
-            kwargs["short"] = short
-            if "action" in kwargs:
-                kwargs["type"] = bool
-            elif "type" not in kwargs:
-                kwargs["type"] = str
-            func.options.insert(0, kwargs)
-            return func
-
-        return decor
-
-    @staticmethod
-    def console_argument(name: str, **kwargs) -> Callable:
+    def console_option(self, *args, **kwargs) -> Callable:
         """
-        Adds an argument for the console_command. These are non-optional values and are expected to be provided when the
-        command is called from console.
+        Delegate to Kernel
 
-        @param name:
-        @param kwargs:
-        @return:
+        Uses current context to be passed to the console_option being registered.
         """
+        return console_option(*args, **kwargs)
 
-        def decor(func):
-            kwargs["name"] = name
-            if "type" not in kwargs:
-                kwargs["type"] = str
-            func.arguments.insert(0, kwargs)
-            return func
-
-        return decor
-
-    def console_command(
-        registration,
-        path: Union[str, Tuple[str, ...]] = None,
-        regex: bool = False,
-        hidden: bool = False,
-        help: str = None,
-        input_type: Union[str, Tuple[str, ...]] = None,
-        output_type: str = None,
-    ):
+    def console_command(self, *args, **kwargs) -> Callable:
         """
-        Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
-        within the console are registered with this decorator. It varies attributes that define how the decorator
-        should be treated. Commands work with named contexts in a pipelined architecture. So "element" commands output
-        must be followed by "element" command inputs. The input_type and output_type do not have to match and can be
-        a tuple of different types. None refers to the base context.
+        Delegate to Kernel
 
-        The long_help is the docstring of the actual function itself.
-
-        @param registration: the kernel or service this is being registered to
-        @param path: command name of the command being registered
-        @param regex: Should this command name match regex command values.
-        @param hidden: Whether this command shows up in `help` or not.
-        @param help: What should the help for this command be.
-        @param input_type: What is the incoming context for the command
-        @param output_type: What is the outgoing context for the command
-        @return:
+        Uses current context to be passed to the console_command being registered.
         """
+        return console_command(self, *args, **kwargs)
 
-        def decorator(func: Callable):
-            @functools.wraps(func)
-            def inner(command: str, remainder: str, channel: "Channel", **ik):
-                options = inner.options
-                arguments = inner.arguments
-                stack = list()
-                stack.extend(arguments)
-                kwargs = dict()
-                argument_index = 0
-                opt_index = 0
-                output_type = inner.output_type
-                pos = 0
-                for kind, value, start, pos in Kernel._cmd_parser(remainder):
-                    if kind == "PARAM":
-                        if argument_index == len(stack):
-                            pos = start
-                            break  # Nothing else is expected.
-                        k = stack[argument_index]
-                        argument_index += 1
-                        if "type" in k and value is not None:
-                            try:
-                                value = k["type"](value)
-                            except ValueError:
-                                raise SyntaxError(
-                                    "'%s' does not cast to %s"
-                                    % (str(value), str(k["type"]))
-                                )
-                        key = k["name"]
-                        current = kwargs.get(key, True)
-                        if current is True:
-                            kwargs[key] = [value]
-                        else:
-                            kwargs[key].append(value)
-                        opt_index = argument_index
-                    elif kind == "LONG":
-                        for pk in options:
-                            if value == pk["name"]:
-                                if pk.get("action") != "store_true":
-                                    count = pk.get("nargs", 1)
-                                    for n in range(count):
-                                        stack.insert(opt_index, pk)
-                                        opt_index += 1
-                                kwargs[value] = True
-                                break
-                        opt_index = argument_index
-                    elif kind == "OPT":
-                        for pk in options:
-                            if value == pk["short"]:
-                                if pk.get("action") != "store_true":
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
-                                kwargs[pk["name"]] = True
-                                break
-
-                # Any unprocessed positional arguments get default values.
-                for a in range(argument_index, len(stack)):
-                    k = stack[a]
-                    value = k.get("default")
-                    if "type" in k and value is not None:
-                        value = k["type"](value)
-                    key = k["name"]
-                    current = kwargs.get(key)
-                    if current is None:
-                        kwargs[key] = [value]
-                    else:
-                        kwargs[key].append(value)
-
-                # TODO: Options with default values should be passed to the function with those values.
-
-                # Any singleton list arguments should become their only element.
-                for a in range(len(stack)):
-                    k = stack[a]
-                    key = k["name"]
-                    current = kwargs.get(key)
-                    if isinstance(current, list):
-                        if len(current) == 1:
-                            kwargs[key] = current[0]
-
-                remainder = remainder[pos:]
-                if len(remainder) > 0:
-                    kwargs["remainder"] = remainder
-                    kwargs["args"] = remainder.split()
-                if output_type is None:
-                    remainder = ""  # not chaining
-                returned = func(command=command, channel=channel, **ik, **kwargs)
-                if returned is None:
-                    value = None
-                    out_type = None
-                else:
-                    if not isinstance(returned, tuple) or len(returned) != 2:
-                        raise ValueError(
-                            '"%s" from command "%s" returned improper values. "%s"'
-                            % (str(returned), command, str(kwargs))
-                        )
-                    out_type, value = returned
-                return value, remainder, out_type
-
-            if hasattr(inner, "arguments"):
-                raise MalformedCommandRegistration(
-                    "Applying console_command() to console_command()"
-                )
-
-            # Main Decorator
-            cmds = path if isinstance(path, tuple) else (path,)
-            ins = input_type if isinstance(input_type, tuple) else (input_type,)
-            inner.long_help = func.__doc__
-            inner.help = help
-            inner.regex = regex
-            inner.hidden = hidden
-            inner.input_type = input_type
-            inner.output_type = output_type
-
-            inner.arguments = list()
-            inner.options = list()
-
-            for cmd in cmds:
-                for i in ins:
-                    p = "command/%s/%s" % (i, cmd)
-                    registration.register(p, inner)
-            return inner
-
-        return decorator
-
-    def console_command_remove(
-        registration,
-        path: Union[str, Tuple[str, ...]] = None,
-        input_type: Union[str, Tuple[str, ...]] = None,
-    ):
+    def console_command_remove(self, *args, **kwargs) -> Callable:
         """
-        Removes a console command with the given input_type at the given path.
+        Delegate to Kernel
 
-        @param registration: the kernel or service this is being registered to
-        @param path: path or tuple of paths to delete.
-        @param input_type: type or tuple of types to delete
-        @return:
+        Uses current context to be passed to the console_command being removed.
         """
-        cmds = path if isinstance(path, tuple) else (path,)
-        ins = input_type if isinstance(input_type, tuple) else (input_type,)
-        for cmd in cmds:
-            for i in ins:
-                p = "command/%s/%s" % (i, cmd)
-                registration.unregister(p)
-
-    @staticmethod
-    def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
-        """
-        Parser for console command events.
-
-        @param text:
-        @return:
-        """
-        pos = 0
-        limit = len(text)
-        while pos < limit:
-            match = _CMD_RE.match(text, pos)
-            if match is None:
-                break  # No more matches.
-            kind = match.lastgroup
-            start = pos
-            pos = match.end()
-            if kind == "SKIP":
-                continue
-            elif kind == "PARAM":
-                value = match.group()
-                yield kind, value, start, pos
-            elif kind == "QPARAM":
-                value = match.group()
-                yield "PARAM", value[1:-1], start, pos
-            elif kind == "LONG":
-                value = match.group()
-                yield kind, value[2:], start, pos
-            elif kind == "OPT":
-                value = match.group()
-                for letter in value[1:]:
-                    yield kind, letter, start, start + 1
-                    start += 1
+        return console_command_remove(self, *args, **kwargs)
 
 
 def lookup_listener(param):
@@ -3194,6 +3046,7 @@ def lookup_listener(param):
         return func
 
     return decor
+
 
 def signal_listener(param):
     """

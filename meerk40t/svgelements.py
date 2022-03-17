@@ -4573,7 +4573,7 @@ class CubicBezier(Curve):
             return abs(
                 3 * (p1 - p0) * (1 - t) ** 2
                 + 6 * (p2 - p1) * (1 - t) * t
-                + 3 * (p3 - p2) * t ** 2
+                + 3 * (p3 - p2) * t**2
             )
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=error, limit=1000)[0]

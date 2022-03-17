@@ -1,25 +1,10 @@
-from meerk40t.gui.icons import (
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_emergency_stop_button_50,
-    icons8_pause_50,
-)
-from meerk40t.kernel.kernel import signal_listener
-from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
-from meerk40t.lihuiyu.gui.lhystudiosaccel import LhystudiosAccelerationChart
-from meerk40t.lihuiyu.gui.lhystudioscontrollergui import LhystudiosControllerGui
-from meerk40t.lihuiyu.gui.lhystudiosdrivergui import LhystudiosDriverGui
-from meerk40t.lihuiyu.gui.tcpcontroller import TCPController
-
-try:
-    import wx
-except ImportError as e:
-    from meerk40t.core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
+from meerk40t.kernel import signal_listener
 
 
 def plugin(service, lifecycle):
+    if lifecycle == "invalidate":
+        return not service.has_feature("wx")
+
     if lifecycle == "service":
         return "provider/device/lhystudios"
 
@@ -27,6 +12,18 @@ def plugin(service, lifecycle):
         service("window toggle Configuration\n")
 
     if lifecycle == "added":
+        from meerk40t.gui.icons import (
+            icons8_computer_support_50,
+            icons8_connected_50,
+            icons8_emergency_stop_button_50,
+            icons8_pause_50,
+        )
+        from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
+        from meerk40t.lihuiyu.gui.lhystudiosaccel import LhystudiosAccelerationChart
+        from meerk40t.lihuiyu.gui.lhystudioscontrollergui import LhystudiosControllerGui
+        from meerk40t.lihuiyu.gui.lhystudiosdrivergui import LhystudiosDriverGui
+        from meerk40t.lihuiyu.gui.tcpcontroller import TCPController
+
         service.register("window/Controller", LhystudiosControllerGui)
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)

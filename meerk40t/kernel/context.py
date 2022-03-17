@@ -1,7 +1,9 @@
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
+from .jobs import ConsoleFunction
 from .lifecycles import *
 from .states import *
+
 
 class Context:
     """

@@ -5,6 +5,21 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_SUSPEND,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+    Service,
+)
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import CutCode, RawCut
@@ -27,9 +42,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from meerk40t.kernel.states import *
-from meerk40t.kernel.module import Module
-from meerk40t.kernel.service import Service
 from ..svgelements import Length
 from .laserspeed import LaserSpeed
 
@@ -62,6 +74,11 @@ REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis
 
 
 def plugin(kernel, lifecycle=None):
+    if lifecycle == "plugins":
+        from .gui import gui as lhygui
+
+        return [lhygui.plugin]
+
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
@@ -182,7 +199,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(str, "address", "localhost")
         self.setting(str, "label", "m2nano")
 
-        self.setting(bool, "twitchless", False)
+        self.setting(bool, "twitches", False)
         self.setting(bool, "nse_raster", False)
         self.setting(bool, "nse_stepraster", False)
 
@@ -469,7 +486,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def egv_import(filename, **kwargs):
             if filename is None:
-                raise SyntaxError
+                raise CommandSyntaxError
 
             def skip(read, byte, count):
                 """Skips forward in the file until we find <count> instances of <byte>"""
@@ -504,7 +521,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def egv_export(channel, _, filename, **kwargs):
             if filename is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 with open(filename, "w") as f:
                     f.write("Document type : LHYMICRO-GL file\n")
@@ -540,7 +557,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def challenge_egv(command, channel, _, remainder=None, **kwargs):
             if not remainder:
-                raise SyntaxError
+                raise CommandSyntaxError
             else:
                 challenge = bytearray.fromhex(
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
@@ -680,7 +697,7 @@ class LihuiyuDevice(Service, ViewPort):
             elif transition_type == "switch":
                 command = "jog_switch"
             else:
-                raise SyntaxError
+                raise CommandSyntaxError
             if data is None:
                 data = kernel.device.spooler
             spooler = data
@@ -1330,7 +1347,7 @@ class LhystudiosDriver(Parameters):
             instance_step = self.step_value_set
 
         suffix_c = None
-        if (self.service.twitchless or self.force_twitchless) and not self.step:
+        if (not self.service.twitches or self.force_twitchless) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward

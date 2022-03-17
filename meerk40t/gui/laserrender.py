@@ -38,7 +38,6 @@ DRAW_MODE_IMAGE = 0x000800
 DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
 DRAW_MODE_ICONS = 0x0040000
-DRAW_MODE_TREE = 0x0080000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
@@ -185,7 +184,7 @@ class LaserRender:
             sw = 1.0
         if sw is None:
             sw = 1.0
-        limit = zoomscale ** 0.5
+        limit = zoomscale**0.5
         try:
             limit /= width_scale
         except ZeroDivisionError:

@@ -4,8 +4,8 @@ import wx
 import wx.ribbon as RB
 from wx import aui
 
-from meerk40t.kernel.kernel import lookup_listener
-from meerk40t.kernel.jobs import Job
+from meerk40t.kernel import Job, lookup_listener
+
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
 
@@ -246,7 +246,7 @@ class RibbonPanel(wx.Panel):
 
 class Ribbon(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(423, 131, *args, **kwds)
+        super().__init__(423, 121, *args, **kwds)
 
         self.panel = RibbonPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)

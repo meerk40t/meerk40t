@@ -3,8 +3,10 @@ from os import times
 from time import time
 from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.kernel import Service
+
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
-from meerk40t.kernel.service import Service
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .cutplan import CutPlan, CutPlanningFailedError
@@ -362,10 +364,10 @@ class Planner(Service):
             This would then run: "egv_export myfile.egv" which would save the current buffer.
             """
             if alias is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             plan_command = "plan/%s" % alias
             if self.lookup(plan_command) is not None:
-                raise SyntaxError(_("You may not overwrite an already used alias."))
+                raise CommandSyntaxError(_("You may not overwrite an already used alias."))
 
             def user_defined_alias():
                 for s in remainder.split(";"):
@@ -571,7 +573,7 @@ class Planner(Service):
             command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             if op is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 for plan_command, command_name, sname in self.find("plan", op):
                     data.plan.append(plan_command)
@@ -593,7 +595,7 @@ class Planner(Service):
             command, channel, _, data_type=None, op=None, data=None, **kwgs
         ):
             if op is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             for plan_command, command_name, sname in self.find("plan", op):
                 data.plan.insert(0, plan_command)
                 self.signal("plan", data.name, None)
@@ -701,7 +703,7 @@ class Planner(Service):
             # pylint: disable=no-member
             # No member calls are for dynamically attributed values.
             if y_distance is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             # Following must be in same order as added in preprocess()
             pre_plan_items = (
                 (self.prephysicalhome, physicalhome),
@@ -733,13 +735,15 @@ class Planner(Service):
                 elif type(c_plan[-1]) == str:  # Rotary disabled
                     post_plan.insert(0, c_plan.pop())
 
-            try:
+                # Sophist: Following try/except commented out as
+                # exceptions need to be narrow not global in scope.
+                # try:
                 if x_distance is None:
                     x_distance = "%f%%" % (100.0 / (cols + 1))
                 if y_distance is None:
                     y_distance = "%f%%" % (100.0 / (rows + 1))
-            except Exception:
-                pass
+            # except Exception:
+            # pass
             x_distance = self.device.length(x_distance, 1)
             y_distance = self.device.length(y_distance, 1)
             x_last = 0

@@ -24,27 +24,10 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
-from meerk40t.kernel.jobs import Job
-from meerk40t.kernel.module import Module
+from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
-
-
-def plugin(kernel, lifecycle):
-    if lifecycle == "register":
-        kernel.register("module/Scene", Scene)
-    elif lifecycle == "boot":
-        kernel_root = kernel.root
-        choices = [
-            {
-                "attr": "units_name",
-                "object": kernel_root,
-                "default": "mm",
-                "type": str,
-            },
-        ]
-        kernel.register_choices("units", choices)
 
 
 class Scene(Module, Job):

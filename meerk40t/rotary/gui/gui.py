@@ -1,20 +1,15 @@
-from meerk40t.gui.icons import icons8_roll_50
-from meerk40t.rotary.gui.rotarysettings import RotarySettings
-
-try:
-    import wx
-except ImportError as e:
-    from meerk40t.core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
-
 ROTARY_VIEW = False
 
 
 def plugin(kernel, lifecycle):
-    # if lifecycle == "service":
-    #     return "provider/camera/mk"
+    if lifecycle == "cli":
+        kernel.set_feature("rotary")
+    if lifecycle == "invalidate":
+        return not kernel.has_feature("wx")
     if lifecycle == "register":
+        from meerk40t.gui.icons import icons8_roll_50
+        from meerk40t.rotary.gui.rotarysettings import RotarySettings
+
         _ = kernel.translation
         kernel.register("window/Rotary", RotarySettings)
         kernel.register(

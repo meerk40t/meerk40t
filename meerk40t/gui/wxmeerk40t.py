@@ -3,50 +3,39 @@ import platform
 import sys
 import traceback
 from datetime import datetime
-from meerk40t.kernel.functions import get_safe_path
 
-from wx import aui
+# According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+# richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+# so we are doing it here even though we do not refer to it in this file
+# richtext is used for the Console panel.
+import wx
+from wx import aui, richtext
 
+from meerk40t.gui.consolepanel import Console
+from meerk40t.gui.navigationpanels import Navigation
+from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 
+from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from .about import About
+from .bufferview import BufferView
+from .consoleproperty import ConsoleProperty
 from .devicepanel import DeviceManager
+from .executejob import ExecuteJob
+from .groupproperties import GroupProperty
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .operationpropertymain import ParameterPanel
-
-try:
-    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-    # so we are doing it here even though we do not refer to it in this file
-    # richtext is used for the Console panel.
-    import wx
-    from wx import richtext
-except ImportError as e:
-    from ..core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
-
-from meerk40t.gui.consolepanel import Console
-from meerk40t.gui.navigationpanels import Navigation
-from meerk40t.gui.spoolerpanel import JobSpooler
-
-from meerk40t.kernel.jobs import ConsoleFunction
-from meerk40t.kernel.module import Module
-from ..main import APPLICATION_NAME, APPLICATION_VERSION
-from .about import About
-from .bufferview import BufferView
-from .consoleproperty import ConsoleProperty
-from .executejob import ExecuteJob
-from .groupproperties import GroupProperty
 from .imageproperty import ImageProperty
 from .keymap import Keymap
-from .laserrender import LaserRender
 from .notes import Notes
 from .operationproperty import OperationProperty
+from .operationpropertymain import ParameterPanel
 from .pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
@@ -66,173 +55,7 @@ The Transformations work in Windows/OSX/Linux for wxPython 4.0+ (and likely befo
 
 """
 
-GUI_START = True
-
 _ = wx.GetTranslation
-
-
-def plugin(kernel, lifecycle):
-    # pylint: disable=global-statement
-    global GUI_START
-    kernel_root = kernel.root
-    if lifecycle == "init" and kernel.args.no_gui:
-        GUI_START = False
-
-        @kernel.console_command("gui", help=_("starts the gui"))
-        def gui_start(**kwargs):
-            kernel.console_command_remove("gui")
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            meerk40tgui.MainLoop()
-
-    elif lifecycle == "preregister":
-        kernel.register("module/wxMeerK40t", wxMeerK40t)
-        kernel_root.open("module/wxMeerK40t")
-
-        # Registers the render-op make_raster. This is used to do cut planning.
-        renderer = LaserRender(kernel_root)
-        kernel_root.register("render-op/make_raster", renderer.make_raster)
-    elif lifecycle == "postboot":
-        choices = [
-            {
-                "attr": "show_negative_guide",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Show Negative Guide"),
-                "tip": _(
-                    "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
-                ),
-            },
-            {
-                "attr": "windows_save",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Save Window Positions"),
-                "tip": _("Open Windows at the same place they were last closed"),
-            },
-            {
-                "attr": "auto_spooler",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Launch Spooler on Job Start"),
-                "tip": _(
-                    "Open the Spooler window automatically when you Execute a Job"
-                ),
-            },
-            {
-                "attr": "mouse_wheel_pan",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("MouseWheel Pan"),
-                "tip": "\n".join(
-                    (
-                        _("Unset: MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."),
-                        _(
-                            "Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
-                        ),
-                    )
-                ),
-            },
-            {
-                "attr": "mouse_pan_invert",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Invert MouseWheel Pan"),
-                "tip": _(
-                    "Reverses the direction of the MouseWheel for horizontal & vertical pan"
-                ),
-            },
-            {
-                "attr": "mouse_zoom_invert",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Invert MouseWheel Zoom"),
-                "tip": _("Reverses the direction of the MouseWheel for zoom"),
-            },
-            {
-                "attr": "disable_tool_tips",
-                "object": kernel.root,
-                "default": False,
-                "type": bool,
-                "label": _("Disable ToolTips"),
-                "tip": "\n".join(
-                    (
-                        _(
-                            "If you do not want to see tooltips like this one, check this box."
-                        ),
-                        _("Particularly useful if you have a touch screen."),
-                        _(
-                            "Note: You will need to restart MeerK40t for any change to take effect."
-                        ),
-                    )
-                ),
-            },
-        ]
-        kernel.register_choices("preferences", choices)
-
-    elif lifecycle == "mainloop":
-        # Replace the default kernel data prompt for a wx Popup.
-
-        def prompt_popup(data_type, prompt):
-            with wx.TextEntryDialog(
-                None, prompt, _("Information Required:"), ""
-            ) as dlg:
-                if dlg.ShowModal() == wx.ID_OK:
-                    value = dlg.GetValue()
-                else:
-                    return
-            try:
-                return data_type(value)
-            except ValueError:
-                return None
-
-        kernel.prompt = prompt_popup
-
-        def interrupt_popup():
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        kernel_root.planner.register("function/interrupt", interrupt_popup)
-
-        def interrupt():
-            yield "wait_finish"
-            yield "function", kernel_root.lookup("function/interrupt")
-
-        kernel_root.planner.register("plan/interrupt", interrupt)
-
-        if GUI_START:
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            for window in kernel.derivable("window"):
-                wsplit = window.split(":")
-                window_name = wsplit[0]
-                window_index = wsplit[-1] if len(wsplit) > 1 else None
-                if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window, False
-                ):
-                    if window_index is not None:
-                        kernel.console(
-                            "window open -m {index} {window} {index}\n".format(
-                                index=window_index, window=window_name
-                            )
-                        )
-                    else:
-                        kernel.console(
-                            "window open {window}\n".format(window=window_name)
-                        )
-            meerk40tgui.MainLoop()
 
 
 def register_panel_go(window, context):
@@ -635,7 +458,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
-                    raise SyntaxError
+                    raise CommandSyntaxError
             else:
                 if window_class is not None:
                     if window_name in path.opened:
@@ -646,7 +469,7 @@ class wxMeerK40t(wx.App, Module):
                         channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
-                    raise SyntaxError
+                    raise CommandSyntaxError
 
         @kernel.console_argument("window", type=str, help=_("window to be closed"))
         @kernel.console_command(
@@ -666,7 +489,7 @@ class wxMeerK40t(wx.App, Module):
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))
             except IndexError:
-                raise SyntaxError
+                raise CommandSyntaxError
 
         @kernel.console_argument("window", type=str, help=_("window to be reset"))
         @kernel.console_command(
@@ -886,9 +709,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     print("\n")
     print(error_log)
     try:
-        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            date=datetime.now()
-        )
+        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
     except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 
@@ -909,7 +730,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     # Ask to send file.
     git = branch = False
     if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
         git = exec_type == "git"
 
     if git:
@@ -925,7 +746,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix) :].strip("\n")
 
-    if git and branch and branch not in ("main", "tatarize-services"):
+    if git and branch and branch not in ("main", "legacy6", "legacy7"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
             """It appears that you are running Meerk40t from source managed by Git,

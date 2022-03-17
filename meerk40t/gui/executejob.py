@@ -2,8 +2,9 @@ import math
 
 import wx
 
+from meerk40t.kernel import signal_listener
+
 from ..core.node.laserop import CutOpNode, EngraveOpNode, ImageOpNode, RasterOpNode
-from meerk40t.kernel.kernel import signal_listener
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
@@ -309,6 +310,8 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def pane_show(self):
+        # self.context.setting(bool, "opt_rasters_split", True)
+        # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
