@@ -278,8 +278,8 @@ class SVGLoader:
         svg = SVG.parse(
             source=source,
             reify=True,
-            width=context.device.width_as_mm,
-            height=context.device.height_as_mm,
+            width=str(context.device.width_as_mm),
+            height=str(context.device.height_as_mm),
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,
