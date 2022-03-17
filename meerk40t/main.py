@@ -191,11 +191,14 @@ def plugin(kernel, lifecycle):
 
         plugins.append(cag.plugin)
 
-        from .gui.plugin import plugin as wxplugin
+        from balormk import main
+        kernel.add_plugin(main.plugin)
 
+        from .gui.plugin import plugin as wxplugin
         plugins.append(wxplugin)
 
         return plugins
+      
     if lifecycle == "invalidate":
         return True
 
