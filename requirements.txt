@@ -3,3 +3,5 @@ Pillow
 pyusb
 pyserial
 wxPython
+scipy
+numpy
