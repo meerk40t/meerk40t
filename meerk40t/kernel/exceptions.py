@@ -13,7 +13,7 @@ class KernelImportAbort(ImportError, KernelError):
     """
 
 
-class CommandSyntaxError(Exception):
+class CommandSyntaxError(SyntaxError):
     """
     Exception to be raised by a registered console command if the parameters provided are erroneous.
 
