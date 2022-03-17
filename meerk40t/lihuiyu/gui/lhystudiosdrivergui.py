@@ -745,7 +745,7 @@ class ConfigurationSetupPanel(wx.Panel):
         )
         sizer_general.Add(self.check_alternative_raster, 0, 0, 0)
 
-        self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Legacy vector protocol (twitches)"))
+        self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
         sizer_general.Add(self.check_twitches, 0, 0, 0)
 
         sizer_jog = wx.StaticBoxSizer(
