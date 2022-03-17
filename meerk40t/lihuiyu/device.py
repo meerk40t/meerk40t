@@ -1324,7 +1324,7 @@ class LhystudiosDriver(Parameters):
 
     def program_mode(self, *values, dx=0, dy=0):
         """
-        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
+        Vector Mode implies but doesn't discount rastering. Twitches are used if twitches is set to True.
 
         @param values:
         @return:
