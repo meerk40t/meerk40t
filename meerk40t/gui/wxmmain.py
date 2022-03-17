@@ -7,6 +7,7 @@ import wx
 from PIL import Image
 from wx import aui
 
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.cutcode import CutCode
@@ -719,7 +720,7 @@ class MeerK40t(MWindow):
         )
         def show_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -735,7 +736,7 @@ class MeerK40t(MWindow):
         )
         def hide_pane(command, _, channel, pane=None, **kwargs):
             if pane is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -752,7 +753,7 @@ class MeerK40t(MWindow):
         )
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
             if pane is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -1920,7 +1921,7 @@ class MeerK40t(MWindow):
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.elements.svg_ppi,
                 )
-            except SyntaxError as e:
+            except CommandSyntaxError as e:
                 dlg = wx.MessageDialog(
                     None,
                     str(e.msg),

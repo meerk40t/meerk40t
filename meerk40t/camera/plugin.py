@@ -1,3 +1,5 @@
+from meerk40t.kernel import CommandSyntaxError
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui
@@ -110,7 +112,7 @@ def plugin(kernel, lifecycle=None):
         )
         def fisheye_camera(data=None, subcommand=None, **kwargs):
             if subcommand is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if subcommand == "capture":
                 data.fisheye_capture()
             elif subcommand == "reset":
@@ -133,17 +135,17 @@ def plugin(kernel, lifecycle=None):
             _, data=None, subcommand=None, corner=None, x=None, y=None, **kwargs
         ):
             if subcommand is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if subcommand == "reset":
                 data.reset_perspective()
                 return "camera", data
             elif subcommand == "set":
                 if y is None:
-                    raise SyntaxError
+                    raise CommandSyntaxError
                 data.perspective[corner] = x, y
                 return "camera", camera
             else:
-                raise SyntaxError
+                raise CommandSyntaxError
 
         @kernel.console_command(
             "background",
@@ -174,7 +176,7 @@ def plugin(kernel, lifecycle=None):
             command, _, channel, data=None, setting=None, value=None, **kwargs
         ):
             if value is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if data.capture is None:
                 channel(_("Camera is not currently running..."))
                 return
