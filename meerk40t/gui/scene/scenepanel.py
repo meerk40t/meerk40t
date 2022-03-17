@@ -1,4 +1,5 @@
 import wx
+from meerk40t.gui.wxutils import get_key_name
 
 
 class ScenePanel(wx.Panel):
@@ -74,37 +75,49 @@ class ScenePanel(wx.Panel):
     isAltPressed = False
 
     def on_key_down(self, evt):
-        keycode = evt.GetKeyCode()
-        # print("Key-Down: %f" % keycode)
-        if keycode == wx.WXK_SHIFT:
+        literal = get_key_name(evt, True)
+        # keycode = evt.GetKeyCode()
+        # print("Key-Down: %f - literal: %s" % (keycode, literal))
+        if "shift+" in literal:
             if not self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = True
                 self.scene.event(self.scene.last_position, "kb_shift_press")
-        elif keycode == wx.WXK_CONTROL:
+        if "ctrl+" in literal:
             if not self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = True
                 self.scene.event(self.scene.last_position, "kb_ctrl_press")
-        elif keycode == wx.WXK_ALT:
+        if "alt+" in literal:
             if not self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = True
                 self.scene.event(self.scene.last_position, "kb_alt_press")
                 # self.scene.event(self.scene.last_position, "kb_alt_press")
+        evt.Skip()
 
     def on_key_up(self, evt):
-        keycode = evt.GetKeyCode()
-        # print("Key-Up: %f" % keycode)
-        if keycode == wx.WXK_SHIFT:
+        literal = ""
+        keystates = (evt.ShiftDown(), evt.ControlDown(), evt.AltDown())
+        if self.isShiftPressed and not keystates[0]:
+            literal += "shift+"
+        if self.isCtrlPressed and not keystates[1]:
+            literal += "ctrl+"
+        if self.isAltPressed and not keystates[2]:
+            literal += "alt+"
+        # key = evt.GetKeyCode()
+        # print("Key-Up: %f - literal: %s" % (key, literal))
+
+        if "shift+" in literal:
             if self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = False
                 self.scene.event(self.scene.last_position, "kb_shift_release")
-        elif keycode == wx.WXK_CONTROL:
+        if "ctrl+" in literal:
             if self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = False
                 self.scene.event(self.scene.last_position, "kb_ctrl_release")
-        elif keycode == wx.WXK_ALT:
+        if "alt+" in literal:
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
                 self.scene.event(self.scene.last_position, "kb_alt_release")
+        evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:

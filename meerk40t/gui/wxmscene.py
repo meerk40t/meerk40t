@@ -307,12 +307,14 @@ class MeerK40tScenePanel(wx.Panel):
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
         if self.context.bind.trigger(keyvalue):
-            event.Skip()
+            pass
+        event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
         if self.context.bind.untrigger(keyvalue):
-            event.Skip()
+            pass
+        event.Skip()
 
 
 class SceneWindow(MWindow):
