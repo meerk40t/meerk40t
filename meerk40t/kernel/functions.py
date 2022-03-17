@@ -343,5 +343,5 @@ def _cmd_parser(text: str) -> Generator[Tuple[str, str, int, int], None, None]:
         elif kind == "OPT":
             value = match.group()
             for letter in value[1:]:
-                yield kind, letter, start, start + 1
+                yield kind, letter, start, pos
                 start += 1
