@@ -22,6 +22,12 @@ from balormk.pathtools import EulerianFill
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         return [gui.plugin]
+    if lifecycle == "invalidate":
+        try:
+            import numpy
+            import scipy
+        except ImportError:
+            return True
     if lifecycle == "register":
         kernel.register("provider/device/balor", BalorDevice)
     elif lifecycle == "preboot":

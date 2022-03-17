@@ -1,31 +1,31 @@
-from meerk40t.gui.icons import (
-    icons8_computer_support_50,
-    icons8_connected_50,
-    icons8_emergency_stop_button_50,
-    icons8_light_off_50,
-    icons8_light_on_50,
-    icons8_pause_50,
-)
-from meerk40t.kernel import signal_listener
-from .balorcontroller import BalorController
-from .balorconfig import BalorConfiguration
-from .baloroperationproperties import BalorOperationPanel
-
-try:
-    import wx
-except ImportError as e:
-    from meerk40t.core.exceptions import Mk40tImportAbort
-
-    raise Mk40tImportAbort("wxpython")
-
 
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/balor"
-
+    if lifecycle == "invalidate":
+        try:
+            import numpy
+            import scipy
+        except ImportError:
+            return True
+        return not service.has_feature("wx")
     if lifecycle == "added":
+        import wx
+        from .balorcontroller import BalorController
+        from .balorconfig import BalorConfiguration
+        from .baloroperationproperties import BalorOperationPanel
+        from meerk40t.gui.icons import (
+            icons8_computer_support_50,
+            icons8_connected_50,
+            icons8_emergency_stop_button_50,
+            icons8_light_off_50,
+            icons8_light_on_50,
+            icons8_pause_50,
+        )
+
         service.register("window/Controller", BalorController)
         service.register("window/Configuration", BalorConfiguration)
+
         _ = service.kernel.translation
 
         service.register(
