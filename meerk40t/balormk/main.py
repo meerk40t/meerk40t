@@ -1,5 +1,10 @@
 import os
 import sys
+
+import scipy
+import numpy as np
+
+from meerk40t import balor
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import ViewPort
 from meerk40t.kernel import Service
