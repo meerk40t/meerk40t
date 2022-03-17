@@ -13,6 +13,14 @@ class KernelImportAbort(ImportError, KernelError):
     """
 
 
+class CommandSyntaxError(SyntaxError):
+    """
+    Exception to be raised by a registered console command if the parameters provided are erroneous.
+
+    An explanatory message can be provided when this exception is raised.
+    """
+
+
 class CommandMatchRejected(Exception):
     """
     Exception to be raised by a registered console command if the match to the command was erroneous

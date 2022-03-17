@@ -5,7 +5,7 @@ import platform
 import re
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from meerk40t.kernel.exceptions import MalformedCommandRegistration
+from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
 
 _cmd_parse = [
     ("OPT", r"-([a-zA-Z]+)"),
@@ -146,7 +146,7 @@ def console_command(
                         try:
                             value = k["type"](value)
                         except ValueError:
-                            raise SyntaxError(
+                            raise CommandSyntaxError(
                                 "'%s' does not cast to %s"
                                 % (str(value), str(k["type"]))
                             )
@@ -306,7 +306,7 @@ def _cmd_cli_parser(
             elif kind == "OPT":
                 value = match.group()
                 for letter in value[1:]:
-                    yield kind, letter, start, start + 1
+                    yield kind, letter, start, pos
                     start += 1
 
 

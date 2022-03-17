@@ -4,7 +4,7 @@ def plugin(service, lifecycle):
             import serial
         except ImportError:
             return True
-        return service.has_feature("wx")
+        return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/grbl"
     if lifecycle == "added":

@@ -4,6 +4,7 @@ import re
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import Service, Settings
 
 from ..svgelements import (
@@ -173,7 +174,7 @@ class Elemental(Service):
             try:
                 self.load(new_file)
             except AttributeError:
-                raise SyntaxError(_("Loading files was not defined"))
+                raise CommandSyntaxError(_("Loading files was not defined"))
             channel(_("loading..."))
             return "file", new_file
 
@@ -208,7 +209,7 @@ class Elemental(Service):
         )
         def save_materials(command, channel, _, data=None, name=None, **kwargs):
             if name is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.save_persistent_operations(name)
             return "materials", data
 
@@ -221,7 +222,7 @@ class Elemental(Service):
         )
         def load_materials(name=None, **kwargs):
             if name is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.load_persistent_operations(name)
             return "ops", list(self.ops())
 
@@ -234,7 +235,7 @@ class Elemental(Service):
         )
         def load_materials(name=None, **kwargs):
             if name is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             self.clear_persistent_operations(name)
             return "materials", list(self.ops())
 
@@ -483,7 +484,7 @@ class Elemental(Service):
                             elif op == "-":
                                 operand.append(v1 - v2)
                         except TypeError:
-                            raise SyntaxError("Cannot evaluate expression")
+                            raise CommandSyntaxError("Cannot evaluate expression")
                         except ZeroDivisionError:
                             operand.append(float("inf"))
                 except IndexError:
@@ -518,7 +519,7 @@ class Elemental(Service):
                     if operand.pop():
                         subops.append(e)
                 else:
-                    raise SyntaxError(_("Filter parse failed"))
+                    raise CommandSyntaxError(_("Filter parse failed"))
 
             self.set_emphasis(subops)
             return "ops", subops
@@ -1493,7 +1494,7 @@ class Elemental(Service):
                 channel(_("No item selected."))
                 return
             if r is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if x is None:
                 x = "100%"
             if y is None:
@@ -1503,7 +1504,7 @@ class Elemental(Service):
                 width = bounds[2] - bounds[0]
                 height = bounds[3] - bounds[1]
             except Exception:
-                raise SyntaxError
+                raise CommandSyntaxError
             x = self.device.length(x, 0, relative_length=width)
             y = self.device.length(y, 1, relative_length=height)
             # TODO: Check lengths do not accept gibberish.
@@ -1578,14 +1579,14 @@ class Elemental(Service):
                 return
 
             if repeats is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if repeats <= 1:
-                raise SyntaxError(_("repeats should be greater or equal to 2"))
+                raise CommandSyntaxError(_("repeats should be greater or equal to 2"))
             if radius is None:
                 radius = Length(0)
             else:
                 if not radius.is_valid_length:
-                    raise SyntaxError("radius: " + _("This is not a valid length"))
+                    raise CommandSyntaxError("radius: " + _("This is not a valid length"))
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
@@ -1600,7 +1601,7 @@ class Elemental(Service):
             width = bounds[2] - bounds[0]
             radius = radius.value(ppi=1000, relative_length=width)
             if isinstance(radius, Length):
-                raise SyntaxError
+                raise CommandSyntaxError
 
             data_out = list(data)
             if deltaangle is None:
@@ -1688,14 +1689,14 @@ class Elemental(Service):
                 return
 
             if copies is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if copies <= 0:
                 copies = 1
             if radius is None:
                 radius = Length(0)
             else:
                 if not radius.is_valid_length:
-                    raise SyntaxError("radius: " + _("This is not a valid length"))
+                    raise CommandSyntaxError("radius: " + _("This is not a valid length"))
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
@@ -1710,7 +1711,7 @@ class Elemental(Service):
             width = bounds[2] - bounds[0]
             radius = radius.value(ppi=1000, relative_length=width)
             if isinstance(radius, Length):
-                raise SyntaxError
+                raise CommandSyntaxError
 
             data_out = list(data)
             if deltaangle is None:
@@ -1818,16 +1819,16 @@ class Elemental(Service):
             **kwargs,
         ):
             if corners is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if corners <= 2:
                 if cx is None:
                     cx = Length(0)
                 elif not cx.is_valid_length:
-                    raise SyntaxError("cx: " + _("This is not a valid length"))
+                    raise CommandSyntaxError("cx: " + _("This is not a valid length"))
                 if cy is None:
                     cy = Length(0)
                 elif not cy.is_valid_length:
-                    raise SyntaxError("cy: " + _("This is not a valid length"))
+                    raise CommandSyntaxError("cy: " + _("This is not a valid length"))
                 cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 if radius is None:
@@ -1850,20 +1851,20 @@ class Elemental(Service):
 
             else:
                 if cx is None:
-                    raise SyntaxError(
+                    raise CommandSyntaxError(
                         _(
                             "Please provide at least one additional value (which will act as radius then)"
                         )
                     )
                 else:
                     if not cx.is_valid_length:
-                        raise SyntaxError("cx: " + _("This is not a valid length"))
+                        raise CommandSyntaxError("cx: " + _("This is not a valid length"))
 
                 if cy is None:
                     cy = Length(0)
                 else:
                     if not cy.is_valid_length:
-                        raise SyntaxError("cy: " + _("This is not a valid length"))
+                        raise CommandSyntaxError("cy: " + _("This is not a valid length"))
                 # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
                 if radius is None:
                     radius = cx
@@ -1871,7 +1872,7 @@ class Elemental(Service):
                     cy = Length(0)
                 else:
                     if not radius.is_valid_length:
-                        raise SyntaxError("radius: " + _("This is not a valid length"))
+                        raise CommandSyntaxError("radius: " + _("This is not a valid length"))
 
                 cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
@@ -1884,7 +1885,7 @@ class Elemental(Service):
                     or isinstance(cx, Length)
                     or isinstance(cy, Length)
                 ):
-                    raise SyntaxError
+                    raise CommandSyntaxError
 
                 if startangle is None:
                     startangle = Angle.parse("0deg")
@@ -1911,7 +1912,7 @@ class Elemental(Service):
                 else:
                     radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
                     if not radius_inner.is_valid_length:
-                        raise SyntaxError(
+                        raise CommandSyntaxError(
                             "radius_inner: " + _("This is not a valid length")
                         )
                     if isinstance(radius_inner, Length):
@@ -2054,7 +2055,7 @@ class Elemental(Service):
         )
         def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
             if x_pos is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             else:
                 if r_pos is None:
                     r_pos = x_pos
@@ -2084,7 +2085,7 @@ class Elemental(Service):
         )
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
             if ry_pos is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             x_pos = self.device.length(x_pos, 0)
             y_pos = self.device.length(y_pos, 1)
             rx_pos = self.device.length(rx_pos, 0)
@@ -2120,7 +2121,7 @@ class Elemental(Service):
             Draws an svg rectangle with optional rounded corners.
             """
             if x_pos is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             x_pos = self.device.length(x_pos, 0)
             y_pos = self.device.length(y_pos, 1)
             rx_pos = self.device.length(rx, 0)
@@ -2153,7 +2154,7 @@ class Elemental(Service):
             Draws an svg line in the scene.
             """
             if y1 is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             x0 = self.device.length(x0, 0)
             y0 = self.device.length(y0, 1)
             x1 = self.device.length(x1, 0)
@@ -2214,7 +2215,7 @@ class Elemental(Service):
                 element = Polygon(mlist)
                 # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
-                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
+                raise CommandSyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -2250,7 +2251,7 @@ class Elemental(Service):
                 element = Polyline(mlist)
                 element.fill = pcol
             except ValueError:
-                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
+                raise CommandSyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -2283,7 +2284,7 @@ class Elemental(Service):
                 path = Path(path_d)
                 path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
-                raise SyntaxError(_("Not a valid path_d string (try quotes)"))
+                raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
             self.add_element(path)
             if data is None:
@@ -2326,7 +2327,7 @@ class Elemental(Service):
                 return
             else:
                 if not stroke_width.is_valid_length:
-                    raise SyntaxError(
+                    raise CommandSyntaxError(
                         "stroke-width: " + _("This is not a valid length")
                     )
 
@@ -2474,7 +2475,7 @@ class Elemental(Service):
             Draws an outline of the current shape.
             """
             if x_offset is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
@@ -2591,7 +2592,7 @@ class Elemental(Service):
                         if hasattr(element, "node"):
                             element.node.modified()
             except ValueError:
-                raise SyntaxError
+                raise CommandSyntaxError
             return "elements", data
 
         @self.console_argument("scale_x", type=float, help=_("scale_x value"))
@@ -2694,7 +2695,7 @@ class Elemental(Service):
                         if hasattr(e, "node"):
                             e.node.modified()
             except ValueError:
-                raise SyntaxError
+                raise CommandSyntaxError
             return "elements", data
 
         @self.console_argument("tx", type=str, help=_("translate x value"))
@@ -2766,7 +2767,7 @@ class Elemental(Service):
                         if hasattr(e, "node"):
                             e.node.modified()
             except ValueError:
-                raise SyntaxError
+                raise CommandSyntaxError
             return "elements", data
 
         @self.console_command(
@@ -2793,7 +2794,7 @@ class Elemental(Service):
                     if hasattr(e, "node"):
                         e.node.modified()
             except ValueError:
-                raise SyntaxError
+                raise CommandSyntaxError
             return "elements", data
 
         @self.console_argument(
@@ -2814,7 +2815,7 @@ class Elemental(Service):
             command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs
         ):
             if height is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 area = self.selected_area()
                 if area is None:
@@ -2855,7 +2856,7 @@ class Elemental(Service):
                         e.node.modified()
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
-                raise SyntaxError
+                raise CommandSyntaxError
 
         @self.console_argument("sx", type=float, help=_("scale_x value"))
         @self.console_argument("kx", type=float, help=_("skew_x value"))
@@ -2912,7 +2913,7 @@ class Elemental(Service):
                     if hasattr(e, "node"):
                         e.node.modified()
             except ValueError:
-                raise SyntaxError
+                raise CommandSyntaxError
             return
 
         @self.console_command(
@@ -3087,7 +3088,7 @@ class Elemental(Service):
             if data is None:
                 data = [self._tree]
             if drop is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 drag_node = self._tree
                 for n in drag.split("."):
@@ -3097,7 +3098,7 @@ class Elemental(Service):
                     drop_node = drop_node.children[int(n)]
                 drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
-                raise SyntaxError
+                raise CommandSyntaxError
             return "tree", data
 
         @self.console_argument("node", help="Node address for menu")
@@ -3120,7 +3121,7 @@ class Elemental(Service):
                 for n in node.split("."):
                     menu_node = menu_node.children[int(n)]
             except (IndexError, AttributeError, ValueError):
-                raise SyntaxError
+                raise CommandSyntaxError
 
             menu = []
             submenus = {}
@@ -3171,7 +3172,7 @@ class Elemental(Service):
                     channel("Executing %s: %s" % (name, str(cmd)))
                     cmd()
                 except (IndexError, AttributeError, ValueError, TypeError):
-                    raise SyntaxError
+                    raise CommandSyntaxError
             else:
 
                 def m_list(path, menu):
