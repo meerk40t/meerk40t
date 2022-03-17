@@ -13,12 +13,16 @@ class KernelImportAbort(ImportError, KernelError):
     """
 
 
-class CommandSyntaxError(SyntaxError):
+class CommandSyntaxError(Exception):
     """
     Exception to be raised by a registered console command if the parameters provided are erroneous.
 
     An explanatory message can be provided when this exception is raised.
     """
+    @property
+    def msg(self):
+        """Backwards compatibility with SyntaxError undocumented property."""
+        return str(self)
 
 
 class CommandMatchRejected(Exception):

@@ -1921,10 +1921,14 @@ class MeerK40t(MWindow):
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.elements.svg_ppi,
                 )
+            # Note: I cannot see how loading a file can run commands that raise CommandSyntaxError
+            # and this exception is not raised outside commands and
+            # is not raised in svg or dxf file loading code,
+            # however this code is left in just in case.
             except CommandSyntaxError as e:
                 dlg = wx.MessageDialog(
                     None,
-                    str(e.msg),
+                    str(e),
                     _("File is Malformed."),
                     wx.OK | wx.ICON_WARNING,
                 )

@@ -2097,8 +2097,8 @@ class Kernel(Settings):
                     # Don't use command help, which is or should be descriptive - use command syntax instead
                     # If CommandSyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
-                    if e.msg:
-                        message = e.msg
+                    if str(e):
+                        message = str(e)
                     channel(
                         "[red][bold]" + _("Syntax Error (%s): %s") % (command, message)
                     )
