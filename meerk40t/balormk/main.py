@@ -323,7 +323,6 @@ class BalorDevice(Service, ViewPort):
             self.lens_size,
             origin_x=0.5,
             origin_y=0.5,
-            flip_y=True,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -426,7 +425,7 @@ class BalorDevice(Service, ViewPort):
             """
             channel("Creating mark job out of elements.")
             paths = data
-            from balor.Cal import Cal
+            from meerk40t.balor.Cal import Cal
 
             cal = None
             if self.calibration_file is not None:
@@ -1259,7 +1258,7 @@ class BalorDevice(Service, ViewPort):
             polygon_delay=None,
             **kwargs
         ):
-            from balor.Cal import Cal
+            from meerk40t.balor.Cal import Cal
 
             cal = None
             if self.calibration_file is not None:
