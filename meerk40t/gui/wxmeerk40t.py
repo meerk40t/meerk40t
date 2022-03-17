@@ -448,14 +448,15 @@ class wxMeerK40t(wx.App, Module):
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)
+                channel(_("Window opened: {window}").format(window=window))
 
             def window_close(*a, **k):
                 path.close(window_name, *args)
+                channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
                 if context.lookup(window_uri) is not None:
                     kernel.run_later(window_open, None)
-                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError
@@ -463,10 +464,8 @@ class wxMeerK40t(wx.App, Module):
                 if window_class is not None:
                     if window_name in path.opened:
                         kernel.run_later(window_close, None)
-                        channel(_("Window closed: {window}").format(window=window))
                     else:
                         kernel.run_later(window_open, None)
-                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError
