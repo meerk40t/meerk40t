@@ -23,6 +23,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle, Length
 
@@ -135,7 +136,7 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     self.tool_container.set_tool(tool.lower())
             except (KeyError, AttributeError):
-                raise SyntaxError
+                raise CommandSyntaxError
 
         @context.console_command("laserpath_clear", hidden=True)
         def clear_laser_path(**kwargs):
@@ -156,7 +157,7 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("aspect", input_type="scene")
         def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
             if zoom_x is None or zoom_y is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_scale(zoom_x, zoom_y)
             data.request_refresh()
@@ -214,7 +215,7 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("focus", input_type="scene")
         def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
             if height is None:
-                raise SyntaxError("x, y, width, height not specified")
+                raise CommandSyntaxError("x, y, width, height not specified")
             x = self.context.device.length(x, 0)
             y = self.context.device.length(y, 1)
             width = self.context.device.length(width, 0)

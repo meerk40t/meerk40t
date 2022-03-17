@@ -5,6 +5,7 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -485,7 +486,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def egv_import(filename, **kwargs):
             if filename is None:
-                raise SyntaxError
+                raise CommandSyntaxError
 
             def skip(read, byte, count):
                 """Skips forward in the file until we find <count> instances of <byte>"""
@@ -520,7 +521,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def egv_export(channel, _, filename, **kwargs):
             if filename is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 with open(filename, "w") as f:
                     f.write("Document type : LHYMICRO-GL file\n")
@@ -556,7 +557,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         def challenge_egv(command, channel, _, remainder=None, **kwargs):
             if not remainder:
-                raise SyntaxError
+                raise CommandSyntaxError
             else:
                 challenge = bytearray.fromhex(
                     md5(bytes(remainder.upper(), "utf8")).hexdigest()
@@ -696,7 +697,7 @@ class LihuiyuDevice(Service, ViewPort):
             elif transition_type == "switch":
                 command = "jog_switch"
             else:
-                raise SyntaxError
+                raise CommandSyntaxError
             if data is None:
                 data = kernel.device.spooler
             spooler = data

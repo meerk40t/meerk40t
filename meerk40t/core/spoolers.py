@@ -1,6 +1,7 @@
 import time
 from threading import Lock
 
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Length
 
 
@@ -20,7 +21,7 @@ def plugin(kernel, lifecycle):
         ):
             spooler = data
             if op is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             try:
                 for plan_command, command_name, suffix in kernel.find("plan", op):
                     spooler.job(plan_command)
@@ -164,7 +165,7 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             if y is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if force:
                 spooler.job("move_abs", x, y)
             else:
@@ -186,7 +187,7 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             if dy is None:
-                raise SyntaxError
+                raise CommandSyntaxError
             if force:
                 spooler.job("move_rel", dx, dy)
             else:

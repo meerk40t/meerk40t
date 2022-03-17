@@ -15,6 +15,7 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
+from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
@@ -457,7 +458,7 @@ class wxMeerK40t(wx.App, Module):
                     channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
-                    raise SyntaxError
+                    raise CommandSyntaxError
             else:
                 if window_class is not None:
                     if window_name in path.opened:
@@ -468,7 +469,7 @@ class wxMeerK40t(wx.App, Module):
                         channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
-                    raise SyntaxError
+                    raise CommandSyntaxError
 
         @kernel.console_argument("window", type=str, help=_("window to be closed"))
         @kernel.console_command(
@@ -488,7 +489,7 @@ class wxMeerK40t(wx.App, Module):
             except (KeyError, ValueError):
                 channel(_("No such window as %s" % window))
             except IndexError:
-                raise SyntaxError
+                raise CommandSyntaxError
 
         @kernel.console_argument("window", type=str, help=_("window to be reset"))
         @kernel.console_command(
@@ -729,7 +730,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     # Ask to send file.
     git = branch = False
     if " " in APPLICATION_VERSION:
-        ver, exec_type = APPLICATION_VERSION.split(" ", 1)
+        ver, exec_type = APPLICATION_VERSION.rsplit(" ", 1)
         git = exec_type == "git"
 
     if git:
@@ -745,7 +746,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             if ref.startswith(ref_prefix):
                 branch = ref[len(ref_prefix) :].strip("\n")
 
-    if git and branch and branch not in ("main", "tatarize-services"):
+    if git and branch and branch not in ("main", "legacy6", "legacy7"):
         message = _("Meerk40t has encountered a crash.")
         ext_msg = _(
             """It appears that you are running Meerk40t from source managed by Git,
