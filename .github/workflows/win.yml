@@ -38,7 +38,7 @@ jobs:
       env:
         PYTHONHASHSEED: 12506
       run: |
-        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
+        git clone --depth=1 --branch=v4 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all --target-arch=32bit
         cd ..
