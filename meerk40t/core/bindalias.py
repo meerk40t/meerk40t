@@ -124,7 +124,7 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+a": ("element* select",),
     "ctrl+c": ("clipboard copy",),
-    "ctrl+e": ("circle 1in 1in 1in stroke red classify",),
+    "ctrl+e": ("circle 0.5in 0.5in 0.5in stroke red classify",),
     "ctrl+f": (
         "",
         "dialog_fill",
