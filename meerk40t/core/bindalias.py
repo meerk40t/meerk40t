@@ -124,7 +124,7 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+a": ("element* select",),
     "ctrl+c": ("clipboard copy",),
-    "ctrl+e": ("circle 500 500 500",),
+    "ctrl+e": ("circle 1in 1in 1in stroke red classify",),
     "ctrl+f": (
         "",
         "dialog_fill",
@@ -137,7 +137,7 @@ DEFAULT_KEYMAP = {
         "",
         "outline",
     ),
-    "ctrl+r": ("rect 0 0 1000 1000",),
+    "ctrl+r": ("rect 0 0 1in 1in stroke red classify",),
     "ctrl+s": (
         "",
         "dialog_stroke",
