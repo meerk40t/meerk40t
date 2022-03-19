@@ -330,6 +330,7 @@ class DxfLoader:
                 DxfLoader.entity_to_svg(elements, dxf, e, scale, translate_y)
             return
         else:
+            # We need a channel comment here so that this is not silently ignored.
             return  # Might be something unsupported.
 
         if entity.rgb is not None:
