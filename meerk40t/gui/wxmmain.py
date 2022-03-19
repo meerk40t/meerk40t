@@ -242,7 +242,7 @@ class MeerK40t(MWindow):
         gui = self
         root = self.context.root
         root.open("window/Properties", gui)
-        self.context.kernel.activate_instance(node)
+        # self.context.kernel.activate_instance(node)
         #
         # if isinstance(
         #     node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
