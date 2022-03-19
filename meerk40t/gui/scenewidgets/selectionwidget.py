@@ -1,5 +1,6 @@
+from pyparsing import line
 import wx
-
+import math
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
     HITCHAIN_DELEGATE,
@@ -9,6 +10,679 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu
+
+TEXT_COLOR = wx.Colour(0xA0, 0x7F, 0xA0)
+LINE_COLOR = wx.Colour(0x7F, 0x7F, 0x7F)
+
+class BorderWidget(Widget):
+    """
+    Border Widget it tasked with drawing the selection box
+    """
+    def __init__(self, master, scene):
+        self.master = master
+        self.scene = scene
+        self.visible = True
+        self.cursor = None
+        Widget.__init__(self, scene, self.master.left, self.master.top, self.master.right, self.master.bottom)
+        self.update()
+
+    def update(self):
+        self.left = self.master.left
+        self.top = self.master.top
+        self.right = self.master.right
+        self.bottom = self.master.bottom
+
+    def hit(self):
+           return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+      return RESPONSE_CHAIN
+
+    def process_draw(self, gc):
+        """
+        Draw routine for drawing the selection box.
+        """
+
+        context = self.scene.context
+
+        self.update()
+
+        center_x = (self.left + self.right) / 2.0
+        center_y = (self.top + self.bottom) / 2.0
+        gc.SetPen(self.master.selection_pen)
+        gc.StrokeLine(center_x, 0, center_x, self.top)
+        gc.StrokeLine(0, center_y, self.left, center_y)
+        gc.StrokeLine(self.left, self.top, self.right, self.top)
+        gc.StrokeLine(self.right, self.top, self.right, self.bottom)
+        gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
+        gc.StrokeLine(self.left, self.bottom, self.left, self.top)
+        # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
+        # if draw_mode & DRAW_MODE_SELECTION == 0:
+        units = context.units_name
+        try:
+            font = wx.Font(self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+        except TypeError:
+            font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetFont(font, TEXT_COLOR)
+        gc.DrawText(
+            "{distance:.2f}{units}".format(
+                distance=context.device.length(self.top, 1, new_units=units, as_float=True),
+                units=units,
+            ),
+            center_x,
+            self.top / 2.0,
+        )
+        gc.DrawText(
+            "{distance:.2f}{units}".format(
+                distance=context.device.length(self.left, 0, new_units=units, as_float=True),
+                units=units,
+            ),
+            self.left / 2.0,
+            center_y,
+        )
+        gc.DrawText(
+            "{distance:.2f}{units}".format(
+                distance=context.device.length(
+                    (self.bottom - self.top), 1, new_units=units, as_float=True
+                ),
+                units=units,
+            ),
+            self.right,
+            center_y,
+        )
+        gc.DrawText(
+            "{distance:.2f}{units}".format(
+                distance=context.device.length(
+                    (self.right - self.left), 0, new_units=units, as_float=True
+                ),
+                units=units,
+            ),
+            center_x,
+            self.bottom,
+        )
+
+class RotationWidget(Widget):
+    """
+    Rotation Widget it tasked with drawing the rotation box and managing the events
+    dealing with rotating the selected object.
+    """
+
+    def __init__(self, master, scene, index, size, inner=0):
+        self.master = master
+        self.scene = scene
+        self.index = index
+        self.half = size/2
+        self.inner = inner
+        self.visible = True
+        self.cursor = "rotate1"
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.update()
+
+    def update(self):
+        if self.index == 0:
+            pos_x = self.master.left
+            pos_y = self.master.top
+        elif self.index == 1:
+            pos_x = self.master.right
+            pos_y = self.master.top
+        elif self.index == 2:
+            pos_x = self.master.right
+            pos_y = self.master.bottom
+        else:
+            pos_x = self.master.left
+            pos_y = self.master.bottom
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        self.update() # make sure coords are valid
+        gc.SetPen(pen)
+        gc.StrokeLine(self.left, self.top, self.right, self.bottom)
+        gc.StrokeLine(self.right, self.top, self.left, self.bottom)
+
+        cx = (self.left + self.right) / 2
+        cy = (self.top + self.bottom) / 2
+        if self.index==0:
+            signx = +1
+            signy = +1
+        elif self.index==1:
+            signx = -1
+            signy = +1
+        elif self.index==2:
+            signx = +1
+            signy = +1
+        elif self.index==3:
+            signx = +1
+            signy = -1
+
+        # Well, I would have liked to draw a poper arc via dc.DrawArc but the DeviceContext is not available here(?)
+        segment = []
+        # Start arrow
+        x = cx - signx * self.half
+        y = cy
+        #segment += [(x - signx * 1/2 * self.inner, y - signy * 1/2 * self.inner)]
+        #segment += [(x, y)]
+        #segment += [(x + signx * 1/2 * self.inner, y - signy * 1/2 * self.inner)]
+        #segment += [(x, y)]
+
+        # Arc-Segment
+        numpts = 8
+        for k in range(numpts+1):
+            radi = k*math.pi/(2*numpts)
+            sy = math.sin(radi)
+            sx = math.cos(radi)
+            x = cx + signx * self.half
+            y = cx + signy * self.half
+            # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
+            segment += [(x, y)]
+
+        # End Arrow
+        x = cx
+        y = cx + signy * self.half
+        #segment += [(x - signx * 1/2 * self.inner, y - signy * 1/2 * self.inner)]
+        #segment += [(x, y)]
+        #segment += [(x - signx * 1/2 * self.inner, y + signy * 1/2 * self.inner)]
+
+        gc.SetPen(pen)
+        gc.StrokeLines(segment)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class CornerWidget(Widget):
+    """
+    Corner Widget it tasked with drawing the corner box and managing the events
+    dealing with sizing the selected object in both X- and Y-direction
+    """
+
+    def __init__(self, master, scene, index, size):
+        self.master = master
+        self.scene = scene
+        self.index = index
+        self.half = size/2
+        self.allow_x = True
+        self.allow_y = True
+        self.visible = True
+        if (index==0):
+            self.cursor ="size_nw"
+        elif (index==1):
+            self.cursor ="size_ne"
+        elif (index==2):
+            self.cursor ="size_sw"
+        if (index==3):
+            self.cursor ="size_sw"
+
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.update()
+
+    def update(self):
+        if self.index == 0:
+            pos_x = self.master.left
+            pos_y = self.master.top
+        elif self.index == 1:
+            pos_x = self.master.right
+            pos_y = self.master.top
+        elif self.index == 2:
+            pos_x = self.master.right
+            pos_y = self.master.bottom
+        else:
+            pos_x = self.master.left
+            pos_y = self.master.bottom
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        self.update() # make sure coords are valid
+        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        gc.SetBrush(brush)
+        gc.DrawRectangle(self.left, self.top, self.width, self.height)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class SideWidget(Widget):
+    """
+    Side Widget it tasked with drawing the corner box and managing the events
+    dealing with sizing the selected object either in X- or Y-direction
+    """
+
+    def __init__(self, master, scene, index, size):
+        self.master = master
+        self.scene = scene
+        self.index = index
+        self.half = size/2
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.visible = True
+        if index==0 or index ==2:
+            self.allow_x = True
+            self.allow_y = False
+        else:
+            self.allow_x = False
+            self.allow_y = True
+        if (index==0):
+            self.cursor ="size_w"
+        elif (index==1):
+            self.cursor ="size_n"
+        elif (index==2):
+            self.cursor ="size_e"
+        if (index==3):
+            self.cursor ="size_s"
+        self.update()
+
+    def update(self):
+        if self.index == 0:
+            pos_x = (self.master.left + self.master.right)/2
+            pos_y = self.master.top
+        elif self.index == 1:
+            pos_x = self.master.right
+            pos_y = (self.master.bottom + self.master.top) / 2
+        elif self.index == 2:
+            pos_x = (self.master.left + self.master.right)/2
+            pos_y = self.master.bottom
+        else:
+            pos_x = self.master.left
+            pos_y = (self.master.bottom + self.master.top) / 2
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        self.update() # make sure coords are valid
+        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        gc.SetBrush(brush)
+        gc.DrawRectangle(self.left, self.top, self.width, self.height)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class SkewWidget(Widget):
+    """
+    Skew Widget it tasked with drawing the skew box and managing the events
+    dealing with skewing the selected object either in X- or Y-direction
+    """
+
+    def __init__(self, master, scene, is_x, size):
+        self.master = master
+        self.scene = scene
+        self.is_x = is_x
+        self.half = size/2
+        self.visible = True
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.cursor = "skew_x" if is_x else "skew_y"
+        self.update()
+
+    def update(self):
+        if self.is_x:
+            pos_x = self.master.left + 3/4 * (self.master.right - self.master.left)
+            pos_y = self.master.bottom
+        else:
+            pos_x = self.master.right
+            pos_y = self.master.top + 1/4 * (self.master.bottom - self.master.top)
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        self.update() # make sure coords are valid
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        gc.SetBrush(brush)
+        gc.DrawRectangle(self.left, self.top, self.width, self.height)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class MoveWidget(Widget):
+    """
+    Move Widget it tasked with drawing the skew box and managing the events
+    dealing with moving the selected object
+    """
+
+    def __init__(self, master, scene, size, drawsize):
+        self.master = master
+        self.scene = scene
+        self.half = size/2
+        self.drawhalf = drawsize/2
+        self.visible = True
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.cursor = "sizing"
+        self.update()
+
+    def update(self):
+        pos_x = (self.master.right + self.master.left) / 2
+        pos_y = (self.master.bottom + self.master.top) / 2
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        self.update() # make sure coords are valid
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        gc.SetBrush(brush)
+        gc.DrawRectangle(self.left+self.half-self.drawhalf, self.top+self.half-self.drawhalf, 2 * self.drawhalf, 2 * self.drawhalf)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class MoveRotationOriginWidget(Widget):
+    """
+    Move Rotation Origin Widget it tasked with drawing the rotation center indicator and managing the events
+    dealing with moving the rotation center for the selected object
+    """
+
+    def __init__(self, master, scene, size):
+        self.master = master
+        self.scene = scene
+        self.half = size/2
+        self.visible = True
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.cursor = "rotmove"
+        self.update()
+
+    def update(self):
+        pos_x = (self.master.right + self.master.left) / 2
+        pos_y = (self.master.bottom + self.master.top) / 2
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if not self.visible:
+            return
+
+        self.update() # make sure coords are valid
+        pen = wx.Pen()
+        pen.SetColour(LINE_COLOR)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        gc.SetBrush(wx.TRANSPARENT_BRUSH)
+        gc.StrokeLine(
+            self.left,
+            self.top + self.height / 2.0,
+            self.right,
+            self.bottom - self.height / 2.0,
+        )
+        gc.StrokeLine(
+            self.left + self.width / 2.0,
+            self.top,
+            self.right - self.width / 2.0,
+            self.bottom,
+        )
+        gc.DrawEllipse(self.left, self.top, self.width, self.height)
+
+    def hit(self):
+        if self.visible:
+            # todo
+            return HITCHAIN_DELEGATE
+        else:
+            return HITCHAIN_DELEGATE
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        if self.visible:
+            if event_type == "leftdown":
+                return RESPONSE_CONSUME
+            elif event_type == "move":
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
+        else:
+            return RESPONSE_CHAIN
+
+class SelectionWidgetNew(Widget):
+    """
+    Selection Widget it tasked with drawing the selection box and managing the events
+    dealing with moving, resizing and altering the selected object.
+    """
+    def __init__(self, scene):
+        Widget.__init__(self, scene, all=False)
+        self.cursor = None
+        self.uniform = True
+        self.matrix = None
+        self.selection_pen = wx.Pen()
+        self.selection_pen.SetColour(LINE_COLOR)
+        self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.selection_font = wx.Font()
+        self.line_width = 0
+        self.font_size = 0
+
+
+    def hit(self):
+        elements = self.scene.context.elements
+        try:
+            bounds = elements.selected_area()
+        except AttributeError:
+            bounds = None
+        if bounds is not None:
+            self.left = bounds[0]
+            self.top = bounds[1]
+            self.right = bounds[2]
+            self.bottom = bounds[3]
+            self.clear()
+            return HITCHAIN_HIT
+        else:
+            self.left = float("inf")
+            self.top = float("inf")
+            self.right = -float("inf")
+            self.bottom = -float("inf")
+            self.clear()
+            return HITCHAIN_DELEGATE
+
+    def update(self):
+        elements = self.scene.context.elements
+        try:
+            bounds = elements.selected_area()
+        except AttributeError:
+            bounds = None
+        if bounds is not None:
+            self.left = bounds[0]
+            self.top = bounds[1]
+            self.right = bounds[2]
+            self.bottom = bounds[3]
+        else:
+            self.left = float("inf")
+            self.top = float("inf")
+            self.right = -float("inf")
+            self.bottom = -float("inf")
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+      return RESPONSE_CHAIN
+
+    def process_draw(self, gc):
+        """
+        Draw routine for drawing the selection box.
+        """
+        self.matrix = self.parent.matrix
+        context = self.scene.context
+        draw_mode = context.draw_mode
+        if draw_mode & DRAW_MODE_SELECTION != 0:
+            print ("Wrong Drawmode")
+            return
+        elements = context.elements
+        bounds = elements.selected_area()
+        if bounds is not None:
+            self.left = bounds[0]
+            self.top = bounds[1]
+            self.right = bounds[2]
+            self.bottom = bounds[3]
+            print ("Draw (%.1f, %.1f, %.1f, %.1f)" % ( self.left, self.top, self.right, self.bottom))
+            self.matrix = self.parent.matrix
+            try:
+                self.line_width = 2.0 / self.matrix.value_scale_x()
+                self.font_size = 14.0 / self.matrix.value_scale_x()
+            except ZeroDivisionError:
+                self.matrix.reset()
+                return
+            # This pen will be used by all subchildren
+            try:
+                self.selection_pen.SetWidth(self.line_width)
+            except TypeError:
+                self.selection_pen.SetWidth(int(self.line_width))
+            if self.font_size < 1.0:
+                self.font_size = 1.0  # Mac does not allow values lower than 1.
+
+            try:
+                self.selection_font = wx.Font(self.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            except TypeError:
+                self.selection_font = wx.Font(int(self.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(self.selection_font, TEXT_COLOR)
+            gc.SetPen(self.selection_pen)
+            print("Linewidth = %.1f, Fontsize=%.1f" % (self.line_width, self.font_size))
+            gc.DrawText("Live" ,  -50 , -20)
+            msize = 5 * self.line_width
+            rotsize = 3 * msize
+
+            center_x = (self.left + self.right) / 2.0
+            center_y = (self.top + self.bottom) / 2.0
+            gc.StrokeLine(center_x, 0, center_x, self.top)
+            gc.StrokeLine(0, center_y, self.left, center_y)
+            gc.StrokeLine(self.left, self.top, self.right, self.top)
+            gc.StrokeLine(self.right, self.top, self.right, self.bottom)
+            gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
+            gc.StrokeLine(self.left, self.bottom, self.left, self.top)
+
+            # Add all subwidgets in Inverse Order
+            self.add_widget(-1, SkewWidget(master=self, scene=self.scene, is_x=False, size=2/3*msize))
+            self.add_widget(-1, SkewWidget(master=self, scene=self.scene, is_x=True, size=2/3*msize))
+            for i in range(4):
+                self.add_widget(
+                    -1, RotationWidget(master=self, scene=self.scene, index=i, size=rotsize, inner=msize)
+                )
+            for i in range(4):
+                self.add_widget(
+                    -1, CornerWidget(master=self, scene=self.scene, index=i, size=msize)
+                )
+            for i in range(4):
+                self.add_widget(-1, SideWidget(master=self, scene=self.scene, index=i, size=msize))
+            self.add_widget(-1, MoveRotationOriginWidget(master=self, scene=self.scene, size=msize))
+            self.add_widget(-1, MoveWidget(master=self, scene=self.scene, size=2*msize, drawsize=msize))
+            self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
+
+
+
+        else:
+            self.clear()
 
 
 class SelectionWidget(Widget):
@@ -553,6 +1227,7 @@ class SelectionWidget(Widget):
         Draw routine for drawing the selection box.
         """
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
+            self.clear()
             return
         context = self.scene.context
         draw_mode = context.draw_mode
@@ -561,72 +1236,49 @@ class SelectionWidget(Widget):
         matrix = self.parent.matrix
         if bounds is not None:
             try:
-                linewidth = 2.0 / matrix.value_scale_x()
-                font_size = 14.0 / matrix.value_scale_x()
+                self.line_width = 2.0 / matrix.value_scale_x()
+                self.font_size = 14.0 / matrix.value_scale_x()
             except ZeroDivisionError:
                 matrix.reset()
                 return
             try:
-                self.selection_pen.SetWidth(linewidth)
+                self.selection_pen.SetWidth(self.line_width)
             except TypeError:
-                self.selection_pen.SetWidth(int(linewidth))
-            if font_size < 1.0:
-                font_size = 1.0  # Mac does not allow values lower than 1.
+                self.selection_pen.SetWidth(int(self.line_width))
+            if self.font_size < 1.0:
+                self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
-                font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(self.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             except TypeError:
-                font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
+                font = wx.Font(int(self.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(font, TEXT_COLOR)
             gc.SetPen(self.selection_pen)
-            x0, y0, x1, y1 = bounds
-            center_x = (x0 + x1) / 2.0
-            center_y = (y0 + y1) / 2.0
-            gc.StrokeLine(center_x, 0, center_x, y0)
-            gc.StrokeLine(0, center_y, x0, center_y)
-            gc.StrokeLine(x0, y0, x1, y0)
-            gc.StrokeLine(x1, y0, x1, y1)
-            gc.StrokeLine(x1, y1, x0, y1)
-            gc.StrokeLine(x0, y1, x0, y0)
-            if draw_mode & DRAW_MODE_SELECTION == 0:
-                p = self.scene.context
-                units = p.units_name
-                # scale(%.13f,%.13f)
-                gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(y0, 1, new_units=units, as_float=True),
-                        units=units,
-                    ),
-                    center_x,
-                    y0 / 2.0,
+            self.left = bounds[0]
+            self.top = bounds[1]
+            self.right = bounds[2]
+            self.bottom = bounds[3]
+
+            # Add all subwidgets in Inverse Order
+            msize = 5 * self.line_width
+            rotsize = 3 * msize
+            self.add_widget(-1, SkewWidget(master=self, scene=self.scene, is_x=False, size=2/3*msize))
+            self.add_widget(-1, SkewWidget(master=self, scene=self.scene, is_x=True, size=2/3*msize))
+            for i in range(4):
+                self.add_widget(
+                    -1, RotationWidget(master=self, scene=self.scene, index=i, size=rotsize, inner=msize)
                 )
-                gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(x0, 0, new_units=units, as_float=True),
-                        units=units,
-                    ),
-                    x0 / 2.0,
-                    center_y,
+            for i in range(4):
+                self.add_widget(
+                    -1, CornerWidget(master=self, scene=self.scene, index=i, size=msize)
                 )
-                gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(
-                            (y1 - y0), 1, new_units=units, as_float=True
-                        ),
-                        units=units,
-                    ),
-                    x1,
-                    center_y,
-                )
-                gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(
-                            (x1 - x0), 0, new_units=units, as_float=True
-                        ),
-                        units=units,
-                    ),
-                    center_x,
-                    y1,
-                )
+            for i in range(4):
+                self.add_widget(-1, SideWidget(master=self, scene=self.scene, index=i, size=msize))
+            self.add_widget(-1, MoveRotationOriginWidget(master=self, scene=self.scene, size=msize))
+            self.add_widget(-1, MoveWidget(master=self, scene=self.scene, size=2*msize, drawsize=msize))
+            self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
+
+        else:
+            self.clear()
 
     def create_duplicate(self):
         from copy import copy
