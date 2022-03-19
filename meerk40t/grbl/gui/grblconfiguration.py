@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertiespanel import PropertiesPanel
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 
@@ -25,13 +25,13 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        self.panel_main = PropertiesPanel(
+        self.panel_main = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-connection"
         )
-        self.panel_global = PropertiesPanel(
+        self.panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-global"
         )
-        self.panel_dim = PropertiesPanel(
+        self.panel_dim = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="bed_dim"
         )
         self.notebook_main.AddPage(self.panel_main, _("GRBL-connection"))

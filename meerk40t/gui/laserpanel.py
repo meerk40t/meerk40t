@@ -11,7 +11,7 @@ from meerk40t.gui.icons import (
     icons8_pause_50,
     icons8_pentagon_50,
 )
-from meerk40t.gui.propertiespanel import PropertiesPanel
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -20,7 +20,7 @@ _ = wx.GetTranslation
 
 def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
-    optimize_panel = PropertiesPanel(
+    optimize_panel = ChoicePropertyPanel(
         window, wx.ID_ANY, context=context, choices="optimize"
     )
     notebook = wx.aui.AuiNotebook(
