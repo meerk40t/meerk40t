@@ -263,8 +263,8 @@ class PlannerPanel(wx.Panel):
             return
         cutplan = self.context.planner.default_plan
         obj = cutplan.plan[node_index]
-        if isinstance(obj, (RasterOpNode, CutOpNode, EngraveOpNode, ImageOpNode)):
-            self.context.open("window/OperationProperty", self, node=obj)
+        self.context.open("window/Properties", self)
+        self.context.kernel.activate_instance(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

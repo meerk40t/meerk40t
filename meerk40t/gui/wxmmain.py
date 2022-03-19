@@ -244,7 +244,8 @@ class MeerK40t(MWindow):
         if isinstance(
             node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
         ):
-            root.open("window/OperationProperty", gui, node=node)
+            root.open("window/Properties", gui)
+            self.context.kernel.activate_instance(node)
             return
         if isinstance(node, ConsoleOperation):
             root.open("window/ConsoleProperty", gui, node=node)

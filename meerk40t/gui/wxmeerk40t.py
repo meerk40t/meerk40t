@@ -34,7 +34,7 @@ from .icons import (
 from .imageproperty import ImageProperty
 from .keymap import Keymap
 from .notes import Notes
-from .operationproperty import OperationProperty
+from .propertywindow import PropertyWindow
 from .operationpropertymain import ParameterPanel
 from .pathproperty import PathProperty
 from .preferences import Preferences
@@ -296,13 +296,20 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
+
+        kernel.register("window/Properties", PropertyWindow)
+        kernel.register("property/RasterOpNode/OpMain", ParameterPanel)
+        kernel.register("property/CutOpNode/OpMain", ParameterPanel)
+        kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
+        kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
+        kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
+
         kernel.register("window/ConsoleProperty", ConsoleProperty)
         kernel.register("window/PathProperty", PathProperty)
         kernel.register("window/TextProperty", TextProperty)
         kernel.register("window/ImageProperty", ImageProperty)
-        kernel.register("window/OperationProperty", OperationProperty)
-        kernel.register("operationproperty/Main", ParameterPanel)
         kernel.register("window/GroupProperty", GroupProperty)
+
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
