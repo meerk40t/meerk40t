@@ -492,14 +492,20 @@ class Scene(Module, Job):
             new_cursor = wx.CURSOR_SIZENWSE
         elif cursor in ("size_sw", "size_ne"):
             new_cursor = wx.CURSOR_SIZENESW
-        elif cursor in ("size_n", "size_s"):
+        elif cursor in ("size_n", "size_s", "skew_y"):
             new_cursor = wx.CURSOR_SIZENS
-        elif cursor in ("size_e", "size_w"):
+        elif cursor in ("size_e", "size_w", "skew_x"):
             new_cursor = wx.CURSOR_SIZEWE
         elif cursor == "arrow":
             new_cursor = wx.CURSOR_ARROW
         elif cursor == "cross":
             new_cursor = wx.CROSS_CURSOR
+        elif cursor == "rotate1":
+            new_cursor = wx.CURSOR_CROSS
+        elif cursor == "rotate2":
+            new_cursor = wx.CURSOR_CROSS
+        elif cursor == "rotmove":
+            new_cursor = wx.CURSOR_HAND
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")
