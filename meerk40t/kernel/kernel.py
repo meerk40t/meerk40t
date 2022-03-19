@@ -2149,26 +2149,6 @@ class Kernel(Settings):
             if isinstance(obj, Context):
                 obj.setting(c["type"], c["attr"], c["default"])
 
-    # ==========
-    # ACTIVE INSTANCES
-    # ==========
-
-    def activate_instance(self, object):
-        if "active/instances" in self._registered:
-            others = list(self._registered["active/instances"])
-            others.append(object)
-            self.register("active/instances", others)  # Reregister to trigger lookup change
-        else:
-            self.register("active/instances", [object])
-
-    def deactivate_instance(self, object):
-        if "active/instances" in self._registered:
-            others = self._registered["active/instances"]
-            for i in range(len(others)):
-                if others[i] is object:
-                    del others[i]
-                    self.register("active/instances", others)  # Reregister to trigger lookup change
-                    return
 
     # ==========
     # KERNEL CONSOLE COMMANDS
