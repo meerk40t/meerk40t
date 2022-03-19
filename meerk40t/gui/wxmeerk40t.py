@@ -21,26 +21,26 @@ from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .consoleproperty import ConsoleProperty
+from .propertypanels.consoleproperty import ConsoleProperty
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .groupproperties import GroupProperty
+from .propertypanels.groupproperties import GroupProperty
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .imageproperty import ImageProperty
+from .propertypanels.imageproperty import ImageProperty
 from .keymap import Keymap
 from .notes import Notes
-from .propertywindow import PropertyWindow
-from .operationpropertymain import ParameterPanel
-from .pathproperty import PathProperty
+from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.operationpropertymain import ParameterPanel
+from .propertypanels.pathproperty import PathProperty
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .simulation import Simulation
-from .textproperty import TextProperty
+from .propertypanels.textproperty import TextProperty
 from .wxmmain import MeerK40t
 
 """
