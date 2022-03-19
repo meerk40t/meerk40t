@@ -31,15 +31,14 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
-
         for p in self.panel_instances:
             try:
                 p.pane_hide()
             except AttributeError:
                 pass
             self.remove_module_delegate(p)
-        self.notebook_main.DeleteAllPages()
         self.panel_instances.clear()
+        self.notebook_main.DeleteAllPages()
         nodes = list(self.context.elements.flat(selected=True, cascade=False))
         if nodes is None:
             return
@@ -70,12 +69,12 @@ class PropertyWindow(MWindow):
                 pass
             self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
-        for p in self.panel_instances:
             try:
-                p.pane_show()
+                page_panel.pane_show()
             except AttributeError:
                 pass
-            p.Layout()
+            page_panel.Layout()
+
         self.Layout()
 
     @staticmethod
@@ -99,3 +98,4 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 pass
             self.remove_module_delegate(p)
+        self.panel_instances.clear()
