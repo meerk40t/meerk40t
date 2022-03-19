@@ -32,7 +32,10 @@ class PropertyWindow(MWindow):
     @lookup_listener("active/instances")
     def on_lookup_change(self, instance_values, old_panels):
         for p in self.panel_instances:
-            p.pane_hide()
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
             self.remove_module_delegate(p)
         self.panel_instances.clear()
         if instance_values is None:
@@ -54,11 +57,14 @@ class PropertyWindow(MWindow):
             page_panel = panel(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
-            self.notebook_main.AddPage(page_panel, panel.name)
+            self.notebook_main.AddPage(page_panel, instance.__class__.__name__)
             self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
         for p in self.panel_instances:
-            p.pane_show()
+            try:
+                p.pane_show()
+            except AttributeError:
+                pass
             p.Layout()
         self.Layout()
 
@@ -75,3 +81,11 @@ class PropertyWindow(MWindow):
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },
         )
+
+    def window_close(self):
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            # self.remove_module_delegate(p)
