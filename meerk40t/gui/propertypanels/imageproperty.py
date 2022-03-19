@@ -55,7 +55,10 @@ class ImagePropertyPanel(wx.Panel):
 
         self.set_widgets()
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        if node is not None:
+            self.element_node = node
+            self.element = node.object
         try:
             self.spin_step_size.SetValue(self.element.values["raster_step"])
             self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
@@ -201,9 +204,7 @@ class ImageProperty(MWindow):
         self.SetTitle(_("Image Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element_node = node
-        self.panel.element = node.object
-        self.panel.set_widgets()
+        self.panel.set_widgets(node)
 
     def window_preserve(self):
         return False

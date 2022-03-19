@@ -79,7 +79,10 @@ class PathPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        if node is not None:
+            self.element = node.object
+            self.element_node = node
         try:
             if self.element.stroke is not None and self.element.stroke != "none":
                 color = wx.Colour(swizzlecolor(self.element.stroke))
@@ -214,9 +217,7 @@ class PathProperty(MWindow):
         self.SetTitle(_("Path Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element = node.object
-        self.panel.element_node = node
-        self.panel.set_widgets()
+        self.panel.set_widgets(node)
 
     def window_preserve(self):
         return False

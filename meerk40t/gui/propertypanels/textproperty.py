@@ -89,12 +89,15 @@ class TextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
     def pane_show(self):
-        self.set_widgets()
+        self.set_widgets(self.element_node)
 
     def pane_hide(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        if node is not None:
+            self.element = node.object
+            self.element_node = node
         try:
             if self.element.text is not None:
                 self.text_text.SetValue(self.element.text)
@@ -274,9 +277,7 @@ class TextProperty(MWindow):
         self.SetTitle(_("Text Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element_node = node
-        self.panel.element = node.object
-        self.panel.set_widgets()
+        self.panel.set_widgets(node)
 
     def window_open(self):
         self.panel.pane_show()
