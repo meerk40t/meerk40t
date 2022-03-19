@@ -7,12 +7,18 @@ def plugin(kernel, lifecycle):
         kernel._gui = True
 
     elif lifecycle == "cli":
+        kernel._gui = not kernel.args.no_gui
+        kernel._hard_gui = not kernel.args.gui_suppress
         try:
             import wx
         except ImportError:
+            kernel._gui = False
+
+            @kernel.console_command("gui", help=_("starts the gui"))
+            def gui_start(channel=None, **kwargs):
+                channel("wxPython is not installed. No graphical user interface possible.")
+
             return
-        kernel._gui = not kernel.args.no_gui
-        kernel._hard_gui = not kernel.args.gui_suppress
         if kernel._hard_gui:
             kernel.set_feature("wx")
 
@@ -30,7 +36,7 @@ def plugin(kernel, lifecycle):
         try:
             import wx
         except ImportError:
-            print("wxMeerK40t plugin could not load because wx is not installed.")
+            print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
         return False
     if not kernel.has_feature("wx"):
