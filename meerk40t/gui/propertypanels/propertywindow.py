@@ -3,7 +3,7 @@ from wx import aui
 
 from ..icons import icons8_computer_support_50
 from ..mwindow import MWindow
-from ...kernel import lookup_listener
+from ...kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -29,32 +29,33 @@ class PropertyWindow(MWindow):
         )
         self.Layout()
 
-    @lookup_listener("active/instances")
-    def on_lookup_change(self, instance_values, old_panels):
+    @signal_listener("selected")
+    def on_selected(self, origin, *args):
+
         for p in self.panel_instances:
             try:
                 p.pane_hide()
             except AttributeError:
                 pass
-            self.remove_module_delegate(p)
+            # self.remove_module_delegate(p)
+        self.notebook_main.DeleteAllPages()
         self.panel_instances.clear()
-        if instance_values is None:
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        if nodes is None:
             return
-        properties = []
-        for instance_value in instance_values:
-            instances, _, _ = instance_value
-            for instance in instances:
-                for q in self.context.lookup_all("property/{class_name}/.*".format(class_name=instance.__class__.__name__)):
-                    properties.append((q, instance))
+        pages_to_instance = []
+        for node in nodes:
+            for property_sheet in self.context.lookup_all("property/{class_name}/.*".format(class_name=node.__class__.__name__)):
+                pages_to_instance.append((property_sheet, node))
 
         def sort_priority(prop):
-            elem, inst = prop
-            return getattr(elem, "priority") if hasattr(elem, "priority") else 0
+            prop_sheet, node = prop
+            return getattr(prop_sheet, "priority") if hasattr(prop_sheet, "priority") else 0
 
-        properties.sort(key=sort_priority)
+        pages_to_instance.sort(key=sort_priority)
 
-        for panel, instance in properties:
-            page_panel = panel(
+        for prop_sheet, instance in pages_to_instance:
+            page_panel = prop_sheet(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
             self.notebook_main.AddPage(page_panel, instance.__class__.__name__)
