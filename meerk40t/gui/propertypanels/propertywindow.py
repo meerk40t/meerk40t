@@ -59,7 +59,11 @@ class PropertyWindow(MWindow):
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
             self.notebook_main.AddPage(page_panel, instance.__class__.__name__)
-            self.add_module_delegate(page_panel)
+            try:
+                page_panel.set_widgets(instance)
+            except AttributeError:
+                pass
+            # self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
         for p in self.panel_instances:
             try:
