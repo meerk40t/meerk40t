@@ -2,8 +2,7 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
-from xml.etree.cElementTree import Element, ElementTree, SubElement
-from xml.etree.ElementTree import ParseError
+from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
 
