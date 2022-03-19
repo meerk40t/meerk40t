@@ -3,17 +3,17 @@ def plugin(kernel, lifecycle):
     kernel_root = kernel.root
 
     if lifecycle == "precli":
+        kernel._hard_gui = True
         kernel._gui = True
+
     elif lifecycle == "cli":
         try:
             import wx
         except ImportError:
             return
-        try:
-            kernel._gui = not kernel.args.no_gui
-        except AttributeError:
-            pass
-        if kernel._gui:
+        kernel._gui = not kernel.args.no_gui
+        kernel._hard_gui = not kernel.args.gui_suppress
+        if kernel._hard_gui:
             kernel.set_feature("wx")
 
             @kernel.console_command("gui", help=_("starts the gui"))
@@ -22,7 +22,11 @@ def plugin(kernel, lifecycle):
                 meerk40tgui = kernel_root.open("module/wxMeerK40t")
                 kernel.console("window open MeerK40t\n")
                 meerk40tgui.MainLoop()
+        else:
+            kernel._gui = False
     if lifecycle == "invalidate":
+        if not kernel._hard_gui:
+            return True
         try:
             import wx
         except ImportError:
