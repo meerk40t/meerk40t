@@ -7,6 +7,7 @@ from math import cos, gcd, pi, sin, tau
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from meerk40t.tools.rastergrouping import group_overlapped_rasters
 
 from ..svgelements import (
     PATTERN_FLOAT,
@@ -5923,27 +5924,7 @@ class Elemental(Service):
 
         # This is a list of groups, where each group is a list of tuples, each an element and its bbox.
         # Initial list has a separate group for each element.
-        raster_groups = [[e] for e in raster_elements]
-        raster_elements = [e[0] for e in raster_elements]
-        # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
-
-        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
-        for i in range(len(raster_groups) - 2, -1, -1):
-            g1 = raster_groups[i]
-            for j in range(len(raster_groups) - 1, i, -1):
-                g2 = raster_groups[j]
-                if self.group_elements_overlap(g1, g2):
-                    # print("g1", list(map(lambda e: e[0].id,g1)))
-                    # print("g2", list(map(lambda e: e[0].id,g2)))
-
-                    # if elements in the group overlap
-                    # add the element tuples from group 2 to group 1
-                    g1.extend(g2)
-                    # and remove group 2
-                    del raster_groups[j]
-
-                    # print("g1+g2", list(map(lambda e: e[0].id,g1)))
-                    # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
+        raster_groups = group_overlapped_rasters([(e, e.bbox()) for e in raster_elements])
 
         debug(
             "classify: condensed to {n} raster groups".format(
