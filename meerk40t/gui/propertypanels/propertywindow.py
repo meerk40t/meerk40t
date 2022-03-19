@@ -58,7 +58,12 @@ class PropertyWindow(MWindow):
             page_panel = prop_sheet(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
-            self.notebook_main.AddPage(page_panel, instance.__class__.__name__)
+            try:
+                name = prop_sheet.name
+            except AttributeError:
+                name = instance.__class__.__name__
+
+            self.notebook_main.AddPage(page_panel, name)
             try:
                 page_panel.set_widgets(instance)
             except AttributeError:
