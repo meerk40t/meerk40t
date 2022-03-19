@@ -1,19 +1,27 @@
-GUI_START = True
-
-
 def plugin(kernel, lifecycle):
     _ = kernel.translation
     kernel_root = kernel.root
 
-    # pylint: disable=global-statement
-    global GUI_START
-
-    if lifecycle == "cli":
+    if lifecycle == "precli":
+        kernel._gui = True
+    elif lifecycle == "cli":
         try:
             import wx
         except ImportError:
             return
-        kernel.set_feature("wx")
+        try:
+            kernel._gui = not kernel.args.no_gui
+        except AttributeError:
+            pass
+        if kernel._gui:
+            kernel.set_feature("wx")
+
+            @kernel.console_command("gui", help=_("starts the gui"))
+            def gui_start(**kwargs):
+                kernel.console_command_remove("gui")
+                meerk40tgui = kernel_root.open("module/wxMeerK40t")
+                kernel.console("window open MeerK40t\n")
+                meerk40tgui.MainLoop()
     if lifecycle == "invalidate":
         try:
             import wx
@@ -21,16 +29,6 @@ def plugin(kernel, lifecycle):
             print("wxMeerK40t plugin could not load because wx is not installed.")
             return True
         return False
-    if lifecycle == "init" and kernel.args.no_gui:
-        GUI_START = False
-
-        @kernel.console_command("gui", help=_("starts the gui"))
-        def gui_start(**kwargs):
-            kernel.console_command_remove("gui")
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            meerk40tgui.MainLoop()
-
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
@@ -179,7 +177,7 @@ def plugin(kernel, lifecycle):
 
         kernel_root.planner.register("plan/interrupt", interrupt)
 
-        if GUI_START:
+        if kernel._gui:
 
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
