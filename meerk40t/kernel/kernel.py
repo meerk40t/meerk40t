@@ -446,6 +446,14 @@ class Kernel(Settings):
         self.delegates.append((delegate, lifecycle_object))
         self.update_linked_lifecycles(lifecycle_object)
 
+    def remove_delegate(self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]):
+        for i in range(len(self.delegates) - 1, -1, -1):
+            delegate_value, ref = self.delegates[i]
+            if delegate_value is delegate and ref is lifecycle_object:
+                self._signal_detach(delegate)
+                self._lookup_detach(delegate)
+                del self.delegates[i]
+
     # ==========
     # LIFECYCLE MANAGEMENT
     # ==========

@@ -37,7 +37,7 @@ class PropertyWindow(MWindow):
                 p.pane_hide()
             except AttributeError:
                 pass
-            # self.remove_module_delegate(p)
+            self.remove_module_delegate(p)
         self.notebook_main.DeleteAllPages()
         self.panel_instances.clear()
         nodes = list(self.context.elements.flat(selected=True, cascade=False))
@@ -63,7 +63,7 @@ class PropertyWindow(MWindow):
                 page_panel.set_widgets(instance)
             except AttributeError:
                 pass
-            # self.add_module_delegate(page_panel)
+            self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
         for p in self.panel_instances:
             try:
@@ -93,4 +93,4 @@ class PropertyWindow(MWindow):
                 p.pane_hide()
             except AttributeError:
                 pass
-            # self.remove_module_delegate(p)
+            self.remove_module_delegate(p)

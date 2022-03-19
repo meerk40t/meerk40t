@@ -423,7 +423,7 @@ class PanelStartPreference(wx.Panel):
     def pane_show(self):
         pass
 
-    @signal_listener("element_property_reload")
+    # @signal_listener("element_property_reload")
     def on_element_property_reload(self, *args):
         self._toggle_sliders()
         self.raster_lines = None
