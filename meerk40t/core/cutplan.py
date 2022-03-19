@@ -45,7 +45,7 @@ class CutPlan:
         self.original = list()
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
-        self.setting(bool, "opt_rasters_split", True)
+        self.context.setting(bool, "opt_rasters_split", True)
 
     def __str__(self):
         parts = list()
@@ -388,7 +388,7 @@ class CutPlan:
 
     def make_image_from_raster(self, nodes, step=1):
         make_raster = self.context.lookup("render-op/make_raster")
-        objs = [n.object for s in nodes]
+        objs = [n.object for n in nodes]
         bounds = Group.union_bbox(objs, with_stroke=True)
         if bounds is None:
             return None
@@ -445,20 +445,6 @@ class CutPlan:
                 op.children.clear()
                 for image in images:
                     op.add(image, type="opnode")
-
-            # if op.type == "op raster":
-                # if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                    # continue
-                # image_element = self._make_image_for_op(op)
-                # if image_element is None:
-                    # continue
-                # if image_element.image_width == 1 and image_element.image_height == 1:
-                    TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                     around because the renderer is what sets the size of the text. If the size hasn't already
-                     been set, the initial bounds are wrong.
-                    # image_element = self._make_image_for_op(op)
-                # op.children.clear()
-                # op.add(image_element, type="ref elem")
 
     def actualize(self):
         """
