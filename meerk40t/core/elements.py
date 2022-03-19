@@ -3808,7 +3808,7 @@ class Elemental(Service):
         # ==========
         # REMOVE ELEMENTS
         # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
             _("Remove %s elements") % "{ecount}",
