@@ -1937,7 +1937,7 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                self("scene focus -4% -4% 104% 104%\n")
+                self.context("scene focus -4% -4% 104% 104%\n")
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
