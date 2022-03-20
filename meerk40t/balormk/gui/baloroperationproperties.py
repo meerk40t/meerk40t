@@ -1,5 +1,5 @@
 import wx
-from meerk40t.gui.propertiespanel import PropertiesPanel
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from ..balor_params import Parameters
 
 _ = wx.GetTranslation
@@ -74,7 +74,7 @@ class BalorOperationPanel(wx.Panel):
             },
         ]
 
-        self.panel = PropertiesPanel(
+        self.panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )
 

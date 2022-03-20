@@ -1,9 +1,9 @@
 import wx
 
-from ..svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color
-from .icons import icons8_choose_font_50, icons8_text_50
-from .laserrender import swizzlecolor
-from .mwindow import MWindow
+from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color, Text
+from ..icons import icons8_choose_font_50, icons8_text_50
+from ..laserrender import swizzlecolor
+from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -88,13 +88,22 @@ class TextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
+    @staticmethod
+    def accepts(node):
+        if isinstance(node.object, Text):
+            return True
+        return False
+
     def pane_show(self):
-        self.set_widgets()
+        self.set_widgets(self.element_node)
 
     def pane_hide(self):
         pass
 
-    def set_widgets(self):
+    def set_widgets(self, node):
+        if node is not None:
+            self.element = node.object
+            self.element_node = node
         try:
             if self.element.text is not None:
                 self.text_text.SetValue(self.element.text)
@@ -274,9 +283,7 @@ class TextProperty(MWindow):
         self.SetTitle(_("Text Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element_node = node
-        self.panel.element = node.object
-        self.panel.set_widgets()
+        self.panel.set_widgets(node)
 
     def window_open(self):
         self.panel.pane_show()

@@ -8,7 +8,7 @@ from ..core.node.laserop import CutOpNode, EngraveOpNode, ImageOpNode, RasterOpN
 from ..svgelements import Group, Length
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow
-from .propertiespanel import PropertiesPanel
+from .choicepropertypanel import ChoicePropertyPanel
 from .wxutils import disable_window
 
 _ = wx.GetTranslation
@@ -42,7 +42,7 @@ class PlannerPanel(wx.Panel):
 
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
         choices = self.context.lookup("choices/optimize")[:7]
-        self.panel_optimize = PropertiesPanel(
+        self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
@@ -263,8 +263,8 @@ class PlannerPanel(wx.Panel):
             return
         cutplan = self.context.planner.default_plan
         obj = cutplan.plan[node_index]
-        if isinstance(obj, (RasterOpNode, CutOpNode, EngraveOpNode, ImageOpNode)):
-            self.context.open("window/OperationProperty", self, node=obj)
+        self.context.open("window/Properties", self)
+        # self.context.kernel.activate_instance(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>

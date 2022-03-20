@@ -241,30 +241,33 @@ class MeerK40t(MWindow):
         """
         gui = self
         root = self.context.root
-        if isinstance(
-            node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
-        ):
-            root.open("window/OperationProperty", gui, node=node)
-            return
-        if isinstance(node, ConsoleOperation):
-            root.open("window/ConsoleProperty", gui, node=node)
-        if node is None:
-            return
-        obj = node.object
-        if obj is None:
-            return
-        elif isinstance(obj, Path):
-            root.open("window/PathProperty", gui, node=node)
-        elif isinstance(obj, SVGText):
-            root.open("window/TextProperty", gui, node=node)
-        elif isinstance(obj, SVGImage):
-            root.open("window/ImageProperty", gui, node=node)
-        elif isinstance(obj, Group):
-            root.open("window/GroupProperty", gui, node=node)
-        elif isinstance(obj, SVGElement):
-            root.open("window/PathProperty", gui, node=node)
-        elif isinstance(obj, CutCode):
-            root.open("window/Simulation", gui, node=node)
+        root.open("window/Properties", gui)
+        # self.context.kernel.activate_instance(node)
+        #
+        # if isinstance(
+        #     node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+        # ):
+        #     pass
+        #     return
+        # if isinstance(node, ConsoleOperation):
+        #     root.open("window/ConsoleProperty", gui, node=node)
+        # if node is None:
+        #     return
+        # obj = node.object
+        # if obj is None:
+        #     return
+        # elif isinstance(obj, Path):
+        #     root.open("window/PathProperty", gui, node=node)
+        # elif isinstance(obj, SVGText):
+        #     root.open("window/TextProperty", gui, node=node)
+        # elif isinstance(obj, SVGImage):
+        #     root.open("window/ImageProperty", gui, node=node)
+        # elif isinstance(obj, Group):
+        #     root.open("window/GroupProperty", gui, node=node)
+        # elif isinstance(obj, SVGElement):
+        #     root.open("window/PathProperty", gui, node=node)
+        # elif isinstance(obj, CutCode):
+        #     root.open("window/Simulation", gui, node=node)
 
     @staticmethod
     def sub_register(kernel):
@@ -1660,8 +1663,7 @@ class MeerK40t(MWindow):
 
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
-
-        self.context("quit\n")
+        self.context(".timer 0 1 quit\n")
 
     @signal_listener("altered")
     @signal_listener("modified")

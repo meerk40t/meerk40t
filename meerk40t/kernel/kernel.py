@@ -446,6 +446,14 @@ class Kernel(Settings):
         self.delegates.append((delegate, lifecycle_object))
         self.update_linked_lifecycles(lifecycle_object)
 
+    def remove_delegate(self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]):
+        for i in range(len(self.delegates) - 1, -1, -1):
+            delegate_value, ref = self.delegates[i]
+            if delegate_value is delegate and ref is lifecycle_object:
+                self._signal_detach(delegate)
+                self._lookup_detach(delegate)
+                del self.delegates[i]
+
     # ==========
     # LIFECYCLE MANAGEMENT
     # ==========
@@ -2121,6 +2129,10 @@ class Kernel(Settings):
                 return None
         return data
 
+    # ==========
+    # CHOICES REGISTRATION
+    # ==========
+
     def register_choices(self, sheet, choices):
         """
         Registers choices to a given sheet. If the sheet already exists then the new choices
@@ -2144,6 +2156,7 @@ class Kernel(Settings):
             obj = c["object"]
             if isinstance(obj, Context):
                 obj.setting(c["type"], c["attr"], c["default"])
+
 
     # ==========
     # KERNEL CONSOLE COMMANDS
