@@ -226,7 +226,7 @@ def plugin(kernel, lifecycle):
                 )
                 answer = dlg.ShowModal()
                 if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/896"
+                    issue_page = "https://github.com/meerk40t/meerk40t/issues/909"
                     import webbrowser
 
                     webbrowser.open(issue_page, new=0, autoraise=True)
