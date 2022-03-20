@@ -868,7 +868,7 @@ class LhystudiosDriver(Driver):
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.h_switch_g(dy)
+                            self.v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.current_x
                 dy = y - self.current_y
