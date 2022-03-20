@@ -3,6 +3,9 @@ import os
 from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+from xml.etree.ElementTree import ParseError
+
+from meerk40t.core.exceptions import BadFileError
 
 from ..svgelements import (
     SVG,
@@ -275,15 +278,18 @@ class SVGLoader:
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
-        svg = SVG.parse(
-            source=source,
-            reify=True,
-            width=str(context.device.width_as_mm),
-            height=str(context.device.height_as_mm),
-            ppi=ppi,
-            color="none",
-            transform="scale(%f)" % scale_factor,
-        )
+        try:
+            svg = SVG.parse(
+                source=source,
+                reify=True,
+                width=str(context.device.width_as_mm),
+                height=str(context.device.height_as_mm),
+                ppi=ppi,
+                color="none",
+                transform="scale(%f)" % scale_factor,
+            )
+        except ParseError as e:
+            raise BadFileError(str(e)) from e
         context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", label=basename)

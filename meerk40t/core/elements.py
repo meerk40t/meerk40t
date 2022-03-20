@@ -1,11 +1,12 @@
 import functools
 import os.path
+from os.path import realpath
 import re
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import Service, Settings
+from meerk40t.core.exceptions import BadFileError
+from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
 from ..svgelements import (
     PATTERN_FLOAT,
@@ -46,11 +47,11 @@ from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):
+    _ = kernel.translation
     if lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
     elif lifecycle == "postboot":
-        _ = kernel.root._
         elements = kernel.elements
         choices = [
             {
@@ -88,17 +89,20 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
-            from os.path import realpath
-
             elements = kernel.elements
 
-            elements.load(realpath(kernel.args.input.name))
-            elements.classify(list(elements.elems()))
+            try:
+                elements.load(realpath(kernel.args.input.name))
+            except BadFileError as e:
+                kernel._console_channel(
+                    _("File is Malformed")
+                    + ": " + str(e)
+                )
+            else:
+                elements.classify(list(elements.elems()))
     elif lifecycle == "poststart":
         if hasattr(kernel.args, "output") and kernel.args.output is not None:
             # output the file you have at this point.
-            from os.path import realpath
-
             elements = kernel.elements
 
             elements.save(realpath(kernel.args.output.name))
@@ -172,10 +176,11 @@ class Elemental(Service):
                 channel(_("No such file."))
                 return
             try:
-                self.load(new_file)
+                result = self.load(new_file)
+                if result:
+                    channel(_("loading..."))
             except AttributeError:
                 raise CommandSyntaxError(_("Loading files was not defined"))
-            channel(_("loading..."))
             return "file", new_file
 
         # ==========
@@ -3803,7 +3808,7 @@ class Elemental(Service):
         # ==========
         # REMOVE ELEMENTS
         # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
             _("Remove %s elements") % "{ecount}",
@@ -6085,6 +6090,7 @@ class Elemental(Service):
 
     def load(self, pathname, **kwargs):
         kernel = self.kernel
+        _ = kernel.translation
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
@@ -6092,12 +6098,17 @@ class Elemental(Service):
                         results = loader.load(self, self, pathname, **kwargs)
                     except FileNotFoundError:
                         return False
+                    except BadFileError as e:
+                        kernel._console_channel(
+                            _("File is Malformed")
+                            + ": " + str(e)
+                        )
                     except OSError:
                         return False
-                    if results:
-                        self.signal("tree_changed\n")
-                        self("scene focus -4% -4% 104% 104%\n")
-                        return True
+                    else:
+                        if results:
+                            self.signal("tree_changed\n")
+                            return True
         return False
 
     def load_types(self, all=True):

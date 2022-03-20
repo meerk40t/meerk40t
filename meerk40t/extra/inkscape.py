@@ -2,6 +2,7 @@ import os.path
 import platform
 from subprocess import PIPE, run
 
+from meerk40t.core.exceptions import BadFileError
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -16,8 +17,15 @@ def plugin(kernel, lifecycle):
         def inscape_load(channel, _, data=None, **kwargs):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
-            e = kernel.root
-            e.elements.load(filename)
+            try:
+                kernel.root.elements.load(filename)
+            except BadFileError as e:
+                channel("\n".join(
+                    _("File is Malformed."),
+                    str(e),
+                ))
+            else:
+                kernel.root.elements.classify(list(elements.elems()))
             return "inkscape", data
 
         @kernel.console_command(

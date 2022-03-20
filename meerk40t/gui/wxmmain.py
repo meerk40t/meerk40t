@@ -7,7 +7,7 @@ import wx
 from PIL import Image
 from wx import aui
 
-from meerk40t.kernel import CommandSyntaxError
+from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.cutcode import CutCode
@@ -1915,25 +1915,31 @@ class MeerK40t(MWindow):
                 pass
 
     def load(self, pathname):
-        with wx.BusyInfo(_("Loading File...")):
-            n = self.context.elements.note
-            try:
+        try:
+            with wx.BusyInfo(
+                wx.BusyInfoFlags()
+                    .Title(_("Loading File..."))
+                    .Label(pathname)
+                ):
+                n = self.context.elements.note
                 results = self.context.elements.load(
                     pathname,
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.elements.svg_ppi,
                 )
-            except CommandSyntaxError as e:
-                dlg = wx.MessageDialog(
-                    None,
-                    str(e.msg),
-                    _("File is Malformed."),
-                    wx.OK | wx.ICON_WARNING,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-                return False
+        except BadFileError as e:
+            dlg = wx.MessageDialog(
+                None,
+                str(e),
+                _("File is Malformed"),
+                wx.OK | wx.ICON_WARNING,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+            return False
+        else:
             if results:
+                self("scene focus -4% -4% 104% 104%\n")
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
