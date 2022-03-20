@@ -93,7 +93,7 @@ class RectSelectWidget(Widget):
         if event_type == "leftdown":
             self.start_location = space_pos
             self.end_location = space_pos
-            print ("RectSelect consumed leftdown")
+            # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
         elif event_type == "leftclick":
             self.start_location = None
