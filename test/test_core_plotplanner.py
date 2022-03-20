@@ -123,7 +123,7 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)
 
         # Increasing
         print()
@@ -133,7 +133,7 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)
 
         # Decreasing
         print()
@@ -143,9 +143,9 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)
 
-        # Randomly generated
+        # Randomly generated with "".join([str(random.randrange(0,2)) for x in range(80)])
         print()
         test       = "11101101011011000001111010010000101110001001100101111001111111010011111001011100"
         expected   = "11011110010111000001111100100000011110010001100011111001111111100011111000111100"
@@ -153,7 +153,7 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)
 
         print()
         test       = "10100000011001001101101011101011000100010111111000001111100110101001100011000000"
@@ -162,7 +162,7 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)
 
         print()
         test       = "01000001001110001000100111110100111111110101111000000100011010111111011000011000"
@@ -171,4 +171,4 @@ class TestPlotplanner(unittest.TestCase):
         print("Test", test)
         print("Grpd", results)
         print("Reduced transitions from", transitions(test), "to", transitions(results))
-        # self.assertEqual(expected, results)
+        self.assertEqual(expected, results)

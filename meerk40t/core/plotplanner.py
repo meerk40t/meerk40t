@@ -407,10 +407,10 @@ class Shift(PlotManipulation):
     #   the input patterns until all shifted bits have moved to at least the first position
     #   i.e. shifted bits will not be shifted again.
     PIX_SHIFT = {
-        # 0b0100:   0b1000,
+        0b0100:   0b1000,
         0b0101:   0b0011,
         0b1010:   0b1100,
-        # 0b1011:   0b0111,
+        0b1011:   0b0111,
     }
 
     def process(self, plot):
