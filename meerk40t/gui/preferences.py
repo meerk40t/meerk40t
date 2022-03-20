@@ -8,7 +8,7 @@ import wx
 
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
-from .propertiespanel import PropertiesPanel
+from .choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 
@@ -248,7 +248,7 @@ class PreferencesPanel(wx.Panel):
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
 
-        self.checklist_options = PropertiesPanel(
+        self.checklist_options = ChoicePropertyPanel(
             self, wx.ID_ANY, context=context, choices="preferences"
         )
         sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)

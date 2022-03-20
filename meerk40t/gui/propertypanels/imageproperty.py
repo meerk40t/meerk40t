@@ -1,8 +1,8 @@
 import wx
 
-from ..svgelements import Matrix
-from .icons import icons8_image_50
-from .mwindow import MWindow
+from ...svgelements import Matrix, Image
+from ..icons import icons8_image_50
+from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
@@ -53,9 +53,18 @@ class ImagePropertyPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
 
-        self.set_widgets()
+        self.set_widgets(None)
 
-    def set_widgets(self):
+    @staticmethod
+    def accepts(node):
+        if isinstance(node.object, Image):
+            return True
+        return False
+
+    def set_widgets(self, node):
+        if node is not None:
+            self.element_node = node
+            self.element = node.object
         try:
             self.spin_step_size.SetValue(self.element.values["raster_step"])
             self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
@@ -201,9 +210,7 @@ class ImageProperty(MWindow):
         self.SetTitle(_("Image Properties"))
 
     def restore(self, *args, node=None, **kwds):
-        self.panel.element_node = node
-        self.panel.element = node.object
-        self.panel.set_widgets()
+        self.panel.set_widgets(node)
 
     def window_preserve(self):
         return False

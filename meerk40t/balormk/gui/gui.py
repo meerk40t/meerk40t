@@ -66,7 +66,11 @@ def plugin(service, lifecycle):
 
             return light_program
 
-        service.register("operationproperty/Balor", BalorOperationPanel)
+        service.register("property/RasterOpNode/Balor", BalorOperationPanel)
+        service.register("property/CutOpNode/Balor", BalorOperationPanel)
+        service.register("property/EngraveOpNode/Balor", BalorOperationPanel)
+        service.register("property/ImageOpNode/Balor", BalorOperationPanel)
+        service.register("property/DotsOpNode/Balor", BalorOperationPanel)
         service.register(
             "button/control/Light_On",
             {

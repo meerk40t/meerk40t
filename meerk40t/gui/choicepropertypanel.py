@@ -7,9 +7,9 @@ from meerk40t.svgelements import Color
 _ = wx.GetTranslation
 
 
-class PropertiesPanel(wx.Panel):
+class ChoicePropertyPanel(wx.Panel):
     """
-    PropertiesPanel is a generic panel that simply presents a simple list of properties to be viewed and edited.
+    ChoicePropertyPanel is a generic panel that simply presents a simple list of properties to be viewed and edited.
     In most cases it can be initialized by passing a choices value which will read the registered choice values
     and display the given properties, automatically generating an appropriate changer for that property.
     """

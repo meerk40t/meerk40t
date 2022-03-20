@@ -28,7 +28,11 @@ def plugin(service, lifecycle):
         service.register("window/Configuration", LhystudiosDriverGui)
         service.register("window/AccelerationChart", LhystudiosAccelerationChart)
         service.register("window/Network-Controller", TCPController)
-        service.register("operationproperty/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/RasterOpNode/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/CutOpNode/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/EngraveOpNode/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/ImageOpNode/Lihuiyu", LhyAdvancedPanel)
+        service.register("property/DotsOpNode/Lihuiyu", LhyAdvancedPanel)
         _ = service.kernel.translation
 
         def controller_click(i=None):

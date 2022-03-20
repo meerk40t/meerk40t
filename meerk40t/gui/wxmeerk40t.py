@@ -21,26 +21,26 @@ from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .consoleproperty import ConsoleProperty
+from .propertypanels.consoleproperty import ConsoleProperty, ConsolePropertiesPanel
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .groupproperties import GroupProperty
+from .propertypanels.groupproperties import GroupProperty, GroupPropertiesPanel
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .imageproperty import ImageProperty
+from .propertypanels.imageproperty import ImageProperty, ImagePropertyPanel
 from .keymap import Keymap
 from .notes import Notes
-from .operationproperty import OperationProperty
-from .operationpropertymain import ParameterPanel
-from .pathproperty import PathProperty
+from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.operationpropertymain import ParameterPanel
+from .propertypanels.pathproperty import PathProperty, PathPropertyPanel
 from .preferences import Preferences
 from .rasterwizard import RasterWizard
 from .simulation import Simulation
-from .textproperty import TextProperty
+from .propertypanels.textproperty import TextProperty, TextPropertyPanel
 from .wxmmain import MeerK40t
 
 """
@@ -296,13 +296,20 @@ class wxMeerK40t(wx.App, Module):
     @staticmethod
     def sub_register(kernel):
         kernel.register("window/MeerK40t", MeerK40t)
-        kernel.register("window/ConsoleProperty", ConsoleProperty)
-        kernel.register("window/PathProperty", PathProperty)
-        kernel.register("window/TextProperty", TextProperty)
-        kernel.register("window/ImageProperty", ImageProperty)
-        kernel.register("window/OperationProperty", OperationProperty)
-        kernel.register("operationproperty/Main", ParameterPanel)
-        kernel.register("window/GroupProperty", GroupProperty)
+
+        kernel.register("window/Properties", PropertyWindow)
+        kernel.register("property/RasterOpNode/OpMain", ParameterPanel)
+        kernel.register("property/CutOpNode/OpMain", ParameterPanel)
+        kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
+        kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
+        kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
+
+        kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
+        kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
+        kernel.register("property/ElemNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/ElemNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/ElemNode/ImageProperty", ImagePropertyPanel)
+
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)

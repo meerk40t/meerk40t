@@ -53,3 +53,6 @@ class Module:
 
     def add_module_delegate(self, delegate):
         self.context.kernel.add_delegate(delegate, self)
+
+    def remove_module_delegate(self, delegate):
+        self.context.kernel.remove_delegate(delegate, self)
