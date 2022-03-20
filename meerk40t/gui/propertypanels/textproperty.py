@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color
+from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color, Text
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
@@ -87,6 +87,12 @@ class TextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0FF)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
+
+    @staticmethod
+    def accepts(node):
+        if isinstance(node.object, Text):
+            return True
+        return False
 
     def pane_show(self):
         self.set_widgets(self.element_node)

@@ -37,15 +37,14 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 pass
             self.remove_module_delegate(p)
-        self.panel_instances.clear()
-        self.notebook_main.DeleteAllPages()
         nodes = list(self.context.elements.flat(selected=True, cascade=False))
         if nodes is None:
             return
         pages_to_instance = []
         for node in nodes:
             for property_sheet in self.context.lookup_all("property/{class_name}/.*".format(class_name=node.__class__.__name__)):
-                pages_to_instance.append((property_sheet, node))
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
+                    pages_to_instance.append((property_sheet, node))
 
         def sort_priority(prop):
             prop_sheet, node = prop
@@ -53,6 +52,8 @@ class PropertyWindow(MWindow):
 
         pages_to_instance.sort(key=sort_priority)
 
+        self.panel_instances.clear()
+        self.notebook_main.DeleteAllPages()
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance

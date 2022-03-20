@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import Matrix
+from ...svgelements import Matrix, Image
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 
@@ -53,7 +53,13 @@ class ImagePropertyPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
 
-        self.set_widgets()
+        self.set_widgets(None)
+
+    @staticmethod
+    def accepts(node):
+        if isinstance(node.object, Image):
+            return True
+        return False
 
     def set_widgets(self, node):
         if node is not None:

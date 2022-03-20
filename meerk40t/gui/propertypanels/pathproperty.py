@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_ID, SVG_ATTR_STROKE, Color
+from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_ID, SVG_ATTR_STROKE, Color, Path
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
@@ -78,6 +78,12 @@ class PathPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0FF)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
+
+    @staticmethod
+    def accepts(node):
+        if isinstance(node.object, Path):
+            return True
+        return False
 
     def set_widgets(self, node):
         if node is not None:
