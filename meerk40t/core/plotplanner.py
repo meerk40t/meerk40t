@@ -392,7 +392,7 @@ class PPI(PlotManipulation):
 class Shift(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
-        self.shift_buffer = deque([], 6)
+        self.shift_buffer = deque([], 4)
         self.shift_pixels = 0
 
     def __str__(self):
@@ -407,16 +407,10 @@ class Shift(PlotManipulation):
     #   the input patterns until all shifted bits have moved to at least the first position
     #   i.e. shifted bits will not be shifted again.
     PIX_SHIFT = {
-        0b010010:   0b001100,
-        0b010100:   0b001100,
-        0b010101:   0b001101,
-        0b010110:   0b001110,
-        0b010111:   0b001111,
-        0b101000:   0b110000,
-        0b101001:   0b110001,
-        0b101010:   0b110010,
-        0b101011:   0b110011,
-        0b101101:   0b110011,
+        # 0b0100:   0b1000,
+        0b0101:   0b0011,
+        0b1010:   0b1100,
+        # 0b1011:   0b0111,
     }
 
     def process(self, plot):
@@ -441,7 +435,7 @@ class Shift(PlotManipulation):
             self.process_add(x, y, on)
 
             # When buffer is full start popping off values.
-            if len(self.shift_buffer) >= 6:
+            if len(self.shift_buffer) >= 4:
                 yield self.process_pop()
 
     def process_add(self, x, y, on):
@@ -450,7 +444,7 @@ class Shift(PlotManipulation):
         self.shift_pixels &= (1 << len(self.shift_buffer)) - 1
         if on:
             self.shift_pixels |= 1
-        assert self.shift_pixels <= 63
+        assert self.shift_pixels < 16
         if self.shift_pixels in self.PIX_SHIFT:
             self.shift_pixels = self.PIX_SHIFT[self.shift_pixels]
 
