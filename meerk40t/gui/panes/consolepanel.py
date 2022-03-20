@@ -138,36 +138,68 @@ class ConsolePanel(wx.Panel):
             "",
             style=wx.richtext.RE_MULTILINE
             | wx.richtext.RE_READONLY
+            | wx.BG_STYLE_SYSTEM
+            | wx.VSCROLL
+            | wx.ALWAYS_SHOW_SB
         )
         self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
-        style = richtext.RichTextAttr(wx.TextAttr(wx.Colour("black")))
-        font = wx.Font(
-            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
-        )
-        style.SetBackgroundColour(wx.Colour("white"))
-        style.SetFont(font)
-        style.SetLineSpacing(0)
-        style.SetParagraphSpacingBefore(0)
-        style.SetParagraphSpacingAfter(0)
-        style.SetLeftIndent(0, 320)
-        self.text_main.SetBasicStyle(style)
-        self.text_main.SetDefaultStyle(style)
 
         self.text_entry = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
 
+        # style = richtext.RichTextAttr()
+        style = wx.TextAttr()
+        font = wx.Font(
+            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
+        )
+        style.SetFont(font)
+        style.SetLineSpacing(0)
+        style.SetParagraphSpacingBefore(0)
+        style.SetParagraphSpacingAfter(0)
+        bg = self.background_color()
+        if self.is_dark:
+            fg = wx.Colour("white")
+        else:
+            fg = wx.Colour("black")
+        style.SetTextColour(fg)
+        style.SetBackgroundColour(bg)
+
+        self.text_main.SetForegroundColour(fg)
+        self.text_main.SetBackgroundColour(bg)
+        self.text_entry.SetForegroundColour(fg)
+        self.text_entry.SetBackgroundColour(bg)
+        self.text_entry.SetDefaultStyle(style)
+
+        style = richtext.RichTextAttr(style)
+        style.SetLeftIndent(0, 320)
+        self.text_main.SetBasicStyle(style)
+        self.text_main.SetDefaultStyle(style)
+        self.text_main.Update()  # Apply style to just opened window
+
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down, self.text_entry)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_entry, self.text_entry)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_enter, self.text_entry)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down_main, self.text_main)
         self.Bind(wx.EVT_TEXT_URL, self.on_text_uri)
         # end wxGlade
         self.command_log = []
         self.command_position = 0
+
+    def background_color(self):
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+
+    @property
+    def is_dark(self):
+        # GetLuminance is new in wxPython 4.1 so manually calculating until this
+        # is the minimum wxP release supported by MK.
+        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW).GetLuminance() < 0.5
+        bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue) / 255.0
+        return luminance < 0.5
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
@@ -177,10 +209,10 @@ class ConsolePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: ConsolePanel.__do_layout
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2.Add(self.text_main, 20, wx.EXPAND, 0)
-        sizer_2.Add(self.text_entry, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.text_main, 1, wx.EXPAND, 0)
+        sizer_2.Add(self.text_entry, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_2)
-        sizer_2.Fit(self)
+        sizer_2.FitInside(self)
         self.Layout()
         # end wxGlade
 
@@ -203,8 +235,12 @@ class ConsolePanel(wx.Panel):
         lines = lines.split("\n") if "\n" in lines else [lines]
         basic_style = self.text_main.BasicStyle
         raw = negative = False
+        newline = not self.text_main.IsEmpty()
         self.text_main.SetInsertionPointEnd()
         for text in lines:
+            if newline:
+                self.text_main.Newline()
+            newline = True
             self.text_main.BeginStyle(basic_style)
             parts = RE_BBCODE.split(text)
             for part in parts:
@@ -239,7 +275,6 @@ class ConsolePanel(wx.Panel):
                         continue
                 self.text_main.WriteText(part)
             self.text_main.EndStyle()
-            self.text_main.Newline()
             self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
             self.text_main.Update()
 
@@ -283,7 +318,7 @@ class ConsolePanel(wx.Panel):
         except IndexError:
             pass
 
-    def on_entry(self, event):  # wxGlade: Terminal.<event_handler>
+    def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
         self.context(command + "\n")
         self.text_entry.SetValue("")
