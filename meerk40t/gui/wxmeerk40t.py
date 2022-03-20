@@ -442,14 +442,15 @@ class wxMeerK40t(wx.App, Module):
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)
+                channel(_("Window opened: {window}").format(window=window))
 
             def window_close(*a, **k):
                 path.close(window_name, *args)
+                channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -461,7 +462,6 @@ class wxMeerK40t(wx.App, Module):
                         channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
