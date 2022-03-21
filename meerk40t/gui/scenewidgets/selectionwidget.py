@@ -1473,7 +1473,10 @@ class SelectionWidget(Widget):
                 pass
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
-                e._bounds_dirty = True
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         for e in self.scene.context.elements.flat(types=("group", "file")):
             try:
                 obj = e.object
@@ -1492,8 +1495,10 @@ class SelectionWidget(Widget):
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
         if not opt_pos is None:
+            elements = self.scene.context.elements
             self.scale_selection_to_ref(opt_scale)
-            self.scene.request_refresh()
+            elements.validate_selected_area()
+            # self.scene.request_refresh()
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
 
