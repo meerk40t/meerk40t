@@ -1,7 +1,9 @@
-from msilib.schema import RadioButton
-from pyparsing import line
-import wx
 import math
+import wx
+
+# from msilib.schema import RadioButton
+# from pyparsing import line
+
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
     HITCHAIN_DELEGATE,

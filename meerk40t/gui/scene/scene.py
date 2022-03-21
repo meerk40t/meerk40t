@@ -2,7 +2,8 @@ import platform
 import threading
 import time
 from math import isinf, isnan, tau
-from weakref import ref
+
+# from weakref import ref
 
 import wx
 
@@ -68,7 +69,7 @@ class Scene(Module, Job):
         self.time = None
         self.distance = None
         self._cursor = None
-        self._reference = None # Reference Object
+        self._reference = None  # Reference Object
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
