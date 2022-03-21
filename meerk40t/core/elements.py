@@ -94,10 +94,7 @@ def plugin(kernel, lifecycle=None):
             try:
                 elements.load(realpath(kernel.args.input.name))
             except BadFileError as e:
-                kernel._console_channel(
-                    _("File is Malformed")
-                    + ": " + str(e)
-                )
+                kernel._console_channel(_("File is Malformed") + ": " + str(e))
             else:
                 elements.classify(list(elements.elems()))
     elif lifecycle == "poststart":
@@ -1466,8 +1463,8 @@ class Elemental(Service):
 
         @self.console_argument("c", type=int, help=_("Number of columns"))
         @self.console_argument("r", type=int, help=_("Number of rows"))
-        @self.console_argument("x", type=Length, help=_("x distance"))
-        @self.console_argument("y", type=Length, help=_("y distance"))
+        @self.console_argument("x", type=str, help=_("x distance"))
+        @self.console_argument("y", type=str, help=_("y distance"))
         @self.console_option(
             "origin",
             "o",
@@ -1538,11 +1535,11 @@ class Elemental(Service):
                     x_pos += x
                 y_pos += y
 
-            self.signal("refresh_scene")
+            self.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @self.console_argument("repeats", type=int, help=_("Number of repeats"))
-        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("radius", type=str, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1588,10 +1585,8 @@ class Elemental(Service):
             if repeats <= 1:
                 raise CommandSyntaxError(_("repeats should be greater or equal to 2"))
             if radius is None:
-                radius = Length(0)
-            else:
-                if not radius.is_valid_length:
-                    raise CommandSyntaxError("radius: " + _("This is not a valid length"))
+                radius = 0
+
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
@@ -1604,9 +1599,7 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = radius.value(ppi=1000, relative_length=width)
-            if isinstance(radius, Length):
-                raise CommandSyntaxError
+            radius = self.device.length(radius, 0, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1648,11 +1641,11 @@ class Elemental(Service):
 
                 currentangle += segment_len
 
-            self.signal("refresh_scene")
+            self.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @self.console_argument("copies", type=int, help=_("Number of copies"))
-        @self.console_argument("radius", type=Length, help=_("Radius"))
+        @self.console_argument("radius", type=str, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1698,10 +1691,8 @@ class Elemental(Service):
             if copies <= 0:
                 copies = 1
             if radius is None:
-                radius = Length(0)
-            else:
-                if not radius.is_valid_length:
-                    raise CommandSyntaxError("radius: " + _("This is not a valid length"))
+                radius = 0
+
             if startangle is None:
                 startangle = Angle.parse("0deg")
             if endangle is None:
@@ -1714,9 +1705,7 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = radius.value(ppi=1000, relative_length=width)
-            if isinstance(radius, Length):
-                raise CommandSyntaxError
+            radius = self.device.length(radius, -1, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1751,17 +1740,17 @@ class Elemental(Service):
                 data_out.extend(add_elem)
                 currentangle += segment_len
 
-            self.signal("refresh_scene")
+            self.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @self.console_argument("cx", type=Length, help=_("X-Value of polygon's center"))
-        @self.console_argument("cy", type=Length, help=_("Y-Value of polygon's center"))
+        @self.console_argument("cx", type=str, help=_("X-Value of polygon's center"))
+        @self.console_argument("cy", type=str, help=_("Y-Value of polygon's center"))
         @self.console_argument(
             "radius",
-            type=Length,
+            type=str,
             help=_("Radius (length of side if --side_length is used)"),
         )
         @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
@@ -1784,7 +1773,7 @@ class Elemental(Service):
         @self.console_option(
             "radius_inner",
             "r",
-            type=Length,
+            type=str,
             help=_("Alternating radius for every other vertex"),
         )
         @self.console_option(
@@ -1827,20 +1816,18 @@ class Elemental(Service):
                 raise CommandSyntaxError
             if corners <= 2:
                 if cx is None:
-                    cx = Length(0)
-                elif not cx.is_valid_length:
-                    raise CommandSyntaxError("cx: " + _("This is not a valid length"))
+                    cx = 0
+                else:
+                    cx = self.device.length(cx, 0)
                 if cy is None:
-                    cy = Length(0)
-                elif not cy.is_valid_length:
-                    raise CommandSyntaxError("cy: " + _("This is not a valid length"))
-                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                    cy = 0
+                else:
+                    cy = self.device.length(cy, 1)
+
                 if radius is None:
-                    radius = Length(0)
-                radius = radius.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                    radius = 0
+                else:
+                    radius = self.device.length(radius, 0)
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
                 if startangle is None:
                     startangle = Angle.parse("0deg")
@@ -1855,6 +1842,12 @@ class Elemental(Service):
                     ]
 
             else:
+                #print("These are your parameters at the start:")
+                #print("Vertices: %d, Center: X=%s Y=%s" % (corners, cx, cy))
+                #print("Radius: Outer=%s Inner=%s" % (radius, radius_inner))
+                #print("Inscribe: %s" % inscribed)
+                #print("Startangle: %s, Alternate-Seq: %s" % (startangle, alternate_seq))
+
                 if cx is None:
                     raise CommandSyntaxError(
                         _(
@@ -1862,35 +1855,20 @@ class Elemental(Service):
                         )
                     )
                 else:
-                    if not cx.is_valid_length:
-                        raise CommandSyntaxError("cx: " + _("This is not a valid length"))
+                    cx = self.device.length(cx, 0)
 
                 if cy is None:
-                    cy = Length(0)
+                    cy = 0
                 else:
-                    if not cy.is_valid_length:
-                        raise CommandSyntaxError("cy: " + _("This is not a valid length"))
+                    cy = self.device.length(cy, 1)
+
                 # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
                 if radius is None:
                     radius = cx
-                    cx = Length(0)
-                    cy = Length(0)
+                    cx = 0
+                    cy = 0
                 else:
-                    if not radius.is_valid_length:
-                        raise CommandSyntaxError("radius: " + _("This is not a valid length"))
-
-                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
-                radius = radius.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-
-                if (
-                    isinstance(radius, Length)
-                    or isinstance(cx, Length)
-                    or isinstance(cy, Length)
-                ):
-                    raise CommandSyntaxError
+                    radius = self.device.length(radius, 0)
 
                 if startangle is None:
                     startangle = Angle.parse("0deg")
@@ -1915,13 +1893,9 @@ class Elemental(Service):
                 if radius_inner is None:
                     radius_inner = radius
                 else:
-                    radius_inner = radius_inner.value(ppi=1000, relative_length=radius)
-                    if not radius_inner.is_valid_length:
-                        raise CommandSyntaxError(
-                            "radius_inner: " + _("This is not a valid length")
-                        )
-                    if isinstance(radius_inner, Length):
-                        radius_inner = radius
+                    radius_inner = self.device.length(
+                        radius_inner, 0, relative_length=radius
+                    )
 
                 if inscribed:
                     if side_length is None:
@@ -1936,14 +1910,14 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                # print("These are your parameters:")
-                # print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
-                # print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
-                # print("Inscribe: %s" % inscribed)
-                # print(
+                #print("These are your parameters:")
+                #print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
+                #print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
+                #print("Inscribe: %s" % inscribed)
+                #print(
                 #    "Startangle: %.2f, Alternate-Seq: %d"
                 #    % (startangle.as_degrees, alternate_seq)
-                # )
+                #)
 
                 pts = []
                 myangle = startangle.as_radians
@@ -1951,11 +1925,17 @@ class Elemental(Service):
                 ct = 0
                 for j in range(corners):
                     if ct < alternate_seq:
-                        # print("Outer: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius, 180 * myangle / pi) )
+                        #print(
+                        #    "Outer: Ct=%d, Radius=%.2f, Angle=%.2f"
+                        #    % (ct, radius, 180 * myangle / pi)
+                        #)
                         thisx = cx + radius * cos(myangle)
                         thisy = cy + radius * sin(myangle)
                     else:
-                        # print("Inner: Ct=%d, Radius=%.2f, Angle=%.2f" % (ct, radius_inner, 180 * myangle / pi) )
+                        #print(
+                        #    "Inner: Ct=%d, Radius=%.2f, Angle=%.2f"
+                        #    % (ct, radius_inner, 180 * myangle / pi)
+                        #)
                         thisx = cx + radius_inner * cos(myangle)
                         thisy = cy + radius_inner * sin(myangle)
                     ct += 1
@@ -2205,22 +2185,18 @@ class Elemental(Service):
                 mlist = list(map(str, args))
                 # TODO: Scale Physical to Scene.
                 for ct, e in enumerate(mlist):
-                    ll = Length(e)
-                    # print("e=%s, ll=%s, valid=%s" % (e, ll, ll.is_valid_length))
                     if ct % 2 == 0:
-                        x = ll.value(
-                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                        )
+                        x = self.device.length(e, 0)
                     else:
-                        x = ll.value(
-                            ppi=1000.0, relative_length=bed_dim.bed_height * MILS_IN_MM
-                        )
+                        x = self.device.length(e, 1)
                     mlist[ct] = x
                     ct += 1
                 element = Polygon(mlist)
                 # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
             except ValueError:
-                raise CommandSyntaxError(_("Must be a list of spaced delimited length pairs."))
+                raise CommandSyntaxError(
+                    _("Must be a list of spaced delimited length pairs.")
+                )
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -2239,16 +2215,10 @@ class Elemental(Service):
             try:
                 mlist = list(map(str, args))
                 for ct, e in enumerate(mlist):
-                    ll = Length(e)
                     if ct % 2 == 0:
-                        x = ll.value(
-                            ppi=1000.0, relative_length=bed_dim.bed_width * MILS_IN_MM
-                        )
+                        x = self.device.length(e, 0)
                     else:
-                        x = ll.value(
-                            ppi=1000.0,
-                            relative_length=bed_dim.bed_height * MILS_IN_MM,
-                        )
+                        x = self.device.length(e, 1)
                     mlist[ct] = x
 
                     ct += 1
@@ -2256,7 +2226,9 @@ class Elemental(Service):
                 element = Polyline(mlist)
                 element.fill = pcol
             except ValueError:
-                raise CommandSyntaxError(_("Must be a list of spaced delimited length pairs."))
+                raise CommandSyntaxError(
+                    _("Must be a list of spaced delimited length pairs.")
+                )
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -2330,11 +2302,6 @@ class Elemental(Service):
                     i += 1
                 channel("----------")
                 return
-            else:
-                if not stroke_width.is_valid_length:
-                    raise CommandSyntaxError(
-                        "stroke-width: " + _("This is not a valid length")
-                    )
 
             if len(data) == 0:
                 channel(_("No selected elements."))
@@ -6099,10 +6066,7 @@ class Elemental(Service):
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
-                        kernel._console_channel(
-                            _("File is Malformed")
-                            + ": " + str(e)
-                        )
+                        kernel._console_channel(_("File is Malformed") + ": " + str(e))
                     except OSError:
                         return False
                     else:
