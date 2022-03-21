@@ -562,7 +562,10 @@ class SelectionWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
             # Establish origin
             if "n" in method:
@@ -624,9 +627,16 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             self.scene.request_refresh()
 
@@ -638,16 +648,26 @@ class SelectionWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+
         if event == 0:
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -662,7 +682,10 @@ class SelectionWidget(Widget):
             self.last_skew_x = 0
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
             if dx> 0 :
                 self.last_skew_x += math.tau / 360
@@ -682,10 +705,16 @@ class SelectionWidget(Widget):
                 mat = obj.transform
                 mat[2] = math.tan(self.last_skew_x)
                 obj.transform = mat
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -698,7 +727,10 @@ class SelectionWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             self.last_skew_y = 0
         if event == 0:
 
@@ -721,10 +753,16 @@ class SelectionWidget(Widget):
                 mat = obj.transform
                 mat[1] = math.tan(self.last_skew_y)
                 obj.transform = mat
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -737,7 +775,10 @@ class SelectionWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             self.rotated_angle = 0
         if event == 0:
             if self.rotate_cx is None:
@@ -785,10 +826,16 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
