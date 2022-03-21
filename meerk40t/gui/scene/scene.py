@@ -2,6 +2,7 @@ import platform
 import threading
 import time
 from math import isinf, isnan, tau
+from weakref import ref
 
 import wx
 
@@ -67,6 +68,7 @@ class Scene(Module, Job):
         self.time = None
         self.distance = None
         self._cursor = None
+        self._reference = None # Reference Object
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
@@ -506,6 +508,8 @@ class Scene(Module, Job):
             new_cursor = wx.CURSOR_CROSS
         elif cursor == "rotmove":
             new_cursor = wx.CURSOR_HAND
+        elif cursor == "reference":
+            new_cursor = wx.CURSOR_BULLSEYE
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")
@@ -532,3 +536,26 @@ class Scene(Module, Job):
         Delegate to the SceneSpaceWidget interface.
         """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
+
+    def validate_reference(self):
+        """
+        Check whether the reference is still valid
+        """
+        found = False
+        if not self._reference is None:
+            for e in self.context.elements.flat(types=("elem",)):
+                # Here we ignore the lock-status of an element
+                obj = e.object
+                if obj is self._reference:
+                    found = True
+                    break
+        if not found:
+            self._reference = None
+
+    @property
+    def reference_object(self):
+        return self._reference
+
+    @reference_object.setter
+    def reference_object(self, ref_object):
+        self._reference = ref_object

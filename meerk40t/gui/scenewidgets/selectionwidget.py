@@ -1,3 +1,4 @@
+from msilib.schema import RadioButton
 from pyparsing import line
 import wx
 import math
@@ -10,7 +11,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu
+from meerk40t.gui.wxutils import create_menu_for_node
 
 TEXT_COLOR = wx.Colour(0xA0, 0x7F, 0xA0)
 LINE_COLOR = wx.Colour(0x7F, 0x7F, 0x7F)
@@ -61,13 +62,13 @@ def process_event(widget, widget_identifier=None, window_pos=None, space_pos=Non
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError: # Widget already destroyed ?!
-        print ("Something went wrong for %s" % widget_identifier)
+        # print ("Something went wrong for %s" % widget_identifier)
         return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
     if event_type=="hover" and widget.hovering and not inside:
-        print ("Hover %s, That was not for me ?!" % widget_identifier)
+        # print ("Hover %s, That was not for me ?!" % widget_identifier)
         widget.hovering = False
         widget.scene.cursor("arrow")
         widget.scene.context.signal("statusmsg", "")
@@ -329,7 +330,10 @@ class RotationWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             self.master.rotated_angle = 0
         if event == 0:
             if self.rotate_cx is None:
@@ -392,11 +396,22 @@ class RotationWidget(Widget):
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
+                try:
+                    if obj.lock:
+                        continue
+                except AttributeError:
+                    pass
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
-                obj = e.object
-                obj.node.modified()
+                try:
+                    obj = e.object
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -539,7 +554,10 @@ class CornerWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
             # Establish origin
             if "n" in self.method:
@@ -604,9 +622,17 @@ class CornerWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+
             for e in elements.flat(types=("group", "file")):
-                obj = e.object
-                obj.node.modified()
+                try:
+                    obj = e.object
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -693,7 +719,10 @@ class SideWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
             # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
             # Establish origin
@@ -758,9 +787,17 @@ class SideWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+
             for e in elements.flat(types=("group", "file")):
-                obj = e.object
-                obj.node.modified()
+                try:
+                    obj = e.object
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -837,7 +874,10 @@ class SkewWidget(Widget):
             self.master.rotated_angle = self.last_skew
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
 
             rotation_unchanged = self.master.rotation_unchanged()
@@ -861,16 +901,27 @@ class SkewWidget(Widget):
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
+                try:
+                    if obj.lock:
+                        continue
+                except AttributeError:
+                    pass
                 mat = obj.transform
                 if self.is_x:
                     mat[2] = math.tan(self.last_skew)
                 else:
                     mat[1] = math.tan(self.last_skew)
                 obj.transform = mat
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
-                obj = e.object
-                obj.node.modified()
+                try:
+                    obj = e.object
+                    obj.node.modified()
+                except AttributeError:
+                    pass
 
             if rotation_unchanged:
                 # Move rotation center as well
@@ -951,16 +1002,29 @@ class MoveWidget(Widget):
         if event == 1:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.node.modified()
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
         if event == 0:
             rotation_unchanged = self.master.rotation_unchanged()
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
+                # Here we ignore the lock-status of an element
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
             for e in elements.flat(types=("group", "file")):
-                e._bounds_dirty = True
+                try:
+                    obj = e.object
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -1054,6 +1118,220 @@ class MoveRotationOriginWidget(Widget):
         response = process_event(widget=self, widget_identifier=s_me, window_pos=window_pos, space_pos=space_pos, event_type=event_type, helptext="Move rotation center")
         return response
 
+class ReferenceWidget(Widget):
+    """
+    Lock Widget it tasked with drawing the skew box and managing the events
+    dealing with moving the selected object
+    """
+
+    def __init__(self, master, scene, size, is_reference_object):
+        self.master = master
+        self.scene = scene
+        self.half = size/2
+        if is_reference_object:
+            self.half = self.half * 1.5
+        self.key_shift_pressed = False
+        self.key_control_pressed = False
+        self.key_alt_pressed = False
+        self.was_lb_raised = False
+        self.hovering = False
+        self.save_width = 0
+        self.save_height = 0
+        self.is_reference_object = is_reference_object
+        self.uniform = False
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.cursor = "reference"
+        self.update()
+
+    def update(self):
+        pos_x = self.master.left
+        pos_y = self.master.top + 1/4 * (self.master.bottom - self.master.top)
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        self.update() # make sure coords are valid
+        pen = wx.Pen()
+        if self.is_reference_object:
+            bgcol = wx.YELLOW
+            fgcol = wx.RED
+        else:
+            bgcol = LINE_COLOR
+            fgcol = wx.BLACK
+        pen.SetColour(bgcol)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        brush = wx.Brush(bgcol, wx.SOLID)
+        gc.SetBrush(brush)
+        gc.DrawEllipse(self.left, self.top, self.width, self.height)
+        # gc.DrawRectangle(self.left, self.top, self.width, self.height)
+        try:
+            font = wx.Font(0.75*self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+        except TypeError:
+            font = wx.Font(int(0.75*self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+        gc.SetFont(font, fgcol)
+        symbol ="r"
+        (t_width, t_height) = gc.GetTextExtent(symbol)
+        gc.DrawText(symbol, (self.left + self.right)/2 - t_width / 2, (self.top + self.bottom)/2 - t_height / 2)
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def tool(self, position=None, dx=None, dy=None, event=0): # Don't need all arguments, just for compatibility with pattern
+        """
+        Toggle the Reference Status of the selected elements
+        """
+        elements = self.scene.context.elements
+        if event == 1:
+            # Nothing to do...
+            pass
+        if event == -1: # leftdown
+            if self.is_reference_object:
+                self.scene.reference_object = None
+            else:
+                for e in elements.flat(types=("elem",), emphasized=True):
+                    try:
+                        # First object
+                        obj = e.object
+                        self.scene.reference_object = obj
+                        break
+                    except AttributeError:
+                        pass
+
+        self.scene.request_refresh()
+
+    def event(self, window_pos=None, space_pos=None, event_type=None):
+        s_me = "lock"
+        response = process_event(widget=self, widget_identifier=s_me, window_pos=window_pos, space_pos=space_pos, event_type=event_type, helptext="Toggle reference status of element")
+        return response
+
+class RefAlign(wx.Dialog):
+    """
+    RefAlign provides a dialog how to aligbn the selection in respect to the reference object
+    """
+    def __init__(self, context, *args, **kwds):
+        self.cancelled = False
+        self.option_pos = ""
+        self.option_scale = ""
+        self.context = context
+        _ = context._
+        # begin wxGlade: RefAlign.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
+        wx.Dialog.__init__(self, *args, **kwds)
+        self.SetTitle("Align Selection")
+
+        sizer_ref_align = wx.BoxSizer(wx.VERTICAL)
+
+        label_1 = wx.StaticText(self, wx.ID_ANY, _("Move the selection into the reference object and scale the elements."))
+        sizer_ref_align.Add(label_1, 0, wx.EXPAND, 0)
+
+        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_ref_align.Add(sizer_options, 0, wx.EXPAND, 0)
+
+        sizer_pos = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Position")), wx.HORIZONTAL)
+        sizer_options.Add(sizer_pos, 1, wx.EXPAND, 0)
+
+        sizer_6 = wx.BoxSizer(wx.VERTICAL)
+        sizer_pos.Add(sizer_6, 1, wx.EXPAND, 0)
+
+        self.radio_btn_1 = wx.RadioButton(self, wx.ID_ANY, "TL", style = wx.RB_GROUP)
+        self.radio_btn_1.SetToolTip(_("Align the selection to the top left corner of the reference object"))
+        sizer_6.Add(self.radio_btn_1, 0, 0, 0)
+
+        self.radio_btn_4 = wx.RadioButton(self, wx.ID_ANY, "L")
+        self.radio_btn_4.SetToolTip(_("Align the selection to the left side of the reference object"))
+        sizer_6.Add(self.radio_btn_4, 0, 0, 0)
+
+        self.radio_btn_7 = wx.RadioButton(self, wx.ID_ANY, "BL")
+        self.radio_btn_7.SetToolTip(_("Align the selection to the bottom left corner of the reference object"))
+        sizer_6.Add(self.radio_btn_7, 0, 0, 0)
+
+        sizer_7 = wx.BoxSizer(wx.VERTICAL)
+        sizer_pos.Add(sizer_7, 1, wx.EXPAND, 0)
+
+        self.radio_btn_2 = wx.RadioButton(self, wx.ID_ANY, "T")
+        self.radio_btn_2.SetToolTip(_("Align the selection to the upper side of the reference object"))
+        sizer_7.Add(self.radio_btn_2, 0, 0, 0)
+
+        self.radio_btn_5 = wx.RadioButton(self, wx.ID_ANY, "C")
+        sizer_7.Add(self.radio_btn_5, 0, 0, 0)
+
+        self.radio_btn_8 = wx.RadioButton(self, wx.ID_ANY, "B")
+        self.radio_btn_8.SetToolTip(_("Align the selection to the lower side of the reference object"))
+        sizer_7.Add(self.radio_btn_8, 0, 0, 0)
+
+        sizer_8 = wx.BoxSizer(wx.VERTICAL)
+        sizer_pos.Add(sizer_8, 1, wx.EXPAND, 0)
+
+        self.radio_btn_3 = wx.RadioButton(self, wx.ID_ANY, "TR")
+        self.radio_btn_3.SetToolTip(_("Align the selection to the top right corner of the reference object"))
+        sizer_8.Add(self.radio_btn_3, 0, 0, 0)
+
+        self.radio_btn_6 = wx.RadioButton(self, wx.ID_ANY, "R")
+        sizer_8.Add(self.radio_btn_6, 0, 0, 0)
+
+        self.radio_btn_9 = wx.RadioButton(self, wx.ID_ANY, "BR")
+        self.radio_btn_9.SetToolTip(_("Align the selection to the bottom right corner of the reference object"))
+        sizer_8.Add(self.radio_btn_9, 0, 0, 0)
+
+        sizer_scale = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Scaling"), wx.VERTICAL)
+        sizer_options.Add(sizer_scale, 1, wx.EXPAND, 0)
+
+        self.radio_btn_10 = wx.RadioButton(self, wx.ID_ANY, "Unchanged", style = wx.RB_GROUP)
+        self.radio_btn_10.SetToolTip(_("Don't change the size of the object(s)"))
+        sizer_scale.Add(self.radio_btn_10, 0, 0, 0)
+
+        self.radio_btn_11 = wx.RadioButton(self, wx.ID_ANY, "Fit")
+        self.radio_btn_11.SetToolTip(_("Scale the object(s) while maintaining the aspect ratio"))
+        sizer_scale.Add(self.radio_btn_11, 0, 0, 0)
+
+        self.radio_btn_12 = wx.RadioButton(self, wx.ID_ANY, "Squeeze")
+        self.radio_btn_11.SetToolTip(_("Scale the object(s) to make them fit the target"))
+        sizer_scale.Add(self.radio_btn_12, 0, 0, 0)
+
+        sizer_buttons = wx.StdDialogButtonSizer()
+        sizer_ref_align.Add(sizer_buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
+
+        self.button_OK = wx.Button(self, wx.ID_OK, "")
+        self.button_OK.SetToolTip(_("Align and scale the elements"))
+        self.button_OK.SetDefault()
+        sizer_buttons.AddButton(self.button_OK)
+
+        self.button_CANCEL = wx.Button(self, wx.ID_CANCEL, "")
+        self.button_CANCEL.SetToolTip(_("Close without applying any changes"))
+        sizer_buttons.AddButton(self.button_CANCEL)
+
+        sizer_buttons.Realize()
+
+        self.SetSizer(sizer_ref_align)
+        sizer_ref_align.Fit(self)
+
+        self.SetAffirmativeId(self.button_OK.GetId())
+        self.SetEscapeId(self.button_CANCEL.GetId())
+
+        self.Layout()
+
+        self.radio_btn_10.SetValue(1) # Unchanged
+        self.radio_btn_5.SetValue(1) # center
+
+    def results(self):
+        self.cancelled = False
+        if self.radio_btn_10.GetValue():
+            self.option_scale = "none"
+        elif self.radio_btn_11.GetValue():
+            self.option_scale = "fit"
+        if self.radio_btn_12.GetValue():
+            self.option_scale = "squeeze"
+        for radio in (self.radio_btn_1, self.radio_btn_2, self.radio_btn_3,self.radio_btn_4, self.radio_btn_5, self.radio_btn_6,self.radio_btn_7, self.radio_btn_8, self.radio_btn_9,):
+            if radio.GetValue():
+                s = radio.GetLabel()
+                self.option_pos = s.lower()
+                break
+        return self.option_pos, self.option_scale
+
 
 class SelectionWidget(Widget):
     """
@@ -1083,6 +1361,7 @@ class SelectionWidget(Widget):
         self.use_handle_size = True
         self.use_handle_move = True
         self.keep_rotation = True
+        self.popupID1 = None
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1111,6 +1390,138 @@ class SelectionWidget(Widget):
             self.rotation_cy = None
             return HITCHAIN_DELEGATE
 
+    def move_selection_to_ref(self, pos="c"):
+        refob = self.scene.reference_object
+        if refob is None:
+            return
+        bb = refob.bbox()
+
+        cc = self.scene.context.elements.selected_area()
+        if bb is None or cc is None:
+            return
+        if "l" in pos:
+            tx = bb[0]
+        elif "r" in pos:
+            tx = bb[2] - (cc[2]-cc[0])
+        else:
+            tx = (bb[0] + bb[2])/2 - (cc[2] - cc[0]) / 2
+
+        if "t" in pos:
+            ty = bb[1]
+        elif "b" in pos:
+            ty = bb[3] - (cc[3]-cc[1])
+        else:
+            ty = (bb[1] + bb[3])/2 - (cc[3] - cc[1]) / 2
+
+        dx = tx - cc[0]
+        dy = ty - cc[1]
+        #print ("Moving from (%.1f, %.1f) to (%.1f, %.1f) translate by (%.1f, %.1f)" % (cc[0], cc[1], tx, ty, dx, dy ))
+
+        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            # Here we ignore the lock-status of an element, as this is just a move...
+            obj = e.object
+            if not obj is refob:
+                obj.transform.post_translate(dx, dy)
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+        for e in self.scene.context.elements.flat(types=("group", "file")):
+            try:
+                obj = e.object
+                obj.node.modified()
+            except AttributeError:
+                pass
+
+
+    def scale_selection_to_ref(self, method="none"):
+        refob = self.scene.reference_object
+        if refob is None:
+            return
+        bb = refob.bbox()
+
+        cc = self.scene.context.elements.selected_area()
+        if bb is None or cc is None:
+            return
+        try:
+            b_ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
+            c_ratio = (cc[2] - cc[0]) / (cc[3] - cc[1])
+        except ZeroDivisionError:
+            return
+        if method=="fit":
+            scalex = (bb[2] - bb[0]) / (cc[2] - cc[0])
+            scaley = (bb[3] - bb[1]) / (cc[3] - cc[1])
+            scalex = min(scalex, scaley)
+            scaley = scalex
+        elif method=="squeeze":
+            scalex = (bb[2] - bb[0]) / (cc[2] - cc[0])
+            scaley = (bb[3] - bb[1]) / (cc[3] - cc[1])
+        else :
+            return
+        # print ("Scaling by x=%.1f, y=%.1f" % (scalex, scaley))
+        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            # Here we acknowledge the lock-status of an element
+            obj = e.object
+            try:
+                if obj.lock:
+                    continue
+            except AttributeError:
+                pass
+            if not obj is refob:
+                obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
+                e._bounds_dirty = True
+        for e in self.scene.context.elements.flat(types=("group", "file")):
+            try:
+                obj = e.object
+                obj.node.modified()
+            except AttributeError:
+                pass
+
+
+    def show_reference_align_dialog(self, event):
+        opt_pos = None
+        opt_scale = None
+        dlgRefAlign = RefAlign(self.scene.context, None, wx.ID_ANY, "")
+        # SetTopWindow(self.dlgRefAlign)
+        if dlgRefAlign.ShowModal() == wx.ID_OK:
+            opt_pos, opt_scale = dlgRefAlign.results()
+            # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
+        dlgRefAlign.Destroy()
+        if not opt_pos is None:
+            self.scale_selection_to_ref(opt_scale)
+            self.scene.request_refresh()
+            self.move_selection_to_ref(opt_pos)
+            self.scene.request_refresh()
+
+    def create_menu(self, gui, node, elements):
+        if node is None:
+            return
+        if hasattr(node, "node"):
+            node = node.node
+        menu = create_menu_for_node(gui, node, elements)
+        # Now check whether we have a reference object
+        obj = self.scene.reference_object
+        if not obj is None:
+            # Okay, just lets make sure we are not doing this on the refobject itself...
+            for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            # Here we acknowledge the lock-status of an element
+                if obj == e.object:
+                    obj = None
+                    break
+
+        # Add Manipulation menu
+        if not obj is None:
+            _ = self.scene.context._
+            menu.AppendSeparator()
+            if self.popupID1 is None:
+                self.popupID1 = wx.NewId()
+            gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=self.popupID1)
+            menu.Append(self.popupID1, _("Align to reference object"))
+
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.scene.context.elements
         if event_type == "hover_start":
@@ -1127,9 +1538,11 @@ class SelectionWidget(Widget):
             self.scene.context.signal("statusmsg", "")
         elif event_type == "rightdown":
             elements.set_emphasized_by_position(space_pos)
+            # Check if reference is still existing
+            self.scene.validate_reference()
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
-            create_menu(
+            self.create_menu(
                 self.scene.context.gui, elements.top_element(emphasized=True), elements
             )
             return RESPONSE_CONSUME
@@ -1209,10 +1622,29 @@ class SelectionWidget(Widget):
                 self.rotation_cx = cx
                 self.rotation_cy = cy
 
+            # Prep codoe for reference object - single object? And identical to reference?
+            is_ref = False
+            single_element = True
+            if not self.scene.reference_object is None:
+
+                for idx, e in enumerate(elements.flat(types=("elem",), emphasized=True)):
+                    obj = e.object
+                    if obj is self.scene.reference_object:
+                        is_ref = True
+                    if idx>0:
+                        single_element =False
+                        break
+
+            if not single_element:
+                is_ref = False
+
             # Add all subwidgets in Inverse Order
             msize = 5 * self.line_width
             rotsize = 3 * msize
 
+            self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
+            if single_element and self.use_handle_skew:
+                self.add_widget(-1, ReferenceWidget(master=self, scene=self.scene, size=msize, is_reference_object=is_ref))
             if self.use_handle_move:
                 self.add_widget(-1, MoveWidget(master=self, scene=self.scene, size=rotsize, drawsize=msize))
             if self.use_handle_skew:
@@ -1231,4 +1663,3 @@ class SelectionWidget(Widget):
                     )
                 for i in range(4):
                     self.add_widget(-1, SideWidget(master=self, scene=self.scene, index=i, size=msize))
-            self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
