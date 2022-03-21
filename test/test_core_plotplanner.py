@@ -10,6 +10,26 @@ from meerk40t.svgelements import Circle, Path, Point, SVGImage
 
 
 class TestPlotplanner(unittest.TestCase):
+
+    def test_plotplanner_rastersmooth(self):
+        plan = PlotPlanner(LaserSettings(power=1000))
+        settings = LaserSettings(power=1000)
+        settings.smooth_raster = 1
+        for i in range(100):
+            plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
+            plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
+            plan.push(LineCut(Point(5, 20), Point(10, 100), settings=settings))
+            q = 0
+            for x, y, on in plan.gen():
+                print(x, y, on)
+                if q == i:
+                    for x, y, on in plan.process_plots(None):
+                        print("FLUSH!", x, y, on)
+                    plan.clear()
+                    break
+                q += 1
+
+
     def test_plotplanner_flush(self):
         """
         Intro test for plotplanner.

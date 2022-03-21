@@ -381,9 +381,13 @@ class Smooth(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
+            if x is None or y is None:
+                yield x, y, on
+                continue
             mode = self.planner.settings.smooth_raster
             if not mode:
                 yield x, y, on
+                continue
             if px is not None and py is not None:
                 # Ensure we are single stepped values.
                 assert abs(px - x) <= 1 or abs(py - y) <= 1
@@ -402,7 +406,7 @@ class Smooth(PlotManipulation):
             self.goal_x = x
             self.goal_y = y
             mode = self.planner.settings.smooth_raster
-            if mode == 1 and dx == 0 or mode == 2 and dy == 0:
+            if (mode == 1 and dy == 0) or (mode == 2 and dx == 0):
                 continue
             self.smooth_x += dx
             self.smooth_y += dy
