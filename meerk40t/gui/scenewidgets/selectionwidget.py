@@ -61,7 +61,8 @@ def process_event(widget, widget_identifier=None, window_pos=None, space_pos=Non
         return RESPONSE_CHAIN
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
-    except TypeError: # Widget already destroyed ?!
+    except TypeError:
+        # Widget already destroyed ?!
         # print ("Something went wrong for %s" % widget_identifier)
         return RESPONSE_CHAIN
 
@@ -235,9 +236,9 @@ class RotationWidget(Widget):
         self.half = size/2
         self.inner = inner
         self.cursor = "rotate1"
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -499,9 +500,9 @@ class CornerWidget(Widget):
         self.half = size/2
         self.allow_x = True
         self.allow_y = True
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -659,9 +660,9 @@ class SideWidget(Widget):
         self.scene = scene
         self.index = index
         self.half = size/2
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -826,9 +827,9 @@ class SkewWidget(Widget):
         self.is_x = is_x
         self.half = size/2
         self.last_skew = 0
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -948,9 +949,9 @@ class MoveWidget(Widget):
         self.scene = scene
         self.half = size/2
         self.drawhalf = drawsize/2
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = self.master.key_shift_pressed
+        self.key_control_pressed = self.master.key_control_pressed
+        self.key_alt_pressed = self.master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -999,14 +1000,17 @@ class MoveWidget(Widget):
         Change the position of the selected elements.
         """
         elements = self.scene.context.elements
-        if event == 1:
+        if event == 1: # end
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
                 except AttributeError:
                     pass
-        if event == 0:
+        elif event == -1: # start
+            if self.key_alt_pressed:
+                self.create_duplicate()
+        elif event == 0: # move
             rotation_unchanged = self.master.rotation_unchanged()
 
             b = elements.selected_area()
@@ -1048,9 +1052,9 @@ class MoveRotationOriginWidget(Widget):
         self.master = master
         self.scene = scene
         self.half = size/2
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1130,9 +1134,9 @@ class ReferenceWidget(Widget):
         self.half = size/2
         if is_reference_object:
             self.half = self.half * 1.5
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1524,6 +1528,32 @@ class SelectionWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         elements = self.scene.context.elements
+        # mirror key-events to provide them to the widgets as they get deleted and created after every event...
+        if event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_release":
+            if self.key_control_pressed:
+                self.key_control_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_ctrl_press":
+            if not self.key_control_pressed:
+                self.key_control_pressed = True
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_release":
+            if self.key_alt_pressed:
+                self.key_alt_pressed = False
+            return RESPONSE_CHAIN
+        elif event_type == "kb_alt_press":
+            if not self.key_alt_pressed:
+                self.key_alt_pressed = True
+            return RESPONSE_CHAIN
+
         if event_type == "hover_start":
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
