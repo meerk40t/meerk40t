@@ -156,6 +156,119 @@ ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
+class CustomStatusBar(wx.StatusBar):
+    """Overloading of Statusbar to allow some checkboxes on it"""
+    panelct = 5
+    startup = True
+
+    def __init__(self, parent, panelct):
+        self.Startup = True
+        self.panelct = panelct
+        self.context = parent.context
+        wx.StatusBar.__init__(self, parent, -1)
+        self.SetFieldsCount(self.panelct)
+        self.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.panelct
+        )
+        sizes = [-2] * self.panelct
+        # Make the first Panel large
+        sizes[0] = -3
+        # Make the last Panel smaller
+        sizes[self.panelct-1] = -1
+        self.SetStatusWidths(sizes)
+        self.sizeChanged = False
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        # These will fall into the last field
+        self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
+        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
+        self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+        self.context.setting(bool, "enable_sel_move", True)
+        self.context.setting(bool, "enable_sel_size", True)
+        self.context.setting(bool, "enable_sel_rotate", True)
+        self.context.setting(bool, "enable_sel_skew", False)
+        self.cb_move.SetValue(self.context.enable_sel_move)
+        self.cb_handle.SetValue(self.context.enable_sel_size)
+        self.cb_rotate.SetValue(self.context.enable_sel_rotate)
+        self.cb_skew.SetValue(self.context.enable_sel_skew)
+        self.cb_enabled = False
+
+        # set the initial position of the checkboxes
+        self.Reposition()
+        self.startup = False
+
+    @property
+    def cb_enabled(self):
+        return self._cb_enabled
+    @cb_enabled.setter
+    def cb_enabled(self, cb_enabled):
+        if cb_enabled:
+            self.cb_move.Show()
+            self.cb_handle.Show()
+            self.cb_rotate.Show()
+            self.cb_skew.Show()
+        else:
+            self.cb_move.Hide()
+            self.cb_handle.Hide()
+            self.cb_rotate.Hide()
+            self.cb_skew.Hide()
+        self._cb_enabled = cb_enabled
+
+    # the checkbox was clicked
+    def on_toggle_move(self, event):
+        if not self.startup:
+            valu = self.cb_move.GetValue()
+            self.context.enable_sel_move = valu
+            self.context.signal("refresh_scene", "Scene")
+
+    def on_toggle_handle(self, event):
+        if not self.startup:
+            valu = self.cb_handle.GetValue()
+            self.context.enable_sel_size = valu
+            self.context.signal("refresh_scene", "Scene")
+
+    def on_toggle_rotate(self, event):
+        if not self.startup:
+            valu = self.cb_rotate.GetValue()
+            self.context.enable_sel_rotate = valu
+            self.context.signal("refresh_scene", "Scene")
+
+    def on_toggle_skew(self, event):
+        if not self.startup:
+            valu = self.cb_skew.GetValue()
+            self.context.enable_sel_skew = valu
+            self.context.signal("refresh_scene", "Scene")
+
+    def OnSize(self, evt):
+        evt.Skip()
+        self.Reposition()  # for normal size events
+        self.sizeChanged = True
+
+    def OnIdle(self, evt):
+        if self.sizeChanged:
+            self.Reposition()
+
+    # reposition the checkboxes
+    def Reposition(self):
+        rect = self.GetFieldRect(self.panelct-1)
+        wd = rect.width / 4
+        rect.x += 1
+        rect.y += 1
+        rect.width = wd
+        self.cb_move.SetRect(rect)
+        rect.x += wd
+        self.cb_handle.SetRect(rect)
+        rect.x += wd
+        self.cb_rotate.SetRect(rect)
+        rect.x += wd
+        self.cb_skew.SetRect(rect)
+        self.sizeChanged = False
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -206,7 +319,8 @@ class MeerK40t(MWindow):
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
 
-        self.main_statusbar = self.CreateStatusBar(4)
+        self.main_statusbar = CustomStatusBar(self, 5)
+        self.SetStatusBar(self.main_statusbar)
         self.main_statusbar.SetStatusStyles(
             [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
         )
@@ -1767,6 +1881,12 @@ class MeerK40t(MWindow):
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):
         self.main_statusbar.SetStatusText(value, 0)
+
+    @signal_listener("emphasized")
+    def on_update_selwidget(self, origin, *args):
+        elements = self.context.elements
+        valu = elements.has_emphasis()
+        self.main_statusbar.cb_enabled = valu
 
     def __set_titlebar(self):
         device_name = ""
