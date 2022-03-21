@@ -45,7 +45,6 @@ class PlotPlanner:
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
-        self.smooth_mode = -1
 
         self.queue = []
 
@@ -382,7 +381,8 @@ class Smooth(PlotManipulation):
         px = None
         py = None
         for x, y, on in plot:
-            if self.planner.smooth_mode == -1:
+            mode = self.planner.settings.smooth_raster
+            if not mode:
                 yield x, y, on
             if px is not None and py is not None:
                 # Ensure we are single stepped values.
@@ -401,7 +401,8 @@ class Smooth(PlotManipulation):
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
             self.goal_x = x
             self.goal_y = y
-            if self.planner.smooth_mode == 0 and dx == 0 or self.planner.smooth_mode == 1 and dy == 0:
+            mode = self.planner.settings.smooth_raster
+            if mode == 1 and dx == 0 or mode == 2 and dy == 0:
                 continue
             self.smooth_x += dx
             self.smooth_y += dy

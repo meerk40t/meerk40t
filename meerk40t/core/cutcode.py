@@ -54,6 +54,7 @@ class LaserSettings:
 
         self.force_twitchless = False
         self.raster_alt = False
+        self.smooth_raster = 0
         self.raster_step = 0
         self.raster_direction = 1  # Bottom To Top - Default.
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
@@ -919,6 +920,7 @@ class PlotCut(CutObject):
         @return: whether the plot can travel
         """
         self.settings.raster_alt = False
+        self.settings.smooth_raster = 0
         self.settings.raster_step = 0
         self.settings.force_twitchless = True
         if (
@@ -936,6 +938,10 @@ class PlotCut(CutObject):
             return False
         self.settings.raster_step = min(self.max_dx, self.max_dy)
         self.settings.raster_alt = True
+        if self.horizontal_raster:
+            self.settings.smooth_raster = 1
+        else:
+            self.settings.smooth_raster = 2
         return True
 
     def plot_extend(self, plot):
