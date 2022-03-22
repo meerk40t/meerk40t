@@ -136,7 +136,7 @@ class ViewPort:
         )
         return nm_x, nm_y
 
-    def physical_to_device_position(self, x, y, unitless=UNITS_PER_NM):
+    def physical_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
         """
         Converts an X,Y position into viewport units.
         @param x:
