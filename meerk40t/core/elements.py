@@ -9,10 +9,6 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
 from ..svgelements import (
-    PATTERN_FLOAT,
-    PATTERN_LENGTH_UNITS,
-    PATTERN_PERCENT,
-    REGEX_LENGTH,
     Angle,
     Circle,
     Color,
@@ -3242,7 +3238,7 @@ class Elemental(Service):
             """
             for n in data:
                 # Cannot delete structure nodes.
-                if n.type not in ("root", "branch elems", "branch ops"):
+                if n.type not in ("root", "branch elems", "branch ops", "branch reg"):
                     if n._parent is not None:
                         n.remove_node()
             return "tree", [self._tree]
@@ -3717,6 +3713,10 @@ class Elemental(Service):
         def clear_all_ops(node, **kwargs):
             self("element* delete\n")
             self.elem_branch.remove_all_children()
+
+        @self.tree_operation(_("Clear all"), node_type="branch reg", help="")
+        def clear_all_regmarks(node, **kwargs):
+            self.reg_branch.remove_all_children()
 
         # ==========
         # REMOVE MULTI (Tree Selected)
@@ -4598,6 +4598,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
+                "branch reg"
                 "group",
                 "file",
                 "root",
@@ -4618,6 +4619,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
+                "branch reg"
                 "group",
                 "file",
                 "root",
@@ -4935,6 +4937,10 @@ class Elemental(Service):
         return decorator
 
     @property
+    def reg_branch(self):
+        return self._tree.get(type="branch reg")
+
+    @property
     def op_branch(self):
         return self._tree.get(type="branch ops")
 
@@ -4956,6 +4962,18 @@ class Elemental(Service):
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
+        for item in elements.flat(
+            types=("elem", "group", "file"), depth=depth, **kwargs
+        ):
+            yield item
+
+    def regmarks(self, **kwargs):
+        elements = self._tree.get(type="branch reg")
+        for item in elements.flat(types=("elem",), **kwargs):
+            yield item.object
+
+    def regmarks_nodes(self, depth=None, **kwargs):
+        elements = self._tree.get(type="branch reg")
         for item in elements.flat(
             types=("elem", "group", "file"), depth=depth, **kwargs
         ):
@@ -5056,12 +5074,36 @@ class Elemental(Service):
         self.signal("element_added", adding_elements)
         return items
 
+    def add_reg(self, element):
+        """
+        Add an registaration. Wraps it within a node, and appends it to the tree.
+
+        :param element:
+        :return:
+        """
+        reg_branch = self._tree.get(type="branch reg")
+        node = reg_branch.add(element, type="elem")
+        self.signal("regmark_added", element)
+        return node
+
+    def add_regs(self, adding_elements):
+        reg_branch = self._tree.get(type="branch reg")
+        items = []
+        for element in adding_elements:
+            items.append(reg_branch.add(element, type="elem"))
+        self.signal("regmark_added", adding_elements)
+        return items
+
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
 
     def clear_elements(self):
         elements = self._tree.get(type="branch elems")
+        elements.remove_all_children()
+
+    def clear_regmarks(self):
+        elements = self._tree.get(type="branch reg")
         elements.remove_all_children()
 
     def clear_files(self):

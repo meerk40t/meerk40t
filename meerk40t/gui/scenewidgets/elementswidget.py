@@ -1,3 +1,4 @@
+from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.scene.widget import Widget
 
@@ -26,10 +27,19 @@ class ElementsWidget(Widget):
             zoom_scale = 1
         if zoom_scale < 1:
             zoom_scale = 1
+        draw_mode = self.renderer.context.draw_mode
+        if (draw_mode & DRAW_MODE_REGMARKS) == 0:
+            self.renderer.render(
+                context.elements.regmarks_nodes(),
+                gc,
+                draw_mode,
+                zoomscale=zoom_scale,
+                alpha=64
+            )
         self.renderer.render(
             context.elements.elems_nodes(),
             gc,
-            self.renderer.context.draw_mode,
+            draw_mode,
             zoomscale=zoom_scale,
         )
 
