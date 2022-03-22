@@ -353,11 +353,10 @@ class LaserRender:
             cache = path.point(0)
             node.cache = cache
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         gc.SetPen(wx.BLACK_PEN)
         point = node.cache
-        dif = 5 * zoomscale
+        point = matrix.point_in_matrix_space(point)
+        dif = 5000
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
         gc.PopState()
