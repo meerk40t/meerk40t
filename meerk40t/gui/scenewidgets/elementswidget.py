@@ -34,6 +34,7 @@ class ElementsWidget(Widget):
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,
+                alpha=64
             )
         self.renderer.render(
             context.elements.elems_nodes(),
