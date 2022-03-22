@@ -548,7 +548,7 @@ class ShadowTree:
 
     def node_register(self, node, pos=None, **kwargs):
         """
-        Node.item is added/inserted. Label is updated and values are set. Icon is set. And tree is refreshed.
+        Node.item is added/inserted. Label is updated and values are set. Icon is set.
 
         @param node:
         @param pos:

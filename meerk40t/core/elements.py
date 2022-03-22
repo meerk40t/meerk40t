@@ -9,10 +9,6 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
 from ..svgelements import (
-    PATTERN_FLOAT,
-    PATTERN_LENGTH_UNITS,
-    PATTERN_PERCENT,
-    REGEX_LENGTH,
     Angle,
     Circle,
     Color,
@@ -4598,6 +4594,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
+                "branch reg"
                 "group",
                 "file",
                 "root",
@@ -4618,6 +4615,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
+                "branch reg"
                 "group",
                 "file",
                 "root",
@@ -4965,6 +4963,18 @@ class Elemental(Service):
         ):
             yield item
 
+    def regs(self, **kwargs):
+        elements = self._tree.get(type="branch reg")
+        for item in elements.flat(types=("elem",), **kwargs):
+            yield item.object
+
+    def reg_nodes(self, depth=None, **kwargs):
+        elements = self._tree.get(type="branch reg")
+        for item in elements.flat(
+            types=("elem", "group", "file"), depth=depth, **kwargs
+        ):
+            yield item
+
     def top_element(self, **kwargs):
         """
         Returns the first matching node via a depth first search.
@@ -5060,6 +5070,28 @@ class Elemental(Service):
         self.signal("element_added", adding_elements)
         return items
 
+    def add_reg(self, element):
+        """
+        Add an registaration. Wraps it within a node, and appends it to the tree.
+
+        :param element:
+        :return:
+        """
+        reg_branch = self._tree.get(type="branch reg")
+        node = reg_branch.add(element, type="elem")
+        self.signal("element_added", element)
+        if classify:
+            self.classify([element])
+        return node
+
+    def add_regs(self, adding_elements):
+        reg_branch = self._tree.get(type="branch reg")
+        items = []
+        for element in adding_elements:
+            items.append(reg_branch.add(element, type="elem"))
+        self.signal("element_added", adding_elements)
+        return items
+
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
@@ -5071,7 +5103,6 @@ class Elemental(Service):
     def clear_regmark(self):
         elements = self._tree.get(type="branch reg")
         elements.remove_all_children()
-
 
     def clear_files(self):
         pass

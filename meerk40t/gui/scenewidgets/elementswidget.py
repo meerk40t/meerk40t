@@ -32,6 +32,12 @@ class ElementsWidget(Widget):
             self.renderer.context.draw_mode,
             zoomscale=zoom_scale,
         )
+        self.renderer.render(
+            context.elements.reg_nodes(),
+            gc,
+            self.renderer.context.draw_mode,
+            zoomscale=zoom_scale,
+        )
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
