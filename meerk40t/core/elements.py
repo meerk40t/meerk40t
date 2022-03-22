@@ -5079,9 +5079,7 @@ class Elemental(Service):
         """
         reg_branch = self._tree.get(type="branch reg")
         node = reg_branch.add(element, type="elem")
-        self.signal("element_added", element)
-        if classify:
-            self.classify([element])
+        self.signal("regmark_added", element)
         return node
 
     def add_regs(self, adding_elements):
@@ -5089,7 +5087,7 @@ class Elemental(Service):
         items = []
         for element in adding_elements:
             items.append(reg_branch.add(element, type="elem"))
-        self.signal("element_added", adding_elements)
+        self.signal("regmark_added", adding_elements)
         return items
 
     def clear_operations(self):
