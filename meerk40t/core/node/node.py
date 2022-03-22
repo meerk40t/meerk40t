@@ -6,7 +6,8 @@ Types:
 root: Root Tree element
 branch ops: Operation Branch
 branch elems: Elements Branch
-refelem: Element below op branch which stores specific data.
+branch reg: Regmark Branch
+ref elem: Element below op branch which stores specific data.
 op: LayerOperation within Operation Branch.
 opcmd: CommandOperation within Operation Branch.
 elem: Element with Element Branch or subgroup.
@@ -117,7 +118,7 @@ class Node:
         return other is self
 
     def is_movable(self):
-        return self.type not in ("branch elems", "branch ops", "root")
+        return self.type not in ("branch elems", "branch ops", "branch reg", "root")
 
     def drop(self, drag_node):
         # TODO: Parse this code off to the individual nodes themselves.

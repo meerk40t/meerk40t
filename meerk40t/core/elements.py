@@ -4963,12 +4963,12 @@ class Elemental(Service):
         ):
             yield item
 
-    def regs(self, **kwargs):
+    def regmarks(self, **kwargs):
         elements = self._tree.get(type="branch reg")
         for item in elements.flat(types=("elem",), **kwargs):
             yield item.object
 
-    def reg_nodes(self, depth=None, **kwargs):
+    def regmarks_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch reg")
         for item in elements.flat(
             types=("elem", "group", "file"), depth=depth, **kwargs

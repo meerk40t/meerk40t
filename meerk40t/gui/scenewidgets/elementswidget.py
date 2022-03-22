@@ -33,7 +33,7 @@ class ElementsWidget(Widget):
             zoomscale=zoom_scale,
         )
         self.renderer.render(
-            context.elements.reg_nodes(),
+            context.elements.regmarks_nodes(),
             gc,
             self.renderer.context.draw_mode,
             zoomscale=zoom_scale,
