@@ -29,16 +29,6 @@ from .wxutils import create_menu, get_key_name
 
 _ = wx.GetTranslation
 
-NODE_ROOT = 0
-NODE_OPERATION_BRANCH = 10
-NODE_OPERATION = 11
-NODE_OPERATION_ELEMENT = 12
-NODE_ELEMENTS_BRANCH = 20
-NODE_ELEMENT = 21
-NODE_FILES_BRANCH = 30
-NODE_FILE_FILE = 31
-NODE_FILE_ELEMENT = 32
-
 
 def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
@@ -396,6 +386,7 @@ class ShadowTree:
         ):
             self.wxtree.Expand(self.element_root.get(type="branch ops").item)
             self.wxtree.Expand(self.element_root.get(type="branch elems").item)
+            self.wxtree.Expand(self.element_root.get(type="branch reg").item)
 
     def reorder(self, node):
         """
@@ -508,10 +499,14 @@ class ShadowTree:
         node_elements = elemtree.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
 
+        node_registration = elemtree.get(type="branch reg")
+        self.set_icon(node_registration, icons8_vector_20.GetBitmap())
+
         # Expand Ops and Element nodes only
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
+        self.wxtree.Expand(node_registration.item)
 
     def register_children(self, node):
         """

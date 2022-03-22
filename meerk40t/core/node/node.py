@@ -153,7 +153,7 @@ class Node:
                 # Dragging element onto a group moves it to the group node.
                 drop_node.append_child(drag_node)
                 return True
-            elif drop_node.type == "branch ref":
+            elif drop_node.type == "branch reg":
                 drop_node.append_child(drag_node)
                 return True
         elif drag_node.type == "ref elem":
@@ -238,6 +238,10 @@ class Node:
                 drop_node.insert_sibling(drag_node)
                 return True
             elif drop_node.type in ("group", "file"):
+                # Move a group
+                drop_node.append_child(drag_node)
+                return True
+            elif drop_node.type == "branch reg":
                 # Move a group
                 drop_node.append_child(drag_node)
                 return True
