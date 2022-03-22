@@ -4,7 +4,7 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.node.node import Node
+from ..core.node.node import Node, is_dot
 from ..svgelements import (
     Arc,
     Close,
@@ -37,6 +37,9 @@ DRAW_MODE_PATH = 0x000400
 DRAW_MODE_IMAGE = 0x000800
 DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
+DRAW_MODE_POINTS = 0x004000
+DRAW_MODE_REGMARKS = 0x008000
+
 DRAW_MODE_ICONS = 0x0040000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
@@ -95,7 +98,10 @@ class LaserRender:
             except AttributeError:
                 element = node.object
                 if isinstance(element, Path):
-                    node.draw = self.draw_path_node
+                    if is_dot(element):
+                        node.draw = self.draw_point_node
+                    else:
+                        node.draw = self.draw_path_node
                 elif isinstance(element, Shape):
                     node.draw = self.draw_shape_node
                 elif isinstance(element, SVGImage):
@@ -332,6 +338,28 @@ class LaserRender:
             gc.FillPath(node.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
             gc.StrokePath(node.cache)
+        gc.PopState()
+
+    def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0):
+        """Default draw routine for the laser path element."""
+        if draw_mode & DRAW_MODE_POINTS:
+            return
+        path = node.object
+        try:
+            matrix = path.transform
+        except AttributeError:
+            matrix = None
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = path.point(0)
+            node.cache = cache
+        gc.PushState()
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        gc.SetPen(wx.BLACK_PEN)
+        point = node.cache
+        dif = 5 * zoomscale
+        gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
+        gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0):
