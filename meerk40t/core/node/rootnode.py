@@ -47,6 +47,7 @@ class RootNode(Node):
         }
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
+        self.add(type="branch reg", label=_("Regmarks"))
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))

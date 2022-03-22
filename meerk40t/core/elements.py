@@ -3242,7 +3242,7 @@ class Elemental(Service):
             """
             for n in data:
                 # Cannot delete structure nodes.
-                if n.type not in ("root", "branch elems", "branch ops"):
+                if n.type not in ("root", "branch elems", "branch ops", "branch reg"):
                     if n._parent is not None:
                         n.remove_node()
             return "tree", [self._tree]
@@ -4935,6 +4935,10 @@ class Elemental(Service):
         return decorator
 
     @property
+    def reg_branch(self):
+        return self._tree.get(type="branch reg")
+
+    @property
     def op_branch(self):
         return self._tree.get(type="branch ops")
 
@@ -5063,6 +5067,11 @@ class Elemental(Service):
     def clear_elements(self):
         elements = self._tree.get(type="branch elems")
         elements.remove_all_children()
+
+    def clear_regmark(self):
+        elements = self._tree.get(type="branch reg")
+        elements.remove_all_children()
+
 
     def clear_files(self):
         pass

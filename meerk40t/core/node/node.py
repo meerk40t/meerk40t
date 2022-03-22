@@ -153,6 +153,9 @@ class Node:
                 # Dragging element onto a group moves it to the group node.
                 drop_node.append_child(drag_node)
                 return True
+            elif drop_node.type == "branch ref":
+                drop_node.append_child(drag_node)
+                return True
         elif drag_node.type == "ref elem":
             if drop_node.type.startswith("op"):
                 # Disallow drop of non-image refelems onto an Image op.
