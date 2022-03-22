@@ -502,7 +502,7 @@ class ShadowTree:
         node_registration = elemtree.get(type="branch reg")
         self.set_icon(node_registration, icons8_vector_20.GetBitmap())
 
-        # Expand Ops and Element nodes only
+        # Expand Ops, Element, and Regmarks nodes only
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)

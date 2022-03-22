@@ -3714,6 +3714,10 @@ class Elemental(Service):
             self("element* delete\n")
             self.elem_branch.remove_all_children()
 
+        @self.tree_operation(_("Clear all"), node_type="branch reg", help="")
+        def clear_all_regmarks(node, **kwargs):
+            self.reg_branch.remove_all_children()
+
         # ==========
         # REMOVE MULTI (Tree Selected)
         # ==========
@@ -5098,7 +5102,7 @@ class Elemental(Service):
         elements = self._tree.get(type="branch elems")
         elements.remove_all_children()
 
-    def clear_regmark(self):
+    def clear_regmarks(self):
         elements = self._tree.get(type="branch reg")
         elements.remove_all_children()
 
