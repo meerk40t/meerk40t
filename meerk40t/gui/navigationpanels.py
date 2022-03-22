@@ -898,11 +898,22 @@ class SizePanel(wx.Panel):
         self.text_height.Enable(v)
 
         if v:
-            width, height = self.context.device.scene_to_device_position(
-                x=self.object_width, y=self.object_height, vector=True
+            p = self.context
+            units = p.units_name
+            s = "{wlen:.2f}{units}".format(
+                wlen=p.device.length(
+                    self.object_width, 1, new_units=units, as_float=True
+                ),
+                units=units,
             )
-            self.text_width.SetValue(str(width))
-            self.text_height.SetValue(str(height))
+            t = "{wlen:.2f}{units}".format(
+                wlen=p.device.length(
+                    self.object_height, 1, new_units=units, as_float=True
+                ),
+                units=units,
+            )
+            self.text_width.SetValue(s)
+            self.text_height.SetValue(t)
         else:
             self.text_width.SetValue("---")
             self.text_height.SetValue("---")
@@ -928,26 +939,44 @@ class SizePanel(wx.Panel):
 
     def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            width = self.device.length(
+            p = self.context
+            units = p.units_name
+            width = self.context.device.length(
                 self.text_width.Value,
                 0,
                 relative_length=self.object_width,
                 new_units="mm",
                 scale=1.0 / self.object_ratio,
             )
-            self.text_height.SetValue(width)
+            s = "{wlen:.2f}{units}".format(
+                wlen=p.device.length(
+                    width.value, 1, new_units=units, as_float=True
+                ),
+                units=units,
+            )
+
+            self.text_height.SetValue(s)
         event.Skip()
 
     def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            height = self.device.length(
+            p = self.context
+            units = p.units_name
+            height = self.context.device.length(
                 self.text_height.Value,
                 1,
                 relative_length=self.object_height,
                 new_units="mm",
                 scale=self.object_ratio,
             )
-            self.text_width.SetValue(height)
+            s = "{wlen:.2f}{units}".format(
+                wlen=p.device.length(
+                    height.value, 1, new_units=units, as_float=True
+                ),
+                units=units,
+            )
+
+            self.text_width.SetValue(s)
 
         event.Skip()
 
