@@ -2,6 +2,7 @@ import re
 from copy import copy
 
 from meerk40t.svgelements import PATTERN_LENGTH_UNITS, PATTERN_PERCENT, Matrix
+from meerk40t.kernel import CommandSyntaxError
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -241,48 +242,71 @@ class ViewPort:
                 relative_length = self.height
         if new_units is None:
             length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
             if scale is not None:
                 length *= scale
             return length.value(
                 ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
             )
         elif new_units == "mm":
-            return Length(value).to_mm(
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
+            return length.to_mm(
                 ppi=UNITS_PER_INCH,
                 relative_length=relative_length,
                 as_float=as_float,
                 scale=scale,
             )
         elif new_units == "inch":
-            return Length(value).to_inch(
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
+            return length.to_inch(
                 ppi=UNITS_PER_INCH,
                 relative_length=relative_length,
                 as_float=as_float,
                 scale=scale,
             )
         elif new_units == "cm":
-            return Length(value).to_cm(
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
+            return length.to_cm(
                 ppi=UNITS_PER_INCH,
                 relative_length=relative_length,
                 as_float=as_float,
                 scale=scale,
             )
         elif new_units == "px":
-            return Length(value).to_px(
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
+            return length.to_px(
                 ppi=UNITS_PER_INCH,
                 relative_length=relative_length,
                 as_float=as_float,
                 scale=scale,
             )
         elif new_units == "mil":
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
             return (
-                Length(value).to_inch(
+                length.to_inch(
                     ppi=UNITS_PER_INCH,
                     relative_length=relative_length,
                     as_float=as_float,
                 )
                 / 1000.0
             )
+        else:
+            length = Length(value)
+            if not length.is_valid_length:
+                raise CommandSyntaxError("'%s' is not a valid length" % value)
+            return length.value
+
 
     def contains(self, x, y):
         x = self.length(x, 0)
@@ -442,6 +466,7 @@ class ViewPort:
 
 class Length(object):
     def __init__(self, *args, **kwargs):
+        self._valid = False
         if len(args) == 1:
             value = args[0]
             if value is None:
@@ -449,11 +474,24 @@ class Length(object):
                 self.units = None
                 return
             s = str(value)
+
             for m in REGEX_LENGTH.findall(s):
+                if len(m[1]) == 0 or m[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    self._valid = True
                 self.amount = float(m[0])
                 self.units = m[1]
                 return
         elif len(args) == 2:
+            try:
+                x = float(args[0])
+                if len(args[1]) == 0 or args[1] in (
+                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
+                ):
+                    self._valid = True
+            except ValueError:
+                pass
             self.amount = args[0]
             self.units = args[1]
             return
@@ -716,29 +754,9 @@ class Length(object):
                 return True
         return False
 
-    @staticmethod
-    def is_valid_length(*args):
-        if len(args) == 1:
-            value = args[0]
-            if value is None:
-                return False
-            s = str(value)
-            for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    return True
-                return False
-        elif len(args) == 2:
-            try:
-                x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    return True
-            except ValueError:
-                pass
-            return False
+    @property
+    def is_valid_length(self):
+        return self._valid
 
     @property
     def value_in_units(self):
