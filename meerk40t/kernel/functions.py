@@ -187,7 +187,7 @@ def console_command(
                     opt_index = argument_index
 
             if inner.all_arguments_required:
-                if argument_index != stack:
+                if argument_index != len(stack):
                     raise CommandSyntaxError("Required arguments were not present.")
 
             # Any unprocessed positional arguments get default values (even None)
