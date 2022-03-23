@@ -436,7 +436,8 @@ class Length(object):
     def __init__(self, *args,
                 ppi=DEFAULT_PPI,
                 relative_length=None,
-                unitless=PX_PER_UNIT):
+                unitless=PX_PER_UNIT,
+                preferred_units=None):
         self._amount = None
         self._preferred_units = ""
 
@@ -483,6 +484,8 @@ class Length(object):
             else:
                 raise ValueError("Percent without relative length is meaningless.")
         self._amount = scale * amount
+        if preferred_units is not None:
+            units = preferred_units
         self._preferred_units = units
 
     def __float__(self):
@@ -507,13 +510,9 @@ class Length(object):
         return c
 
     def __truediv__(self, other):
-        if isinstance(other, (int, float)):
-            c = self.__copy__()
-            c._amount /= other
-            return c
-        if self._amount == 0.0:
-            return 0.0
-        raise ValueError
+        if not isinstance(other, Length):
+            other = Length(other)
+        return self._amount / other._amount
 
     __floordiv__ = __truediv__
     __div__ = __truediv__
