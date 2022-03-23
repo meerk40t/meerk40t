@@ -205,42 +205,22 @@ class BorderWidget(Widget):
             font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, TEXT_COLOR)
         gc.DrawText(
-            "{distance:.2f}{units}".format(
-                distance=context.device.length(
-                    self.top, 1, new_units=units, as_float=True
-                ),
-                units=units,
-            ),
+            str(Length(amount=self.top, digits=3, preferred_units=units)),
             center_x,
             self.top / 2.0,
         )
         gc.DrawText(
-            "{distance:.2f}{units}".format(
-                distance=context.device.length(
-                    self.left, 0, new_units=units, as_float=True
-                ),
-                units=units,
-            ),
+            str(Length(amount=self.left, digits=3, preferred_units=units)),
             self.left / 2.0,
             center_y,
         )
         gc.DrawText(
-            "{distance:.2f}{units}".format(
-                distance=context.device.length(
-                    (self.bottom - self.top), 1, new_units=units, as_float=True
-                ),
-                units=units,
-            ),
+            str(Length(amount=(self.bottom - self.top), digits=3, preferred_units=units)),
             self.right,
             center_y,
         )
         gc.DrawText(
-            "{distance:.2f}{units}".format(
-                distance=context.device.length(
-                    (self.right - self.left), 0, new_units=units, as_float=True
-                ),
-                units=units,
-            ),
+            str(Length(amount=(self.right - self.left), digits=3, preferred_units=units)),
             center_x,
             self.bottom,
         )
