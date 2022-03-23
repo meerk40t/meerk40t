@@ -902,11 +902,11 @@ class SizePanel(wx.Panel):
         self.object_width = None
         self.object_height = None
         self.object_ratio = None
-        if self.context.elements.has_emphasis:
+        bbox = self.context.elements.selected_area()
+        if bbox is not None:
             p = self.context
             units = p.units_name
             try:
-                bbox = self.context.elements.selected_area()
                 self.object_x = Length(bbox[0], unitless=1.0, preferred_units=units, digits=3)
                 self.object_y = Length(bbox[1], unitless=1.0, preferred_units=units, digits=3)
                 self.object_width = Length(
