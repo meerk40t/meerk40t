@@ -274,9 +274,9 @@ class ViewPort:
     def contains(self, x, y):
         x = self.length(x, 0)
         y = self.length(y, 1)
-        if x >= self.width:
+        if x >= self._width:
             return False
-        if y >= self.height:
+        if y >= self._height:
             return False
         if x < 0:
             return False
