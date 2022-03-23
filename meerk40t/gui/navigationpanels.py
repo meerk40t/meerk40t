@@ -945,7 +945,7 @@ class SizePanel(wx.Panel):
         new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
             "resize {x} {y} {width} {height}".format(
-                x=self.object_x, y=self.object_y, width=new_width, height=new_height
+                x=repr(self.object_x), y=repr(self.object_y), width=new_width, height=new_height
             )
         )
 
@@ -957,6 +957,7 @@ class SizePanel(wx.Panel):
                 self.text_width.Value,
                 relative_length=self.object_width,
                 preferred_units=units,
+                digits=3,
             )
             self.text_height.SetValue((new_width * (1.0 / self.object_ratio)).preferred_length)
         event.Skip()
@@ -969,6 +970,7 @@ class SizePanel(wx.Panel):
                 self.text_height.Value,
                 relative_length=self.object_height,
                 preferred_units=units,
+                digits=3,
             )
             self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
 
