@@ -147,6 +147,14 @@ class Elemental(Service):
         if not len(ops) and self.operation_default_empty:
             self.load_default()
 
+
+    def length_x(self, v):
+        return float(Length(v, relative_length=self.device.width))
+
+    def length_y(self, v):
+        return float(Length(v, relative_length=self.device.height))
+
+
     def _init_commands(self, kernel):
 
         _ = kernel.translation
@@ -2059,46 +2067,41 @@ class Elemental(Service):
             data.append(circ)
             return "elements", data
 
-        @self.console_argument("x_pos", type=str)
-        @self.console_argument("y_pos", type=str)
-        @self.console_argument("rx_pos", type=str)
-        @self.console_argument("ry_pos", type=str)
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("rx_pos", type=Length)
+        @self.console_argument("ry_pos", type=Length)
         @self.console_command(
             "ellipse",
             help=_("ellipse <cx> <cy> <rx> <ry>"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
-            if ry_pos is None:
-                raise CommandSyntaxError
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            rx_pos = self.device.length(rx_pos, 0)
-            ry_pos = self.device.length(ry_pos, 1)
-            ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
+            ellip = Ellipse(cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos))
             self.add_element(ellip)
             if data is None:
-                return "elements", [ellip]
-            else:
-                data.append(ellip)
-                return "elements", data
+                data = list()
+            data.append(ellip)
+            return "elements", data
 
         @self.console_argument(
-            "x_pos", type=str, help=_("x position for top left corner of rectangle.")
+            "x_pos", type=self.length_x, help=_("x position for top left corner of rectangle.")
         )
         @self.console_argument(
-            "y_pos", type=str, help=_("y position for top left corner of rectangle.")
+            "y_pos", type=self.length_y, help=_("y position for top left corner of rectangle.")
         )
-        @self.console_argument("width", type=str, help=_("width of the rectangle."))
-        @self.console_argument("height", type=str, help=_("height of the rectangle."))
-        @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
-        @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
+        @self.console_argument("width", type=self.length_x, help=_("width of the rectangle."))
+        @self.console_argument("height", type=self.length_y, help=_("height of the rectangle."))
+        @self.console_option("rx", "x", type=self.length_x, help=_("rounded rx corner value."))
+        @self.console_option("ry", "y", type=self.length_y, help=_("rounded ry corner value."))
         @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_rect(
             x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
@@ -2106,52 +2109,36 @@ class Elemental(Service):
             """
             Draws an svg rectangle with optional rounded corners.
             """
-            if x_pos is None:
-                raise CommandSyntaxError
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            rx_pos = self.device.length(rx, 0)
-            ry_pos = self.device.length(ry, 1)
-            width = self.device.length(width, 0)
-            height = self.device.length(height, 1)
             rect = Rect(
-                x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos
+                x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry
             )
-
             self.add_element(rect)
             if data is None:
-                return "elements", [rect]
-            else:
-                data.append(rect)
-                return "elements", data
+                data = list()
+            data.append(rect)
+            return "elements", data
 
-        @self.console_argument("x0", type=str, help=_("start x position"))
-        @self.console_argument("y0", type=str, help=_("start y position"))
-        @self.console_argument("x1", type=str, help=_("end x position"))
-        @self.console_argument("y1", type=str, help=_("end y position"))
+        @self.console_argument("x0", type=self.length_x, help=_("start x position"))
+        @self.console_argument("y0", type=self.length_y, help=_("start y position"))
+        @self.console_argument("x1", type=self.length_x, help=_("end x position"))
+        @self.console_argument("y1", type=self.length_y, help=_("end y position"))
         @self.console_command(
             "line",
             help=_("adds line to scene"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_line(command, x0, y0, x1, y1, data=None, **kwargs):
             """
             Draws an svg line in the scene.
             """
-            if y1 is None:
-                raise CommandSyntaxError
-            x0 = self.device.length(x0, 0)
-            y0 = self.device.length(y0, 1)
-            x1 = self.device.length(x1, 0)
-            y1 = self.device.length(y1, 1)
             simple_line = SimpleLine(x0, y0, x1, y1)
             self.add_element(simple_line)
             if data is None:
-                return "elements", [simple_line]
-            else:
-                data.append(simple_line)
-                return "elements", data
+                data = list()
+            data.append(simple_line)
+            return "elements", data
 
         @self.console_option("size", "s", type=float, help=_("font size to for object"))
         @self.console_argument("text", type=str, help=_("quoted string of text"))
@@ -2170,72 +2157,32 @@ class Elemental(Service):
             svg_text = SVGText(text)
             if size is not None:
                 svg_text.font_size = size
-            svg_text *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+            svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
             self.add_element(svg_text)
             if data is None:
-                return "elements", [svg_text]
-            else:
-                data.append(svg_text)
-                return "elements", data
+                data = list()
+            data.append(svg_text)
+            return "elements", data
 
+        @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
         @self.console_command(
-            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
+            ("polygon", "polyline"), help=_("poly(gon|line) (Length Length)*"), input_type=("elements", None), all_arguments_required=True,
         )
-        def element_polygon(args=tuple(), data=None, **kwargs):
+        def element_poly(command, mlist, data=None, **kwargs):
             try:
-                mlist = list(map(str, args))
-                # TODO: Scale Physical to Scene.
-                for ct, e in enumerate(mlist):
-                    if ct % 2 == 0:
-                        x = self.device.length(e, 0)
-                    else:
-                        x = self.device.length(e, 1)
-                    mlist[ct] = x
-                    ct += 1
-                element = Polygon(mlist)
-                # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+                if command == "polygon":
+                    element = Polygon(list(map(float,mlist)))
+                else:
+                    element = Polyline(list(map(float, mlist)))
             except ValueError:
                 raise CommandSyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
                 )
             self.add_element(element)
             if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
-
-        @self.console_command(
-            "polyline",
-            help=_("polyline (Length Length)*"),
-            input_type=("elements", None),
-        )
-        def element_polyline(command, channel, _, args=tuple(), data=None, **kwargs):
-            pcol = None
-            pstroke = Color()
-            try:
-                mlist = list(map(str, args))
-                for ct, e in enumerate(mlist):
-                    if ct % 2 == 0:
-                        x = self.device.length(e, 0)
-                    else:
-                        x = self.device.length(e, 1)
-                    mlist[ct] = x
-
-                    ct += 1
-
-                element = Polyline(mlist)
-                element.fill = pcol
-            except ValueError:
-                raise CommandSyntaxError(
-                    _("Must be a list of spaced delimited length pairs.")
-                )
-            self.add_element(element)
-            if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
+                data = list()
+            data.append(element)
+            return "elements", data
 
         @self.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
@@ -2266,13 +2213,12 @@ class Elemental(Service):
 
             self.add_element(path)
             if data is None:
-                return "elements", [path]
-            else:
-                data.append(path)
-                return "elements", data
+                data=list()
+            data.append(path)
+            return "elements", data
 
         @self.console_argument(
-            "stroke_width", type=str, help=_("Stroke-width for the given stroke")
+            "stroke_width", type=Length, help=_("Stroke-width for the given stroke")
         )
         @self.console_command(
             "stroke-width",
