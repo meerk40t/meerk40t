@@ -614,7 +614,22 @@ class Length(object):
 
     @property
     def preferred_length(self):
-        return "{amount}{units}".format(amount=self._amount, units=self._preferred_units)
+        if self._preferred_units == "px":
+            return self.length_pixels
+        elif self._preferred_units == "in":
+            return self.length_inches
+        elif self._preferred_units == "cm":
+            return self.length_cm
+        elif self._preferred_units == "mm":
+            return self.length_mm
+        elif self._preferred_units == "nm":
+            return self.length_nm
+        elif self._preferred_units == "mil":
+            return self.length_mil
+        elif self._preferred_units == "um":
+            return self.length_um
+        else:
+            return self.length_units
 
     @property
     def pixels(self):

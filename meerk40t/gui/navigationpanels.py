@@ -449,12 +449,12 @@ class Drag(wx.Panel):
     def on_button_align_drag_up(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, "-" + self.context.jog_amount)
+        self.drag_relative(0, str(-Length(self.context.jog_amount)))
 
     def on_button_align_drag_left(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative("-" + self.context.jog_amount, 0)
+        self.drag_relative(str(-Length(self.context.jog_amount)), 0)
 
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
