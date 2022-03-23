@@ -1,7 +1,7 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import PATTERN_LENGTH_UNITS, PATTERN_PERCENT, Matrix
+from meerk40t.svgelements import Matrix
 from meerk40t.kernel import CommandSyntaxError
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
@@ -464,39 +464,32 @@ class ViewPort:
         )
 
 
+ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")
+
+
 class Length(object):
     def __init__(self, *args, **kwargs):
-        self._valid = False
+        self.amount = None
+        self.units = None
         if len(args) == 1:
             value = args[0]
             if value is None:
-                self.amount = None
-                self.units = None
                 return
             s = str(value)
-
             for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self._valid = True
-                self.amount = float(m[0])
+                self.amount = m[0]
                 self.units = m[1]
-                return
         elif len(args) == 2:
-            try:
-                x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    self._valid = True
-            except ValueError:
-                pass
             self.amount = args[0]
             self.units = args[1]
+        else:
+            raise ValueError("Arguments not acceptable")
+        if self.units == "inch" or self.units == "inches":
+            self.units = "in"
+        try:
+            self.amount = float(self.amount)
+        except ValueError:
             return
-        self.amount = 0.0
-        self.units = ""
 
     def __float__(self):
         if self.amount is None:
@@ -756,7 +749,7 @@ class Length(object):
 
     @property
     def is_valid_length(self):
-        return self._valid
+        return self.amount is not None and self.units in ACCEPTED_UNITS
 
     @property
     def value_in_units(self):
