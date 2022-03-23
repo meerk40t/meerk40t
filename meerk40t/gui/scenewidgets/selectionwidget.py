@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
     HITCHAIN_DELEGATE,
@@ -592,38 +593,22 @@ class SelectionWidget(Widget):
                 units = p.units_name
                 # scale(%.13f,%.13f)
                 gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(y0, 1, new_units=units, as_float=True),
-                        units=units,
-                    ),
+                    str(Length(amount=y0, preferred_units=units, digits=2)),
                     center_x,
                     y0 / 2.0,
                 )
                 gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(x0, 0, new_units=units, as_float=True),
-                        units=units,
-                    ),
+                    str(Length(amount=x0, preferred_units=units, digits=2)),
                     x0 / 2.0,
                     center_y,
                 )
                 gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(
-                            (y1 - y0), 1, new_units=units, as_float=True
-                        ),
-                        units=units,
-                    ),
+                    str(Length(amount=(y1 - y0), preferred_units=units, digits=2)),
                     x1,
                     center_y,
                 )
                 gc.DrawText(
-                    "{distance:.2f}{units}".format(
-                        distance=p.device.length(
-                            (x1 - x0), 0, new_units=units, as_float=True
-                        ),
-                        units=units,
-                    ),
+                    str(Length(amount=(x1 - x0), preferred_units=units, digits=2)),
                     center_x,
                     y1,
                 )

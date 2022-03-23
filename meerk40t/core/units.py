@@ -501,6 +501,8 @@ class Length(object):
                 preferred_units = units
         if preferred_units is None:
             preferred_units = ""
+        if preferred_units == "inch" or preferred_units == "inches":
+            preferred_units = "in"
         self._preferred_units = preferred_units
 
     def __float__(self):
