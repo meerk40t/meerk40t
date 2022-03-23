@@ -1,8 +1,8 @@
 import time
 from threading import Lock
 
+from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Length
 
 
 def plugin(kernel, lifecycle):
@@ -90,7 +90,7 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
         @kernel.console_argument(
-            "amount", type=str, help=_("amount to move in the set direction.")
+            "amount", type=Length, help=_("amount to move in the set direction.")
         )
         @kernel.console_command(
             ("left", "right", "up", "down"),
@@ -105,17 +105,17 @@ def plugin(kernel, lifecycle):
             if amount is None:
                 amount = Length("1mm")
             if not hasattr(spooler, "_dx"):
-                spooler._dx = 0
+                spooler._dx = Length(0)
             if not hasattr(spooler, "_dy"):
-                spooler._dy = 0
+                spooler._dy = Length(0)
             if command.endswith("right"):
-                spooler._dx += kernel.device.length(amount, 0)
+                spooler._dx += amount
             elif command.endswith("left"):
-                spooler._dx -= kernel.device.length(amount, 0)
+                spooler._dx -= amount
             elif command.endswith("up"):
-                spooler._dy -= kernel.device.length(amount, 1)
+                spooler._dy -= amount
             elif command.endswith("down"):
-                spooler._dy += kernel.device.length(amount, 1)
+                spooler._dy += amount
             kernel.console(".timer 1 0 spool jog\n")
             return "spooler", spooler
 
@@ -132,21 +132,19 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             try:
-                idx = int(spooler._dx)
-                idy = int(spooler._dy)
+                idx = spooler._dx
+                idy = spooler._dy
             except AttributeError:
                 return
-            if idx == 0 and idy == 0:
-                return
-            sidx = "{dx}nm".format(dx=idx)
-            sidy = "{dy}nm".format(dy=idy)
             if force:
-                spooler.job("move_rel", sidx, sidy)
+                spooler.job("move_rel", idx, idy)
+                spooler._dx = Length(0)
+                spooler._dy = Length(0)
             else:
-                if spooler.job_if_idle("move_rel", sidx, sidy):
-                    channel(_("Position moved: %d %d") % (idx, idy))
-                    spooler._dx -= idx
-                    spooler._dy -= idy
+                if spooler.job_if_idle("move_rel", float(idx), float(idy)):
+                    channel(_("Position moved: {x} {y}").format(x=idx, y=idy))
+                    spooler._dx = Length(0)
+                    spooler._dy = Length(0)
                 else:
                     channel(_("Busy Error"))
             return "spooler", spooler
