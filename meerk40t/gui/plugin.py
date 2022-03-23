@@ -1,36 +1,47 @@
-GUI_START = True
-
-
 def plugin(kernel, lifecycle):
     _ = kernel.translation
     kernel_root = kernel.root
 
-    # pylint: disable=global-statement
-    global GUI_START
+    if lifecycle == "precli":
+        kernel._hard_gui = True
+        kernel._gui = True
 
-    if lifecycle == "cli":
+    elif lifecycle == "cli":
+        kernel._gui = not kernel.args.no_gui
+        kernel._hard_gui = not kernel.args.gui_suppress
         try:
             import wx
         except ImportError:
+            kernel._gui = False
+
+            @kernel.console_command("gui", help=_("starts the gui"))
+            def gui_start(channel=None, **kwargs):
+                channel(
+                    "wxPython is not installed. No graphical user interface possible."
+                )
+
             return
-        kernel.set_feature("wx")
+        if kernel._hard_gui:
+            kernel.set_feature("wx")
+
+            @kernel.console_command("gui", help=_("starts the gui"))
+            def gui_start(**kwargs):
+                kernel.console_command_remove("gui")
+                meerk40tgui = kernel_root.open("module/wxMeerK40t")
+                kernel.console("window open MeerK40t\n")
+                meerk40tgui.MainLoop()
+
+        else:
+            kernel._gui = False
     if lifecycle == "invalidate":
+        if not kernel._hard_gui:
+            return True
         try:
             import wx
         except ImportError:
-            print("wxMeerK40t plugin could not load because wx is not installed.")
+            print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
         return False
-    if lifecycle == "init" and kernel.args.no_gui:
-        GUI_START = False
-
-        @kernel.console_command("gui", help=_("starts the gui"))
-        def gui_start(**kwargs):
-            kernel.console_command_remove("gui")
-            meerk40tgui = kernel_root.open("module/wxMeerK40t")
-            kernel.console("window open MeerK40t\n")
-            meerk40tgui.MainLoop()
-
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
@@ -179,7 +190,7 @@ def plugin(kernel, lifecycle):
 
         kernel_root.planner.register("plan/interrupt", interrupt)
 
-        if GUI_START:
+        if kernel._gui:
 
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
@@ -218,7 +229,7 @@ def plugin(kernel, lifecycle):
                 )
                 answer = dlg.ShowModal()
                 if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/896"
+                    issue_page = "https://github.com/meerk40t/meerk40t/issues/909"
                     import webbrowser
 
                     webbrowser.open(issue_page, new=0, autoraise=True)

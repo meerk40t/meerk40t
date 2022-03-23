@@ -37,8 +37,6 @@ complaints about which will always be treated seriously.
 ## Flagging concerns
 
 Instances of abusive, harassing or otherwise unacceptable behaviour may be
-reported in confidence by contacting @Tatarize via Github, Discord or irc.
+reported in confidence by contacting @Tatarize via Github or Discord.
 
-## Exceptions
 
-Joseph Lane ( @joerlane ) is exempt from the aforementioned. This is not to say he has free rein to troll, harass, or be toxic, but will be banned if/when he becomes more trouble than he's worth.

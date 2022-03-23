@@ -422,7 +422,7 @@ class BalorDevice(Service, ViewPort):
             laser_off_delay=None,
             polygon_delay=None,
             quantization=500,
-            **kwgs
+            **kwgs,
         ):
             """
             Mark takes in element types from element* or circle or hull and applies the mark settings, and outputs
@@ -513,7 +513,7 @@ class BalorDevice(Service, ViewPort):
             simulation_speed=None,
             quantization=500,
             data=None,
-            **kwgs
+            **kwgs,
         ):
             channel("Creating light job out of elements.")
             paths = data
@@ -1094,7 +1094,7 @@ class BalorDevice(Service, ViewPort):
             grayscale=False,
             grayscale_min=None,
             grayscale_max=None,
-            **kwgs
+            **kwgs,
         ):
             # def raster_render(self, job, cal, in_file, out_file, args):
             if len(data) == 0:
@@ -1261,7 +1261,7 @@ class BalorDevice(Service, ViewPort):
             laser_on_delay=None,
             laser_off_delay=None,
             polygon_delay=None,
-            **kwargs
+            **kwargs,
         ):
             from meerk40t.balor.Cal import Cal
 

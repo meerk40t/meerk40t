@@ -1,6 +1,7 @@
 import math
 import wx
 
+from meerk40t.core.units import Length
 # from msilib.schema import RadioButton
 # from pyparsing import line
 

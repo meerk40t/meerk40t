@@ -2,8 +2,8 @@ import wx
 
 from meerk40t.kernel import signal_listener
 
-from ..svgelements import Color
-from .laserrender import swizzlecolor
+from ...svgelements import Color
+from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
 
@@ -423,7 +423,7 @@ class PanelStartPreference(wx.Panel):
     def pane_show(self):
         pass
 
-    @signal_listener("element_property_reload")
+    # @signal_listener("element_property_reload")
     def on_element_property_reload(self, *args):
         self._toggle_sliders()
         self.raster_lines = None

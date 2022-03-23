@@ -1,11 +1,12 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import PATTERN_LENGTH_UNITS, PATTERN_PERCENT, Matrix
+from meerk40t.svgelements import Matrix
+from meerk40t.kernel import CommandSyntaxError
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
-ERROR = 1e-12
+ERROR = 1e-11
 DEFAULT_PPI = 96.0
 NATIVE_UNIT_PER_INCH = 65535
 
@@ -111,8 +112,8 @@ class ViewPort:
     def realize(self):
         self._imatrix = None
         self._matrix = None
-        self._width = Length(self.width).value(ppi=UNITS_PER_INCH, unitless=1.0)
-        self._height = Length(self.height).value(ppi=UNITS_PER_INCH, unitless=1.0)
+        self._width = Length(self.width, unitless=1.0).units
+        self._height = Length(self.height, unitless=1.0).units
         self._offset_x = self._width * self.origin_x
         self._offset_y = self._height * self.origin_y
         self._scale_x = self.user_scale_x * self.native_scale_x
@@ -128,15 +129,11 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        nm_x = Length(x).value(
-            ppi=UNITS_PER_INCH, relative_length=self._width, unitless=unitless
-        )
-        nm_y = Length(y).value(
-            ppi=UNITS_PER_INCH, relative_length=self._height, unitless=unitless
-        )
-        return nm_x, nm_y
+        unit_x = Length(x, relative_length=self._width, unitless=unitless).units
+        unit_y = Length(y, relative_length=self._height, unitless=unitless).units
+        return unit_x, unit_y
 
-    def physical_to_device_position(self, x, y, unitless=UNITS_PER_NM):
+    def physical_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
         """
         Converts an X,Y position into viewport units.
         @param x:
@@ -239,57 +236,47 @@ class ViewPort:
         else:
             if relative_length is None:
                 relative_length = self.height
-        if new_units is None:
-            length = Length(value)
-            if scale is not None:
-                length *= scale
-            return length.value(
-                ppi=UNITS_PER_INCH, relative_length=relative_length, unitless=unitless
-            )
-        elif new_units == "mm":
-            return Length(value).to_mm(
-                ppi=UNITS_PER_INCH,
-                relative_length=relative_length,
-                as_float=as_float,
-                scale=scale,
-            )
+        try:
+            length = Length(value, relative_length=relative_length, unitless=unitless)
+        except ValueError:
+            raise CommandSyntaxError("'%s' is not a valid length" % value)
+        if scale is not None:
+            length *= scale
+
+        if new_units == "mm":
+            if as_float:
+                return length.mm
+            else:
+                return length.length_mm
         elif new_units == "inch":
-            return Length(value).to_inch(
-                ppi=UNITS_PER_INCH,
-                relative_length=relative_length,
-                as_float=as_float,
-                scale=scale,
-            )
+            if as_float:
+                return length.inches
+            else:
+                return length.length_inches
         elif new_units == "cm":
-            return Length(value).to_cm(
-                ppi=UNITS_PER_INCH,
-                relative_length=relative_length,
-                as_float=as_float,
-                scale=scale,
-            )
+            if as_float:
+                return length.cm
+            else:
+                return length.length_cm
         elif new_units == "px":
-            return Length(value).to_px(
-                ppi=UNITS_PER_INCH,
-                relative_length=relative_length,
-                as_float=as_float,
-                scale=scale,
-            )
+            if as_float:
+                return length.pixels
+            else:
+                return length.length_pixels
         elif new_units == "mil":
-            return (
-                Length(value).to_inch(
-                    ppi=UNITS_PER_INCH,
-                    relative_length=relative_length,
-                    as_float=as_float,
-                )
-                / 1000.0
-            )
+            if as_float:
+                return length.mil
+            else:
+                return length.length_mil
+        else:
+            return length.units
 
     def contains(self, x, y):
         x = self.length(x, 0)
         y = self.length(y, 1)
-        if x >= self.width:
+        if x >= self._width:
             return False
-        if y >= self.height:
+        if y >= self._height:
             return False
         if x < 0:
             return False
@@ -307,27 +294,27 @@ class ViewPort:
 
     @property
     def width_as_mm(self):
-        return Length(self.width).to_mm(ppi=UNITS_PER_INCH)
+        return Length(self.width).length_mm
 
     @property
     def height_as_mm(self):
-        return Length(self.height).to_mm(ppi=UNITS_PER_INCH)
+        return Length(self.height).length_mm
 
     @property
     def width_as_inch(self):
-        return Length(self.width).to_inch(ppi=UNITS_PER_INCH)
+        return Length(self.width).length_inches
 
     @property
     def height_as_inch(self):
-        return Length(self.height).to_inch(ppi=UNITS_PER_INCH)
+        return Length(self.height).length_inches
 
     @property
     def unit_width(self):
-        return Length(self.width).value(ppi=UNITS_PER_INCH)
+        return Length(self.width).units
 
     @property
     def unit_height(self):
-        return Length(self.height).value(ppi=UNITS_PER_INCH)
+        return Length(self.width).units
 
     @staticmethod
     def viewbox_transform(
@@ -435,206 +422,130 @@ class ViewPort:
 
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).value(
-            ppi=UNITS_PER_INCH
-        )
+        return Length("{amount}{units}".format(units=units, amount=amount)).preferred
+
+
+ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")
 
 
 class Length(object):
-    def __init__(self, *args, **kwargs):
-        if len(args) == 1:
-            value = args[0]
-            if value is None:
-                self.amount = None
-                self.units = None
-                return
+    """
+    Amounts are converted to UNITS.
+    Initial unit is saved as preferred units.
+    """
+
+    def __init__(
+        self,
+        *args,
+        amount=None,
+        relative_length=None,
+        unitless=PX_PER_UNIT,
+        preferred_units=None,
+        digits=None,
+    ):
+        self._digits = digits
+        self._amount = amount
+        if self._amount is None:
+            if len(args) == 2:
+                value = str(args[0]) + str(args[1])
+            elif len(args) == 1:
+                value = args[0]
+            else:
+                raise ValueError("Arguments not acceptable")
             s = str(value)
-            for m in REGEX_LENGTH.findall(s):
-                self.amount = float(m[0])
-                self.units = m[1]
-                return
-        elif len(args) == 2:
-            self.amount = args[0]
-            self.units = args[1]
-            return
-        self.amount = 0.0
-        self.units = ""
+            match = REGEX_LENGTH.match(s)
+            if not match:
+                raise ValueError("Length was not parsable.")
+            amount = float(match.group(1))
+            units = match.group(2)
+            if units == "inch" or units == "inches":
+                units = "in"
+            scale = 1.0
+            if units == "":
+                if unitless:
+                    scale = unitless
+            elif units == "mm":
+                scale = UNITS_PER_MM
+            elif units == "cm":
+                scale = UNITS_PER_CM
+            elif units == "um":
+                scale = UNITS_PER_uM
+            elif units == "nm":
+                scale = UNITS_PER_NM
+            elif units == "in":
+                scale = UNITS_PER_INCH
+            elif units == "mil":
+                scale = UNITS_PER_MIL
+            elif units == "px":
+                scale = UNITS_PER_PIXEL
+            elif units == "pt":
+                scale = UNITS_PER_PIXEL * 1.3333
+            elif units == "pc":
+                scale = UNITS_PER_PIXEL * 16.0
+            elif units == "%":
+                if relative_length is not None:
+                    fraction = amount / 100.0
+                    if isinstance(relative_length, (str, Length)):
+                        relative_length = Length(
+                            relative_length, unitless=unitless
+                        ).units
+                    amount = relative_length
+                    scale = fraction
+                    units = ""
+                else:
+                    raise ValueError("Percent without relative length is meaningless.")
+            else:
+                raise ValueError("Units was not recognized")
+            self._amount = scale * amount
+            if preferred_units is None:
+                preferred_units = units
+        if preferred_units is None:
+            preferred_units = ""
+        if preferred_units == "inch" or preferred_units == "inches":
+            preferred_units = "in"
+        self._preferred_units = preferred_units
 
     def __float__(self):
-        if self.amount is None:
-            return None
-        if self.units == "pt":
-            return self.amount * 1.3333
-        elif self.units == "pc":
-            return self.amount * 16.0
-        return self.amount
+        return self._amount
 
     def __imul__(self, other):
         if isinstance(other, (int, float)):
-            self.amount *= other
+            self._amount *= other
             return self
-        if self.amount == 0.0:
+        if self._amount == 0.0:
             return 0.0
-        if isinstance(other, str):
-            other = Length(other)
-        if isinstance(other, Length):
-            if other.amount == 0.0:
-                self.amount = 0.0
-                return self
-            if self.units == other.units:
-                self.amount *= other.amount
-                return self
-            if self.units == "%":
-                self.units = other.units
-                self.amount = self.amount * other.amount / 100.0
-                return self
-            elif other.units == "%":
-                self.amount = self.amount * other.amount / 100.0
-                return self
         raise ValueError
 
     def __iadd__(self, other):
         if not isinstance(other, Length):
             other = Length(other)
-        if self.units == other.units:
-            self.amount += other.amount
-            return self
-        if self.amount == 0:
-            self.amount = other.amount
-            self.units = other.units
-            return self
-        if other.amount == 0:
-            return self
-        if self.units == "px" or self.units == "":
-            if other.units == "px" or other.units == "":
-                self.amount += other.amount
-            elif other.units == "pt":
-                self.amount += other.amount * 1.3333
-            elif other.units == "pc":
-                self.amount += other.amount * 16.0
-            else:
-                raise ValueError
-            return self
-        if self.units == "pt":
-            if other.units == "px" or other.units == "":
-                self.amount += other.amount / 1.3333
-            elif other.units == "pc":
-                self.amount += other.amount * 12.0
-            else:
-                raise ValueError
-            return self
-        elif self.units == "pc":
-            if other.units == "px" or other.units == "":
-                self.amount += other.amount / 16.0
-            elif other.units == "pt":
-                self.amount += other.amount / 12.0
-            else:
-                raise ValueError
-            return self
-        elif self.units == "cm":
-            if other.units == "mm":
-                self.amount += other.amount / 10.0
-            elif other.units == "in":
-                self.amount += other.amount / 0.393701
-            else:
-                raise ValueError
-            return self
-        elif self.units == "mm":
-            if other.units == "cm":
-                self.amount += other.amount * 10.0
-            elif other.units == "in":
-                self.amount += other.amount / 0.0393701
-            else:
-                raise ValueError
-            return self
-        elif self.units == "in":
-            if other.units == "cm":
-                self.amount += other.amount * 0.393701
-            elif other.units == "mm":
-                self.amount += other.amount * 0.0393701
-            else:
-                raise ValueError
-            return self
-        raise ValueError("%s units were not determined." % self.units)
+        self._amount += other._amount
+        return self
 
     def __abs__(self):
         c = self.__copy__()
-        c.amount = abs(c.amount)
+        c._amount = abs(c._amount)
         return c
 
     def __truediv__(self, other):
-        if isinstance(other, (int, float)):
-            c = self.__copy__()
-            c.amount /= other
-            return c
-        if self.amount == 0.0:
-            return 0.0
-        if isinstance(other, str):
+        if not isinstance(other, Length):
             other = Length(other)
-        if isinstance(other, Length):
-            if self.units == other.units:
-                q = self.amount / other.amount
-                return q  # no units
-        if self.units == "px" or self.units == "":
-            if other.units == "px" or other.units == "":
-                return self.amount / other.amount
-            elif other.units == "pt":
-                return self.amount / (other.amount * 1.3333)
-            elif other.units == "pc":
-                return self.amount / (other.amount * 16.0)
-            else:
-                raise ValueError
-        if self.units == "pt":
-            if other.units == "px" or other.units == "":
-                return self.amount / (other.amount / 1.3333)
-            elif other.units == "pc":
-                return self.amount / (other.amount * 12.0)
-            else:
-                raise ValueError
-        if self.units == "pc":
-            if other.units == "px" or other.units == "":
-                return self.amount / (other.amount / 16.0)
-            elif other.units == "pt":
-                return self.amount / (other.amount / 12.0)
-            else:
-                raise ValueError
-        if self.units == "cm":
-            if other.units == "mm":
-                return self.amount / (other.amount / 10.0)
-            elif other.units == "in":
-                return self.amount / (other.amount / 0.393701)
-            else:
-                raise ValueError
-        if self.units == "mm":
-            if other.units == "cm":
-                return self.amount / (other.amount * 10.0)
-            elif other.units == "in":
-                return self.amount / (other.amount / 0.0393701)
-            else:
-                raise ValueError
-        if self.units == "in":
-            if other.units == "cm":
-                return self.amount / (other.amount * 0.393701)
-            elif other.units == "mm":
-                return self.amount / (other.amount * 0.0393701)
-            else:
-                raise ValueError
-        raise ValueError
+        return self._amount / other._amount
 
     __floordiv__ = __truediv__
     __div__ = __truediv__
 
     def __lt__(self, other):
-        return (self - other).amount < 0.0
-
-    def __le__(self, other):
-        return (self - other).amount <= 0.0
+        return (self - other)._amount - ERROR < 0
 
     def __gt__(self, other):
-        return (self - other).amount > 0.0
+        return (self - other)._amount + ERROR > 0
+
+    def __le__(self, other):
+        return (self - other)._amount - ERROR <= 0
 
     def __ge__(self, other):
-        return (self - other).amount >= 0.0
+        return (self - other)._amount + ERROR >= 0
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -655,16 +566,16 @@ class Length(object):
 
     def __rdiv__(self, other):
         c = copy(self)
-        c *= 1.0 / other.amount
+        c *= 1.0 / other._amount
         return c
 
     def __neg__(self):
         s = self.__copy__()
-        s.amount = -s.amount
+        s._amount = -s._amount
         return s
 
     def __isub__(self, other):
-        if isinstance(other, (str, float, int)):
+        if not isinstance(other, Length):
             other = Length(other)
         self += -other
         return self
@@ -674,273 +585,169 @@ class Length(object):
         s -= other
         return s
 
+    def __round__(self, ndigits=0):
+        return round(self._amount, ndigits=ndigits)
+
     def __rsub__(self, other):
-        if isinstance(other, (str, float, int)):
+        if not isinstance(other, Length):
             other = Length(other)
         return (-self) + other
 
     def __copy__(self):
-        return Length(self.amount, self.units)
+        return Length(
+            None,
+            amount=self._amount,
+            preferred_units=self._preferred_units,
+            digits=self._digits,
+        )
 
     __rmul__ = __mul__
 
     def __repr__(self):
-        return "Length('%s')" % (str(self))
+        c = self.__copy__()
+        c._digits = None
+        return c.preferred_length
 
     def __str__(self):
-        if self.amount is None:
-            return "None"
-        return "%s%s" % (Length.str(self.amount), self.units)
+        return self.preferred_length
 
     def __eq__(self, other):
         if other is None:
             return False
-        s = self.in_pixels()
-        if isinstance(other, (float, int)):
-            if s is not None:
-                return abs(s - other) <= ERROR
-            else:
-                return other == 0 and self.amount == 0
-        if isinstance(other, str):
+        if isinstance(other, (int, float)):
+            return self._amount == other
+        if not isinstance(other, Length):
             other = Length(other)
-        if self.amount == other.amount and self.units == other.units:
-            return True
-        if s is not None:
-            o = self.in_pixels()
-            if abs(s - o) <= ERROR:
-                return True
-        s = self.in_inches()
-        if s is not None:
-            o = self.in_inches()
-            if abs(s - o) <= ERROR:
-                return True
-        return False
-
-    @staticmethod
-    def is_valid_length(*args):
-        if len(args) == 1:
-            value = args[0]
-            if value is None:
-                return False
-            s = str(value)
-            for m in REGEX_LENGTH.findall(s):
-                if len(m[1]) == 0 or m[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    return True
-                return False
-        elif len(args) == 2:
-            try:
-                x = float(args[0])
-                if len(args[1]) == 0 or args[1] in (
-                    PATTERN_LENGTH_UNITS + "|" + PATTERN_PERCENT
-                ):
-                    return True
-            except ValueError:
-                pass
-            return False
+        return abs(self._amount - other._amount) <= ERROR
 
     @property
-    def value_in_units(self):
-        return self.amount
+    def preferred(self):
+        if self._preferred_units == "px":
+            return self.pixels
+        elif self._preferred_units == "in":
+            return self.inches
+        elif self._preferred_units == "cm":
+            return self.cm
+        elif self._preferred_units == "mm":
+            return self.mm
+        elif self._preferred_units == "nm":
+            return self.nm
+        elif self._preferred_units == "mil":
+            return self.mil
+        elif self._preferred_units == "um":
+            return self.um
+        else:
+            return self.units
 
-    def in_pixels(self):
-        if self.units == "px" or self.units == "":
-            return self.amount
-        if self.units == "pt":
-            return self.amount / 1.3333
-        if self.units == "pc":
-            return self.amount / 16.0
-        return None
+    @property
+    def preferred_length(self):
+        if self._preferred_units == "px":
+            return self.length_pixels
+        elif self._preferred_units == "in":
+            return self.length_inches
+        elif self._preferred_units == "cm":
+            return self.length_cm
+        elif self._preferred_units == "mm":
+            return self.length_mm
+        elif self._preferred_units == "nm":
+            return self.length_nm
+        elif self._preferred_units == "mil":
+            return self.length_mil
+        elif self._preferred_units == "um":
+            return self.length_um
+        else:
+            return self.length_units
 
-    def in_inches(self):
-        if self.units == "mm":
-            return self.amount * 0.0393701
-        if self.units == "cm":
-            return self.amount * 0.393701
-        if self.units == "in":
-            return self.amount
-        return None
+    @property
+    def pixels(self):
+        amount = self._amount / UNITS_PER_PIXEL
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    def to_mm(
-        self,
-        ppi=UNITS_PER_INCH,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        viewbox=None,
-        as_float=False,
-        scale=None,
-    ):
-        value = self.value(
-            ppi=ppi,
-            relative_length=relative_length,
-            font_size=font_size,
-            font_height=font_height,
-            viewbox=viewbox,
-        )
-        v = value / (ppi * 0.0393701)
-        if scale is not None:
-            v *= scale
-        if as_float:
-            return v
-        return Length("%smm" % (Length.str(v)))
+    @property
+    def inches(self):
+        amount = self._amount / UNITS_PER_INCH
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    def to_cm(
-        self,
-        ppi=UNITS_PER_INCH,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        viewbox=None,
-        as_float=False,
-        scale=None,
-    ):
-        value = self.value(
-            ppi=ppi,
-            relative_length=relative_length,
-            font_size=font_size,
-            font_height=font_height,
-            viewbox=viewbox,
-        )
-        v = value / (ppi * 0.393701)
-        if scale is not None:
-            v *= scale
-        if as_float:
-            return v
-        return Length("%scm" % (Length.str(v)))
+    @property
+    def cm(self):
+        amount = self._amount / UNITS_PER_CM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    def to_inch(
-        self,
-        ppi=UNITS_PER_INCH,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        viewbox=None,
-        as_float=False,
-        scale=None,
-    ):
-        value = self.value(
-            ppi=ppi,
-            relative_length=relative_length,
-            font_size=font_size,
-            font_height=font_height,
-            viewbox=viewbox,
-        )
-        v = value / ppi
-        if scale is not None:
-            v *= scale
-        if as_float:
-            return v
-        return Length("%sin" % (Length.str(v)))
+    @property
+    def mm(self):
+        amount = self._amount / UNITS_PER_MM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    def to_px(
-        self,
-        ppi=UNITS_PER_INCH,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        viewbox=None,
-        as_float=False,
-        scale=None,
-    ):
-        value = self.value(
-            ppi=ppi,
-            relative_length=relative_length,
-            font_size=font_size,
-            font_height=font_height,
-            viewbox=viewbox,
-        )
-        v = (value / ppi) / DEFAULT_PPI
-        if scale is not None:
-            v *= scale
-        if as_float:
-            return v
-        return Length("%sin" % (Length.str(v)))
+    @property
+    def nm(self):
+        amount = self._amount / UNITS_PER_NM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    def value(
-        self,
-        ppi=None,
-        relative_length=None,
-        font_size=None,
-        font_height=None,
-        unitless=None,
-        **kwargs,
-    ):
-        if self.amount is None:
-            return None
-        if self.units == "":
-            if unitless:
-                return self.amount * unitless
-            else:
-                return self.amount
-        if self.units == "%":
-            if relative_length is None:
-                return self
-            fraction = self.amount / 100.0
-            if isinstance(relative_length, (float, int)):
-                return fraction * relative_length
-            elif isinstance(relative_length, (str, Length)):
-                length = relative_length * self
-                if isinstance(length, Length):
-                    return length.value(
-                        ppi=ppi,
-                        font_size=font_size,
-                        font_height=font_height,
-                    )
-                return length
-            return self
-        if self.units == "mm":
-            if ppi is None:
-                return self
-            return self.amount * ppi * 0.0393701
-        if self.units == "cm":
-            if ppi is None:
-                return self
-            return self.amount * ppi * 0.393701
-        if self.units == "nm":
-            if ppi is None:
-                return self
-            return self.amount * ppi * 3.93701e-8
-        if self.units == "in":
-            if ppi is None:
-                return self
-            return self.amount * ppi
-        if self.units == "px":
-            return self.amount
-        if self.units == "pt":
-            return self.amount * 1.3333
-        if self.units == "pc":
-            return self.amount * 16.0
-        if self.units == "em":
-            if font_size is None:
-                return self
-            return self.amount * float(font_size)
-        if self.units == "ex":
-            if font_height is None:
-                return self
-            return self.amount * float(font_height)
-        try:
-            return float(self)
-        except ValueError:
-            return self
+    @property
+    def mil(self):
+        amount = self._amount / UNITS_PER_MIL
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
-    @staticmethod
-    def str(s):
-        if s is None:
-            return "n/a"
-        if isinstance(s, Length):
-            if s.units == "":
-                s = s.amount
-            else:
-                a = "%.12f" % s.amount
-                if "." in a:
-                    a = a.rstrip("0").rstrip(".")
-                return "'%s%s'" % (a, s.units)
-        try:
-            s = "%.12f" % s
-        except TypeError:
-            return str(s)
-        if "." in s:
-            s = s.rstrip("0").rstrip(".")
-        return s
+    @property
+    def um(self):
+        amount = self._amount / UNITS_PER_uM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def units(self):
+        amount = self._amount
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def length_pixels(self):
+        return "{amount}px".format(amount=self.pixels)
+
+    @property
+    def length_inches(self):
+        return "{amount}in".format(amount=self.inches)
+
+    @property
+    def length_cm(self):
+        return "{amount}cm".format(amount=self.cm)
+
+    @property
+    def length_mm(self):
+        return "{amount}mm".format(amount=self.mm)
+
+    @property
+    def length_nm(self):
+        return "{amount}nm".format(amount=self.nm)
+
+    @property
+    def length_mil(self):
+        return "{amount}mil".format(amount=self.mil)
+
+    @property
+    def length_um(self):
+        return "{amount}um".format(amount=self.um)
+
+    @property
+    def length_units(self):
+        return "{amount}".format(amount=self.units)
+
+    def as_percent(self, relative_length):
+        return 100.00 * self._amount / Length(relative_length).units
+
+
+# TODO: Add in speed for units. mm/s in/s mm/minute.

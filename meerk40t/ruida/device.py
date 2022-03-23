@@ -2,7 +2,6 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import Module, Service
 
 from ..core.cutcode import CutCode, LineCut, PlotCut
@@ -10,8 +9,6 @@ from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
 from ..svgelements import Color, Point
-
-UNITS_PER_uM = UNITS_PER_uM
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -169,6 +166,12 @@ def plugin(kernel, lifecycle=None):
                     path=d, suffix=suffix
                 )
             )
+
+
+class RuidaCommandError(Exception):
+    """
+    Exception raised when an invalid Ruida command is received.
+    """
 
 
 class RuidaDevice(Service, ViewPort):
@@ -520,7 +523,7 @@ class RuidaEmulator(Module, Parameters):
         for array in self.parse_commands(data):
             try:
                 self.process(array)
-            except CommandSyntaxError:
+            except RuidaCommandError:
                 self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
@@ -543,7 +546,7 @@ class RuidaEmulator(Module, Parameters):
             self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
             self.ruida_channel("NOT A COMMAND: %d" % array[0])
-            raise CommandSyntaxError
+            raise RuidaCommandError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:

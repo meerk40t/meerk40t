@@ -7,28 +7,16 @@ import wx
 from PIL import Image
 from wx import aui
 
-from meerk40t.kernel import CommandSyntaxError
+from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.cutcode import CutCode
-from ..core.node.consoleop import ConsoleOperation
-from ..core.node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
-from ..core.units import UNITS_PER_INCH
+
+from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (
     Color,
-    Group,
-    Length,
     Matrix,
     Path,
-    SVGElement,
     SVGImage,
-    SVGText,
 )
 from .icons import (
     icon_meerk40t,
@@ -355,30 +343,33 @@ class MeerK40t(MWindow):
         """
         gui = self
         root = self.context.root
-        if isinstance(
-            node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
-        ):
-            root.open("window/OperationProperty", gui, node=node)
-            return
-        if isinstance(node, ConsoleOperation):
-            root.open("window/ConsoleProperty", gui, node=node)
-        if node is None:
-            return
-        obj = node.object
-        if obj is None:
-            return
-        elif isinstance(obj, Path):
-            root.open("window/PathProperty", gui, node=node)
-        elif isinstance(obj, SVGText):
-            root.open("window/TextProperty", gui, node=node)
-        elif isinstance(obj, SVGImage):
-            root.open("window/ImageProperty", gui, node=node)
-        elif isinstance(obj, Group):
-            root.open("window/GroupProperty", gui, node=node)
-        elif isinstance(obj, SVGElement):
-            root.open("window/PathProperty", gui, node=node)
-        elif isinstance(obj, CutCode):
-            root.open("window/Simulation", gui, node=node)
+        root.open("window/Properties", gui)
+        # self.context.kernel.activate_instance(node)
+        #
+        # if isinstance(
+        #     node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+        # ):
+        #     pass
+        #     return
+        # if isinstance(node, ConsoleOperation):
+        #     root.open("window/ConsoleProperty", gui, node=node)
+        # if node is None:
+        #     return
+        # obj = node.object
+        # if obj is None:
+        #     return
+        # elif isinstance(obj, Path):
+        #     root.open("window/PathProperty", gui, node=node)
+        # elif isinstance(obj, SVGText):
+        #     root.open("window/TextProperty", gui, node=node)
+        # elif isinstance(obj, SVGImage):
+        #     root.open("window/ImageProperty", gui, node=node)
+        # elif isinstance(obj, Group):
+        #     root.open("window/GroupProperty", gui, node=node)
+        # elif isinstance(obj, SVGElement):
+        #     root.open("window/PathProperty", gui, node=node)
+        # elif isinstance(obj, CutCode):
+        #     root.open("window/Simulation", gui, node=node)
 
     @staticmethod
     def sub_register(kernel):
@@ -615,9 +606,7 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 unit_width = context.device.unit_width
-                length = Length(dlg.GetValue()).value(
-                    ppi=UNITS_PER_INCH, relative_length=unit_width
-                )
+                length = float(Length(dlg.GetValue(), relative_length=unit_width))
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
@@ -831,10 +820,9 @@ class MeerK40t(MWindow):
             "show",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def show_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -847,10 +835,9 @@ class MeerK40t(MWindow):
             "hide",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def hide_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -864,10 +851,9 @@ class MeerK40t(MWindow):
             "float",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -1774,8 +1760,7 @@ class MeerK40t(MWindow):
 
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
-
-        self.context("quit\n")
+        self.context(".timer 0 1 quit\n")
 
     @signal_listener("altered")
     @signal_listener("modified")
@@ -2033,25 +2018,29 @@ class MeerK40t(MWindow):
                 pass
 
     def load(self, pathname):
-        with wx.BusyInfo(_("Loading File...")):
-            n = self.context.elements.note
-            try:
+        try:
+            with wx.BusyInfo(
+                wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
+            ):
+                n = self.context.elements.note
                 results = self.context.elements.load(
                     pathname,
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.elements.svg_ppi,
                 )
-            except CommandSyntaxError as e:
-                dlg = wx.MessageDialog(
-                    None,
-                    str(e.msg),
-                    _("File is Malformed."),
-                    wx.OK | wx.ICON_WARNING,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-                return False
+        except BadFileError as e:
+            dlg = wx.MessageDialog(
+                None,
+                str(e),
+                _("File is Malformed"),
+                wx.OK | wx.ICON_WARNING,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+            return False
+        else:
             if results:
+                self.context("scene focus -4% -4% 104% 104%\n")
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.

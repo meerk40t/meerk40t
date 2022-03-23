@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0003 RC2"
+APPLICATION_VERSION = "0.8.0004 RC3"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -192,13 +192,15 @@ def plugin(kernel, lifecycle):
         plugins.append(cag.plugin)
 
         from .balormk.plugin import plugin as balorplugin
+
         kernel.add_plugin(balorplugin)
 
         from .gui.plugin import plugin as wxplugin
+
         plugins.append(wxplugin)
 
         return plugins
-      
+
     if lifecycle == "invalidate":
         return True
 

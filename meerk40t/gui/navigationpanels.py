@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -369,9 +370,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        px = (bbox[0] + bbox[2]) / 2.0
-        py = (bbox[3] + bbox[1]) / 2.0
-        self.context("move_absolute %f %f\n" % (px, py))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=(bbox[0] + bbox[2]) / 2.0).length_mm,
+                y=Length(amount=(bbox[3] + bbox[1]) / 2.0).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_tl(
@@ -380,7 +384,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=bbox[0]).length_mm,
+                y=Length(amount=bbox[1]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_tr(
@@ -389,7 +398,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=bbox[2]).length_mm,
+                y=Length(amount=bbox[1]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_bl(
@@ -398,7 +412,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=bbox[0]).length_mm,
+                y=Length(amount=bbox[3]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_br(
@@ -407,7 +426,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[2], bbox[3]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=bbox[2]).length_mm,
+                y=Length(amount=bbox[3]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def drag_relative(self, dx, dy):
@@ -428,12 +452,12 @@ class Drag(wx.Panel):
     def on_button_align_drag_up(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, -self.context.jog_amount)
+        self.drag_relative(0, str(-Length(self.context.jog_amount)))
 
     def on_button_align_drag_left(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(-self.context.jog_amount, 0)
+        self.drag_relative(str(-Length(self.context.jog_amount)), 0)
 
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
@@ -444,7 +468,12 @@ class Drag(wx.Panel):
             return
         if pos is None:
             return
-        self.context("move_absolute %f %f\n" % (pos[0], pos[1]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=pos[0]).length_mm,
+                y=Length(amount=pos[1]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_trace_hull(
@@ -869,85 +898,98 @@ class SizePanel(wx.Panel):
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
 
-    object_ratio = 1.0
-    object_x = 0
-    object_y = 0
-    object_width = 0
-    object_height = 0
+    object_ratio = None
+    object_x = None
+    object_y = None
+    object_width = None
+    object_height = None
 
     def update_sizes(self):
-        f = self.context.elements.first_element(emphasized=True)
-        v = f is not None
-        if v:
+        self.object_x = None
+        self.object_y = None
+        self.object_width = None
+        self.object_height = None
+        self.object_ratio = None
+        bbox = self.context.elements.selected_area()
+        if bbox is not None:
+            p = self.context
+            units = p.units_name
             try:
-                bbox = f.bbox()
-                self.object_x = bbox[0]
-                self.object_y = bbox[1]
-                self.object_width = abs(bbox[2] - bbox[0])
-                self.object_height = abs(bbox[3] - bbox[1])
+                self.object_x = Length(amount=bbox[0], preferred_units=units, digits=3)
+                self.object_y = Length(amount=bbox[1], preferred_units=units, digits=3)
+                self.object_width = Length(
+                    amount=abs(bbox[2] - bbox[0]),
+                    preferred_units=units,
+                    digits=3,
+                )
+                self.object_height = Length(
+                    amount=abs(bbox[3] - bbox[1]),
+                    preferred_units=units,
+                    digits=3,
+                )
                 try:
                     self.object_ratio = self.object_width / self.object_height
                 except ZeroDivisionError:
                     self.object_ratio = 0
             except (ValueError, AttributeError):
-                self.object_ratio = 1.0
-                v = False  # has no bounding box...
+                pass
 
-        self.button_navigate_resize.Enable(v)
-        self.text_width.Enable(v)
-        self.text_height.Enable(v)
-
-        if v:
-            width, height = self.context.device.scene_to_device_position(
-                x=self.object_width, y=self.object_height, vector=True
-            )
-            self.text_width.SetValue(str(width))
-            self.text_height.SetValue(str(height))
+        if self.object_width is not None:
+            self.text_width.SetValue(self.object_width.preferred_length)
+            self.text_width.Enable(True)
         else:
             self.text_width.SetValue("---")
+            self.text_width.Enable(False)
+        if self.object_height is not None:
+            self.text_height.SetValue(self.object_height.preferred_length)
+            self.text_height.Enable(True)
+
+        else:
             self.text_height.SetValue("---")
+            self.text_height.Enable(False)
+        if self.object_ratio is not None:
+            self.button_navigate_resize.Enable(True)
+        else:
+            self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):  # wxGlade: SizePanel.<event_handler>
-        x = self.context.device.length(self.object_x, 0, new_units="mm")
-        y = self.context.device.length(self.object_y, 1, new_units="mm")
-
-        width = self.context.device.length(
-            self.text_width.Value, 0, relative_length=self.object_width, new_units="mm"
-        )
-        height = self.context.device.length(
-            self.text_height.Value,
-            1,
-            relative_length=self.object_height,
-            new_units="mm",
-        )
+        new_width = Length(self.text_width.Value, relative_length=self.object_width)
+        new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
             "resize {x} {y} {width} {height}".format(
-                x=x, y=y, width=width, height=height
+                x=repr(self.object_x),
+                y=repr(self.object_y),
+                width=new_width,
+                height=new_height,
             )
         )
 
     def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            width = self.device.length(
+            p = self.context
+            units = p.units_name
+            new_width = Length(
                 self.text_width.Value,
-                0,
                 relative_length=self.object_width,
-                new_units="mm",
-                scale=1.0 / self.object_ratio,
+                preferred_units=units,
+                digits=3,
             )
-            self.text_height.SetValue(width)
+            self.text_height.SetValue(
+                (new_width * (1.0 / self.object_ratio)).preferred_length
+            )
         event.Skip()
 
     def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
-            height = self.device.length(
+            p = self.context
+            units = p.units_name
+            new_height = Length(
                 self.text_height.Value,
-                1,
                 relative_length=self.object_height,
-                new_units="mm",
-                scale=self.object_ratio,
+                preferred_units=units,
+                digits=3,
             )
-            self.text_width.SetValue(height)
+            self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
 
         event.Skip()
 

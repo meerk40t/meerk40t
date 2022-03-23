@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertiespanel import PropertiesPanel
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 
@@ -25,13 +25,13 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        self.panel_main = PropertiesPanel(
+        self.panel_main = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor"
         )
-        self.panel_global = PropertiesPanel(
+        self.panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor-global"
         )
-        self.panel_extra = PropertiesPanel(
+        self.panel_extra = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor-extra"
         )
         self.notebook_main.AddPage(self.panel_main, _("Balor"))

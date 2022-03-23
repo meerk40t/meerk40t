@@ -124,7 +124,10 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+a": ("element* select",),
     "ctrl+c": ("clipboard copy",),
-    "ctrl+e": ("circle 500 500 500",),
+    "ctrl+e": (
+        "circle 0.5in 0.5in 0.5in stroke red classify",
+        "circle 500 500 500",
+    ),
     "ctrl+f": (
         "",
         "dialog_fill",
@@ -137,7 +140,10 @@ DEFAULT_KEYMAP = {
         "",
         "outline",
     ),
-    "ctrl+r": ("rect 0 0 1000 1000",),
+    "ctrl+r": (
+        "rect 0 0 1in 1in stroke red classify",
+        "rect 0 0 1000 1000",
+    ),
     "ctrl+s": (
         "",
         "dialog_stroke",
@@ -288,9 +294,25 @@ class Bind(Service):
         if not len(self.keymap):
             self.default_keymap()
 
+    # help transition from old definitions of control-key-combinations
+    def is_found(self, keyvalue, target):
+        valu = False
+        if not keyvalue is None:
+            s = keyvalue
+            if s in target:
+                valu = True
+            else:
+                s = keyvalue.replace("ctrl", "control")
+                if s in target:
+                    keyvalue = s
+                    valu = True
+        return valu, keyvalue
+
     def trigger(self, keyvalue):
-        if keyvalue in self.keymap:
-            if keyvalue not in self.triggered:
+        fnd, keyvalue = self.is_found(keyvalue, self.keymap)
+        if fnd:
+            fnd, keyvalue = self.is_found(keyvalue, self.triggered)
+            if not fnd:
                 self.triggered[keyvalue] = 1
                 action = self.keymap[keyvalue]
                 cmds = (action,) if action[0] in "+-" else action.split(";")
@@ -301,8 +323,10 @@ class Bind(Service):
 
     def untrigger(self, keyvalue):
         keymap = self.keymap
-        if keyvalue in keymap:
-            if keyvalue in self.triggered:
+        fnd, keyvalue = self.is_found(keyvalue, self.keymap)
+        if fnd:
+            fnd, keyvalue = self.is_found(keyvalue, self.triggered)
+            if fnd:
                 del self.triggered[keyvalue]
             action = keymap[keyvalue]
             if action.startswith("+"):

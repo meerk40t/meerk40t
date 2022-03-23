@@ -4,7 +4,7 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.node.node import Node
+from ..core.node.node import Node, is_dot
 from ..svgelements import (
     Arc,
     Close,
@@ -37,6 +37,9 @@ DRAW_MODE_PATH = 0x000400
 DRAW_MODE_IMAGE = 0x000800
 DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
+DRAW_MODE_POINTS = 0x004000
+DRAW_MODE_REGMARKS = 0x008000
+
 DRAW_MODE_ICONS = 0x0040000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
@@ -66,7 +69,7 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
-    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0):
+    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
 
@@ -91,11 +94,14 @@ class LaserRender:
 
         for node in nodes:
             try:
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale)
+                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
                 element = node.object
                 if isinstance(element, Path):
-                    node.draw = self.draw_path_node
+                    if is_dot(element):
+                        node.draw = self.draw_point_node
+                    else:
+                        node.draw = self.draw_path_node
                 elif isinstance(element, Shape):
                     node.draw = self.draw_shape_node
                 elif isinstance(element, SVGImage):
@@ -106,7 +112,7 @@ class LaserRender:
                     node.draw = self.draw_group_node
                 else:
                     continue
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale)
+                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
 
     def make_path(self, gc, path):
         """
@@ -177,7 +183,7 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None):
+    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None, alpha=255):
         try:
             sw = element.stroke_width
         except AttributeError:
@@ -191,10 +197,10 @@ class LaserRender:
             pass
         if sw < limit:
             sw = limit
-        self.set_pen(gc, element.stroke, width=sw)
+        self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
 
-    def set_element_brush(self, gc, element):
-        self.set_brush(gc, element.fill)
+    def set_element_brush(self, gc, element, alpha=255):
+        self.set_brush(gc, element.fill, alpha=alpha)
 
     def draw_cutcode_node(
         self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
@@ -283,10 +289,10 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         pass
 
-    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
         shape = node.object
         try:
@@ -301,15 +307,17 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, shape, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, shape)
+        self.set_element_pen(
+            gc, shape, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+        )
+        self.set_element_brush(gc, shape, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
             gc.FillPath(node.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and shape.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
         path = node.object
         try:
@@ -324,17 +332,40 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
+        self.set_element_pen(
+            gc, path, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+        )
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, path.stroke, width=1)
-        self.set_element_brush(gc, path)
+            self.set_pen(gc, path.stroke, width=1, alpha=alpha)
+        self.set_element_brush(gc, path, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
             gc.FillPath(node.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0):
+    def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the laser path element."""
+        if draw_mode & DRAW_MODE_POINTS:
+            return
+        path = node.object
+        try:
+            matrix = path.transform
+        except AttributeError:
+            matrix = None
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = path.point(0)
+            node.cache = cache
+        gc.PushState()
+        gc.SetPen(wx.BLACK_PEN)
+        point = node.cache
+        point = matrix.point_in_matrix_space(point)
+        dif = 5 * zoomscale
+        gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
+        gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
+        gc.PopState()
+
+    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         text = node.object
         try:
             matrix = text.transform
@@ -395,7 +426,7 @@ class LaserRender:
             gc.DrawText(text.text, x, y)
         gc.PopState()
 
-    def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image = node.object
         try:
             matrix = image.transform

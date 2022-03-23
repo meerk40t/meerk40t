@@ -446,6 +446,16 @@ class Kernel(Settings):
         self.delegates.append((delegate, lifecycle_object))
         self.update_linked_lifecycles(lifecycle_object)
 
+    def remove_delegate(
+        self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]
+    ):
+        for i in range(len(self.delegates) - 1, -1, -1):
+            delegate_value, ref = self.delegates[i]
+            if delegate_value is delegate and ref is lifecycle_object:
+                self._signal_detach(delegate)
+                self._lookup_detach(delegate)
+                del self.delegates[i]
+
     # ==========
     # LIFECYCLE MANAGEMENT
     # ==========
@@ -2097,8 +2107,8 @@ class Kernel(Settings):
                     # Don't use command help, which is or should be descriptive - use command syntax instead
                     # If CommandSyntaxError has a msg then that needs to be provided AS WELL as the syntax.
                     message = command_funct.help
-                    if e.msg:
-                        message = e.msg
+                    if str(e):
+                        message = str(e)
                     channel(
                         "[red][bold]" + _("Syntax Error (%s): %s") % (command, message)
                     )
@@ -2120,6 +2130,10 @@ class Kernel(Settings):
                 )
                 return None
         return data
+
+    # ==========
+    # CHOICES REGISTRATION
+    # ==========
 
     def register_choices(self, sheet, choices):
         """
