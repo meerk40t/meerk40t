@@ -890,71 +890,64 @@ class SizePanel(wx.Panel):
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
 
-    object_ratio = 1.0
-    object_x = 0
-    object_y = 0
-    object_width = 0
-    object_height = 0
+    object_ratio = None
+    object_x = None
+    object_y = None
+    object_width = None
+    object_height = None
 
     def update_sizes(self):
+        self.object_x = None
+        self.object_y = None
+        self.object_width = None
+        self.object_height = None
+        self.object_ratio = None
+
         f = self.context.elements.first_element(emphasized=True)
-        v = f is not None
-        if v:
+        if f is not None:
+            p = self.context
+            units = p.units_name
             try:
                 bbox = f.bbox()
-                self.object_x = bbox[0]
-                self.object_y = bbox[1]
-                self.object_width = abs(bbox[2] - bbox[0])
-                self.object_height = abs(bbox[3] - bbox[1])
+                self.object_x = Length(bbox[0], unitless=1.0, preferred_units=units)
+                self.object_y = Length(bbox[1], unitless=1.0, preferred_units=units)
+                self.object_width = Length(
+                    abs(bbox[2] - bbox[0]), unitless=1.0, preferred_units=units
+                )
+                self.object_height = Length(
+                    abs(bbox[3] - bbox[1]), unitless=1.0, preferred_units=units
+                )
                 try:
                     self.object_ratio = self.object_width / self.object_height
                 except ZeroDivisionError:
                     self.object_ratio = 0
             except (ValueError, AttributeError):
-                self.object_ratio = 1.0
-                v = False  # has no bounding box...
+                pass
 
-        self.button_navigate_resize.Enable(v)
-        self.text_width.Enable(v)
-        self.text_height.Enable(v)
-
-        if v:
-            p = self.context
-            units = p.units_name
-            s = "{wlen:.2f}{units}".format(
-                wlen=p.device.length(
-                    self.object_width, 1, new_units=units, as_float=True
-                ),
-                units=units,
-            )
-            t = "{wlen:.2f}{units}".format(
-                wlen=p.device.length(
-                    self.object_height, 1, new_units=units, as_float=True
-                ),
-                units=units,
-            )
-            self.text_width.SetValue(s)
-            self.text_height.SetValue(t)
+        if self.object_width is not None:
+            self.text_width.SetValue(self.object_width.preferred_length)
+            self.text_width.Enable(True)
         else:
             self.text_width.SetValue("---")
+            self.text_width.Enable(False)
+        if self.object_height is not None:
+            self.text_height.SetValue(self.object_height.preferred_length)
+            self.text_height.Enable(True)
+
+        else:
             self.text_height.SetValue("---")
+            self.text_height.Enable(False)
+        if self.object_ratio is not None:
+            self.button_navigate_resize.Enable(True)
+        else:
+            self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):  # wxGlade: SizePanel.<event_handler>
-        x = self.context.device.length(self.object_x, 0, new_units="mm")
-        y = self.context.device.length(self.object_y, 1, new_units="mm")
-
-        width = self.context.device.length(
-            self.text_width.Value, 0, relative_length=self.object_width, new_units="mm"
-        )
-        height = self.context.device.length(
-            self.text_height.Value,
-            1,
-            relative_length=self.object_height,
-            new_units="mm",
-        )
+        new_width = Length(self.text_width.Value, relative_length=self.object_width)
+        new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
             "resize {x} {y} {width} {height}".format(
-                x=x, y=y, width=width, height=height
+                x=self.object_x, y=self.object_y, width=new_width, height=new_height
             )
         )
 
