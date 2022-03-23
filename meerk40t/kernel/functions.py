@@ -128,15 +128,20 @@ def console_command(
         def inner(command: str, remainder: str, channel: "Channel", **ik):
             options = inner.options
             arguments = inner.arguments
+
+            # Stack are the opts which require values.
             stack = list()
             stack.extend(arguments)
+
+            # To be passed to the console_command
             kwargs = dict()
+
             argument_index = 0
             opt_index = 0
-            output_type = inner.output_type
             pos = 0
             for kind, value, start, pos in _cmd_parser(remainder):
                 if kind == "PARAM":
+                    # is a parameter-option
                     if argument_index == len(stack):
                         pos = start
                         break  # Nothing else is expected.
@@ -157,31 +162,31 @@ def console_command(
                     else:
                         kwargs[key].append(value)
                     opt_index = argument_index
-                elif kind == "LONG":
+                elif kind == "LONG" or kind == "OPT":
+                    # is a --option or -o type option.
                     for pk in options:
-                        if value == pk["name"]:
-                            if pk.get("action") != "store_true":
+                        # check all options for this one to match
+                        name = pk["name"]
+                        if (value == pk["name"] and kind == "LONG") or (
+                            value == pk["short"] and kind == "OPT"
+                        ):
+                            # matching option.
+                            action = pk.get("action")
+                            if action == "store_true":
+                                kwargs[name] = True
+                            elif action == "store_const":
+                                kwargs[name] = pk.get("const")
+                            else:
                                 count = pk.get("nargs", 1)
                                 for n in range(count):
                                     stack.insert(opt_index, pk)
                                     opt_index += 1
-                            kwargs[value] = True
                             break
                     opt_index = argument_index
-                elif kind == "OPT":
-                    for pk in options:
-                        if value == pk["short"]:
-                            count = pk.get("nargs", 1)
-                            for n in range(count):
-                                if pk.get("action") != "store_true":
-                                    stack.insert(opt_index, pk)
-                                    opt_index += 1
-                            kwargs[pk["name"]] = True
-                            break
 
-            # Any unprocessed positional arguments get default values.
-            for a in range(argument_index, len(stack)):
-                k = stack[a]
+            # Any unprocessed positional arguments get default values (even None)
+            for idx in range(argument_index, len(stack)):
+                k = stack[idx]
                 value = k.get("default")
                 if "type" in k and value is not None:
                     value = k["type"](value)
@@ -192,7 +197,14 @@ def console_command(
                 else:
                     kwargs[key].append(value)
 
-            # TODO: Options with default values should be passed to the function with those values.
+            # Unset uncalled options with default values are added to kwargs.
+            for pk in options:
+                key = pk["name"]
+                if "default" in pk and key not in kwargs:
+                    value = pk.get("default")
+                    if "type" in pk and value is not None:
+                        value = pk["type"](value)
+                    kwargs[key] = value
 
             # Any singleton list arguments should become their only element.
             for a in range(len(stack)):
@@ -203,6 +215,7 @@ def console_command(
                     if len(current) == 1:
                         kwargs[key] = current[0]
 
+            # Process any remainder and args to include into kwargs
             remainder = remainder[pos:]
             if len(remainder) > 0:
                 kwargs["remainder"] = remainder
@@ -210,22 +223,30 @@ def console_command(
                     kwargs["args"] = remainder.split()
                 except AttributeError:
                     kwargs["args"] = remainder
-            if output_type is None:
+
+            command_return_context = inner.output_type
+            # If function does not chain, we should unset remainder
+            if command_return_context is None:
                 remainder = ""  # not chaining
+
+            # Call the function.
             returned = func(command=command, channel=channel, **ik, **kwargs)
+
+            # Process return values.
             if returned is None:
                 value = None
-                out_type = None
+                command_return_context = None
             else:
                 if not isinstance(returned, tuple) or len(returned) != 2:
                     raise ValueError(
                         '"%s" from command "%s" returned improper values. "%s"'
                         % (str(returned), command, str(kwargs))
                     )
-                out_type, value = returned
-            return value, remainder, out_type
+                command_return_context, value = returned
+            return value, remainder, command_return_context
 
         if hasattr(inner, "arguments"):
+            # Console_command() was called twice.
             raise MalformedCommandRegistration(
                 "Applying console_command() to console_command()"
             )
