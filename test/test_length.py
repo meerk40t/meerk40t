@@ -6,6 +6,9 @@ from meerk40t.core.units import Length
 class TestElementLength(unittest.TestCase):
     """Tests the functionality of the Length Element."""
 
+    def test_length_init(self):
+        self.assertRaises(ValueError, lambda: Length('12garbage'))
+
     def test_length_parsing(self):
         self.assertAlmostEqual(Length('10cm'), (Length('100mm')))
         self.assertNotEqual(Length("1mm"), 0)
@@ -31,11 +34,11 @@ class TestElementLength(unittest.TestCase):
         a += "2in"
         a += "2mil"
         a *= 1.7
-        self.assertEqual(str(a), "86.36mm")
-        self.assertEqual(a.mm, 86.36)
+        self.assertEqual(str(a), "86.45mm")
+        self.assertEqual(a.mm, 86.45)
 
-        # Still rounds to 2 places but in cm this is larger.
-        self.assertEqual(a.cm, 863.64)
+        self.assertEqual(a.um, 86446.36)
+        self.assertEqual(a.cm, 8.64)
 
     def test_length_compare(self):
         self.assertTrue(Length('1in') < Length('2.6cm'))

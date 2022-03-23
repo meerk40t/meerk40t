@@ -468,10 +468,14 @@ class Length(object):
                 scale = UNITS_PER_MM
             elif units == "cm":
                 scale = UNITS_PER_CM
+            elif units == "um":
+                scale = UNITS_PER_uM
             elif units == "nm":
                 scale = UNITS_PER_NM
             elif units == "in":
                 scale = UNITS_PER_INCH
+            elif units == "mil":
+                scale = UNITS_PER_MIL
             elif units == "px":
                 scale = UNITS_PER_PIXEL
             elif units == "pt":
@@ -490,6 +494,8 @@ class Length(object):
                     units = ""
                 else:
                     raise ValueError("Percent without relative length is meaningless.")
+            else:
+                raise ValueError("Units was not recognized")
             self._amount = scale * amount
             if preferred_units is None:
                 preferred_units = units
@@ -736,7 +742,7 @@ class Length(object):
 
     @property
     def length_units(self):
-        return "{amount}units".format(amount=self.units)
+        return "{amount}".format(amount=self.units)
 
     def as_percent(self, relative_length):
         return 100.00 * self._amount / Length(relative_length).units
