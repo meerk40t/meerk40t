@@ -12,7 +12,11 @@ def plugin(kernel, lifecycle):
             "angle", "a", type=Angle.parse, default="0deg", help=_("Angle of the fill")
         )
         @context.console_option(
-            "distance", "d", type=Length, default="0.5mm", help=_("Length between rungs")
+            "distance",
+            "d",
+            type=Length,
+            default="0.5mm",
+            help=_("Length between rungs"),
         )
         @context.console_command("embroider", help=_("embroider <angle> <distance>"))
         def embroider(command, channel, _, angle=None, distance=None, **kwargs):

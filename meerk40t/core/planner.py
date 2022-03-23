@@ -320,7 +320,6 @@ class Planner(Service):
     def length_y(self, v):
         return float(Length(v, relative_length=self.device.height))
 
-
     def get_or_make_plan(self, plan_name):
         """
         Plans are a tuple of 3 lists and the name. Plan, Original, Commands, and Plan-Name
@@ -378,7 +377,9 @@ class Planner(Service):
                 raise CommandSyntaxError
             plan_command = "plan/%s" % alias
             if self.lookup(plan_command) is not None:
-                raise CommandSyntaxError(_("You may not overwrite an already used alias."))
+                raise CommandSyntaxError(
+                    _("You may not overwrite an already used alias.")
+                )
 
             def user_defined_alias():
                 for s in remainder.split(";"):

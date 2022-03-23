@@ -1900,10 +1900,8 @@ class MeerK40t(MWindow):
     def load(self, pathname):
         try:
             with wx.BusyInfo(
-                wx.BusyInfoFlags()
-                    .Title(_("Loading File..."))
-                    .Label(pathname)
-                ):
+                wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
+            ):
                 n = self.context.elements.note
                 results = self.context.elements.load(
                     pathname,

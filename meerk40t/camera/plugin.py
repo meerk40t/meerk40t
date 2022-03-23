@@ -1,5 +1,6 @@
 from meerk40t.kernel import CommandSyntaxError
 
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui

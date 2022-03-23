@@ -7,5 +7,3 @@ class Meerk40tError(Exception):
 
 class BadFileError(Meerk40tError):
     """Abort loading a malformed file"""
-
-

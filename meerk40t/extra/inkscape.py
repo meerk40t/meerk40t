@@ -4,6 +4,7 @@ from subprocess import PIPE, run
 
 from meerk40t.core.exceptions import BadFileError
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -20,10 +21,12 @@ def plugin(kernel, lifecycle):
             try:
                 kernel.root.elements.load(filename)
             except BadFileError as e:
-                channel("\n".join(
-                    _("File is Malformed."),
-                    str(e),
-                ))
+                channel(
+                    "\n".join(
+                        _("File is Malformed."),
+                        str(e),
+                    )
+                )
             else:
                 kernel.root.elements.classify(list(elements.elems()))
             return "inkscape", data

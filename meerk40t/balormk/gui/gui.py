@@ -1,4 +1,3 @@
-
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/balor"

@@ -915,12 +915,8 @@ class SizePanel(wx.Panel):
             p = self.context
             units = p.units_name
             try:
-                self.object_x = Length(
-                    amount=bbox[0], preferred_units=units, digits=3
-                )
-                self.object_y = Length(
-                    amount=bbox[1], preferred_units=units, digits=3
-                )
+                self.object_x = Length(amount=bbox[0], preferred_units=units, digits=3)
+                self.object_y = Length(amount=bbox[1], preferred_units=units, digits=3)
                 self.object_width = Length(
                     amount=abs(bbox[2] - bbox[0]),
                     preferred_units=units,

@@ -22,6 +22,7 @@ class CommandSyntaxError(KernelError):
 
     An explanatory message can be provided when this exception is raised.
     """
+
     @property
     def msg(self):
         """Backwards compatibility with SyntaxError undocumented property."""

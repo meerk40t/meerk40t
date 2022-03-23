@@ -86,5 +86,3 @@ class TestElements(unittest.TestCase):
 
         finally:
             kernel.shutdown()
-
-

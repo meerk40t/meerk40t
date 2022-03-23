@@ -176,7 +176,10 @@ class PlannerPanel(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 x_distance = self.context.device.length(
-                    dlg.GetValue(), 0, relative_length=width, as_float=True,
+                    dlg.GetValue(),
+                    0,
+                    relative_length=width,
+                    as_float=True,
                 )
             except ValueError:
                 dlg.Destroy()
@@ -202,7 +205,10 @@ class PlannerPanel(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             try:
                 y_distance = self.context.device.length(
-                    dlg.GetValue(), 1, relative_length=height, as_float=True,
+                    dlg.GetValue(),
+                    1,
+                    relative_length=height,
+                    as_float=True,
                 )
             except ValueError:
                 dlg.Destroy()

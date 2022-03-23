@@ -1745,8 +1745,12 @@ class Elemental(Service):
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @self.console_argument("cx", type=self.length_x, help=_("X-Value of polygon's center"))
-        @self.console_argument("cy", type=self.length_y, help=_("Y-Value of polygon's center"))
+        @self.console_argument(
+            "cx", type=self.length_x, help=_("X-Value of polygon's center")
+        )
+        @self.console_argument(
+            "cy", type=self.length_y, help=_("Y-Value of polygon's center")
+        )
         @self.console_argument(
             "radius",
             type=self.length,
@@ -1998,7 +2002,7 @@ class Elemental(Service):
             circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
             self.add_element(circ)
             if data is None:
-                data=list()
+                data = list()
             data.append(circ)
             return "elements", data
 
@@ -2030,7 +2034,9 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
-            ellip = Ellipse(cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos))
+            ellip = Ellipse(
+                cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
+            )
             self.add_element(ellip)
             if data is None:
                 data = list()
@@ -2038,15 +2044,27 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_argument(
-            "x_pos", type=self.length_x, help=_("x position for top left corner of rectangle.")
+            "x_pos",
+            type=self.length_x,
+            help=_("x position for top left corner of rectangle."),
         )
         @self.console_argument(
-            "y_pos", type=self.length_y, help=_("y position for top left corner of rectangle.")
+            "y_pos",
+            type=self.length_y,
+            help=_("y position for top left corner of rectangle."),
         )
-        @self.console_argument("width", type=self.length_x, help=_("width of the rectangle."))
-        @self.console_argument("height", type=self.length_y, help=_("height of the rectangle."))
-        @self.console_option("rx", "x", type=self.length_x, help=_("rounded rx corner value."))
-        @self.console_option("ry", "y", type=self.length_y, help=_("rounded ry corner value."))
+        @self.console_argument(
+            "width", type=self.length_x, help=_("width of the rectangle.")
+        )
+        @self.console_argument(
+            "height", type=self.length_y, help=_("height of the rectangle.")
+        )
+        @self.console_option(
+            "rx", "x", type=self.length_x, help=_("rounded rx corner value.")
+        )
+        @self.console_option(
+            "ry", "y", type=self.length_y, help=_("rounded ry corner value.")
+        )
         @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
@@ -2060,9 +2078,7 @@ class Elemental(Service):
             """
             Draws an svg rectangle with optional rounded corners.
             """
-            rect = Rect(
-                x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry
-            )
+            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.add_element(rect)
             if data is None:
                 data = list()
@@ -2115,14 +2131,19 @@ class Elemental(Service):
             data.append(svg_text)
             return "elements", data
 
-        @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
+        @self.console_argument(
+            "mlist", type=Length, help=_("list of positions"), nargs="*"
+        )
         @self.console_command(
-            ("polygon", "polyline"), help=_("poly(gon|line) (Length Length)*"), input_type=("elements", None), all_arguments_required=True,
+            ("polygon", "polyline"),
+            help=_("poly(gon|line) (Length Length)*"),
+            input_type=("elements", None),
+            all_arguments_required=True,
         )
         def element_poly(command, mlist, data=None, **kwargs):
             try:
                 if command == "polygon":
-                    element = Polygon(list(map(float,mlist)))
+                    element = Polygon(list(map(float, mlist)))
                 else:
                     element = Polyline(list(map(float, mlist)))
             except ValueError:
@@ -2164,12 +2185,14 @@ class Elemental(Service):
 
             self.add_element(path)
             if data is None:
-                data=list()
+                data = list()
             data.append(path)
             return "elements", data
 
         @self.console_argument(
-            "stroke_width", type=self.length, help=_("Stroke-width for the given stroke")
+            "stroke_width",
+            type=self.length,
+            help=_("Stroke-width for the given stroke"),
         )
         @self.console_command(
             "stroke-width",
@@ -2320,8 +2343,12 @@ class Elemental(Service):
                         e.node.altered()
             return "elements", data
 
-        @self.console_argument("x_offset", type=self.length_x, help=_("x offset."), default="0")
-        @self.console_argument("y_offset", type=self.length_y, help=_("y offset"), default="0")
+        @self.console_argument(
+            "x_offset", type=self.length_x, help=_("x offset."), default="0"
+        )
+        @self.console_argument(
+            "y_offset", type=self.length_y, help=_("y offset"), default="0"
+        )
         @self.console_command(
             "outline",
             help=_("outline the current selected elements"),
@@ -2355,11 +2382,11 @@ class Elemental(Service):
             y_pos -= y_offset
             width += x_offset * 2
             height += y_offset * 2
-            
+
             element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
             self.add_element(element, "red")
             self.classify([element])
-            
+
             if data is None:
                 data = list()
             data.append(element)
@@ -2455,8 +2482,12 @@ class Elemental(Service):
 
         @self.console_argument("scale_x", type=float, help=_("scale_x value"))
         @self.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @self.console_option("px", "x", type=self.length_x, help=_("scale x origin point"))
-        @self.console_option("py", "y", type=self.length_y, help=_("scale y origin point"))
+        @self.console_option(
+            "px", "x", type=self.length_x, help=_("scale x origin point")
+        )
+        @self.console_option(
+            "py", "y", type=self.length_y, help=_("scale y origin point")
+        )
         @self.console_option(
             "absolute",
             "a",
@@ -2542,9 +2573,7 @@ class Elemental(Service):
                         osy = e.transform.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix(
-                            "scale(%f,%f,%f,%f)" % (nsx, nsy, px, px)
-                        )
+                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
@@ -2599,7 +2628,7 @@ class Elemental(Service):
                 tx = 0
             if ty is None:
                 ty = 0
-            m = Matrix.translate(tx,ty)
+            m = Matrix.translate(tx, ty)
             try:
                 if not absolute:
                     for e in data:
@@ -2653,8 +2682,12 @@ class Elemental(Service):
         @self.console_argument(
             "y_pos", type=self.length_y, help=_("y position for top left corner")
         )
-        @self.console_argument("width", type=self.length_x, help=_("new width of selected"))
-        @self.console_argument("height", type=self.length_y, help=_("new height of selected"))
+        @self.console_argument(
+            "width", type=self.length_x, help=_("new width of selected")
+        )
+        @self.console_argument(
+            "height", type=self.length_y, help=_("new height of selected")
+        )
         @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -3140,8 +3173,12 @@ class Elemental(Service):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
-        @self.console_option("dy", "y", help=_("paste offset y"), type=Length, default=0)
+        @self.console_option(
+            "dx", "x", help=_("paste offset x"), type=Length, default=0
+        )
+        @self.console_option(
+            "dy", "y", help=_("paste offset y"), type=Length, default=0
+        )
         @self.console_command(
             "paste",
             help=_("clipboard paste"),
@@ -4435,8 +4472,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
-                "branch reg"
-                "group",
+                "branch reg" "group",
                 "file",
                 "root",
             ),
@@ -4456,8 +4492,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
-                "branch reg"
-                "group",
+                "branch reg" "group",
                 "file",
                 "root",
             ),

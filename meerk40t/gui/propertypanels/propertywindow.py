@@ -42,13 +42,21 @@ class PropertyWindow(MWindow):
             return
         pages_to_instance = []
         for node in nodes:
-            for property_sheet in self.context.lookup_all("property/{class_name}/.*".format(class_name=node.__class__.__name__)):
-                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
+            for property_sheet in self.context.lookup_all(
+                "property/{class_name}/.*".format(class_name=node.__class__.__name__)
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    node
+                ):
                     pages_to_instance.append((property_sheet, node))
 
         def sort_priority(prop):
             prop_sheet, node = prop
-            return getattr(prop_sheet, "priority") if hasattr(prop_sheet, "priority") else 0
+            return (
+                getattr(prop_sheet, "priority")
+                if hasattr(prop_sheet, "priority")
+                else 0
+            )
 
         pages_to_instance.sort(key=sort_priority)
 
