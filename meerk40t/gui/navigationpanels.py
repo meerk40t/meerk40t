@@ -401,9 +401,11 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        "move_absolute {x} {y}\n".format(
-            x=Length(bbox[2], unitless=1.0).length_mm,
-            y=Length(bbox[1], unitless=1.0).length_mm,
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(bbox[2], unitless=1.0).length_mm,
+                y=Length(bbox[1], unitless=1.0).length_mm,
+            )
         )
         self.drag_ready(True)
 
@@ -413,9 +415,11 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        "move_absolute {x} {y}\n".format(
-            x=Length(bbox[0], unitless=1.0).length_mm,
-            y=Length(bbox[3], unitless=1.0).length_mm,
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(bbox[0], unitless=1.0).length_mm,
+                y=Length(bbox[3], unitless=1.0).length_mm,
+            )
         )
         self.drag_ready(True)
 
@@ -425,9 +429,11 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        "move_absolute {x} {y}\n".format(
-            x=Length(bbox[2], unitless=1.0).length_mm,
-            y=Length(bbox[3], unitless=1.0).length_mm,
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(bbox[2], unitless=1.0).length_mm,
+                y=Length(bbox[3], unitless=1.0).length_mm,
+            )
         )
         self.drag_ready(True)
 
@@ -907,13 +913,23 @@ class SizePanel(wx.Panel):
             p = self.context
             units = p.units_name
             try:
-                self.object_x = Length(bbox[0], unitless=1.0, preferred_units=units, digits=3)
-                self.object_y = Length(bbox[1], unitless=1.0, preferred_units=units, digits=3)
+                self.object_x = Length(
+                    bbox[0], unitless=1.0, preferred_units=units, digits=3
+                )
+                self.object_y = Length(
+                    bbox[1], unitless=1.0, preferred_units=units, digits=3
+                )
                 self.object_width = Length(
-                    abs(bbox[2] - bbox[0]), unitless=1.0, preferred_units=units, digits=3
+                    abs(bbox[2] - bbox[0]),
+                    unitless=1.0,
+                    preferred_units=units,
+                    digits=3,
                 )
                 self.object_height = Length(
-                    abs(bbox[3] - bbox[1]), unitless=1.0, preferred_units=units, digits=3
+                    abs(bbox[3] - bbox[1]),
+                    unitless=1.0,
+                    preferred_units=units,
+                    digits=3,
                 )
                 try:
                     self.object_ratio = self.object_width / self.object_height
@@ -945,7 +961,10 @@ class SizePanel(wx.Panel):
         new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
             "resize {x} {y} {width} {height}".format(
-                x=repr(self.object_x), y=repr(self.object_y), width=new_width, height=new_height
+                x=repr(self.object_x),
+                y=repr(self.object_y),
+                width=new_width,
+                height=new_height,
             )
         )
 
@@ -959,7 +978,9 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_height.SetValue((new_width * (1.0 / self.object_ratio)).preferred_length)
+            self.text_height.SetValue(
+                (new_width * (1.0 / self.object_ratio)).preferred_length
+            )
         event.Skip()
 
     def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
