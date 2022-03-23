@@ -433,13 +433,16 @@ class Length(object):
     Amounts are converted to UNITS.
     Initial unit is saved as preferred units.
     """
-    def __init__(self, *args,
-                ppi=DEFAULT_PPI,
-                relative_length=None,
-                unitless=PX_PER_UNIT,
-                preferred_units=None):
+
+    def __init__(
+        self,
+        *args,
+        relative_length=None,
+        unitless=PX_PER_UNIT,
+        preferred_units=None,
+        digits=None,
+    ):
         self._amount = None
-        self._preferred_units = ""
 
         if len(args) == 2:
             value = str(args[0]) + str(args[1])
@@ -477,7 +480,9 @@ class Length(object):
             if relative_length is not None:
                 fraction = amount / 100.0
                 if isinstance(relative_length, (str, Length)):
-                    relative_length = Length(relative_length, ppi=ppi, unitless=unitless).units
+                    relative_length = Length(
+                        relative_length, unitless=unitless
+                    ).units
                 amount = relative_length
                 scale = fraction
                 units = ""
@@ -487,6 +492,7 @@ class Length(object):
         if preferred_units is not None:
             units = preferred_units
         self._preferred_units = units
+        self._digits = digits
 
     def __float__(self):
         return self._amount
@@ -573,7 +579,11 @@ class Length(object):
         return (-self) + other
 
     def __copy__(self):
-        return Length(self.preferred_length)
+        return Length(
+            self.preferred_length,
+            preferred_units=self._preferred_units,
+            digits=self._digits,
+        )
 
     __rmul__ = __mul__
 
@@ -632,35 +642,59 @@ class Length(object):
 
     @property
     def pixels(self):
-        return self._amount / UNITS_PER_PIXEL
+        amount = self._amount / UNITS_PER_PIXEL
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def inches(self):
-        return self._amount / UNITS_PER_INCH
+        amount = self._amount / UNITS_PER_INCH
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def cm(self):
-        return self._amount / UNITS_PER_CM
+        amount = self._amount / UNITS_PER_CM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def mm(self):
-        return self._amount / UNITS_PER_MM
+        amount = self._amount / UNITS_PER_MM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def nm(self):
-        return self._amount / UNITS_PER_NM
+        amount = self._amount / UNITS_PER_NM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def mil(self):
-        return self._amount / UNITS_PER_MIL
+        amount = self._amount / UNITS_PER_MIL
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def um(self):
-        return self._amount / UNITS_PER_uM
+        amount = self._amount / UNITS_PER_uM
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def units(self):
-        return self._amount
+        amount = self._amount
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
 
     @property
     def length_pixels(self):
