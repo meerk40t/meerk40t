@@ -370,13 +370,10 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        px = (bbox[0] + bbox[2]) / 2.0
-        py = (bbox[3] + bbox[1]) / 2.0
-
         self.context(
             "move_absolute {x} {y}\n".format(
-                x=Length(px, unitless=1.0).length_mm,
-                y=Length(py, unitless=1.0).length_mm,
+                x=Length(amount=(bbox[0] + bbox[2]) / 2.0).length_mm,
+                y=Length(amount=(bbox[3] + bbox[1]) / 2.0).length_mm,
             )
         )
         self.drag_ready(True)
@@ -389,8 +386,8 @@ class Drag(wx.Panel):
             return
         self.context(
             "move_absolute {x} {y}\n".format(
-                x=Length(bbox[0], unitless=1.0).length_mm,
-                y=Length(bbox[1], unitless=1.0).length_mm,
+                x=Length(amount=bbox[0]).length_mm,
+                y=Length(amount=bbox[1]).length_mm,
             )
         )
         self.drag_ready(True)
@@ -403,8 +400,8 @@ class Drag(wx.Panel):
             return
         self.context(
             "move_absolute {x} {y}\n".format(
-                x=Length(bbox[2], unitless=1.0).length_mm,
-                y=Length(bbox[1], unitless=1.0).length_mm,
+                x=Length(amount=bbox[2]).length_mm,
+                y=Length(amount=bbox[1]).length_mm,
             )
         )
         self.drag_ready(True)
@@ -417,8 +414,8 @@ class Drag(wx.Panel):
             return
         self.context(
             "move_absolute {x} {y}\n".format(
-                x=Length(bbox[0], unitless=1.0).length_mm,
-                y=Length(bbox[3], unitless=1.0).length_mm,
+                x=Length(amount=bbox[0]).length_mm,
+                y=Length(amount=bbox[3]).length_mm,
             )
         )
         self.drag_ready(True)
@@ -431,8 +428,8 @@ class Drag(wx.Panel):
             return
         self.context(
             "move_absolute {x} {y}\n".format(
-                x=Length(bbox[2], unitless=1.0).length_mm,
-                y=Length(bbox[3], unitless=1.0).length_mm,
+                x=Length(amount=bbox[2]).length_mm,
+                y=Length(amount=bbox[3]).length_mm,
             )
         )
         self.drag_ready(True)
@@ -471,7 +468,12 @@ class Drag(wx.Panel):
             return
         if pos is None:
             return
-        self.context("move_absolute %f %f\n" % (pos[0], pos[1]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(amount=pos[0]).length_mm,
+                y=Length(amount=pos[1]).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_trace_hull(
@@ -914,20 +916,18 @@ class SizePanel(wx.Panel):
             units = p.units_name
             try:
                 self.object_x = Length(
-                    bbox[0], unitless=1.0, preferred_units=units, digits=3
+                    amount=bbox[0], preferred_units=units, digits=3
                 )
                 self.object_y = Length(
-                    bbox[1], unitless=1.0, preferred_units=units, digits=3
+                    amount=bbox[1], preferred_units=units, digits=3
                 )
                 self.object_width = Length(
-                    abs(bbox[2] - bbox[0]),
-                    unitless=1.0,
+                    amount=abs(bbox[2] - bbox[0]),
                     preferred_units=units,
                     digits=3,
                 )
                 self.object_height = Length(
-                    abs(bbox[3] - bbox[1]),
-                    unitless=1.0,
+                    amount=abs(bbox[3] - bbox[1]),
                     preferred_units=units,
                     digits=3,
                 )
