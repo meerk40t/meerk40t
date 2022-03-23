@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import Service
+from .units import Length
 
 from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
@@ -309,6 +310,16 @@ class Planner(Service):
         Service.__init__(self, kernel, "planner")
         self._plan = dict()
         self._default_plan = "0"
+
+    def length(self, v):
+        return float(Length(v))
+
+    def length_x(self, v):
+        return float(Length(v, relative_length=self.device.width))
+
+    def length_y(self, v):
+        return float(Length(v, relative_length=self.device.height))
+
 
     def get_or_make_plan(self, plan_name):
         """
@@ -677,10 +688,10 @@ class Planner(Service):
         @self.console_argument("cols", type=int, help=_("columns for the grid"))
         @self.console_argument("rows", type=int, help=_("rows for the grid"))
         @self.console_argument(
-            "x_distance", type=str, help=_("x_distance each column step")
+            "x_distance", type=self.length_x, help=_("x_distance each column step")
         )
         @self.console_argument(
-            "y_distance", type=str, help=_("y_distance each row step")
+            "y_distance", type=self.length_y, help=_("y_distance each row step")
         )
         @self.console_command(
             "step_repeat",
@@ -744,8 +755,6 @@ class Planner(Service):
                     y_distance = "%f%%" % (100.0 / (rows + 1))
             # except Exception:
             # pass
-            x_distance = self.device.length(x_distance, 1)
-            y_distance = self.device.length(y_distance, 1)
             x_last = 0
             y_last = 0
             y_pos = 0
