@@ -706,10 +706,9 @@ class MeerK40t(MWindow):
             "show",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def show_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -722,10 +721,9 @@ class MeerK40t(MWindow):
             "hide",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def hide_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -739,10 +737,9 @@ class MeerK40t(MWindow):
             "float",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
