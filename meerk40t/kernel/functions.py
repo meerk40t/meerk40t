@@ -103,6 +103,7 @@ def console_command(
     help: str = None,
     input_type: Union[str, Tuple[str, ...]] = None,
     output_type: str = None,
+    all_arguments_required: bool = False,
 ):
     """
     Console Command registers is a decorator that registers a command to the kernel. Any commands that execute
@@ -120,6 +121,7 @@ def console_command(
     @param help: What should the help for this command be.
     @param input_type: What is the incoming context for the command
     @param output_type: What is the outgoing context for the command
+    @param all_arguments_required: Should raise a syntax error if any argument is unfilled
     @return:
     """
 
@@ -183,6 +185,10 @@ def console_command(
                                     opt_index += 1
                             break
                     opt_index = argument_index
+
+            if inner.all_arguments_required:
+                if argument_index != stack:
+                    raise CommandSyntaxError("Required arguments were not present.")
 
             # Any unprocessed positional arguments get default values (even None)
             for idx in range(argument_index, len(stack)):
@@ -260,6 +266,7 @@ def console_command(
         inner.hidden = hidden
         inner.input_type = input_type
         inner.output_type = output_type
+        inner.all_arguments_required = all_arguments_required
 
         inner.arguments = list()
         inner.options = list()
