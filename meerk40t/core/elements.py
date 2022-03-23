@@ -147,6 +147,8 @@ class Elemental(Service):
         if not len(ops) and self.operation_default_empty:
             self.load_default()
 
+    def length(self, v):
+        return float(Length(v))
 
     def length_x(self, v):
         return float(Length(v, relative_length=self.device.width))
@@ -1488,33 +1490,31 @@ class Elemental(Service):
             _,
             c: int,
             r: int,
-            x: Length,
-            y: Length,
+            x: str,
+            y: str,
             origin=None,
             data=None,
             **kwargs,
         ):
+            if r is None:
+                raise CommandSyntaxError
             if data is None:
                 data = list(self.elems(emphasized=True))
-            if len(data) == 0 and self._emphasized_bounds is None:
+            if len(data) == 0:
                 channel(_("No item selected."))
                 return
-            if r is None:
+            try:
+                bounds = Group.union_bbox(data)
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except TypeError:
                 raise CommandSyntaxError
             if x is None:
                 x = "100%"
             if y is None:
                 y = "100%"
-            try:
-                bounds = self._emphasized_bounds
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-            except Exception:
-                raise CommandSyntaxError
-            x = self.device.length(x, 0, relative_length=width)
-            y = self.device.length(y, 1, relative_length=height)
-            # TODO: Check lengths do not accept gibberish.
-            y_pos = 0
+            x = Length(x, relative_length=Length(amount=width))
+            y = Length(y, relative_length=Length(amount=height))
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -1523,7 +1523,6 @@ class Elemental(Service):
                 cx = 1
             if cy is None:
                 cy = 1
-            # Tell whether original is at the left / middle / or right
             start_x = -1 * x * (cx - 1)
             start_y = -1 * y * (cy - 1)
             y_pos = start_y
@@ -1533,17 +1532,16 @@ class Elemental(Service):
                     if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
-                            e *= "translate(%f, %f)" % (x_pos, y_pos)
+                            e *= Matrix.translate(x_pos, y_pos)
                         self.add_elems(add_elem)
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
-
             self.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @self.console_argument("repeats", type=int, help=_("Number of repeats"))
-        @self.console_argument("radius", type=str, help=_("Radius"))
+        @self.console_argument("radius", type=self.length, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1603,7 +1601,6 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = self.device.length(radius, 0, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1649,7 +1646,7 @@ class Elemental(Service):
             return "elements", data_out
 
         @self.console_argument("copies", type=int, help=_("Number of copies"))
-        @self.console_argument("radius", type=str, help=_("Radius"))
+        @self.console_argument("radius", type=self.length, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1709,7 +1706,6 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = self.device.length(radius, -1, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1750,11 +1746,11 @@ class Elemental(Service):
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @self.console_argument("cx", type=str, help=_("X-Value of polygon's center"))
-        @self.console_argument("cy", type=str, help=_("Y-Value of polygon's center"))
+        @self.console_argument("cx", type=self.length_x, help=_("X-Value of polygon's center"))
+        @self.console_argument("cy", type=self.length_y, help=_("Y-Value of polygon's center"))
         @self.console_argument(
             "radius",
-            type=str,
+            type=self.length,
             help=_("Radius (length of side if --side_length is used)"),
         )
         @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
@@ -1777,7 +1773,7 @@ class Elemental(Service):
         @self.console_option(
             "radius_inner",
             "r",
-            type=str,
+            type=self.length,
             help=_("Alternating radius for every other vertex"),
         )
         @self.console_option(
@@ -1807,7 +1803,7 @@ class Elemental(Service):
             cx,
             cy,
             radius,
-            startangle=None,
+            start_angle=None,
             inscribed=None,
             side_length=None,
             radius_inner=None,
@@ -1818,64 +1814,40 @@ class Elemental(Service):
         ):
             if corners is None:
                 raise CommandSyntaxError
-            if corners <= 2:
-                if cx is None:
-                    cx = 0
-                else:
-                    cx = self.device.length(cx, 0)
-                if cy is None:
-                    cy = 0
-                else:
-                    cy = self.device.length(cy, 1)
 
-                if radius is None:
-                    radius = 0
-                else:
-                    radius = self.device.length(radius, 0)
-                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
-
-                starpts = [(cx, cy)]
-                if corners == 2:
-                    starpts += [
-                        (
-                            cx + cos(startangle.as_radians) * radius,
-                            cy + sin(startangle.as_radians) * radius,
-                        )
-                    ]
-
-            else:
-                #print("These are your parameters at the start:")
-                #print("Vertices: %d, Center: X=%s Y=%s" % (corners, cx, cy))
-                #print("Radius: Outer=%s Inner=%s" % (radius, radius_inner))
-                #print("Inscribe: %s" % inscribed)
-                #print("Startangle: %s, Alternate-Seq: %s" % (startangle, alternate_seq))
-
-                if cx is None:
+            if cx is None:
+                if corners <= 2:
                     raise CommandSyntaxError(
                         _(
                             "Please provide at least one additional value (which will act as radius then)"
                         )
                     )
-                else:
-                    cx = self.device.length(cx, 0)
+                cx = 0
+            if cy is None:
+                cy = 0
+            if radius is None:
+                radius = 0
+            if corners <= 2:
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
+                if start_angle is None:
+                    start_angle = Angle.parse("0deg")
 
-                if cy is None:
-                    cy = 0
-                else:
-                    cy = self.device.length(cy, 1)
-
+                star_points = [(cx, cy)]
+                if corners == 2:
+                    star_points += [
+                        (
+                            cx + cos(start_angle.as_radians) * radius,
+                            cy + sin(start_angle.as_radians) * radius,
+                        )
+                    ]
+            else:
                 # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
                 if radius is None:
                     radius = cx
                     cx = 0
                     cy = 0
-                else:
-                    radius = self.device.length(radius, 0)
-
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
+                if start_angle is None:
+                    start_angle = Angle.parse("0deg")
 
                 if alternate_seq is None:
                     if radius_inner is None:
@@ -1897,9 +1869,7 @@ class Elemental(Service):
                 if radius_inner is None:
                     radius_inner = radius
                 else:
-                    radius_inner = self.device.length(
-                        radius_inner, 0, relative_length=radius
-                    )
+                    radius_inner = Length(radius_inner, relative_length=radius)
 
                 if inscribed:
                     if side_length is None:
@@ -1914,53 +1884,36 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                #print("These are your parameters:")
-                #print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
-                #print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
-                #print("Inscribe: %s" % inscribed)
-                #print(
-                #    "Startangle: %.2f, Alternate-Seq: %d"
-                #    % (startangle.as_degrees, alternate_seq)
-                #)
-
                 pts = []
-                myangle = startangle.as_radians
-                deltaangle = tau / corners
+                i_angle = start_angle.as_radians
+                delta_angle = tau / corners
                 ct = 0
                 for j in range(corners):
                     if ct < alternate_seq:
-                        #print(
-                        #    "Outer: Ct=%d, Radius=%.2f, Angle=%.2f"
-                        #    % (ct, radius, 180 * myangle / pi)
-                        #)
-                        thisx = cx + radius * cos(myangle)
-                        thisy = cy + radius * sin(myangle)
+                        thisx = cx + radius * cos(i_angle)
+                        thisy = cy + radius * sin(i_angle)
                     else:
-                        #print(
-                        #    "Inner: Ct=%d, Radius=%.2f, Angle=%.2f"
-                        #    % (ct, radius_inner, 180 * myangle / pi)
-                        #)
-                        thisx = cx + radius_inner * cos(myangle)
-                        thisy = cy + radius_inner * sin(myangle)
+                        thisx = cx + radius_inner * cos(i_angle)
+                        thisy = cy + radius_inner * sin(i_angle)
                     ct += 1
                     if ct >= 2 * alternate_seq:
                         ct = 0
                     if j == 0:
                         firstx = thisx
                         firsty = thisy
-                    myangle += deltaangle
+                    i_angle += delta_angle
                     pts += [(thisx, thisy)]
                 # Close the path
                 pts += [(firstx, firsty)]
 
-                starpts = [(pts[0][0], pts[0][1])]
+                star_points = [(pts[0][0], pts[0][1])]
                 idx = density
                 while idx != 0:
-                    starpts += [(pts[idx][0], pts[idx][1])]
+                    star_points += [(pts[idx][0], pts[idx][1])]
                     idx += density
                     if idx >= corners:
                         idx -= corners
-                if len(starpts) < corners:
+                if len(star_points) < corners:
                     ct = 0
                     possible_combinations = ""
                     for i in range(corners - 1):
@@ -1979,20 +1932,19 @@ class Elemental(Service):
                             ct += 1
                     channel(
                         _("Just for info: we have missed %d vertices...")
-                        % (corners - len(starpts))
+                        % (corners - len(star_points))
                     )
                     channel(
                         _("To hit all, the density parameters should be e.g. %s")
                         % possible_combinations
                     )
 
-            poly_path = Polygon(starpts)
+            poly_path = Polygon(star_points)
             self.add_element(poly_path)
             if data is None:
-                return "elements", [poly_path]
-            else:
-                data.append(poly_path)
-                return "elements", data
+                data = list()
+            data.append(poly_path)
+            return "elements", data
 
         @self.console_option("step", "s", default=2.0, type=float)
         @self.console_command(
