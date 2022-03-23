@@ -746,3 +746,6 @@ class Length(object):
 
     def as_percent(self, relative_length):
         return 100.00 * self._amount / Length(relative_length).units
+
+
+# TODO: Add in speed for units. mm/s in/s mm/minute.
