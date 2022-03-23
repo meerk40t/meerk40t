@@ -437,62 +437,65 @@ class Length(object):
     def __init__(
         self,
         *args,
+        amount=None,
         relative_length=None,
         unitless=PX_PER_UNIT,
         preferred_units=None,
         digits=None,
     ):
-        self._amount = None
-
-        if len(args) == 2:
-            value = str(args[0]) + str(args[1])
-        elif len(args) == 1:
-            value = args[0]
-        else:
-            raise ValueError("Arguments not acceptable")
-        s = str(value)
-        match = REGEX_LENGTH.match(s)
-        if not match:
-            raise ValueError("Length was not parsable.")
-        amount = float(match.group(1))
-        units = match.group(2)
-        if units == "inch" or units == "inches":
-            units = "in"
-        scale = 1.0
-        if units == "":
-            if unitless:
-                scale = unitless
-        elif units == "mm":
-            scale = UNITS_PER_MM
-        elif units == "cm":
-            scale = UNITS_PER_CM
-        elif units == "nm":
-            scale = UNITS_PER_NM
-        elif units == "in":
-            scale = UNITS_PER_INCH
-        elif units == "px":
-            scale = UNITS_PER_PIXEL
-        elif units == "pt":
-            scale = UNITS_PER_PIXEL * 1.3333
-        elif units == "pc":
-            scale = UNITS_PER_PIXEL * 16.0
-        elif units == "%":
-            if relative_length is not None:
-                fraction = amount / 100.0
-                if isinstance(relative_length, (str, Length)):
-                    relative_length = Length(
-                        relative_length, unitless=unitless
-                    ).units
-                amount = relative_length
-                scale = fraction
-                units = ""
-            else:
-                raise ValueError("Percent without relative length is meaningless.")
-        self._amount = scale * amount
-        if preferred_units is not None:
-            units = preferred_units
-        self._preferred_units = units
         self._digits = digits
+        self._amount = amount
+        if self._amount is None:
+            if len(args) == 2:
+                value = str(args[0]) + str(args[1])
+            elif len(args) == 1:
+                value = args[0]
+            else:
+                raise ValueError("Arguments not acceptable")
+            s = str(value)
+            match = REGEX_LENGTH.match(s)
+            if not match:
+                raise ValueError("Length was not parsable.")
+            amount = float(match.group(1))
+            units = match.group(2)
+            if units == "inch" or units == "inches":
+                units = "in"
+            scale = 1.0
+            if units == "":
+                if unitless:
+                    scale = unitless
+            elif units == "mm":
+                scale = UNITS_PER_MM
+            elif units == "cm":
+                scale = UNITS_PER_CM
+            elif units == "nm":
+                scale = UNITS_PER_NM
+            elif units == "in":
+                scale = UNITS_PER_INCH
+            elif units == "px":
+                scale = UNITS_PER_PIXEL
+            elif units == "pt":
+                scale = UNITS_PER_PIXEL * 1.3333
+            elif units == "pc":
+                scale = UNITS_PER_PIXEL * 16.0
+            elif units == "%":
+                if relative_length is not None:
+                    fraction = amount / 100.0
+                    if isinstance(relative_length, (str, Length)):
+                        relative_length = Length(
+                            relative_length, unitless=unitless
+                        ).units
+                    amount = relative_length
+                    scale = fraction
+                    units = ""
+                else:
+                    raise ValueError("Percent without relative length is meaningless.")
+            self._amount = scale * amount
+            if preferred_units is None:
+                preferred_units = units
+        if preferred_units is None:
+            preferred_units = ""
+        self._preferred_units = preferred_units
 
     def __float__(self):
         return self._amount
@@ -580,7 +583,8 @@ class Length(object):
 
     def __copy__(self):
         return Length(
-            self.preferred_length,
+            None,
+            amount=self._amount,
             preferred_units=self._preferred_units,
             digits=self._digits,
         )
@@ -588,7 +592,9 @@ class Length(object):
     __rmul__ = __mul__
 
     def __repr__(self):
-        return "Length('%s')" % (str(self))
+        c = self.__copy__()
+        c._digits = None
+        return c.preferred_length
 
     def __str__(self):
         return self.preferred_length
