@@ -55,3 +55,33 @@ class TestElements(unittest.TestCase):
                 self.assertEqual(element.fill, "blue")
         finally:
             kernel.shutdown()
+
+    def test_elements_clipboard(self):
+        """
+        Intro test for elements
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
+            kernel_root("clipboard copy\n")
+            kernel_root("clipboard paste -xy 2in 2in\n")
+        finally:
+            kernel.shutdown()
+
+    def test_elements_shapes(self):
+        """
+        Intro test for elements
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            kernel_root("polygon 1in 1in 2in 2in 0in 4cm\n")
+        finally:
+            kernel.shutdown()
+
+
