@@ -1,7 +1,7 @@
-
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         from meerk40t.balormk.gui import gui
+
         return [gui.plugin]
     if lifecycle == "invalidate":
         try:
@@ -14,6 +14,7 @@ def plugin(kernel, lifecycle):
             return True
     if lifecycle == "register":
         from meerk40t.balormk.main import BalorDevice
+
         kernel.register("provider/device/balor", BalorDevice)
     elif lifecycle == "preboot":
         suffix = "balor"

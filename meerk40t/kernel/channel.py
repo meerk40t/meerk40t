@@ -77,6 +77,8 @@ def bbcode_to_ansi_match(m):
 
 
 def bbcode_to_plain(text):
+    if isinstance(text, (bytes, bytearray)):
+        return text
     return RE_ANSI.sub("", text)
 
 

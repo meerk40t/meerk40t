@@ -397,6 +397,7 @@ class MoshiDriver:
         self.plotplanner_process()
 
     def move_abs(self, x, y):
+        # TODO: mimic lihuiyu code for device_in_physical space
         x = self.service.length(x, 0)
         y = self.service.length(y, 1)
         x = int(round(self.service.scale_x * x / UNITS_PER_MIL))
@@ -406,6 +407,7 @@ class MoshiDriver:
         self.rapid_mode()
 
     def move_rel(self, dx, dy):
+        # TODO: mimic lihuiyu code for device_in_physical space
         dx = self.service.length(dx, 0)
         dy = self.service.length(dy, 1)
         dx = int(round(self.service.scale_x * dx / UNITS_PER_MIL))

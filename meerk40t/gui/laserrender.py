@@ -307,7 +307,9 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, shape, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha)
+        self.set_element_pen(
+            gc, shape, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+        )
         self.set_element_brush(gc, shape, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
             gc.FillPath(node.cache)
@@ -330,7 +332,9 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha)
+        self.set_element_pen(
+            gc, path, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+        )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, path.stroke, width=1, alpha=alpha)
         self.set_element_brush(gc, path, alpha=alpha)

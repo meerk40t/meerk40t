@@ -25,7 +25,7 @@ from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Angle, Length
+from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 
@@ -208,8 +208,8 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(matrix))
             return "scene", data
 
-        @self.context.console_argument("x", type=Length, help="x position")
-        @self.context.console_argument("y", type=Length, help="y position")
+        @self.context.console_argument("x", type=str, help="x position")
+        @self.context.console_argument("y", type=str, help="y position")
         @self.context.console_argument("width", type=str, help="width of view")
         @self.context.console_argument("height", type=str, help="height of view")
         @self.context.console_command("focus", input_type="scene")

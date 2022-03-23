@@ -446,7 +446,9 @@ class Kernel(Settings):
         self.delegates.append((delegate, lifecycle_object))
         self.update_linked_lifecycles(lifecycle_object)
 
-    def remove_delegate(self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]):
+    def remove_delegate(
+        self, delegate: Any, lifecycle_object: Union[Module, Service, "Kernel"]
+    ):
         for i in range(len(self.delegates) - 1, -1, -1):
             delegate_value, ref = self.delegates[i]
             if delegate_value is delegate and ref is lifecycle_object:
@@ -2156,7 +2158,6 @@ class Kernel(Settings):
             obj = c["object"]
             if isinstance(obj, Context):
                 obj.setting(c["type"], c["attr"], c["default"])
-
 
     # ==========
     # KERNEL CONSOLE COMMANDS

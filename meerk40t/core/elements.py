@@ -147,6 +147,15 @@ class Elemental(Service):
         if not len(ops) and self.operation_default_empty:
             self.load_default()
 
+    def length(self, v):
+        return float(Length(v))
+
+    def length_x(self, v):
+        return float(Length(v, relative_length=self.device.width))
+
+    def length_y(self, v):
+        return float(Length(v, relative_length=self.device.height))
+
     def _init_commands(self, kernel):
 
         _ = kernel.translation
@@ -566,7 +575,7 @@ class Elemental(Service):
         @self.console_option("speed", "s", type=float)
         @self.console_option("power", "p", type=float)
         @self.console_option("step", "S", type=int)
-        @self.console_option("overscan", "o", type=str)
+        @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
         @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots"),
@@ -615,7 +624,7 @@ class Elemental(Service):
             if step is not None:
                 op.raster_step = step
             if overscan is not None:
-                op.overscan = self.device.length(overscan, -1)
+                op.overscan = overscan
             self.add_op(op)
             if data is not None:
                 for item in data:
@@ -1480,33 +1489,31 @@ class Elemental(Service):
             _,
             c: int,
             r: int,
-            x: Length,
-            y: Length,
+            x: str,
+            y: str,
             origin=None,
             data=None,
             **kwargs,
         ):
+            if r is None:
+                raise CommandSyntaxError
             if data is None:
                 data = list(self.elems(emphasized=True))
-            if len(data) == 0 and self._emphasized_bounds is None:
+            if len(data) == 0:
                 channel(_("No item selected."))
                 return
-            if r is None:
+            try:
+                bounds = Group.union_bbox(data)
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except TypeError:
                 raise CommandSyntaxError
             if x is None:
                 x = "100%"
             if y is None:
                 y = "100%"
-            try:
-                bounds = self._emphasized_bounds
-                width = bounds[2] - bounds[0]
-                height = bounds[3] - bounds[1]
-            except Exception:
-                raise CommandSyntaxError
-            x = self.device.length(x, 0, relative_length=width)
-            y = self.device.length(y, 1, relative_length=height)
-            # TODO: Check lengths do not accept gibberish.
-            y_pos = 0
+            x = Length(x, relative_length=Length(amount=width))
+            y = Length(y, relative_length=Length(amount=height))
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -1515,7 +1522,6 @@ class Elemental(Service):
                 cx = 1
             if cy is None:
                 cy = 1
-            # Tell whether original is at the left / middle / or right
             start_x = -1 * x * (cx - 1)
             start_y = -1 * y * (cy - 1)
             y_pos = start_y
@@ -1525,17 +1531,16 @@ class Elemental(Service):
                     if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
-                            e *= "translate(%f, %f)" % (x_pos, y_pos)
+                            e *= Matrix.translate(x_pos, y_pos)
                         self.add_elems(add_elem)
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
-
             self.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @self.console_argument("repeats", type=int, help=_("Number of repeats"))
-        @self.console_argument("radius", type=str, help=_("Radius"))
+        @self.console_argument("radius", type=self.length, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1595,7 +1600,6 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = self.device.length(radius, 0, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1641,7 +1645,7 @@ class Elemental(Service):
             return "elements", data_out
 
         @self.console_argument("copies", type=int, help=_("Number of copies"))
-        @self.console_argument("radius", type=str, help=_("Radius"))
+        @self.console_argument("radius", type=self.length, help=_("Radius"))
         @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
         @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
         @self.console_option(
@@ -1701,7 +1705,6 @@ class Elemental(Service):
             if bounds is None:
                 return
             width = bounds[2] - bounds[0]
-            radius = self.device.length(radius, -1, relative_length=width)
 
             data_out = list(data)
             if deltaangle is None:
@@ -1742,11 +1745,15 @@ class Elemental(Service):
         @self.console_argument(
             "corners", type=int, help=_("Number of corners/vertices")
         )
-        @self.console_argument("cx", type=str, help=_("X-Value of polygon's center"))
-        @self.console_argument("cy", type=str, help=_("Y-Value of polygon's center"))
+        @self.console_argument(
+            "cx", type=self.length_x, help=_("X-Value of polygon's center")
+        )
+        @self.console_argument(
+            "cy", type=self.length_y, help=_("Y-Value of polygon's center")
+        )
         @self.console_argument(
             "radius",
-            type=str,
+            type=self.length,
             help=_("Radius (length of side if --side_length is used)"),
         )
         @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
@@ -1769,7 +1776,7 @@ class Elemental(Service):
         @self.console_option(
             "radius_inner",
             "r",
-            type=str,
+            type=self.length,
             help=_("Alternating radius for every other vertex"),
         )
         @self.console_option(
@@ -1799,7 +1806,7 @@ class Elemental(Service):
             cx,
             cy,
             radius,
-            startangle=None,
+            start_angle=None,
             inscribed=None,
             side_length=None,
             radius_inner=None,
@@ -1810,64 +1817,40 @@ class Elemental(Service):
         ):
             if corners is None:
                 raise CommandSyntaxError
-            if corners <= 2:
-                if cx is None:
-                    cx = 0
-                else:
-                    cx = self.device.length(cx, 0)
-                if cy is None:
-                    cy = 0
-                else:
-                    cy = self.device.length(cy, 1)
 
-                if radius is None:
-                    radius = 0
-                else:
-                    radius = self.device.length(radius, 0)
-                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
-
-                starpts = [(cx, cy)]
-                if corners == 2:
-                    starpts += [
-                        (
-                            cx + cos(startangle.as_radians) * radius,
-                            cy + sin(startangle.as_radians) * radius,
-                        )
-                    ]
-
-            else:
-                #print("These are your parameters at the start:")
-                #print("Vertices: %d, Center: X=%s Y=%s" % (corners, cx, cy))
-                #print("Radius: Outer=%s Inner=%s" % (radius, radius_inner))
-                #print("Inscribe: %s" % inscribed)
-                #print("Startangle: %s, Alternate-Seq: %s" % (startangle, alternate_seq))
-
-                if cx is None:
+            if cx is None:
+                if corners <= 2:
                     raise CommandSyntaxError(
                         _(
                             "Please provide at least one additional value (which will act as radius then)"
                         )
                     )
-                else:
-                    cx = self.device.length(cx, 0)
+                cx = 0
+            if cy is None:
+                cy = 0
+            if radius is None:
+                radius = 0
+            if corners <= 2:
+                # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
+                if start_angle is None:
+                    start_angle = Angle.parse("0deg")
 
-                if cy is None:
-                    cy = 0
-                else:
-                    cy = self.device.length(cy, 1)
-
+                star_points = [(cx, cy)]
+                if corners == 2:
+                    star_points += [
+                        (
+                            cx + cos(start_angle.as_radians) * radius,
+                            cy + sin(start_angle.as_radians) * radius,
+                        )
+                    ]
+            else:
                 # do we have something like 'polyshape 3 4cm' ? If yes, reassign the parameters
                 if radius is None:
                     radius = cx
                     cx = 0
                     cy = 0
-                else:
-                    radius = self.device.length(radius, 0)
-
-                if startangle is None:
-                    startangle = Angle.parse("0deg")
+                if start_angle is None:
+                    start_angle = Angle.parse("0deg")
 
                 if alternate_seq is None:
                     if radius_inner is None:
@@ -1889,9 +1872,7 @@ class Elemental(Service):
                 if radius_inner is None:
                     radius_inner = radius
                 else:
-                    radius_inner = self.device.length(
-                        radius_inner, 0, relative_length=radius
-                    )
+                    radius_inner = Length(radius_inner, relative_length=radius)
 
                 if inscribed:
                     if side_length is None:
@@ -1906,53 +1887,36 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                #print("These are your parameters:")
-                #print("Vertices: %d, Center: X=%.2f Y=%.2f" % (corners, cx, cy))
-                #print("Radius: Outer=%.2f Inner=%.2f" % (radius, radius_inner))
-                #print("Inscribe: %s" % inscribed)
-                #print(
-                #    "Startangle: %.2f, Alternate-Seq: %d"
-                #    % (startangle.as_degrees, alternate_seq)
-                #)
-
                 pts = []
-                myangle = startangle.as_radians
-                deltaangle = tau / corners
+                i_angle = start_angle.as_radians
+                delta_angle = tau / corners
                 ct = 0
                 for j in range(corners):
                     if ct < alternate_seq:
-                        #print(
-                        #    "Outer: Ct=%d, Radius=%.2f, Angle=%.2f"
-                        #    % (ct, radius, 180 * myangle / pi)
-                        #)
-                        thisx = cx + radius * cos(myangle)
-                        thisy = cy + radius * sin(myangle)
+                        thisx = cx + radius * cos(i_angle)
+                        thisy = cy + radius * sin(i_angle)
                     else:
-                        #print(
-                        #    "Inner: Ct=%d, Radius=%.2f, Angle=%.2f"
-                        #    % (ct, radius_inner, 180 * myangle / pi)
-                        #)
-                        thisx = cx + radius_inner * cos(myangle)
-                        thisy = cy + radius_inner * sin(myangle)
+                        thisx = cx + radius_inner * cos(i_angle)
+                        thisy = cy + radius_inner * sin(i_angle)
                     ct += 1
                     if ct >= 2 * alternate_seq:
                         ct = 0
                     if j == 0:
                         firstx = thisx
                         firsty = thisy
-                    myangle += deltaangle
+                    i_angle += delta_angle
                     pts += [(thisx, thisy)]
                 # Close the path
                 pts += [(firstx, firsty)]
 
-                starpts = [(pts[0][0], pts[0][1])]
+                star_points = [(pts[0][0], pts[0][1])]
                 idx = density
                 while idx != 0:
-                    starpts += [(pts[idx][0], pts[idx][1])]
+                    star_points += [(pts[idx][0], pts[idx][1])]
                     idx += density
                     if idx >= corners:
                         idx -= corners
-                if len(starpts) < corners:
+                if len(star_points) < corners:
                     ct = 0
                     possible_combinations = ""
                     for i in range(corners - 1):
@@ -1971,20 +1935,19 @@ class Elemental(Service):
                             ct += 1
                     channel(
                         _("Just for info: we have missed %d vertices...")
-                        % (corners - len(starpts))
+                        % (corners - len(star_points))
                     )
                     channel(
                         _("To hit all, the density parameters should be e.g. %s")
                         % possible_combinations
                     )
 
-            poly_path = Polygon(starpts)
+            poly_path = Polygon(star_points)
             self.add_element(poly_path)
             if data is None:
-                return "elements", [poly_path]
-            else:
-                data.append(poly_path)
-                return "elements", data
+                data = list()
+            data.append(poly_path)
+            return "elements", data
 
         @self.console_option("step", "s", default=2.0, type=float)
         @self.console_command(
@@ -2025,75 +1988,89 @@ class Elemental(Service):
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
-        @self.console_argument("x_pos", type=str)
-        @self.console_argument("y_pos", type=str)
-        @self.console_argument("r_pos", type=str)
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("r_pos", type=Length)
         @self.console_command(
             "circle",
-            help=_("circle <x> <y> <r> or circle <r>"),
+            help=_("circle <x> <y> <r>"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
-            if x_pos is None:
-                raise CommandSyntaxError
-            else:
-                if r_pos is None:
-                    r_pos = x_pos
-                    x_pos = 0
-                    y_pos = 0
-
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            r_pos = self.device.length(r_pos, -1)
-            circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
+            circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
             self.add_element(circ)
             if data is None:
-                return "elements", [circ]
-            else:
-                data.append(circ)
-                return "elements", data
+                data = list()
+            data.append(circ)
+            return "elements", data
 
-        @self.console_argument("x_pos", type=str)
-        @self.console_argument("y_pos", type=str)
-        @self.console_argument("rx_pos", type=str)
-        @self.console_argument("ry_pos", type=str)
+        @self.console_argument("r_pos", type=Length)
+        @self.console_command(
+            "circle_r",
+            help=_("circle_r <r>"),
+            input_type=("elements", None),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def element_circle(r_pos, data=None, **kwargs):
+            circ = Circle(r=float(r_pos))
+            self.add_element(circ)
+            if data is None:
+                data = list()
+            data.append(circ)
+            return "elements", data
+
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("rx_pos", type=Length)
+        @self.console_argument("ry_pos", type=Length)
         @self.console_command(
             "ellipse",
             help=_("ellipse <cx> <cy> <rx> <ry>"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
-            if ry_pos is None:
-                raise CommandSyntaxError
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            rx_pos = self.device.length(rx_pos, 0)
-            ry_pos = self.device.length(ry_pos, 1)
-            ellip = Ellipse(cx=x_pos, cy=y_pos, rx=rx_pos, ry=ry_pos)
+            ellip = Ellipse(
+                cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
+            )
             self.add_element(ellip)
             if data is None:
-                return "elements", [ellip]
-            else:
-                data.append(ellip)
-                return "elements", data
+                data = list()
+            data.append(ellip)
+            return "elements", data
 
         @self.console_argument(
-            "x_pos", type=str, help=_("x position for top left corner of rectangle.")
+            "x_pos",
+            type=self.length_x,
+            help=_("x position for top left corner of rectangle."),
         )
         @self.console_argument(
-            "y_pos", type=str, help=_("y position for top left corner of rectangle.")
+            "y_pos",
+            type=self.length_y,
+            help=_("y position for top left corner of rectangle."),
         )
-        @self.console_argument("width", type=str, help=_("width of the rectangle."))
-        @self.console_argument("height", type=str, help=_("height of the rectangle."))
-        @self.console_option("rx", "x", type=str, help=_("rounded rx corner value."))
-        @self.console_option("ry", "y", type=str, help=_("rounded ry corner value."))
+        @self.console_argument(
+            "width", type=self.length_x, help=_("width of the rectangle.")
+        )
+        @self.console_argument(
+            "height", type=self.length_y, help=_("height of the rectangle.")
+        )
+        @self.console_option(
+            "rx", "x", type=self.length_x, help=_("rounded rx corner value.")
+        )
+        @self.console_option(
+            "ry", "y", type=self.length_y, help=_("rounded ry corner value.")
+        )
         @self.console_command(
             "rect",
             help=_("adds rectangle to scene"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_rect(
             x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
@@ -2101,52 +2078,34 @@ class Elemental(Service):
             """
             Draws an svg rectangle with optional rounded corners.
             """
-            if x_pos is None:
-                raise CommandSyntaxError
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            rx_pos = self.device.length(rx, 0)
-            ry_pos = self.device.length(ry, 1)
-            width = self.device.length(width, 0)
-            height = self.device.length(height, 1)
-            rect = Rect(
-                x=x_pos, y=y_pos, width=width, height=height, rx=rx_pos, ry=ry_pos
-            )
-
+            rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.add_element(rect)
             if data is None:
-                return "elements", [rect]
-            else:
-                data.append(rect)
-                return "elements", data
+                data = list()
+            data.append(rect)
+            return "elements", data
 
-        @self.console_argument("x0", type=str, help=_("start x position"))
-        @self.console_argument("y0", type=str, help=_("start y position"))
-        @self.console_argument("x1", type=str, help=_("end x position"))
-        @self.console_argument("y1", type=str, help=_("end y position"))
+        @self.console_argument("x0", type=self.length_x, help=_("start x position"))
+        @self.console_argument("y0", type=self.length_y, help=_("start y position"))
+        @self.console_argument("x1", type=self.length_x, help=_("end x position"))
+        @self.console_argument("y1", type=self.length_y, help=_("end y position"))
         @self.console_command(
             "line",
             help=_("adds line to scene"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_line(command, x0, y0, x1, y1, data=None, **kwargs):
             """
             Draws an svg line in the scene.
             """
-            if y1 is None:
-                raise CommandSyntaxError
-            x0 = self.device.length(x0, 0)
-            y0 = self.device.length(y0, 1)
-            x1 = self.device.length(x1, 0)
-            y1 = self.device.length(y1, 1)
             simple_line = SimpleLine(x0, y0, x1, y1)
             self.add_element(simple_line)
             if data is None:
-                return "elements", [simple_line]
-            else:
-                data.append(simple_line)
-                return "elements", data
+                data = list()
+            data.append(simple_line)
+            return "elements", data
 
         @self.console_option("size", "s", type=float, help=_("font size to for object"))
         @self.console_argument("text", type=str, help=_("quoted string of text"))
@@ -2165,72 +2124,37 @@ class Elemental(Service):
             svg_text = SVGText(text)
             if size is not None:
                 svg_text.font_size = size
-            svg_text *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+            svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
             self.add_element(svg_text)
             if data is None:
-                return "elements", [svg_text]
-            else:
-                data.append(svg_text)
-                return "elements", data
+                data = list()
+            data.append(svg_text)
+            return "elements", data
 
-        @self.console_command(
-            "polygon", help=_("polygon (float float)*"), input_type=("elements", None)
+        @self.console_argument(
+            "mlist", type=Length, help=_("list of positions"), nargs="*"
         )
-        def element_polygon(args=tuple(), data=None, **kwargs):
-            try:
-                mlist = list(map(str, args))
-                # TODO: Scale Physical to Scene.
-                for ct, e in enumerate(mlist):
-                    if ct % 2 == 0:
-                        x = self.device.length(e, 0)
-                    else:
-                        x = self.device.length(e, 1)
-                    mlist[ct] = x
-                    ct += 1
-                element = Polygon(mlist)
-                # element *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
-            except ValueError:
-                raise CommandSyntaxError(
-                    _("Must be a list of spaced delimited length pairs.")
-                )
-            self.add_element(element)
-            if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
-
         @self.console_command(
-            "polyline",
-            help=_("polyline (Length Length)*"),
+            ("polygon", "polyline"),
+            help=_("poly(gon|line) (Length Length)*"),
             input_type=("elements", None),
+            all_arguments_required=True,
         )
-        def element_polyline(command, channel, _, args=tuple(), data=None, **kwargs):
-            pcol = None
-            pstroke = Color()
+        def element_poly(command, mlist, data=None, **kwargs):
             try:
-                mlist = list(map(str, args))
-                for ct, e in enumerate(mlist):
-                    if ct % 2 == 0:
-                        x = self.device.length(e, 0)
-                    else:
-                        x = self.device.length(e, 1)
-                    mlist[ct] = x
-
-                    ct += 1
-
-                element = Polyline(mlist)
-                element.fill = pcol
+                if command == "polygon":
+                    element = Polygon(list(map(float, mlist)))
+                else:
+                    element = Polyline(list(map(float, mlist)))
             except ValueError:
                 raise CommandSyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
                 )
             self.add_element(element)
             if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
+                data = list()
+            data.append(element)
+            return "elements", data
 
         @self.console_command(
             "path", help=_("Convert any shapes to paths"), input_type="elements"
@@ -2261,13 +2185,14 @@ class Elemental(Service):
 
             self.add_element(path)
             if data is None:
-                return "elements", [path]
-            else:
-                data.append(path)
-                return "elements", data
+                data = list()
+            data.append(path)
+            return "elements", data
 
         @self.console_argument(
-            "stroke_width", type=str, help=_("Stroke-width for the given stroke")
+            "stroke_width",
+            type=self.length,
+            help=_("Stroke-width for the given stroke"),
         )
         @self.console_command(
             "stroke-width",
@@ -2302,7 +2227,6 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            stroke_width = self.device.length(stroke_width, -1)
             for e in data:
                 e.stroke_width = stroke_width
                 if hasattr(e, "node"):
@@ -2419,8 +2343,12 @@ class Elemental(Service):
                         e.node.altered()
             return "elements", data
 
-        @self.console_argument("x_offset", type=str, help=_("x offset."))
-        @self.console_argument("y_offset", type=str, help=_("y offset"))
+        @self.console_argument(
+            "x_offset", type=self.length_x, help=_("x offset."), default="0"
+        )
+        @self.console_argument(
+            "y_offset", type=self.length_y, help=_("y offset"), default="0"
+        )
         @self.console_command(
             "outline",
             help=_("outline the current selected elements"),
@@ -2442,8 +2370,6 @@ class Elemental(Service):
             """
             Draws an outline of the current shape.
             """
-            if x_offset is None:
-                raise CommandSyntaxError
             bounds = self.selected_area()
             if bounds is None:
                 channel(_("Nothing Selected"))
@@ -2452,28 +2378,23 @@ class Elemental(Service):
             y_pos = bounds[1]
             width = bounds[2] - bounds[0]
             height = bounds[3] - bounds[1]
+            x_pos -= x_offset
+            y_pos -= y_offset
+            width += x_offset * 2
+            height += y_offset * 2
 
-            offset_x = self.device.length(x_offset, 0) if x_offset is not None else 0
-            offset_y = (
-                self.device.length(y_offset, 1) if y_offset is not None else offset_x
-            )
-
-            x_pos -= offset_x
-            y_pos -= offset_y
-            width += offset_x * 2
-            height += offset_y * 2
             element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
             self.add_element(element, "red")
             self.classify([element])
+
             if data is None:
-                return "elements", [element]
-            else:
-                data.append(element)
-                return "elements", data
+                data = list()
+            data.append(element)
+            return "elements", data
 
         @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
-        @self.console_option("cx", "x", type=str, help=_("center x"))
-        @self.console_option("cy", "y", type=str, help=_("center y"))
+        @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
+        @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
         @self.console_option(
             "absolute",
             "a",
@@ -2528,13 +2449,9 @@ class Elemental(Service):
                 return
             rot = angle.as_degrees
 
-            if cx is not None:
-                cx = self.device.length(cx, 0)
-            else:
+            if cx is None:
                 cx = (bounds[2] + bounds[0]) / 2.0
-            if cy is not None:
-                cy = self.device.length(cy, 1)
-            else:
+            if cy is None:
                 cy = (bounds[3] + bounds[1]) / 2.0
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
@@ -2565,8 +2482,12 @@ class Elemental(Service):
 
         @self.console_argument("scale_x", type=float, help=_("scale_x value"))
         @self.console_argument("scale_y", type=float, help=_("scale_y value"))
-        @self.console_option("px", "x", type=str, help=_("scale x origin point"))
-        @self.console_option("py", "y", type=str, help=_("scale y origin point"))
+        @self.console_option(
+            "px", "x", type=self.length_x, help=_("scale x origin point")
+        )
+        @self.console_option(
+            "py", "y", type=self.length_y, help=_("scale y origin point")
+        )
         @self.console_option(
             "absolute",
             "a",
@@ -2620,18 +2541,14 @@ class Elemental(Service):
             bounds = Group.union_bbox(data)
             if scale_y is None:
                 scale_y = scale_x
-            if px is not None:
-                center_x = self.device.length(px, 0)
-            else:
-                center_x = (bounds[2] + bounds[0]) / 2.0
-            if py is not None:
-                center_y = self.device.length(py, 1)
-            else:
-                center_y = (bounds[3] + bounds[1]) / 2.0
+            if px is None:
+                px = (bounds[2] + bounds[0]) / 2.0
+            if py is None:
+                py = (bounds[3] + bounds[1]) / 2.0
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, center_x, center_y))
+            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
             try:
                 if not absolute:
                     for e in data:
@@ -2656,9 +2573,7 @@ class Elemental(Service):
                         osy = e.transform.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix(
-                            "scale(%f,%f,%f,%f)" % (nsx, nsy, center_x, center_x)
-                        )
+                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
@@ -2666,8 +2581,8 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
-        @self.console_argument("tx", type=str, help=_("translate x value"))
-        @self.console_argument("ty", type=str, help=_("translate y value"))
+        @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
         @self.console_option(
             "absolute",
             "a",
@@ -2709,15 +2624,11 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            if tx is not None:
-                tx = self.device.length(tx, 0)
-            else:
+            if tx is None:
                 tx = 0
-            if ty is not None:
-                ty = self.device.length(ty, 0)
-            else:
+            if ty is None:
                 ty = 0
-            m = Matrix("translate(%f,%f)" % (tx, ty))
+            m = Matrix.translate(tx, ty)
             try:
                 if not absolute:
                     for e in data:
@@ -2730,7 +2641,7 @@ class Elemental(Service):
                         oty = e.transform.value_trans_y()
                         ntx = tx - otx
                         nty = ty - oty
-                        m = Matrix("translate(%f,%f)" % (ntx, nty))
+                        m = Matrix.translate(ntx, nty)
                         e *= m
                         if hasattr(e, "node"):
                             e.node.modified()
@@ -2766,13 +2677,17 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_argument(
-            "x_pos", type=str, help=_("x position for top left corner")
+            "x_pos", type=self.length_x, help=_("x position for top left corner")
         )
         @self.console_argument(
-            "y_pos", type=str, help=_("y position for top left corner")
+            "y_pos", type=self.length_y, help=_("y position for top left corner")
         )
-        @self.console_argument("width", type=str, help=_("new width of selected"))
-        @self.console_argument("height", type=str, help=_("new height of selected"))
+        @self.console_argument(
+            "width", type=self.length_x, help=_("new width of selected")
+        )
+        @self.console_argument(
+            "height", type=self.length_y, help=_("new height of selected")
+        )
         @self.console_command(
             "resize",
             help=_("resize <x-pos> <y-pos> <width> <height>"),
@@ -2789,10 +2704,6 @@ class Elemental(Service):
                 if area is None:
                     channel(_("resize: nothing selected"))
                     return
-                x_pos = self.device.length(x_pos, 0)
-                y_pos = self.device.length(y_pos, 1)
-                width = self.device.length(width, 0)
-                height = self.device.length(height, 1)
                 x, y, x1, y1 = area
                 w, h = x1 - x, y1 - y
                 if w == 0 or h == 0:  # dot
@@ -2830,8 +2741,8 @@ class Elemental(Service):
         @self.console_argument("kx", type=float, help=_("skew_x value"))
         @self.console_argument("ky", type=float, help=_("skew_y value"))
         @self.console_argument("sy", type=float, help=_("scale_y value"))
-        @self.console_argument("tx", type=str, help=_("translate_x value"))
-        @self.console_argument("ty", type=str, help=_("translate_y value"))
+        @self.console_argument("tx", type=self.length_x, help=_("translate_x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("translate_y value"))
         @self.console_command(
             "matrix",
             help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),
@@ -2867,8 +2778,8 @@ class Elemental(Service):
                     kx,
                     ky,
                     sy,
-                    self.device.length(tx, 0),
-                    self.device.length(ty, 1),
+                    tx,
+                    ty,
                 )
                 for e in data:
                     try:
@@ -3262,8 +3173,12 @@ class Elemental(Service):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @self.console_option("dx", "x", help=_("paste offset x"), type=str)
-        @self.console_option("dy", "y", help=_("paste offset y"), type=str)
+        @self.console_option(
+            "dx", "x", help=_("paste offset x"), type=Length, default=0
+        )
+        @self.console_option(
+            "dy", "y", help=_("paste offset y"), type=Length, default=0
+        )
         @self.console_command(
             "paste",
             help=_("clipboard paste"),
@@ -3277,16 +3192,8 @@ class Elemental(Service):
             except KeyError:
                 channel(_("Error: Clipboard Empty"))
                 return
-            if dx is not None or dy is not None:
-                if dx is None:
-                    dx = 0
-                else:
-                    dx = self.device.length(dx, 0)
-                if dy is None:
-                    dy = 0
-                else:
-                    dy = self.device.length(dy, 1)
-                m = Matrix("translate(%s, %s)" % (dx, dy))
+            if dx != 0 or dy != 0:
+                m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
                 for e in pasted:
                     e *= m
             group = self.elem_branch.add(type="group", label="Group")
@@ -4565,8 +4472,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
-                "branch reg"
-                "group",
+                "branch reg" "group",
                 "file",
                 "root",
             ),
@@ -4586,8 +4492,7 @@ class Elemental(Service):
                 "op dots",
                 "branch elems",
                 "branch ops",
-                "branch reg"
-                "group",
+                "branch reg" "group",
                 "file",
                 "root",
             ),

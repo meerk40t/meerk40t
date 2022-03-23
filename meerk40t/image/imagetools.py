@@ -5,7 +5,7 @@ from os import path as ospath
 from meerk40t.kernel import CommandSyntaxError
 from ..core.planner import make_actual, needs_actualization
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
-from ..svgelements import Angle, Color, Length, Matrix, Path, SVGImage
+from ..svgelements import Angle, Color, Matrix, Path, SVGImage
 from .actualize import actualize
 
 
@@ -908,9 +908,13 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             if left >= right:
-                raise CommandSyntaxError(_("Right margin is to the left of the left margin."))
+                raise CommandSyntaxError(
+                    _("Right margin is to the left of the left margin.")
+                )
             if upper >= lower:
-                raise CommandSyntaxError(_("Lower margin is higher than the upper margin."))
+                raise CommandSyntaxError(
+                    _("Lower margin is higher than the upper margin.")
+                )
             image_pop = img.crop((left, upper, right, lower))
             image_remain = img.copy()
 

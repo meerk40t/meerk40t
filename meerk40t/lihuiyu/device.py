@@ -25,7 +25,7 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 from ..core.cutcode import CutCode, RawCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort, Length
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -42,7 +42,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from ..svgelements import Length
 from .laserspeed import LaserSpeed
 
 STATUS_BAD_STATE = 204
@@ -295,20 +294,17 @@ class LihuiyuDevice(Service, ViewPort):
             return
 
         @self.console_argument("speed", type=float, help=_("Set the movement speed"))
-        @self.console_argument("dx", type=str, help=_("change in x"))
-        @self.console_argument("dy", type=str, help=_("change in y"))
+        @self.console_argument("dx", type=Length, help=_("change in x"))
+        @self.console_argument("dy", type=Length, help=_("change in y"))
         @self.console_command(
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
-            dx = self.length(dx, 0)
-            dy = self.length(dy, 0)
-
             def move_at_speed():
                 yield "set", "speed", speed
                 yield "program_mode"
-                yield "move_rel", "{dx}nm".format(dx=dx), "{dy}nm".format(dy=dy)
+                yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
 
             if not self.spooler.job_if_idle(move_at_speed):
@@ -1062,12 +1058,12 @@ class LhystudiosDriver(Parameters):
         self.state = original_state
 
     def move_abs(self, x, y):
-        x, y = self.service.physical_to_device_position(x, y)
+        x, y = self.service.physical_to_device_position(x, y, 1)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
         self.rapid_mode()
         self.move_relative(dx, dy)
 

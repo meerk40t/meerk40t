@@ -1,6 +1,6 @@
 # Balor Galvo Laser Control Module
 # Copyright (C) 2021-2022 Gnostic Instruments, Inc.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -20,104 +20,120 @@ import threading
 
 from meerk40t.balor.command_list import CommandSource, CommandList
 
-class BalorException(Exception): pass
-class BalorMachineException(BalorException): pass
-class BalorCommunicationException(BalorException): pass
-class BalorDataValidityException(BalorException): pass
+
+class BalorException(Exception):
+    pass
+
+
+class BalorMachineException(BalorException):
+    pass
+
+
+class BalorCommunicationException(BalorException):
+    pass
+
+
+class BalorDataValidityException(BalorException):
+    pass
+
 
 # Marked with ? - currently not seen in the wild
-DISABLE_LASER          = 0x0002
-RESET                  = 0x0003 
-ENABLE_LASER           = 0x0004
-EXECUTE_LIST           = 0x0005
-SET_PWM_PULSE_WIDTH    = 0x0006 # ?
-GET_REGISTER           = 0x0007
-GET_SERIAL_NUMBER      = 0x0009 # In EzCAD mine is 32012LI43405B, Version 4.02, LMC V4 FIB
-GET_LIST_STATUS        = 0x000A 
-GET_XY_POSITION        = 0x000C # Get current galvo position
-SET_XY_POSITION        = 0x000D # Travel the galvo xy to specified position
-LASER_SIGNAL_OFF       = 0x000E # ?
-LASER_SIGNAL_ON        = 0x000F # ?
-WRITE_CORRECTION_LINE  = 0x0010 # ?
-RESET_LIST             = 0x0012
-RESTART_LIST           = 0x0013
+DISABLE_LASER = 0x0002
+RESET = 0x0003
+ENABLE_LASER = 0x0004
+EXECUTE_LIST = 0x0005
+SET_PWM_PULSE_WIDTH = 0x0006  # ?
+GET_REGISTER = 0x0007
+GET_SERIAL_NUMBER = 0x0009  # In EzCAD mine is 32012LI43405B, Version 4.02, LMC V4 FIB
+GET_LIST_STATUS = 0x000A
+GET_XY_POSITION = 0x000C  # Get current galvo position
+SET_XY_POSITION = 0x000D  # Travel the galvo xy to specified position
+LASER_SIGNAL_OFF = 0x000E  # ?
+LASER_SIGNAL_ON = 0x000F  # ?
+WRITE_CORRECTION_LINE = 0x0010  # ?
+RESET_LIST = 0x0012
+RESTART_LIST = 0x0013
 WRITE_CORRECTION_TABLE = 0x0015
-SET_CONTROL_MODE       = 0x0016
-SET_DELAY_MODE         = 0x0017
-SET_MAX_POLY_DELAY     = 0x0018
-SET_END_OF_LIST        = 0x0019
+SET_CONTROL_MODE = 0x0016
+SET_DELAY_MODE = 0x0017
+SET_MAX_POLY_DELAY = 0x0018
+SET_END_OF_LIST = 0x0019
 SET_FIRST_PULSE_KILLER = 0x001A
-SET_LASER_MODE         = 0x001B
-SET_TIMING             = 0x001C
-SET_STANDBY            = 0x001D
-SET_PWM_HALF_PERIOD    = 0x001E
-STOP_EXECUTE           = 0x001F # Since observed in the wild
-STOP_LIST              = 0x0020 # ?
-WRITE_PORT             = 0x0021
-WRITE_ANALOG_PORT_1    = 0x0022 # At end of cut, seen writing 0x07FF
-WRITE_ANALOG_PORT_2    = 0x0023 # ?
-WRITE_ANALOG_PORT_X    = 0x0024 # ?
-READ_PORT              = 0x0025
-SET_AXIS_MOTION_PARAM  = 0x0026
-SET_AXIS_ORIGIN_PARAM  = 0x0027
-GO_TO_AXIS_ORIGIN      = 0x0028
-MOVE_AXIS_TO           = 0x0029
-GET_AXIS_POSITION      = 0x002A
-GET_FLY_WAIT_COUNT     = 0x002B # ?
-GET_MARK_COUNT         = 0x002D # ?
-SET_FPK_2E             = 0x002E # First pulse killer related, SetFpkParam2
-                                # My ezcad lists 40 microseconds as FirstPulseKiller
-                                # EzCad sets it 0x0FFB, 1, 0x199, 0x64
-FIBER_CONFIG_1         = 0x002F # 
-FIBER_CONFIG_2         = 0x0030 #
-LOCK_INPUT_PORT        = 0x0031 # ?
-SET_FLY_RES            = 0x0032 # Unknown fiber laser parameter being set
-                                # EzCad sets it: 0x0000, 0x0063, 0x03E8, 0x0019
-FIBER_OPEN_MO          = 0x0033 # "IPG (i.e. fiber) Open MO" - MO is probably Master Oscillator
-                                # (In BJJCZ documentation, the pin 18 on the IPG connector is 
-                                #  called "main oscillator"; on the raycus docs it is "emission enable.")
-                                # Seen at end of marking operation with all
-                                # zero parameters. My Ezcad has an "open MO delay"
-                                # of 8 ms
-FIBER_GET_StMO_AP      = 0x0034 # Unclear what this means; there is no
-                                # corresponding list command. It might be to
-                                # get a status register related to the source.
-                                # It is called IPG_GETStMO_AP in the dll, and the abbreviations
-                                # MO and AP are used for the master oscillator and power amplifier 
-                                # signal lines in BJJCZ documentation for the board; LASERST is 
-                                # the name given to the error code lines on the IPG connector.
-GET_USER_DATA          = 0x0036 # ?
-GET_FLY_PULSE_COUNT    = 0x0037 # ?
-GET_FLY_SPEED          = 0x0038 # ?
-ENABLE_Z_2             = 0x0039 # ? AutoFocus on/off
-ENABLE_Z               = 0x003A # AutoFocus on/off
-SET_Z_DATA             = 0x003B # ?
-SET_SPI_SIMMER_CURRENT = 0x003C # ?
-IS_LITE_VERSION        = 0x0040 # Tell laser to nerf itself for ezcad lite apparently
-GET_MARK_TIME          = 0x0041 # Seen at end of cutting, only and always called with param 0x0003
-SET_FPK_PARAM          = 0x0062  # Probably "first pulse killer" = fpk
-
+SET_LASER_MODE = 0x001B
+SET_TIMING = 0x001C
+SET_STANDBY = 0x001D
+SET_PWM_HALF_PERIOD = 0x001E
+STOP_EXECUTE = 0x001F  # Since observed in the wild
+STOP_LIST = 0x0020  # ?
+WRITE_PORT = 0x0021
+WRITE_ANALOG_PORT_1 = 0x0022  # At end of cut, seen writing 0x07FF
+WRITE_ANALOG_PORT_2 = 0x0023  # ?
+WRITE_ANALOG_PORT_X = 0x0024  # ?
+READ_PORT = 0x0025
+SET_AXIS_MOTION_PARAM = 0x0026
+SET_AXIS_ORIGIN_PARAM = 0x0027
+GO_TO_AXIS_ORIGIN = 0x0028
+MOVE_AXIS_TO = 0x0029
+GET_AXIS_POSITION = 0x002A
+GET_FLY_WAIT_COUNT = 0x002B  # ?
+GET_MARK_COUNT = 0x002D  # ?
+SET_FPK_2E = 0x002E  # First pulse killer related, SetFpkParam2
+# My ezcad lists 40 microseconds as FirstPulseKiller
+# EzCad sets it 0x0FFB, 1, 0x199, 0x64
+FIBER_CONFIG_1 = 0x002F  #
+FIBER_CONFIG_2 = 0x0030  #
+LOCK_INPUT_PORT = 0x0031  # ?
+SET_FLY_RES = 0x0032  # Unknown fiber laser parameter being set
+# EzCad sets it: 0x0000, 0x0063, 0x03E8, 0x0019
+FIBER_OPEN_MO = 0x0033  # "IPG (i.e. fiber) Open MO" - MO is probably Master Oscillator
+# (In BJJCZ documentation, the pin 18 on the IPG connector is
+#  called "main oscillator"; on the raycus docs it is "emission enable.")
+# Seen at end of marking operation with all
+# zero parameters. My Ezcad has an "open MO delay"
+# of 8 ms
+FIBER_GET_StMO_AP = 0x0034  # Unclear what this means; there is no
+# corresponding list command. It might be to
+# get a status register related to the source.
+# It is called IPG_GETStMO_AP in the dll, and the abbreviations
+# MO and AP are used for the master oscillator and power amplifier
+# signal lines in BJJCZ documentation for the board; LASERST is
+# the name given to the error code lines on the IPG connector.
+GET_USER_DATA = 0x0036  # ?
+GET_FLY_PULSE_COUNT = 0x0037  # ?
+GET_FLY_SPEED = 0x0038  # ?
+ENABLE_Z_2 = 0x0039  # ? AutoFocus on/off
+ENABLE_Z = 0x003A  # AutoFocus on/off
+SET_Z_DATA = 0x003B  # ?
+SET_SPI_SIMMER_CURRENT = 0x003C  # ?
+IS_LITE_VERSION = 0x0040  # Tell laser to nerf itself for ezcad lite apparently
+GET_MARK_TIME = (
+    0x0041  # Seen at end of cutting, only and always called with param 0x0003
+)
+SET_FPK_PARAM = 0x0062  # Probably "first pulse killer" = fpk
 
 
 class Sender:
-    """This is a simplified control class for the BJJCZ (Golden Orange, 
+    """This is a simplified control class for the BJJCZ (Golden Orange,
     Beijing JCZ) LMCV4-FIBER-M and compatible boards. All operations are blocking
     so it should probably run in its own thread for nontrivial applications.
-    It does have an .abort() method that it is expected will be called 
+    It does have an .abort() method that it is expected will be called
     asynchronously from another thread."""
+
     sleep_time = 0.001
 
-    # We include this "blob" here (the contents of which are all well-understood) to 
+    # We include this "blob" here (the contents of which are all well-understood) to
     # avoid introducing a dependency on job generation from within the sender.
     # It just consists of the new job command followed by a bunch of NOPs.
-    _abort_list_chunk = (
-               bytearray([0x51, 0x80] + [0x00]*10)       # New job
-             + bytearray(([0x02, 0x80] + [0x00]*10)*255) # NOP
-            )
+    _abort_list_chunk = bytearray([0x51, 0x80] + [0x00] * 10) + bytearray(  # New job
+        ([0x02, 0x80] + [0x00] * 10) * 255
+    )  # NOP
 
-    _packet_size = 256*12
+    _packet_size = 256 * 12
+
     def get_packet_size(self):
-        return self._packet_size # TODO maybe this should get it from the usb connection class,
+        return (
+            self._packet_size
+        )  # TODO maybe this should get it from the usb connection class,
         # n.b. not instance which will not exist at the time it's needed necessarily
 
     def __init__(self, footswitch_callback=None, debug=False):
@@ -127,7 +143,6 @@ class Sender:
         self._debug = debug
         self._usb_connection = None
         self._write_port = 0x0000
-
 
     def open(self, machine_index=0, mock=False, **kwargs):
         if self._usb_connection is not None:
@@ -139,7 +154,9 @@ class Sender:
         connection.open()
         self._usb_connection = connection
         self._init_machine(**kwargs)
-        time.sleep(0.05)  # We sacrifice this time at the altar of the unknown race condition
+        time.sleep(
+            0.05
+        )  # We sacrifice this time at the altar of the unknown race condition
         return True
 
     def close(self):
@@ -166,31 +183,33 @@ class Sender:
             raise BalorCommunicationException("No usb connection.")
         self._usb_connection.send_list_chunk(*args)
 
-    def _init_machine(self,
-                      cor_file=None,
-                      first_pulse_killer=200,
-                      pwm_half_period=125,
-                      pwm_pulse_width=125,
-                      standby_param_1=2000,
-                      standby_param_2=20,
-                      timing_mode=1,
-                      delay_mode=1,
-                      laser_mode=1,
-                      control_mode=0,
-                      fpk2_p1=0xFFB,
-                      fpk2_p2=1,
-                      fpk2_p3=409,
-                      fpk2_p4=100,
-                      fly_res_p1=0,
-                      fly_res_p2=99,
-                      fly_res_p3=1000,
-                      fly_res_p4=25,
-                      **kwargs):
+    def _init_machine(
+        self,
+        cor_file=None,
+        first_pulse_killer=200,
+        pwm_half_period=125,
+        pwm_pulse_width=125,
+        standby_param_1=2000,
+        standby_param_2=20,
+        timing_mode=1,
+        delay_mode=1,
+        laser_mode=1,
+        control_mode=0,
+        fpk2_p1=0xFFB,
+        fpk2_p2=1,
+        fpk2_p3=409,
+        fpk2_p4=100,
+        fly_res_p1=0,
+        fly_res_p2=99,
+        fly_res_p3=1000,
+        fly_res_p4=25,
+        **kwargs,
+    ):
         """Initialize the machine."""
         self.serial_number = self.raw_get_serial_no()
         self.version = self.raw_get_version()
         self.raw_get_st_mo_ap()
-        
+
         # Unknown function
         self.raw_reset()
 
@@ -201,7 +220,7 @@ class Sender:
         self._send_correction_table(cor_table)
 
         self.raw_enable_laser()
-        self.raw_set_control_mode(control_mode,0)
+        self.raw_set_control_mode(control_mode, 0)
         self.raw_set_laser_mode(laser_mode, 0)
         self.raw_set_delay_mode(delay_mode, 0)
         self.raw_set_timing(timing_mode, 0)
@@ -226,7 +245,7 @@ class Sender:
         # Is this appropriate for all laser engraver machines?
         self.raw_write_port(self._write_port)
 
-        # Conjecture is that this puts the output port out of a 
+        # Conjecture is that this puts the output port out of a
         # high impedance state (based on the name in the DLL,
         # ENABLEZ)
         # Based on how it's used, it could also be about latching out
@@ -256,10 +275,12 @@ class Sender:
         self.raw_write_correction_table(True)
         if table is None:
             for n in range(65**2):
-                self.raw_write_correction_line(0,0,0 if n == 0 else 1)
+                self.raw_write_correction_line(0, 0, 0 if n == 0 else 1)
         else:
             for n in range(65**2):
-                self.raw_write_correction_line(table[n][0], table[n][1],0 if n == 0 else 1)
+                self.raw_write_correction_line(
+                    table[n][0], table[n][1], 0 if n == 0 else 1
+                )
 
     def is_ready(self):
         """Returns true if the laser is ready for more data, false otherwise."""
@@ -268,18 +289,19 @@ class Sender:
 
     def is_busy(self):
         """Returns true if the machine is busy, false otherwise;
-           Note that running a lighting job counts as being busy."""
+        Note that running a lighting job counts as being busy."""
         self.read_port()
         return bool(self._usb_connection.status & 0x04)
 
-    def execute(self, command_list: CommandSource, loop_count=1,
-                callback_finished=None):
+    def execute(
+        self, command_list: CommandSource, loop_count=1, callback_finished=None
+    ):
         """Run a job. loop_count is the number of times to repeat the
-           job; if it is inf, it repeats until aborted. If there is a job
-           already running, it will be aborted and replaced. Optionally,
-           calls a callback function when the job is finished.
-           The loop job can either be regular data in multiples of 3072 bytes, or
-           it can be a callable that provides data as above on command."""
+        job; if it is inf, it repeats until aborted. If there is a job
+        already running, it will be aborted and replaced. Optionally,
+        calls a callback function when the job is finished.
+        The loop job can either be regular data in multiples of 3072 bytes, or
+        it can be a callable that provides data as above on command."""
         self._terminate_execution = False
         with self._lock:
             while self.is_busy():
@@ -311,8 +333,8 @@ class Sender:
 
                 # when done, SET_END_OF_LIST(0), SET_CONTROL_MODE(1), 7(1)
                 self.raw_set_end_of_list(0, 0)
-                #self.raw_execute_list()
-                self.raw_set_control_mode(1,0)
+                # self.raw_execute_list()
+                self.raw_set_control_mode(1, 0)
 
                 while self.is_busy():
                     if self._terminate_execution:
@@ -326,11 +348,11 @@ class Sender:
 
     def abort(self):
         """Aborts any job in progress and puts the machine back into an
-           idle ready condition."""
+        idle ready condition."""
         self._terminate_execution = True
         with self._lock:
             self.raw_stop_execute()
-            self.raw_fiber_open_mo(0,0)
+            self.raw_fiber_open_mo(0, 0)
             self.raw_reset_list()
             self._send_list_chunk(self._abort_list_chunk)
 
@@ -348,7 +370,7 @@ class Sender:
 
     def get_condition(self):
         """Returns the 16-bit condition register value (from whatever
-           command was run last.)"""
+        command was run last.)"""
         return self._usb_connection.status
 
     def port_toggle(self, bit):
@@ -369,7 +391,7 @@ class Sender:
         return (self._write_port >> bit) & 1
 
     def light_on(self):
-        self.port_on(bit=8) # 0x100
+        self.port_on(bit=8)  # 0x100
 
     def light_off(self):
         self.port_off(bit=8)
@@ -385,8 +407,8 @@ class Sender:
 
     def set_xy(self, x, y):
         """Change the galvo position. If the machine is running a job,
-           this will abort the job."""
-        self.raw_set_xy_position(x,y)
+        this will abort the job."""
+        self.raw_set_xy_position(x, y)
 
     def get_xy(self):
         """Returns the galvo position."""
@@ -552,7 +574,7 @@ class Sender:
 
     def raw_set_end_of_list(self, a=0, b=0):
         """
-        No parameters 
+        No parameters
         :return: value response
         """
         # It does so have parameters, in the pcap...
@@ -914,7 +936,7 @@ class Sender:
 
 
 class UsbConnection:
-    chunk_size = 12*256
+    chunk_size = 12 * 256
     ep_hodi = 0x01  # endpoint for the "dog," i.e. dongle.
     ep_hido = 0x81  # fortunately it turns out that we can ignore it completely.
     ep_homi = 0x02  # endpoint for host out, machine in. (query status, send ops)
@@ -927,7 +949,7 @@ class UsbConnection:
         self._debug = debug
 
     def open(self):
-        devices=list(usb.core.find(find_all=True, idVendor=0x9588, idProduct=0x9899))
+        devices = list(usb.core.find(find_all=True, idVendor=0x9588, idProduct=0x9899))
         if len(devices) == 0:
             raise BalorMachineException("No compatible engraver machine was found.")
 
@@ -935,7 +957,7 @@ class UsbConnection:
             device = list(devices)[self.machine_index]
         except IndexError:
             # Can't find device
-            raise BalorMachineException("Invalid machine index %d"%self.machine_index)
+            raise BalorMachineException("Invalid machine index %d" % self.machine_index)
 
         # if the permissions are wrong, these will throw usb.core.USBError
         device.set_configuration()
@@ -951,22 +973,22 @@ class UsbConnection:
         self.status = None
         if self._debug:
             self._debug("Disconnected.")
-            
+
     def is_ready(self):
         self.send_command(READ_PORT, 0)
         return self.status & 0x20
-    
+
     def send_correction_entry(self, correction):
         """Send an individual correction table entry to the machine."""
         # This is really a command and should just be issued without reading.
         query = bytearray([0x10] + [0] * 11)
-        query[2:2 + 5] = correction
+        query[2 : 2 + 5] = correction
         if self.device.write(self.ep_homi, query, 100) != 12:
             raise BalorCommunicationException("Failed to write correction entry")
 
     def send_command(self, code, *parameters, read=True):
         """Send a command to the machine and return the response.
-           Updates the host condition register as a side effect."""
+        Updates the host condition register as a side effect."""
         query = bytearray([0] * 12)
         query[0] = code & 0x00FF
         query[1] = (code >> 8) & 0x00FF
@@ -1009,6 +1031,7 @@ class MockConnection:
     @property
     def status(self):
         import random
+
         return random.randint(0, 255)
 
     def open(self):
@@ -1026,7 +1049,7 @@ class MockConnection:
 
     def send_command(self, code, *parameters, read=True):
         """Send a command to the machine and return the response.
-           Updates the host condition register as a side effect."""
+        Updates the host condition register as a side effect."""
         if self._debug:
             self._debug("---> " + str(code) + " " + str(parameters))
         time.sleep(0.005)
@@ -1034,6 +1057,7 @@ class MockConnection:
         # so the fake laser can give sensical responses
         if read:
             import random
+
             return random.randint(0, 255), random.randint(0, 255)
         else:
             return 0, 0

@@ -21,7 +21,6 @@ class Simulation:
         self.y = 0x8000
         self.show_travels = show_travels
 
-
     def simulate(self, op):
         op.simulate(self)
 
@@ -35,11 +34,13 @@ class Simulation:
                 int(cm * ((self.q_switch_period - 5000) / 50000.0)),
                 int(round(cm * (2000 - self.cut_speed) / 2000.0)),
                 # cm,)
-                int(round((cm / 100.0) * self.laser_power)))
-        self.draw.line((self.x * self.scale, self.y * self.scale,
-                        self.scale * x, self.scale * y),
-                       fill=color,
-                       width=1)
+                int(round((cm / 100.0) * self.laser_power)),
+            )
+        self.draw.line(
+            (self.x * self.scale, self.y * self.scale, self.scale * x, self.scale * y),
+            fill=color,
+            width=1,
+        )
         self.x, self.y = x, y
 
     def travel(self, x, y):
@@ -47,15 +48,17 @@ class Simulation:
             return
         cm = 128 if self.segcount % 2 else 255
         self.segcount += 1
-        self.draw.line((self.x*self.scale, self.y*self.scale,
-           self.scale*x, self.scale*y),
-           fill=(cm//2,cm//2,cm//2, 64), width=1)
+        self.draw.line(
+            (self.x * self.scale, self.y * self.scale, self.scale * x, self.scale * y),
+            fill=(cm // 2, cm // 2, cm // 2, 64),
+            width=1,
+        )
         self.x, self.y = x, y
 
 
 class Operation:
     opcode = 0x8000
-    name = 'UNDEFINED OPERATION'
+    name = "UNDEFINED OPERATION"
     x = None  # know which is x and which is y,
     y = None  # for adjustment purposes by correction filters
     d = None
@@ -76,7 +79,9 @@ class Operation:
             for n, p in enumerate(params):
                 self.params[n] = int(p)
                 if p > 0xFFFF:
-                    print("Parameter overflow", self.name, self.opcode, p, file=sys.stderr)
+                    print(
+                        "Parameter overflow", self.name, self.opcode, p, file=sys.stderr
+                    )
                     raise ValueError
         else:
             self.opcode = from_binary[0] | (from_binary[1] << 8)
@@ -97,24 +102,35 @@ class Operation:
             try:
                 blank[i + 1] = param >> 8
             except ValueError:
-                print("Parameter overflow %x" % param, self.name, self.opcode, self.params, file=sys.stderr)
+                print(
+                    "Parameter overflow %x" % param,
+                    self.name,
+                    self.opcode,
+                    self.params,
+                    file=sys.stderr,
+                )
             i += 2
         return blank
 
     def validate(self):
         for n, param in enumerate(self.params):
-            if param > 0xFFFF: raise ValueError(
-                "A parameter can't be greater than 0xFFFF (Op %s, Param %d = 0x%04X" % (self.name,
-                                                                                        n, param))
+            if param > 0xFFFF:
+                raise ValueError(
+                    "A parameter can't be greater than 0xFFFF (Op %s, Param %d = 0x%04X"
+                    % (self.name, n, param)
+                )
 
     def text_decode(self):
         return self.name
 
     def text_debug(self, show_tracking=False):
-        return (('%s:%03X' % (self.tracking, self.position) if show_tracking else '')
-                + ' | %04X | ' % self.opcode
-                + ' '.join(['%04X' % x for x in self.params])
-                + ' | ' + self.text_decode())
+        return (
+            ("%s:%03X" % (self.tracking, self.position) if show_tracking else "")
+            + " | %04X | " % self.opcode
+            + " ".join(["%04X" % x for x in self.params])
+            + " | "
+            + self.text_decode()
+        )
 
     def has_xy(self):
         return self.x is not None and self.y is not None
@@ -157,13 +173,11 @@ class OpTravel(Operation):
 
     def text_decode(self):
         xs, ys, unit = self.job.get_scale()
-        x = '%.3f %s' % (self.params[1] * xs, unit) if unit else '%d' % self.params[1]
-        y = '%.3f %s' % (self.params[0] * ys, unit) if unit else '%d' % self.params[0]
+        x = "%.3f %s" % (self.params[1] * xs, unit) if unit else "%d" % self.params[1]
+        y = "%.3f %s" % (self.params[0] * ys, unit) if unit else "%d" % self.params[0]
         distance = self.params[3] | ((self.params[3] & 0x0001) << 16)
-        d = '%.3f %s' % (distance * xs, unit) if unit else '%d' % distance
-        return "Travel to x=%s y=%s angle=%04X dist=%s" % (
-            x, y, self.params[2],
-            d)
+        d = "%.3f %s" % (distance * xs, unit) if unit else "%d" % distance
+        return "Travel to x=%s y=%s angle=%04X dist=%s" % (x, y, self.params[2], d)
 
     def simulate(self, sim):
         sim.travel(self.params[self.x], self.params[self.y])
@@ -181,7 +195,7 @@ class OpLaserOnPoint(Operation):
             p1=self.params[1],
             p2=self.params[2],
             p3=self.params[3],
-            p4=self.params[4]
+            p4=self.params[4],
         )
 
 
@@ -203,12 +217,10 @@ class OpCut(Operation):
 
     def text_decode(self):
         xs, ys, unit = self.job.get_scale()
-        x = '%.3f %s' % (self.params[1] * xs, unit) if unit else '%d' % self.params[1]
-        y = '%.3f %s' % (self.params[0] * ys, unit) if unit else '%d' % self.params[0]
-        d = '%.3f %s' % (self.params[3] * xs, unit) if unit else '%d' % self.params[3]
-        return "Cut to x=%s y=%s angle=%04X dist=%s" % (
-            x, y, self.params[2],
-            d)
+        x = "%.3f %s" % (self.params[1] * xs, unit) if unit else "%d" % self.params[1]
+        y = "%.3f %s" % (self.params[0] * ys, unit) if unit else "%d" % self.params[0]
+        d = "%.3f %s" % (self.params[3] * xs, unit) if unit else "%d" % self.params[3]
+        return "Cut to x=%s y=%s angle=%04X dist=%s" % (x, y, self.params[2], d)
 
     def simulate(self, sim):
         sim.cut(self.params[self.x], self.params[self.y])
@@ -284,7 +296,7 @@ class OpSetJumpDelay(Operation):
     opcode = 0x800D
 
     def text_decode(self):
-        return "Set jump delay, param=(%d,%d)" % (self.params[0],self.params[1])
+        return "Set jump delay, param=(%d,%d)" % (self.params[0], self.params[1])
 
 
 class OpSetPolygonDelay(Operation):
@@ -344,7 +356,8 @@ class OpSetQSwitchPeriod(Operation):
     def text_decode(self):
         return "Set Q-switch period = %d ns (%.0f kHz)" % (
             self.params[0] * 50,
-            1.0 / (1000 * self.params[0] * 50e-9))
+            1.0 / (1000 * self.params[0] * 50e-9),
+        )
 
     def simulate(self, sim):
         sim.q_switch_period = self.params[0] * 50.0
@@ -416,7 +429,7 @@ class OpLaserControl(Operation):
     opcode = 0x8021
 
     def text_decode(self):
-        return "Laser control - turn " + ('ON' if self.params[0] else 'OFF')
+        return "Laser control - turn " + ("ON" if self.params[0] else "OFF")
 
     def simulate(self, sim):
         sim.laser_on = bool(self.params[0])
@@ -515,6 +528,7 @@ class OpSetDaZWord(Operation):
             p4=self.params[4],
         )
 
+
 class OpJptSetParam(Operation):
 
     opcode = 0x8050
@@ -531,8 +545,6 @@ class OpJptSetParam(Operation):
         )
 
 
-
-
 class OpReadyMark(Operation):
     name = "BEGIN JOB"
     opcode = 0x8051
@@ -541,16 +553,37 @@ class OpReadyMark(Operation):
         return "Begin job"
 
 
-
-
-all_operations = [OpReadyMark, OpLaserControl, OpSetQSwitchPeriod, OpCut, OpLaserOnPoint,
-                  OpMarkPowerRatio, OpSetPolygonDelay, OpSetJumpDelay, OpSetCutSpeed,
-                  OpSetLaserOffDelay, OpSetLaserOnDelay, OpSetTravelSpeed,
-                  OpSetMarkEndDelay, OpEndOfList, OpTravel, OpMarkFrequency, OpMarkPulseWidth,
-                  OpWritePort, OpDirectLaserSwitch, OpFlyDelay, OpSetCo2FPK, OpFlyWaitInput,
-                  OpChangeMarkCount, OpSetWeldPowerWave, OpEnableWeldPowerWave, OpFiberYLPMPulseWidth,
-                  OpFlyEncoderCount, OpJptSetParam, OpSetDaZWord
-                  ]
+all_operations = [
+    OpReadyMark,
+    OpLaserControl,
+    OpSetQSwitchPeriod,
+    OpCut,
+    OpLaserOnPoint,
+    OpMarkPowerRatio,
+    OpSetPolygonDelay,
+    OpSetJumpDelay,
+    OpSetCutSpeed,
+    OpSetLaserOffDelay,
+    OpSetLaserOnDelay,
+    OpSetTravelSpeed,
+    OpSetMarkEndDelay,
+    OpEndOfList,
+    OpTravel,
+    OpMarkFrequency,
+    OpMarkPulseWidth,
+    OpWritePort,
+    OpDirectLaserSwitch,
+    OpFlyDelay,
+    OpSetCo2FPK,
+    OpFlyWaitInput,
+    OpChangeMarkCount,
+    OpSetWeldPowerWave,
+    OpEnableWeldPowerWave,
+    OpFiberYLPMPulseWidth,
+    OpFlyEncoderCount,
+    OpJptSetParam,
+    OpSetDaZWord,
+]
 
 operations_by_opcode = {OpClass.opcode: OpClass for OpClass in all_operations}
 
@@ -560,15 +593,19 @@ def OperationFactory(code, tracking=None, position=0):
     OpClass = operations_by_opcode.get(opcode, Operation)
     return OpClass(from_binary=code, tracking=tracking, position=position)
 
+
 class CommandSource:
     tick = None
+
     def packet_generator(self):
         assert False, "Override this abstract method!"
+
 
 class CommandBinary(CommandSource):
     def __init__(self, data, repeat=1):
         self._original_data = data
         self._repeat = repeat
+
     def packet_generator(self):
         while self._repeat > 0:
             self._data = self._original_data
@@ -581,14 +618,15 @@ class CommandBinary(CommandSource):
 
 
 class CommandList(CommandSource):
-    def __init__(self,
-                 machine=None,
-                 x=0x8000,
-                 y=0x8000,
-                 cal=None,
-                 sender=None,
-                 tick=None,
-                 ):
+    def __init__(
+        self,
+        machine=None,
+        x=0x8000,
+        y=0x8000,
+        cal=None,
+        sender=None,
+        tick=None,
+    ):
         self.machine = machine
         self.tick = tick
 
@@ -722,7 +760,7 @@ class CommandList(CommandSource):
                 i = 0
                 yield buf
         while i < 0xC00:
-            buf[i: i + 12] = eol
+            buf[i : i + 12] = eol
             i += 12
         yield buf
 
@@ -768,7 +806,7 @@ class CommandList(CommandSource):
         # q_switch_period
         return int(round(1.0 / (frequency * 1e3) / 50e-9))
 
-    #def convert_period(self, period):
+    # def convert_period(self, period):
     #    return int(round(period / 50e-9))
 
     ######################
@@ -1001,7 +1039,7 @@ class CommandList(CommandSource):
         return (self._write_port >> bit) & 1
 
     def light_on(self):
-        self.port_on(bit=8) # 0x100
+        self.port_on(bit=8)  # 0x100
 
     def light_off(self):
         self.port_off(bit=8)
@@ -1026,7 +1064,9 @@ class CommandList(CommandSource):
             i += 12
 
     def plot(self, draw, resolution=2048, show_travels=False):
-        sim = Simulation(self, self.machine, draw, resolution, show_travels=show_travels)
+        sim = Simulation(
+            self, self.machine, draw, resolution, show_travels=show_travels
+        )
         for op in self.operations:
             sim.simulate(op)
 

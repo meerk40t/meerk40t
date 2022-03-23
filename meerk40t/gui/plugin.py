@@ -16,7 +16,9 @@ def plugin(kernel, lifecycle):
 
             @kernel.console_command("gui", help=_("starts the gui"))
             def gui_start(channel=None, **kwargs):
-                channel("wxPython is not installed. No graphical user interface possible.")
+                channel(
+                    "wxPython is not installed. No graphical user interface possible."
+                )
 
             return
         if kernel._hard_gui:
@@ -28,6 +30,7 @@ def plugin(kernel, lifecycle):
                 meerk40tgui = kernel_root.open("module/wxMeerK40t")
                 kernel.console("window open MeerK40t\n")
                 meerk40tgui.MainLoop()
+
         else:
             kernel._gui = False
     if lifecycle == "invalidate":

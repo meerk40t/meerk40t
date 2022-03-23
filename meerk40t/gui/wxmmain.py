@@ -10,25 +10,13 @@ from wx import aui
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.cutcode import CutCode
-from ..core.node.consoleop import ConsoleOperation
-from ..core.node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
-from ..core.units import UNITS_PER_INCH
+
+from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (
     Color,
-    Group,
-    Length,
     Matrix,
     Path,
-    SVGElement,
     SVGImage,
-    SVGText,
 )
 from .icons import (
     icon_meerk40t,
@@ -504,9 +492,7 @@ class MeerK40t(MWindow):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 unit_width = context.device.unit_width
-                length = Length(dlg.GetValue()).value(
-                    ppi=UNITS_PER_INCH, relative_length=unit_width
-                )
+                length = float(Length(dlg.GetValue(), relative_length=unit_width))
                 mx = Matrix()
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
@@ -720,10 +706,9 @@ class MeerK40t(MWindow):
             "show",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def show_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -736,10 +721,9 @@ class MeerK40t(MWindow):
             "hide",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def hide_pane(command, _, channel, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -753,10 +737,9 @@ class MeerK40t(MWindow):
             "float",
             input_type="panes",
             help=_("show the pane"),
+            all_arguments_required=True,
         )
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            if pane is None:
-                raise CommandSyntaxError
             _pane = context.lookup("pane", pane)
             if _pane is None:
                 channel(_("Pane not found."))
@@ -1917,10 +1900,8 @@ class MeerK40t(MWindow):
     def load(self, pathname):
         try:
             with wx.BusyInfo(
-                wx.BusyInfoFlags()
-                    .Title(_("Loading File..."))
-                    .Label(pathname)
-                ):
+                wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
+            ):
                 n = self.context.elements.note
                 results = self.context.elements.load(
                     pathname,
