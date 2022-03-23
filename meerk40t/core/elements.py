@@ -2025,34 +2025,39 @@ class Elemental(Service):
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
-        @self.console_argument("x_pos", type=str)
-        @self.console_argument("y_pos", type=str)
-        @self.console_argument("r_pos", type=str)
+        @self.console_argument("x_pos", type=Length)
+        @self.console_argument("y_pos", type=Length)
+        @self.console_argument("r_pos", type=Length)
         @self.console_command(
             "circle",
-            help=_("circle <x> <y> <r> or circle <r>"),
+            help=_("circle <x> <y> <r>"),
             input_type=("elements", None),
             output_type="elements",
+            all_arguments_required=True,
         )
         def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
-            if x_pos is None:
-                raise CommandSyntaxError
-            else:
-                if r_pos is None:
-                    r_pos = x_pos
-                    x_pos = 0
-                    y_pos = 0
-
-            x_pos = self.device.length(x_pos, 0)
-            y_pos = self.device.length(y_pos, 1)
-            r_pos = self.device.length(r_pos, -1)
-            circ = Circle(cx=x_pos, cy=y_pos, r=r_pos)
+            circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
             self.add_element(circ)
             if data is None:
-                return "elements", [circ]
-            else:
-                data.append(circ)
-                return "elements", data
+                data=list()
+            data.append(circ)
+            return "elements", data
+
+        @self.console_argument("r_pos", type=Length)
+        @self.console_command(
+            "circle_r",
+            help=_("circle_r <r>"),
+            input_type=("elements", None),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def element_circle(r_pos, data=None, **kwargs):
+            circ = Circle(r=float(r_pos))
+            self.add_element(circ)
+            if data is None:
+                data = list()
+            data.append(circ)
+            return "elements", data
 
         @self.console_argument("x_pos", type=str)
         @self.console_argument("y_pos", type=str)
@@ -3262,8 +3267,8 @@ class Elemental(Service):
             self._clipboard[destination] = [copy(e) for e in data]
             return "elements", self._clipboard[destination]
 
-        @self.console_option("dx", "x", help=_("paste offset x"), type=str)
-        @self.console_option("dy", "y", help=_("paste offset y"), type=str)
+        @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
+        @self.console_option("dy", "y", help=_("paste offset y"), type=Length, default=0)
         @self.console_command(
             "paste",
             help=_("clipboard paste"),
@@ -3277,16 +3282,8 @@ class Elemental(Service):
             except KeyError:
                 channel(_("Error: Clipboard Empty"))
                 return
-            if dx is not None or dy is not None:
-                if dx is None:
-                    dx = 0
-                else:
-                    dx = self.device.length(dx, 0)
-                if dy is None:
-                    dy = 0
-                else:
-                    dy = self.device.length(dy, 1)
-                m = Matrix("translate(%s, %s)" % (dx, dy))
+            if dx != 0 or dy != 0:
+                m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
                 for e in pasted:
                     e *= m
             group = self.elem_branch.add(type="group", label="Group")
