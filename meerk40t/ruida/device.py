@@ -10,8 +10,6 @@ from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
 from ..svgelements import Color, Point
 
-UNITS_PER_uM = UNITS_PER_uM
-
 STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
