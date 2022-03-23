@@ -299,7 +299,7 @@ class ViewPort:
                     relative_length=relative_length,
                     as_float=as_float,
                 )
-                / 1000.0
+                * MIL_PER_INCH
             )
         else:
             length = Length(value)
