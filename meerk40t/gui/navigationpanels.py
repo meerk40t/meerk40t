@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     icon_corner1,
     icon_corner2,
@@ -371,7 +372,13 @@ class Drag(wx.Panel):
             return
         px = (bbox[0] + bbox[2]) / 2.0
         py = (bbox[3] + bbox[1]) / 2.0
-        self.context("move_absolute %f %f\n" % (px, py))
+
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(px, unitless=1.0).length_mm,
+                y=Length(py, unitless=1.0).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_tl(
@@ -380,7 +387,12 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[0], bbox[1]))
+        self.context(
+            "move_absolute {x} {y}\n".format(
+                x=Length(bbox[0], unitless=1.0).length_mm,
+                y=Length(bbox[1], unitless=1.0).length_mm,
+            )
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_tr(
@@ -389,7 +401,10 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[2], bbox[1]))
+        "move_absolute {x} {y}\n".format(
+            x=Length(bbox[2], unitless=1.0).length_mm,
+            y=Length(bbox[1], unitless=1.0).length_mm,
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_bl(
@@ -398,7 +413,10 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[0], bbox[3]))
+        "move_absolute {x} {y}\n".format(
+            x=Length(bbox[0], unitless=1.0).length_mm,
+            y=Length(bbox[3], unitless=1.0).length_mm,
+        )
         self.drag_ready(True)
 
     def on_button_align_corner_br(
@@ -407,7 +425,10 @@ class Drag(wx.Panel):
         bbox = self.get_bbox()
         if bbox is None:
             return
-        self.context("move_absolute %f %f\n" % (bbox[2], bbox[3]))
+        "move_absolute {x} {y}\n".format(
+            x=Length(bbox[2], unitless=1.0).length_mm,
+            y=Length(bbox[3], unitless=1.0).length_mm,
+        )
         self.drag_ready(True)
 
     def drag_relative(self, dx, dy):
@@ -949,9 +970,7 @@ class SizePanel(wx.Panel):
                 scale=1.0 / self.object_ratio,
             )
             s = "{wlen:.2f}{units}".format(
-                wlen=p.device.length(
-                    width.value, 1, new_units=units, as_float=True
-                ),
+                wlen=p.device.length(width.value, 1, new_units=units, as_float=True),
                 units=units,
             )
 
@@ -970,9 +989,7 @@ class SizePanel(wx.Panel):
                 scale=self.object_ratio,
             )
             s = "{wlen:.2f}{units}".format(
-                wlen=p.device.length(
-                    height.value, 1, new_units=units, as_float=True
-                ),
+                wlen=p.device.length(height.value, 1, new_units=units, as_float=True),
                 units=units,
             )
 
