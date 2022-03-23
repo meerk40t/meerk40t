@@ -907,13 +907,13 @@ class SizePanel(wx.Panel):
             units = p.units_name
             try:
                 bbox = self.context.elements.selected_area()
-                self.object_x = Length(bbox[0], unitless=1.0, preferred_units=units)
-                self.object_y = Length(bbox[1], unitless=1.0, preferred_units=units)
+                self.object_x = Length(bbox[0], unitless=1.0, preferred_units=units, digits=3)
+                self.object_y = Length(bbox[1], unitless=1.0, preferred_units=units, digits=3)
                 self.object_width = Length(
-                    abs(bbox[2] - bbox[0]), unitless=1.0, preferred_units=units
+                    abs(bbox[2] - bbox[0]), unitless=1.0, preferred_units=units, digits=3
                 )
                 self.object_height = Length(
-                    abs(bbox[3] - bbox[1]), unitless=1.0, preferred_units=units
+                    abs(bbox[3] - bbox[1]), unitless=1.0, preferred_units=units, digits=3
                 )
                 try:
                     self.object_ratio = self.object_width / self.object_height
