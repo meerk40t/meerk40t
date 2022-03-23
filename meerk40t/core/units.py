@@ -6,7 +6,7 @@ from meerk40t.kernel import CommandSyntaxError
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
-ERROR = 1e-12
+ERROR = 1e-11
 DEFAULT_PPI = 96.0
 NATIVE_UNIT_PER_INCH = 65535
 
@@ -512,6 +512,7 @@ class Length(object):
         if not isinstance(other, Length):
             other = Length(other)
         self._amount += other._amount
+        return self
 
     def __abs__(self):
         c = self.__copy__()
@@ -527,16 +528,16 @@ class Length(object):
     __div__ = __truediv__
 
     def __lt__(self, other):
-        return (self - other)._amount < 0.0
-
-    def __le__(self, other):
-        return (self - other)._amount <= 0.0
+        return (self - other)._amount - ERROR < 0
 
     def __gt__(self, other):
-        return (self - other)._amount > 0.0
+        return (self - other)._amount + ERROR > 0
+
+    def __le__(self, other):
+        return (self - other)._amount - ERROR <= 0
 
     def __ge__(self, other):
-        return (self - other)._amount >= 0.0
+        return (self - other)._amount + ERROR >= 0
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -576,6 +577,9 @@ class Length(object):
         s -= other
         return s
 
+    def __round__(self, ndigits=0):
+        return round(self._amount, ndigits=ndigits)
+
     def __rsub__(self, other):
         if not isinstance(other, Length):
             other = Length(other)
@@ -602,11 +606,11 @@ class Length(object):
     def __eq__(self, other):
         if other is None:
             return False
-        if other == 0:
-            return self._amount == 0
+        if isinstance(other, (int, float)):
+            return self._amount == other
         if not isinstance(other, Length):
             other = Length(other)
-        return abs((self - other)._amount) <= ERROR
+        return abs(self._amount - other._amount) <= ERROR
 
     @property
     def preferred(self):
