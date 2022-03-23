@@ -68,6 +68,7 @@ class TestElements(unittest.TestCase):
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
             kernel_root("clipboard copy\n")
             kernel_root("clipboard paste -xy 2in 2in\n")
+            kernel_root("grid 2 4\n")
         finally:
             kernel.shutdown()
 
@@ -80,7 +81,9 @@ class TestElements(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             kernel_root = kernel.get_context("/")
+            kernel_root("shape 5 2in 2in 1in\n")
             kernel_root("polygon 1in 1in 2in 2in 0in 4cm\n")
+
         finally:
             kernel.shutdown()
 
