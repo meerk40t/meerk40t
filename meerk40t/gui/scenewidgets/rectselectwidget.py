@@ -93,6 +93,7 @@ class RectSelectWidget(Widget):
         if event_type == "leftdown":
             self.start_location = space_pos
             self.end_location = space_pos
+            # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
         elif event_type == "leftclick":
             self.start_location = None
@@ -160,6 +161,8 @@ class RectSelectWidget(Widget):
                 return RESPONSE_CHAIN
 
         elif event_type == "leftup":
+            if self.start_location is None:
+                return RESPONSE_CHAIN
             _ = self.scene.context._
             self.update_statusmsg(_("Status"))
             elements.validate_selected_area()
