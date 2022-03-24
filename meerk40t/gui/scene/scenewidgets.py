@@ -85,6 +85,7 @@ class SelectionWidget(Widget):
     Selection Widget it tasked with drawing the selection box and managing the events
     dealing with moving, resizing and altering the selected object.
     """
+
     # Size of rotation indicator area - will be multiplied by selbox_wx / selbox_wy respectively
     rot_area = 2
     use_handle_rotate = True
@@ -107,6 +108,10 @@ class SelectionWidget(Widget):
         self.tool = self.tool_translate
         self.cursor = None
         self.uniform = True
+        self.total_delta_x = 0
+        self.total_delta_y = 0
+        self.tool_running = False
+        self.arcsegment = None
 
     def hit(self):
         elements = self.elements
@@ -166,28 +171,106 @@ class SelectionWidget(Widget):
         checks = [[self.left, self.top, self.right, self.bottom]]
         # The 4 side handles
         if self.use_handle_size:
-            checks.append ([self.left - self.selbox_wx / 2, (self.top + self.bottom)/2 - self.selbox_wy / 2, self.left, (self.top + self.bottom)/2 + self.selbox_wy / 2])
-            checks.append ([self.right, (self.top + self.bottom)/2 - self.selbox_wy / 2, self.right + self.selbox_wx / 2, (self.top + self.bottom)/2 + self.selbox_wy / 2])
-            checks.append ([(self.left+self.right)/2 - self.selbox_wx / 2, self.top - self.selbox_wy / 2, (self.left+self.right)/2 + self.selbox_wx / 2, self.top])
-            checks.append ([(self.left+self.right)/2 - self.selbox_wx / 2, self.bottom, (self.left+self.right)/2 + self.selbox_wx / 2, self.bottom + self.selbox_wy / 2])
+            checks.append(
+                [
+                    self.left - self.selbox_wx / 2,
+                    (self.top + self.bottom) / 2 - self.selbox_wy / 2,
+                    self.left,
+                    (self.top + self.bottom) / 2 + self.selbox_wy / 2,
+                ]
+            )
+            checks.append(
+                [
+                    self.right,
+                    (self.top + self.bottom) / 2 - self.selbox_wy / 2,
+                    self.right + self.selbox_wx / 2,
+                    (self.top + self.bottom) / 2 + self.selbox_wy / 2,
+                ]
+            )
+            checks.append(
+                [
+                    (self.left + self.right) / 2 - self.selbox_wx / 2,
+                    self.top - self.selbox_wy / 2,
+                    (self.left + self.right) / 2 + self.selbox_wx / 2,
+                    self.top,
+                ]
+            )
+            checks.append(
+                [
+                    (self.left + self.right) / 2 - self.selbox_wx / 2,
+                    self.bottom,
+                    (self.left + self.right) / 2 + self.selbox_wx / 2,
+                    self.bottom + self.selbox_wy / 2,
+                ]
+            )
 
         # The 4 corner handles incl. rotation indicator
         if self.use_handle_rotate:
             h_factor = self.rot_area
         else:
             h_factor = 0.5
-        checks.append ([self.left - h_factor * self.selbox_wx, self.top - h_factor * self.selbox_wy, self.left + h_factor * self.selbox_wx, self.top + h_factor * self.selbox_wy])
-        checks.append ([self.right - h_factor * self.selbox_wx, self.top - h_factor * self.selbox_wy, self.right + h_factor * self.selbox_wx, self.top + h_factor * self.selbox_wy])
-        checks.append ([self.left - h_factor * self.selbox_wx, self.bottom - h_factor * self.selbox_wy, self.left + h_factor * self.selbox_wx, self.bottom + h_factor * self.selbox_wy])
-        checks.append ([self.right - h_factor * self.selbox_wx, self.bottom - h_factor * self.selbox_wy, self.right + h_factor * self.selbox_wx, self.bottom + h_factor * self.selbox_wy])
+        checks.append(
+            [
+                self.left - h_factor * self.selbox_wx,
+                self.top - h_factor * self.selbox_wy,
+                self.left + h_factor * self.selbox_wx,
+                self.top + h_factor * self.selbox_wy,
+            ]
+        )
+        checks.append(
+            [
+                self.right - h_factor * self.selbox_wx,
+                self.top - h_factor * self.selbox_wy,
+                self.right + h_factor * self.selbox_wx,
+                self.top + h_factor * self.selbox_wy,
+            ]
+        )
+        checks.append(
+            [
+                self.left - h_factor * self.selbox_wx,
+                self.bottom - h_factor * self.selbox_wy,
+                self.left + h_factor * self.selbox_wx,
+                self.bottom + h_factor * self.selbox_wy,
+            ]
+        )
+        checks.append(
+            [
+                self.right - h_factor * self.selbox_wx,
+                self.bottom - h_factor * self.selbox_wy,
+                self.right + h_factor * self.selbox_wx,
+                self.bottom + h_factor * self.selbox_wy,
+            ]
+        )
         if self.use_handle_skew:
             # The two skew handles
-            checks.append ([self.left + 3/4 * (self.right-self.left) - 1/3 * self.selbox_wx, self.bottom - 1/3 * self.selbox_wy, self.left + 3/4 * (self.right-self.left) + 1/3 * self.selbox_wx, self.bottom + 1/3 * self.selbox_wy])
-            checks.append ([self.right - 1/3 * self.selbox_wx, self.top + 1/4 *(self.bottom - self.top) - 1/3 * self.selbox_wy, self.right + 1/3 * self.selbox_wx, self.top + 1/4 *(self.bottom - self.top) + 1/3 * self.selbox_wy])
+            checks.append(
+                [
+                    self.left
+                    + 3 / 4 * (self.right - self.left)
+                    - 1 / 3 * self.selbox_wx,
+                    self.bottom - 1 / 3 * self.selbox_wy,
+                    self.left
+                    + 3 / 4 * (self.right - self.left)
+                    + 1 / 3 * self.selbox_wx,
+                    self.bottom + 1 / 3 * self.selbox_wy,
+                ]
+            )
+            checks.append(
+                [
+                    self.right - 1 / 3 * self.selbox_wx,
+                    self.top
+                    + 1 / 4 * (self.bottom - self.top)
+                    - 1 / 3 * self.selbox_wy,
+                    self.right + 1 / 3 * self.selbox_wx,
+                    self.top
+                    + 1 / 4 * (self.bottom - self.top)
+                    + 1 / 3 * self.selbox_wy,
+                ]
+            )
 
         # Check whether the given point lie within one of the relevant rectangles
         for crn in checks:
-            if crn[0]  <= x <= crn[2] and crn[1] <= y <= crn[3]:
+            if crn[0] <= x <= crn[2] and crn[1] <= y <= crn[3]:
                 valu = True
                 break
         return valu
@@ -213,6 +296,7 @@ class SelectionWidget(Widget):
         return res
 
     store_last_msg = ""
+
     def update_statusmsg(self, value):
         if value != self.store_last_msg:
             self.store_last_msg = value
@@ -235,7 +319,7 @@ class SelectionWidget(Widget):
         if event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False
-                if self.stillinside(space_pos):
+                if not self.tool_running and self.stillinside(space_pos):
                     self.scene.cursor("sizing")
                     self.hovering = True
                     self.tool = self.tool_translate
@@ -244,14 +328,14 @@ class SelectionWidget(Widget):
             if not self.key_shift_pressed:
                 self.key_shift_pressed = True
             # Are we hovering ? If yes reset cursor
-            if self.hovering:
+            if not self.tool_running and self.hovering:
                 self.hovering = False
                 self.scene.cursor("arrow")
             return RESPONSE_CHAIN
         elif event_type == "kb_ctrl_release":
             if self.key_control_pressed:
                 self.key_control_pressed = False
-                if self.stillinside(space_pos):
+                if not self.tool_running and self.stillinside(space_pos):
                     self.scene.cursor("sizing")
                     self.hovering = True
                     self.tool = self.tool_translate
@@ -260,7 +344,7 @@ class SelectionWidget(Widget):
             if not self.key_control_pressed:
                 self.key_control_pressed = True
             # Are we hovering ? If yes reset cursor
-            if self.hovering:
+            if not self.tool_running and self.hovering:
                 self.hovering = False
                 self.scene.cursor("arrow")
             return RESPONSE_CHAIN
@@ -304,47 +388,203 @@ class SelectionWidget(Widget):
                     except (ValueError, AttributeError):
                         pass
 
-                if ( self.width < 3 *  self.selbox_wx ) or ( self.height < 3 *  self.selbox_wy ):
+                if (self.width < 3 * self.selbox_wx) or (
+                    self.height < 3 * self.selbox_wy
+                ):
                     center_size = 1
-                elif ( self.width < 5 *  self.selbox_wx ) or ( self.height < 5 *  self.selbox_wy ):
+                elif (self.width < 5 * self.selbox_wx) or (
+                    self.height < 5 * self.selbox_wy
+                ):
                     center_size = 2
                 else:
                     center_size = 3
                 # print("Ratio-Y: %.1f, X: %.1f, cs=%d" % (self.width / self.selbox_wx, self.height / self.selbox_wy, center_size))
                 # The centre for moving
-                checks = [[(xmin+xmax)/2 - center_size * self.selbox_wx,  (ymin+ymax)/2 - center_size * self.selbox_wy, (xmin+xmax)/2 + center_size * self.selbox_wx, (ymin+ymax)/2 + center_size * self.selbox_wy, "move"]]
+                checks = [
+                    [
+                        (xmin + xmax) / 2 - center_size * self.selbox_wx,
+                        (ymin + ymax) / 2 - center_size * self.selbox_wy,
+                        (xmin + xmax) / 2 + center_size * self.selbox_wx,
+                        (ymin + ymax) / 2 + center_size * self.selbox_wy,
+                        "move",
+                    ]
+                ]
                 # The 4 side handles for resizing
-                checks.append ([xmin - self.selbox_wx / 2, (ymin + ymax)/2 - self.selbox_wy / 2, xmin + self.selbox_wx / 2, (ymin + ymax)/2 + self.selbox_wy / 2, "size_l"])
-                checks.append ([xmax - self.selbox_wx / 2, (ymin + ymax)/2 - self.selbox_wy / 2, xmax + self.selbox_wx / 2, (ymin + ymax)/2 + self.selbox_wy / 2, "size_r"])
-                checks.append ([(xmin+xmax)/2 - self.selbox_wx / 2, ymin - self.selbox_wy / 2, (xmin+xmax)/2 + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_t"])
-                checks.append ([(xmin+xmax)/2 - self.selbox_wx / 2, ymax - self.selbox_wy / 2, (xmin+xmax)/2 + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_b"])
+                checks.append(
+                    [
+                        xmin - self.selbox_wx / 2,
+                        (ymin + ymax) / 2 - self.selbox_wy / 2,
+                        xmin + self.selbox_wx / 2,
+                        (ymin + ymax) / 2 + self.selbox_wy / 2,
+                        "size_l",
+                    ]
+                )
+                checks.append(
+                    [
+                        xmax - self.selbox_wx / 2,
+                        (ymin + ymax) / 2 - self.selbox_wy / 2,
+                        xmax + self.selbox_wx / 2,
+                        (ymin + ymax) / 2 + self.selbox_wy / 2,
+                        "size_r",
+                    ]
+                )
+                checks.append(
+                    [
+                        (xmin + xmax) / 2 - self.selbox_wx / 2,
+                        ymin - self.selbox_wy / 2,
+                        (xmin + xmax) / 2 + self.selbox_wx / 2,
+                        ymin + self.selbox_wy / 2,
+                        "size_t",
+                    ]
+                )
+                checks.append(
+                    [
+                        (xmin + xmax) / 2 - self.selbox_wx / 2,
+                        ymax - self.selbox_wy / 2,
+                        (xmin + xmax) / 2 + self.selbox_wx / 2,
+                        ymax + self.selbox_wy / 2,
+                        "size_b",
+                    ]
+                )
                 # The 4 corner handles (need to come before rotation)
-                checks.append ([xmin - self.selbox_wx / 2, ymin - self.selbox_wy / 2, xmin + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_tl"])
-                checks.append ([xmax - self.selbox_wx / 2, ymin - self.selbox_wy / 2, xmax + self.selbox_wx / 2, ymin + self.selbox_wy / 2, "size_tr"])
-                checks.append ([xmin - self.selbox_wx / 2, ymax - self.selbox_wy / 2, xmin + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_bl"])
-                checks.append ([xmax - self.selbox_wx / 2, ymax - self.selbox_wy / 2, xmax + self.selbox_wx / 2, ymax + self.selbox_wy / 2, "size_br"])
+                checks.append(
+                    [
+                        xmin - self.selbox_wx / 2,
+                        ymin - self.selbox_wy / 2,
+                        xmin + self.selbox_wx / 2,
+                        ymin + self.selbox_wy / 2,
+                        "size_tl",
+                    ]
+                )
+                checks.append(
+                    [
+                        xmax - self.selbox_wx / 2,
+                        ymin - self.selbox_wy / 2,
+                        xmax + self.selbox_wx / 2,
+                        ymin + self.selbox_wy / 2,
+                        "size_tr",
+                    ]
+                )
+                checks.append(
+                    [
+                        xmin - self.selbox_wx / 2,
+                        ymax - self.selbox_wy / 2,
+                        xmin + self.selbox_wx / 2,
+                        ymax + self.selbox_wy / 2,
+                        "size_bl",
+                    ]
+                )
+                checks.append(
+                    [
+                        xmax - self.selbox_wx / 2,
+                        ymax - self.selbox_wy / 2,
+                        xmax + self.selbox_wx / 2,
+                        ymax + self.selbox_wy / 2,
+                        "size_br",
+                    ]
+                )
 
                 if self.use_handle_rotate:
                     # The 4 rotation areas for inner coverage first
-                    checks.append ([xmin, ymin, xmin + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_inner_tl"])
-                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymin, xmax, ymin + self.rot_area * self.selbox_wy, "rotate_inner_tr"])
-                    checks.append ([xmin, ymax - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymax, "rotate_inner_bl"])
-                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmax, ymax, "rotate_inner_br"])
+                    checks.append(
+                        [
+                            xmin,
+                            ymin,
+                            xmin + self.rot_area * self.selbox_wx,
+                            ymin + self.rot_area * self.selbox_wy,
+                            "rotate_inner_tl",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmax - self.rot_area * self.selbox_wx,
+                            ymin,
+                            xmax,
+                            ymin + self.rot_area * self.selbox_wy,
+                            "rotate_inner_tr",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmin,
+                            ymax - self.rot_area * self.selbox_wy,
+                            xmin + self.rot_area * self.selbox_wx,
+                            ymax,
+                            "rotate_inner_bl",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmax - self.rot_area * self.selbox_wx,
+                            ymax - self.rot_area * self.selbox_wy,
+                            xmax,
+                            ymax,
+                            "rotate_inner_br",
+                        ]
+                    )
                     # The 4 wider areas around the corner handles incl. rotation indicator
-                    checks.append ([xmin - self.rot_area * self.selbox_wx, ymin - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_outer_tl"])
-                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymin - self.rot_area * self.selbox_wy, xmax + self.rot_area * self.selbox_wx, ymin + self.rot_area * self.selbox_wy, "rotate_outer_tr"])
-                    checks.append ([xmin - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmin + self.rot_area * self.selbox_wx, ymax + self.rot_area * self.selbox_wy, "rotate_outer_bl"])
-                    checks.append ([xmax - self.rot_area * self.selbox_wx, ymax - self.rot_area * self.selbox_wy, xmax + self.rot_area * self.selbox_wx, ymax + self.rot_area * self.selbox_wy, "rotate_outer_br"])
+                    checks.append(
+                        [
+                            xmin - self.rot_area * self.selbox_wx,
+                            ymin - self.rot_area * self.selbox_wy,
+                            xmin + self.rot_area * self.selbox_wx,
+                            ymin + self.rot_area * self.selbox_wy,
+                            "rotate_outer_tl",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmax - self.rot_area * self.selbox_wx,
+                            ymin - self.rot_area * self.selbox_wy,
+                            xmax + self.rot_area * self.selbox_wx,
+                            ymin + self.rot_area * self.selbox_wy,
+                            "rotate_outer_tr",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmin - self.rot_area * self.selbox_wx,
+                            ymax - self.rot_area * self.selbox_wy,
+                            xmin + self.rot_area * self.selbox_wx,
+                            ymax + self.rot_area * self.selbox_wy,
+                            "rotate_outer_bl",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmax - self.rot_area * self.selbox_wx,
+                            ymax - self.rot_area * self.selbox_wy,
+                            xmax + self.rot_area * self.selbox_wx,
+                            ymax + self.rot_area * self.selbox_wy,
+                            "rotate_outer_br",
+                        ]
+                    )
                 if self.use_handle_skew:
                     # The two skew handles
-                    checks.append ([xmin + 3/4 * (xmax - xmin) - 1/3 * self.selbox_wx, ymax - 1/3 * self.selbox_wy, xmin + 3/4 * (xmax - xmin) + 1/3 * self.selbox_wx, ymax + 1/3 * self.selbox_wy, "skew_x"])
-                    checks.append ([xmax - 1/3 * self.selbox_wx, ymin + 1/4 *(ymax - ymin) - 1/3 * self.selbox_wy, xmax + 1/3 * self.selbox_wx, ymin + 1/4 *(ymax - ymin) + 1/3 * self.selbox_wy, "skew_y"])
+                    checks.append(
+                        [
+                            xmin + 3 / 4 * (xmax - xmin) - 1 / 3 * self.selbox_wx,
+                            ymax - 1 / 3 * self.selbox_wy,
+                            xmin + 3 / 4 * (xmax - xmin) + 1 / 3 * self.selbox_wx,
+                            ymax + 1 / 3 * self.selbox_wy,
+                            "skew_x",
+                        ]
+                    )
+                    checks.append(
+                        [
+                            xmax - 1 / 3 * self.selbox_wx,
+                            ymin + 1 / 4 * (ymax - ymin) - 1 / 3 * self.selbox_wy,
+                            xmax + 1 / 3 * self.selbox_wx,
+                            ymin + 1 / 4 * (ymax - ymin) + 1 / 3 * self.selbox_wy,
+                            "skew_y",
+                        ]
+                    )
 
                 method = ""
                 # Check whether the given point lies within one of the relevant rectangles
                 for crn in checks:
                     # print("Checking method: %s for (%.1f, %.1f) vs (%.1f, %.1f, %.1f, %.1f)" % ( crn[4], xin, yin, crn[0], crn[1], crn[2], crn[3]))
-                    if crn[0]  <= xin <= crn[2] and crn[1] <= yin <= crn[3]:
+                    if crn[0] <= xin <= crn[2] and crn[1] <= yin <= crn[3]:
                         method = crn[4]
                         break
                 # print ("Method found: %s" % method)
@@ -469,22 +709,29 @@ class SelectionWidget(Widget):
                 self.was_lb_raised = True
                 self.save_width = self.width
                 self.save_height = self.height
+                self.total_delta_x = dx
+                self.total_delta_y = dy
                 self.uniform = True
                 if (
                     self.key_alt_pressed
                 ):  # Duplicate the selection in the background and start moving
                     self.create_duplicate()
+                self.tool_running = True
                 self.tool(space_pos, dx, dy, -1)
                 return RESPONSE_CONSUME
         elif event_type == "middledown":
             self.was_lb_raised = False
             self.save_width = self.width
             self.save_height = self.height
+            self.total_delta_x = dx
+            self.total_delta_y = dy
             self.uniform = False
+            self.tool_running = True
             self.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
         elif event_type == "leftup":
             if self.was_lb_raised:
+                self.tool_running = False
                 self.tool(space_pos, dx, dy, 1)
                 self.elements.ensure_positive_bounds()
                 self.was_lb_raised = False
@@ -502,6 +749,8 @@ class SelectionWidget(Widget):
                 if self.save_width is None or self.save_height is None:
                     self.save_width = self.width
                     self.save_height = self.height
+                self.total_delta_x += dx
+                self.total_delta_y += dy
                 self.tool(space_pos, dx, dy, 0)
                 return RESPONSE_CONSUME
         return RESPONSE_CHAIN
@@ -591,7 +840,7 @@ class SelectionWidget(Widget):
             elif "e" in method:
                 scalex = (position[0] - self.left) / self.save_width
 
-            if len(method)>1 and self.uniform: # from corner
+            if len(method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
@@ -599,7 +848,8 @@ class SelectionWidget(Widget):
             self.save_width *= scalex
             self.save_height *= scaley
 
-            b = elements.selected_area()
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             if "n" in method:
                 orgy = self.bottom
             else:
@@ -627,10 +877,11 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                # We leave that to the end
+                # try:
+                #    obj.node.modified()
+                # except AttributeError:
+                #    pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
                 try:
@@ -654,7 +905,8 @@ class SelectionWidget(Widget):
                     pass
 
         if event == 0:
-            b = elements.selected_area()
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
@@ -664,22 +916,22 @@ class SelectionWidget(Widget):
                     pass
             for e in elements.flat(types=("group", "file")):
                 obj = e.object
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                # We leave that to the end
+                # try:
+                #    obj.node.modified()
+                # except AttributeError:
+                #    pass
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
-    last_skew_x = 0
     def tool_skew_x(self, position, dx, dy, event=0):
         """
         Change the skew of the selected elements.
         """
         elements = self.scene.context.elements
         if event == 1:
-            self.last_skew_x = 0
+            self.rotated_angle = 0
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 try:
@@ -687,23 +939,16 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
         if event == 0:
-            if dx> 0 :
-                self.last_skew_x += math.tau / 360
-            else:
-                self.last_skew_x -= math.tau / 360
-
-            if self.last_skew_x <= -0.99 * math.pi / 2:
-                self.last_skew_x = -0.99 * math.pi / 2
-            if self.last_skew_x >= +0.99 * math.pi / 2:
-                self.last_skew_x = +0.99 * math.pi / 2
-            # valu = self.last_skew_x / math.tau * 360
-            # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew_x, valu, self.last_skew_x / math.pi))
+            this_side = self.total_delta_x
+            other_side = self.height
+            skew_tan = this_side / other_side
+            self.rotated_angle = math.atan(skew_tan)
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 mat = obj.transform
-                mat[2] = math.tan(self.last_skew_x)
+                mat[2] = skew_tan
                 obj.transform = mat
                 try:
                     obj.node.modified()
@@ -718,7 +963,6 @@ class SelectionWidget(Widget):
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
-    last_skew_y = 0
     def tool_skew_y(self, position, dx, dy, event=0):
         """
         Change the skew of the selected elements.
@@ -731,27 +975,19 @@ class SelectionWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-            self.last_skew_y = 0
+            self.rotated_angle = 0
         if event == 0:
 
-            if dy> 0 :
-                self.last_skew_y += math.tau / 360
-            else:
-                self.last_skew_y -= math.tau / 360
-
-            if self.last_skew_y <= -0.99 * math.pi / 2:
-                self.last_skew_y = -0.99 * math.pi / 2
-            if self.last_skew_y >= +0.99 * math.pi / 2:
-                self.last_skew_y = +0.99 * math.pi / 2
-
-            # valu = self.last_skew_y / math.tau * 360
-            # print ("Skew-Y, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew_x, valu, self.last_skew_y / math.pi))
+            this_side = self.total_delta_y
+            other_side = self.width
+            skew_tan = this_side / other_side
+            self.rotated_angle = math.atan(skew_tan)
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 mat = obj.transform
-                mat[1] = math.tan(self.last_skew_y)
+                mat[1] = skew_tan
                 obj.transform = mat
                 try:
                     obj.node.modified()
@@ -790,37 +1026,50 @@ class SelectionWidget(Widget):
             # Lets focus on the bigger movement
             d_left = position[0] < self.rotate_cx
             d_top = position[1] < self.rotate_cy
-            if abs(dx)>abs(dy):
-                if d_left and d_top: # LT
+            if abs(dx) > abs(dy):
+                if d_left and d_top:  # LT
                     cw = dx > 0
-                elif d_left and not d_top: # LB
+                elif d_left and not d_top:  # LB
                     cw = dx < 0
-                elif not d_left and not d_top: # RB
+                elif not d_left and not d_top:  # RB
                     cw = dx < 0
-                elif not d_left and d_top: # TR
+                elif not d_left and d_top:  # TR
                     cw = dx > 0
             else:
-                if d_left and d_top: # LT
+                if d_left and d_top:  # LT
                     cw = dy < 0
-                elif d_left and not d_top: # LB
+                elif d_left and not d_top:  # LB
                     cw = dy < 0
-                elif not d_left and not d_top: # RB
+                elif not d_left and not d_top:  # RB
                     cw = dy > 0
-                elif not d_left and d_top: # TR
+                elif not d_left and d_top:  # TR
                     cw = dy > 0
 
-            # print ("cw=%s, d_left=%s, d_top=%s, dx=%.1f, dy=%.1f, Pos=(%.1f, %.1f), Center=(%.1f, %.1f)" % ( cw, d_left, d_top, dx, dy, position[0], position[1], self.rotate_cx, self.rotate_cy))
-
+            if self.key_alt_pressed:
+                delta = 45
+            else:
+                delta = 1
+                if not self.key_shift_pressed:
+                    dd = abs(dx) if abs(dx) > abs(dy) else abs(dy)
+                    pxl = dd * self.matrix.value_scale_x()
+                    # print ("Delta=%.1f, Pxl=%.1f" % ( dd, pxl))
+                    if 10 < pxl <= 20:
+                        delta = 2
+                    elif 20 < pxl <= 30:
+                        delta = 5
+                    elif pxl > 30:
+                        delta = 10
             if cw:
-                rot_angle = +1 * math.tau / 360
+                rot_angle = +1 * delta * math.tau / 360
             else:
-                rot_angle = -1 * math.tau / 360
-            #Update Rotation angle...
+                rot_angle = -1 * delta * math.tau / 360
+
+            # Update Rotation angle...
             self.rotated_angle += rot_angle
             # Bring back to 'regular' radians
-            while (self.rotated_angle >= 1 * math.tau):
+            while self.rotated_angle >= 1 * math.tau:
                 self.rotated_angle -= 1 * math.tau
-            while (self.rotated_angle <= -1 * math.tau):
+            while self.rotated_angle <= -1 * math.tau:
                 self.rotated_angle += 1 * math.tau
 
             for e in elements.flat(types=("elem",), emphasized=True):
@@ -840,52 +1089,81 @@ class SelectionWidget(Widget):
         self.scene.request_refresh()
 
     def draw_rotation_corners(self, gc, wdx, wdy, x0, y0, x1, y1):
+        # Compute only once....
+        if self.arcsegment is None:
+            signx = +1
+            signy = +1
+            xx = 0
+            yy = 0
+            self.arcsegment = []
+            # Start arrow
+            x = xx + signx * 0.5 * wdx - signx * self.rot_area * wdx
+            y = yy + signy * 0.5 * wdy
+            self.arcsegment += [
+                (
+                    x - signx * self.rot_area * 1 / 4 * wdx,
+                    y - signy * self.rot_area * 1 / 4 * wdy,
+                )
+            ]
+            self.arcsegment += [(x, y)]
+            self.arcsegment += [
+                (
+                    x + signx * self.rot_area * 1 / 4 * wdx,
+                    y - signy * self.rot_area * 1 / 4 * wdy,
+                )
+            ]
+            self.arcsegment += [(x, y)]
+
+            # Arc-Segment
+            numpts = 8
+            for k in range(numpts + 1):
+                radi = k * math.pi / (2 * numpts)
+                sy = math.sin(radi)
+                sx = math.cos(radi)
+                x = xx + signx * 0.5 * wdx - signx * sx * self.rot_area * wdx
+                y = yy + signy * 0.5 * wdy - signy * sy * self.rot_area * wdy
+                # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
+                self.arcsegment += [(x, y)]
+
+            # End Arrow
+            x = xx + signx * 0.5 * wdx
+            y = yy + signy * 0.5 * wdy - signy * self.rot_area * wdy
+            self.arcsegment += [
+                (
+                    x - signx * self.rot_area * 1 / 4 * wdx,
+                    y - signy * self.rot_area * 1 / 4 * wdy,
+                )
+            ]
+            self.arcsegment += [(x, y)]
+            self.arcsegment += [
+                (
+                    x - signx * self.rot_area * 1 / 4 * wdx,
+                    y + signy * self.rot_area * 1 / 4 * wdy,
+                )
+            ]
+
         if self.use_handle_rotate:
             for i in range(2):
                 for j in range(2):
-                    if i==0:
+                    if i == 0:
                         signx = +1
                         xx = x0
                     else:
                         signx = -1
                         xx = x1
-                    if j==0:
+                    if j == 0:
                         signy = +1
                         yy = y0
                     else:
                         signy = -1
                         yy = y1
 
-                    # Well, I would have liked to draw a poper arc via dc.DrawArc but the DeviceContext is not available here(?)
                     segment = []
-                    # Start arrow
-                    x = xx + signx * 0.5 * wdx - signx * self.rot_area * wdx
-                    y = yy + signy * 0.5 * wdy
-                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
-                    segment += [(x, y)]
-                    segment += [(x + signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
-                    segment += [(x, y)]
-
-                    # Arc-Segment
-                    numpts = 8
-                    for k in range(numpts+1):
-                        radi = k*math.pi/(2*numpts)
-                        sy = math.sin(radi)
-                        sx = math.cos(radi)
-                        x = xx + signx * 0.5 * wdx - signx * sx * self.rot_area * wdx
-                        y = yy + signy * 0.5 * wdy - signy * sy * self.rot_area * wdy
-                        # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
+                    for idx in range(len(self.arcsegment)):
+                        x = xx + signx * self.arcsegment[idx][0]
+                        y = yy + signy * self.arcsegment[idx][1]
                         segment += [(x, y)]
-
-
-                    # End Arrow
-                    x = xx + signx * 0.5 * wdx
-                    y = yy + signy * 0.5 * wdy - signy * self.rot_area * wdy
-                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y - signy * self.rot_area * 1/4 * wdy)]
-                    segment += [(x, y)]
-                    segment += [(x - signx * self.rot_area * 1/4 * wdx, y + signy * self.rot_area * 1/4 * wdy)]
-
-                    pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 2, wx.SOLID )
+                    pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 2, wx.SOLID)
                     pen.SetWidth(0.75 * self.selection_pen.GetWidth())
                     pen.SetStyle(wx.PENSTYLE_SOLID)
                     gc.StrokeLines(segment)
@@ -895,24 +1173,39 @@ class SelectionWidget(Widget):
         if self.use_handle_size:
             corners += [
                 # corners
-                [x0 - wdx/2, y0 - wdy/2, wdx, wdy],
-                [x1 - wdx/2, y0 - wdy/2, wdx, wdy],
-                [x0 - wdx/2, y1 - wdy/2, wdx, wdy],
-                [x1 - wdx/2, y1 - wdy/2, wdx, wdy],
+                [x0 - wdx / 2, y0 - wdy / 2, wdx, wdy],
+                [x1 - wdx / 2, y0 - wdy / 2, wdx, wdy],
+                [x0 - wdx / 2, y1 - wdy / 2, wdx, wdy],
+                [x1 - wdx / 2, y1 - wdy / 2, wdx, wdy],
                 # Middle of sides
-                [x0 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy],
-                [x1 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy],
-                [(x0+x1)/2 - wdx/2, y0 - wdy/2, wdx, wdy],
-                [(x0+x1)/2 - wdx/2, y1 - wdy/2, wdx, wdy],
+                [x0 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
+                [x1 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
+                [(x0 + x1) / 2 - wdx / 2, y0 - wdy / 2, wdx, wdy],
+                [(x0 + x1) / 2 - wdx / 2, y1 - wdy / 2, wdx, wdy],
                 # Center
-                [(x0+x1)/2 - wdx/2, (y1+y0)/2 - wdy/2, wdx, wdy]]
+                [(x0 + x1) / 2 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
+            ]
         # Skew
         if self.use_handle_skew:
-            corners.append([x0 + 3/4*(x1-x0) - wdx/3, y1 - wdy/3, 2/3*wdx, 2/3*wdy]) # skew x
-            corners.append([x1 - wdx/3, y0 + 1/4*(y1-y0) - wdy/3, 2/3*wdx, 2/3*wdy]) # skew y
+            corners.append(
+                [
+                    x0 + 3 / 4 * (x1 - x0) - wdx / 3,
+                    y1 - wdy / 3,
+                    2 / 3 * wdx,
+                    2 / 3 * wdy,
+                ]
+            )  # skew x
+            corners.append(
+                [
+                    x1 - wdx / 3,
+                    y0 + 1 / 4 * (y1 - y0) - wdy / 3,
+                    2 / 3 * wdx,
+                    2 / 3 * wdy,
+                ]
+            )  # skew y
 
-        if len(corners)>0:
-            pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 1, wx.SOLID )
+        if len(corners) > 0:
+            pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 1, wx.SOLID)
             pen.SetStyle(wx.PENSTYLE_SOLID)
             brush = wx.Brush(wx.Colour(0x7F, 0x7F, 0x7F), wx.SOLID)
             gc.SetPen(pen)
@@ -985,15 +1278,18 @@ class SelectionWidget(Widget):
                 gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
                 gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
-            self.selbox_wx = 5 * linewidth # 10.0 / matrix.value_scale_x()
-            self.selbox_wy = 5 * linewidth # 10.0 / matrix.value_scale_y()
+            self.selbox_wx = 5 * linewidth  # 10.0 / matrix.value_scale_x()
+            self.selbox_wy = 5 * linewidth  # 10.0 / matrix.value_scale_y()
             # print("Selbox-width=(%.1f, %.1f) - linewidth=%.1f" % (self.selbox_wx, self.selbox_wy, self.selection_pen.GetWidth()))
-
-            self.draw_handles(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
-            self.draw_rotation_corners(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
-            if abs(self.rotated_angle)>0.001:
-                gc.DrawText("%.0f°" % (360 * self.rotated_angle / math.tau), center_x, center_y)
-
+            if not self.tool_running:
+                self.draw_handles(gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1)
+                self.draw_rotation_corners(
+                    gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1
+                )
+            if abs(self.rotated_angle) > 0.001:
+                gc.DrawText(
+                    "%.0f°" % (360 * self.rotated_angle / math.tau), center_x, center_y
+                )
 
     def create_duplicate(self):
         from copy import copy
