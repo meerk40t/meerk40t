@@ -237,20 +237,29 @@ class ConsolePanel(wx.Panel):
     def update_text_gui(self, lines):
         self.text_main.SetInsertionPointEnd()
         ansi = False
-        ansi_text = ''
+        ansi_text = ""
+        text = ""
         if not self.text_main.IsEmpty():
             self.text_main.Newline()
             self.text_main.BeginStyle(self.style)
+
         for c in lines:
             b = ord(c)
             if c == "\n":
+                if text:
+                    self.text_main.WriteText(text)
+                    text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                text = ""
             if b == 27:
                 ansi = True
             if ansi:
                 ansi_text += c
                 if c == "m":
+                    if text:
+                        self.text_main.WriteText(text)
+                        text = ""
                     style_function = self.ansi_styles.get(ansi_text)
                     if style_function is not None:
                         new_style = style_function(self.text_main.GetDefaultStyleEx())
@@ -258,9 +267,11 @@ class ConsolePanel(wx.Panel):
                         if new_style is not None:
                             self.text_main.BeginStyle(new_style)
                     ansi = False
-                    ansi_text = ''
+                    ansi_text = ""
                 continue
-            self.text_main.WriteText(c)
+            text += c
+        if text:
+            self.text_main.WriteText(text)
         self.text_main.EndStyle()
         self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
         self.text_main.Update()
