@@ -2,9 +2,6 @@ import math
 import wx
 
 from meerk40t.core.units import Length
-# from msilib.schema import RadioButton
-# from pyparsing import line
-
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
     HITCHAIN_DELEGATE,
@@ -114,6 +111,9 @@ def process_event(
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
             widget.uniform = not widget.key_alt_pressed
+            widget.master.total_delta_x = 0
+            widget.master.total_delta_y = 0
+
             widget.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
     elif event_type == "middledown":
@@ -122,6 +122,8 @@ def process_event(
         widget.save_width = widget.master.width
         widget.save_height = widget.master.height
         widget.uniform = False
+        widget.master.total_delta_x = 0
+        widget.master.total_delta_y = 0
         widget.tool(space_pos, dx, dy, -1)
         return RESPONSE_CONSUME
     elif event_type == "leftup":
@@ -143,6 +145,8 @@ def process_event(
             if widget.save_width is None or widget.save_height is None:
                 widget.save_width = widget.width
                 widget.save_height = widget.height
+            widget.master.total_delta_x += dx
+            widget.master.total_delta_y += dy
             widget.tool(space_pos, dx, dy, 0)
             return RESPONSE_CONSUME
     else:
@@ -215,12 +219,16 @@ class BorderWidget(Widget):
             center_y,
         )
         gc.DrawText(
-            str(Length(amount=(self.bottom - self.top), digits=3, preferred_units=units)),
+            str(
+                Length(amount=(self.bottom - self.top), digits=3, preferred_units=units)
+            ),
             self.right,
             center_y,
         )
         gc.DrawText(
-            str(Length(amount=(self.right - self.left), digits=3, preferred_units=units)),
+            str(
+                Length(amount=(self.right - self.left), digits=3, preferred_units=units)
+            ),
             center_x,
             self.bottom,
         )
@@ -922,6 +930,7 @@ class SkewWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:
             self.last_skew = 0
+
             self.master.rotated_angle = self.last_skew
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
@@ -935,17 +944,28 @@ class SkewWidget(Widget):
 
             if self.is_x:
                 dd = dx
+                this_side = self.master.total_delta_x
+                other_side = self.master.height
             else:
                 dd = dy
-            if dd > 0:
-                self.last_skew += math.tau / 360
-            else:
-                self.last_skew -= math.tau / 360
+                this_side = self.master.total_delta_y
+                other_side = self.master.width
+            skew_tan = this_side / other_side
+            self.last_skew = math.atan(skew_tan)
+            # fmt:off
+            # print("This Side==%.1f, Other Side=%.1f, tan=%.1f, deg=%.2f (%.2f)"
+            #    % ( this_side, other_side, skew_tan, self.last_skew, self.last_skew / math.pi * 180, ))
+            # fmt:on
+            # if dd > 0:
+            #        self.last_skew += math.tau / 360
+            #    else:
+            #        self.last_skew -= math.tau / 360
 
-            if self.last_skew <= -0.99 * math.pi / 2:
-                self.last_skew = -0.99 * math.pi / 2
-            if self.last_skew >= +0.99 * math.pi / 2:
-                self.last_skew = +0.99 * math.pi / 2
+            # if self.last_skew <= -0.99 * math.pi / 2:
+            #    self.last_skew = -0.99 * math.pi / 2
+            # if self.last_skew >= +0.99 * math.pi / 2:
+            #    self.last_skew = +0.99 * math.pi / 2
+            # skew_tan = math.tan(self.last_skew)
             # valu = self.last_skew / math.tau * 360
             # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew, valu, self.last_skew / math.pi))
             self.master.rotated_angle = self.last_skew
@@ -959,9 +979,9 @@ class SkewWidget(Widget):
                     pass
                 mat = obj.transform
                 if self.is_x:
-                    mat[2] = math.tan(self.last_skew)
+                    mat[2] = skew_tan
                 else:
-                    mat[1] = math.tan(self.last_skew)
+                    mat[1] = skew_tan
                 obj.transform = mat
                 try:
                     obj.node.modified()
@@ -1488,6 +1508,8 @@ class SelectionWidget(Widget):
         self.rotation_cx = None
         self.rotation_cy = None
         self.rotated_angle = 0
+        self.total_delta_x = 0
+        self.total_delta_y = 0
         self.key_shift_pressed = False
         self.key_control_pressed = False
         self.key_alt_pressed = False
@@ -1527,6 +1549,8 @@ class SelectionWidget(Widget):
             self.bottom = -float("inf")
             self.rotation_cx = None
             self.rotation_cy = None
+            self.total_delta_x = 0
+            self.total_delta_y = 0
             return HITCHAIN_DELEGATE
 
     def move_selection_to_ref(self, pos="c"):
