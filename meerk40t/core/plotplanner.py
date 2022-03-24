@@ -367,10 +367,7 @@ class Smooth(PlotManipulation):
         )
 
     def flushed(self):
-        return (
-                self.goal_x == self.smooth_x
-                and self.goal_y == self.smooth_y
-        )
+        return self.goal_x == self.smooth_x and self.goal_y == self.smooth_y
 
     def process(self, plot):
         """
@@ -386,10 +383,12 @@ class Smooth(PlotManipulation):
                 yield from self.flush()
                 yield x, y, on
                 continue
-            mode = self.planner.settings.smooth_raster
-            if not mode:
+            if (
+                not self.planner.settings.constant_move_x
+                and not self.planner.settings.constant_move_y
+            ):
                 yield x, y, on
-                continue
+                continue  # We are not smoothing.
             if px is not None and py is not None:
                 # Ensure we are single stepped values.
                 assert abs(px - x) <= 1 or abs(py - y) <= 1
@@ -407,12 +406,13 @@ class Smooth(PlotManipulation):
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
             self.goal_x = x
             self.goal_y = y
-            mode = self.planner.settings.smooth_raster
-            if (mode == 1 and dy == 0) or (mode == 2 and dx == 0):
+            if (self.planner.settings.constant_move_x and dx == 0) or (
+                self.planner.settings.constant_move_y and dy == 0
+            ):
                 continue
             self.smooth_x += dx
             self.smooth_y += dy
-            yield self.smooth_x , self.smooth_y, on
+            yield self.smooth_x, self.smooth_y, on
 
     def flush(self):
         if not self.flushed():
