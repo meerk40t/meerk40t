@@ -382,6 +382,8 @@ class Smooth(PlotManipulation):
         py = None
         for x, y, on in plot:
             if x is None or y is None:
+                # flush the process when if sent a None value.
+                yield from self.flush()
                 yield x, y, on
                 continue
             mode = self.planner.settings.smooth_raster
@@ -414,6 +416,8 @@ class Smooth(PlotManipulation):
 
     def flush(self):
         if not self.flushed():
+            if self.goal_x is None or self.goal_y is None:
+                return
             total_dx = self.goal_x - self.smooth_x
             total_dy = self.goal_y - self.smooth_y
             cx = self.smooth_x
@@ -428,6 +432,8 @@ class Smooth(PlotManipulation):
                 self.smooth_x = cx + (i * dx)
                 self.smooth_y = cy + (i * dy)
                 yield self.smooth_x, self.smooth_y, 0
+            self.goal_x = None
+            self.goal_y = None
 
     def warp(self, x, y):
         self.smooth_x = x
