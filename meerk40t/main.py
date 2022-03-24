@@ -8,6 +8,7 @@ for full details.
 
 import argparse
 import asyncio
+import ctypes
 import os
 import os.path
 import platform
@@ -99,6 +100,13 @@ parser.add_argument(
     action="store_true",
     help="Do not load meerk40t.plugins entrypoints",
 )
+parser.add_argument(
+    "-A",
+    "--disable-ansi",
+    action="store_true",
+    default=False,
+    help="Disable ANSI colors",
+)
 
 
 def run():
@@ -125,7 +133,7 @@ def run():
         path = "profile%d" % args.profile
     else:
         path = ""
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path)
+    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path, ansi=not args.disable_ansi)
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted
