@@ -1,4 +1,3 @@
-import ctypes
 import datetime
 import functools
 import inspect
@@ -72,21 +71,6 @@ RE_ANSI = re.compile(
     + r")",
     re.IGNORECASE
 )
-
-def ansi_supported():
-    # https://en.wikipedia.org/wiki/ANSI_escape_code#Platform_support
-    if platform.system() != "Windows":
-        return True
-    version = platform.version().split(".")
-    if int(version[0]) < 10:
-        return False
-    if int(version[0]) == 10 and int(version[2]) < 10586:
-        return False
-    # Fix ANSI color in Windows 10 version 10.0.14393 (Windows Anniversary Update)
-    # https://gist.github.com/RDCH106/6562cc7136b30a5c59628501d87906f7
-    kernel32 = ctypes.windll.kernel32
-    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-    return True
 
 def bbcode_to_ansi(text):
     return "".join([
@@ -791,7 +775,7 @@ class Kernel:
     """
 
     def __init__(
-        self, name: str, version: str, profile: str, path: str = "/", config=None
+        self, name: str, version: str, profile: str, path: str = "/", config=None, ansi=False,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessable to all modules.
@@ -854,7 +838,7 @@ class Kernel:
         self._current_directory = "."
         self._console_buffer = ""
         self.queue = []
-        self._console_channel = self.channel("console", timestamp=True)
+        self._console_channel = self.channel("console", timestamp=True, ansi=ansi)
         self.console_channel_file = None
 
         if config is not None:
