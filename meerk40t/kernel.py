@@ -2874,7 +2874,8 @@ class Channel:
         return BBCODE_LIST[tag] if tag != "raw" else m[2]
 
     def bbcode_to_plain(self, text):
-        return RE_ANSI.sub("", text)
+        strip = lambda m: m[2]
+        return RE_ANSI.sub(strip, text)
 
 
 class Job:
