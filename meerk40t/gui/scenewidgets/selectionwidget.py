@@ -111,8 +111,9 @@ def process_event(
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
             widget.uniform = not widget.key_alt_pressed
-            widget.master.total_delta_x = 0
-            widget.master.total_delta_y = 0
+            widget.master.total_delta_x = dx
+            widget.master.total_delta_y = dy
+            widget.master.tool_running = True
 
             widget.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
@@ -122,8 +123,9 @@ def process_event(
         widget.save_width = widget.master.width
         widget.save_height = widget.master.height
         widget.uniform = False
-        widget.master.total_delta_x = 0
-        widget.master.total_delta_y = 0
+        widget.master.total_delta_x = dx
+        widget.master.total_delta_y = dy
+        widget.master.tool_running = True
         widget.tool(space_pos, dx, dy, -1)
         return RESPONSE_CONSUME
     elif event_type == "leftup":
@@ -131,9 +133,11 @@ def process_event(
             widget.tool(space_pos, dx, dy, 1)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
+            widget.master.tool_running = False
             return RESPONSE_CONSUME
     elif event_type in ("middleup", "lost"):
         if widget.was_lb_raised:
+            widget.was_lb_raised = False
             widget.was_lb_raised = False
             widget.tool(space_pos, dx, dy, 1)
             widget.scene.context.elements.ensure_positive_bounds()
@@ -283,6 +287,8 @@ class RotationWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
         try:
@@ -580,6 +586,9 @@ class CornerWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         brush = wx.Brush(LINE_COLOR, wx.SOLID)
         pen = wx.Pen()
@@ -752,6 +761,9 @@ class SideWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         brush = wx.Brush(LINE_COLOR, wx.SOLID)
         pen = wx.Pen()
@@ -907,6 +919,9 @@ class SkewWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
@@ -1056,6 +1071,9 @@ class MoveWidget(Widget):
         elements.classify(adding_elements)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
@@ -1171,6 +1189,8 @@ class MoveRotationOriginWidget(Widget):
             pass
 
     def process_draw(self, gc):
+        # This one gets painted always.
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         # pen.SetColour(wx.RED)
@@ -1251,6 +1271,9 @@ class ReferenceWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         if self.is_reference_object:
@@ -1521,8 +1544,14 @@ class SelectionWidget(Widget):
         self.use_handle_move = True
         self.keep_rotation = True
         self.popupID1 = None
+        self.popupID2 = None
+        self.popupID3 = None
         self.line_width = 0
         self.font_size = 0
+        self.tool_running = False
+        self.single_element = True
+        self.is_ref = False
+        self.gc = None
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1659,6 +1688,24 @@ class SelectionWidget(Widget):
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
 
+    def become_reference(self, event):
+        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            try:
+                # First object
+                obj = e.object
+                self.scene.reference_object = obj
+                break
+            except AttributeError:
+                pass
+        print("set...")
+        self.scene.request_refresh()
+
+    def delete_reference(self, event):
+        self.scene.reference_object = None
+        # Simplify, no complete scene refresh required
+        print("unset...")
+        self.scene.request_refresh()
+
     def create_menu(self, gui, node, elements):
         if node is None:
             return
@@ -1675,14 +1722,33 @@ class SelectionWidget(Widget):
                     obj = None
                     break
 
+        _ = self.scene.context._
+        submenu = None
         # Add Manipulation menu
         if not obj is None:
-            _ = self.scene.context._
-            menu.AppendSeparator()
+            submenu = wx.Menu()
             if self.popupID1 is None:
                 self.popupID1 = wx.NewId()
             gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=self.popupID1)
-            menu.Append(self.popupID1, _("Align to reference object"))
+            submenu.Append(self.popupID1, _("Align to reference object"))
+
+        if self.single_element and not self.is_ref:
+            if submenu is None:
+                submenu = wx.Menu()
+            if self.popupID3 is None:
+                self.popupID3 = wx.NewId()
+            gui.Bind(wx.EVT_MENU, self.become_reference, id=self.popupID3)
+            submenu.Append(self.popupID3, _("Become reference object"))
+            if self.popupID2 is None:
+                self.popupID2 = wx.NewId()
+        if not self.scene.reference_object is None:
+            if submenu is None:
+                submenu = wx.Menu()
+            gui.Bind(wx.EVT_MENU, self.delete_reference, id=self.popupID2)
+            submenu.Append(self.popupID2, _("Clear reference object"))
+
+        if not submenu is None:
+            menu.AppendSubMenu(submenu, _("Reference Object"))
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -1764,6 +1830,7 @@ class SelectionWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
+        self.gc = gc
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         self.clear()  # Clearing children as we are generating them in a bit...
@@ -1814,9 +1881,9 @@ class SelectionWidget(Widget):
                 self.rotation_cx = cx
                 self.rotation_cy = cy
 
-            # Prep codoe for reference object - single object? And identical to reference?
-            is_ref = False
-            single_element = True
+            # Code for reference object - single object? And identical to reference?
+            self.is_ref = False
+            self.single_element = True
             if not self.scene.reference_object is None:
 
                 for idx, e in enumerate(
@@ -1824,27 +1891,27 @@ class SelectionWidget(Widget):
                 ):
                     obj = e.object
                     if obj is self.scene.reference_object:
-                        is_ref = True
+                        self.is_ref = True
                     if idx > 0:
-                        single_element = False
+                        self.single_element = False
                         break
 
-            if not single_element:
-                is_ref = False
+            if not self.single_element:
+                self.is_ref = False
 
             # Add all subwidgets in Inverse Order
             msize = 5 * self.line_width
             rotsize = 3 * msize
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if single_element and self.use_handle_skew:
+            if self.single_element and self.use_handle_skew:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
                         master=self,
                         scene=self.scene,
                         size=msize,
-                        is_reference_object=is_ref,
+                        is_reference_object=self.is_ref,
                     ),
                 )
             if self.use_handle_move:
