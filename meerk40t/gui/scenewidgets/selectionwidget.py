@@ -645,8 +645,9 @@ class CornerWidget(Widget):
 
             self.save_width *= scalex
             self.save_height *= scaley
-
-            b = elements.selected_area()
+            # Correct, but slow...
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -674,10 +675,11 @@ class CornerWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                # We leave the recalculation of everything to the very end
+                # try:
+                #    obj.node.modified()
+                # except AttributeError:
+                #    pass
 
             for e in elements.flat(types=("group", "file")):
                 try:
@@ -822,7 +824,9 @@ class SideWidget(Widget):
             self.save_width *= scalex
             self.save_height *= scaley
 
-            b = elements.selected_area()
+            # Correct, but slow...
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -850,10 +854,11 @@ class SideWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                # We leave that to the very end...
+                # try:
+                #    obj.node.modified()
+                # except AttributeError:
+                #    pass
 
             for e in elements.flat(types=("group", "file")):
                 try:
@@ -1113,7 +1118,8 @@ class MoveWidget(Widget):
         elif event == 0:  # move
             rotation_unchanged = self.master.rotation_unchanged()
 
-            b = elements.selected_area()
+            # b = elements.selected_area()  # correct, but slow...
+            b = elements._emphasized_bounds
             for e in elements.flat(types=("elem",), emphasized=True):
                 # Here we ignore the lock-status of an element
                 obj = e.object
@@ -1524,6 +1530,13 @@ class SelectionWidget(Widget):
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(LINE_COLOR)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.popupID1 = None
+        self.popupID2 = None
+        self.popupID3 = None
+        self.gc = None
+        self.reset_variables()
+
+    def reset_variables(self):
         self.save_width = None
         self.save_height = None
         self.cursor = "arrow"
@@ -1543,15 +1556,11 @@ class SelectionWidget(Widget):
         self.use_handle_size = True
         self.use_handle_move = True
         self.keep_rotation = True
-        self.popupID1 = None
-        self.popupID2 = None
-        self.popupID3 = None
         self.line_width = 0
         self.font_size = 0
         self.tool_running = False
         self.single_element = True
         self.is_ref = False
-        self.gc = None
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1572,14 +1581,7 @@ class SelectionWidget(Widget):
             # print ("Hit and delegate")
             return HITCHAIN_HIT_AND_DELEGATE
         else:
-            self.left = float("inf")
-            self.top = float("inf")
-            self.right = -float("inf")
-            self.bottom = -float("inf")
-            self.rotation_cx = None
-            self.rotation_cy = None
-            self.total_delta_x = 0
-            self.total_delta_y = 0
+            self.reset_variables()
             return HITCHAIN_DELEGATE
 
     def move_selection_to_ref(self, pos="c"):
@@ -1697,13 +1699,13 @@ class SelectionWidget(Widget):
                 break
             except AttributeError:
                 pass
-        print("set...")
+        # print("set...")
         self.scene.request_refresh()
 
     def delete_reference(self, event):
         self.scene.reference_object = None
         # Simplify, no complete scene refresh required
-        print("unset...")
+        # print("unset...")
         self.scene.request_refresh()
 
     def create_menu(self, gui, node, elements):
