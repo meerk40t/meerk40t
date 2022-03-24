@@ -916,7 +916,8 @@ class PlotCut(CutObject):
 
     def check_if_rasterable(self):
         """
-        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+        Rasterable plotcuts are heuristically defined as having a max step of less than 15 and
+        must have an unused travel direction.
 
         @return: whether the plot can travel
         """
