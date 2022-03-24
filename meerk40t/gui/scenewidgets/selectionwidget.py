@@ -434,7 +434,7 @@ class RotationWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-            for e in elements.flat(types=("group", "file")):
+            for e in elements.flat(types=("group", "file"), emphasized=True):
                 try:
                     obj = e.object
                     obj.node.modified()
@@ -605,7 +605,7 @@ class CornerWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -675,18 +675,7 @@ class CornerWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                # We leave the recalculation of everything to the very end
-                # try:
-                #    obj.node.modified()
-                # except AttributeError:
-                #    pass
 
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -782,7 +771,7 @@ class SideWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -860,12 +849,6 @@ class SideWidget(Widget):
                 # except AttributeError:
                 #    pass
 
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -1106,7 +1089,7 @@ class MoveWidget(Widget):
         """
         elements = self.scene.context.elements
         if event == 1:  # end
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1124,16 +1107,6 @@ class MoveWidget(Widget):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
 
             self.translate(dx, dy)
 
