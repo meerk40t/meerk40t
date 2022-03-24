@@ -356,14 +356,14 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 try:
+                    obj = e.object
                     obj.node.modified()
                 except AttributeError:
                     pass
             self.master.rotated_angle = 0
-        if event == 0:
+        elif event == 0:
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:
@@ -431,13 +431,7 @@ class RotationWidget(Widget):
                     pass
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
                 try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file"), emphasized=True):
-                try:
-                    obj = e.object
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -845,7 +839,7 @@ class SideWidget(Widget):
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
                 # We leave that to the very end...
                 # try:
-                #    obj.node.modified()
+                #    obj.node._bounds_dirty = True
                 # except AttributeError:
                 #    pass
 
@@ -987,13 +981,7 @@ class SkewWidget(Widget):
                     mat[1] = skew_tan
                 obj.transform = mat
                 try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
 
@@ -1590,15 +1578,9 @@ class SelectionWidget(Widget):
             if not obj is refob:
                 obj.transform.post_translate(dx, dy)
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-        for e in self.scene.context.elements.flat(types=("group", "file")):
-            try:
-                obj = e.object
-                obj.node.modified()
-            except AttributeError:
-                pass
 
     def scale_selection_to_ref(self, method="none"):
         refob = self.scene.reference_object
@@ -1636,15 +1618,9 @@ class SelectionWidget(Widget):
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-        for e in self.scene.context.elements.flat(types=("group", "file")):
-            try:
-                obj = e.object
-                obj.node.modified()
-            except AttributeError:
-                pass
 
     def show_reference_align_dialog(self, event):
         opt_pos = None
