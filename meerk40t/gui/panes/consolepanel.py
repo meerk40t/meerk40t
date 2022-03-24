@@ -201,12 +201,8 @@ class ConsolePanel(wx.Panel):
 
     @property
     def is_dark(self):
-        # GetLuminance is new in wxPython 4.1 so manually calculating until this
-        # is the minimum wxP release supported by MK.
-        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW).GetLuminance() < 0.5
-        bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue) / 255.0
-        return luminance < 0.5
+
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
