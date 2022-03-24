@@ -114,6 +114,7 @@ class SelectionWidget(Widget):
         self.arcsegment = None
 
     def hit(self):
+
         elements = self.elements
         bounds = elements.selected_area()
         if bounds is not None:
@@ -159,7 +160,7 @@ class SelectionWidget(Widget):
         Query as to whether the current point is contained within the current widget.
         Overloaded routine to allow for selection rectangle size
         """
-        valu = False
+        value = False
         if y is None:
             y = x.y
             x = x.x
@@ -271,9 +272,9 @@ class SelectionWidget(Widget):
         # Check whether the given point lie within one of the relevant rectangles
         for crn in checks:
             if crn[0] <= x <= crn[2] and crn[1] <= y <= crn[3]:
-                valu = True
+                value = True
                 break
-        return valu
+        return value
 
     key_shift_pressed = False
     key_control_pressed = False
@@ -357,12 +358,15 @@ class SelectionWidget(Widget):
                 self.key_alt_pressed = True
             return RESPONSE_CHAIN
         elif event_type == "hover_start":
-            self.scene.cursor("sizing")
+            if self.tool_running:
+                print("Still running?!")
+            self.scene.cursor("arrow")
             self.hovering = True
             return RESPONSE_CHAIN
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor("arrow")
             self.hovering = False
+            self.tool_running = False
             self.update_statusmsg(_("Status"))
 
             return RESPONSE_CHAIN
@@ -685,12 +689,14 @@ class SelectionWidget(Widget):
                     self.scene.cursor("arrow")
                     self.tool = self.tool_none
                     self.update_statusmsg(_("Status"))
+                    self.tool_running = False
 
             return RESPONSE_CHAIN
         dx = space_pos[4]
         dy = space_pos[5]
 
         if event_type == "rightdown":
+            self.tool_running = False
             elements.set_emphasized_by_position(space_pos)
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
@@ -700,6 +706,7 @@ class SelectionWidget(Widget):
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
+            self.tool_running = False
             elements.set_emphasized_by_position(space_pos)
             self.scene.context.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
@@ -738,6 +745,7 @@ class SelectionWidget(Widget):
                 return RESPONSE_CONSUME
         elif event_type in ("middleup", "lost"):
             if self.was_lb_raised:
+                self.tool_running = False
                 self.was_lb_raised = False
                 self.tool(space_pos, dx, dy, 1)
                 self.elements.ensure_positive_bounds()
@@ -809,12 +817,13 @@ class SelectionWidget(Widget):
     def tool_scale_general(self, method, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+            # for e in elements.flat(types=("elem",), emphasized=True):
+            #    obj = e.object
+            #    try:
+            #        obj.node.modified()
+            #    except AttributeError:
+            #        pass
+            pass  # tool and scale are okayish to leave as they are
         if event == 0:
             # Establish origin
             if "n" in method:
@@ -893,11 +902,11 @@ class SelectionWidget(Widget):
 
     def tool_translate(self, position, dx, dy, event=0):
         """
-        Change the position of the selected elements.
+        Change the position of the selected elements. NEW
         """
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -910,17 +919,6 @@ class SelectionWidget(Widget):
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file")):
-                obj = e.object
-                # We leave that to the end
-                # try:
-                #    obj.node.modified()
-                # except AttributeError:
-                #    pass
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -954,7 +952,7 @@ class SelectionWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-            for e in elements.flat(types=("group", "file")):
+            for e in elements.flat(types=("group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -993,7 +991,7 @@ class SelectionWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-            for e in elements.flat(types=("group", "file")):
+            for e in elements.flat(types=("group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1079,7 +1077,7 @@ class SelectionWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-            for e in elements.flat(types=("group", "file")):
+            for e in elements.flat(types=("group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1223,7 +1221,11 @@ class SelectionWidget(Widget):
         context = self.scene.context
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
-        bounds = elements.selected_area()
+        # bounds = elements.selected_area()
+        bounds = elements._emphasized_bounds
+        if bounds is None:
+            bounds = elements.selected_area()
+
         matrix = self.parent.matrix
         # get infos whether to draw handles or not
         try:
@@ -1290,6 +1292,9 @@ class SelectionWidget(Widget):
                 gc.DrawText(
                     "%.0f°" % (360 * self.rotated_angle / math.tau), center_x, center_y
                 )
+        else:
+            # No bounds
+            pass
 
     def create_duplicate(self):
         from copy import copy
