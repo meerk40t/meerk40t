@@ -251,7 +251,6 @@ class ConsolePanel(wx.Panel):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
-                text = ""
             if b == 27:
                 ansi = True
             if ansi:
