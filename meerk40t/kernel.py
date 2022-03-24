@@ -72,21 +72,6 @@ RE_ANSI = re.compile(
     re.IGNORECASE
 )
 
-def bbcode_to_ansi(text):
-    return "".join([
-        BBCODE_LIST["normal"],
-        RE_ANSI.sub(bbcode_to_ansi_match, text),
-        BBCODE_LIST["normal"],
-    ])
-
-def bbcode_to_ansi_match(m):
-    tag = re.sub(r"\].*", "", m[0])[1:].lower()
-    return BBCODE_LIST[tag] if tag != "raw" else m[2]
-
-def bbcode_to_plain(text):
-    return RE_ANSI.sub("", text)
-
-
 
 class Modifier:
     """
@@ -2817,10 +2802,10 @@ class Channel:
         if ansi:
             if self.ansi:
                 # Convert bbcode to ansi
-                message = bbcode_to_ansi(message)
+                message = self.bbcode_to_ansi(message)
             else:
                 # Convert bbcode to stripped
-                message = bbcode_to_plain(message)
+                message = self.bbcode_to_plain(message)
 
         console_open_print = False
         # Check if this channel is "open" i.e. being sent to console
@@ -2876,6 +2861,20 @@ class Channel:
 
     def unwatch(self, monitor_function: Callable):
         self.watchers.remove(monitor_function)
+
+    def bbcode_to_ansi(self, text):
+        return "".join([
+            BBCODE_LIST["normal"],
+            RE_ANSI.sub(self.bbcode_to_ansi_match, text),
+            BBCODE_LIST["normal"],
+        ])
+
+    def bbcode_to_ansi_match(self, m):
+        tag = re.sub(r"\].*", "", m[0])[1:].lower()
+        return BBCODE_LIST[tag] if tag != "raw" else m[2]
+
+    def bbcode_to_plain(self, text):
+        return RE_ANSI.sub("", text)
 
 
 class Job:
