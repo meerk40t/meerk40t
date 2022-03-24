@@ -197,6 +197,9 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+        wx.ToolTip.SetAutoPop(10000)
+        wx.ToolTip.SetDelay(100)
+        wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
         try:
@@ -517,6 +520,7 @@ class wxMeerK40t(wx.App, Module):
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
+
 
     def initialize(self, *args, **kwargs):
         context = self.context
