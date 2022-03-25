@@ -293,28 +293,20 @@ class ViewPort:
         )
 
     @property
-    def width_as_mm(self):
-        return Length(self.width).length_mm
+    def length_width(self):
+        return Length(self.width)
 
     @property
-    def height_as_mm(self):
-        return Length(self.height).length_mm
-
-    @property
-    def width_as_inch(self):
-        return Length(self.width).length_inches
-
-    @property
-    def height_as_inch(self):
-        return Length(self.height).length_inches
+    def length_height(self):
+        return Length(self.height)
 
     @property
     def unit_width(self):
-        return Length(self.width).units
+        return float(Length(self.width))
 
     @property
     def unit_height(self):
-        return Length(self.width).units
+        return float(Length(self.width))
 
     @staticmethod
     def viewbox_transform(
