@@ -4784,6 +4784,22 @@ class Elemental(Service):
 
         return decorator
 
+    def validate_ids(self):
+        uid = {}
+        missing = list()
+        for node in self.flat():
+            e = node.object
+            if e is not None and e.id is not None:
+                uid[e.id] = node
+                node.id = e.id
+            else:
+                missing.append(node)
+        idx = 1
+        for m in missing:
+            while "meerk40t:%d" % idx in uid:
+                idx += 1
+            m.id = "meerk40t:%d" % idx
+
     @property
     def reg_branch(self):
         return self._tree.get(type="branch reg")
