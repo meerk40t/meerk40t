@@ -86,19 +86,18 @@ class SelectionWidget(Widget):
     dealing with moving, resizing and altering the selected object.
     """
 
-    # Size of rotation indicator area - will be multiplied by selbox_wx / selbox_wy respectively
-    rot_area = 2
-    use_handle_rotate = True
-    use_handle_skew = True
-    use_handle_size = True
-    selbox_wx = None
-    selbox_wy = None
-    rotate_cx = None
-    rotate_cy = None
-    rotated_angle = 0
-
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        # Size of rotation indicator area - will be multiplied by selbox_wx / selbox_wy respectively
+        self.rot_area = 2
+        self.use_handle_rotate = True
+        self.use_handle_skew = True
+        self.use_handle_size = True
+        self.selbox_wx = None
+        self.selbox_wy = None
+        self.rotate_cx = None
+        self.rotate_cy = None
+        self.rotated_angle = 0
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
@@ -112,6 +111,7 @@ class SelectionWidget(Widget):
         self.total_delta_y = 0
         self.tool_running = False
         self.arcsegment = None
+        self.draw_border = True
 
     def hit(self):
 
@@ -817,13 +817,13 @@ class SelectionWidget(Widget):
     def tool_scale_general(self, method, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            # for e in elements.flat(types=("elem",), emphasized=True):
-            #    obj = e.object
-            #    try:
-            #        obj.node.modified()
-            #    except AttributeError:
-            #        pass
-            pass  # tool and scale are okayish to leave as they are
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+                obj = e.object
+                try:
+                    obj.node.modified()
+                except AttributeError:
+                    pass
+            self.draw_border = True
         if event == 0:
             # Establish origin
             if "n" in method:
@@ -886,15 +886,8 @@ class SelectionWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                # We leave that to the end
-                # try:
-                #    obj.node.modified()
-                # except AttributeError:
-                #    pass
-            for e in elements.flat(types=("group", "file")):
-                obj = e.object
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
@@ -912,8 +905,9 @@ class SelectionWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
+            self.draw_border = True
 
-        if event == 0:
+        elif event == 0:
             # b = elements.selected_area()
             b = elements._emphasized_bounds
             for e in elements.flat(types=("elem",), emphasized=True):
@@ -921,6 +915,7 @@ class SelectionWidget(Widget):
                 obj.transform.post_translate(dx, dy)
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
         self.scene.request_refresh()
 
     def tool_skew_x(self, position, dx, dy, event=0):
@@ -930,13 +925,17 @@ class SelectionWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:
             self.rotated_angle = 0
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
                 except AttributeError:
                     pass
-        if event == 0:
+            self.draw_border = True
+
+        elif event == 0:
+            self.draw_border = False
+
             this_side = self.total_delta_x
             other_side = self.height
             skew_tan = this_side / other_side
@@ -948,16 +947,6 @@ class SelectionWidget(Widget):
                 mat = obj.transform
                 mat[2] = skew_tan
                 obj.transform = mat
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file"), emphasized=True):
-                obj = e.object
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -967,14 +956,17 @@ class SelectionWidget(Widget):
         """
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
                 except AttributeError:
                     pass
             self.rotated_angle = 0
-        if event == 0:
+            self.draw_border = True
+
+        elif event == 0:
+            self.draw_border = False
 
             this_side = self.total_delta_y
             other_side = self.width
@@ -987,16 +979,6 @@ class SelectionWidget(Widget):
                 mat = obj.transform
                 mat[1] = skew_tan
                 obj.transform = mat
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file"), emphasized=True):
-                obj = e.object
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
@@ -1007,14 +989,18 @@ class SelectionWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
                 except AttributeError:
                     pass
             self.rotated_angle = 0
-        if event == 0:
+            self.draw_border = True
+
+        elif event == 0:
+            self.draw_border = False
+
             if self.rotate_cx is None:
                 self.rotate_cx = (self.right + self.left) / 2
             if self.rotate_cy is None:
@@ -1074,13 +1060,7 @@ class SelectionWidget(Widget):
                 obj = e.object
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
                 try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file"), emphasized=True):
-                obj = e.object
-                try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
@@ -1255,30 +1235,32 @@ class SelectionWidget(Widget):
                 font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             except TypeError:
                 font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+
             gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
             center_y = (y0 + y1) / 2.0
-            gc.StrokeLine(center_x, 0, center_x, y0)
-            gc.StrokeLine(0, center_y, x0, center_y)
-            gc.StrokeLine(x0, y0, x1, y0)
-            gc.StrokeLine(x1, y0, x1, y1)
-            gc.StrokeLine(x1, y1, x0, y1)
-            gc.StrokeLine(x0, y1, x0, y0)
+            if self.draw_border:
+                gc.StrokeLine(center_x, 0, center_x, y0)
+                gc.StrokeLine(0, center_y, x0, center_y)
+                gc.StrokeLine(x0, y0, x1, y0)
+                gc.StrokeLine(x1, y0, x1, y1)
+                gc.StrokeLine(x1, y1, x0, y1)
+                gc.StrokeLine(x0, y1, x0, y0)
 
-            if draw_mode & DRAW_MODE_SELECTION == 0:
-                p = self.scene.context
-                conversion, name, marks, index = (
-                    p.units_convert,
-                    p.units_name,
-                    p.units_marks,
-                    p.units_index,
-                )
-                gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
-                gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
-                gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
-                gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
+                if draw_mode & DRAW_MODE_SELECTION == 0:
+                    p = self.scene.context
+                    conversion, name, marks, index = (
+                        p.units_convert,
+                        p.units_name,
+                        p.units_marks,
+                        p.units_index,
+                    )
+                    gc.DrawText("%.1f%s" % (y0 / conversion, name), center_x, y0 / 2.0)
+                    gc.DrawText("%.1f%s" % (x0 / conversion, name), x0 / 2.0, center_y)
+                    gc.DrawText("%.1f%s" % ((y1 - y0) / conversion, name), x1, center_y)
+                    gc.DrawText("%.1f%s" % ((x1 - x0) / conversion, name), center_x, y1)
 
             self.selbox_wx = 5 * linewidth  # 10.0 / matrix.value_scale_x()
             self.selbox_wy = 5 * linewidth  # 10.0 / matrix.value_scale_y()
@@ -1289,9 +1271,24 @@ class SelectionWidget(Widget):
                     gc, self.selbox_wx, self.selbox_wy, x0, y0, x1, y1
                 )
             if abs(self.rotated_angle) > 0.001:
-                gc.DrawText(
-                    "%.0f°" % (360 * self.rotated_angle / math.tau), center_x, center_y
+                symbol = "%.0f°" % (360 * self.rotated_angle / math.tau)
+                pen = wx.Pen()
+                gc.SetPen(pen)
+                brush = wx.Brush(wx.WHITE, wx.SOLID)
+                gc.SetBrush(brush)
+                (t_width, t_height) = gc.GetTextExtent(symbol)
+                gc.DrawEllipse(
+                    center_x - 0.6 * t_width,
+                    center_y - 0.6 * t_height,
+                    1.2 * t_width,
+                    1.2 * t_height,
                 )
+                gc.DrawText(
+                    symbol,
+                    center_x - 0.5 * t_width,
+                    center_y - 0.5 * t_height,
+                )
+
         else:
             # No bounds
             pass
