@@ -1,4 +1,4 @@
-from wx import wx
+import wx
 
 from meerk40t.gui.scene.widget import Widget
 
