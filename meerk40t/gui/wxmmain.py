@@ -2031,15 +2031,26 @@ class MeerK40t(MWindow):
 
     def load(self, pathname):
         try:
-            with wx.BusyInfo(
-                wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
-            ):
-                n = self.context.elements.note
-                results = self.context.elements.load(
-                    pathname,
-                    channel=self.context.channel("load"),
-                    svg_ppi=self.context.elements.svg_ppi,
-                )
+            try:
+                # wxPython 4.1.+
+                with wx.BusyInfo(
+                    wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
+                ):
+                    n = self.context.elements.note
+                    results = self.context.elements.load(
+                        pathname,
+                        channel=self.context.channel("load"),
+                        svg_ppi=self.context.elements.svg_ppi,
+                    )
+            except AttributeError:
+                # wxPython 4.0
+                with wx.BusyInfo(_("Loading File...")):
+                    n = self.context.elements.note
+                    results = self.context.elements.load(
+                        pathname,
+                        channel=self.context.channel("load"),
+                        svg_ppi=self.context.elements.svg_ppi,
+                    )
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,
