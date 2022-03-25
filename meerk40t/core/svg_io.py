@@ -67,6 +67,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("save/SVGWriter", SVGWriter)
 
 
+MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
+
 class SVGWriter:
     @staticmethod
     def save_types():
@@ -85,7 +87,7 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
         root.set(
             "xmlns:meerK40t",
-            "https://github.com/meerk40t/meerk40t/wiki/Namespace",
+            MEERK40T_NAMESPACE,
         )
         scene_width = context.device.length_width
         scene_height = context.device.length_height
@@ -97,18 +99,7 @@ class SVGWriter:
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
-        uid = {}
-        missing = list()
-        for e in elements.elems():
-            if e.id is not None:
-                uid[e.id] = e
-            else:
-                missing.append(e)
-        idx = 1
-        for m in missing:
-            while "element: %d" % idx in uid:
-                idx += 1
-            m.id = "element: %d" % idx
+        elements.validate_ids()
 
         # If there is a note set then we save the note with the project.
         if elements.note is not None:
@@ -131,10 +122,12 @@ class SVGWriter:
                 for c in node.children:
                     SVGWriter._write_elements(xml_tree, c)
             elif node.type == "branch reg":
-                regmark = SubElement(xml_tree, "group")
-                regmark.set("visibility", "hidden")
-                for c in node.children:
-                    SVGWriter._write_elements(regmark, c)
+                if len(node.children):
+                    regmark = SubElement(xml_tree, "group")
+                    regmark.set("id", "regmark")
+                    regmark.set("visibility", "hidden")
+                    for c in node.children:
+                        SVGWriter._write_elements(regmark, c)
 
     @staticmethod
     def _write_elements(xml_tree, elem_tree):
