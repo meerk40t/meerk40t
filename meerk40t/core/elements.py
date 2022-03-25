@@ -122,7 +122,6 @@ class Elemental(Service):
         )
         self._clipboard = {}
         self._clipboard_default = "0"
-        self.units = "nm"
         self.unitless = UNITS_PER_PIXEL
 
         self.note = None
@@ -3304,9 +3303,7 @@ class Elemental(Service):
                 yield "rapid_mode"
                 for p in hull:
                     yield (
-                        "move_abs",
-                        "{x}{units}".format(x=p[0], units=self.units),
-                        "{y}{units}".format(y=p[1], units=self.units),
+                        "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
                     )
 
             spooler.job(trace_hull)
@@ -3323,31 +3320,11 @@ class Elemental(Service):
 
             def trace_quick():
                 yield "rapid_mode"
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[2], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[2], units=self.units),
-                    "{y}{units}".format(y=bbox[3], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[3], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[1]).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[3]).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[3]).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
 
             spooler.job(trace_quick)
 
