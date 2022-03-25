@@ -85,17 +85,17 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
         root.set(
             "xmlns:meerK40t",
-            "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
+            "https://github.com/meerk40t/meerk40t/wiki/Namespace",
         )
-        scene_width = context.device.width_as_inch
-        scene_height = context.device.height_as_inch
-        root.set(SVG_ATTR_WIDTH, str(scene_width))
-        root.set(SVG_ATTR_HEIGHT, str(scene_height))
-        px_width = scene_width.value(ppi=96.0)
-        px_height = scene_height.value(ppi=96.0)
+        scene_width = context.device.length_width
+        scene_height = context.device.length_height
+        root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
+        root.set(SVG_ATTR_HEIGHT, scene_height.length_mm)
+        px_width = scene_width.pixels
+        px_height = scene_height.pixels
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % (1.0 / UNITS_PER_PIXEL)
+        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         for operation in elements.ops():
@@ -281,8 +281,8 @@ class SVGLoader:
             svg = SVG.parse(
                 source=source,
                 reify=True,
-                width=str(context.device.width_as_mm),
-                height=str(context.device.height_as_mm),
+                width=context.device.length_width.length_mm,
+                height=context.device.length_height.length_mm,
                 ppi=ppi,
                 color="none",
                 transform="scale(%f)" % scale_factor,
