@@ -116,18 +116,11 @@ class SVGWriter:
     def _write_tree(xml_tree, node_tree):
         for node in node_tree.children:
             if node.type == "branch ops":
-                for c in node.children:
-                    SVGWriter._write_operation(xml_tree, c)
+                SVGWriter._write_operations(xml_tree, node)
             elif node.type == "branch elems":
-                for c in node.children:
-                    SVGWriter._write_elements(xml_tree, c)
+                SVGWriter._write_elements(xml_tree, node)
             elif node.type == "branch reg":
-                if len(node.children):
-                    regmark = SubElement(xml_tree, "group")
-                    regmark.set("id", "regmark")
-                    regmark.set("visibility", "hidden")
-                    for c in node.children:
-                        SVGWriter._write_elements(regmark, c)
+                SVGWriter._write_regmarks(xml_tree, node)
 
     @staticmethod
     def _write_elements(xml_tree, elem_tree):
@@ -145,6 +138,27 @@ class SVGWriter:
             else:
                 # This is a structural group node of elements (group/file). Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
+
+    @staticmethod
+    def _write_operations(xml_tree, op_tree):
+        """
+        Write the operations branch part of the tree to disk.
+
+        @param xml_tree:
+        @param elem_tree:
+        @return:
+        """
+        for c in op_tree.children:
+            SVGWriter._write_operation(xml_tree, c)
+
+    @staticmethod
+    def _write_regmarks(xml_tree, reg_tree):
+        if len(reg_tree.children):
+            regmark = SubElement(xml_tree, "group")
+            regmark.set("id", "regmarks")
+            regmark.set("visibility", "hidden")
+            for c in reg_tree.children:
+                SVGWriter._write_elements(regmark, c)
 
     @staticmethod
     def _write_operation(xml_tree, node):
