@@ -64,6 +64,24 @@ class RibbonPanel(wx.Panel):
         # self._ribbon
         self.pipe_state = None
         self._ribbon_dirty = False
+        self.button_actions = []
+
+    def button_click(self, event):
+        # Let's figure out what kind of action we need to perform
+        # button["action"]
+        evt_id = event.GetId()
+        for button in self.button_actions:
+            parent_obj = button[0]
+            my_id = button[1]
+            my_grp = button[2]
+            my_code = button[3]
+            if my_id == evt_id:
+                if my_grp != "":
+                    for obutton in self.button_actions:
+                        if obutton[2] == my_grp and obutton[1] != my_id:
+                            obutton[0].ToggleButton(obutton[1], False)
+                my_code(0)  # Needs a parameter....
+                break
 
     def set_buttons(self, new_values, button_bar):
         button_bar.ClearButtons()
@@ -78,6 +96,7 @@ class RibbonPanel(wx.Panel):
 
         for button in buttons:
             new_id = wx.NewId()
+            toggle_grp = ""
             if "alt-action" in button:
                 button_bar.AddHybridButton(
                     new_id,
@@ -103,13 +122,26 @@ class RibbonPanel(wx.Panel):
                     id=new_id,
                 )
             else:
+                if "toggle" in button:
+                    toggle_grp = button["toggle"]
+                    bkind = RB.RIBBON_BUTTON_TOGGLE
+                else:
+                    bkind = RB.RIBBON_BUTTON_NORMAL
+
                 button_bar.AddButton(
                     new_id,
                     button["label"],
                     button["icon"].GetBitmap(),
                     button["tip"],
+                    kind=bkind,
                 )
-            button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button["action"], id=new_id)
+            self.button_actions.append(
+                (button_bar, new_id, toggle_grp, button["action"])
+            )
+            # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
+            )
         self.ensure_realize()
 
     @lookup_listener("button/project")
