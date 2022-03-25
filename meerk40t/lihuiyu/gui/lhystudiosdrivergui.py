@@ -2,6 +2,7 @@
 
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -423,6 +424,11 @@ class ConfigurationLaserPanel(wx.Panel):
         self.spin_home_y.SetValue(self.context.home_adjust_y)
 
     def on_text_bedwidth(self, event=None):
+        try:
+            Length(self.text_bedwidth.GetValue())
+            Length(self.text_bedheight.GetValue())
+        except ValueError:
+            return
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
         self.context.device.bedwidth = self.text_bedwidth.GetValue()
@@ -433,6 +439,11 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
+        try:
+            Length(self.text_bedwidth.GetValue())
+            Length(self.text_bedheight.GetValue())
+        except ValueError:
+            return
         self.context.device.width = self.text_bedwidth.GetValue()
         self.context.device.height = self.text_bedheight.GetValue()
         self.context.device.bedwidth = self.text_bedwidth.GetValue()
