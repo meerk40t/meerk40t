@@ -22,7 +22,7 @@ class TextTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.text is not None:
-            gc.SetPen(wx.BLUE_PEN)
+            gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.DrawText(self.text.text, self.x, self.y)
 

@@ -19,6 +19,7 @@ class DrawTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.series is not None and len(self.series) > 1:
+            gc.SetPen(self.pen)
             gc.StrokeLines(self.series)
 
     def add_point(self, point):

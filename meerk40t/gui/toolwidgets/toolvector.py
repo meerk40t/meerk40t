@@ -23,7 +23,7 @@ class VectorTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.path:
-            gc.SetPen(wx.BLUE_PEN)
+            gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             path = Path(self.path)
             if self.mouse_position is not None:
@@ -38,7 +38,7 @@ class VectorTool(ToolWidget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
             if self.path is None:
-                self.path = Path(stroke="blue")
+                self.path = Path(stroke="blue", stroke_width=1000)
                 self.path.move((space_pos[0], space_pos[1]))
             else:
                 self.path.line((space_pos[0], space_pos[1]))

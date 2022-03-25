@@ -16,9 +16,6 @@ class CircleTool(ToolWidget):
         self.start_position = None
         self.p1 = None
         self.p2 = None
-        self.draw_pen = wx.Pen()
-        self.draw_pen.SetColour(wx.BLUE)
-        self.draw_pen.SetWidth(1000)
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -26,7 +23,7 @@ class CircleTool(ToolWidget):
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
             y1 = max(self.p1.imag, self.p2.imag)
-            gc.SetPen(self.draw_pen)
+            gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             ellipse = Circle(
                 (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2

@@ -19,7 +19,7 @@ class PolylineTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.point_series:
-            gc.SetPen(wx.BLUE_PEN)
+            gc.SetPen(self.pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             points = list(self.point_series)
             if self.mouse_position is not None:
@@ -38,7 +38,7 @@ class PolylineTool(ToolWidget):
             if self.point_series:
                 self.scene.request_refresh()
         elif event_type == "doubleclick":
-            polyline = Polyline(*self.point_series, stroke="blue")
+            polyline = Polyline(*self.point_series, stroke="blue", stroke_width=1000)
             t = Path(polyline)
             if len(t) != 0:
                 self.scene.context.elements.add_elem(t, classify=True)
