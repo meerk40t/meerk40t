@@ -47,4 +47,4 @@ class TextTool(ToolWidget):
                 self.scene.context.elements.add_elem(self.text, classify=True)
                 self.text = None
             dlg.Destroy()
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()

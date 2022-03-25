@@ -37,7 +37,7 @@ class DrawTool(ToolWidget):
             if self.series is None:
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         elif event_type == "lost":
             self.series = None
             return RESPONSE_DROP

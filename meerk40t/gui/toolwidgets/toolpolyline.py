@@ -32,11 +32,11 @@ class PolylineTool(ToolWidget):
         elif event_type == "rightdown":
             self.point_series = []
             self.mouse_position = None
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         elif event_type == "hover":
             self.mouse_position = space_pos[0], space_pos[1]
             if self.point_series:
-                self.scene.context.signal("refresh_scene", self.scene.name)
+                self.scene.request_refresh()
         elif event_type == "doubleclick":
             polyline = Polyline(*self.point_series, stroke="blue")
             t = Path(polyline)

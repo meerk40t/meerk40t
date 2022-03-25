@@ -46,23 +46,23 @@ class VectorTool(ToolWidget):
         elif event_type == "rightdown":
             self.path = None
             self.mouse_position = None
-            self.scene.context.signal("refresh_scene", self.scene.name)
+            self.scene.request_refresh()
         elif event_type == "leftdown":
             self.c0 = (space_pos[0], space_pos[1])
         elif event_type == "move":
             self.c0 = (space_pos[0], space_pos[1])
             if self.path:
-                self.scene.context.signal("refresh_scene", self.scene.name)
+                self.scene.request_refresh()
         elif event_type == "leftup":
             if self.c0 is not None and self.path:
                 self.path.smooth_cubic(self.c0, self.mouse_position)
-                self.scene.context.signal("refresh_scene", self.scene.name)
+                self.scene.request_refresh()
             self.c0 = None
             self.mouse_position = None
         elif event_type == "hover":
             self.mouse_position = space_pos[0], space_pos[1]
             if self.path:
-                self.scene.context.signal("refresh_scene", self.scene.name)
+                self.scene.request_refresh()
         elif event_type == "doubleclick":
             t = self.path
             if len(t) != 0:
