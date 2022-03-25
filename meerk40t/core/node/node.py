@@ -110,6 +110,7 @@ class Node:
         self.icon = None
         self.cache = None
         self.last_transform = None
+        self.id = None
 
     def __repr__(self):
         return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))

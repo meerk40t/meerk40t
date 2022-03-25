@@ -39,7 +39,7 @@ from .node.laserop import (
 )
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from .units import UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -122,8 +122,6 @@ class Elemental(Service):
         )
         self._clipboard = {}
         self._clipboard_default = "0"
-        self.units = "nm"
-        self.unitless = UNITS_PER_PIXEL
 
         self.note = None
         self._emphasized_bounds = None
@@ -3304,9 +3302,7 @@ class Elemental(Service):
                 yield "rapid_mode"
                 for p in hull:
                     yield (
-                        "move_abs",
-                        "{x}{units}".format(x=p[0], units=self.units),
-                        "{y}{units}".format(y=p[1], units=self.units),
+                        "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
                     )
 
             spooler.job(trace_hull)
@@ -3323,31 +3319,11 @@ class Elemental(Service):
 
             def trace_quick():
                 yield "rapid_mode"
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[2], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[2], units=self.units),
-                    "{y}{units}".format(y=bbox[3], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[3], units=self.units),
-                )
-                yield (
-                    "move_abs",
-                    "{x}{units}".format(x=bbox[0], units=self.units),
-                    "{y}{units}".format(y=bbox[1], units=self.units),
-                )
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[1]).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[3]).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[3]).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
 
             spooler.job(trace_quick)
 
@@ -4807,6 +4783,22 @@ class Elemental(Service):
             return inner
 
         return decorator
+
+    def validate_ids(self):
+        uid = {}
+        missing = list()
+        for node in self.flat():
+            e = node.object
+            if e is not None and e.id is not None:
+                uid[e.id] = node
+                node.id = e.id
+            else:
+                missing.append(node)
+        idx = 1
+        for m in missing:
+            while "meerk40t:%d" % idx in uid:
+                idx += 1
+            m.id = "meerk40t:%d" % idx
 
     @property
     def reg_branch(self):

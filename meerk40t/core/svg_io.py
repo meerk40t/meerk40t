@@ -67,6 +67,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("save/SVGWriter", SVGWriter)
 
 
+MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
+
+
 class SVGWriter:
     @staticmethod
     def save_types():
@@ -85,166 +88,207 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
         root.set(
             "xmlns:meerK40t",
-            "https://htmlpreview.github.io/?https://github.com/meerk40t/meerk40t/blob/master/svg-namespace.html",
+            MEERK40T_NAMESPACE,
         )
-        scene_width = context.device.width_as_inch
-        scene_height = context.device.height_as_inch
-        root.set(SVG_ATTR_WIDTH, str(scene_width))
-        root.set(SVG_ATTR_HEIGHT, str(scene_height))
-        px_width = scene_width.value(ppi=96.0)
-        px_height = scene_height.value(ppi=96.0)
+        scene_width = context.device.length_width
+        scene_height = context.device.length_height
+        root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
+        root.set(SVG_ATTR_HEIGHT, scene_height.length_mm)
+        px_width = scene_width.pixels
+        px_height = scene_height.pixels
 
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
-        scale = "scale(%f)" % (1.0 / UNITS_PER_PIXEL)
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
-        for operation in elements.ops():
-            subelement = SubElement(root, "operation")
+        elements.validate_ids()
 
-            if hasattr(operation, "color"):
-                c = getattr(operation, "color")
-                if c is not None:
-                    if isinstance(c, int):
-                        c = Color(c)
-                subelement.set("color", str(c).lower())
-            for key in dir(operation):
-                if key.startswith("_") or key.startswith("implicit"):
-                    continue
-                value = getattr(operation, key)
-                if type(value) not in (int, float, str, bool):
-                    continue
-                subelement.set(key, str(value))
-            if hasattr(operation, "settings"):
-                for key in dir(operation.settings):
-                    if key.startswith("_") or key.startswith("implicit"):
-                        continue
-                    value = getattr(operation.settings, key)
-                    if type(value) not in (int, float, str, bool):
-                        continue
-                    subelement.set(key, str(value))
-
+        # If there is a note set then we save the note with the project.
         if elements.note is not None:
             subelement = SubElement(root, "note")
             subelement.set(SVG_TAG_TEXT, elements.note)
-        for element in elements.elems():
-            if isinstance(element, Shape) and not isinstance(element, Path):
-                element = Path(element)
 
-            if isinstance(element, Path):
-                element = abs(element * scale)
-                subelement = SubElement(root, SVG_TAG_PATH)
+        SVGWriter._write_tree(root, elements._tree)
 
-                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-
-                for key, val in element.values.items():
-                    if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
-                    ):
-                        subelement.set(key, str(val))
-            elif isinstance(element, SVGText):
-                subelement = SubElement(root, SVG_TAG_TEXT)
-                subelement.text = element.text
-                t = Matrix(element.transform)
-                t *= scale
-                subelement.set(
-                    "transform",
-                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
-                )
-                for key, val in element.values.items():
-                    if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
-                        "font-family",
-                        "font_face",
-                        "font-size",
-                        "font-weight",
-                        "anchor",
-                        "x",
-                        "y",
-                    ):
-                        subelement.set(key, str(val))
-            elif isinstance(element, SVGImage):
-                subelement = SubElement(root, SVG_TAG_IMAGE)
-                stream = BytesIO()
-                element.image.save(stream, format="PNG")
-                png = b64encode(stream.getvalue()).decode("utf8")
-                subelement.set("xlink:href", "data:image/png;base64,%s" % png)
-                subelement.set(SVG_ATTR_X, "0")
-                subelement.set(SVG_ATTR_Y, "0")
-                subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
-                subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-                # subelement.set(SVG_ATTR_TRANSFORM, scale)
-                t = Matrix(element.transform)
-                t *= scale
-                subelement.set(
-                    "transform",
-                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
-                )
-                if element.values is not None:
-                    for key, val in element.values.items():
-                        if key in (
-                            "speed",
-                            "overscan",
-                            "power",
-                            "passes",
-                            "raster_direction",
-                            "raster_step",
-                            "d_ratio",
-                        ):
-                            subelement.set(key, str(val))
-            else:
-                raise ValueError("Attempting to save unknown element.")
-            stroke = element.stroke
-            if stroke is not None:
-                stroke_opacity = stroke.opacity
-                stroke = (
-                    str(abs(stroke))
-                    if stroke is not None and stroke.value is not None
-                    else SVG_VALUE_NONE
-                )
-                subelement.set(SVG_ATTR_STROKE, stroke)
-                if stroke_opacity != 1.0 and stroke_opacity is not None:
-                    subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
-                try:
-                    stroke_width = (
-                        str(element.stroke_width)
-                        if element.stroke_width is not None
-                        else SVG_VALUE_NONE
-                    )
-                    subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-                except AttributeError:
-                    pass
-
-            fill = element.fill
-            if fill is not None:
-                fill_opacity = fill.opacity
-                fill = (
-                    str(abs(fill))
-                    if fill is not None and fill.value is not None
-                    else SVG_VALUE_NONE
-                )
-                subelement.set(SVG_ATTR_FILL, fill)
-                if fill_opacity != 1.0 and fill_opacity is not None:
-                    subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
-            else:
-                subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
-
-            if element.id is not None:
-                subelement.set(SVG_ATTR_ID, str(element.id))
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
         tree.write(f)
+
+    @staticmethod
+    def _write_tree(xml_tree, node_tree):
+        for node in node_tree.children:
+            if node.type == "branch ops":
+                SVGWriter._write_operations(xml_tree, node)
+            elif node.type == "branch elems":
+                SVGWriter._write_elements(xml_tree, node)
+            elif node.type == "branch reg":
+                SVGWriter._write_regmarks(xml_tree, node)
+
+    @staticmethod
+    def _write_elements(xml_tree, elem_tree):
+        """
+        Write the elements branch part of the tree to disk.
+
+        @param xml_tree:
+        @param elem_tree:
+        @return:
+        """
+        for c in elem_tree.children:
+            if c.type == "elem":
+                # This is an element node.
+                SVGWriter._write_element(xml_tree, c)
+            else:
+                # This is a structural group node of elements (group/file). Recurse call to write flat values.
+                SVGWriter._write_elements(xml_tree, c)
+
+    @staticmethod
+    def _write_operations(xml_tree, op_tree):
+        """
+        Write the operations branch part of the tree to disk.
+
+        @param xml_tree:
+        @param elem_tree:
+        @return:
+        """
+        for c in op_tree.children:
+            SVGWriter._write_operation(xml_tree, c)
+
+    @staticmethod
+    def _write_regmarks(xml_tree, reg_tree):
+        if len(reg_tree.children):
+            regmark = SubElement(xml_tree, "group")
+            regmark.set("id", "regmarks")
+            regmark.set("visibility", "hidden")
+            for c in reg_tree.children:
+                SVGWriter._write_elements(regmark, c)
+
+    @staticmethod
+    def _write_operation(xml_tree, node):
+        """
+        Write an individual operation. This is any node directly under `branch ops`
+
+        @param xml_tree:
+        @param node:
+        @return:
+        """
+        subelement = SubElement(xml_tree, "operation")
+        SVGWriter._write_custom(subelement, node)
+
+    @staticmethod
+    def _write_element(xml_tree, element_node):
+        """
+        Write any specific svgelement to SVG.
+
+        @param xml_tree: xml tree we're writing to
+        @param element_node: ElemNode we are writing to xml
+        @return:
+        """
+        if element_node.object is not None:
+            SVGWriter._write_svg_element(xml_tree, element_node)
+            return
+        subelement = SubElement(xml_tree, "element")
+        SVGWriter._write_custom(subelement, element_node)
+
+    @staticmethod
+    def _write_custom(subelement, node):
+        subelement.set("type", node.type)
+        try:
+            settings = node.settings
+            for key in settings:
+                value = settings[key]
+                subelement.set(key, str(value))
+        except AttributeError:
+            pass
+        contains = list()
+        for c in node.children:
+            contains.append(c.id)
+        subelement.set("references", " ".join(contains))
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+    @staticmethod
+    def _write_svg_element(xml_tree, element_node):
+        element = element_node.object
+        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
+        if isinstance(element, Shape):
+            if not isinstance(element, Path):
+                element = Path(element)
+            element = abs(element * scale)
+            subelement = SubElement(xml_tree, SVG_TAG_PATH)
+
+            subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+        elif isinstance(element, SVGText):
+            subelement = SubElement(xml_tree, SVG_TAG_TEXT)
+            subelement.text = element.text
+            t = Matrix(element.transform)
+            t *= scale
+            subelement.set(
+                "transform",
+                "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+            )
+            for key, val in element.values.items():
+                if key in (
+                    "raster_step",
+                    "font-family",
+                    "font_face",
+                    "font-size",
+                    "font-weight",
+                    "anchor",
+                    "x",
+                    "y",
+                ):
+                    subelement.set(key, str(val))
+        elif isinstance(element, SVGImage):
+            subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
+            stream = BytesIO()
+            element.image.save(stream, format="PNG")
+            png = b64encode(stream.getvalue()).decode("utf8")
+            subelement.set("xlink:href", "data:image/png;base64,%s" % png)
+            subelement.set(SVG_ATTR_X, "0")
+            subelement.set(SVG_ATTR_Y, "0")
+            subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
+            subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
+            t = Matrix(element.transform)
+            t *= scale
+            subelement.set(
+                "transform",
+                "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+            )
+        else:
+            raise ValueError("Attempting to save unknown element.")
+        stroke = element.stroke
+        if stroke is not None:
+            stroke_opacity = stroke.opacity
+            stroke = (
+                str(abs(stroke))
+                if stroke is not None and stroke.value is not None
+                else SVG_VALUE_NONE
+            )
+            subelement.set(SVG_ATTR_STROKE, stroke)
+            if stroke_opacity != 1.0 and stroke_opacity is not None:
+                subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
+            try:
+                stroke_width = (
+                    str(element.stroke_width)
+                    if element.stroke_width is not None
+                    else SVG_VALUE_NONE
+                )
+                subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+            except AttributeError:
+                pass
+
+        fill = element.fill
+        if fill is not None:
+            fill_opacity = fill.opacity
+            fill = (
+                str(abs(fill))
+                if fill is not None and fill.value is not None
+                else SVG_VALUE_NONE
+            )
+            subelement.set(SVG_ATTR_FILL, fill)
+            if fill_opacity != 1.0 and fill_opacity is not None:
+                subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
+        else:
+            subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
+        subelement.set(SVG_ATTR_ID, str(element_node.id))
 
     @staticmethod
     def _pretty_print(current, parent=None, index=-1, depth=0):
@@ -281,8 +325,8 @@ class SVGLoader:
             svg = SVG.parse(
                 source=source,
                 reify=True,
-                width=str(context.device.width_as_mm),
-                height=str(context.device.height_as_mm),
+                width=context.device.length_width.length_mm,
+                height=context.device.length_height.length_mm,
                 ppi=ppi,
                 color="none",
                 transform="scale(%f)" % scale_factor,
