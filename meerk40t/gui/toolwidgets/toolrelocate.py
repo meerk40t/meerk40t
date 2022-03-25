@@ -19,14 +19,7 @@ class RelocateTool(ToolWidget):
         self.p2 = None
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.p1 is not None and self.p2 is not None:
-            x0 = min(self.p1.real, self.p2.real)
-            y0 = min(self.p1.imag, self.p2.imag)
-            x1 = max(self.p1.real, self.p2.real)
-            y1 = max(self.p1.imag, self.p2.imag)
-            gc.SetPen(wx.BLUE_PEN)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+        pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
