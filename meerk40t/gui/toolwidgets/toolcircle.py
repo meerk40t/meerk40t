@@ -18,8 +18,7 @@ class CircleTool(ToolWidget):
         self.p2 = None
         self.draw_pen = wx.Pen()
         self.draw_pen.SetColour(wx.BLUE)
-        self.draw_pen.SetWidth(25)
-        self.draw_pen.SetStyle(wx.PENSTYLE_SHORT_DASH)
+        self.draw_pen.SetWidth(1000)
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -56,7 +55,7 @@ class CircleTool(ToolWidget):
                     (y1 + y0) / 2.0,
                     abs(self.p1 - self.p2) / 2,
                     stroke="blue",
-                    stroke_width=25
+                    stroke_width=1000
                 )
                 t = Path(ellipse)
                 if len(t) != 0:
