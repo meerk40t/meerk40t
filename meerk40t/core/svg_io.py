@@ -170,6 +170,25 @@ class SVGWriter:
         @return:
         """
         subelement = SubElement(xml_tree, "operation")
+        SVGWriter._write_custom(subelement, node)
+
+    @staticmethod
+    def _write_element(xml_tree, element_node):
+        """
+        Write any specific svgelement to SVG.
+
+        @param xml_tree: xml tree we're writing to
+        @param element_node: ElemNode we are writing to xml
+        @return:
+        """
+        if element_node.object is not None:
+            SVGWriter._write_svg_element(xml_tree, element_node)
+            return
+        subelement = SubElement(xml_tree, "element")
+        SVGWriter._write_custom(subelement, element_node)
+
+    @staticmethod
+    def _write_custom(subelement, node):
         subelement.set("type", node.type)
         try:
             settings = node.settings
@@ -182,22 +201,15 @@ class SVGWriter:
         for c in node.children:
             contains.append(c.id)
         subelement.set("references", " ".join(contains))
-
+        subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
-    def _write_element(xml_tree, element_node):
-        """
-        Write any specific svgelement to SVG.
-
-        @param xml_tree: xml tree we're writing to
-        @param element_node: ElemNode we are writing to xml
-        @return:
-        """
-        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
+    def _write_svg_element(xml_tree, element_node):
         element = element_node.object
-        if isinstance(element, Shape) and not isinstance(element, Path):
-            element = Path(element)
-        if isinstance(element, Path):
+        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
+        if isinstance(element, Shape):
+            if not isinstance(element, Path):
+                element = Path(element)
             element = abs(element * scale)
             subelement = SubElement(xml_tree, SVG_TAG_PATH)
 
@@ -251,7 +263,6 @@ class SVGWriter:
             subelement.set(SVG_ATTR_Y, "0")
             subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
             subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-            # subelement.set(SVG_ATTR_TRANSFORM, scale)
             t = Matrix(element.transform)
             t *= scale
             subelement.set(
@@ -306,9 +317,7 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
         else:
             subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
-
-        if element.id is not None:
-            subelement.set(SVG_ATTR_ID, str(element.id))
+        subelement.set(SVG_ATTR_ID, str(element_node.id))
 
     @staticmethod
     def _pretty_print(current, parent=None, index=-1, depth=0):
