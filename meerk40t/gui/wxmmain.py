@@ -144,8 +144,10 @@ ID_DISCORD = wx.NewId()
 ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
+
 class CustomStatusBar(wx.StatusBar):
     """Overloading of Statusbar to allow some checkboxes on it"""
+
     panelct = 5
     startup = True
 
@@ -155,14 +157,12 @@ class CustomStatusBar(wx.StatusBar):
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
         self.SetFieldsCount(self.panelct)
-        self.SetStatusStyles(
-            [wx.SB_SUNKEN] * self.panelct
-        )
+        self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         sizes = [-2] * self.panelct
         # Make the first Panel large
         sizes[0] = -3
         # Make the last Panel smaller
-        sizes[self.panelct-1] = -1
+        sizes[self.panelct - 1] = -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -194,6 +194,7 @@ class CustomStatusBar(wx.StatusBar):
     @property
     def cb_enabled(self):
         return self._cb_enabled
+
     @cb_enabled.setter
     def cb_enabled(self, cb_enabled):
         if cb_enabled:
@@ -244,7 +245,7 @@ class CustomStatusBar(wx.StatusBar):
 
     # reposition the checkboxes
     def Reposition(self):
-        rect = self.GetFieldRect(self.panelct-1)
+        rect = self.GetFieldRect(self.panelct - 1)
         wd = rect.width / 4
         rect.x += 1
         rect.y += 1
@@ -257,6 +258,7 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += wd
         self.cb_skew.SetRect(rect)
         self.sizeChanged = False
+
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -419,6 +421,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_cursor_50,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
+                "toggle": "tool",
             },
         )
 
@@ -429,6 +432,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_place_marker_50,
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
+                "toggle": "tool",
             },
         )
 
@@ -439,6 +443,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_pencil_drawing_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool draw\n"),
+                "toggle": "tool",
             },
         )
 
@@ -449,6 +454,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_oval_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
+                "toggle": "tool",
             },
         )
 
@@ -459,6 +465,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_circle_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool circle\n"),
+                "toggle": "tool",
             },
         )
 
@@ -469,6 +476,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_polygon_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polygon\n"),
+                "toggle": "tool",
             },
         )
 
@@ -479,6 +487,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_polyline_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polyline\n"),
+                "toggle": "tool",
             },
         )
 
@@ -489,6 +498,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rectangular_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool rect\n"),
+                "toggle": "tool",
             },
         )
 
@@ -499,6 +509,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_vector_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool vector\n"),
+                "toggle": "tool",
             },
         )
 
@@ -509,6 +520,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_type_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool text\n"),
+                "toggle": "tool",
             },
         )
         kernel.register(
