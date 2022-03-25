@@ -97,6 +97,18 @@ class SVGWriter:
         viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
+        uid = {}
+        missing = list()
+        for e in elements.elems():
+            if e.id is not None:
+                uid[e.id] = e
+            else:
+                missing.append(e)
+        idx = 1
+        for m in missing:
+            while "element: %d" % idx in uid:
+                idx += 1
+            m.id = "element: %d" % idx
 
         # If there is a note set then we save the note with the project.
         if elements.note is not None:
