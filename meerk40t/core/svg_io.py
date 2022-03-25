@@ -173,11 +173,16 @@ class SVGWriter:
         subelement.set("type", node.type)
         try:
             settings = node.settings
+            for key in settings:
+                value = settings[key]
+                subelement.set(key, str(value))
         except AttributeError:
-            return
-        for key in settings:
-            value = settings[key]
-            subelement.set(key, str(value))
+            pass
+        contains = list()
+        for c in node.children:
+            contains.append(c.id)
+        subelement.set("references", " ".join(contains))
+
 
     @staticmethod
     def _write_element(xml_tree, element_node):
