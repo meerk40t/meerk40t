@@ -215,18 +215,6 @@ class SVGWriter:
             subelement = SubElement(xml_tree, SVG_TAG_PATH)
 
             subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-
-            for key, val in element.values.items():
-                if key in (
-                    "speed",
-                    "overscan",
-                    "power",
-                    "passes",
-                    "raster_direction",
-                    "raster_step",
-                    "d_ratio",
-                ):
-                    subelement.set(key, str(val))
         elif isinstance(element, SVGText):
             subelement = SubElement(xml_tree, SVG_TAG_TEXT)
             subelement.text = element.text
@@ -238,13 +226,7 @@ class SVGWriter:
             )
             for key, val in element.values.items():
                 if key in (
-                    "speed",
-                    "overscan",
-                    "power",
-                    "passes",
-                    "raster_direction",
                     "raster_step",
-                    "d_ratio",
                     "font-family",
                     "font_face",
                     "font-size",
@@ -270,18 +252,6 @@ class SVGWriter:
                 "transform",
                 "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
             )
-            if element.values is not None:
-                for key, val in element.values.items():
-                    if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
-                    ):
-                        subelement.set(key, str(val))
         else:
             raise ValueError("Attempting to save unknown element.")
         stroke = element.stroke
