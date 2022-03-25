@@ -258,10 +258,33 @@ class BorderWidget(Widget):
             )
         # But show the angle
         if abs(self.master.rotated_angle) > 0.001:
+            try:
+                font = wx.Font(
+                    0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+                )
+            gc.SetFont(font, LINE_COLOR)
+            symbol = "%.0f°" % (360 * self.master.rotated_angle / math.tau)
+            pen = wx.Pen()
+            pen.SetColour(LINE_COLOR)
+            pen.SetStyle(wx.PENSTYLE_SOLID)
+            gc.SetPen(pen)
+            brush = wx.Brush(wx.WHITE, wx.SOLID)
+            gc.SetBrush(brush)
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            gc.DrawEllipse(
+                center_x - 0.6 * t_width,
+                center_y - 0.6 * t_height,
+                1.2 * t_width,
+                1.2 * t_height,
+            )
             gc.DrawText(
-                "%.0f°" % (360 * self.master.rotated_angle / math.tau),
-                center_x,
-                center_y,
+                symbol,
+                center_x - 0.5 * t_width,
+                center_y - 0.5 * t_height,
             )
 
 
@@ -1055,6 +1078,11 @@ class SkewWidget(Widget):
             event_type=event_type,
             helptext=s_help,
         )
+        if event_type == "leftdown":
+            self.master.show_border = False
+        elif event_type in ("leftclick", "leftup"):
+            self.master.show_border = True
+
         return response
 
 
