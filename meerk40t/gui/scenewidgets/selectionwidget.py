@@ -1,4 +1,5 @@
 import math
+from cv2 import rectangle
 import wx
 
 from meerk40t.core.units import Length
@@ -13,6 +14,8 @@ from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
 
+from meerk40t.svgelements import Rect
+
 TEXT_COLOR = wx.Colour(0xA0, 0x7F, 0xA0)
 LINE_COLOR = wx.Colour(0x7F, 0x7F, 0x7F)
 
@@ -24,10 +27,11 @@ def process_event(
     space_pos=None,
     event_type=None,
     helptext="",
+    optimize_drawing=True,
 ):
     if widget_identifier is None:
-        widget_identifier = "unknown"
-    # print ("Its me - %s, event=%s, pos=%s" % (widget_identifier, event_type, space_pos ))
+        widget_identifier = "none"
+    # print("Its me - %s, event=%s, pos=%s" % (widget_identifier, event_type, space_pos))
     # Keyboard-Events...
     if event_type == "kb_shift_release":
         if widget.key_shift_pressed:
@@ -111,8 +115,9 @@ def process_event(
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
             widget.uniform = not widget.key_alt_pressed
-            widget.master.total_delta_x = 0
-            widget.master.total_delta_y = 0
+            widget.master.total_delta_x = dx
+            widget.master.total_delta_y = dy
+            widget.master.tool_running = optimize_drawing
 
             widget.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
@@ -122,8 +127,9 @@ def process_event(
         widget.save_width = widget.master.width
         widget.save_height = widget.master.height
         widget.uniform = False
-        widget.master.total_delta_x = 0
-        widget.master.total_delta_y = 0
+        widget.master.total_delta_x = dx
+        widget.master.total_delta_y = dy
+        widget.master.tool_running = optimize_drawing
         widget.tool(space_pos, dx, dy, -1)
         return RESPONSE_CONSUME
     elif event_type == "leftup":
@@ -131,11 +137,15 @@ def process_event(
             widget.tool(space_pos, dx, dy, 1)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
+            widget.master.show_border = True
+            widget.master.tool_running = False
             return RESPONSE_CONSUME
     elif event_type in ("middleup", "lost"):
         if widget.was_lb_raised:
-            widget.was_lb_raised = False
             widget.tool(space_pos, dx, dy, 1)
+            widget.was_lb_raised = False
+            widget.master.show_border = True
+            widget.master.tool_running = False
             widget.scene.context.elements.ensure_positive_bounds()
             return RESPONSE_CONSUME
     elif event_type == "move":
@@ -148,6 +158,14 @@ def process_event(
             widget.master.total_delta_x += dx
             widget.master.total_delta_y += dy
             widget.tool(space_pos, dx, dy, 0)
+            return RESPONSE_CONSUME
+    elif event_type == "leftclick":
+        if widget.was_lb_raised:
+            widget.tool(space_pos, dx, dy, 1)
+            widget.scene.context.elements.ensure_positive_bounds()
+            widget.was_lb_raised = False
+            widget.master.tool_running = False
+            widget.master.show_border = True
             return RESPONSE_CONSUME
     else:
         return RESPONSE_CHAIN
@@ -194,49 +212,79 @@ class BorderWidget(Widget):
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
         gc.SetPen(self.master.selection_pen)
-        gc.StrokeLine(center_x, 0, center_x, self.top)
-        gc.StrokeLine(0, center_y, self.left, center_y)
-        gc.StrokeLine(self.left, self.top, self.right, self.top)
-        gc.StrokeLine(self.right, self.top, self.right, self.bottom)
-        gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
-        gc.StrokeLine(self.left, self.bottom, self.left, self.top)
-        # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
-        # if draw_mode & DRAW_MODE_SELECTION == 0:
-        units = context.units_name
-        try:
-            font = wx.Font(self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
-        except TypeError:
-            font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, TEXT_COLOR)
-        gc.DrawText(
-            str(Length(amount=self.top, digits=3, preferred_units=units)),
-            center_x,
-            self.top / 2.0,
-        )
-        gc.DrawText(
-            str(Length(amount=self.left, digits=3, preferred_units=units)),
-            self.left / 2.0,
-            center_y,
-        )
-        gc.DrawText(
-            str(
-                Length(amount=(self.bottom - self.top), digits=3, preferred_units=units)
-            ),
-            self.right,
-            center_y,
-        )
-        gc.DrawText(
-            str(
-                Length(amount=(self.right - self.left), digits=3, preferred_units=units)
-            ),
-            center_x,
-            self.bottom,
-        )
-        if abs(self.master.rotated_angle) > 0.001:
+        # Wont be display when rotating...
+        if self.master.show_border:
+            gc.StrokeLine(center_x, 0, center_x, self.top)
+            gc.StrokeLine(0, center_y, self.left, center_y)
+            gc.StrokeLine(self.left, self.top, self.right, self.top)
+            gc.StrokeLine(self.right, self.top, self.right, self.bottom)
+            gc.StrokeLine(self.right, self.bottom, self.left, self.bottom)
+            gc.StrokeLine(self.left, self.bottom, self.left, self.top)
+            # print ("Inner Drawmode=%d (logic=%s)" % ( draw_mode ,(draw_mode & DRAW_MODE_SELECTION) ))
+            # if draw_mode & DRAW_MODE_SELECTION == 0:
+            units = context.units_name
+            try:
+                font = wx.Font(self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            except TypeError:
+                font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+            gc.SetFont(font, TEXT_COLOR)
             gc.DrawText(
-                "%.0f°" % (360 * self.master.rotated_angle / math.tau),
+                str(Length(amount=self.top, digits=3, preferred_units=units)),
                 center_x,
+                self.top / 2.0,
+            )
+            gc.DrawText(
+                str(Length(amount=self.left, digits=3, preferred_units=units)),
+                self.left / 2.0,
                 center_y,
+            )
+            gc.DrawText(
+                str(
+                    Length(
+                        amount=(self.bottom - self.top), digits=3, preferred_units=units
+                    )
+                ),
+                self.right,
+                center_y,
+            )
+            gc.DrawText(
+                str(
+                    Length(
+                        amount=(self.right - self.left), digits=3, preferred_units=units
+                    )
+                ),
+                center_x,
+                self.bottom,
+            )
+        # But show the angle
+        if abs(self.master.rotated_angle) > 0.001:
+            try:
+                font = wx.Font(
+                    0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+                )
+            gc.SetFont(font, LINE_COLOR)
+            symbol = "%.0f°" % (360 * self.master.rotated_angle / math.tau)
+            pen = wx.Pen()
+            pen.SetColour(LINE_COLOR)
+            pen.SetStyle(wx.PENSTYLE_SOLID)
+            gc.SetPen(pen)
+            brush = wx.Brush(wx.WHITE, wx.SOLID)
+            gc.SetBrush(brush)
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            gc.DrawEllipse(
+                center_x - 0.6 * t_width,
+                center_y - 0.6 * t_height,
+                1.2 * t_width,
+                1.2 * t_height,
+            )
+            gc.DrawText(
+                symbol,
+                center_x - 0.5 * t_width,
+                center_y - 0.5 * t_height,
             )
 
 
@@ -263,6 +311,7 @@ class RotationWidget(Widget):
         self.uniform = False
         self.rotate_cx = None
         self.rotate_cy = None
+        self.reference_rect = None
 
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
         self.update()
@@ -283,6 +332,8 @@ class RotationWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
         try:
@@ -350,14 +401,16 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 try:
+                    obj = e.object
                     obj.node.modified()
                 except AttributeError:
                     pass
             self.master.rotated_angle = 0
-        if event == 0:
+        elif event == 0:
+            rotation_unchanged = self.master.rotation_unchanged
+
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:
@@ -416,6 +469,17 @@ class RotationWidget(Widget):
             while self.master.rotated_angle <= -1 * math.tau:
                 self.master.rotated_angle += 1 * math.tau
 
+            # Take representation rectangle and rotate it
+            if self.reference_rect is None:
+                b = elements._emphasized_bounds
+                self.reference_rect = Rect(
+                    x=b[0], y=b[1], width=b[2] - b[0], height=b[3] - b[1]
+                )
+            self.reference_rect.transform.post_rotate(
+                rot_angle, self.rotate_cx, self.rotate_cy
+            )
+            b = self.reference_rect.bbox()
+
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 try:
@@ -425,16 +489,14 @@ class RotationWidget(Widget):
                     pass
                 obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+            elements.update_bounds([b[0], b[1], b[2], b[3]])
+            if rotation_unchanged:
+                # Move rotation center as well
+                self.master.keep_rotation_center()
+
         self.scene.request_refresh()
 
     def hit(self):
@@ -442,13 +504,13 @@ class RotationWidget(Widget):
 
     def contains(self, x, y=None):
         # Slightly more complex than usual due to the inner exclusion...
-        valu = False
+        value = False
         if y is None:
             y = x.y
             x = x.x
         if self.left <= x <= self.right and self.top <= y <= self.bottom:
             # print ("rotation was queried:  x=%.1f, y=%.1f, left=%.1f, top=%.1f, right=%.1f, bottom=%.1f" % (x, y, self.left, self.top, self.right, self.bottom))
-            valu = True
+            value = True
             if (
                 self.left + self.half - self.inner / 2
                 <= x
@@ -458,12 +520,12 @@ class RotationWidget(Widget):
                 <= self.bottom - self.half + self.inner / 2
             ):
                 # print("...but the inner part")
-                valu = False
-        return valu
+                value = False
+        return value
 
     def inner_contains(self, x, y=None):
         # Slightly more complex than usual due to the inner exclusion...
-        valu = False
+        value = False
         if y is None:
             y = x.y
             x = x.x
@@ -485,7 +547,7 @@ class RotationWidget(Widget):
             y1 -= self.half
 
         if x0 <= x <= x1 and y0 <= y <= y1:
-            valu = True
+            value = True
             if (
                 self.left + self.half - self.inner / 2
                 <= x
@@ -495,11 +557,11 @@ class RotationWidget(Widget):
                 <= self.bottom - self.half + self.inner / 2
             ):
                 # print("...but the inner part")
-                valu = False
-        return valu
+                value = False
+        return value
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        s_me = "rotation #" + str(self.index)
+        s_me = "rotation"
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -509,6 +571,7 @@ class RotationWidget(Widget):
             helptext="Rotate element",
         )
         if event_type == "leftdown":
+            self.master.show_border = False
             # Hit in the inner area?
             if self.inner_contains(space_pos[0], space_pos[1]):
                 if self.index == 0:  # tl
@@ -526,6 +589,8 @@ class RotationWidget(Widget):
             else:
                 self.rotate_cx = None
                 self.rotate_cy = None
+        elif event_type in ("leftclick", "leftup"):
+            self.master.show_border = True
 
         return response
 
@@ -580,6 +645,9 @@ class CornerWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         brush = wx.Brush(LINE_COLOR, wx.SOLID)
         pen = wx.Pen()
@@ -596,7 +664,7 @@ class CornerWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -636,8 +704,9 @@ class CornerWidget(Widget):
 
             self.save_width *= scalex
             self.save_height *= scaley
-
-            b = elements.selected_area()
+            # Correct, but slow...
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -665,17 +734,7 @@ class CornerWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
 
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -687,7 +746,7 @@ class CornerWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        s_me = "corner #" + str(self.index)
+        s_me = "corner"
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -752,6 +811,9 @@ class SideWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         brush = wx.Brush(LINE_COLOR, wx.SOLID)
         pen = wx.Pen()
@@ -768,7 +830,7 @@ class SideWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -810,7 +872,9 @@ class SideWidget(Widget):
             self.save_width *= scalex
             self.save_height *= scaley
 
-            b = elements.selected_area()
+            # Correct, but slow...
+            # b = elements.selected_area()
+            b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -838,17 +902,12 @@ class SideWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                # We leave that to the very end...
+                # try:
+                #    obj.node._bounds_dirty = True
+                # except AttributeError:
+                #    pass
 
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
             elements.update_bounds([b[0], b[1], b[2], b[3]])
             if rotation_unchanged:
                 # Move rotation center as well
@@ -860,7 +919,7 @@ class SideWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        s_me = "side #" + str(self.index)
+        s_me = "side"
         s_help = "Size element in %s-direction" % ("Y" if self.index in (0, 2) else "X")
         response = process_event(
             widget=self,
@@ -907,6 +966,9 @@ class SkewWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
@@ -928,7 +990,7 @@ class SkewWidget(Widget):
         Change the skew of the selected elements.
         """
         elements = self.scene.context.elements
-        if event == 1:
+        if event == 1:  # end
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
@@ -938,7 +1000,17 @@ class SkewWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-        if event == 0:
+        elif event == -1:  # start
+            pass
+            # wont work...
+            # for e in elements.flat(types=("elem",), emphasized=True):
+            #     obj = e.object
+            #     try:
+            #         obj.reify()
+            #     except AttributeError:
+            #         pass
+
+        elif event == 0:  # move
 
             rotation_unchanged = self.master.rotation_unchanged()
 
@@ -966,8 +1038,8 @@ class SkewWidget(Widget):
             # if self.last_skew >= +0.99 * math.pi / 2:
             #    self.last_skew = +0.99 * math.pi / 2
             # skew_tan = math.tan(self.last_skew)
-            # valu = self.last_skew / math.tau * 360
-            # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew, valu, self.last_skew / math.pi))
+            # value = self.last_skew / math.tau * 360
+            # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew, value, self.last_skew / math.pi))
             self.master.rotated_angle = self.last_skew
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
@@ -984,13 +1056,7 @@ class SkewWidget(Widget):
                     mat[1] = skew_tan
                 obj.transform = mat
                 try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
 
@@ -1002,7 +1068,7 @@ class SkewWidget(Widget):
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        s_me = "skew-x" if self.is_x else "skew-y"
+        s_me = "skew"
         s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
         response = process_event(
             widget=self,
@@ -1012,6 +1078,11 @@ class SkewWidget(Widget):
             event_type=event_type,
             helptext=s_help,
         )
+        if event_type == "leftdown":
+            self.master.show_border = False
+        elif event_type in ("leftclick", "leftup"):
+            self.master.show_border = True
+
         return response
 
 
@@ -1056,6 +1127,9 @@ class MoveWidget(Widget):
         elements.classify(adding_elements)
 
     def process_draw(self, gc):
+        if self.master.tool_running:  # We don't need that overhead
+            return
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         pen.SetColour(LINE_COLOR)
@@ -1083,7 +1157,7 @@ class MoveWidget(Widget):
         """
         elements = self.scene.context.elements
         if event == 1:  # end
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1095,21 +1169,12 @@ class MoveWidget(Widget):
         elif event == 0:  # move
             rotation_unchanged = self.master.rotation_unchanged()
 
-            b = elements.selected_area()
+            # b = elements.selected_area()  # correct, but slow...
+            b = elements._emphasized_bounds
             for e in elements.flat(types=("elem",), emphasized=True):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
-                try:
-                    obj.node.modified()
-                except AttributeError:
-                    pass
-            for e in elements.flat(types=("group", "file")):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
 
             self.translate(dx, dy)
 
@@ -1171,6 +1236,8 @@ class MoveRotationOriginWidget(Widget):
             pass
 
     def process_draw(self, gc):
+        # This one gets painted always.
+
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         # pen.SetColour(wx.RED)
@@ -1251,6 +1318,9 @@ class ReferenceWidget(Widget):
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
+        if self.master.tool_running:
+            # We don't need that overhead
+            return
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         if self.is_reference_object:
@@ -1295,10 +1365,10 @@ class ReferenceWidget(Widget):
         Toggle the Reference Status of the selected elements
         """
         elements = self.scene.context.elements
-        if event == 1:
+        if event == -1:  # leftdown
             # Nothing to do...
             pass
-        if event == -1:  # leftdown
+        elif event == 1:  # leftup, leftclick
             if self.is_reference_object:
                 self.scene.reference_object = None
             else:
@@ -1314,7 +1384,7 @@ class ReferenceWidget(Widget):
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        s_me = "lock"
+        s_me = "reference"
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -1322,6 +1392,7 @@ class ReferenceWidget(Widget):
             space_pos=space_pos,
             event_type=event_type,
             helptext="Toggle reference status of element",
+            optimize_drawing=False,
         )
         return response
 
@@ -1501,6 +1572,13 @@ class SelectionWidget(Widget):
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(LINE_COLOR)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.popupID1 = None
+        self.popupID2 = None
+        self.popupID3 = None
+        self.gc = None
+        self.reset_variables()
+
+    def reset_variables(self):
         self.save_width = None
         self.save_height = None
         self.cursor = "arrow"
@@ -1520,9 +1598,13 @@ class SelectionWidget(Widget):
         self.use_handle_size = True
         self.use_handle_move = True
         self.keep_rotation = True
-        self.popupID1 = None
         self.line_width = 0
         self.font_size = 0
+        self.tool_running = False
+        self.active_tool = "none"
+        self.single_element = True
+        self.is_ref = False
+        self.show_border = True
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1543,23 +1625,18 @@ class SelectionWidget(Widget):
             # print ("Hit and delegate")
             return HITCHAIN_HIT_AND_DELEGATE
         else:
-            self.left = float("inf")
-            self.top = float("inf")
-            self.right = -float("inf")
-            self.bottom = -float("inf")
-            self.rotation_cx = None
-            self.rotation_cy = None
-            self.total_delta_x = 0
-            self.total_delta_y = 0
+            self.reset_variables()
             return HITCHAIN_DELEGATE
 
     def move_selection_to_ref(self, pos="c"):
         refob = self.scene.reference_object
+        elements = self.scene.context.elements
         if refob is None:
             return
         bb = refob.bbox()
 
-        cc = self.scene.context.elements.selected_area()
+        cc = elements.selected_area()
+
         if bb is None or cc is None:
             return
         if "l" in pos:
@@ -1580,29 +1657,25 @@ class SelectionWidget(Widget):
         dy = ty - cc[1]
         # print ("Moving from (%.1f, %.1f) to (%.1f, %.1f) translate by (%.1f, %.1f)" % (cc[0], cc[1], tx, ty, dx, dy ))
 
-        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=("elem",), emphasized=True):
             # Here we ignore the lock-status of an element, as this is just a move...
             obj = e.object
             if not obj is refob:
                 obj.transform.post_translate(dx, dy)
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-        for e in self.scene.context.elements.flat(types=("group", "file")):
-            try:
-                obj = e.object
-                obj.node.modified()
-            except AttributeError:
-                pass
+        elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
 
     def scale_selection_to_ref(self, method="none"):
         refob = self.scene.reference_object
         if refob is None:
             return
         bb = refob.bbox()
+        elements = self.scene.context.elements
+        cc = elements.selected_area()
 
-        cc = self.scene.context.elements.selected_area()
         if bb is None or cc is None:
             return
         try:
@@ -1620,8 +1693,10 @@ class SelectionWidget(Widget):
             scaley = (bb[3] - bb[1]) / (cc[3] - cc[1])
         else:
             return
-        # print ("Scaling by x=%.1f, y=%.1f" % (scalex, scaley))
-        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+        dx = (scalex - 1) * (cc[2] - cc[0])
+        dy = (scaley - 1) * (cc[3] - cc[1])
+
+        for e in elements.flat(types=("elem",), emphasized=True):
             # Here we acknowledge the lock-status of an element
             obj = e.object
             try:
@@ -1632,15 +1707,10 @@ class SelectionWidget(Widget):
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
                 try:
-                    obj.node.modified()
+                    obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-        for e in self.scene.context.elements.flat(types=("group", "file")):
-            try:
-                obj = e.object
-                obj.node.modified()
-            except AttributeError:
-                pass
+        elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):
         opt_pos = None
@@ -1654,10 +1724,26 @@ class SelectionWidget(Widget):
         if not opt_pos is None:
             elements = self.scene.context.elements
             self.scale_selection_to_ref(opt_scale)
-            elements.validate_selected_area()
-            # self.scene.request_refresh()
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
+
+    def become_reference(self, event):
+        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            try:
+                # First object
+                obj = e.object
+                self.scene.reference_object = obj
+                break
+            except AttributeError:
+                pass
+        # print("set...")
+        self.scene.request_refresh()
+
+    def delete_reference(self, event):
+        self.scene.reference_object = None
+        # Simplify, no complete scene refresh required
+        # print("unset...")
+        self.scene.request_refresh()
 
     def create_menu(self, gui, node, elements):
         if node is None:
@@ -1675,14 +1761,33 @@ class SelectionWidget(Widget):
                     obj = None
                     break
 
+        _ = self.scene.context._
+        submenu = None
         # Add Manipulation menu
         if not obj is None:
-            _ = self.scene.context._
-            menu.AppendSeparator()
+            submenu = wx.Menu()
             if self.popupID1 is None:
                 self.popupID1 = wx.NewId()
             gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=self.popupID1)
-            menu.Append(self.popupID1, _("Align to reference object"))
+            submenu.Append(self.popupID1, _("Align to reference object"))
+
+        if self.single_element and not self.is_ref:
+            if submenu is None:
+                submenu = wx.Menu()
+            if self.popupID3 is None:
+                self.popupID3 = wx.NewId()
+            gui.Bind(wx.EVT_MENU, self.become_reference, id=self.popupID3)
+            submenu.Append(self.popupID3, _("Become reference object"))
+        if not self.scene.reference_object is None:
+            if submenu is None:
+                submenu = wx.Menu()
+            if self.popupID2 is None:
+                self.popupID2 = wx.NewId()
+            gui.Bind(wx.EVT_MENU, self.delete_reference, id=self.popupID2)
+            submenu.Append(self.popupID2, _("Clear reference object"))
+
+        if not submenu is None:
+            menu.AppendSubMenu(submenu, _("Reference Object"))
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -1716,9 +1821,13 @@ class SelectionWidget(Widget):
                 self.key_alt_pressed = True
             return RESPONSE_CHAIN
 
+        # Now all hovering, there is some empty space in the selection widget that get these events
+        # print("** MASTER, event=%s, pos=%s" % (event_type, space_pos))
+
         if event_type == "hover_start":
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
+            self.tool_running = False
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
@@ -1726,6 +1835,7 @@ class SelectionWidget(Widget):
         elif event_type == "hover":
             if self.hovering:
                 self.scene.cursor(self.cursor)
+            # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
         elif event_type == "rightdown":
             elements.set_emphasized_by_position(space_pos)
@@ -1747,14 +1857,14 @@ class SelectionWidget(Widget):
     def rotation_unchanged(self):
         cx = (self.left + self.right) / 2
         cy = (self.top + self.bottom) / 2
-        valu = (
+        value = (
             abs(self.rotation_cx - cx) < 0.0001 and abs(self.rotation_cy - cy) < 0.0001
         )
-        # if valu:
+        # if value:
         #    print ("RotHandle still in center")
         # else:
         #    print ("RotHandle (%.1f, %.1f) outside center (%.1f, %.1f)" % (self.rotation_cx, self.rotation_cy, cx, cy))
-        return valu
+        return value
 
     def keep_rotation_center(self):
         # Make sure rotation center remains centered...
@@ -1764,6 +1874,7 @@ class SelectionWidget(Widget):
         """
         Draw routine for drawing the selection box.
         """
+        self.gc = gc
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         self.clear()  # Clearing children as we are generating them in a bit...
@@ -1814,9 +1925,9 @@ class SelectionWidget(Widget):
                 self.rotation_cx = cx
                 self.rotation_cy = cy
 
-            # Prep codoe for reference object - single object? And identical to reference?
-            is_ref = False
-            single_element = True
+            # Code for reference object - single object? And identical to reference?
+            self.is_ref = False
+            self.single_element = True
             if not self.scene.reference_object is None:
 
                 for idx, e in enumerate(
@@ -1824,27 +1935,27 @@ class SelectionWidget(Widget):
                 ):
                     obj = e.object
                     if obj is self.scene.reference_object:
-                        is_ref = True
+                        self.is_ref = True
                     if idx > 0:
-                        single_element = False
+                        self.single_element = False
                         break
 
-            if not single_element:
-                is_ref = False
+            if not self.single_element:
+                self.is_ref = False
 
             # Add all subwidgets in Inverse Order
             msize = 5 * self.line_width
             rotsize = 3 * msize
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if single_element and self.use_handle_skew:
+            if self.single_element and self.use_handle_skew:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
                         master=self,
                         scene=self.scene,
                         size=msize,
-                        is_reference_object=is_ref,
+                        is_reference_object=self.is_ref,
                     ),
                 )
             if self.use_handle_move:
