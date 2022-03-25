@@ -69,6 +69,7 @@ def plugin(kernel, lifecycle=None):
 
 MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
 
+
 class SVGWriter:
     @staticmethod
     def save_types():
@@ -217,13 +218,13 @@ class SVGWriter:
 
             for key, val in element.values.items():
                 if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
+                    "speed",
+                    "overscan",
+                    "power",
+                    "passes",
+                    "raster_direction",
+                    "raster_step",
+                    "d_ratio",
                 ):
                     subelement.set(key, str(val))
         elif isinstance(element, SVGText):
@@ -237,20 +238,20 @@ class SVGWriter:
             )
             for key, val in element.values.items():
                 if key in (
-                        "speed",
-                        "overscan",
-                        "power",
-                        "passes",
-                        "raster_direction",
-                        "raster_step",
-                        "d_ratio",
-                        "font-family",
-                        "font_face",
-                        "font-size",
-                        "font-weight",
-                        "anchor",
-                        "x",
-                        "y",
+                    "speed",
+                    "overscan",
+                    "power",
+                    "passes",
+                    "raster_direction",
+                    "raster_step",
+                    "d_ratio",
+                    "font-family",
+                    "font_face",
+                    "font-size",
+                    "font-weight",
+                    "anchor",
+                    "x",
+                    "y",
                 ):
                     subelement.set(key, str(val))
         elif isinstance(element, SVGImage):
@@ -272,13 +273,13 @@ class SVGWriter:
             if element.values is not None:
                 for key, val in element.values.items():
                     if key in (
-                            "speed",
-                            "overscan",
-                            "power",
-                            "passes",
-                            "raster_direction",
-                            "raster_step",
-                            "d_ratio",
+                        "speed",
+                        "overscan",
+                        "power",
+                        "passes",
+                        "raster_direction",
+                        "raster_step",
+                        "d_ratio",
                     ):
                         subelement.set(key, str(val))
         else:
