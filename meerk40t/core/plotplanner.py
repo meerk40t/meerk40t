@@ -355,6 +355,7 @@ class Smooth(PlotManipulation):
         super().__init__(planner)
         self.goal_x = None
         self.goal_y = None
+        self.goal_on = None
 
         self.smooth_x = None
         self.smooth_y = None
@@ -406,23 +407,14 @@ class Smooth(PlotManipulation):
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
             self.goal_x = x
             self.goal_y = y
+            self.goal_on = on
             if self.planner.settings.constant_move_x and dx == 0:
                 # If we are moving x and we don't move x. Skip.
-                if total_dy > 15:
-                    # The move in y is too large, flush to position.
-                    for lx, ly in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
-                        yield lx, ly, on
-                    self.smooth_x = self.goal_x
-                    self.smooth_y = self.goal_y
-                continue
+                if abs(total_dy) < 15:
+                    continue
             if self.planner.settings.constant_move_y and dy == 0:
-                if total_dx > 15:
-                    # The move in x is too large, flush to position.
-                    for lx, ly in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
-                        yield lx, ly, on
-                    self.smooth_x = self.goal_x
-                    self.smooth_y = self.goal_y
-                continue
+                if abs(total_dx) < 15:
+                    continue
             self.smooth_x += dx
             self.smooth_y += dy
             yield self.smooth_x, self.smooth_y, on
@@ -432,9 +424,10 @@ class Smooth(PlotManipulation):
             if self.goal_x is None or self.goal_y is None:
                 return
             for x, y in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
-                yield x, y, 0
+                yield x, y, self.goal_on
             self.goal_x = None
             self.goal_y = None
+            self.goal_on = None
 
     def warp(self, x, y):
         self.smooth_x = x

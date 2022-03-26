@@ -125,6 +125,46 @@ class TestPlotplanner(unittest.TestCase):
             last_y = cy
             print(f"Moving to {x} {y}")
 
+    def test_plotplanner_constant_move_xy_rect(self):
+        """
+        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+        @return:
+        """
+        plan = PlotPlanner(LaserSettings(power=1000))
+        # plan.debug = True
+        settings = LaserSettings(power=1000)
+        settings.constant_move_x = True
+        settings.constant_move_y = True
+        plan.push(LineCut(Point(0, 0), Point(0, 100), settings=settings))
+        plan.push(LineCut(Point(0, 100), Point(100, 100), settings=settings))
+        plan.push(LineCut(Point(100, 100), Point(100, 0), settings=settings))
+        plan.push(LineCut(Point(100, 0), Point(0, 0), settings=settings))
+        last_x = None
+        last_y = None
+        for x, y, on in plan.gen():
+            if on == 4:
+                last_x = x
+                last_y = y
+            if on > 1:
+                continue
+            cx = x
+            cy = y
+            if cx is None:
+                continue
+            if last_x is not None:
+                total_dx = cx - last_x
+                total_dy = cy - last_y
+                dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+                dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+                for i in range(1, max(abs(total_dx), abs(total_dy))+1):
+                    nx = last_x + (i * dx)
+                    ny = last_y + (i * dy)
+                    print(nx, ny, on)
+            print(x, y, on)
+            last_x = cx
+            last_y = cy
+            print(f"Moving to {x} {y}")
+
 
     def test_plotplanner_flush(self):
         """
