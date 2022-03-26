@@ -1551,6 +1551,7 @@ class LhystudiosDriver(Parameters):
             adjust_x = values[0]
             adjust_y = values[1]
             if isinstance(adjust_x, str):
+                # TODO: May require revision
                 adjust_x = self.service.length(adjust_x, 0, unitless=UNITS_PER_MIL)
                 adjust_y = self.service.length(adjust_y, 1, unitless=UNITS_PER_MIL)
         except IndexError:
