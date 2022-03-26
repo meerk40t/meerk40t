@@ -4266,6 +4266,7 @@ class Elemental(Service):
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
             self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
+            self.signal("ext-modified")
 
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
@@ -4273,6 +4274,7 @@ class Elemental(Service):
         )
         def reify_elem_changes(node, **kwargs):
             self("reify\n")
+            self.signal("ext-modified")
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
@@ -4287,6 +4289,7 @@ class Elemental(Service):
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self("reset\n")
+            self.signal("ext-modified")
 
         @self.tree_operation(
             _("Merge items"),
