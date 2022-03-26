@@ -22,28 +22,24 @@ def plugin(kernel, lifecycle):
         def cag(command, channel, _, data=None, **kwargs):
             import numpy as np
 
-            if len(data) >= 2:
-                e0 = data[0]
-                if isinstance(e0, Shape) and not isinstance(e0, Path):
-                    e0 = Path(e0)
-                e0 = abs(e0)
+            if len(data) < 2:
+                channel(_("Not enough items selected to apply constructive geometric function"))
+                return "elements", []
+
+            clip_polygons = None
+            for element in data:
+                if isinstance(element, Shape) and not isinstance(element, Path):
+                    element = Path(element)
+                element = abs(element)
                 subject_polygons = []
-                for subpath in e0.as_subpaths():
+                for subpath in element.as_subpaths():
                     subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
                     subj.reshape((2, 1000))
                     s = list(map(Point, subj))
                     subject_polygons.append(s)
-
-                e1 = data[1]
-                if isinstance(e1, Shape) and not isinstance(e1, Path):
-                    e1 = Path(e1)
-                e1 = abs(e1)
-                clip_polygons = []
-                for subpath in e1.as_subpaths():
-                    clip = Path(subpath).npoint(np.linspace(0, 1, 1000))
-                    clip.reshape((2, 1000))
-                    c = list(map(Point, clip))
-                    clip_polygons.append(c)
+                if clip_polygons is None:
+                    clip_polygons = subject_polygons
+                    continue
                 pc = Clipper()
                 solution = []
                 pc.AddPolygons(subject_polygons, PolyType.Subject)
