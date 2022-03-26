@@ -77,7 +77,6 @@ class Scene(Module, Job):
     def module_open(self, *args, **kwargs):
         context = self.context
         context.schedule(self)
-        context.listen("driver;position", self.on_update_position)
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
@@ -90,16 +89,12 @@ class Scene(Module, Job):
         self.interval = 1.0 / float(context.fps)
         self.commit()
 
-    def on_update_position(self, origin, pos):
-        self.request_refresh_for_animation()
-
     def commit(self):
         context = self.context
         self._init_widget(self.widget_root, context)
 
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
-        self.context.unlisten("driver;position", self.on_update_position)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
 
