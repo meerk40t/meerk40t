@@ -418,20 +418,7 @@ class Smooth(PlotManipulation):
         if not self.flushed():
             if self.goal_x is None or self.goal_y is None:
                 return
-            total_dx = self.goal_x - self.smooth_x
-            total_dy = self.goal_y - self.smooth_y
-            cx = self.smooth_x
-            cy = self.smooth_y
-            dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
-            dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
-                if self.planner.abort:
-                    self.smooth_x = None
-                    self.smooth_y = None
-                    return
-                self.smooth_x = cx + (i * dx)
-                self.smooth_y = cy + (i * dy)
-                yield self.smooth_x, self.smooth_y, 0
+            yield from ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y)
             self.goal_x = None
             self.goal_y = None
 
