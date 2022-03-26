@@ -560,6 +560,9 @@ class MeerK40t(MWindow):
             },
         )
 
+    def window_menu(self):
+        return False
+
     def __set_commands(self):
         context = self.context
         gui = self
