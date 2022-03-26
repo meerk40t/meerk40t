@@ -190,7 +190,7 @@ class LaserRender:
             sw = 1000
         if sw is None:
             sw = 1000
-        limit = zoomscale**0.5
+        limit = 25 * zoomscale**0.5
         try:
             limit /= width_scale
         except ZeroDivisionError:
