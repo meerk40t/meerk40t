@@ -216,7 +216,6 @@ class Scene(Module, Job):
         """
         Called when a child is added to the tree. Notifies scene as a whole.
         """
-        self.add_module_delegate(child)
         try:
             child.init(self.context)
         except AttributeError:
@@ -232,7 +231,6 @@ class Scene(Module, Job):
         """
         Called when a widget's child is removed. Notifies scene as a whole.
         """
-        self.remove_module_delegate(child)
         try:
             child.final(self.context)
         except AttributeError:
