@@ -30,7 +30,8 @@ class CircleTool(ToolWidget):
             )
             t = Path(ellipse)
             bbox = t.bbox()
-            gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+            if bbox is not None:
+                gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
