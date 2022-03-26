@@ -1,5 +1,4 @@
 import math
-from cv2 import rectangle
 import wx
 
 from meerk40t.core.units import Length
@@ -1577,10 +1576,12 @@ class SelectionWidget(Widget):
         self.popupID3 = None
         self.gc = None
         self.reset_variables()
-        self.scene.context.listen("ext-modified", self.external_modification)
 
-    def __del__(self):
-        self.scene.context.unlisten("ext-modified", self.external_modification)
+    def init(self, context):
+        context.listen("ext-modified", self.external_modification)
+
+    def final(self, context):
+        context.unlisten("ext-modified", self.external_modification)
 
     def reset_variables(self):
         self.save_width = None
