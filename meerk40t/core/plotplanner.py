@@ -410,12 +410,18 @@ class Smooth(PlotManipulation):
                 # If we are moving x and we don't move x. Skip.
                 if total_dy > 15:
                     # The move in y is too large, flush to position.
-                    yield from self.flush()
+                    for lx, ly in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+                        yield lx, ly, on
+                    self.smooth_x = self.goal_x
+                    self.smooth_y = self.goal_y
                 continue
             if self.planner.settings.constant_move_y and dy == 0:
                 if total_dx > 15:
                     # The move in x is too large, flush to position.
-                    yield from self.flush()
+                    for lx, ly in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+                        yield lx, ly, on
+                    self.smooth_x = self.goal_x
+                    self.smooth_y = self.goal_y
                 continue
             self.smooth_x += dx
             self.smooth_y += dy
@@ -425,7 +431,8 @@ class Smooth(PlotManipulation):
         if not self.flushed():
             if self.goal_x is None or self.goal_y is None:
                 return
-            yield from ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y)
+            for x, y in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+                yield x, y, 0
             self.goal_x = None
             self.goal_y = None
 

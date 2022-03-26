@@ -20,9 +20,9 @@ class TestPlotplanner(unittest.TestCase):
         plan = PlotPlanner(LaserSettings(power=1000))
         settings = LaserSettings(power=1000)
         settings.constant_move_x = True
-        plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
-        plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
-        plan.push(LineCut(Point(5, 20), Point(10, 100), settings=settings))
+        plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
+        plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
+        plan.push(LineCut(Point(20, 5), Point(100,10), settings=settings))
         last_x = None
         last_y = None
         for x, y, on in plan.gen():
@@ -40,8 +40,7 @@ class TestPlotplanner(unittest.TestCase):
                 total_dy = cy - last_y
                 dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
                 dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-                if x < 10:
-                    self.assertFalse(dx == 0)
+                self.assertFalse(dx == 0)
                 for i in range(1, max(abs(total_dx), abs(total_dy))+1):
                     nx = last_x + (i * dx)
                     ny = last_y + (i * dy)
@@ -120,8 +119,8 @@ class TestPlotplanner(unittest.TestCase):
                 for i in range(1, max(abs(total_dx), abs(total_dy))+1):
                     nx = last_x + (i * dx)
                     ny = last_y + (i * dy)
-                    # print(nx, ny, on)
-            # print(x, y, on)
+                    print(nx, ny, on)
+            print(x, y, on)
             last_x = cx
             last_y = cy
             print(f"Moving to {x} {y}")
