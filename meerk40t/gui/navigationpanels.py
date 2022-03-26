@@ -1274,10 +1274,12 @@ class Transform(wx.Panel):
 
     def _scale(self, scale):
         self.context("scale %f %f \n" % (scale, scale))
+        self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
     def _rotate(self, angle):
         self.context("rotate %fdeg \n" % (angle))
+        self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
     def _translate(self, dx, dy, scale):
@@ -1288,6 +1290,7 @@ class Transform(wx.Panel):
             dy, 1, scale=scale, new_units=self.context.units_name
         )
         self.context("translate {dx} {dy}\n".format(dx=dx, dy=dy))
+        self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
     def on_scale_down_50(self, event=None):  # wxGlade: Navigation.<event_handler>

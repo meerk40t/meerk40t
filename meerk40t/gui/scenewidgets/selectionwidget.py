@@ -1577,6 +1577,10 @@ class SelectionWidget(Widget):
         self.popupID3 = None
         self.gc = None
         self.reset_variables()
+        self.scene.context.listen("ext-modified", self.external_modification)
+
+    def __del__(self):
+        self.scene.context.unlisten("ext-modified", self.external_modification)
 
     def reset_variables(self):
         self.save_width = None
@@ -1869,6 +1873,12 @@ class SelectionWidget(Widget):
     def keep_rotation_center(self):
         # Make sure rotation center remains centered...
         self.keep_rotation = True
+
+    def external_modification(self, origin, *args):
+        # Reset rotation center...
+        self.keep_rotation = True
+        self.rotation_cx = None
+        self.rotation_cy = None
 
     def process_draw(self, gc):
         """
