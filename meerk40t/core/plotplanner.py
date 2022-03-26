@@ -406,9 +406,16 @@ class Smooth(PlotManipulation):
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
             self.goal_x = x
             self.goal_y = y
-            if (self.planner.settings.constant_move_x and dx == 0) or (
-                self.planner.settings.constant_move_y and dy == 0
-            ):
+            if self.planner.settings.constant_move_x and dx == 0:
+                # If we are moving x and we don't move x. Skip.
+                if total_dy > 15:
+                    # The move in y is too large, flush to position.
+                    yield from self.flush()
+                continue
+            if self.planner.settings.constant_move_y and dy == 0:
+                if total_dx > 15:
+                    # The move in x is too large, flush to position.
+                    yield from self.flush()
                 continue
             self.smooth_x += dx
             self.smooth_y += dy
