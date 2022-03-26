@@ -792,7 +792,6 @@ class LhystudiosDriver(Driver):
         for x, y, on in self.plot:
             sx = self.current_x
             sy = self.current_y
-            # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
             if on > 1:
                 # Special Command.
@@ -868,7 +867,7 @@ class LhystudiosDriver(Driver):
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.h_switch_g(dy)
+                            self.v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.current_x
                 dy = y - self.current_y
@@ -1175,7 +1174,9 @@ class LhystudiosDriver(Driver):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitchfull is set to True.
 
-        @param values:
+        @param values: passed information from the driver command
+        @param dx: change in dx that should be made while switching to program mode.
+        @param dy: change in dy that should be made while switching to program mode.
         @return:
         """
         if self.state == DRIVER_STATE_PROGRAM:
@@ -1242,9 +1243,10 @@ class LhystudiosDriver(Driver):
         """
         NSE h_switches replace the mere reversal of direction with N<v><distance>SE
 
-        If a G-value is set we should subtract that from the step for our movement.
+        If a G-value is set we should subtract that from the step for our movement. Since triggering NSE will cause
+        that step to occur.
 
-        @param dy: The amount along the directional axis we should move.
+        @param dy: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1285,7 +1287,7 @@ class LhystudiosDriver(Driver):
         """
         NSE v_switches replace the mere reversal of direction with N<h><distance>SE
 
-        @param dx: The amount along the directional axis we should move.
+        @param dx: The amount along the directional axis we should move during this step.
 
         @return:
         """

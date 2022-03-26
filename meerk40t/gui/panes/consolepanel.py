@@ -8,79 +8,52 @@ from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
-def bg_Colour(colour):
-    def styColour(style):
+
+def background_color(colour):
+    def style_color(style):
         style.SetBackgroundColour(wx.Colour(colour))
         return style
-    return styColour
 
-def fg_Colour(colour):
-    def styColour(style):
+    return style_color
+
+
+def foreground_color(colour):
+    def style_color(style):
         style.SetTextColour(wx.Colour(colour))
         return style
-    return styColour
+
+    return style_color
+
 
 def style_bold(style):
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
 
+
 def style_unbold(style):
     style.SetFontWeight(wx.FONTWEIGHT_NORMAL)
     return style
+
 
 def style_italic(style):
     style.SetFontStyle(wx.FONTSTYLE_ITALIC)
     return style
 
+
 def style_unitalic(style):
     style.SetFontStyle(wx.FONTSTYLE_NORMAL)
     return style
+
 
 def style_underline(style):
     style.SetFontUnderlined(True)
     return style
 
+
 def style_ununderline(style):
     style.SetFontUnderlined(False)
     return style
 
-BBCODE_LIST = {
-    "black":        fg_Colour("black"),
-    "red":          fg_Colour("red"),
-    "green":        fg_Colour("green"),
-    "yellow":       fg_Colour("yellow"),
-    "blue":         fg_Colour("blue"),
-    "magenta":      fg_Colour("magenta"),
-    "cyan":         fg_Colour("cyan"),
-    "white":        fg_Colour("white"),
-    "bg-black":     bg_Colour("black"),
-    "bg-red":       bg_Colour("red"),
-    "bg-green":     bg_Colour("green"),
-    "bg-yellow":    bg_Colour("yellow"),
-    "bg-blue":      bg_Colour("blue"),
-    "bg-magenta":   bg_Colour("magenta"),
-    "bg-cyan":      bg_Colour("cyan"),
-    "bg-white":     bg_Colour("white"),
-    "bold":         style_bold,
-    "/bold":        style_unbold,
-    "italic":       style_italic,
-    "/italic":      style_unitalic,
-    "underline":    style_underline,
-    "/underline":   style_ununderline,
-    "underscore":   style_underline,
-    "/underscore":  style_ununderline,
-    "normal":       None,
-    "negative":     None,
-    "positive":     None,
-    "raw":          None,
-    "/raw":         None,
-}
-
-RE_BBCODE = re.compile(
-    r"(%s)" %
-        (r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])),
-    re.IGNORECASE,
-)
 
 def style_negate(style):
     bg_colour = style.BackgroundColour
@@ -88,6 +61,7 @@ def style_negate(style):
     style.SetBackgroundColour(fg_colour)
     style.SetTextColour(bg_colour)
     return style
+
 
 def register_panel_console(window, context):
     panel = ConsolePanel(window, wx.ID_ANY, context=context)
@@ -119,9 +93,7 @@ def register_panel_console(window, context):
             if x in context.opened
         ]
 
-        panels.append(
-            context.registered["pane/console"]
-        )
+        panels.append(context.registered["pane/console"])
         for panel in panels:
             panel.control.clear()
 
@@ -140,7 +112,7 @@ class ConsolePanel(wx.Panel):
             | wx.richtext.RE_READONLY
             | wx.BG_STYLE_SYSTEM
             | wx.VSCROLL
-            | wx.ALWAYS_SHOW_SB
+            | wx.ALWAYS_SHOW_SB,
         )
         self.text_main.SetEditable(False)
         self.text_main.BeginSuppressUndo()
@@ -152,7 +124,10 @@ class ConsolePanel(wx.Panel):
         # style = richtext.RichTextAttr()
         style = wx.TextAttr()
         font = wx.Font(
-            10, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL,
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
         )
         style.SetFont(font)
         style.SetLineSpacing(0)
@@ -176,6 +151,7 @@ class ConsolePanel(wx.Panel):
         style.SetLeftIndent(0, 320)
         self.text_main.SetBasicStyle(style)
         self.text_main.SetDefaultStyle(style)
+        self.style = style
         self.text_main.Update()  # Apply style to just opened window
 
         self.__set_properties()
@@ -189,17 +165,44 @@ class ConsolePanel(wx.Panel):
         self.command_log = []
         self.command_position = 0
 
+        self.ansi_styles = {
+            "\033[30m": foreground_color("black"),  # "black"
+            "\033[31m": foreground_color("red"),  # "red"
+            "\033[32m": foreground_color("green"),  # "green"
+            "\033[33m": foreground_color("yellow"),  # "yellow"
+            "\033[34m": foreground_color("blue"),  # "blue"
+            "\033[35m": foreground_color("magenta"),  # "magenta"
+            "\033[36m": foreground_color("cyan"),  # "cyan"
+            "\033[37m": foreground_color("white"),  # "white"
+            "\033[40m": background_color("black"),  # "bg-black"
+            "\033[41m": background_color("red"),  # "bg-red"
+            "\033[42m": background_color("green"),  # "bg-green"
+            "\033[43m": background_color("yellow"),  # "bg-yellow"
+            "\033[44m": background_color("blue"),  # "bg-blue"
+            "\033[45m": background_color("magenta"),  # "bg-magenta"
+            "\033[46m": background_color("cyan"),  # "bg-cyan"
+            "\033[47m": background_color("white"),  # "bg-white"
+            "\033[1m": style_bold,  # "bold"
+            "\033[22m": style_unbold,  # "/bold"
+            "\033[3m": style_italic,  # "italic"
+            # "\033[3m": style_unitalic, # "/italic"
+            "\033[4m": style_underline,  # "underline"
+            "\033[24m": style_ununderline,  # "/underline"
+            "\033[7m": None,  # "negative"
+            "\033[27m": None,  # "positive"
+            "\033[0m": self.style_normal,  # "normal"
+        }
+
+    def style_normal(self, style):
+        return self.style
+
     def background_color(self):
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
 
     @property
     def is_dark(self):
-        # GetLuminance is new in wxPython 4.1 so manually calculating until this
-        # is the minimum wxP release supported by MK.
-        # return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW).GetLuminance() < 0.5
-        bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
-        luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue) / 255.0
-        return luminance < 0.5
+
+        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __set_properties(self):
         # begin wxGlade: ConsolePanel.__set_properties
@@ -231,52 +234,46 @@ class ConsolePanel(wx.Panel):
         else:
             self.update_text_gui(str(text))
 
-    def update_text_gui(self, lines, bbcode=True):
-        lines = lines.split("\n") if "\n" in lines else [lines]
-        basic_style = self.text_main.BasicStyle
-        raw = negative = False
-        newline = not self.text_main.IsEmpty()
+    def update_text_gui(self, lines):
         self.text_main.SetInsertionPointEnd()
-        for text in lines:
-            if newline:
+        ansi = False
+        ansi_text = ""
+        text = ""
+        if not self.text_main.IsEmpty():
+            self.text_main.Newline()
+            self.text_main.BeginStyle(self.style)
+
+        for c in lines:
+            b = ord(c)
+            if c == "\n":
+                if text:
+                    self.text_main.WriteText(text)
+                    text = ""
                 self.text_main.Newline()
-            newline = True
-            self.text_main.BeginStyle(basic_style)
-            parts = RE_BBCODE.split(text)
-            for part in parts:
-                if part == "":
-                    continue
-                tag = part[1:-1].lower()
-                if (
-                    bbcode
-                    and part.startswith("[")
-                    and part.endswith("]")
-                    and tag in BBCODE_LIST
-                ):
-                    if tag[-3:] == "raw":
-                        raw = tag == "raw"
-                        continue
-                    if not raw:
-                        style = self.text_main.DefaultStyleEx
-                        if negative:
-                            style = style_negate(style)
-                        if tag in ("negative", "positive", "normal"):
-                            negative = tag == "negative"
-                        if tag == "normal":
-                            style = basic_style
-                        else:
-                            getstyle = BBCODE_LIST[part[1:-1].lower()]
-                            if getstyle:
-                                style = getstyle(style)
-                        if negative:
-                            style = style_negate(style)
+                self.text_main.BeginStyle(self.style)
+            if b == 27:
+                ansi = True
+            if ansi:
+                ansi_text += c
+                if c == "m":
+                    if text:
+                        self.text_main.WriteText(text)
+                        text = ""
+                    style_function = self.ansi_styles.get(ansi_text)
+                    if style_function is not None:
+                        new_style = style_function(self.text_main.GetDefaultStyleEx())
                         self.text_main.EndStyle()
-                        self.text_main.BeginStyle(style)
-                        continue
-                self.text_main.WriteText(part)
-            self.text_main.EndStyle()
-            self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
-            self.text_main.Update()
+                        if new_style is not None:
+                            self.text_main.BeginStyle(new_style)
+                    ansi = False
+                    ansi_text = ""
+                continue
+            text += c
+        if text:
+            self.text_main.WriteText(text)
+        self.text_main.EndStyle()
+        self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
+        self.text_main.Update()
 
     def on_text_uri(self, event):
         mouse_event = event.GetMouseEvent()
