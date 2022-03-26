@@ -14,8 +14,10 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
     
-    - name: Ensure latest meerk40t-camera
+    - name: Ensure dependencies installed
       run: |
+        pip3 install ezdxf pyserial
+        pip3 install scipy
         pip3 install meerk40t-camera opencv-python-headless
 
     - name: Build Meerk40t
