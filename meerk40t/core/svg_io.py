@@ -44,7 +44,7 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
 
 
 def plugin(kernel, lifecycle=None):
@@ -314,10 +314,10 @@ class SVGLoader:
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
-            ppi = 96.0
+            ppi = DEFAULT_PPI
         if ppi == 0:
-            ppi = 96.0
-        scale_factor = UNITS_PER_INCH / ppi
+            ppi = DEFAULT_PPI
+        scale_factor = UNITS_PER_PIXEL
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
@@ -347,19 +347,15 @@ class SVGLoader:
 
     @staticmethod
     def parse(
-        svg, elements_modifier, context_node, pathname, scale_factor, reverse, elements
+        parent_context, elements_modifier, context_node, pathname, scale_factor, reverse, elements
     ):
         operations_cleared = False
         if reverse:
-            svg = reversed(svg)
-        for element in svg:
-            try:
-                if element.values["visibility"] == "hidden":
-                    continue
-            except KeyError:
-                pass
-            except AttributeError:
-                pass
+            parent_context = reversed(parent_context)
+
+        for element in parent_context:
+            if element.values.get("visibility") == "hidden":
+                continue
             if isinstance(element, SVGText):
                 if element.text is None:
                     continue
@@ -408,70 +404,34 @@ class SVGLoader:
                 )
                 continue
             elif isinstance(element, SVGElement):
-                try:
-                    if str(element.values[SVG_ATTR_TAG]).lower() == "note":
-                        try:
-                            elements_modifier.note = element.values[SVG_TAG_TEXT]
-                            elements_modifier.signal("note", pathname)
-                        except (KeyError, AttributeError):
-                            pass
-                except KeyError:
-                    pass
-                try:
-                    pass
-                    # if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
-                    #     if not operations_cleared:
-                    #         elements_modifier.clear_operations()
-                    #         operations_cleared = True
-                    #     op = LaserOperation()
-                    #     for key in dir(op):
-                    #         if key.startswith("_") or key.startswith("implicit"):
-                    #             continue
-                    #         v = getattr(op, key)
-                    #         if key in element.values:
-                    #             type_v = type(v)
-                    #             if type_v in (str, int, float, Color):
-                    #                 try:
-                    #                     setattr(op, key, type_v(element.values[key]))
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #             elif type_v == bool:
-                    #                 try:
-                    #                     setattr(
-                    #                         op,
-                    #                         key,
-                    #                         str(element.values[key]).lower()
-                    #                         in ("true", "1"),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #     for key in dir(op.settings):
-                    #         if key.startswith("_") or key.startswith("implicit"):
-                    #             continue
-                    #         v = getattr(op.settings, key)
-                    #         if key in element.values:
-                    #             type_v = type(v)
-                    #             if type_v in (str, int, float, Color):
-                    #                 try:
-                    #                     setattr(
-                    #                         op.settings,
-                    #                         key,
-                    #                         type_v(element.values[key]),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #             elif type_v == bool:
-                    #                 try:
-                    #                     setattr(
-                    #                         op.settings,
-                    #                         key,
-                    #                         str(element.values[key]).lower()
-                    #                         in ("true", "1"),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #     elements_modifier.add_op(op)
-                except KeyError:
-                    pass
+                # Check if SVGElement:  Note.
+                tag = element.values.get(SVG_ATTR_TAG)
+                if tag is not None:
+                    tag = tag.lower()
 
+                if tag == "note":
+                    try:
+                        elements_modifier.note = element.values[SVG_TAG_TEXT]
+                        elements_modifier.signal("note", pathname)
+                        continue
+                    except (KeyError, AttributeError):
+                        pass
+                node_type = element.values.get("type")
+                if node_type is None:
+                    continue
+                node_id = element.values.get("id")
+                # Check if SVGElement: operation
+                if tag == "operation":
+                    if not operations_cleared:
+                        elements_modifier.clear_operations()
+                        operations_cleared = True
+                    op = elements_modifier.op_branch.add(type=node_type)
+                    op.settings.update(element.values)
+                    op.id = node_id
+
+                # Check if SVGElement: element
+                if tag == "element":
+                    op = context_node.add(type=node_type)
+                    op.settings.update(element.values)
+                    op.id = node_id
         return True
