@@ -44,7 +44,7 @@ class DrawTool(ToolWidget):
             return RESPONSE_DROP
         elif event_type == "leftup":
             try:
-                t = Path(stroke="blue")
+                t = Path(stroke="blue", stroke_width=1000)
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
