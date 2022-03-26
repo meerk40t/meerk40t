@@ -195,9 +195,12 @@ class PositionPanel(wx.Panel):
             try:
                 w = float(self.text_w.GetValue())
             except ValueError:
-                w = self.context.device.length(
-                    self.text_w.GetValue(), 0, new_unit=self.position_units
-                )
+                try:
+                    w = self.context.device.length(
+                        self.text_w.GetValue(), 0, new_unit=self.position_units
+                    )
+                except ValueError:
+                    return
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -233,9 +236,12 @@ class PositionPanel(wx.Panel):
             try:
                 h = float(self.text_h.GetValue())
             except ValueError:
-                h = self.context.device.length(
-                    self.text_h.GetValue(), 1, new_units=self.position_units
-                )
+                try:
+                    h = self.context.device.length(
+                        self.text_h.GetValue(), 1, new_units=self.position_units
+                    )
+                except ValueError:
+                    return
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
@@ -264,11 +270,14 @@ class PositionPanel(wx.Panel):
     def on_text_x_enter(self, event=None):
         event.Skip()
         try:
-            x = float(self.text_x.GetValue())
+            self.position_x = float(self.text_x.GetValue())
         except ValueError:
-            self.position_x = self.context.device.length(
-                self.text_h.GetValue(), 1, new_units=self.position_units
-            )
+            try:
+                self.position_x = self.context.device.length(
+                    self.text_h.GetValue(), 1, new_units=self.position_units
+                )
+            except ValueError:
+                return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (
@@ -287,11 +296,14 @@ class PositionPanel(wx.Panel):
     def on_text_y_enter(self, event=None):
         event.Skip()
         try:
-            y = float(self.text_y.GetValue())
+            self.position_y = float(self.text_y.GetValue())
         except ValueError:
-            self.position_x = self.context.device.length(
-                self.text_h.GetValue(), 1, new_units=self.position_units
-            )
+            try:
+                self.position_y = self.context.device.length(
+                    self.text_h.GetValue(), 1, new_units=self.position_units
+                )
+            except ValueError:
+                return
         self.context(
             "resize %f%s %f%s %f%s %f%s\n"
             % (

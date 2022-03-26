@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, swizzlecolor
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
@@ -52,7 +53,7 @@ class GridWidget(Widget):
         context = self.scene.context
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
-        step = context.device.length("10mm", as_float=True)
+        step = float(Length("10mm"))
         starts = []
         ends = []
         if step == 0:

@@ -236,10 +236,7 @@ class ViewPort:
         else:
             if relative_length is None:
                 relative_length = self.height
-        try:
-            length = Length(value, relative_length=relative_length, unitless=unitless)
-        except ValueError:
-            raise CommandSyntaxError("'%s' is not a valid length" % value)
+        length = Length(value, relative_length=relative_length, unitless=unitless)
         if scale is not None:
             length *= scale
 
