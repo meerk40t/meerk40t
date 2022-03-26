@@ -187,9 +187,9 @@ class LaserRender:
         try:
             sw = element.stroke_width
         except AttributeError:
-            sw = 1.0
+            sw = 1000
         if sw is None:
-            sw = 1.0
+            sw = 1000
         limit = zoomscale**0.5
         try:
             limit /= width_scale
@@ -336,7 +336,7 @@ class LaserRender:
             gc, path, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, path.stroke, width=1, alpha=alpha)
+            self.set_pen(gc, path.stroke, width=1000, alpha=alpha)
         self.set_element_brush(gc, path, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
             gc.FillPath(node.cache)
