@@ -49,6 +49,7 @@ class PlotPlanner:
         self.queue = []
 
         self.single = Single(self)
+        self.smooth = Smooth(self)
         self.ppi = PPI(self)
         self.shift = Shift(self)
         self.group = Group(self)
@@ -199,7 +200,14 @@ class PlotPlanner:
                         self.shift.process(
                             debug(
                                 self.ppi.process(
-                                    debug(self.single.process(plot), self.single)
+                                    debug(
+                                        self.smooth.process(
+                                            debug(
+                                                self.single.process(plot), self.single
+                                            )
+                                        ),
+                                        self.smooth,
+                                    )
                                 ),
                                 self.ppi,
                             )
@@ -210,7 +218,9 @@ class PlotPlanner:
                 self.group,
             )
         return self.group.process(
-            self.shift.process(self.ppi.process(self.single.process(plot)))
+            self.shift.process(
+                self.ppi.process(self.smooth.process(self.single.process(plot)))
+            )
         )
 
     def step_move(self, x0, y0, x1, y1):
@@ -231,12 +241,14 @@ class PlotPlanner:
         self.pos_x = x
         self.pos_y = y
         self.single.warp(x, y)
+        self.smooth.warp(x, y)
         self.ppi.warp(x, y)
         self.shift.warp(x, y)
         self.group.warp(x, y)
 
     def reset(self):
         self.single.clear()
+        self.smooth.clear()
         self.shift.clear()
         self.ppi.clear()
         self.group.clear()
@@ -336,6 +348,96 @@ class Single(PlotManipulation):
     def clear(self):
         self.single_x = None
         self.single_y = None
+
+
+class Smooth(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.goal_x = None
+        self.goal_y = None
+        self.goal_on = None
+
+        self.smooth_x = None
+        self.smooth_y = None
+
+    def __str__(self):
+        return "%s(%s,%s)" % (
+            self.__class__.__name__,
+            str(self.smooth_x),
+            str(self.smooth_y),
+        )
+
+    def flushed(self):
+        return self.goal_x == self.smooth_x and self.goal_y == self.smooth_y
+
+    def process(self, plot):
+        """
+
+        :param plot: single stepped plots to be smoothed into orth/diag sequences.
+        :return:
+        """
+        px = None
+        py = None
+        for x, y, on in plot:
+            if x is None or y is None:
+                # flush the process when if sent a None value.
+                yield from self.flush()
+                yield x, y, on
+                continue
+            if (
+                not self.planner.settings.constant_move_x
+                and not self.planner.settings.constant_move_y
+            ):
+                yield x, y, on
+                continue  # We are not smoothing.
+            if px is not None and py is not None:
+                # Ensure we are single stepped values.
+                assert abs(px - x) <= 1 or abs(py - y) <= 1
+            px = x
+            py = y
+            if self.smooth_x is None:
+                self.smooth_x = x
+            if self.smooth_y is None:
+                self.smooth_y = y
+            total_dx = x - self.smooth_x
+            total_dy = y - self.smooth_y
+            if total_dx == 0 and total_dy == 0:
+                continue
+            dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+            dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+            self.goal_x = x
+            self.goal_y = y
+            self.goal_on = on
+            if self.planner.settings.constant_move_x and dx == 0:
+                # If we are moving x and we don't move x. Skip.
+                if abs(total_dy) < 15:
+                    continue
+            if self.planner.settings.constant_move_y and dy == 0:
+                if abs(total_dx) < 15:
+                    continue
+            self.smooth_x += dx
+            self.smooth_y += dy
+            yield self.smooth_x, self.smooth_y, on
+
+    def flush(self):
+        if not self.flushed():
+            if self.goal_x is None or self.goal_y is None:
+                return
+            for x, y in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+                yield x, y, self.goal_on
+            self.goal_x = None
+            self.goal_y = None
+            self.goal_on = None
+
+    def warp(self, x, y):
+        self.smooth_x = x
+        self.smooth_y = y
+        self.goal_x = x
+        self.goal_y = y
+
+    def clear(self):
+        self.smooth_x = None
+        self.smooth_y = None
 
 
 class PPI(PlotManipulation):

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.10"
+SVGELEMENTS_VERSION = "1.6.11"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -4573,7 +4573,7 @@ class CubicBezier(Curve):
             return abs(
                 3 * (p1 - p0) * (1 - t) ** 2
                 + 6 * (p2 - p1) * (1 - t) * t
-                + 3 * (p3 - p2) * t ** 2
+                + 3 * (p3 - p2) * t**2
             )
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=error, limit=1000)[0]
@@ -7113,7 +7113,7 @@ class _Polyshape(Shape):
                 self.points = list()
                 return
         try:
-            if len(points) == 1:
+            if len(points) == 1 and isinstance(points[0], (list, tuple, str)):
                 points = points[0]
         except TypeError:
             pass

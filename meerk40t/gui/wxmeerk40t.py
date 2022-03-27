@@ -197,6 +197,9 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+        wx.ToolTip.SetAutoPop(10000)
+        wx.ToolTip.SetDelay(100)
+        wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
         try:
@@ -442,14 +445,15 @@ class wxMeerK40t(wx.App, Module):
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)
+                channel(_("Window opened: {window}").format(window=window))
 
             def window_close(*a, **k):
                 path.close(window_name, *args)
+                channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -461,7 +465,6 @@ class wxMeerK40t(wx.App, Module):
                         channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -517,6 +520,7 @@ class wxMeerK40t(wx.App, Module):
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
+
 
     def initialize(self, *args, **kwargs):
         context = self.context

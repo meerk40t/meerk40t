@@ -7660,6 +7660,54 @@ msgstr " Der Status wird dabei umgekehrt!"
 msgid "This is not a valid length"
 msgstr "Das ist keine gültige Längenangabe"
 
+#: meerk40t/gui/scene/scenewidgets.py:590
+msgid "Move element"
+msgstr "Element verschieben"
+
+#: meerk40t/gui/scene/scenewidgets.py:594
+msgid "Scale element"
+msgstr "Größe des Elements verändern"
+
+#: meerk40t/gui/scene/scenewidgets.py:610
+msgid "Scale element in X-direction"
+msgstr "Größe des Elements verändern (nur X-Wert)"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Scale element in Y-direction"
+msgstr "Größe des Elements verändern (nur Y-Wert)"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Skew element in X-direction"
+msgstr "Element in X-Richtung scheren"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Skew element in Y-direction"
+msgstr "Element in Y-Richtung scheren"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Rotate around center"
+msgstr "Element um Mittelpunkt drehen"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Rotate around bottom-right-corner"
+msgstr "Element um Ecke rechts unten drehen"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Rotate around bottom-left-corner"
+msgstr "Element um Ecke links unten drehen"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Rotate around top-right-corner"
+msgstr "Element um Ecke rechts oben drehen"
+
+#: meerk40t/gui/scene/scenewidgets.py:618
+msgid "Rotate around top-left-corner"
+msgstr "Element um Ecke links oben drehen"
+
+#: meerk40t/gui/wxmmain.py:153
+msgid "Handle"
+msgstr "Größe"
+
 #: meerk40t/core/elements.py:3218
 msgid "Position of original in matrix (e.g '2,2' or '4,3')"
 msgstr "Platzierung des Originals im neuen Gitter (z.B. '2,2' oder '4,3')"
@@ -7731,4 +7779,3 @@ msgstr "Nur zur Info: es fehlen %d Eckpunkte gegenüber dem regulären Polygon..
 #: meerk40t/core/elements.py:3684
 msgid "To hit all, the density parameters should be e.g. %s"
 msgstr "Um alle Eckpunkte zu 'erwischen', sollte eine der folgenden Kombinationen verwendet werden: %s"
-

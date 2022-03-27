@@ -1228,7 +1228,7 @@ class LaserOperation(Node):
             for path_node in self.children:
                 try:
                     obj = abs(path_node.object)
-                    first = obj.first_point
+                    first = obj.point(0)
                 except (IndexError, AttributeError):
                     continue
                 if first is None:
