@@ -14,6 +14,7 @@ class BalorOperationPanel(wx.Panel):
         self.context = context
         self.operation = node
         params = Parameters(self.operation.settings)
+        params.validate()
 
         choices = [
             {

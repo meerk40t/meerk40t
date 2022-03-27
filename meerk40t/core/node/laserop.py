@@ -441,8 +441,8 @@ class CutOpNode(Node, Parameters):
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        Parameters.validate(update_dict)
         self.settings.update(update_dict)
+        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -632,8 +632,8 @@ class EngraveOpNode(Node, Parameters):
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        Parameters.validate(update_dict)
         self.settings.update(update_dict)
+        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -836,8 +836,8 @@ class RasterOpNode(Node, Parameters):
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        Parameters.validate(update_dict)
         self.settings.update(update_dict)
+        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -996,8 +996,8 @@ class ImageOpNode(Node, Parameters):
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        Parameters.validate(update_dict)
         self.settings.update(update_dict)
+        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
@@ -1142,8 +1142,8 @@ class DotsOpNode(Node, Parameters):
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        Parameters.validate(update_dict)
         self.settings.update(update_dict)
+        self.validate()
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)

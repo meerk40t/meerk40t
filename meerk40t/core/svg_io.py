@@ -385,13 +385,21 @@ class SVGProcessor:
                         self.operations_cleared = True
                     op = self.elements.op_branch.add(type=node_type)
                     op.settings.update(element.values)
+                    try:
+                        op.validate()
+                    except AttributeError:
+                        pass
                     op.id = node_id
 
                 # Check if SVGElement: element
                 if tag == "element":
-                    op = context_node.add(type=node_type)
-                    op.settings.update(element.values)
-                    op.id = node_id
+                    elem = context_node.add(type=node_type)
+                    elem.settings.update(element.values)
+                    try:
+                        elem.validate()
+                    except AttributeError:
+                        pass
+                    elem.id = node_id
 
 class SVGLoader:
     @staticmethod
