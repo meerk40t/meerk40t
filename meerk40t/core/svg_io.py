@@ -42,7 +42,8 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText, SVG_TAG_GROUP,
+    SVGText,
+    SVG_TAG_GROUP,
 )
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
 
@@ -400,6 +401,7 @@ class SVGProcessor:
                     except AttributeError:
                         pass
                     elem.id = node_id
+
 
 class SVGLoader:
     @staticmethod
