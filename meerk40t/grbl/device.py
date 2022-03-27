@@ -199,12 +199,14 @@ class GRBLDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "number_of_unicorns",
+                "attr": "use_m3",
                 "object": self,
-                "default": 7.0,
-                "type": float,
-                "label": _("How many unicorns?"),
-                "tip": _("I didn't really have any settings for this."),
+                "default": False,
+                "type": bool,
+                "label": _("Use M3"),
+                "tip": _(
+                    "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
+                ),
             },
         ]
         self.register_choices("grbl-global", choices)
@@ -560,7 +562,10 @@ class GRBLDriver(Parameters):
         self.g91_absolute()
         self.g94_feedrate()
         self.clean()
-        self.grbl("M4\r")
+        if self.service.use_m3:
+            self.grbl("M3\r")
+        else:
+            self.grbl("M4\r")
         for x, y, on in self.plot_data:
             while self.hold_work():
                 time.sleep(0.05)
