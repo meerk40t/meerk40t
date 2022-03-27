@@ -157,8 +157,9 @@ def plugin(kernel, lifecycle=None):
                     emulator.control = True
                 elif command == "ruidaemulator":
                     pass
-            except OSError:
+            except OSError as e:
                 channel(_("Server failed."))
+                channel(str(e.strerror))
             return
 
 
