@@ -14,6 +14,7 @@ INT_PARAMETERS = (
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
+    "raster_preference_left",
     "raster_preference_bottom",
 )
 
@@ -59,8 +60,8 @@ class Parameters:
             derived_dict[attr] = value
         return derived_dict
 
-    @staticmethod
-    def validate(settings: Dict):
+    def validate(self):
+        settings = self.settings
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])

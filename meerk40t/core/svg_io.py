@@ -43,8 +43,9 @@ from ..svgelements import (
     SVGElement,
     SVGImage,
     SVGText,
+    SVG_TAG_GROUP,
 )
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
 
 
 def plugin(kernel, lifecycle=None):
@@ -155,7 +156,7 @@ class SVGWriter:
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree):
         if len(reg_tree.children):
-            regmark = SubElement(xml_tree, "group")
+            regmark = SubElement(xml_tree, SVG_TAG_GROUP)
             regmark.set("id", "regmarks")
             regmark.set("visibility", "hidden")
             for c in reg_tree.children:
@@ -303,6 +304,105 @@ class SVGWriter:
                 current.tail = "\n" + ("\t" * (depth - 1))
 
 
+class SVGProcessor:
+    def __init__(self, elements):
+        self.elements = elements
+        self.element_list = list()
+        self.regmark_list = list()
+        self.reverse = False
+        self.requires_classification = True
+        self.operations_cleared = False
+        self.pathname = None
+        self.regmark = None
+
+    def process(self, svg, pathname):
+        self.pathname = pathname
+        context_node = self.elements.get(type="branch elems")
+        file_node = context_node.add(type="file", label=os.path.basename(self.pathname))
+        self.regmark = self.elements.reg_branch
+        file_node.filepath = self.pathname
+        file_node.focus()
+
+        self.parse(svg, file_node, self.element_list)
+
+        if self.requires_classification:
+            self.elements.classify(self.element_list)
+
+    def parse(self, element, context_node, e_list):
+        if element.values.get("visibility") == "hidden":
+            context_node = self.regmark
+            e_list = self.regmark_list
+        if isinstance(element, SVGText):
+            if element.text is not None:
+                context_node.add(element, type="elem")
+                e_list.append(element)
+        elif isinstance(element, Path):
+            if len(element) >= 0:
+                element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem")
+                e_list.append(element)
+        elif isinstance(element, Shape):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem")
+                e_list.append(element)
+        elif isinstance(element, SVGImage):
+            try:
+                element.load(os.path.dirname(self.pathname))
+                if element.image is not None:
+                    context_node.add(element, type="elem")
+                    e_list.append(element)
+            except OSError:
+                pass
+        elif isinstance(element, (Group, SVG)):
+            context_node = context_node.add(element, type="group")
+            # recurse to children
+            if self.reverse:
+                for child in reversed(element):
+                    self.parse(child, context_node, e_list)
+            else:
+                for child in element:
+                    self.parse(child, context_node, e_list)
+        else:
+            # Check if SVGElement:  Note.
+            tag = element.values.get(SVG_ATTR_TAG)
+            if tag is not None:
+                tag = tag.lower()
+            if tag == "note":
+                self.elements.note = element.values.get(SVG_TAG_TEXT)
+                self.elements.signal("note", self.pathname)
+                return
+            node_type = element.values.get("type")
+            if node_type is not None:
+                node_id = element.values.get("id")
+                # Check if SVGElement: operation
+                if tag == "operation":
+                    if not self.operations_cleared:
+                        self.elements.clear_operations()
+                        self.operations_cleared = True
+                    op = self.elements.op_branch.add(type=node_type)
+                    op.settings.update(element.values)
+                    try:
+                        op.validate()
+                    except AttributeError:
+                        pass
+                    op.id = node_id
+
+                # Check if SVGElement: element
+                if tag == "element":
+                    elem = context_node.add(type=node_type)
+                    elem.settings.update(element.values)
+                    try:
+                        elem.validate()
+                    except AttributeError:
+                        pass
+                    elem.id = node_id
+
+
 class SVGLoader:
     @staticmethod
     def load_types():
@@ -310,14 +410,13 @@ class SVGLoader:
 
     @staticmethod
     def load(context, elements_modifier, pathname, **kwargs):
-        reverse = False
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
-            ppi = 96.0
+            ppi = DEFAULT_PPI
         if ppi == 0:
-            ppi = 96.0
-        scale_factor = UNITS_PER_INCH / ppi
+            ppi = DEFAULT_PPI
+        scale_factor = UNITS_PER_PIXEL
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
@@ -333,145 +432,6 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        context_node = elements_modifier.get(type="branch elems")
-        basename = os.path.basename(pathname)
-        file_node = context_node.add(type="file", label=basename)
-        file_node.filepath = pathname
-        file_node.focus()
-        elements = []
-        result = SVGLoader.parse(
-            svg, elements_modifier, file_node, pathname, scale_factor, reverse, elements
-        )
-        elements_modifier.classify(elements)
-        return result
-
-    @staticmethod
-    def parse(
-        svg, elements_modifier, context_node, pathname, scale_factor, reverse, elements
-    ):
-        operations_cleared = False
-        if reverse:
-            svg = reversed(svg)
-        for element in svg:
-            try:
-                if element.values["visibility"] == "hidden":
-                    continue
-            except KeyError:
-                pass
-            except AttributeError:
-                pass
-            if isinstance(element, SVGText):
-                if element.text is None:
-                    continue
-                context_node.add(element, type="elem")
-                elements.append(element)
-            elif isinstance(element, Path):
-                if len(element) == 0:
-                    continue
-                element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem")
-                elements.append(element)
-            elif isinstance(element, Shape):
-                if not element.transform.is_identity():
-                    # 1 Shape Reification failed.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                    if len(element) == 0:
-                        continue  # Degenerate.
-                else:
-                    e = Path(element)
-                    if len(e) == 0:
-                        continue  # Degenerate.
-                context_node.add(element, type="elem")
-                elements.append(element)
-            elif isinstance(element, SVGImage):
-                try:
-                    element.load(os.path.dirname(pathname))
-                    if element.image is not None:
-                        context_node.add(element, type="elem")
-                        elements.append(element)
-                except OSError:
-                    pass
-            elif isinstance(element, SVG):
-                continue
-            elif isinstance(element, Group):
-                new_context = context_node.add(element, type="group")
-                SVGLoader.parse(
-                    element,
-                    elements_modifier,
-                    new_context,
-                    pathname,
-                    scale_factor,
-                    reverse,
-                    elements,
-                )
-                continue
-            elif isinstance(element, SVGElement):
-                try:
-                    if str(element.values[SVG_ATTR_TAG]).lower() == "note":
-                        try:
-                            elements_modifier.note = element.values[SVG_TAG_TEXT]
-                            elements_modifier.signal("note", pathname)
-                        except (KeyError, AttributeError):
-                            pass
-                except KeyError:
-                    pass
-                try:
-                    pass
-                    # if str(element.values[SVG_ATTR_TAG]).lower() == "operation":
-                    #     if not operations_cleared:
-                    #         elements_modifier.clear_operations()
-                    #         operations_cleared = True
-                    #     op = LaserOperation()
-                    #     for key in dir(op):
-                    #         if key.startswith("_") or key.startswith("implicit"):
-                    #             continue
-                    #         v = getattr(op, key)
-                    #         if key in element.values:
-                    #             type_v = type(v)
-                    #             if type_v in (str, int, float, Color):
-                    #                 try:
-                    #                     setattr(op, key, type_v(element.values[key]))
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #             elif type_v == bool:
-                    #                 try:
-                    #                     setattr(
-                    #                         op,
-                    #                         key,
-                    #                         str(element.values[key]).lower()
-                    #                         in ("true", "1"),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #     for key in dir(op.settings):
-                    #         if key.startswith("_") or key.startswith("implicit"):
-                    #             continue
-                    #         v = getattr(op.settings, key)
-                    #         if key in element.values:
-                    #             type_v = type(v)
-                    #             if type_v in (str, int, float, Color):
-                    #                 try:
-                    #                     setattr(
-                    #                         op.settings,
-                    #                         key,
-                    #                         type_v(element.values[key]),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #             elif type_v == bool:
-                    #                 try:
-                    #                     setattr(
-                    #                         op.settings,
-                    #                         key,
-                    #                         str(element.values[key]).lower()
-                    #                         in ("true", "1"),
-                    #                     )
-                    #                 except (ValueError, KeyError, AttributeError):
-                    #                     pass
-                    #     elements_modifier.add_op(op)
-                except KeyError:
-                    pass
-
+        svg_processor = SVGProcessor(elements_modifier)
+        svg_processor.process(svg, pathname)
         return True
