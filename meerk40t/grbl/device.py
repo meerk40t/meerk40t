@@ -410,10 +410,10 @@ class GRBLDriver(Parameters):
             self.on_dirty = False
         if self.move_mode == 0:
             line.append("G0")
-            self.power_dirty = True
-            self.speed_dirty = True
         else:
             line.append("G1")
+            self.power_dirty = True
+            self.speed_dirty = True
         x /= self.unit_scale
         y /= self.unit_scale
         line.append("X%f" % x)
