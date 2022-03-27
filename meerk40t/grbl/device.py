@@ -349,7 +349,7 @@ class GRBLDriver(Parameters):
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
 
-        self.on_dirty = True
+        self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
@@ -415,7 +415,7 @@ class GRBLDriver(Parameters):
         line.append("Y%f" % y)
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%f" % self.power)
+                line.append("S%f" % (self.power * self.on_value))
             self.power_dirty = False
         if self.speed_dirty:
             line.append("F%f" % self.feed_convert(self.speed))
@@ -588,7 +588,9 @@ class GRBLDriver(Parameters):
                 self.move_mode = 0
             else:
                 self.move_mode = 1
-            self.set("power", 1000 * on)
+            if self.on_value != on:
+                self.speed_dirty = True
+                self.on_value = on
             self.move(x, y)
 
         self.plot_data = None
@@ -598,7 +600,9 @@ class GRBLDriver(Parameters):
 
     def blob(self, data_type, data):
         """
-        @param type:
+        This is intended to send a blob of gcode to be processed and executed.
+
+        @param data_type:
         @param data:
         @return:
         """
