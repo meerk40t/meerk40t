@@ -594,8 +594,8 @@ class GRBLDriver(Parameters):
             else:
                 self.move_mode = 1
             if self.on_value != on:
-                self.speed_dirty = True
-                self.on_value = on
+                self.power_dirty = True
+            self.on_value = on
             self.move(x, y)
 
         self.plot_data = None
