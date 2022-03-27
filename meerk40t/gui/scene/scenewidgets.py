@@ -13,7 +13,7 @@ from meerk40t.gui.laserrender import (
 )
 from meerk40t.gui.scene.scene import Widget
 from meerk40t.gui.wxutils import create_menu
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Color, Point
 
 MILS_IN_MM = 39.3701
 
@@ -98,6 +98,7 @@ class SelectionWidget(Widget):
         self.rotate_cx = None
         self.rotate_cy = None
         self.rotated_angle = 0
+        self.last_angle = None
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
@@ -939,15 +940,22 @@ class SelectionWidget(Widget):
             this_side = self.total_delta_x
             other_side = self.height
             skew_tan = this_side / other_side
-            self.rotated_angle = math.atan(skew_tan)
+            current_angle = math.atan(skew_tan)
+            delta_angle = current_angle - self.rotated_angle
+            self.rotated_angle = current_angle
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                mat = obj.transform
-                mat[2] = skew_tan
-                obj.transform = mat
-            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+                obj.transform.post_skew_x(
+                    delta_angle,
+                    (self.right + self.left) / 2,
+                    (self.top + self.bottom) / 2,
+                )
+                try:
+                    obj.node._bounds_dirty = True
+                except AttributeError:
+                    pass
         self.scene.request_refresh()
 
     def tool_skew_y(self, position, dx, dy, event=0):
@@ -971,15 +979,23 @@ class SelectionWidget(Widget):
             this_side = self.total_delta_y
             other_side = self.width
             skew_tan = this_side / other_side
-            self.rotated_angle = math.atan(skew_tan)
+            current_angle = math.atan(skew_tan)
+            delta_angle = current_angle - self.rotated_angle
+            self.rotated_angle = current_angle
 
             b = elements.selected_area()
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                mat = obj.transform
-                mat[1] = skew_tan
-                obj.transform = mat
-            # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+                obj.transform.post_skew_y(
+                    delta_angle,
+                    (self.right + self.left) / 2,
+                    (self.top + self.bottom) / 2,
+                )
+                try:
+                    obj.node._bounds_dirty = True
+                except AttributeError:
+                    pass
+
         self.scene.request_refresh()
 
     def tool_rotate(self, position, dx, dy, event=0):
@@ -988,7 +1004,7 @@ class SelectionWidget(Widget):
         """
         rot_angle = 0
         elements = self.scene.context.elements
-        if event == 1:
+        if event == 1:  # End
             for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
@@ -997,7 +1013,8 @@ class SelectionWidget(Widget):
                     pass
             self.rotated_angle = 0
             self.draw_border = True
-
+        elif event == -1:  # Start
+            self.last_angle = None
         elif event == 0:
             self.draw_border = False
 
@@ -1006,50 +1023,15 @@ class SelectionWidget(Widget):
             if self.rotate_cy is None:
                 self.rotate_cy = (self.top + self.bottom) / 2
 
-            # Okay lets figure out whether the direction of travel was more CW or CCW
-            # Lets focus on the bigger movement
-            d_left = position[0] < self.rotate_cx
-            d_top = position[1] < self.rotate_cy
-            if abs(dx) > abs(dy):
-                if d_left and d_top:  # LT
-                    cw = dx > 0
-                elif d_left and not d_top:  # LB
-                    cw = dx < 0
-                elif not d_left and not d_top:  # RB
-                    cw = dx < 0
-                elif not d_left and d_top:  # TR
-                    cw = dx > 0
-            else:
-                if d_left and d_top:  # LT
-                    cw = dy < 0
-                elif d_left and not d_top:  # LB
-                    cw = dy < 0
-                elif not d_left and not d_top:  # RB
-                    cw = dy > 0
-                elif not d_left and d_top:  # TR
-                    cw = dy > 0
-
-            if self.key_alt_pressed:
-                delta = 45
-            else:
-                delta = 1
-                if not self.key_shift_pressed:
-                    dd = abs(dx) if abs(dx) > abs(dy) else abs(dy)
-                    pxl = dd * self.matrix.value_scale_x()
-                    # print ("Delta=%.1f, Pxl=%.1f" % ( dd, pxl))
-                    if 10 < pxl <= 20:
-                        delta = 2
-                    elif 20 < pxl <= 30:
-                        delta = 5
-                    elif pxl > 30:
-                        delta = 10
-            if cw:
-                rot_angle = +1 * delta * math.tau / 360
-            else:
-                rot_angle = -1 * delta * math.tau / 360
-
+            # Improved code by tatarize to establish rotation angle
+            current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
+            if self.last_angle is None:
+                self.last_angle = current_angle
+            delta_angle = current_angle - self.last_angle
+            self.last_angle = current_angle
             # Update Rotation angle...
-            self.rotated_angle += rot_angle
+            self.rotated_angle += delta_angle
+
             # Bring back to 'regular' radians
             while self.rotated_angle >= 1 * math.tau:
                 self.rotated_angle -= 1 * math.tau
@@ -1058,7 +1040,7 @@ class SelectionWidget(Widget):
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
-                obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
+                obj.transform.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
                 try:
                     obj.node._bounds_dirty = True
                 except AttributeError:
