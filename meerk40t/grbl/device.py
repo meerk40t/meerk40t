@@ -349,6 +349,7 @@ class GRBLDriver(Parameters):
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
 
+        self.on_dirty = True
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
@@ -404,6 +405,8 @@ class GRBLDriver(Parameters):
             self.native_x += x
             self.native_y += y
         line = []
+        if self.on_dirty:
+            line.append("M4\r")
         if self.move_mode == 0:
             line.append("G0")
             self.power_dirty = True
