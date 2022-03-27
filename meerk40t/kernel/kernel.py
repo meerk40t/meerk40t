@@ -42,7 +42,7 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str):
+    def __init__(self, name: str, version: str, profile: str, ansi: bool):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -129,7 +129,7 @@ class Kernel(Settings):
         )
         self._console_buffer = ""
         self.queue = []
-        self._console_channel = self.channel("console", timestamp=True)
+        self._console_channel = self.channel("console", timestamp=True, ansi=True)
         self.console_channel_file = None
 
         self.current_directory = "."
@@ -2060,7 +2060,7 @@ class Kernel(Settings):
         if text.startswith("."):
             text = text[1:]
         else:
-            channel("[blue][bold][raw]%s[/raw]" % text, indent=False)
+            channel("[blue][bold][raw]%s[/raw]" % text, indent=False, ansi=True)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2110,7 +2110,7 @@ class Kernel(Settings):
                     if str(e):
                         message = str(e)
                     channel(
-                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message)
+                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message), ansi=True
                     )
                     return None
                 except CommandMatchRejected:
@@ -2126,7 +2126,7 @@ class Kernel(Settings):
                 channel(
                     "[red][bold]"
                     + _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name)
+                    % (command, ctx_name), ansi=True
                 )
                 return None
         return data

@@ -1,9 +1,7 @@
-import ctypes
-import platform
 import re
 from collections import deque
 from datetime import datetime
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Callable, Optional, Union
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
 BBCODE_LIST = {
@@ -45,22 +43,6 @@ RE_ANSI = re.compile(
 )
 
 
-def ansi_supported():
-    # https://en.wikipedia.org/wiki/ANSI_escape_code#Platform_support
-    if platform.system() != "Windows":
-        return True
-    version = platform.version().split(".")
-    if int(version[0]) < 10:
-        return False
-    if int(version[0]) == 10 and int(version[2]) < 10586:
-        return False
-    # Fix ANSI color in Windows 10 version 10.0.14393 (Windows Anniversary Update)
-    # https://gist.github.com/RDCH106/6562cc7136b30a5c59628501d87906f7
-    kernel32 = ctypes.windll.kernel32
-    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-    return True
-
-
 def bbcode_to_ansi(text):
     return "".join(
         [
@@ -95,6 +77,7 @@ class Channel:
         line_end: Optional[str] = None,
         timestamp: bool = False,
         pure: bool = False,
+        ansi: bool = False,
     ):
         self.watchers = []
         self.greet = None
@@ -108,7 +91,7 @@ class Channel:
             self.buffer = None
         else:
             self.buffer = deque()
-        self.ansi_supported = ansi_supported()
+        self.ansi = ansi
 
     def __repr__(self):
         return "Channel(%s, buffer_size=%s, line_end=%s)" % (
@@ -117,22 +100,45 @@ class Channel:
             repr(self.line_end),
         )
 
+    def _call_raw(
+        self,
+        message: Union[str, bytes, bytearray],
+    ):
+        for w in self.watchers:
+            w(message)
+        if self.buffer is not None:
+            self.buffer.append(message)
+            while len(self.buffer) > self.buffer_size:
+                self.buffer.popleft()
+
     def __call__(
         self,
         message: Union[str, bytes, bytearray],
         *args,
         indent: Optional[bool] = True,
+        ansi: Optional[bool] = False,
         **kwargs,
     ):
+        if isinstance(message, (bytes, bytearray)) or self.pure:
+            self._call_raw(message)
+            return
+
         original_msg = message
-        if not self.pure and not isinstance(message, (bytes, bytearray)):
-            if self.line_end is not None:
-                message = message + self.line_end
-            if indent:
-                message = "    " + message.replace("\n", "\n    ")
-            if self.timestamp:
-                ts = datetime.now().strftime("[%H:%M:%S] ")
-                message = ts + message.replace("\n", "\n%s" % ts)
+        if self.line_end is not None:
+            message = message + self.line_end
+        if indent:
+            message = "    " + message.replace("\n", "\n    ")
+        if self.timestamp:
+            ts = datetime.now().strftime("[%H:%M:%S] ")
+            message = ts + message.replace("\n", "\n%s" % ts)
+        if ansi:
+            if self.ansi:
+                # Convert bbcode to ansi
+                message = self.bbcode_to_ansi(message)
+            else:
+                # Convert bbcode to stripped
+                message = self.bbcode_to_plain(message)
+
         console_open_print = False
         # Check if this channel is "open" i.e. being sent to console
         # and if so whether the console is being sent to print
@@ -148,15 +154,8 @@ class Channel:
                 continue
             # Avoid double timestamp and indent
             if isinstance(w, Channel):
-                w(original_msg, indent=indent)
-            elif w is print or (
-                hasattr(w, "__name__") and w.__name__ == "__print_delegate"
-            ):
-                if self.ansi_supported:
-                    w(bbcode_to_ansi(message))
-                else:
-                    w(bbcode_to_plain(message))
-            else:  # "open"
+                w(original_msg, indent=indent, ansi=ansi)
+            else:
                 w(message)
         if self.buffer is not None:
             self.buffer.append(message)
@@ -180,6 +179,23 @@ class Channel:
         is listening for that data, or the data is being buffered.
         """
         return bool(self.watchers) or self.buffer_size != 0
+
+    def bbcode_to_ansi(self, text):
+        return "".join(
+            [
+                BBCODE_LIST["normal"],
+                RE_ANSI.sub(self.bbcode_to_ansi_match, text),
+                BBCODE_LIST["normal"],
+            ]
+        )
+
+    def bbcode_to_ansi_match(self, m):
+        tag = re.sub(r"\].*", "", m[0])[1:].lower()
+        return BBCODE_LIST[tag] if tag != "raw" else m[2]
+
+    def bbcode_to_plain(self, text):
+        strip = lambda m: m[2]
+        return RE_ANSI.sub(strip, text)
 
     def watch(self, monitor_function: Callable):
         for q in self.watchers:
