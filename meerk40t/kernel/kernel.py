@@ -42,7 +42,7 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str, ansi: bool):
+    def __init__(self, name: str, version: str, profile: str, ansi: bool=True):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
