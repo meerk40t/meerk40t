@@ -372,6 +372,8 @@ class Smooth(PlotManipulation):
         )
 
     def flushed(self):
+        if self.smooth_y is None or self.smooth_y is None:
+            return True
         return self.goal_x == self.smooth_x and self.goal_y == self.smooth_y
 
     def process(self, plot):
