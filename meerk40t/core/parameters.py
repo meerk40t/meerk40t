@@ -14,6 +14,7 @@ INT_PARAMETERS = (
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
+    "raster_preference_left",
     "raster_preference_bottom",
 )
 
