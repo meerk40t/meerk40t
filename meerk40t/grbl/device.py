@@ -411,6 +411,8 @@ class GRBLDriver(Parameters):
         if self.move_mode == 0:
             line.append("G0")
         else:
+            line.append("S%f" % self.power)
+            line.append("F%f" % self.feed_convert(self.speed))
             line.append("G1")
             self.power_dirty = True
             self.speed_dirty = True
@@ -418,13 +420,13 @@ class GRBLDriver(Parameters):
         y /= self.unit_scale
         line.append("X%f" % x)
         line.append("Y%f" % y)
-        if self.power_dirty:
-            if self.power is not None:
-                line.append("S%f" % self.power)
-            self.power_dirty = False
-        if self.speed_dirty:
-            line.append("F%f" % self.feed_convert(self.speed))
-            self.speed_dirty = False
+        # if self.power_dirty:
+        #     if self.power is not None:
+        #         line.append("S%f" % self.power)
+        #     self.power_dirty = False
+        # if self.speed_dirty:
+        #     line.append("F%f" % self.feed_convert(self.speed))
+        #     self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
