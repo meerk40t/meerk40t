@@ -405,28 +405,21 @@ class GRBLDriver(Parameters):
             self.native_x += x
             self.native_y += y
         line = []
-        if self.on_dirty:
-            line.append("M4\r")
-            self.on_dirty = False
         if self.move_mode == 0:
             line.append("G0")
         else:
-            line.append("S%f" % self.power)
-            line.append("F%f" % self.feed_convert(self.speed))
             line.append("G1")
-            self.power_dirty = True
-            self.speed_dirty = True
         x /= self.unit_scale
         y /= self.unit_scale
         line.append("X%f" % x)
         line.append("Y%f" % y)
-        # if self.power_dirty:
-        #     if self.power is not None:
-        #         line.append("S%f" % self.power)
-        #     self.power_dirty = False
-        # if self.speed_dirty:
-        #     line.append("F%f" % self.feed_convert(self.speed))
-        #     self.speed_dirty = False
+        if self.power_dirty:
+            if self.power is not None:
+                line.append("S%f" % self.power)
+            self.power_dirty = False
+        if self.speed_dirty:
+            line.append("F%f" % self.feed_convert(self.speed))
+            self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
@@ -434,7 +427,7 @@ class GRBLDriver(Parameters):
         self.clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
+        # self.rapid_mode()
         self.move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -449,7 +442,7 @@ class GRBLDriver(Parameters):
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        self.rapid_mode()
+        # self.rapid_mode()
         self.move(dx, dy)
 
         new_current = self.service.current
@@ -567,6 +560,7 @@ class GRBLDriver(Parameters):
         self.g91_absolute()
         self.g94_feedrate()
         self.clean()
+        self.grbl("M4\r")
         for x, y, on in self.plot_data:
             while self.hold_work():
                 time.sleep(0.05)
@@ -594,8 +588,12 @@ class GRBLDriver(Parameters):
                 self.move_mode = 0
             else:
                 self.move_mode = 1
+            self.set("power", 1000 * on)
             self.move(x, y)
+
         self.plot_data = None
+        self.grbl("G1 S0\r")
+        self.grbl("M5\r")
         return False
 
     def blob(self, data_type, data):
