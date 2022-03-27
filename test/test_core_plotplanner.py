@@ -3,16 +3,13 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import CutCode, LaserSettings, LineCut
-from meerk40t.core.elements import LaserOperation
-from meerk40t.core.plotplanner import PlotPlanner, Single
 from meerk40t.core.cutcode import CutCode, LineCut, Parameters
 
 from meerk40t.core.node.laserop import EngraveOpNode, RasterOpNode
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
 from meerk40t.svgelements import Circle, Path, Point, SVGImage
-# TODO: fix these
+
 
 class TestPlotplanner(unittest.TestCase):
     def test_plotplanner_constant_move_x(self):
@@ -20,9 +17,8 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings(power=1000)
-        settings.constant_move_x = True
+        settings = {"power": 1000, "constant_move_x": True}
+        plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
         plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
@@ -58,10 +54,8 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings(power=1000)
-        settings.constant_move_x = True
-        settings.power = 500
+        settings = {"power": 500, "constant_move_x": True}
+        plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
         plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
@@ -101,9 +95,8 @@ class TestPlotplanner(unittest.TestCase):
         With smooth_raster set to 2 we should never have x = 0. The x should *always* be in motion.
         @return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings(power=1000)
-        settings.constant_move_y = True
+        settings = {"power": 1000, "constant_move_y": True}
+        plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
         plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
         plan.push(LineCut(Point(5, 20), Point(10, 100), settings=settings))
@@ -139,8 +132,8 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        settings = LaserSettings(power=1000)
+        settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}
+        plan = PlotPlanner(settings)
         settings.constant_move_x = True
         settings.constant_move_y = True
         for i in range(100):
@@ -182,11 +175,8 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        plan = PlotPlanner(LaserSettings(power=1000))
-        # plan.debug = True
-        settings = LaserSettings(power=1000)
-        settings.constant_move_x = True
-        settings.constant_move_y = True
+        settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}
+        plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(0, 100), settings=settings))
         plan.push(LineCut(Point(0, 100), Point(100, 100), settings=settings))
         plan.push(LineCut(Point(100, 100), Point(100, 0), settings=settings))
