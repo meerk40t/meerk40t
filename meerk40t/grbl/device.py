@@ -406,6 +406,8 @@ class GRBLDriver(Parameters):
         line = []
         if self.move_mode == 0:
             line.append("G0")
+            self.power_dirty = True
+            self.speed_dirty = True
         else:
             line.append("G1")
         x /= self.unit_scale
