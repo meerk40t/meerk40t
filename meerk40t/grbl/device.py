@@ -601,6 +601,11 @@ class GRBLDriver(Parameters):
         self.plot_data = None
         self.grbl("G1 S0\r")
         self.grbl("M5\r")
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
         return False
 
     def blob(self, data_type, data):
