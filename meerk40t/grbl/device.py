@@ -407,6 +407,7 @@ class GRBLDriver(Parameters):
         line = []
         if self.on_dirty:
             line.append("M4\r")
+            self.on_dirty = False
         if self.move_mode == 0:
             line.append("G0")
             self.power_dirty = True
