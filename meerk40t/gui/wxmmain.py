@@ -1082,7 +1082,11 @@ class MeerK40t(MWindow):
             _("Clear existing elements and notes and open a new file"),
         )
         self.recent_file_menu = wx.Menu()
-        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.file_menu.AppendSubMenu(
+                self.recent_file_menu,
+                _("&Recent")
+                )
         self.file_menu.Append(
             ID_MENU_IMPORT,
             _("&Import File"),
