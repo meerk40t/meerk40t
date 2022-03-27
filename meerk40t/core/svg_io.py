@@ -324,6 +324,16 @@ class SVGProcessor:
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
+        if self.operations_cleared:
+            for op in self.elements.ops():
+                refs = op.settings.get("references")
+                if refs is None:
+                    continue
+                self.requires_classification = False
+                for ref in refs.split(" "):
+                    for e in self.element_list:
+                        if e.id == ref:
+                            op.add(e, type="ref elem")
 
         if self.requires_classification:
             self.elements.classify(self.element_list)
@@ -391,7 +401,6 @@ class SVGProcessor:
                     except AttributeError:
                         pass
                     op.id = node_id
-
                 # Check if SVGElement: element
                 if tag == "element":
                     elem = context_node.add(type=node_type)
