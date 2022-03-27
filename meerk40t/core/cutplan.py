@@ -168,7 +168,7 @@ class CutPlan:
                         blob_plan.append(op)
                         continue
                     if op.type == "op dots":
-                        if pass_idx == 1:
+                        if pass_idx == 0:
                             blob_plan.append(op)
                         continue
                     copies = op.implicit_passes

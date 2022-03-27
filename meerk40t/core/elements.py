@@ -105,6 +105,7 @@ def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
 
+# TODO: Dots first point to first = obj.point(0) for shapes.
 
 class Elemental(Service):
     """

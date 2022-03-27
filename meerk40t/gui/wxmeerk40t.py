@@ -241,6 +241,9 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+        wx.ToolTip.SetAutoPop(10000)
+        wx.ToolTip.SetDelay(100)
+        wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
         try:

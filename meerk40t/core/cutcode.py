@@ -36,7 +36,8 @@ class CutObject(Parameters):
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
-
+    #         self.constant_move_x = False
+    #         self.constant_move_y = False
     def __init__(
         self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
     ):
@@ -879,11 +880,14 @@ class PlotCut(CutObject):
 
     def check_if_rasterable(self):
         """
-        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+        Rasterable plotcuts are heuristically defined as having a max step of less than 15 and
+        must have an unused travel direction.
 
         @return: whether the plot can travel
         """
         self.settings.raster_alt = False
+        self.settings.constant_move_x = False
+        self.settings.constant_move_y = False
         self.settings.raster_step = 0
         self.settings.force_twitchless = True
         if (
@@ -901,6 +905,10 @@ class PlotCut(CutObject):
             return False
         self.settings.raster_step = min(self.max_dx, self.max_dy)
         self.settings.raster_alt = True
+        if self.horizontal_raster:
+            self.settings.constant_move_x = True
+        else:
+            self.settings.constant_move_y = True
         return True
 
     def plot_extend(self, plot):
@@ -1023,59 +1031,15 @@ class PlotCut(CutObject):
         last_yy = None
         ix = 0
         iy = 0
-        # last_dx = None
-        # last_dy = None
         for x, y, on in self.plot:
             idx = int(round(x - ix))
             idy = int(round(y - iy))
             ix += idx
             iy += idy
             if last_xx is not None:
-                # if self.horizontal_raster and idx:
-                #     if idx > 0 > last_dx or idx < 0 < last_dx:
-                #         # If this idx is different direction as the last one, we step y first
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #                 yield zx, zy, on
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, iy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idx is the same direction as the last one, we step x first
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #             yield zx, zy, on
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # elif self.vertical_raster and idy:
-                #     if idy > 0 > last_dy or idy < 0 < last_dy:
-                #         # If this idy is different direction as the last one, we step x first
-                #         if idx:
-                #             # step x
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #                 yield zx, zy, on
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idy is the same direction as the last one, we step y first
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #             yield zx, zy, on
-                #         if idx:
-                #             #step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # else:
-                #     # Non-raster go directly to result.
                 for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
                     yield zx, zy, on
             last_xx = ix
             last_yy = iy
-            # last_dx = idx
-            # last_dy = idy
 
         return self.plot

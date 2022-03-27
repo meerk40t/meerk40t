@@ -968,7 +968,7 @@ class LhystudiosDriver(Parameters):
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.h_switch_g(dy)
+                            self.v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.native_x
                 dy = y - self.native_y
@@ -1323,7 +1323,9 @@ class LhystudiosDriver(Parameters):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitches is set to True.
 
-        @param values:
+        @param values: passed information from the driver command
+        @param dx: change in dx that should be made while switching to program mode.
+        @param dy: change in dy that should be made while switching to program mode.
         @return:
         """
         if self.state == DRIVER_STATE_PROGRAM:
@@ -1388,9 +1390,10 @@ class LhystudiosDriver(Parameters):
         """
         NSE h_switches replace the mere reversal of direction with N<v><distance>SE
 
-        If a G-value is set we should subtract that from the step for our movement.
+        If a G-value is set we should subtract that from the step for our movement. Since triggering NSE will cause
+        that step to occur.
 
-        @param dy: The amount along the directional axis we should move.
+        @param dy: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1431,7 +1434,7 @@ class LhystudiosDriver(Parameters):
         """
         NSE v_switches replace the mere reversal of direction with N<h><distance>SE
 
-        @param dx: The amount along the directional axis we should move.
+        @param dx: The amount along the directional axis we should move during this step.
 
         @return:
         """

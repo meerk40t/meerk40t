@@ -93,6 +93,13 @@ parser.add_argument(
     action="store_true",
     help="Do not load meerk40t.plugins entrypoints",
 )
+parser.add_argument(
+    "-A",
+    "--disable-ansi",
+    action="store_true",
+    default=False,
+    help="Disable ANSI colors",
+)
 
 
 def plugin(kernel, lifecycle):
@@ -224,7 +231,7 @@ def run():
             )
         )
         return
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME)
+    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, ansi=not args.disable_ansi)
     kernel.args = args
     kernel.add_plugin(plugin)
     kernel()
