@@ -13,7 +13,7 @@ from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
 
-from meerk40t.svgelements import Rect
+from meerk40t.svgelements import Rect, Point
 
 TEXT_COLOR = wx.Colour(0xA0, 0x7F, 0xA0)
 LINE_COLOR = wx.Colour(0x7F, 0x7F, 0x7F)
@@ -117,7 +117,8 @@ def process_event(
             widget.master.total_delta_x = dx
             widget.master.total_delta_y = dy
             widget.master.tool_running = optimize_drawing
-
+            widget.master.invalidate_rot_center()
+            widget.master.check_rot_center()
             widget.tool(space_pos, dx, dy, -1)
             return RESPONSE_CONSUME
     elif event_type == "middledown":
@@ -406,9 +407,9 @@ class RotationWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
+            self.master.last_angle = None
             self.master.rotated_angle = 0
         elif event == 0:
-            rotation_unchanged = self.master.rotation_unchanged
 
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
@@ -418,50 +419,24 @@ class RotationWidget(Widget):
             #    print ("Rotating around center")
             # else:
             #    print ("Rotating around special point")
+            # Improved code by tatarize to establish rotation angle
 
-            # Okay lets figure out whether the direction of travel was more CW or CCW
-            # Lets focus on the bigger movement
-            d_left = position[0] < self.rotate_cx
-            d_top = position[1] < self.rotate_cy
-            if abs(dx) > abs(dy):
-                if d_left and d_top:  # LT
-                    cw = dx > 0
-                elif d_left and not d_top:  # LB
-                    cw = dx < 0
-                elif not d_left and not d_top:  # RB
-                    cw = dx < 0
-                elif not d_left and d_top:  # TR
-                    cw = dx > 0
-            else:
-                if d_left and d_top:  # LT
-                    cw = dy < 0
-                elif d_left and not d_top:  # LB
-                    cw = dy < 0
-                elif not d_left and not d_top:  # RB
-                    cw = dy > 0
-                elif not d_left and d_top:  # TR
-                    cw = dy > 0
-
-            # print ("cw=%s, d_left=%s, d_top=%s, dx=%.1f, dy=%.1f, Pos=(%.1f, %.1f), Center=(%.1f, %.1f)" % ( cw, d_left, d_top, dx, dy, position[0], position[1], self.rotate_cx, self.rotate_cy))
-            if self.key_alt_pressed:
-                delta = 45
-            else:
-                delta = 1
-                dd = abs(dx) if abs(dx) > abs(dy) else abs(dy)
-                pxl = dd * self.master.parent.matrix.value_scale_x()
-                # print ("Delta=%.1f, Pxl=%.1f" % ( dd, pxl))
-                if 8 < pxl <= 15:
-                    delta = 2
-                elif 15 < pxl <= 25:
-                    delta = 5
-                elif pxl > 25:
-                    delta = 10
-            if cw:
-                rot_angle = +1 * delta * math.tau / 360
-            else:
-                rot_angle = -1 * delta * math.tau / 360
+            current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
+            if self.master.last_angle is None:
+                self.master.last_angle = current_angle
+            delta_angle = current_angle - self.master.last_angle
+            self.master.last_angle = current_angle
             # Update Rotation angle...
-            self.master.rotated_angle += rot_angle
+            self.master.rotated_angle += delta_angle
+            # print(
+            #    "Angle to Point=%.1f, last_angle=%.1f, total_angle=%.1f, delta=%.1f"
+            #    % (
+            #        current_angle / math.pi * 180,
+            #        self.master.last_angle / math.pi * 180,
+            #        self.master.rotated_angle / math.pi * 180,
+            #        delta_angle / math.pi * 180,
+            #    )
+            # )
             # Bring back to 'regular' radians
             while self.master.rotated_angle >= 1 * math.tau:
                 self.master.rotated_angle -= 1 * math.tau
@@ -469,15 +444,15 @@ class RotationWidget(Widget):
                 self.master.rotated_angle += 1 * math.tau
 
             # Take representation rectangle and rotate it
-            if self.reference_rect is None:
-                b = elements._emphasized_bounds
-                self.reference_rect = Rect(
-                    x=b[0], y=b[1], width=b[2] - b[0], height=b[3] - b[1]
-                )
-            self.reference_rect.transform.post_rotate(
-                rot_angle, self.rotate_cx, self.rotate_cy
-            )
-            b = self.reference_rect.bbox()
+            # if self.reference_rect is None:
+            #    b = elements._emphasized_bounds
+            #    self.reference_rect = Rect(
+            #        x=b[0], y=b[1], width=b[2] - b[0], height=b[3] - b[1]
+            #    )
+            # self.reference_rect.transform.post_rotate(
+            #    rot_angle, self.rotate_cx, self.rotate_cy
+            # )
+            # b = self.reference_rect.bbox()
 
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
@@ -486,15 +461,12 @@ class RotationWidget(Widget):
                         continue
                 except AttributeError:
                     pass
-                obj.transform.post_rotate(rot_angle, self.rotate_cx, self.rotate_cy)
+                obj.transform.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
                 try:
                     obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-            elements.update_bounds([b[0], b[1], b[2], b[3]])
-            if rotation_unchanged:
-                # Move rotation center as well
-                self.master.keep_rotation_center()
+            # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
 
@@ -681,8 +653,6 @@ class CornerWidget(Widget):
             else:
                 orgx = self.master.left
 
-            rotation_unchanged = self.master.rotation_unchanged()
-
             # Establish scales
             scalex = 1
             scaley = 1
@@ -735,9 +705,6 @@ class CornerWidget(Widget):
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
-            if rotation_unchanged:
-                # Move rotation center as well
-                self.master.keep_rotation_center()
 
             self.scene.request_refresh()
 
@@ -848,8 +815,6 @@ class SideWidget(Widget):
             else:
                 orgx = self.master.left
 
-            rotation_unchanged = self.master.rotation_unchanged()
-
             # Establish scales
             scalex = 1
             scaley = 1
@@ -908,9 +873,6 @@ class SideWidget(Widget):
                 #    pass
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
-            if rotation_unchanged:
-                # Move rotation center as well
-                self.master.keep_rotation_center()
 
             self.scene.request_refresh()
 
@@ -999,19 +961,8 @@ class SkewWidget(Widget):
                     obj.node.modified()
                 except AttributeError:
                     pass
-        elif event == -1:  # start
-            pass
-            # wont work...
-            # for e in elements.flat(types=("elem",), emphasized=True):
-            #     obj = e.object
-            #     try:
-            #         obj.reify()
-            #     except AttributeError:
-            #         pass
 
         elif event == 0:  # move
-
-            rotation_unchanged = self.master.rotation_unchanged()
 
             if self.is_x:
                 dd = dx
@@ -1021,26 +972,12 @@ class SkewWidget(Widget):
                 dd = dy
                 this_side = self.master.total_delta_y
                 other_side = self.master.width
-            skew_tan = this_side / other_side
-            self.last_skew = math.atan(skew_tan)
-            # fmt:off
-            # print("This Side==%.1f, Other Side=%.1f, tan=%.1f, deg=%.2f (%.2f)"
-            #    % ( this_side, other_side, skew_tan, self.last_skew, self.last_skew / math.pi * 180, ))
-            # fmt:on
-            # if dd > 0:
-            #        self.last_skew += math.tau / 360
-            #    else:
-            #        self.last_skew -= math.tau / 360
 
-            # if self.last_skew <= -0.99 * math.pi / 2:
-            #    self.last_skew = -0.99 * math.pi / 2
-            # if self.last_skew >= +0.99 * math.pi / 2:
-            #    self.last_skew = +0.99 * math.pi / 2
-            # skew_tan = math.tan(self.last_skew)
-            # value = self.last_skew / math.tau * 360
-            # print ("Skew-X, dx=%.1f, rad=%.2f, deg=%.2f, of Pi: %.3f" % (dx, self.last_skew, value, self.last_skew / math.pi))
-            self.master.rotated_angle = self.last_skew
-            b = elements.selected_area()
+            skew_tan = this_side / other_side
+            current_angle = math.atan(skew_tan)
+            delta_angle = current_angle - self.master.rotated_angle
+            self.master.rotated_angle = current_angle
+
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 try:
@@ -1048,20 +985,22 @@ class SkewWidget(Widget):
                         continue
                 except AttributeError:
                     pass
-                mat = obj.transform
                 if self.is_x:
-                    mat[2] = skew_tan
+                    obj.transform.post_skew_x(
+                        delta_angle,
+                        (self.master.right + self.master.left) / 2,
+                        (self.master.top + self.master.bottom) / 2,
+                    )
                 else:
-                    mat[1] = skew_tan
-                obj.transform = mat
+                    obj.transform.post_skew_y(
+                        delta_angle,
+                        (self.master.right + self.master.left) / 2,
+                        (self.master.top + self.master.bottom) / 2,
+                    )
                 try:
                     obj.node._bounds_dirty = True
                 except AttributeError:
                     pass
-
-            if rotation_unchanged:
-                # Move rotation center as well
-                self.master.keep_rotation_center()
 
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -1166,7 +1105,6 @@ class MoveWidget(Widget):
             if self.key_alt_pressed:
                 self.create_duplicate()
         elif event == 0:  # move
-            rotation_unchanged = self.master.rotation_unchanged()
 
             # b = elements.selected_area()  # correct, but slow...
             b = elements._emphasized_bounds
@@ -1178,8 +1116,6 @@ class MoveWidget(Widget):
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-            if rotation_unchanged:
-                self.master.keep_rotation_center()
 
         self.scene.request_refresh()
 
@@ -1268,6 +1204,7 @@ class MoveRotationOriginWidget(Widget):
         """
         self.master.rotation_cx += dx
         self.master.rotation_cy += dy
+        self.master.invalidate_rot_center()
         self.scene.request_refresh()
 
     def hit(self):
@@ -1602,7 +1539,7 @@ class SelectionWidget(Widget):
         self.use_handle_skew = True
         self.use_handle_size = True
         self.use_handle_move = True
-        self.keep_rotation = True
+        self.keep_rotation = None
         self.line_width = 0
         self.font_size = 0
         self.tool_running = False
@@ -1610,6 +1547,7 @@ class SelectionWidget(Widget):
         self.single_element = True
         self.is_ref = False
         self.show_border = True
+        self.last_angle = None
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1859,21 +1797,26 @@ class SelectionWidget(Widget):
 
         return RESPONSE_CHAIN
 
-    def rotation_unchanged(self):
-        cx = (self.left + self.right) / 2
-        cy = (self.top + self.bottom) / 2
-        value = (
-            abs(self.rotation_cx - cx) < 0.0001 and abs(self.rotation_cy - cy) < 0.0001
-        )
-        # if value:
-        #    print ("RotHandle still in center")
-        # else:
-        #    print ("RotHandle (%.1f, %.1f) outside center (%.1f, %.1f)" % (self.rotation_cx, self.rotation_cy, cx, cy))
-        return value
+    def invalidate_rot_center(self):
+        self.keep_rotation = None
 
-    def keep_rotation_center(self):
-        # Make sure rotation center remains centered...
-        self.keep_rotation = True
+    def check_rot_center(self):
+        if self.keep_rotation is None:
+            if self.rotation_cx is None:
+                # print ("Update rot-center")
+                self.rotation_cx = (self.left + self.right) / 2
+                self.rotation_cy = (self.top + self.bottom) / 2
+            cx = (self.left + self.right) / 2
+            cy = (self.top + self.bottom) / 2
+            value = (
+                abs(self.rotation_cx - cx) < 0.0001
+                and abs(self.rotation_cy - cy) < 0.0001
+            )
+            self.keep_rotation = value
+            # if value:
+            #    print ("RotHandle still in center")
+            # else:
+            #    print ("RotHandle (%.1f, %.1f) outside center (%.1f, %.1f)" % (self.rotation_cx, self.rotation_cy, cx, cy))
 
     def external_modification(self, origin, *args):
         # Reset rotation center...
@@ -1929,10 +1872,11 @@ class SelectionWidget(Widget):
             self.top = bounds[1]
             self.right = bounds[2]
             self.bottom = bounds[3]
+            self.check_rot_center()
             if self.keep_rotation:  # Reset it to center....
                 cx = (self.left + self.right) / 2
                 cy = (self.top + self.bottom) / 2
-                self.keep_rotation = False
+                # self.keep_rotation = False
                 self.rotation_cx = cx
                 self.rotation_cy = cy
 
