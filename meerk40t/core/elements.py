@@ -105,7 +105,6 @@ def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
 
-# TODO: Dots first point to first = obj.point(0) for shapes.
 
 class Elemental(Service):
     """
@@ -3303,7 +3302,9 @@ class Elemental(Service):
                 yield "rapid_mode"
                 for p in hull:
                     yield (
-                        "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
+                        "move_abs",
+                        Length(amount=p[0]).length_mm,
+                        Length(amount=p[1]).length_mm,
                     )
 
             spooler.job(trace_hull)
@@ -3320,11 +3321,21 @@ class Elemental(Service):
 
             def trace_quick():
                 yield "rapid_mode"
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[1]).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(amount=bbox[3]).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[3]).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(amount=bbox[1]).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
+                    amount=bbox[1]
+                ).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
+                    amount=bbox[1]
+                ).length_mm
+                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
+                    amount=bbox[3]
+                ).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
+                    amount=bbox[3]
+                ).length_mm
+                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
+                    amount=bbox[1]
+                ).length_mm
 
             spooler.job(trace_quick)
 
