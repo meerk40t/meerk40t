@@ -46,7 +46,8 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
-
+        self.constant_move_x = False
+        self.constant_move_y = False
         self.queue = []
 
         self.single = Single(self)
@@ -388,8 +389,8 @@ class Smooth(PlotManipulation):
                 yield x, y, on
                 continue
             if (
-                not self.planner.settings.constant_move_x
-                and not self.planner.settings.constant_move_y
+                not self.planner.constant_move_x
+                and not self.planner.constant_move_y
             ):
                 yield x, y, on
                 continue  # We are not smoothing.
@@ -411,11 +412,11 @@ class Smooth(PlotManipulation):
             self.goal_x = x
             self.goal_y = y
             self.goal_on = on
-            if self.planner.settings.constant_move_x and dx == 0:
+            if self.planner.constant_move_x and dx == 0:
                 # If we are moving x and we don't move x. Skip.
                 if abs(total_dy) < 15:
                     continue
-            if self.planner.settings.constant_move_y and dy == 0:
+            if self.planner.constant_move_y and dy == 0:
                 if abs(total_dx) < 15:
                     continue
             self.smooth_x += dx
