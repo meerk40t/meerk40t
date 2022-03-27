@@ -42,7 +42,7 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText,
+    SVGText, SVG_TAG_GROUP,
 )
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
 
@@ -155,7 +155,7 @@ class SVGWriter:
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree):
         if len(reg_tree.children):
-            regmark = SubElement(xml_tree, "group")
+            regmark = SubElement(xml_tree, SVG_TAG_GROUP)
             regmark.set("id", "regmarks")
             regmark.set("visibility", "hidden")
             for c in reg_tree.children:
