@@ -39,6 +39,9 @@ ORIENTATION_GRID = 0b00000100000000
 ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
 
+# LINECOL = wx.Colour(0x7F, 0x7F, 0x7F)
+LINECOL = wx.Colour(0xA0, 0x7F, 0xA0)
+
 
 class ElementsWidget(Widget):
     """
@@ -101,7 +104,7 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(wx.Colour(0xA0, 0x7F, 0xA0))
+        self.selection_pen.SetColour(LINECOL)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.save_width = None
         self.save_height = None
@@ -359,8 +362,8 @@ class SelectionWidget(Widget):
                 self.key_alt_pressed = True
             return RESPONSE_CHAIN
         elif event_type == "hover_start":
-            if self.tool_running:
-                print("Still running?!")
+            # if self.tool_running:
+            #    print("Still running?!")
             self.scene.cursor("arrow")
             self.hovering = True
             return RESPONSE_CHAIN
@@ -832,7 +835,7 @@ class SelectionWidget(Widget):
             else:
                 orgy = self.top
 
-            if "e" in method:
+            if "w" in method:
                 orgx = self.right
             else:
                 orgx = self.left
@@ -850,7 +853,12 @@ class SelectionWidget(Widget):
             elif "e" in method:
                 scalex = (position[0] - self.left) / self.save_width
 
-            if len(method) > 1 and self.uniform:  # from corner
+            if self.key_shift_pressed:  # Override uniform behaviour
+                unif = False
+            else:
+                unif = self.uniform
+
+            if len(method) > 1 and unif:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
@@ -860,15 +868,6 @@ class SelectionWidget(Widget):
 
             # b = elements.selected_area()
             b = elements._emphasized_bounds
-            if "n" in method:
-                orgy = self.bottom
-            else:
-                orgy = self.top
-
-            if "w" in method:
-                orgx = self.right
-            else:
-                orgx = self.left
 
             if "n" in method:
                 b[1] = b[3] - self.save_height
@@ -1050,57 +1049,58 @@ class SelectionWidget(Widget):
 
     def draw_rotation_corners(self, gc, wdx, wdy, x0, y0, x1, y1):
         # Compute only once....
-        if self.arcsegment is None:
-            signx = +1
-            signy = +1
-            xx = 0
-            yy = 0
-            self.arcsegment = []
-            # Start arrow
-            x = xx + signx * 0.5 * wdx - signx * self.rot_area * wdx
-            y = yy + signy * 0.5 * wdy
-            self.arcsegment += [
-                (
-                    x - signx * self.rot_area * 1 / 4 * wdx,
-                    y - signy * self.rot_area * 1 / 4 * wdy,
-                )
-            ]
-            self.arcsegment += [(x, y)]
-            self.arcsegment += [
-                (
-                    x + signx * self.rot_area * 1 / 4 * wdx,
-                    y - signy * self.rot_area * 1 / 4 * wdy,
-                )
-            ]
+
+        signx = +1
+        signy = +1
+        xx = 0
+        yy = 0
+        self.arcsegment = []
+        radius = 1.0 * self.rot_area
+        # Start arrow
+        x = xx + signx * 0.5 * wdx - signx * radius * wdx
+        y = yy + signy * 0.5 * wdy
+        self.arcsegment += [
+            (
+                x - signx * radius * 1 / 4 * wdx,
+                y - signy * radius * 1 / 4 * wdy,
+            )
+        ]
+        self.arcsegment += [(x, y)]
+        self.arcsegment += [
+            (
+                x + signx * radius * 1 / 4 * wdx,
+                y - signy * radius * 1 / 4 * wdy,
+            )
+        ]
+        self.arcsegment += [(x, y)]
+
+        # Arc-Segment
+        numpts = 8
+        for k in range(numpts + 1):
+            radi = k * math.pi / (2 * numpts)
+            sy = math.sin(radi)
+            sx = math.cos(radi)
+            x = xx + signx * 0.5 * wdx - signx * sx * radius * wdx
+            y = yy + signy * 0.5 * wdy - signy * sy * radius * wdy
+            # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
             self.arcsegment += [(x, y)]
 
-            # Arc-Segment
-            numpts = 8
-            for k in range(numpts + 1):
-                radi = k * math.pi / (2 * numpts)
-                sy = math.sin(radi)
-                sx = math.cos(radi)
-                x = xx + signx * 0.5 * wdx - signx * sx * self.rot_area * wdx
-                y = yy + signy * 0.5 * wdy - signy * sy * self.rot_area * wdy
-                # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
-                self.arcsegment += [(x, y)]
-
-            # End Arrow
-            x = xx + signx * 0.5 * wdx
-            y = yy + signy * 0.5 * wdy - signy * self.rot_area * wdy
-            self.arcsegment += [
-                (
-                    x - signx * self.rot_area * 1 / 4 * wdx,
-                    y - signy * self.rot_area * 1 / 4 * wdy,
-                )
-            ]
-            self.arcsegment += [(x, y)]
-            self.arcsegment += [
-                (
-                    x - signx * self.rot_area * 1 / 4 * wdx,
-                    y + signy * self.rot_area * 1 / 4 * wdy,
-                )
-            ]
+        # End Arrow
+        x = xx + signx * 0.5 * wdx
+        y = yy + signy * 0.5 * wdy - signy * radius * wdy
+        self.arcsegment += [
+            (
+                x - signx * radius * 1 / 4 * wdx,
+                y - signy * radius * 1 / 4 * wdy,
+            )
+        ]
+        self.arcsegment += [(x, y)]
+        self.arcsegment += [
+            (
+                x - signx * radius * 1 / 4 * wdx,
+                y + signy * radius * 1 / 4 * wdy,
+            )
+        ]
 
         if self.use_handle_rotate:
             for i in range(2):
@@ -1123,9 +1123,10 @@ class SelectionWidget(Widget):
                         x = xx + signx * self.arcsegment[idx][0]
                         y = yy + signy * self.arcsegment[idx][1]
                         segment += [(x, y)]
-                    pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 2, wx.SOLID)
+                    pen = wx.Pen(LINECOL, 2, wx.SOLID)
                     pen.SetWidth(0.75 * self.selection_pen.GetWidth())
                     pen.SetStyle(wx.PENSTYLE_SOLID)
+                    gc.SetPen(pen)
                     gc.StrokeLines(segment)
 
     def draw_handles(self, gc, wdx, wdy, x0, y0, x1, y1):
@@ -1165,9 +1166,9 @@ class SelectionWidget(Widget):
             )  # skew y
 
         if len(corners) > 0:
-            pen = wx.Pen(wx.Colour(0x7F, 0x7F, 0x7F), 1, wx.SOLID)
+            pen = wx.Pen(LINECOL, 1, wx.SOLID)
             pen.SetStyle(wx.PENSTYLE_SOLID)
-            brush = wx.Brush(wx.Colour(0x7F, 0x7F, 0x7F), wx.SOLID)
+            brush = wx.Brush(LINECOL, wx.SOLID)
             gc.SetPen(pen)
             gc.SetBrush(brush)
 
@@ -1218,7 +1219,7 @@ class SelectionWidget(Widget):
             except TypeError:
                 font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
 
-            gc.SetFont(font, wx.Colour(0x7F, 0x7F, 0x7F))
+            gc.SetFont(font, LINECOL)
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0

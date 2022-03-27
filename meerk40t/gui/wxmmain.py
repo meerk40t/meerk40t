@@ -139,16 +139,16 @@ class CustomStatusBar(wx.StatusBar):
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         sizes = [-3] * self.panelct
         # Make the first Panel large
-        sizes[0] = -5
+        sizes[0] = -4
         # Make the last Panel smaller
-        sizes[self.panelct - 1] = -2
+        # sizes[self.panelct - 1] = -2
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         # These will fall into the last field
-        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Handle"))
+        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Scale"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
