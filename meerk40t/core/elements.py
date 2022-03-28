@@ -1751,7 +1751,7 @@ class Elemental(Service):
         )
         @self.console_argument(
             "radius",
-            type=self.length,
+            type=self.length_x,
             help=_("Radius (length of side if --side_length is used)"),
         )
         @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))
@@ -1774,7 +1774,7 @@ class Elemental(Service):
         @self.console_option(
             "radius_inner",
             "r",
-            type=self.length,
+            type=str,
             help=_("Alternating radius for every other vertex"),
         )
         @self.console_option(
@@ -1870,7 +1870,12 @@ class Elemental(Service):
                 if radius_inner is None:
                     radius_inner = radius
                 else:
-                    radius_inner = Length(radius_inner, relative_length=radius)
+                    try:
+                        radius_inner = float(
+                            Length(radius_inner, relative_length=radius)
+                        )
+                    except ValueError:
+                        raise CommandSyntaxError
 
                 if inscribed:
                     if side_length is None:
@@ -1885,17 +1890,27 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
+                # print(
+                #    "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d"
+                #    % (cx, cy, radius, radius_inner, corners, density, alternate_seq)
+                # )
                 pts = []
                 i_angle = start_angle.as_radians
                 delta_angle = tau / corners
                 ct = 0
                 for j in range(corners):
                     if ct < alternate_seq:
-                        thisx = cx + radius * cos(i_angle)
-                        thisy = cy + radius * sin(i_angle)
+                        r = radius
+                    #    dbg = "outer"
                     else:
-                        thisx = cx + radius_inner * cos(i_angle)
-                        thisy = cy + radius_inner * sin(i_angle)
+                        r = radius_inner
+                    #    dbg = "inner"
+                    thisx = cx + r * cos(i_angle)
+                    thisy = cy + r * sin(i_angle)
+                    # print(
+                    #    "pt %d, Angle=%.1f: %s radius=%.1f: (%.1f, %.1f)"
+                    #    % (j, i_angle / pi * 180, dbg, r, thisx, thisy)
+                    # )
                     ct += 1
                     if ct >= 2 * alternate_seq:
                         ct = 0
