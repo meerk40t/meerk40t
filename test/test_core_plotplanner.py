@@ -134,8 +134,8 @@ class TestPlotplanner(unittest.TestCase):
         """
         settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}
         plan = PlotPlanner(settings)
-        settings.constant_move_x = True
-        settings.constant_move_y = True
+        self.constant_move_x = True
+        self.constant_move_y = True
         for i in range(100):
             plan.push(
                 LineCut(

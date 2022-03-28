@@ -39,7 +39,7 @@ of zero will remain zero.
 
 
 class PlotPlanner(Parameters):
-    def __init__(self, settings, **kwargs):
+    def __init__(self, settings, single=True, smooth=True, ppi=True, shift=True, group=True, **kwargs):
         super().__init__(settings, **kwargs)
         self.debug = False
 
@@ -50,11 +50,22 @@ class PlotPlanner(Parameters):
         self.constant_move_y = False
         self.queue = []
 
-        self.single = Single(self)
-        self.smooth = Smooth(self)
-        self.ppi = PPI(self)
-        self.shift = Shift(self)
-        self.group = Group(self)
+        self.single = None
+        self.smooth = None
+        self.ppi = None
+        self.shift = None
+        self.group = None
+
+        if single:
+            self.single = Single(self)
+        if smooth:
+            self.smooth = Smooth(self)
+        if ppi:
+            self.ppi = PPI(self)
+        if shift:
+            self.shift = Shift(self)
+        if group:
+            self.group = Group(self)
 
         self.pos_x = None
         self.pos_y = None
@@ -190,42 +201,32 @@ class PlotPlanner(Parameters):
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
-        # Applies single, ppi, shift, then group.
+        def debug(plot, manipulator):
+            for q in plot:
+                print("Manipulator: %s, %s" % (str(q), str(manipulator)))
+                yield q
+
+        if self.single is not None:
+            plot = self.single.process(plot)
         if self.debug:
-
-            def debug(plot, manipulator):
-                for q in plot:
-                    print("Manipulator: %s, %s" % (str(q), str(manipulator)))
-                    yield q
-
-            return debug(
-                self.group.process(
-                    debug(
-                        self.shift.process(
-                            debug(
-                                self.ppi.process(
-                                    debug(
-                                        self.smooth.process(
-                                            debug(
-                                                self.single.process(plot), self.single
-                                            )
-                                        ),
-                                        self.smooth,
-                                    )
-                                ),
-                                self.ppi,
-                            )
-                        ),
-                        self.shift,
-                    )
-                ),
-                self.group,
-            )
-        return self.group.process(
-            self.shift.process(
-                self.ppi.process(self.smooth.process(self.single.process(plot)))
-            )
-        )
+            plot = debug(plot, self.single)
+        if self.smooth is not None:
+            plot = self.smooth.process(plot)
+        if self.debug:
+            plot = debug(plot, self.smooth)
+        if self.ppi is not None:
+            plot = self.ppi.process(plot)
+        if self.debug:
+            plot = debug(plot, self.ppi)
+        if self.shift is not None:
+            plot = self.shift.process(plot)
+        if self.debug:
+            plot = debug(plot, self.shift)
+        if self.group is not None:
+            plot = self.group.process(plot)
+        if self.debug:
+            plot = debug(plot, self.group)
+        return plot
 
     def step_move(self, x0, y0, x1, y1):
         """
@@ -244,11 +245,16 @@ class PlotPlanner(Parameters):
     def warp(self, x, y):
         self.pos_x = x
         self.pos_y = y
-        self.single.warp(x, y)
-        self.smooth.warp(x, y)
-        self.ppi.warp(x, y)
-        self.shift.warp(x, y)
-        self.group.warp(x, y)
+        if self.single:
+            self.single.warp(x, y)
+        if self.smooth:
+            self.smooth.warp(x, y)
+        if self.ppi:
+            self.ppi.warp(x, y)
+        if self.shift:
+            self.shift.warp(x, y)
+        if self.group:
+            self.group.warp(x, y)
 
     def reset(self):
         self.single.clear()
