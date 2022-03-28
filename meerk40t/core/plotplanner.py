@@ -255,11 +255,16 @@ class PlotPlanner(Parameters):
             self.group.warp(x, y)
 
     def reset(self):
-        self.single.clear()
-        self.smooth.clear()
-        self.shift.clear()
-        self.ppi.clear()
-        self.group.clear()
+        if self.single:
+            self.single.clear()
+        if self.smooth:
+            self.smooth.clear()
+        if self.shift:
+            self.shift.clear()
+        if self.ppi:
+            self.ppi.clear()
+        if self.group:
+            self.group.clear()
 
 
 class PlotManipulation:

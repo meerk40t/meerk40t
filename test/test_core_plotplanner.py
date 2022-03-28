@@ -18,7 +18,7 @@ class TestPlotplanner(unittest.TestCase):
         @return:
         """
         settings = {"power": 1000, "constant_move_x": True}
-        plan = PlotPlanner(settings)
+        plan = PlotPlanner(settings, ppi=False)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
         plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
