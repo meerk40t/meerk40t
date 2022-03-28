@@ -18,7 +18,7 @@ from .core.exceptions import Mk40tImportAbort
 from .kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.7.5003"
+APPLICATION_VERSION = "0.7.5004"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
