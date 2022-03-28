@@ -211,6 +211,12 @@ class wxMeerK40t(wx.App, Module):
     def OnInit(self):
         return True
 
+    def InitLocale(self):
+        import sys
+        if sys.platform.startswith('win') and sys.version_info > (3,8):
+            import locale
+            locale.setlocale(locale.LC_ALL, "C")
+
     def BringWindowToFront(self):
         try:  # it's possible for this event to come when the frame is closed
             self.GetTopWindow().Raise()
