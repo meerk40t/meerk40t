@@ -70,16 +70,30 @@ class RibbonPanel(wx.Panel):
         # Let's figure out what kind of action we need to perform
         # button["action"]
         evt_id = event.GetId()
+        # print("button_click called for %d" % evt_id)
         for button in self.button_actions:
             parent_obj = button[0]
             my_id = button[1]
             my_grp = button[2]
             my_code = button[3]
             if my_id == evt_id:
+                button[4] = not button[4]
                 if my_grp != "":
-                    for obutton in self.button_actions:
-                        if obutton[2] == my_grp and obutton[1] != my_id:
-                            obutton[0].ToggleButton(obutton[1], False)
+                    if button[4]:  # got toggled
+                        for obutton in self.button_actions:
+                            if obutton[2] == my_grp and obutton[1] != my_id:
+                                obutton[0].ToggleButton(obutton[1], False)
+                    else:  # got untoggled...
+                        # so let' activate the first button of the group (implicitly defined as default...)
+                        for obutton in self.button_actions:
+                            if obutton[2] == my_grp:
+                                obutton[0].ToggleButton(obutton[1], True)
+                                mevent = event.Clone()
+                                mevent.SetId(obutton[1])
+                                # print("Calling master...")
+                                self.button_click(mevent)
+                                # exit
+                                return
                 my_code(0)  # Needs a parameter....
                 break
 
@@ -136,7 +150,13 @@ class RibbonPanel(wx.Panel):
                     kind=bkind,
                 )
             self.button_actions.append(
-                (button_bar, new_id, toggle_grp, button["action"])
+                [
+                    button_bar,
+                    new_id,
+                    toggle_grp,
+                    button["action"],
+                    False,
+                ]  # Parent, ID, Toggle, Action, State
             )
             # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
             button_bar.Bind(
