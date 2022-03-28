@@ -46,8 +46,6 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
-        self.constant_move_x = False
-        self.constant_move_y = False
         self.queue = []
 
         self.single = None
