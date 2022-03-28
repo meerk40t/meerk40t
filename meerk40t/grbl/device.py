@@ -348,7 +348,7 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
-        self.plot_planner = PlotPlanner(self.settings)
+        self.plot_planner = PlotPlanner(self.settings, single=True, smooth=False, ppi=False, shift=False, group=True)
         self.plot_data = None
 
         self.on_value = 0
