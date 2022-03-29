@@ -811,7 +811,6 @@ class Node:
                 types, cascade, depth, selected, emphasized, targeted, highlighted
             )
 
-
     def count_children(self):
         return len(self._children)
 
@@ -886,18 +885,20 @@ class Node:
         self.unregister()
         return node
 
-    def remove_node(self):
+    def remove_node(self, children=True, references=True):
         """
         Remove the current node from the tree.
 
         This function must iterate down and first remove all children from the bottom.
         """
-        self.remove_all_children()
+        if children:
+            self.remove_all_children()
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
-        for ref in list(self._references):
-            ref.remove_node()
+        if references:
+            for ref in list(self._references):
+                ref.remove_node()
         self.item = None
         self._parent = None
         self._root = None
