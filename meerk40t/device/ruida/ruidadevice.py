@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import Tuple, Union
 
 from ...core.cutcode import CutCode, LaserSettings, PlotCut
-from ...kernel import Module
+from ...kernel import Module, get_safe_path
 from ...svgelements import Color
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
@@ -423,6 +423,7 @@ class RuidaEmulator(Module):
                 self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
+                self.ruida_channel(str(e))
                 raise e
 
     def process(self, array):
@@ -1137,7 +1138,7 @@ class RuidaEmulator(Module):
                     self.filename += chr(a)
                 desc = "Filename: %s" % self.filename
                 if self.saving:
-                    self.filestream = open("%s.rd" % self.filename, "wb")
+                    self.filestream = open(get_safe_path("%s.rd" % self.filename), "wb")
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / UM_PER_MIL
                 c_y = self.abscoord(array[7:12]) / UM_PER_MIL
@@ -1266,7 +1267,7 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
                 if v1 == 0:
                     for f in files:
                         os.remove(f)
@@ -1281,7 +1282,7 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
                 name = files[filenumber - 1]
                 name = os.path.split(name)[-1]
                 name = name.split(".")[0]
@@ -1298,7 +1299,7 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
                 name = files[filenumber - 1]
                 try:
                     with open(name, "rb") as f:
@@ -1937,21 +1938,21 @@ class RuidaEmulator(Module):
             from glob import glob
             from os.path import join, realpath
 
-            files = [name for name in glob(join(realpath("."), "*.rd"))]
+            files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
             v = len(files)
             return "Total Doc Number", v
         if mem == 0x0206:
             from os.path import realpath
             from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath("."))
+            total, used, free = disk_usage(realpath(get_safe_path(".")))
             v = min(total, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0207:
             from os.path import realpath
             from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath("."))
+            total, used, free = disk_usage(realpath(get_safe_path(".")))
             v = min(free, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0208:
