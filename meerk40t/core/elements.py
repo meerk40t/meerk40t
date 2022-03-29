@@ -1,6 +1,7 @@
 import functools
 import os.path
 import re
+import time
 from copy import copy
 from math import sin, cos, pi, gcd, tau
 
@@ -6768,11 +6769,17 @@ class Elemental(Modifier):
         self.note = None
 
     def remove_nodes(self, node_list):
-        for n in node_list:
-            # Cannot delete structure nodes.
-            if n.type not in ("root", "branch elems", "branch ops"):
-                if n._parent is not None:
-                    n.remove_node()
+        for node in node_list:
+            for n in node.flat():
+                n._mark_delete = True
+                for ref in list(n._references):
+                    ref._mark_delete = True
+        for n in reversed(list(self.flat())):
+            if not hasattr(n, "_mark_delete"):
+                continue
+            if n.type in ("root", "branch elems", "branch ops"):
+                continue
+            n.remove_node(children=False, references=False)
 
     def remove_elements(self, elements_list):
         for elem in elements_list:
