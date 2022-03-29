@@ -980,10 +980,15 @@ class PlotCut(CutObject):
             self.max_y = y
 
     def major_axis(self):
-        if self.horizontal_raster:
-            return 0
+        """
+        If both vertical and horizontal are set we prefer vertical as major axis because vertical rastering is heavier
+        with the movement of the gantry bar.
+        @return:
+        """
         if self.vertical_raster:
             return 1
+        if self.horizontal_raster:
+            return 0
 
         if len(self.plot) < 2:
             return 0
