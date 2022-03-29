@@ -73,6 +73,54 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
+        self.magnet_x = []
+        self.magnet_y = []
+        self.use_magnet = True
+
+    def clear_magnets(self):
+        self.magnet_x = []
+        self.magnet_y = []
+        # print("Clear all magnets")
+
+    def toggle_x_magnet(self, x_value):
+        if x_value in self.magnet_x:
+            self.magnet_x.remove(x_value)
+            # print("Remove x magnet for %.1f" % x_value)
+        else:
+            self.magnet_x += [x_value]
+            # print("Add x magnet for %.1f" % x_value)
+
+    def toggle_y_magnet(self, y_value):
+        if y_value in self.magnet_y:
+            self.magnet_y.remove(y_value)
+            # print("Remove y magnet for %.1f" % y_value)
+        else:
+            self.magnet_y += [y_value]
+            # print("Add y magnet for %.1f" % y_value)
+
+    def attracted_x(self, x_value):  # TODO
+        delta = float("inf")
+        x_val = None
+        for mag_x in self.magnet_y:
+            if abs(x_value - mag_x) < delta:
+                delta = abs(x_value - mag_x)
+                x_val = mag_x
+        # Is it less than xx away?
+        if delta > 1000:
+            x_val = x_value
+        return x_val
+
+    def attracted_y(self, y_value):  # TODO
+        delta = float("inf")
+        y_val = None
+        for mag_y in self.magnet_y:
+            if abs(y_value - mag_y) < delta:
+                delta = abs(y_value - mag_y)
+                y_val = mag_y
+        # Is it less than xx away?
+        if delta > 1000:
+            y_val = y_value
+        return y_val
 
     def module_open(self, *args, **kwargs):
         context = self.context

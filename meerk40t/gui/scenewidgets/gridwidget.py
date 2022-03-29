@@ -18,6 +18,9 @@ class GridWidget(Widget):
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
         self.grid_line_pen.SetWidth(1)
+        self.grid_line_high_pen = wx.Pen()
+        self.grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0))
+        self.grid_line_high_pen.SetWidth(2)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -56,20 +59,30 @@ class GridWidget(Widget):
         step = float(Length("10mm"))
         starts = []
         ends = []
+        starts_hi = []
+        ends_hi = []
         if step == 0:
             self.grid = None
-            return starts, ends
+            return starts, ends, starts_hi, ends_hi
         x = 0.0
         while x < units_width:
             starts.append((x, 0.0))
             ends.append((x, units_height))
             x += step
+        for x in self.scene.magnet_x:
+            starts_hi.append((x, 0.0))
+            ends_hi.append((x, units_height))
+
         y = 0.0
         while y < units_height:
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
-        self.grid = starts, ends
+        for y in self.scene.magnet_y:
+            starts_hi.append((0.0, y))
+            ends_hi.append((units_width, y))
+
+        self.grid = starts, ends, starts_hi, ends_hi
 
     def process_draw(self, gc):
         """
@@ -92,7 +105,7 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
-            starts, ends = self.grid
+            starts, ends, starts_hi, ends_hi = self.grid
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
                 scale_x = matrix.value_scale_x()
@@ -107,6 +120,9 @@ class GridWidget(Widget):
                 gc.SetPen(self.grid_line_pen)
                 if starts and ends:
                     gc.StrokeLineSegments(starts, ends)
+                gc.SetPen(self.grid_line_high_pen)
+                if starts_hi and ends_hi:
+                    gc.StrokeLineSegments(starts_hi, ends_hi)
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()
 
