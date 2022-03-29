@@ -4,6 +4,7 @@ from os.path import realpath
 import re
 from copy import copy
 from math import cos, gcd, pi, sin, tau
+from tracemalloc import start
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
@@ -1804,7 +1805,7 @@ class Elemental(Service):
             cx,
             cy,
             radius,
-            start_angle=None,
+            startangle=None,
             inscribed=None,
             side_length=None,
             radius_inner=None,
@@ -1830,15 +1831,15 @@ class Elemental(Service):
                 radius = 0
             if corners <= 2:
                 # No need to look at side_length parameter as we are considering the radius value as an edge anyway...
-                if start_angle is None:
-                    start_angle = Angle.parse("0deg")
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
 
                 star_points = [(cx, cy)]
                 if corners == 2:
                     star_points += [
                         (
-                            cx + cos(start_angle.as_radians) * radius,
-                            cy + sin(start_angle.as_radians) * radius,
+                            cx + cos(startangle.as_radians) * radius,
+                            cy + sin(startangle.as_radians) * radius,
                         )
                     ]
             else:
@@ -1847,8 +1848,8 @@ class Elemental(Service):
                     radius = cx
                     cx = 0
                     cy = 0
-                if start_angle is None:
-                    start_angle = Angle.parse("0deg")
+                if startangle is None:
+                    startangle = Angle.parse("0deg")
 
                 if alternate_seq is None:
                     if radius_inner is None:
@@ -1890,12 +1891,12 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                # print(
-                #    "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d"
-                #    % (cx, cy, radius, radius_inner, corners, density, alternate_seq)
-                # )
+                #print(
+                #   "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d, angle=%.1f"
+                #   % (cx, cy, radius, radius_inner, corners, density, alternate_seq, startangle)
+                #)
                 pts = []
-                i_angle = start_angle.as_radians
+                i_angle = startangle.as_radians
                 delta_angle = tau / corners
                 ct = 0
                 for j in range(corners):
