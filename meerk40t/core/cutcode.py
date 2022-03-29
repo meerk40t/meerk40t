@@ -921,31 +921,28 @@ class PlotCut(CutObject):
 
         @return: whether the plot can travel
         """
+        # Default to vector settings.
         self.settings.raster_alt = False
         self.settings.constant_move_x = False
         self.settings.constant_move_y = False
         self.settings.raster_step = 0
-        self.settings.force_twitchless = True
-        if (
-            not self.travels_left
-            and not self.travels_right
-            and not self.travels_bottom
-            and not self.travels_top
-        ):
-            return False
-        if 0 < self.max_dx <= 15:
-            self.vertical_raster = True
-        elif 0 < self.max_dy <= 15:
-            self.horizontal_raster = True
-        else:
-            return False
-        self.settings.raster_step = min(self.max_dx, self.max_dy)
-        self.settings.raster_alt = True
-        if self.horizontal_raster:
-            self.settings.constant_move_x = True
-        else:
-            self.settings.constant_move_y = True
-        return True
+        if self.settings.speed < 80:
+            # Twitchless gets sketchy at 80.
+            self.settings.force_twitchless = True
+            if self.max_dy >= 15 and self.max_dy >= 15:
+                return False  # This is probably a vector.
+
+        if self.settings.speed >= 80:
+            # Above 80 we're likely dealing with a raster.
+            self.settings.raster_step = min(self.max_dx, self.max_dy)
+            self.settings.raster_alt = True
+            if 0 < self.max_dx <= 15:
+                self.vertical_raster = True
+                self.settings.constant_move_y = True
+            if 0 < self.max_dy <= 15:
+                self.horizontal_raster = True
+                self.settings.constant_move_x = True
+            return True
 
     def plot_extend(self, plot):
         for x, y, laser in plot:
