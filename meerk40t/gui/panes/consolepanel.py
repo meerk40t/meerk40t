@@ -1,6 +1,8 @@
+import threading
+
 import wx
 from wx import aui
-# from wx import richtext
+from wx import richtext
 
 from ..icons import icons8_console_50
 from ..mwindow import MWindow
@@ -103,6 +105,7 @@ class ConsolePanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.lock = threading.Lock()
 
         font = wx.Font(
             10,
@@ -199,6 +202,9 @@ class ConsolePanel(wx.Panel):
             "\033[0m": self.style_normal,  # "normal"
         }
 
+        self.line_buffer = list()
+        self.append_process_queued = False
+
     def style_normal(self, style):
         return self.style
 
@@ -234,12 +240,38 @@ class ConsolePanel(wx.Panel):
         self.text_main.Clear()
 
     def update_text(self, text):
+        with self.lock:
+            self.line_buffer.append(str(text))
         if not wx.IsMainThread():
-            wx.CallAfter(self._update_text, str(text))
+            if not self.append_process_queued:
+                self.append_process_queued = True
+                wx.CallAfter(self._update_text)
         else:
-            self._update_text(str(text))
+            self._update_text()
 
-    def update_text_text(self, lines):
+    def update_text_text(self):
+        with self.lock:
+            line_buffer = list(self.line_buffer)
+            self.line_buffer.clear()
+            self.append_process_queued = False
+        if len(line_buffer) > 100:
+            line_buffer = line_buffer[:-100]
+            line_buffer[0] = "...\n"
+        for line in line_buffer:
+            self.process_text_text_line(line)
+
+    def update_text_rich(self):
+        with self.lock:
+            line_buffer = list(self.line_buffer)
+            self.line_buffer.clear()
+            self.append_process_queued = False
+        if len(line_buffer) > 100:
+            line_buffer = line_buffer[:-100]
+            line_buffer[0] = "...\n"
+        for line in line_buffer:
+            self.process_text_rich_line(line)
+
+    def process_text_text_line(self, lines):
         text = ""
         ansi_text = ""
         ansi = False
@@ -267,7 +299,7 @@ class ConsolePanel(wx.Panel):
             self.text_main.AppendText(text)
         # self.text_main.AppendText(lines)
 
-    def update_text_rich(self, lines):
+    def process_text_rich_line(self, lines):
         """
         Update rich text code line. This only works if text_main is a RichText box.
 
