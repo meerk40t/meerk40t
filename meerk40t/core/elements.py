@@ -5146,7 +5146,6 @@ class Elemental(Modifier):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
-            self.remove_elements()
             self.remove_nodes(data)
             self.context.signal("refresh_scene", 0)
             return "tree", [self._tree]
@@ -6768,7 +6767,6 @@ class Elemental(Modifier):
 
     def remove_nodes(self, node_list):
         for n in node_list:
-            self.remove_nodes(node_list)
             # Cannot delete structure nodes.
             if n.type not in ("root", "branch elems", "branch ops"):
                 if n._parent is not None:
