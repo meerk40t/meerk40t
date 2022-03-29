@@ -1631,6 +1631,7 @@ class LhystudiosController:
         self.reset()
 
         self.context.root.listen("lifecycle;ready", self.on_controller_ready)
+        self.context.root.listen("lifecycle;shutdown", self.finalize)
 
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
@@ -1646,12 +1647,13 @@ class LhystudiosController:
         return buffer_str
 
     def on_controller_ready(self, origin, *args):
+        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         self.start()
 
     def finalize(self, *args, **kwargs):
-        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         if self._thread is not None:
             self.write(b"\x18\n")
+        self.context.root.unlisten("lifecycle;shutdown", self.finalize)
 
     def __repr__(self):
         return "LhystudiosController(%s)" % self.name

@@ -1,6 +1,7 @@
 import functools
 import os.path
 import re
+import time
 from copy import copy
 from math import sin, cos, pi, gcd, tau
 
@@ -352,6 +353,8 @@ class Node:
 
     @targeted.setter
     def targeted(self, value):
+        if self._target == value:
+            return
         self._target = value
         self.notify_targeted(self)
 
@@ -361,6 +364,8 @@ class Node:
 
     @highlighted.setter
     def highlighted(self, value):
+        if self._highlighted == value:
+            return
         self._highlighted = value
         self.notify_highlighted(self)
 
@@ -370,6 +375,8 @@ class Node:
 
     @emphasized.setter
     def emphasized(self, value):
+        if self._emphasized == value:
+            return
         self._emphasized = value
         self.notify_emphasized(self)
 
@@ -379,6 +386,8 @@ class Node:
 
     @selected.setter
     def selected(self, value):
+        if self._selected == value:
+            return
         self._selected = value
         self.notify_selected(self)
 
@@ -877,18 +886,20 @@ class Node:
         self.unregister()
         return node
 
-    def remove_node(self):
+    def remove_node(self, children=True, references=True):
         """
         Remove the current node from the tree.
 
         This function must iterate down and first remove all children from the bottom.
         """
-        self.remove_all_children()
+        if children:
+            self.remove_all_children()
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
-        for ref in list(self._references):
-            ref.remove_node()
+        if references:
+            for ref in list(self._references):
+                ref.remove_node()
         self.item = None
         self._parent = None
         self._root = None
@@ -5092,6 +5103,18 @@ class Elemental(Modifier):
             return "tree", list(self.flat(selected=True))
 
         @context.console_command(
+            "emphasized",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+            Set tree list to emphasized node
+            """
+            return "tree", list(self.flat(emphasized=True))
+
+        @context.console_command(
             "highlighted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -5124,13 +5147,10 @@ class Elemental(Modifier):
         def delete(channel, _, data=None, **kwargs):
             """
             Delete nodes.
-            Structural nodes such as root, elements, and operations are not able to be deleted
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
-            for n in data:
-                # Cannot delete structure nodes.
-                if n.type not in ("root", "branch elems", "branch ops"):
-                    if n._parent is not None:
-                        n.remove_node()
+            self.remove_nodes(data)
+            self.context.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
         @context.console_command(
@@ -6747,6 +6767,19 @@ class Elemental(Modifier):
 
     def clear_note(self):
         self.note = None
+
+    def remove_nodes(self, node_list):
+        for node in node_list:
+            for n in node.flat():
+                n._mark_delete = True
+                for ref in list(n._references):
+                    ref._mark_delete = True
+        for n in reversed(list(self.flat())):
+            if not hasattr(n, "_mark_delete"):
+                continue
+            if n.type in ("root", "branch elems", "branch ops"):
+                continue
+            n.remove_node(children=False, references=False)
 
     def remove_elements(self, elements_list):
         for elem in elements_list:
