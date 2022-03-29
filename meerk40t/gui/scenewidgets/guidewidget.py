@@ -52,6 +52,8 @@ class GuideWidget(Widget):
             return RESPONSE_CHAIN
         elif event_type == "doubleclick":
             value = 0
+            is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
+            is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
             p = self.scene.context
             scaled_conversion = (
                 p.device.length(str(1) + p.units_name, as_float=True)
@@ -64,7 +66,8 @@ class GuideWidget(Widget):
                 ]
             )
             mark_point_x = (window_pos[0] - sx) / scaled_conversion
-            mark_point_y = (window_pos[0] - sx) / scaled_conversion
+            mark_point_y = (window_pos[1] - sy) / scaled_conversion
+
             print(
                 "Coordinates: x=%.1f, y=%.1f, sx=%.1f, sy=%.1f, mark-x=%.1f, y=%.1f"
                 % (window_pos[0], window_pos[1], sx, sy, mark_point_x, mark_point_y)
@@ -74,8 +77,6 @@ class GuideWidget(Widget):
                 window_pos[0] - sx, window_pos[1] - sy, UNITS_PER_PIXEL
             )
             print("cx=%.1f, cy=%.1f" % (cx, cy))
-            is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
-            is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
             if is_x and is_y:
                 self.scene.clear_magnets()
             elif is_x:
