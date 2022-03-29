@@ -352,6 +352,8 @@ class Node:
 
     @targeted.setter
     def targeted(self, value):
+        if self._target == value:
+            return
         self._target = value
         self.notify_targeted(self)
 
@@ -361,6 +363,8 @@ class Node:
 
     @highlighted.setter
     def highlighted(self, value):
+        if self._highlighted == value:
+            return
         self._highlighted = value
         self.notify_highlighted(self)
 
@@ -370,6 +374,8 @@ class Node:
 
     @emphasized.setter
     def emphasized(self, value):
+        if self._emphasized == value:
+            return
         self._emphasized = value
         self.notify_emphasized(self)
 
@@ -379,6 +385,8 @@ class Node:
 
     @selected.setter
     def selected(self, value):
+        if self._selected == value:
+            return
         self._selected = value
         self.notify_selected(self)
 
@@ -5138,11 +5146,8 @@ class Elemental(Modifier):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
-            for n in data:
-                # Cannot delete structure nodes.
-                if n.type not in ("root", "branch elems", "branch ops"):
-                    if n._parent is not None:
-                        n.remove_node()
+            self.remove_elements()
+            self.remove_nodes(data)
             self.context.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
@@ -6760,6 +6765,14 @@ class Elemental(Modifier):
 
     def clear_note(self):
         self.note = None
+
+    def remove_nodes(self, node_list):
+        for n in node_list:
+            self.remove_nodes(node_list)
+            # Cannot delete structure nodes.
+            if n.type not in ("root", "branch elems", "branch ops"):
+                if n._parent is not None:
+                    n.remove_node()
 
     def remove_elements(self, elements_list):
         for elem in elements_list:
