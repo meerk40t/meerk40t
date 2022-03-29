@@ -5092,6 +5092,18 @@ class Elemental(Modifier):
             return "tree", list(self.flat(selected=True))
 
         @context.console_command(
+            "emphasized",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+            Set tree list to emphasized node
+            """
+            return "tree", list(self.flat(emphasized=True))
+
+        @context.console_command(
             "highlighted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -5124,7 +5136,7 @@ class Elemental(Modifier):
         def delete(channel, _, data=None, **kwargs):
             """
             Delete nodes.
-            Structural nodes such as root, elements, and operations are not able to be deleted
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
             for n in data:
                 # Cannot delete structure nodes.
