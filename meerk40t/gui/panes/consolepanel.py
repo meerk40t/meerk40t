@@ -121,7 +121,6 @@ class ConsolePanel(wx.Panel):
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         )
 
-        # style = richtext.RichTextAttr()
         style = wx.TextAttr()
         font = wx.Font(
             10,
