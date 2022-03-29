@@ -4,7 +4,6 @@ from os.path import realpath
 import re
 from copy import copy
 from math import cos, gcd, pi, sin, tau
-from tracemalloc import start
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
