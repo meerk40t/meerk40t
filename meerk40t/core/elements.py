@@ -787,7 +787,7 @@ class Node:
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
             and (selected is None or selected == node.selected)
-            and (highlighted is None or highlighted != node.highlighted)
+            and (highlighted is None or highlighted == node.highlighted)
         ):
             # Matches the emphases.
             if cascade:
