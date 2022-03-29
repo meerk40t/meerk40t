@@ -5143,6 +5143,7 @@ class Elemental(Modifier):
                 if n.type not in ("root", "branch elems", "branch ops"):
                     if n._parent is not None:
                         n.remove_node()
+            self.context.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
         @context.console_command(
