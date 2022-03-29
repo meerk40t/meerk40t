@@ -767,6 +767,7 @@ class Node:
         emphasized=None,
         targeted=None,
         highlighted=None,
+        bottom=False,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
@@ -780,6 +781,7 @@ class Node:
         :param emphasized: match only emphasized nodes.
         :param targeted: match only targeted nodes
         :param highlighted: match only highlighted nodes
+        :param bottom: list items bottom to top
         :return:
         """
         node = self
@@ -792,9 +794,13 @@ class Node:
             # Matches the emphases.
             if cascade:
                 # Give every type-matched descendant.
-                for c in self._flatten(node):
-                    if types is None or c.type in types:
-                        yield c
+                flat = self._flatten(node)
+                if bottom:
+                    flat = reversed(flat)
+                for c in flat:
+                    if types is not None and c.type in types:
+                        continue
+                    yield c
                 # Do not recurse further. This node is end node.
                 return
             else:
@@ -808,7 +814,7 @@ class Node:
         # Check all children.
         for c in node.children:
             yield from c.flat(
-                types, cascade, depth, selected, emphasized, targeted, highlighted
+                types, cascade, depth, selected, emphasized, targeted, highlighted, bottom
             )
 
     def count_children(self):
