@@ -1,4 +1,5 @@
-import re
+import threading
+
 import wx
 from wx import aui
 from wx import richtext
@@ -104,55 +105,63 @@ class ConsolePanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
-        self.text_main = richtext.RichTextCtrl(
-            self,
-            wx.ID_ANY,
-            "",
-            style=wx.richtext.RE_MULTILINE
-            | wx.richtext.RE_READONLY
-            | wx.BG_STYLE_SYSTEM
-            | wx.VSCROLL
-            | wx.ALWAYS_SHOW_SB,
-        )
-        self.text_main.SetEditable(False)
-        self.text_main.BeginSuppressUndo()
+        self.lock = threading.Lock()
 
-        self.text_entry = wx.TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
-        )
-
-        # style = richtext.RichTextAttr()
-        style = wx.TextAttr()
         font = wx.Font(
             10,
             wx.FONTFAMILY_TELETYPE,
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
         )
-        style.SetFont(font)
-        style.SetLineSpacing(0)
-        style.SetParagraphSpacingBefore(0)
-        style.SetParagraphSpacingAfter(0)
-        bg = self.background_color()
-        if self.is_dark:
-            fg = wx.Colour("white")
-        else:
-            fg = wx.Colour("black")
-        style.SetTextColour(fg)
-        style.SetBackgroundColour(bg)
+        self.text_entry = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
+        )
 
-        self.text_main.SetForegroundColour(fg)
-        self.text_main.SetBackgroundColour(bg)
-        self.text_entry.SetForegroundColour(fg)
-        self.text_entry.SetBackgroundColour(bg)
-        self.text_entry.SetDefaultStyle(style)
+        try:
+            self.text_main = richtext.RichTextCtrl(
+                self,
+                wx.ID_ANY,
+                "",
+                style=wx.richtext.RE_MULTILINE
+                | wx.richtext.RE_READONLY
+                | wx.BG_STYLE_SYSTEM
+                | wx.VSCROLL
+                | wx.ALWAYS_SHOW_SB,
+            )
+            self.text_main.SetEditable(False)
+            self.text_main.BeginSuppressUndo()
+            style = wx.TextAttr()
 
-        style = richtext.RichTextAttr(style)
-        style.SetLeftIndent(0, 320)
-        self.text_main.SetBasicStyle(style)
-        self.text_main.SetDefaultStyle(style)
-        self.style = style
-        self.text_main.Update()  # Apply style to just opened window
+            style.SetFont(font)
+            style.SetLineSpacing(0)
+            style.SetParagraphSpacingBefore(0)
+            style.SetParagraphSpacingAfter(0)
+            bg = self.background_color()
+            if self.is_dark:
+                fg = wx.Colour("white")
+            else:
+                fg = wx.Colour("black")
+            style.SetTextColour(fg)
+            style.SetBackgroundColour(bg)
+
+            self.text_main.SetForegroundColour(fg)
+            self.text_main.SetBackgroundColour(bg)
+            self.text_entry.SetForegroundColour(fg)
+            self.text_entry.SetBackgroundColour(bg)
+            self.text_entry.SetDefaultStyle(style)
+
+            style = richtext.RichTextAttr(style)
+            style.SetLeftIndent(0, 320)
+            self.text_main.SetBasicStyle(style)
+            self.text_main.SetDefaultStyle(style)
+            self.style = style
+            self.text_main.Update()  # Apply style to just opened window
+            self._update_text = self.update_text_rich
+
+        except NameError:
+            self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+            self.text_main.SetFont(font)
+            self._update_text = self.update_text_text
 
         self.__set_properties()
         self.__do_layout()
@@ -193,6 +202,9 @@ class ConsolePanel(wx.Panel):
             "\033[0m": self.style_normal,  # "normal"
         }
 
+        self.line_buffer = list()
+        self.append_process_queued = False
+
     def style_normal(self, style):
         return self.style
 
@@ -201,7 +213,6 @@ class ConsolePanel(wx.Panel):
 
     @property
     def is_dark(self):
-
         return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __set_properties(self):
@@ -229,12 +240,72 @@ class ConsolePanel(wx.Panel):
         self.text_main.Clear()
 
     def update_text(self, text):
+        with self.lock:
+            self.line_buffer.append(str(text))
         if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, str(text))
+            if not self.append_process_queued:
+                self.append_process_queued = True
+                wx.CallAfter(self._update_text)
         else:
-            self.update_text_gui(str(text))
+            self._update_text()
 
-    def update_text_gui(self, lines):
+    def update_text_text(self):
+        with self.lock:
+            line_buffer = list(self.line_buffer)
+            self.line_buffer.clear()
+            self.append_process_queued = False
+        if len(line_buffer) > 100:
+            line_buffer = line_buffer[:-100]
+            line_buffer[0] = "...\n"
+        for line in line_buffer:
+            self.process_text_text_line(line)
+
+    def update_text_rich(self):
+        with self.lock:
+            line_buffer = list(self.line_buffer)
+            self.line_buffer.clear()
+            self.append_process_queued = False
+        if len(line_buffer) > 100:
+            line_buffer = line_buffer[:-100]
+            line_buffer[0] = "...\n"
+        for line in line_buffer:
+            self.process_text_rich_line(line)
+
+    def process_text_text_line(self, lines):
+        text = ""
+        ansi_text = ""
+        ansi = False
+        if not self.text_main.IsEmpty():
+            self.text_main.AppendText("\n")
+        for c in lines:
+            b = ord(c)
+            if c == "\n":
+                if text:
+                    self.text_main.AppendText(text)
+                    text = ""
+            if b == 27:
+                ansi = True
+            if ansi:
+                ansi_text += c
+                if c == "m":
+                    if text:
+                        self.text_main.AppendText(text)
+                        text = ""
+                    ansi = False
+                    ansi_text = ""
+                continue
+            text += c
+        if text:
+            self.text_main.AppendText(text)
+        # self.text_main.AppendText(lines)
+
+    def process_text_rich_line(self, lines):
+        """
+        Update rich text code line. This only works if text_main is a RichText box.
+
+        @param lines:
+        @return:
+        """
         self.text_main.SetInsertionPointEnd()
         ansi = False
         ansi_text = ""

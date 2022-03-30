@@ -368,7 +368,12 @@ class Smooth(PlotManipulation):
         )
 
     def flushed(self):
-        return self.goal_x == self.smooth_x and self.goal_y == self.smooth_y
+        return (
+            self.goal_x == self.smooth_x
+            and self.goal_y == self.smooth_y
+            and self.goal_x is not None
+            and self.goal_y is not None
+        )
 
     def process(self, plot):
         """
@@ -423,7 +428,11 @@ class Smooth(PlotManipulation):
         if not self.flushed():
             if self.goal_x is None or self.goal_y is None:
                 return
-            for x, y in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+            if self.smooth_x is None or self.smooth_y is None:
+                return
+            for x, y in ZinglPlotter.plot_line(
+                self.smooth_x, self.smooth_y, self.goal_x, self.goal_y
+            ):
                 yield x, y, self.goal_on
             self.goal_x = None
             self.goal_y = None
