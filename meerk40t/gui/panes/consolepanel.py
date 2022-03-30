@@ -99,11 +99,11 @@ def register_panel_console(window, context):
             panel.control.clear()
 
 
-class ConsolePanel(wx.Panel):
+class ConsolePanel(wx.ScrolledWindow):
     def __init__(self, *args, context=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwargs)
+        wx.ScrolledWindow.__init__(self, *args, **kwargs)
         self.context = context
         self.lock = threading.Lock()
 
@@ -159,7 +159,7 @@ class ConsolePanel(wx.Panel):
             self._update_text = self.update_text_rich
 
         except NameError:
-            self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
+            self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
             self.text_main.SetFont(font)
             self._update_text = self.update_text_text
 
@@ -202,9 +202,6 @@ class ConsolePanel(wx.Panel):
             "\033[0m": self.style_normal,  # "normal"
         }
 
-        self.line_buffer = list()
-        self.append_process_queued = False
-
     def style_normal(self, style):
         return self.style
 
@@ -240,36 +237,16 @@ class ConsolePanel(wx.Panel):
         self.text_main.Clear()
 
     def update_text(self, text):
-        with self.lock:
-            self.line_buffer.append(str(text))
         if not wx.IsMainThread():
-            if not self.append_process_queued:
-                self.append_process_queued = True
-                wx.CallAfter(self._update_text)
+            wx.CallAfter(self._update_text, text)
         else:
-            self._update_text()
+            self._update_text(text)
 
-    def update_text_text(self):
-        with self.lock:
-            line_buffer = list(self.line_buffer)
-            self.line_buffer.clear()
-            self.append_process_queued = False
-        if len(line_buffer) > 100:
-            line_buffer = line_buffer[:-100]
-            line_buffer[0] = "...\n"
-        for line in line_buffer:
-            self.process_text_text_line(line)
+    def update_text_text(self, text):
+        self.process_text_text_line(text)
 
-    def update_text_rich(self):
-        with self.lock:
-            line_buffer = list(self.line_buffer)
-            self.line_buffer.clear()
-            self.append_process_queued = False
-        if len(line_buffer) > 100:
-            line_buffer = line_buffer[:-100]
-            line_buffer[0] = "...\n"
-        for line in line_buffer:
-            self.process_text_rich_line(line)
+    def update_text_rich(self, text):
+        self.process_text_rich_line(text)
 
     def process_text_text_line(self, lines):
         text = ""
