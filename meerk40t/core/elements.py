@@ -5424,6 +5424,45 @@ class Elemental(Modifier):
 
             spooler.job(trace_quick)
 
+        # ==========
+        # TRACE OPERATIONS
+        # ==========
+        @context.console_command(
+            "trace",
+            help=_("trace the given element path"),
+            input_type="elements",
+        )
+        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
+            if not data:
+                return
+            active = self.context.active
+            try:
+                spooler, input_device, output = self.context.registered[
+                    "device/%s" % active
+                ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
+
+            pts = []
+            for path in data:
+                if isinstance(path, Shape):
+                    path = abs(Path(path))
+                    pts.append(path.first_point)
+                    for segment in path:
+                        pts.append(segment.end)
+            if not pts:
+                return
+
+            def trace_command():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MODE_RAPID
+                for p in pts:
+                    yield COMMAND_MOVE, p[0], p[1]
+
+            spooler.job(trace_command)
+
+
         # --------------------------- END COMMANDS ------------------------------
 
         # --------------------------- TREE OPERATIONS ---------------------------
