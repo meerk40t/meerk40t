@@ -63,7 +63,7 @@ class GridWidget(Widget):
             # The very first time we get absurd values, so let's do as if nothing had happened...
             divider = units_width / step
             if divider > 1000:
-                print ("Something strange happened: %s" %s)
+                # print ("Something strange happened: %s" %s)
                 step = 0
         if step==0:
             # print ("Default kicked in")

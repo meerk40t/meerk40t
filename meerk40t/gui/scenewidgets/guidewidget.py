@@ -118,7 +118,6 @@ class GuideWidget(Widget):
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
         delta = points / self.scaled_conversion
         # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
-        print("Delta=%.3f, log=%.3f, 0.1=%.3f, 0.01=%.3f" % (delta, math.log10(delta), math.log10(0.1), math.log10(0.01)))
         x = delta
         factor = 1
         if x >= 1:
@@ -140,7 +139,7 @@ class GuideWidget(Widget):
             l_pref = 5.0
 
         delta = l_pref * factor
-        print ("New Delta={delta}".format(delta=delta))
+        # print ("New Delta={delta}".format(delta=delta))
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
         self.scene.tick_distance = delta
