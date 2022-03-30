@@ -99,29 +99,30 @@ class Scene(Module, Job):
             self.magnet_y += [y_value]
             # print("Add y magnet for %.1f" % y_value)
 
-    def attracted_x(self, x_value):  # TODO
+    def magnet_attracted_x(self, x_value):
         delta = float("inf")
         x_val = None
-        for mag_x in self.magnet_y:
+        for mag_x in self.magnet_x:
             if abs(x_value - mag_x) < delta:
                 delta = abs(x_value - mag_x)
                 x_val = mag_x
-        # Is it less than xx away?
-        if delta > 1000:
-            x_val = x_value
         return x_val
 
-    def attracted_y(self, y_value):  # TODO
+    def magnet_attracted_y(self, y_value):  # TODO
         delta = float("inf")
         y_val = None
         for mag_y in self.magnet_y:
             if abs(y_value - mag_y) < delta:
                 delta = abs(y_value - mag_y)
                 y_val = mag_y
-        # Is it less than xx away?
-        if delta > 1000:
-            y_val = y_value
         return y_val
+
+    def revised_magnet_bound(self, bounds = None):
+        dx = 0
+        dy = 0
+        if self.use_magnet:
+            pass
+        return dx, dy
 
     def module_open(self, *args, **kwargs):
         context = self.context

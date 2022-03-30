@@ -56,22 +56,27 @@ class GridWidget(Widget):
         context = self.scene.context
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
-        step = float(Length("10mm"))
+        step = 0
+        if self.scene.tick_distance > 0:
+            s = "{dist}{unit}".format(dist=self.scene.tick_distance, unit=context.units_name)
+            step = float(Length(s))
+            # The very first time we get absurd values, so let's do as if nothing had happened...
+            divider = units_width / step
+            if divider > 1000:
+                print ("Something strange happened: %s" %s)
+                step = 0
+        if step==0:
+            # print ("Default kicked in")
+            step = float(Length("10mm"))
 
-        #if self.scene.tick_distance > 0:
-        #    s = "{value}{units}".format(value=self.scene.tick_distance, units=context.units_name)
-        #    print ("Step should become %s" % s)
-        #    step = float(Length(s))
-        #else:
-        #    step = float(Length("10mm"))
-        #print ("step=%.3f" % step)
         starts = []
         ends = []
         starts_hi = []
         ends_hi = []
         if step == 0:
             self.grid = None
-            return starts, ends, starts_hi, ends_hi
+            return
+
         x = 0.0
         while x < units_width:
             starts.append((x, 0.0))
@@ -96,6 +101,8 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
+        print ("GridWidget draw")
+
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             unit_width = context.device.unit_width
@@ -113,6 +120,7 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
+
             starts, ends, starts_hi, ends_hi = self.grid
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
@@ -140,5 +148,6 @@ class GridWidget(Widget):
         """
         if signal == "grid":
             self.grid = None
+
         elif signal == "background":
             self.background = args[0]

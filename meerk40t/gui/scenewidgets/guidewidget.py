@@ -98,6 +98,7 @@ class GuideWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
+        print ("GuideWidget Draw")
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
@@ -107,16 +108,44 @@ class GuideWidget(Widget):
         )
         if self.scaled_conversion == 0:
             return
+        # Establish the delta for about 15 ticks
         wpoints = w / 15.0
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
-        print ("Did you know: bedwidth=%.1f, bedheight=%.1f" % (p.device.unit_width, p.device.unit_height))
+        # print ("Did you know: bedwidth=%.1f, bedheight=%.1f" % (p.device.unit_width, p.device.unit_height))
 
         # tweak the scaled points into being useful.
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+        delta = points / self.scaled_conversion
+        # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
+        print("Delta=%.3f, log=%.3f, 0.1=%.3f, 0.01=%.3f" % (delta, math.log10(delta), math.log10(0.1), math.log10(0.01)))
+        x = delta
+        factor = 1
+        if x >= 1:
+            while (x>=10):
+              x *= 0.1
+              factor *= 10
+        else:
+            while x<1:
+                x *= 10
+                factor *= 0.1
 
-        self.scene.tick_distance = points / self.scaled_conversion
+        l_pref = delta / factor
+        # Assign 'useful' scale
+        if l_pref < 2:
+            l_pref = 1
+        elif l_pref < 4:
+            l_pref = 2.5
+        else:
+            l_pref = 5.0
+
+        delta = l_pref * factor
+        print ("New Delta={delta}".format(delta=delta))
+        # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+
+        self.scene.tick_distance = delta
+        # print ("set scene_tick_distance to %f" % delta)
+        points = self.scene.tick_distance * self.scaled_conversion
         self.units = p.units_name
 
         sx, sy = self.scene.convert_scene_to_window(
@@ -130,7 +159,7 @@ class GuideWidget(Widget):
         offset_x = float(sx) % points
         offset_y = float(sy) % points
 
-        print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
+        # print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
 
         starts = []
         ends = []
