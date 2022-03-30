@@ -24,6 +24,8 @@ class GuideWidget(Widget):
         self.scale_x_upper = self.scale_x_lower + self.line_length
         self.scale_y_lower = self.edge_gap
         self.scale_y_upper = self.scale_y_lower + self.line_length
+        self.scaled_conversion = 0
+        self.units = None
 
     def hit(self):
         return HITCHAIN_HIT
@@ -51,41 +53,38 @@ class GuideWidget(Widget):
         if event_type == "hover":
             return RESPONSE_CHAIN
         elif event_type == "doubleclick":
-            value = 0
+
             is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
             is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
+            value = 0
             p = self.scene.context
-            scaled_conversion = (
-                p.device.length(str(1) + p.units_name, as_float=True)
-                * self.scene.widget_root.scene_widget.matrix.value_scale_x()
-            )
+            if self.scaled_conversion == 0:
+                return
+            p = self.scene.context
             sx, sy = self.scene.convert_scene_to_window(
                 [
                     p.device.unit_width * p.device.origin_x,
                     p.device.unit_height * p.device.origin_y,
                 ]
             )
-            mark_point_x = (window_pos[0] - sx) / scaled_conversion
-            mark_point_y = (window_pos[1] - sy) / scaled_conversion
-
-            print(
-                "Coordinates: x=%.1f, y=%.1f, sx=%.1f, sy=%.1f, mark-x=%.1f, y=%.1f"
-                % (window_pos[0], window_pos[1], sx, sy, mark_point_x, mark_point_y)
-            )
-
-            cx, cy = p.device.physical_to_scene_position(
-                window_pos[0] - sx, window_pos[1] - sy, UNITS_PER_PIXEL
-            )
-            print("cx=%.1f, cy=%.1f" % (cx, cy))
+            mark_point_x = (window_pos[0] - sx) / self.scaled_conversion
+            mark_point_y = (window_pos[1] - sy) / self.scaled_conversion
+            # Make positions stick on ticks (or exactly inbetween)
+            mark_point_x = round(2.0 * mark_point_x / self.scene.tick_distance) * 0.5 * self.scene.tick_distance
+            mark_point_y = round(2.0 * mark_point_y / self.scene.tick_distance) * 0.5 * self.scene.tick_distance
+            #print(
+            #    "Coordinates: x=%.1f, y=%.1f, sx=%.1f, sy=%.1f, mark-x=%.1f, y=%.1f"
+            #    % (window_pos[0], window_pos[1], sx, sy, mark_point_x, mark_point_y)
+            #)
             if is_x and is_y:
                 self.scene.clear_magnets()
             elif is_x:
                 # Get the X coordinate from space_pos [0]
-                value = cx
+                value = float(Length("%.1f%s"%(mark_point_x, self.units)))
                 self.scene.toggle_x_magnet(value)
             elif is_y:
                 # Get the Y coordinate form space_pos [1]
-                value = cy
+                value = float(Length("%.1f%s"%(mark_point_y, self.units)))
                 self.scene.toggle_y_magnet(value)
 
             self.scene.request_refresh()
@@ -102,18 +101,24 @@ class GuideWidget(Widget):
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
-        scaled_conversion = (
+        self.scaled_conversion = (
             p.device.length(str(1) + p.units_name, as_float=True)
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
-        if scaled_conversion == 0:
+        if self.scaled_conversion == 0:
             return
         wpoints = w / 15.0
         hpoints = h / 15.0
         points = min(wpoints, hpoints)
+        print ("Did you know: bedwidth=%.1f, bedheight=%.1f" % (p.device.unit_width, p.device.unit_height))
+
         # tweak the scaled points into being useful.
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        points = scaled_conversion * float("{:.1g}".format(points / scaled_conversion))
+        points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+
+        self.scene.tick_distance = points / self.scaled_conversion
+        self.units = p.units_name
+
         sx, sy = self.scene.convert_scene_to_window(
             [
                 p.device.unit_width * p.device.origin_x,
@@ -125,6 +130,8 @@ class GuideWidget(Widget):
         offset_x = float(sx) % points
         offset_y = float(sy) % points
 
+        print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
+
         starts = []
         ends = []
         x = offset_x
@@ -132,10 +139,10 @@ class GuideWidget(Widget):
         edge_gap = self.edge_gap
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
-        gc.DrawText(p.units_name, edge_gap, edge_gap)
+        gc.DrawText(self.units, edge_gap, edge_gap)
         while x < w:
             if x >= 45:
-                mark_point = (x - sx) / scaled_conversion
+                mark_point = (x - sx) / self.scaled_conversion
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_x:
@@ -145,6 +152,14 @@ class GuideWidget(Widget):
 
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
+                # Show half distance as well
+                starts.append((x-0.5*points, edge_gap))
+                ends.append((x-0.5*points, 0.25 * length + edge_gap))
+
+                starts.append((x, h - edge_gap))
+                ends.append((x, h - length - edge_gap))
+                starts.append((x-0.5*points, h - edge_gap))
+                ends.append((x-0.5*points, h - 0.25*length - edge_gap))
 
                 gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
             x += points
@@ -152,7 +167,7 @@ class GuideWidget(Widget):
         y = offset_y
         while y < h:
             if y >= 20:
-                mark_point = (y - sy) / scaled_conversion
+                mark_point = (y - sy) / self.scaled_conversion
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_y:
@@ -160,9 +175,13 @@ class GuideWidget(Widget):
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
+                    starts.append((edge_gap, y-0.5*points))
+                    ends.append((0.25*length + edge_gap, y-0.5*points))
 
                     starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))
+                    starts.append((w - edge_gap, y-0.5*points))
+                    ends.append((w - 0.25* length - edge_gap, y-0.5*points))
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)

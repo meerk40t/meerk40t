@@ -76,6 +76,7 @@ class Scene(Module, Job):
         self.magnet_x = []
         self.magnet_y = []
         self.use_magnet = True
+        self.tick_distance = 0
 
     def clear_magnets(self):
         self.magnet_x = []

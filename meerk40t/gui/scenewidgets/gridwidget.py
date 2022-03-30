@@ -20,7 +20,7 @@ class GridWidget(Widget):
         self.grid_line_pen.SetWidth(1)
         self.grid_line_high_pen = wx.Pen()
         self.grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0))
-        self.grid_line_high_pen.SetWidth(2)
+        self.grid_line_high_pen.SetWidth(3)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -57,6 +57,14 @@ class GridWidget(Widget):
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
         step = float(Length("10mm"))
+
+        #if self.scene.tick_distance > 0:
+        #    s = "{value}{units}".format(value=self.scene.tick_distance, units=context.units_name)
+        #    print ("Step should become %s" % s)
+        #    step = float(Length(s))
+        #else:
+        #    step = float(Length("10mm"))
+        #print ("step=%.3f" % step)
         starts = []
         ends = []
         starts_hi = []
