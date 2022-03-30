@@ -4323,7 +4323,7 @@ class Elemental(Modifier):
 
         @context.console_command(
             "hull",
-            help=_("trace the convex hull of current elements"),
+            help=_("creates convex hull of current elements as an object"),
             input_type=(None, "elements"),
             output_type="elements"
         )
