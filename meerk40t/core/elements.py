@@ -4321,6 +4321,41 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
+        @context.console_command(
+            "hull",
+            help=_("trace the convex hull of current elements"),
+            input_type=(None, "elements"),
+            output_type="elements"
+        )
+        def element_hull(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            pts = []
+            for obj in data:
+                if isinstance(obj, Path):
+                    epath = abs(obj)
+                    pts += [q for q in epath.as_points()]
+                elif isinstance(obj, SVGImage):
+                    bounds = obj.bbox()
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+            hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) == 0:
+                channel(_("No elements bounds to trace."))
+                return
+            hull.append(hull[0])  # loop
+            poly_path = Polygon(hull)
+            self.add_element(poly_path)
+            if data is None:
+                return "elements", [poly_path]
+            else:
+                data.append(poly_path)
+                return "elements", data
+
         @context.console_argument(
             "angle", type=Angle.parse, help=_("angle to rotate by")
         )
