@@ -804,6 +804,86 @@ class RasterSettingsPanel(wx.Panel):
 
 # end of class RasterSettingsPanel
 
+class HatchSettingsPanel(wx.Panel):
+    def __init__(self, *args, **kwds):
+        # begin wxGlade: HatchSettingsPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+
+        raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch:"), wx.VERTICAL)
+
+        sizer_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch Distance:"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
+
+        self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "")
+        sizer_distance.Add(self.text_distance, 0, 0, 0)
+
+        sizer_angle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Angle"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
+
+        self.text_angle = wx.TextCtrl(self, wx.ID_ANY, "0deg")
+        sizer_angle.Add(self.text_angle, 1, 0, 0)
+
+        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
+        sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
+
+        sizer_pass_inc = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Pass Angle Increment"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_pass_inc, 1, wx.EXPAND, 0)
+
+        self.text_pass_inc = wx.TextCtrl(self, wx.ID_ANY, "0deg")
+        sizer_pass_inc.Add(self.text_pass_inc, 1, 0, 0)
+
+        self.slider_pass_inc = wx.Slider(self, wx.ID_ANY, 0, -180, 180)
+        sizer_pass_inc.Add(self.slider_pass_inc, 3, wx.EXPAND, 0)
+
+        sizer_fill = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL)
+        raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
+
+        self.combo_fill_style = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
+
+        self.display_panel = wx.Panel(self, wx.ID_ANY)
+        sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
+
+        self.SetSizer(raster_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_distance, self.text_distance)
+        self.Bind(wx.EVT_TEXT, self.on_text_angle, self.text_angle)
+        self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_angle, self.slider_angle)
+        self.Bind(wx.EVT_TEXT, self.on_text_pass_inc, self.text_pass_inc)
+        self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_pass_inc, self.slider_pass_inc)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
+        # end wxGlade
+
+    def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_text_distance' not implemented!")
+        event.Skip()
+
+    def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_text_angle' not implemented!")
+        event.Skip()
+
+    def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_slider_angle' not implemented!")
+        event.Skip()
+
+    def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_text_pass_inc' not implemented!")
+        event.Skip()
+
+    def on_slider_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_slider_pass_inc' not implemented!")
+        event.Skip()
+
+    def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        print("Event handler 'on_combo_fill' not implemented!")
+        event.Skip()
+
+
+# end of class HatchSettingsPanel
+
 
 class ParameterPanel(wx.Panel):
     name = _("Properties")
