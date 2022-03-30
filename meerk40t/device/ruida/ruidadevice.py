@@ -452,6 +452,9 @@ class RuidaEmulator(Module):
                 desc = "Axis Z Move %f" % value
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
+            if self.settings.speed < 40:
+                self.new_plot_cut()
+
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
@@ -461,6 +464,8 @@ class RuidaEmulator(Module):
             )
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
+                if self.settings.speed < 40:
+                    self.new_plot_cut()
                 dx = self.relcoord(array[1:3])
                 dy = self.relcoord(array[3:5])
                 self.x += dx
