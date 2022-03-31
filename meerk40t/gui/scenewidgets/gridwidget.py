@@ -106,8 +106,8 @@ class GridWidget(Widget):
         factor = 1
         if x >= 1:
             while (x>=10):
-              x *= 0.1
-              factor *= 10
+                x *= 0.1
+                factor *= 10
         else:
             while x<1:
                 x *= 10

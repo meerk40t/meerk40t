@@ -243,7 +243,7 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
-    def on_magnet(self, origin, strength=0, *args):
+    def on_magnet(self, origin, strength, *args):
         strength = int(strength)
         if strength<0:
             strength=0

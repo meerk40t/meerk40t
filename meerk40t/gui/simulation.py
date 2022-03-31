@@ -18,7 +18,6 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
-from meerk40t.core.units import Length
 
 _ = wx.GetTranslation
 

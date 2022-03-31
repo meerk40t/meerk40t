@@ -120,7 +120,7 @@ class Scene(Module, Job):
                 x_val = mag_x
         return delta, x_val
 
-    def magnet_attracted_y(self, y_value):  # TODO
+    def magnet_attracted_y(self, y_value):
         delta = float("inf")
         y_val = None
         for mag_y in self.magnet_y:

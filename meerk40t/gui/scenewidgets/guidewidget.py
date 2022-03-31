@@ -5,7 +5,7 @@ import wx
 from meerk40t.gui.laserrender import DRAW_MODE_GUIDES
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
-from meerk40t.core.units import PX_PER_UNIT, UNITS_PER_PIXEL, Length
+from meerk40t.core.units import Length
 
 
 class GuideWidget(Widget):
@@ -52,8 +52,8 @@ class GuideWidget(Widget):
             self.scene.auto_tick = False
             self.scene.tick_distance = value
 
-    def menu_event(self, id):
-        value = self.options[id]
+    def menu_event(self, idx):
+        value = self.options[idx]
         self.set_auto_tick(value)
 
     def fill_magnets(self):

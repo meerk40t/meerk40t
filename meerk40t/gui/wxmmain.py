@@ -1937,7 +1937,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.cb_enabled = valu
 
     @signal_listener("magnets")
-    def on_update_magnets(self, origin, has_magnets=False, *args):
+    def on_update_magnets(self, origin, has_magnets, *args):
         self.main_statusbar.with_magnets = has_magnets
 
     def __set_titlebar(self):
