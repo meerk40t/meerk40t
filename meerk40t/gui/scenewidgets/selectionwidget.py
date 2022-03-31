@@ -408,6 +408,7 @@ class RotationWidget(Widget):
                 except AttributeError:
                     pass
             self.master.last_angle = None
+            self.master.start_angle = None
             self.master.rotated_angle = 0
         elif event == 0:
 
@@ -423,11 +424,12 @@ class RotationWidget(Widget):
 
             current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
             if self.master.last_angle is None:
+                self.master.start_angle = current_angle
                 self.master.last_angle = current_angle
             delta_angle = current_angle - self.master.last_angle
             self.master.last_angle = current_angle
             # Update Rotation angle...
-            self.master.rotated_angle += delta_angle
+            self.master.rotated_angle = current_angle - self.master.start_angle
             # print(
             #    "Angle to Point=%.1f, last_angle=%.1f, total_angle=%.1f, delta=%.1f"
             #    % (
@@ -438,11 +440,10 @@ class RotationWidget(Widget):
             #    )
             # )
             # Bring back to 'regular' radians
-            while self.master.rotated_angle >= 1 * math.tau:
-                self.master.rotated_angle -= 1 * math.tau
-            while self.master.rotated_angle <= -1 * math.tau:
-                self.master.rotated_angle += 1 * math.tau
-
+            while self.master.rotated_angle > 0.5 * math.tau:
+                self.master.rotated_angle -= 1.0 * math.tau
+            while self.master.rotated_angle < -0.5 * math.tau:
+                self.master.rotated_angle += 1.0 * math.tau
             # Take representation rectangle and rotate it
             # if self.reference_rect is None:
             #    b = elements._emphasized_bounds
@@ -1548,6 +1549,7 @@ class SelectionWidget(Widget):
         self.is_ref = False
         self.show_border = True
         self.last_angle = None
+        self.start_angle = None
 
     def hit(self):
         elements = self.scene.context.elements
