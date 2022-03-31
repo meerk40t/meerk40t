@@ -303,7 +303,7 @@ class ViewPort:
 
     @property
     def unit_height(self):
-        return float(Length(self.width))
+        return float(Length(self.height))
 
     @staticmethod
     def viewbox_transform(
