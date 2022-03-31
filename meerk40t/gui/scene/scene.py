@@ -77,6 +77,7 @@ class Scene(Module, Job):
         self.magnet_y = []
         self.magnet_attraction = 2 # 0 off, 1..3 increasing strength
         self.tick_distance = 0
+        self.auto_tick = False # by definition do not auto_tick
 
     def clear_magnets(self):
         self.magnet_x = []

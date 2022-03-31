@@ -56,6 +56,7 @@ class GridWidget(Widget):
         step = 0
         if self.scene.tick_distance > 0:
             s = "{dist}{unit}".format(dist=self.scene.tick_distance, unit=context.units_name)
+            # print ("Calculate grid with %s" %s)
             step = float(Length(s))
             # The very first time we get absurd values, so let's do as if nothing had happened...
             divider = units_width / step
@@ -148,8 +149,9 @@ class GridWidget(Widget):
             else:
                 gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
         # Get proper gridsize
-        w, h = gc.Size
-        self.calculate_gridsize(w, h)
+        if self.scene.auto_tick:
+            w, h = gc.Size
+            self.calculate_gridsize(w, h)
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:

@@ -78,6 +78,9 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
+        # Let the grid resize itself
+        self.widget_scene.auto_tick = True
+
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))

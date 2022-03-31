@@ -18,6 +18,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
+from meerk40t.core.units import Length
 
 _ = wx.GetTranslation
 
@@ -117,6 +118,10 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.add_scenewidget(
             SimulationTravelWidget(self.widget_scene, self)
         )
+        # Don't let grid resize itself
+        self.widget_scene.auto_tick = False
+        self.widget_scene.tick_distance = 10 # mm
+
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)

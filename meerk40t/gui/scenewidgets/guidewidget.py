@@ -26,6 +26,7 @@ class GuideWidget(Widget):
         self.scale_y_upper = self.scale_y_lower + self.line_length
         self.scaled_conversion = 0
         self.units = None
+        self.options = []
 
     def hit(self):
         return HITCHAIN_HIT
@@ -44,6 +45,17 @@ class GuideWidget(Widget):
             value = True
         return value
 
+    def set_auto_tick(self, value):
+        if value == 0:
+            self.scene.auto_tick = True
+        else:
+            self.scene.auto_tick = False
+            self.scene.tick_distance = value
+
+    def menu_event(self, id):
+        value = self.options[id]
+        self.set_auto_tick(value)
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
         Capture and deal with the doubleclick event.
@@ -52,6 +64,40 @@ class GuideWidget(Widget):
         """
         if event_type == "hover":
             return RESPONSE_CHAIN
+        elif event_type == "rightdown":
+            menu = wx.Menu()
+            _ = self.scene.context._
+            item = menu.Append(wx.ID_ANY, _("Auto-Scale"), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.set_auto_tick(0), id=item.GetId(),)
+            menu.AppendSeparator()
+
+            units = self.scene.context.units_name
+            if units=="mm":
+                self.options = [1, 5, 10, 25]
+            elif units=="cm":
+                self.options = [0.1, 0.5, 1, 5]
+            elif units=="inch":
+                self.options = [0.1, 0.25, 0.5, 1]
+            else: # mils
+                self.options = [100, 250, 500, 1000]
+            # Not elegant but if used with a loop lambda would take the last value of the loop for all...
+            item = menu.Append(wx.ID_ANY, "{amount:.2f}{units}".format(amount=self.options[0], units=units), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.menu_event(0), id=item.GetId(),)
+            item = menu.Append(wx.ID_ANY, "{amount:.2f}{units}".format(amount=self.options[1], units=units), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.menu_event(1), id=item.GetId(),)
+            item = menu.Append(wx.ID_ANY, "{amount:.2f}{units}".format(amount=self.options[2], units=units), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.menu_event(2), id=item.GetId(),)
+            item = menu.Append(wx.ID_ANY, "{amount:.2f}{units}".format(amount=self.options[3], units=units), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.menu_event(3), id=item.GetId(),)
+            menu.AppendSeparator()
+            item = menu.Append(wx.ID_ANY, _("Clear all magnets"), "")
+            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.scene.clear_magnets(), id=item.GetId(),)
+
+            self.scene.context.gui.PopupMenu(menu)
+            menu.Destroy()
+            self.scene.request_refresh()
+
+            return RESPONSE_CONSUME
         elif event_type == "doubleclick":
 
             is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
