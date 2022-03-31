@@ -1090,17 +1090,19 @@ class MoveWidget(Widget):
         return HITCHAIN_HIT
 
     def check_for_magnets(self):
-        elements = self.scene.context.elements
-        b = elements._emphasized_bounds
-        dx, dy = self.scene.revised_magnet_bound(b)
-        if dx != 0 or dy !=0:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.transform.post_translate(dx, dy)
+        # print ("Shift-key-Status: self=%g, master=%g" % (self.key_shift_pressed, self.master.key_shift_pressed))
+        if not self.master.key_shift_pressed: # if Shift-Key pressed then ignore Magnets...
+            elements = self.scene.context.elements
+            b = elements._emphasized_bounds
+            dx, dy = self.scene.revised_magnet_bound(b)
+            if dx != 0 or dy !=0:
+                for e in elements.flat(types=("elem",), emphasized=True):
+                    obj = e.object
+                    obj.transform.post_translate(dx, dy)
 
-            self.translate(dx, dy)
+                self.translate(dx, dy)
 
-            elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+                elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
     def tool(self, position, dx, dy, event=0):
         """

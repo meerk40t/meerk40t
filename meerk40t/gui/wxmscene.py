@@ -240,10 +240,17 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
+    def on_magnet(self, origin, strength=0, *args):
+        strength = int(strength)
+        if strength<0:
+            strength=0
+        self.scene.scene.magnet_attraction = strength
+
     def pane_show(self, *args):
         context = self.context
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
+        context.listen("magnet-attraction", self.on_magnet)
         context.listen("background", self.on_background_signal)
         context.listen("bed_size", self.bed_changed)
         context.listen("emphasized", self.on_emphasized_elements_changed)
