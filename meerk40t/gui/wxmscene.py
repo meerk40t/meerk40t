@@ -78,6 +78,9 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
+        # Let the grid resize itself
+        self.widget_scene.auto_tick = True
+
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
@@ -240,10 +243,17 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
+    def on_magnet(self, origin, strength, *args):
+        strength = int(strength)
+        if strength<0:
+            strength=0
+        self.scene.scene.magnet_attraction = strength
+
     def pane_show(self, *args):
         context = self.context
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
+        context.listen("magnet-attraction", self.on_magnet)
         context.listen("background", self.on_background_signal)
         context.listen("bed_size", self.bed_changed)
         context.listen("emphasized", self.on_emphasized_elements_changed)

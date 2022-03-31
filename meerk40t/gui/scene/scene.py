@@ -73,6 +73,117 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
+        self.magnet_x = []
+        self.magnet_y = []
+        self.magnet_attraction = 2 # 0 off, 1..3 increasing strength
+        self.tick_distance = 0
+        self.auto_tick = False # by definition do not auto_tick
+
+    def clear_magnets(self):
+        self.magnet_x = []
+        self.magnet_y = []
+        self.context.signal("magnets", False)
+
+    def toggle_x_magnet(self, x_value):
+        prev = self.has_magnets()
+        if x_value in self.magnet_x:
+            self.magnet_x.remove(x_value)
+            # print("Remove x magnet for %.1f" % x_value)
+            now = self.has_magnets()
+        else:
+            self.magnet_x += [x_value]
+            # print("Add x magnet for %.1f" % x_value)
+            now = True
+        if prev != now:
+            self.context.signal("magnets", now)
+
+
+    def toggle_y_magnet(self, y_value):
+        prev = self.has_magnets()
+        if y_value in self.magnet_y:
+            self.magnet_y.remove(y_value)
+            # print("Remove y magnet for %.1f" % y_value)
+            now = self.has_magnets()
+        else:
+            self.magnet_y += [y_value]
+            now = True
+            # print("Add y magnet for %.1f" % y_value)
+        if prev != now:
+            self.context.signal("magnets", now)
+
+    def magnet_attracted_x(self, x_value):
+        delta = float("inf")
+        x_val = None
+        for mag_x in self.magnet_x:
+            if abs(x_value - mag_x) < delta:
+                delta = abs(x_value - mag_x)
+                x_val = mag_x
+        return delta, x_val
+
+    def magnet_attracted_y(self, y_value):
+        delta = float("inf")
+        y_val = None
+        for mag_y in self.magnet_y:
+            if abs(y_value - mag_y) < delta:
+                delta = abs(y_value - mag_y)
+                y_val = mag_y
+        return delta, y_val
+
+    def revised_magnet_bound(self, bounds = None):
+        from meerk40t.core.units import Length
+        dx = 0
+        dy = 0
+        if self.has_magnets() and self.magnet_attraction>0:
+            if self.tick_distance > 0:
+                s = "{amount}{units}".format(amount=self.tick_distance, units=self.context.units_name)
+                # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
+                attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * float(Length(s))
+                # print ("Attraction len=%s, %d, %.1f" % (s, self.magnet_attraction, attraction_len))
+            else:
+                attraction_len = float(Length("1mm"))
+            delta_x1, x1 = self.magnet_attracted_x(bounds[0])
+            delta_x2, x2 = self.magnet_attracted_x(bounds[2])
+            delta_x3, x3 = self.magnet_attracted_x((bounds[0] + bounds[2])/2)
+            delta_y1, y1 = self.magnet_attracted_y(bounds[1])
+            delta_y2, y2 = self.magnet_attracted_y(bounds[3])
+            delta_y3, y3 = self.magnet_attracted_y((bounds[1] + bounds[3])/2)
+            if not x1 is None:
+                #print("X-left: delta=%.1f, x-nearest=%.1f" % ( delta_x1, x1))
+                #print("X-right: delta=%.1f, x-nearest=%.1f" % ( delta_x2, x2))
+                #print("X-center: delta=%.1f, x-nearest=%.1f" % ( delta_x3, x3))
+                if delta_x1 < delta_x2 and delta_x1<delta_x3:
+                    if delta_x1<attraction_len:
+                        dx = x1 - bounds[0]
+                        #print ("Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
+                elif delta_x2 < delta_x1 and delta_x2<delta_x3:
+                    if delta_x2<attraction_len:
+                        dx = x2 - bounds[2]
+                        #print ("Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
+                else:
+                    if delta_x3<attraction_len:
+                        dx = x3 - (bounds[0]+bounds[2]) / 2
+                        #print ("Take center , x=%.1f, dx=%.1f" % ((bounds[0]+bounds[2])/2, dx))
+            if not y1 is None:
+                #print("Y-top: delta=%.1f, y-nearest=%.1f" % ( delta_y1, y1))
+                #print("Y-bottom: delta=%.1f, y-nearest=%.1f" % ( delta_y2, y2))
+                #print("Y-center: delta=%.1f, x-nearest=%.1f" % ( delta_y3, y3))
+                if delta_y1 < delta_y2 and delta_y1<delta_y3:
+                    if delta_y1<attraction_len:
+                        dy = y1 - bounds[1]
+                        #print ("Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
+                elif delta_y2 < delta_y1 and delta_y2<delta_y3:
+                    if delta_y2<attraction_len:
+                        dy = y2 - bounds[3]
+                        #print ("Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
+                else:
+                    if delta_y3<attraction_len:
+                        dy = y3 - (bounds[1]+bounds[3]) / 2
+                        #print ("Take center , x=%.1f, dx=%.1f" % ((bounds[1]+bounds[3])/2, dy))
+
+        return dx, dy
+
+    def has_magnets(self):
+        return len(self.magnet_x) + len(self.magnet_y) > 0
 
     def module_open(self, *args, **kwargs):
         context = self.context

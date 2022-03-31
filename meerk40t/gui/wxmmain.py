@@ -10,7 +10,6 @@ from wx import aui
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (
     Color,
@@ -161,8 +160,9 @@ class CustomStatusBar(wx.StatusBar):
         sizes = [-2] * self.panelct
         # Make the first Panel large
         sizes[0] = -3
-        # Make the last Panel smaller
-        sizes[self.panelct - 1] = -1
+        # Traditionally we made the last Panel smaller, but now no longer with Magnets...
+        # The most intelligent way would be  to calculate the needed size...
+        # sizes[self.panelct - 1] = -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -173,10 +173,22 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        magnets = [_("Off"), _("Weak"), _("Normal"), _("Strong")]
+
+        self.combo_magnet = wx.ComboBox(self, wx.ID_ANY, choices=magnets, style=wx.CB_DROPDOWN)
+        needed_size = 0
+        needed_size += self.cb_move.GetRect().width
+        needed_size += self.cb_handle.GetRect().width
+        needed_size += self.cb_rotate.GetRect().width
+        needed_size += self.cb_skew.GetRect().width
+        needed_size += self.combo_magnet.GetRect().width
+        # print ("Needed size for window: %g" % needed_size)
+        self.combo_magnet.SetSelection(2)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+        self.Bind(wx.EVT_COMBOBOX, self.on_magnet_combo, self.combo_magnet)
         self.context.setting(bool, "enable_sel_move", True)
         self.context.setting(bool, "enable_sel_size", True)
         self.context.setting(bool, "enable_sel_rotate", True)
@@ -185,7 +197,13 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle.SetValue(self.context.enable_sel_size)
         self.cb_rotate.SetValue(self.context.enable_sel_rotate)
         self.cb_skew.SetValue(self.context.enable_sel_skew)
+        self.cb_move.SetToolTip(_("Toggle visibility of Move-Indicator"))
+        self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
+        self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
+        self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
+        self.combo_magnet.SetToolTip(_("Set attraction strength of magnet lines"))
         self.cb_enabled = False
+        self.with_magnets = False
 
         # set the initial position of the checkboxes
         self.Reposition()
@@ -202,12 +220,24 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_handle.Show()
             self.cb_rotate.Show()
             self.cb_skew.Show()
+            if self.with_magnets:
+                self.combo_magnet.Show()
         else:
             self.cb_move.Hide()
             self.cb_handle.Hide()
             self.cb_rotate.Hide()
             self.cb_skew.Hide()
+            self.combo_magnet.Hide()
         self._cb_enabled = cb_enabled
+
+    @property
+    def with_magnets(self):
+        return self._with_magnets
+
+    @with_magnets.setter
+    def with_magnets(self, value):
+        self._with_magnets = value
+        self.Reposition()
 
     # the checkbox was clicked
     def on_toggle_move(self, event):
@@ -234,6 +264,13 @@ class CustomStatusBar(wx.StatusBar):
             self.context.enable_sel_skew = valu
             self.context.signal("refresh_scene", "Scene")
 
+    def on_magnet_combo(self, event):
+        if not self.startup:
+            value = self.combo_magnet.GetSelection()
+            if value is None:
+                value = 0
+            self.context.signal("magnet-attraction", value)
+
     def OnSize(self, evt):
         evt.Skip()
         self.Reposition()  # for normal size events
@@ -246,7 +283,11 @@ class CustomStatusBar(wx.StatusBar):
     # reposition the checkboxes
     def Reposition(self):
         rect = self.GetFieldRect(self.panelct - 1)
-        wd = rect.width / 4
+        if self.with_magnets:
+            ct = 5
+        else:
+            ct = 4
+        wd = rect.width / ct
         rect.x += 1
         rect.y += 1
         rect.width = wd
@@ -257,6 +298,8 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_rotate.SetRect(rect)
         rect.x += wd
         self.cb_skew.SetRect(rect)
+        rect.x += wd
+        self.combo_magnet.SetRect(rect)
         self.sizeChanged = False
 
 
@@ -1892,6 +1935,10 @@ class MeerK40t(MWindow):
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
+
+    @signal_listener("magnets")
+    def on_update_magnets(self, origin, has_magnets, *args):
+        self.main_statusbar.with_magnets = has_magnets
 
     def __set_titlebar(self):
         device_name = ""

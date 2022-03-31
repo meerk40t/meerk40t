@@ -53,28 +53,88 @@ class GridWidget(Widget):
         context = self.scene.context
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
-        step = float(Length("10mm"))
+        step = 0
+        if self.scene.tick_distance > 0:
+            s = "{dist}{unit}".format(dist=self.scene.tick_distance, unit=context.units_name)
+            # print ("Calculate grid with %s" %s)
+            step = float(Length(s))
+            # The very first time we get absurd values, so let's do as if nothing had happened...
+            divider = units_width / step
+            if divider > 1000: # Too many lines to draw?!
+                # print ("Something strange happened: %s" %s)
+                step = 0
+        if step==0:
+            # print ("Default kicked in")
+            step = float(Length("10mm"))
+
         starts = []
         ends = []
         if step == 0:
             self.grid = None
-            return starts, ends
+            return
+
         x = 0.0
         while x < units_width:
             starts.append((x, 0.0))
             ends.append((x, units_height))
             x += step
+
         y = 0.0
         while y < units_height:
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
+
         self.grid = starts, ends
+
+    def calculate_gridsize(self, w, h):
+       # Establish the delta for about 15 ticks
+        wpoints = w / 15.0
+        hpoints = h / 15.0
+        points = min(wpoints, hpoints)
+        scaled_conversion = (
+            self.scene.context.device.length(str(1) + self.scene.context.units_name, as_float=True)
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
+        if scaled_conversion == 0:
+            return
+        # tweak the scaled points into being useful.
+        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
+        delta = points / scaled_conversion
+        # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
+        x = delta
+        factor = 1
+        if x >= 1:
+            while (x>=10):
+                x *= 0.1
+                factor *= 10
+        else:
+            while x<1:
+                x *= 10
+                factor *= 0.1
+
+        l_pref = delta / factor
+        # Assign 'useful' scale
+        if l_pref < 3:
+            l_pref = 1
+        #elif l_pref < 4:
+        #    l_pref = 2.5
+        else:
+            l_pref = 5.0
+
+        delta = l_pref * factor
+        # print ("New Delta={delta}".format(delta=delta))
+        # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+
+        self.scene.tick_distance = delta
+        # print ("set scene_tick_distance to %f" % delta)
 
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
         """
+        # print ("GridWidget draw")
+
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             unit_width = context.device.unit_width
@@ -88,10 +148,15 @@ class GridWidget(Widget):
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             else:
                 gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
+        # Get proper gridsize
+        if self.scene.auto_tick:
+            w, h = gc.Size
+            self.calculate_gridsize(w, h)
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
+
             starts, ends = self.grid
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
@@ -107,6 +172,7 @@ class GridWidget(Widget):
                 gc.SetPen(self.grid_line_pen)
                 if starts and ends:
                     gc.StrokeLineSegments(starts, ends)
+
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()
 
@@ -116,5 +182,6 @@ class GridWidget(Widget):
         """
         if signal == "grid":
             self.grid = None
+
         elif signal == "background":
             self.background = args[0]
