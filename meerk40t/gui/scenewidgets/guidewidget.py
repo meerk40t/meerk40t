@@ -77,7 +77,21 @@ class GuideWidget(Widget):
             #    % (window_pos[0], window_pos[1], sx, sy, mark_point_x, mark_point_y)
             #)
             if is_x and is_y:
-                self.scene.clear_magnets()
+                if self.scene.has_magnets():
+                    self.scene.clear_magnets()
+                else:
+                    # Lets set the full grid
+                    tlen= float(Length("{value}{units}".format(value=self.scene.tick_distance, units=p.units_name)))
+
+                    x = 0
+                    while x <= p.device.unit_width:
+                        self.scene.toggle_x_magnet(x)
+                        x += tlen
+
+                    y = 0
+                    while y <= p.device.unit_height:
+                        self.scene.toggle_y_magnet(y)
+                        y += tlen
             elif is_x:
                 # Get the X coordinate from space_pos [0]
                 value = float(Length("%.1f%s"%(mark_point_x, self.units)))
@@ -98,7 +112,7 @@ class GuideWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
-        print ("GuideWidget Draw")
+        # print ("GuideWidget Draw")
         gc.SetPen(wx.BLACK_PEN)
         w, h = gc.Size
         p = self.scene.context
@@ -109,40 +123,6 @@ class GuideWidget(Widget):
         if self.scaled_conversion == 0:
             return
         # Establish the delta for about 15 ticks
-        wpoints = w / 15.0
-        hpoints = h / 15.0
-        points = min(wpoints, hpoints)
-        # print ("Did you know: bedwidth=%.1f, bedheight=%.1f" % (p.device.unit_width, p.device.unit_height))
-
-        # tweak the scaled points into being useful.
-        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
-        delta = points / self.scaled_conversion
-        # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
-        x = delta
-        factor = 1
-        if x >= 1:
-            while (x>=10):
-              x *= 0.1
-              factor *= 10
-        else:
-            while x<1:
-                x *= 10
-                factor *= 0.1
-
-        l_pref = delta / factor
-        # Assign 'useful' scale
-        if l_pref < 2:
-            l_pref = 1
-        elif l_pref < 4:
-            l_pref = 2.5
-        else:
-            l_pref = 5.0
-
-        delta = l_pref * factor
-        # print ("New Delta={delta}".format(delta=delta))
-        # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
-
-        self.scene.tick_distance = delta
         # print ("set scene_tick_distance to %f" % delta)
         points = self.scene.tick_distance * self.scaled_conversion
         self.units = p.units_name
@@ -216,6 +196,27 @@ class GuideWidget(Widget):
             y += points
         if len(starts) > 0:
             gc.StrokeLineSegments(starts, ends)
+
+        starts_hi = []
+        ends_hi = []
+
+        for x in self.scene.magnet_x:
+            sx, sy = self.scene.convert_scene_to_window([x, 0])
+            starts_hi.append((sx, length + edge_gap))
+            ends_hi.append((sx, h - length - edge_gap))
+
+        for y in self.scene.magnet_y:
+            sx, sy = self.scene.convert_scene_to_window([0, y])
+            starts_hi.append((length + edge_gap, sy))
+            ends_hi.append((w- length - edge_gap, sy))
+
+        grid_line_high_pen = wx.Pen()
+        grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0))
+        grid_line_high_pen.SetWidth(2)
+
+        gc.SetPen(grid_line_high_pen)
+        if starts_hi and ends_hi:
+            gc.StrokeLineSegments(starts_hi, ends_hi)
 
     def signal(self, signal, *args, **kwargs):
         """

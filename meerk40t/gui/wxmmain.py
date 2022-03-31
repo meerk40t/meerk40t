@@ -182,7 +182,7 @@ class CustomStatusBar(wx.StatusBar):
         needed_size += self.cb_rotate.GetRect().width
         needed_size += self.cb_skew.GetRect().width
         needed_size += self.combo_magnet.GetRect().width
-        print ("Needed size for window: %g" % needed_size)
+        # print ("Needed size for window: %g" % needed_size)
         self.combo_magnet.SetSelection(2)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)

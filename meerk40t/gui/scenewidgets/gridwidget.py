@@ -18,9 +18,6 @@ class GridWidget(Widget):
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
         self.grid_line_pen.SetWidth(1)
-        self.grid_line_high_pen = wx.Pen()
-        self.grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0))
-        self.grid_line_high_pen.SetWidth(3)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -62,7 +59,7 @@ class GridWidget(Widget):
             step = float(Length(s))
             # The very first time we get absurd values, so let's do as if nothing had happened...
             divider = units_width / step
-            if divider > 1000:
+            if divider > 1000: # Too many lines to draw?!
                 # print ("Something strange happened: %s" %s)
                 step = 0
         if step==0:
@@ -71,8 +68,6 @@ class GridWidget(Widget):
 
         starts = []
         ends = []
-        starts_hi = []
-        ends_hi = []
         if step == 0:
             self.grid = None
             return
@@ -82,26 +77,62 @@ class GridWidget(Widget):
             starts.append((x, 0.0))
             ends.append((x, units_height))
             x += step
-        for x in self.scene.magnet_x:
-            starts_hi.append((x, 0.0))
-            ends_hi.append((x, units_height))
 
         y = 0.0
         while y < units_height:
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
-        for y in self.scene.magnet_y:
-            starts_hi.append((0.0, y))
-            ends_hi.append((units_width, y))
 
-        self.grid = starts, ends, starts_hi, ends_hi
+        self.grid = starts, ends
+
+    def calculate_gridsize(self, w, h):
+       # Establish the delta for about 15 ticks
+        wpoints = w / 15.0
+        hpoints = h / 15.0
+        points = min(wpoints, hpoints)
+        scaled_conversion = (
+            self.scene.context.device.length(str(1) + self.scene.context.units_name, as_float=True)
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
+        if scaled_conversion == 0:
+            return
+        # tweak the scaled points into being useful.
+        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
+        delta = points / scaled_conversion
+        # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
+        x = delta
+        factor = 1
+        if x >= 1:
+            while (x>=10):
+              x *= 0.1
+              factor *= 10
+        else:
+            while x<1:
+                x *= 10
+                factor *= 0.1
+
+        l_pref = delta / factor
+        # Assign 'useful' scale
+        if l_pref < 3:
+            l_pref = 1
+        #elif l_pref < 4:
+        #    l_pref = 2.5
+        else:
+            l_pref = 5.0
+
+        delta = l_pref * factor
+        # print ("New Delta={delta}".format(delta=delta))
+        # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+
+        self.scene.tick_distance = delta
+        # print ("set scene_tick_distance to %f" % delta)
 
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
         """
-        print ("GridWidget draw")
+        # print ("GridWidget draw")
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
@@ -116,12 +147,15 @@ class GridWidget(Widget):
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             else:
                 gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
+        # Get proper gridsize
+        w, h = gc.Size
+        self.calculate_gridsize(w, h)
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
 
-            starts, ends, starts_hi, ends_hi = self.grid
+            starts, ends = self.grid
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
                 scale_x = matrix.value_scale_x()
@@ -136,9 +170,7 @@ class GridWidget(Widget):
                 gc.SetPen(self.grid_line_pen)
                 if starts and ends:
                     gc.StrokeLineSegments(starts, ends)
-                gc.SetPen(self.grid_line_high_pen)
-                if starts_hi and ends_hi:
-                    gc.StrokeLineSegments(starts_hi, ends_hi)
+
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()
 
