@@ -56,6 +56,22 @@ class GuideWidget(Widget):
         value = self.options[id]
         self.set_auto_tick(value)
 
+    def fill_magnets(self):
+        # Lets set the full grid
+        p = self.scene.context
+        tlen= float(Length("{value}{units}".format(value=self.scene.tick_distance, units=p.units_name)))
+
+        x = 0
+        while x <= p.device.unit_width:
+            self.scene.toggle_x_magnet(x)
+            x += tlen
+
+        y = 0
+        while y <= p.device.unit_height:
+            self.scene.toggle_y_magnet(y)
+            y += tlen
+
+
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
         Capture and deal with the doubleclick event.
@@ -90,8 +106,12 @@ class GuideWidget(Widget):
             item = menu.Append(wx.ID_ANY, "{amount:.2f}{units}".format(amount=self.options[3], units=units), "")
             self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.menu_event(3), id=item.GetId(),)
             menu.AppendSeparator()
-            item = menu.Append(wx.ID_ANY, _("Clear all magnets"), "")
-            self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.scene.clear_magnets(), id=item.GetId(),)
+            if self.scene.has_magnets():
+                item = menu.Append(wx.ID_ANY, _("Clear all magnets"), "")
+                self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.scene.clear_magnets(), id=item.GetId(),)
+            else:
+                item = menu.Append(wx.ID_ANY, _("Create magnets along grid"), "")
+                self.scene.context.gui.Bind(wx.EVT_MENU, lambda e: self.fill_magnets(), id=item.GetId(),)
 
             self.scene.context.gui.PopupMenu(menu)
             menu.Destroy()
@@ -126,18 +146,7 @@ class GuideWidget(Widget):
                 if self.scene.has_magnets():
                     self.scene.clear_magnets()
                 else:
-                    # Lets set the full grid
-                    tlen= float(Length("{value}{units}".format(value=self.scene.tick_distance, units=p.units_name)))
-
-                    x = 0
-                    while x <= p.device.unit_width:
-                        self.scene.toggle_x_magnet(x)
-                        x += tlen
-
-                    y = 0
-                    while y <= p.device.unit_height:
-                        self.scene.toggle_y_magnet(y)
-                        y += tlen
+                    self.fill_magnets()
             elif is_x:
                 # Get the X coordinate from space_pos [0]
                 value = float(Length("%.1f%s"%(mark_point_x, self.units)))
