@@ -4321,6 +4321,41 @@ class Elemental(Modifier):
                 data.append(element)
                 return "elements", data
 
+        @context.console_command(
+            "hull",
+            help=_("creates convex hull of current elements as an object"),
+            input_type=(None, "elements"),
+            output_type="elements"
+        )
+        def element_hull(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            pts = []
+            for obj in data:
+                if isinstance(obj, Path):
+                    epath = abs(obj)
+                    pts += [q for q in epath.as_points()]
+                elif isinstance(obj, SVGImage):
+                    bounds = obj.bbox()
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+            hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) == 0:
+                channel(_("No elements bounds to trace."))
+                return
+            hull.append(hull[0])  # loop
+            poly_path = Polygon(hull)
+            self.add_element(poly_path)
+            if data is None:
+                return "elements", [poly_path]
+            else:
+                data.append(poly_path)
+                return "elements", data
+
         @context.console_argument(
             "angle", type=Angle.parse, help=_("angle to rotate by")
         )
@@ -5388,6 +5423,45 @@ class Elemental(Modifier):
                 yield COMMAND_MOVE, bbox[0], bbox[1]
 
             spooler.job(trace_quick)
+
+        # ==========
+        # TRACE OPERATIONS
+        # ==========
+        @context.console_command(
+            "trace",
+            help=_("trace the given element path"),
+            input_type="elements",
+        )
+        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
+            if not data:
+                return
+            active = self.context.active
+            try:
+                spooler, input_device, output = self.context.registered[
+                    "device/%s" % active
+                ]
+            except KeyError:
+                channel(_("No active device found."))
+                return
+
+            pts = []
+            for path in data:
+                if isinstance(path, Shape):
+                    path = abs(Path(path))
+                    pts.append(path.first_point)
+                    for segment in path:
+                        pts.append(segment.end)
+            if not pts:
+                return
+
+            def trace_command():
+                yield COMMAND_WAIT_FINISH
+                yield COMMAND_MODE_RAPID
+                for p in pts:
+                    yield COMMAND_MOVE, p[0], p[1]
+
+            spooler.job(trace_command)
+
 
         # --------------------------- END COMMANDS ------------------------------
 
