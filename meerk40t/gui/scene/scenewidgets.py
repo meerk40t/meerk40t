@@ -102,6 +102,7 @@ class SelectionWidget(Widget):
         self.rotate_cy = None
         self.rotated_angle = 0
         self.last_angle = None
+        self.start_angle = None
         self.elements = scene.context.elements
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(LINECOL)
@@ -1014,6 +1015,7 @@ class SelectionWidget(Widget):
             self.draw_border = True
         elif event == -1:  # Start
             self.last_angle = None
+            self.start_angle = None
         elif event == 0:
             self.draw_border = False
 
@@ -1026,15 +1028,16 @@ class SelectionWidget(Widget):
             current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
             if self.last_angle is None:
                 self.last_angle = current_angle
+                self.start_angle = current_angle
             delta_angle = current_angle - self.last_angle
             self.last_angle = current_angle
             # Update Rotation angle...
-            self.rotated_angle += delta_angle
+            self.rotated_angle = current_angle - self.start_angle
 
             # Bring back to 'regular' radians
-            while self.rotated_angle >= 1 * math.tau:
+            while self.rotated_angle > 0.5 * math.tau:
                 self.rotated_angle -= 1 * math.tau
-            while self.rotated_angle <= -1 * math.tau:
+            while self.rotated_angle < -0.5 * math.tau:
                 self.rotated_angle += 1 * math.tau
 
             for e in elements.flat(types=("elem",), emphasized=True):
