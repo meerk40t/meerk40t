@@ -16,7 +16,7 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
+        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0, 128))
         self.grid_line_pen.SetWidth(1)
 
     def hit(self):
@@ -55,15 +55,17 @@ class GridWidget(Widget):
         units_height = float(context.device.unit_height)
         step = 0
         if self.scene.tick_distance > 0:
-            s = "{dist}{unit}".format(dist=self.scene.tick_distance, unit=context.units_name)
+            s = "{dist}{unit}".format(
+                dist=self.scene.tick_distance, unit=context.units_name
+            )
             # print ("Calculate grid with %s" %s)
             step = float(Length(s))
             # The very first time we get absurd values, so let's do as if nothing had happened...
             divider = units_width / step
-            if divider > 1000: # Too many lines to draw?!
+            if divider > 1000:  # Too many lines to draw?!
                 # print ("Something strange happened: %s" %s)
                 step = 0
-        if step==0:
+        if step == 0:
             # print ("Default kicked in")
             step = float(Length("10mm"))
 
@@ -88,12 +90,14 @@ class GridWidget(Widget):
         self.grid = starts, ends
 
     def calculate_gridsize(self, w, h):
-       # Establish the delta for about 15 ticks
+        # Establish the delta for about 15 ticks
         wpoints = w / 15.0
         hpoints = h / 15.0
-        points = min(wpoints, hpoints)
+        points = (wpoints + hpoints) / 2
         scaled_conversion = (
-            self.scene.context.device.length(str(1) + self.scene.context.units_name, as_float=True)
+            self.scene.context.device.length(
+                str(1) + self.scene.context.units_name, as_float=True
+            )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
         if scaled_conversion == 0:
@@ -105,11 +109,11 @@ class GridWidget(Widget):
         x = delta
         factor = 1
         if x >= 1:
-            while (x>=10):
+            while x >= 10:
                 x *= 0.1
                 factor *= 10
         else:
-            while x<1:
+            while x < 1:
                 x *= 10
                 factor *= 0.1
 
@@ -117,7 +121,7 @@ class GridWidget(Widget):
         # Assign 'useful' scale
         if l_pref < 3:
             l_pref = 1
-        #elif l_pref < 4:
+        # elif l_pref < 4:
         #    l_pref = 2.5
         else:
             l_pref = 5.0
