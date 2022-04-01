@@ -57,7 +57,7 @@ class LhystudiosParser:
 
         self.x = 0.0
         self.y = 0.0
-        self.number_value = None
+        self.number_value = ""
         self.distance_x = 0
         self.distance_y = 0
 
@@ -68,17 +68,22 @@ class LhystudiosParser:
         self.top = False
         self.x_on = False
         self.y_on = False
+        self.returning_compact = True
+        self.returning_finished = False
+
+        self.paused_state = False
+        self.compact_state = False
+        self.finish_state = False
         self.horizontal_major = False
         self.fix_speeds = False
-        self.process = self.state_default
 
     @property
     def program_mode(self):
-        return self.process == self.state_compact
+        return self.compact_state
 
     @property
     def default_mode(self):
-        return self.process is self.state_default
+        return not self.compact_state
 
     @property
     def raster_mode(self):
@@ -127,71 +132,155 @@ class LhystudiosParser:
         for b in data:
             c = chr(b)
             if c == "I":
-                self.process = self.state_default
+                self.process = self.process
                 continue
             self.process(b, c)
 
-    def state_finish(self, b, c):
-        if c in "NSEF":
+    def process(self, b, c):
+        if self.finish_state:
+            # In finished all commands are black holed
             return
-        if self.channel:
-            self.channel("Finish State Unknown: %s" % c)
+
+        # Not processing number distance or finish.
+        if self.compact_state:
+            # Every command in compact state executes distances.
+            self.execute_distance()
+
+        if ord("0") <= b <= ord("9"):
+            self.number_value += c
+        elif c == "|":
+            self.append_distance(25)
+            self.small_jump = True
+        elif ord("a") <= b <= ord("y"):
+            self.append_distance(b + 1 - ord("a"))
+            self.small_jump = False
+        elif c == "z":
+            self.append_distance(26 if self.small_jump else 255)
+            self.small_jump = False
+        elif c == "B":
+            self.left = False
+            self.x_on = True
+            self.y_on = False
+            if self.channel:
+                self.channel("Right")
+        elif c == "T":
+            self.left = True
+            self.x_on = True
+            self.y_on = False
+            if self.channel:
+                self.channel("Left")
+        elif c == "R":
+            self.top = False
+            self.x_on = False
+            self.y_on = True
+            if self.channel:
+                self.channel("Bottom")
+        elif c == "L":
+            self.top = True
+            self.x_on = False
+            self.y_on = True
+            if self.channel:
+                self.channel("Top")
+        elif c == "U":
+            self.laser = 0
+            if self.channel:
+                self.channel("Laser Off")
+        elif c == "D":
+            self.laser = 1
+            if self.channel:
+                self.channel("Laser On")
+        elif c == "F":
+            if self.channel:
+                self.channel("Finish")
+            self.returning_compact = False
+            self.returning_finished = True
+        elif c == "@":
+            if self.channel:
+                self.channel("Reset")
+            self.returning_compact = False
+        elif c in "C":
+            if self.channel:
+                self.channel("Speedcode")
+            self.speed_code = ""
+            self.process = self.process_speed_characters
+            self.process(b, c)
+            return
+        elif c in "V":
+            if c in "GCV01234567890":
+                self.speed_code += c
+                return
+            speed = LaserSpeed(
+                self.speed_code, board=self.board, fix_speeds=self.fix_speeds
+            )
+            self.settings.raster_step = speed.raster_step
+            self.settings.speed = speed.speed
+            if self.channel:
+                self.channel("Setting Speed: %f" % self.settings.speed)
+            self.speed_code = None
+        elif c in "G":
+            pass
+        elif c == "S":
+            self.laser = 0
+            self.execute_distance()
+            if self.channel:
+                self.channel("Switch")
+            self.process = self.state_switch
+            self.process(b, c)
+        elif c == "E":
+            if c in "S012":
+                if c == "1":
+                    self.horizontal_major = self.x_on
+                    if self.channel:
+                        self.channel("Setting Axis.")
+                return
+            self.laser = 0
+            if self.channel:
+                self.channel("Execute State")
+            self.process = self.state_execute
+            self.process(b, c)
+
+        elif c == "P":
+            if self.channel:
+                self.channel("Pause")
+            self.laser = 0
+            if self.paused_state:
+                # Home sequence triggered by 2 F commands in the same packet.
+                if self.position:
+                    self.position((self.x, self.y, 0, 0))
+                self.x = 0
+                self.y = 0
+                self.distance_y = 0
+                self.distance_x = 0
+                self.finish_state = True
+                self.paused_state = False
+            else:
+                self.execute_distance()  # distance is executed by a P command
+                self.paused_state = True
+        elif c == "N":
+            if self.channel:
+                self.channel("N")
+            self.execute_distance()  # distance is executed by an N command.
+            self.laser = 0
+            self.compact_state = False
+
+            if self.position:
+                self.position(None)
+            self.process(b, c)
+        elif c == "M":
+            self.x_on = True
+            self.y_on = True
+            if self.channel:
+                a = "Top" if self.top else "Bottom"
+                b = "Left" if self.left else "Right"
+                self.channel("Diagonal %s %s" % (a, b))
 
     def state_reset(self, b, c):
         if c in "@NSE":
             return
         else:
-            self.process = self.state_default
+            self.process = self.process
             self.process(b, c)
 
-    def state_jog(self, b, c):
-        if c in "N":
-            return
-        else:
-            self.process = self.state_default
-            self.process(b, c)
-
-    def state_pop(self, b, c):
-        if c == "P":
-            # Home sequence triggered.
-            if self.position:
-                self.position((self.x, self.y, 0, 0))
-            self.x = 0
-            self.y = 0
-            self.laser = 0
-            self.process = self.state_default
-            return
-        elif c == "F":
-            return
-        else:
-            if self.channel:
-                self.channel("Finish State Unknown: %s" % c)
-
-    def state_speed(self, b, c):
-        if c in "GCV01234567890":
-            self.speed_code += c
-            return
-        speed = LaserSpeed(
-            self.speed_code, board=self.board, fix_speeds=self.fix_speeds
-        )
-        self.settings.steps = speed.raster_step
-        self.settings.speed = speed.speed
-        if self.channel:
-            self.channel("Setting Speed: %f" % self.settings.speed)
-        self.speed_code = None
-
-        self.process = self.state_default
-        self.process(b, c)
-
-    def state_switch(self, b, c):
-        if c in "S012":
-            if c == "1":
-                self.horizontal_major = self.x_on
-                if self.channel:
-                    self.channel("Setting Axis.")
-            return
-        self.process = self.state_default
-        self.process(b, c)
 
     def state_pause(self, b, c):
         if c in "NF":
@@ -213,31 +302,12 @@ class LhystudiosParser:
             return
 
     def state_execute(self, b, c):
-        self.process = self.state_compact
-
-    def state_distance(self, b, c):
-        if c == "|":
-            self.append_distance(25)
-            self.small_jump = True
-            return True
-        elif ord("0") <= b <= ord("9"):
-            if self.number_value is None:
-                self.number_value = c
-            else:
-                self.number_value += c
-            if len(self.number_value) >= 3:
-                self.append_distance(int(self.number_value))
-                self.number_value = None
-            return True
-        elif ord("a") <= b <= ord("y"):
-            self.append_distance(b + 1 - ord("a"))
-        elif c == "z":
-            self.append_distance(26 if self.small_jump else 255)
+        if self.returning_compact:
+            self.process = self.state_compact
         else:
-            self.small_jump = False
-            return False
-        self.small_jump = False
-        return True
+            self.process = self.process
+        self.returning_compact = False
+
 
     def execute_distance(self):
         if self.distance_x != 0 or self.distance_y != 0:
@@ -261,148 +331,6 @@ class LhystudiosParser:
 
             if self.channel:
                 self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
-
-    def state_compact(self, b, c):
-        if self.state_distance(b, c):
-            return
-        self.execute_distance()
-
-        if c == "F":
-            self.laser = 0
-            if self.channel:
-                self.channel("Finish")
-            self.process = self.state_finish
-            self.process(b, c)
-            return
-        elif c == "@":
-            self.laser = 0
-            if self.channel:
-                self.channel("Reset")
-            self.process = self.state_reset
-            self.process(b, c)
-            return
-        elif c == "P":
-            self.laser = 0
-            if self.channel:
-                self.channel("Pause")
-            self.process = self.state_pause
-        elif c == "N":
-            if self.channel:
-                self.channel("Jog")
-            self.process = self.state_jog
-            if self.position:
-                self.position(None)
-            self.process(b, c)
-        elif c == "S":
-            self.laser = 0
-            if self.channel:
-                self.channel("Switch")
-            self.process = self.state_switch
-            self.process(b, c)
-        elif c == "E":
-            self.laser = 0
-            if self.channel:
-                self.channel("Compact-Compact")
-            self.process = self.state_execute
-            if self.position:
-                self.position(None)
-            self.process(b, c)
-        elif c == "B":
-            self.left = False
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Right")
-        elif c == "T":
-            self.left = True
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Left")
-        elif c == "R":
-            self.top = False
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Bottom")
-        elif c == "L":
-            self.top = True
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Top")
-        elif c == "M":
-            self.x_on = True
-            self.y_on = True
-            if self.channel:
-                a = "Top" if self.top else "Bottom"
-                b = "Left" if self.left else "Right"
-                self.channel("Diagonal %s %s" % (a, b))
-        elif c == "U":
-            self.laser = 0
-        elif c == "D":
-            self.laser = 1
-
-    def state_default(self, b, c):
-        if self.state_distance(b, c):
-            return
-
-        # Execute Commands.
-        if c == "N":
-            self.execute_distance()
-        elif c == "F":
-            if self.channel:
-                self.channel("Finish")
-            self.process = self.state_finish
-            self.process(b, c)
-            return
-        elif c == "P":
-            if self.channel:
-                self.channel("Popping")
-            self.process = self.state_pop
-            return
-        elif c in "CVG":
-            if self.channel:
-                self.channel("Speedcode")
-            self.speed_code = ""
-            self.process = self.state_speed
-            self.process(b, c)
-            return
-        elif c == "S":
-            self.execute_distance()
-            if self.channel:
-                self.channel("Switch")
-            self.process = self.state_switch
-            self.process(b, c)
-        elif c == "E":
-            if self.channel:
-                self.channel("Compact")
-            self.process = self.state_execute
-            self.process(b, c)
-        elif c == "B":
-            self.left = False
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Right")
-        elif c == "T":
-            self.left = True
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Left")
-        elif c == "R":
-            self.top = False
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Bottom")
-        elif c == "L":
-            self.top = True
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Top")
 
 
 class EGVBlob:
