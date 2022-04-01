@@ -617,6 +617,9 @@ class LineCut(CutObject):
         )
         settings.raster_step = 0
 
+    def __repr__(self):
+        return f'LineCut({repr(self.start())}, {repr(self.end())}, settings="{self.settings}", passes={self.passes})'
+
     def generator(self):
         # pylint: disable=unsubscriptable-object
         start = self.start()
