@@ -406,13 +406,13 @@ class Smooth(PlotManipulation):
                 self.smooth_y = y
             total_dx = x - self.smooth_x
             total_dy = y - self.smooth_y
+            self.goal_x = x
+            self.goal_y = y
+            self.goal_on = on
             if total_dx == 0 and total_dy == 0:
                 continue
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            self.goal_x = x
-            self.goal_y = y
-            self.goal_on = on
             if self.planner.settings.constant_move_x and dx == 0:
                 # If we are moving x and we don't move x. Skip.
                 if abs(total_dy) < 15:
