@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw
 
 from meerk40t.core.cutcode import CutCode, LaserSettings, LineCut
 from meerk40t.core.elements import LaserOperation
-from meerk40t.core.plotplanner import PlotPlanner, Single
+from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
 from meerk40t.svgelements import Circle, Path, Point, SVGImage
 
