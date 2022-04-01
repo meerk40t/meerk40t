@@ -1009,7 +1009,6 @@ class MeerK40t(MWindow):
         context.listen("pipe;running", self.on_usb_running)
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
-        context.listen("spooler;thread", self.on_spooler_state)
         context.listen("warning", self.on_warning_signal)
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)  # Default Value
@@ -1863,7 +1862,6 @@ class MeerK40t(MWindow):
         context.unlisten("pipe;running", self.on_usb_running)
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
-        context.unlisten("spooler;thread", self.on_spooler_state)
         context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
@@ -1937,12 +1935,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.SetStatusText(
             _("Controller: %s") % self.context.kernel.get_text_thread_state(state),
             2,
-        )
-
-    def on_spooler_state(self, origin, value):
-        self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value),
-            3,
         )
 
     def on_export_signal(self, origin, frame):
