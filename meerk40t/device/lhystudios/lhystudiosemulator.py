@@ -344,8 +344,12 @@ class LhystudiosParser:
                     self.finish_state = True
                 if self.horizontal_major:
                     self.left = not self.left
+                    if self.raster_step:
+                        self.distance_y += self.raster_step
                 else:
                     self.top = not self.top
+                    if self.raster_step:
+                        self.distance_x += self.raster_step
             elif self.mode == 0:
                 # Homes then moves position.
                 pass
