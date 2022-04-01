@@ -28,8 +28,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/ruida", RuidaEmulator)
 
         @kernel.console_option(
-            "silent",
-            "s",
+            "verbose",
+            "v",
             type=bool,
             action="store_true",
             help=_("do not watch server channels"),
@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle=None):
             help=_("activate the ruidaserver."),
         )
         def ruidaserver(
-            command, channel, _, laser=None, silent=False, quit=False, **kwargs
+            command, channel, _, laser=None, verbose=False, quit=False, **kwargs
         ):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
@@ -108,7 +108,7 @@ def plugin(kernel, lifecycle=None):
                 if m2lj:
                     channel(_("Ruida Jog Destination opened on port %d.") % 40207)
 
-                if not silent:
+                if verbose:
                     console = kernel.channel("console")
                     chan = "ruida"
                     root.channel(chan).watch(console)
