@@ -75,7 +75,13 @@ class Scene(Module, Job):
         self.background_brush = wx.Brush("Grey")
         self.magnet_x = []
         self.magnet_y = []
-        self.magnet_attraction = 2  # 0 off, 1..3 increasing strength
+        self.magnet_attraction = (
+            2  # 0 off, 1..x increasing strength (quadratic behaviour)
+        )
+        self.magnet_attract_x = True  # Shall the X-Axis be affected
+        self.magnet_attract_y = True  # Shall the Y-Axis be affected
+        self.magnet_attract_c = True  # Shall the center be affected
+
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
 
@@ -110,22 +116,24 @@ class Scene(Module, Job):
         if prev != now:
             self.context.signal("magnets", now)
 
-    def magnet_attracted_x(self, x_value):
+    def magnet_attracted_x(self, x_value, useit):
         delta = float("inf")
         x_val = None
-        for mag_x in self.magnet_x:
-            if abs(x_value - mag_x) < delta:
-                delta = abs(x_value - mag_x)
-                x_val = mag_x
+        if useit:
+            for mag_x in self.magnet_x:
+                if abs(x_value - mag_x) < delta:
+                    delta = abs(x_value - mag_x)
+                    x_val = mag_x
         return delta, x_val
 
-    def magnet_attracted_y(self, y_value):
+    def magnet_attracted_y(self, y_value, useit):
         delta = float("inf")
         y_val = None
-        for mag_y in self.magnet_y:
-            if abs(y_value - mag_y) < delta:
-                delta = abs(y_value - mag_y)
-                y_val = mag_y
+        if useit:
+            for mag_y in self.magnet_y:
+                if abs(y_value - mag_y) < delta:
+                    delta = abs(y_value - mag_y)
+                    y_val = mag_y
         return delta, y_val
 
     def revised_magnet_bound(self, bounds=None):
@@ -138,52 +146,56 @@ class Scene(Module, Job):
                 s = "{amount}{units}".format(
                     amount=self.tick_distance, units=self.context.units_name
                 )
+                len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
-                attraction_len = (
-                    1
-                    / 3
-                    * self.magnet_attraction
-                    * self.magnet_attraction
-                    * float(Length(s))
-                )
-                # print ("Attraction len=%s, %d, %.1f" % (s, self.magnet_attraction, attraction_len))
+                # fmt: off
+                attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * len_tick
+
+                # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self.magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
+                # fmt: on
             else:
                 attraction_len = float(Length("1mm"))
-            delta_x1, x1 = self.magnet_attracted_x(bounds[0])
-            delta_x2, x2 = self.magnet_attracted_x(bounds[2])
-            delta_x3, x3 = self.magnet_attracted_x((bounds[0] + bounds[2]) / 2)
-            delta_y1, y1 = self.magnet_attracted_y(bounds[1])
-            delta_y2, y2 = self.magnet_attracted_y(bounds[3])
-            delta_y3, y3 = self.magnet_attracted_y((bounds[1] + bounds[3]) / 2)
-            if not x1 is None:
-                # There is no difference between center, left and right
-                # One could imagine to prefer the center over the others
-                # if the delta would be not significantly different
-                if delta_x3 < delta_x1 and delta_x3 < delta_x2:
-                    if delta_x3 < attraction_len:
+
+            delta_x1, x1 = self.magnet_attracted_x(bounds[0], self.magnet_attract_x)
+            delta_x2, x2 = self.magnet_attracted_x(bounds[2], self.magnet_attract_x)
+            delta_x3, x3 = self.magnet_attracted_x(
+                (bounds[0] + bounds[2]) / 2, self.magnet_attract_c
+            )
+            delta_y1, y1 = self.magnet_attracted_y(bounds[1], self.magnet_attract_y)
+            delta_y2, y2 = self.magnet_attracted_y(bounds[3], self.magnet_attract_y)
+            delta_y3, y3 = self.magnet_attracted_y(
+                (bounds[1] + bounds[3]) / 2, self.magnet_attract_c
+            )
+            if delta_x3 < delta_x1 and delta_x3 < delta_x2:
+                if delta_x3 < attraction_len:
+                    if not x3 is None:
                         dx = x3 - (bounds[0] + bounds[2]) / 2
-                        # print ("Take center , x=%.1f, dx=%.1f" % ((bounds[0]+bounds[2])/2, dx))
-                elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
-                    if delta_x1 < attraction_len:
+                        #print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
+            elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
+                if delta_x1 < attraction_len:
+                    if not x1 is None:
                         dx = x1 - bounds[0]
-                        # print ("Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
-                elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
-                    if delta_x2 < attraction_len:
+                        # print("X Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
+            elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
+                if delta_x2 < attraction_len:
+                    if not x2 is None:
                         dx = x2 - bounds[2]
-                        # print ("Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
-            if not y1 is None:
-                if delta_y3 < delta_y1 and delta_y3 < delta_y2:
-                    if delta_y3 < attraction_len:
+                        # print("X Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
+            if delta_y3 < delta_y1 and delta_y3 < delta_y2:
+                if delta_y3 < attraction_len:
+                    if not y3 is None:
                         dy = y3 - (bounds[1] + bounds[3]) / 2
-                        # print ("Take center , x=%.1f, dx=%.1f" % ((bounds[1]+bounds[3])/2, dy))
-                elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
-                    if delta_y1 < attraction_len:
+                        # print("Y Take center , x=%.1f, dx=%.1f" % ((bounds[1] + bounds[3]) / 2, dy))
+            elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
+                if delta_y1 < attraction_len:
+                    if not y1 is None:
                         dy = y1 - bounds[1]
-                        # print ("Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
-                elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
-                    if delta_y2 < attraction_len:
+                        # print("Y Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
+            elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
+                if delta_y2 < attraction_len:
+                    if not y2 is None:
                         dy = y2 - bounds[3]
-                        # print ("Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
+                        # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
 
         return dx, dy
 
