@@ -3,7 +3,8 @@ from io import BytesIO
 from typing import Tuple, Union
 
 from ...core.cutcode import CutCode, LaserSettings, PlotCut
-from ...kernel import Module, get_safe_path
+from ...kernel import Module, get_safe_path, STATE_INITIALIZE, STATE_TERMINATE, STATE_END, STATE_PAUSE, STATE_BUSY, \
+    STATE_WAIT, STATE_ACTIVE, STATE_IDLE, STATE_UNKNOWN
 from ...svgelements import Color
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
@@ -214,9 +215,38 @@ class RuidaEmulator(Module):
         self.process_commands = True
         self.parse_lasercode = True
         self.swizzle_mode = True
+        self.state = 22
+
+    def initialize(self, *args, **kwargs):
+        self.context.listen("pipe;thread", self.on_pipe_state)
+
+    def finalize(self, *args, **kwargs):
+        self.context.unlisten("pipe;thread", self.on_pipe_state)
 
     def __repr__(self):
         return "Ruida(%s, %d cuts)" % (self.name, len(self.cutcode))
+
+    def on_pipe_state(self, origin, state):
+        if not self.control:
+            return  # We are not using ruidacontrol mode. Do not update the state.
+        if state == STATE_INITIALIZE:
+            self.state = 22
+        elif state == STATE_TERMINATE:
+            self.state = 22
+        elif state == STATE_END:
+            self.state = 22
+        elif state == STATE_PAUSE:
+            self.state = 23
+        elif state == STATE_BUSY:
+            self.state = 23
+        elif state == STATE_WAIT:
+            self.state = 21
+        elif state == STATE_ACTIVE:
+            self.state = 21
+        elif state == STATE_IDLE:
+            self.state = 22
+        elif state == STATE_UNKNOWN:
+            self.state = 22
 
     def generate(self):
         for cutobject in self.cutcode:
@@ -850,10 +880,16 @@ class RuidaEmulator(Module):
                 desc = "Start Process"
             if array[1] == 0x01:
                 desc = "Stop Process"
+                if self.control:
+                    self.context("estop\ntimer 1 1 home\n")
             if array[1] == 0x02:
                 desc = "Pause Process"
+                if self.control:
+                    self.context("pause\n")
             if array[1] == 0x03:
                 desc = "Restore Process"
+                if self.control:
+                    self.context("resume\n")
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
@@ -1932,7 +1968,7 @@ class RuidaEmulator(Module):
         if mem == 0x01B2:
             return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
-            return "Machine Status", 22
+            return "Machine Status", self.state  # 22 ok, 23 paused. 21 running.
         if mem == 0x0201:
             return "Total Open Time (s)", 0
         if mem == 0x0202:
