@@ -342,6 +342,10 @@ class LhystudiosParser:
                     self.compact_state = True
                 if self.returning_finished:
                     self.finish_state = True
+                if self.horizontal_major:
+                    self.left = not self.left
+                else:
+                    self.top = not self.top
             elif self.mode == 0:
                 # Homes then moves position.
                 pass
