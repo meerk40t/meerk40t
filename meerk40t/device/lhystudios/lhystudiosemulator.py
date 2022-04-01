@@ -260,8 +260,9 @@ class LhystudiosParser:
         elif c == "z":
             self.append_distance(26 if self.small_jump else 255)
             self.small_jump = False
-        elif c == "B":
+        elif c == "B":  # Move to Right.
             if self.left and self.horizontal_major:
+                # Was T switched to B with horizontal rastering.
                 if self.raster_step:
                     self.distance_y += self.raster_step
             self.left = False
@@ -269,8 +270,9 @@ class LhystudiosParser:
             self.y_on = False
             if self.channel:
                 self.channel("Right")
-        elif c == "T":
+        elif c == "T":  # Move to Left
             if not self.left and self.horizontal_major:
+                # Was T switched to B with horizontal rastering.
                 if self.raster_step:
                     self.distance_y += self.raster_step
             self.left = True
@@ -278,8 +280,9 @@ class LhystudiosParser:
             self.y_on = False
             if self.channel:
                 self.channel("Left")
-        elif c == "R":
+        elif c == "R":  # Move to Bottom
             if self.top and not self.horizontal_major:
+                # Was L switched to R with vertical rastering.
                 if self.raster_step:
                     self.distance_x += self.raster_step
             self.top = False
@@ -287,8 +290,9 @@ class LhystudiosParser:
             self.y_on = True
             if self.channel:
                 self.channel("Bottom")
-        elif c == "L":
+        elif c == "L":  # Move to Top
             if not self.top and not self.horizontal_major:
+                # Was R switched to L with vertical rastering.
                 if self.raster_step:
                     self.distance_x += self.raster_step
             self.top = True
@@ -319,6 +323,7 @@ class LhystudiosParser:
                 self.channel("Speedcode")
             self.speed_code = ""
         elif c in "V":
+            self.raster_step = None
             if self.channel:
                 self.channel("Velocity")
             self.number_consumer = self.speedcode_b1_consumer
@@ -344,10 +349,14 @@ class LhystudiosParser:
                     self.finish_state = True
                 if self.horizontal_major:
                     self.left = not self.left
+                    self.x_on = True
+                    self.y_on = False
                     if self.raster_step:
                         self.distance_y += self.raster_step
                 else:
                     self.top = not self.top
+                    self.x_on = False
+                    self.y_on = True
                     if self.raster_step:
                         self.distance_x += self.raster_step
             elif self.mode == 0:
