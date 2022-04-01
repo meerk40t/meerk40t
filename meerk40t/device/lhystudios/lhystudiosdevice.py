@@ -1267,10 +1267,9 @@ class LhystudiosDriver(Driver):
             self.data_output(self.CODE_LEFT)
         else:
             self.data_output(self.CODE_RIGHT)
-
         self.data_output(b"N")
         if delta != 0:
-            if self._topward:
+            if delta < 0:
                 self.data_output(self.CODE_TOP)
             else:
                 self.data_output(self.CODE_BOTTOM)
@@ -1309,7 +1308,7 @@ class LhystudiosDriver(Driver):
             self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
         if delta != 0:
-            if self._leftward:
+            if delta < 0:
                 self.data_output(self.CODE_LEFT)
             else:
                 self.data_output(self.CODE_RIGHT)
