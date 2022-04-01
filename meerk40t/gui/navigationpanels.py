@@ -1,3 +1,4 @@
+from wsgiref import validate
 import wx
 from wx import aui
 
@@ -215,7 +216,7 @@ class Drag(wx.Panel):
         self.button_align_trace_quick = wx.BitmapButton(
             self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap()
         )
-
+        self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
         self.__do_layout()
 
@@ -260,16 +261,35 @@ class Drag(wx.Panel):
             self.on_button_align_trace_quick,
             self.button_align_trace_quick,
         )
+        # Right Button Events
+        self.button_align_corner_top_left.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_lock_tl
+        )
+        self.button_align_corner_top_right.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_lock_tr
+        )
+        self.button_align_corner_bottom_left.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_lock_bl
+        )
+        self.button_align_corner_bottom_right.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_lock_br
+        )
+        self.button_align_center.Bind(wx.EVT_RIGHT_DOWN, self.on_button_lock_center)
+
         # end wxGlade
         self.elements = None
         self.console = None
         self.design_locked = False
         self.drag_ready(False)
+        self._current_lockmode = 0
 
     def __set_properties(self):
         # begin wxGlade: Drag.__set_properties
+        lockmsg = "\n" + _(
+            "(Right Mouseclick to lock/unlock the selection to the laserhead)"
+        )
         self.button_align_corner_top_left.SetToolTip(
-            _("Align laser with the upper left corner of the selection")
+            _("Align laser with the upper left corner of the selection") + lockmsg
         )
         self.button_align_corner_top_left.SetSize(
             self.button_align_corner_top_left.GetBestSize()
@@ -279,7 +299,7 @@ class Drag(wx.Panel):
         )
         self.button_align_drag_up.SetSize(self.button_align_drag_up.GetBestSize())
         self.button_align_corner_top_right.SetToolTip(
-            _("Align laser with the upper right corner of the selection")
+            _("Align laser with the upper right corner of the selection") + lockmsg
         )
         self.button_align_corner_top_right.SetSize(
             self.button_align_corner_top_right.GetBestSize()
@@ -289,7 +309,7 @@ class Drag(wx.Panel):
         )
         self.button_align_drag_left.SetSize(self.button_align_drag_left.GetBestSize())
         self.button_align_center.SetToolTip(
-            _("Align laser with the center of the selection")
+            _("Align laser with the center of the selection") + lockmsg
         )
         self.button_align_center.SetSize(self.button_align_center.GetBestSize())
         self.button_align_drag_right.SetToolTip(
@@ -297,7 +317,7 @@ class Drag(wx.Panel):
         )
         self.button_align_drag_right.SetSize(self.button_align_drag_right.GetBestSize())
         self.button_align_corner_bottom_left.SetToolTip(
-            _("Align laser with the lower left corner of the selection")
+            _("Align laser with the lower left corner of the selection") + lockmsg
         )
         self.button_align_corner_bottom_left.SetSize(
             self.button_align_corner_bottom_left.GetBestSize()
@@ -307,7 +327,7 @@ class Drag(wx.Panel):
         )
         self.button_align_drag_down.SetSize(self.button_align_drag_down.GetBestSize())
         self.button_align_corner_bottom_right.SetToolTip(
-            _("Align laser with the lower right corner of the selection")
+            _("Align laser with the lower right corner of the selection") + lockmsg
         )
         self.button_align_corner_bottom_right.SetSize(
             self.button_align_corner_bottom_right.GetBestSize()
@@ -349,6 +369,56 @@ class Drag(wx.Panel):
         align_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    @property
+    def lockmode(self):
+        return self._current_lockmode
+
+    @lockmode.setter
+    def lockmode(self, value):
+        if value == 1:
+            self.on_button_align_corner_tl(event=None)
+        elif value == 2:
+            self.on_button_align_corner_tr(event=None)
+        elif value == 3:
+            self.on_button_align_corner_bl(event=None)
+        elif value == 4:
+            self.on_button_align_corner_br(event=None)
+        elif value == 5:
+            self.on_button_align_center(event=None)
+
+        self._current_lockmode = value
+
+    def lock_mode_toggle(self, button):
+        coldefault = self.bg_color
+        collocked = wx.GREEN
+        bval = [coldefault, coldefault, coldefault, coldefault, coldefault]
+        if button == self.lockmode:
+            bval[button - 1] = coldefault
+            self.lockmode = 0
+        else:
+            bval[button - 1] = collocked
+            self.lockmode = button
+        self.button_align_corner_top_left.BackgroundColour = bval[0]
+        self.button_align_corner_top_right.BackgroundColour = bval[1]
+        self.button_align_corner_bottom_left.BackgroundColour = bval[2]
+        self.button_align_corner_bottom_right.BackgroundColour = bval[3]
+        self.button_align_center.BackgroundColour = bval[4]
+
+    def on_button_lock_tl(self, event=None):
+        self.lock_mode_toggle(1)
+
+    def on_button_lock_tr(self, event=None):
+        self.lock_mode_toggle(2)
+
+    def on_button_lock_bl(self, event=None):
+        self.lock_mode_toggle(3)
+
+    def on_button_lock_br(self, event=None):
+        self.lock_mode_toggle(4)
+
+    def on_button_lock_center(self, event=None):
+        self.lock_mode_toggle(5)
 
     def drag_ready(self, v):
         self.design_locked = v
@@ -486,6 +556,51 @@ class Drag(wx.Panel):
     ):  # wxGlade: Navigation.<event_handler>
         self.context("trace_quick\n")
         self.drag_ready(True)
+
+    def init(self, context):
+        context.listen("driver;position", self.on_update)
+        context.listen("emulator;position", self.on_update)
+
+    def final(self, context):
+        context.unlisten("driver;position", self.on_update)
+        context.unlisten("emulator;position", self.on_update)
+
+    def on_update(self, origin, pos):
+        # bb = self.get_bbox()
+        elements = self.context.elements
+        bb = elements._emphasized_bounds
+
+        if bb is None or self.lockmode == 0:
+            return
+        dx = 0
+        dy = 0
+        if self.lockmode == 1:  # tl
+            orgx = bb[0]
+            orgy = bb[1]
+        elif self.lockmode == 2:  # tr
+            orgx = bb[2]
+            orgy = bb[1]
+        elif self.lockmode == 3:  # bl
+            orgx = bb[0]
+            orgy = bb[3]
+        elif self.lockmode == 4:  # br
+            orgx = bb[2]
+            orgy = bb[3]
+        elif self.lockmode == 5:  # center
+            orgx = (bb[0] + bb[2]) / 2
+            orgy = (bb[1] + bb[3]) / 2
+        dx = pos[0] - orgx
+        dy = pos[1] - orgy
+        # print("dx=%.1f, dy=%.1f" % (dx, dy))
+        if dx != 0 or dy != 0:
+            elements = self.context.elements
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.transform.post_translate(dx, dy)
+                obj._bounds_dirty = False
+
+            elements.validate_selected_area()
+            self.drag_ready(True)
 
 
 class Jog(wx.Panel):
@@ -1506,6 +1621,11 @@ class NavigationPanel(wx.Panel):
             size_panel,
         ]
         # end wxGlade
+        for p in self.panels:
+            try:
+                p.init(self.context)
+            except AttributeError:
+                pass
 
     def pane_show(self):
         for p in self.panels:
