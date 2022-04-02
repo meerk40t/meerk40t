@@ -37,6 +37,9 @@ def plugin(kernel, lifecycle=None):
     def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
         if data_type == "inkscape":
             inkscape_path, filename = data
+            if filename is None:
+                channel(_("File was not set."))
+                return
             if filename.endswith("png"):
                 from PIL import Image
 
