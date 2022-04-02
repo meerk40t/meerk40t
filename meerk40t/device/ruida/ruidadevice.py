@@ -1352,7 +1352,7 @@ class RuidaEmulator(Module):
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Calculate Document Time %d" % filenumber
         elif array[0] == 0xEA:
-            index = array[1]
+            index = array[1]  # TODO: Index error raised here.
             desc = "Array Start (%d)" % index
         elif array[0] == 0xEB:
             desc = "Array End"
