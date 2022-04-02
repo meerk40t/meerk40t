@@ -12,6 +12,7 @@ from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
@@ -69,6 +70,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.widget_scene = self.scene.scene
         context = self.context
+        self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
@@ -245,8 +247,8 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_magnet(self, origin, strength, *args):
         strength = int(strength)
-        if strength<0:
-            strength=0
+        if strength < 0:
+            strength = 0
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
