@@ -562,6 +562,8 @@ class ShadowTree:
         @return:
         """
         item = node.item
+        if item is None:
+            raise ValueError("Item was None for node " + repr(node))
         if not item.IsOk():
             raise ValueError("Bad Item")
         node.unregister_object()

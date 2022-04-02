@@ -629,7 +629,7 @@ class RuidaEmulator(Module):
             self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0xC7:
-            v0 = self.parse_power(array[1:3])
+            v0 = self.parse_power(array[1:3]) # TODO: Check command fewer values.
             desc = "Imd Power 1 (%f)" % v0
         elif array[0] == 0xC2:
             v0 = self.parse_power(array[1:3])
