@@ -727,14 +727,18 @@ class ShadowTree:
         self.wxtree.SetItemText(node.item, node.label)
         try:
             stroke = node.object.stroke
-            color = wx.Colour(swizzlecolor(Color(stroke).argb))
-            self.wxtree.SetItemTextColour(node.item, color)
+            wxcolor = Color(stroke).bgr
+            if wxcolor is not None:
+                color = wx.Colour(wxcolor)
+                self.wxtree.SetItemTextColour(node.item, color)
         except AttributeError:
             pass
         try:
             color = node.color
-            c = wx.Colour(swizzlecolor(Color(color)))
-            self.wxtree.SetItemTextColour(node.item, c)
+            wxcolor = Color(color).bgr
+            if wxcolor is not None:
+                c = wx.Colour(wxcolor)
+                self.wxtree.SetItemTextColour(node.item, c)
         except AttributeError:
             pass
 
