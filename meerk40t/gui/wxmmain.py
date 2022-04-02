@@ -1888,7 +1888,9 @@ class MeerK40t(MWindow):
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
-    def on_warning_signal(self, origin, message, caption, style):
+    def on_warning_signal(self, origin, message, caption="", style=None):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,
