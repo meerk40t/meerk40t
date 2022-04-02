@@ -395,7 +395,8 @@ class RuidaEmulator(Module):
         :return:
         """
         self.swizzle_mode = True
-
+        if len(sent_data) < 2:
+            return  # Cannot contain a checksum.
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
