@@ -344,7 +344,8 @@ class DxfLoader:
             return
         else:
             return  # Might be something unsupported.
-
+        if element is None:
+            return
         if entity.rgb is not None:
             if isinstance(entity.rgb, tuple):
                 element.stroke = Color(*entity.rgb)
