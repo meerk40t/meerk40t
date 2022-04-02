@@ -20,10 +20,10 @@ class GuideWidget(Widget):
         self.scene.context.setting(bool, "show_negative_guide", True)
         self.edge_gap = 5
         self.line_length = 20
-        self.scale_x_lower = self.edge_gap
-        self.scale_x_upper = self.scale_x_lower + self.line_length
-        self.scale_y_lower = self.edge_gap
-        self.scale_y_upper = self.scale_y_lower + self.line_length
+        self.scale_x_lower = 0
+        self.scale_x_upper = self.edge_gap + self.line_length
+        self.scale_y_lower = 0
+        self.scale_y_upper = self.edge_gap + self.line_length
         self.scaled_conversion = 0
         self.units = None
         self.options = []
@@ -51,13 +51,22 @@ class GuideWidget(Widget):
         else:
             self.scene.auto_tick = False
             self.scene.tick_distance = value
+        self.scene.context.signal("grid")
 
-    def menu_event(self, idx):
+    def change_tick_event(self, idx):
         value = self.options[idx]
         self.set_auto_tick(value)
 
     def attract_event(self, value):
         self.scene.magnet_attraction = value
+
+    def affect_event(self, value):
+        if value == 0:
+            self.scene.magnet_attract_x = not self.scene.magnet_attract_x
+        elif value == 1:
+            self.scene.magnet_attract_y = not self.scene.magnet_attract_y
+        elif value == 2:
+            self.scene.magnet_attract_c = not self.scene.magnet_attract_c
 
     def fill_magnets(self):
         # Lets set the full grid
@@ -83,14 +92,11 @@ class GuideWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
         Capture and deal with the doubleclick event.
-
         Doubleclick in the grid loads a menu to remove the background.
         """
-        if event_type == "hover":
-            return RESPONSE_CHAIN
-        elif event_type == "rightdown":
-            menu = wx.Menu()
-            _ = self.scene.context._
+        _ = self.scene.context._
+
+        def add_scale_options(self, menu):
             kind = wx.ITEM_CHECK if self.scene.auto_tick else wx.ITEM_NORMAL
             item = menu.Append(wx.ID_ANY, _("Auto-Scale"), "", kind)
             if kind == wx.ITEM_CHECK:
@@ -101,7 +107,6 @@ class GuideWidget(Widget):
                 id=item.GetId(),
             )
             menu.AppendSeparator()
-
             units = self.scene.context.units_name
             if units == "mm":
                 self.options = [1, 5, 10, 25]
@@ -129,7 +134,7 @@ class GuideWidget(Widget):
                 menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
-                lambda e: self.menu_event(0),
+                lambda e: self.change_tick_event(0),
                 id=item.GetId(),
             )
             kind = (
@@ -148,7 +153,7 @@ class GuideWidget(Widget):
                 menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
-                lambda e: self.menu_event(1),
+                lambda e: self.change_tick_event(1),
                 id=item.GetId(),
             )
             kind = (
@@ -167,7 +172,7 @@ class GuideWidget(Widget):
                 menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
-                lambda e: self.menu_event(2),
+                lambda e: self.change_tick_event(2),
                 id=item.GetId(),
             )
             kind = (
@@ -186,9 +191,118 @@ class GuideWidget(Widget):
                 menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
-                lambda e: self.menu_event(3),
+                lambda e: self.change_tick_event(3),
                 id=item.GetId(),
             )
+
+        def add_attraction_strength_menu(self, menu):
+            item = menu.Append(
+                wx.ID_ANY, _("Attraction strength..."), "", wx.ITEM_NORMAL
+            )
+            menu.Enable(item.GetId(), False)
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 0 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Off"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(0),
+                id=item.GetId(),
+            )
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 1 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Weak"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(1),
+                id=item.GetId(),
+            )
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 2 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Normal"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(2),
+                id=item.GetId(),
+            )
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 3 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Strong"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(3),
+                id=item.GetId(),
+            )
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 4 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Very Strong"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(4),
+                id=item.GetId(),
+            )
+            kind = (
+                wx.ITEM_CHECK if self.scene.magnet_attraction == 5 else wx.ITEM_NORMAL
+            )
+            item = menu.Append(wx.ID_ANY, _("Enormous"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.attract_event(5),
+                id=item.GetId(),
+            )
+
+        def add_attraction_options_menu(self, menu):
+            item = menu.Append(wx.ID_ANY, _("Attraction areas..."), "", wx.ITEM_NORMAL)
+            menu.Enable(item.GetId(), False)
+            kind = wx.ITEM_CHECK if self.scene.magnet_attract_x else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Left/Right Side"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.affect_event(0),
+                id=item.GetId(),
+            )
+            kind = wx.ITEM_CHECK if self.scene.magnet_attract_y else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Top/Bottom Side"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.affect_event(1),
+                id=item.GetId(),
+            )
+            kind = wx.ITEM_CHECK if self.scene.magnet_attract_c else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Center"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.affect_event(2),
+                id=item.GetId(),
+            )
+
+        if event_type == "hover":
+            return RESPONSE_CHAIN
+        elif event_type == "rightdown":
+            menu = wx.Menu()
+            add_scale_options(self, menu)
             menu.AppendSeparator()
             if self.scene.has_magnets():
                 item = menu.Append(wx.ID_ANY, _("Clear all magnets"), "")
@@ -198,88 +312,10 @@ class GuideWidget(Widget):
                     id=item.GetId(),
                 )
                 menu.AppendSeparator()
-                item = menu.Append(
-                    wx.ID_ANY, _("Attraction strength..."), "", wx.ITEM_NORMAL
-                )
-                menu.Enable(item.GetId(), False)
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 0
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Off"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(0),
-                    id=item.GetId(),
-                )
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 1
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Weak"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(1),
-                    id=item.GetId(),
-                )
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 2
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Normal"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(2),
-                    id=item.GetId(),
-                )
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 3
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Strong"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(3),
-                    id=item.GetId(),
-                )
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 4
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Very Strong"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(4),
-                    id=item.GetId(),
-                )
-                kind = (
-                    wx.ITEM_CHECK
-                    if self.scene.magnet_attraction == 5
-                    else wx.ITEM_NORMAL
-                )
-                item = menu.Append(wx.ID_ANY, _("Enormous"), "", kind)
-                if kind == wx.ITEM_CHECK:
-                    menu.Check(item.GetId(), True)
-                self.scene.context.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.attract_event(5),
-                    id=item.GetId(),
-                )
+                add_attraction_strength_menu(self, menu)
+                menu.AppendSeparator()
+                add_attraction_options_menu(self, menu)
+
             else:
                 item = menu.Append(wx.ID_ANY, _("Create magnets along grid"), "")
                 self.scene.context.gui.Bind(
@@ -308,8 +344,38 @@ class GuideWidget(Widget):
                     p.device.unit_height * p.device.origin_y,
                 ]
             )
+            ox, oy = self.scene.convert_scene_to_window([0, 0])
             mark_point_x = (window_pos[0] - sx) / self.scaled_conversion
             mark_point_y = (window_pos[1] - sy) / self.scaled_conversion
+            m_p_x = (window_pos[0] - ox) / self.scaled_conversion
+            m_p_y = (window_pos[1] - oy) / self.scaled_conversion
+
+            # print(
+            #    "SX=%.1f, Sy=%.1f, Mark before x=%.1f, y=%.1f"
+            #    % (
+            #        sx / self.scaled_conversion,
+            #        sy / self.scaled_conversion,
+            #        mark_point_x,
+            #        mark_point_y,
+            #    )
+            # )
+            # print(
+            #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
+            #    % (
+            #        ox / self.scaled_conversion,
+            #        oy / self.scaled_conversion,
+            #        m_p_x,
+            #        m_p_y,
+            #    )
+            # )
+            if p.device.flip_x:
+                mark_point_x = m_p_x
+            #    print("After flip, x=%.1f" % mark_point_x)
+
+            if p.device.flip_y:
+                mark_point_y = m_p_y
+            #    print("After flip, y=%.1f" % mark_point_y)
+
             # Make positions stick on ticks (or exactly inbetween)
             mark_point_x = (
                 round(2.0 * mark_point_x / self.scene.tick_distance)
@@ -321,10 +387,6 @@ class GuideWidget(Widget):
                 * 0.5
                 * self.scene.tick_distance
             )
-            # print(
-            #    "Coordinates: x=%.1f, y=%.1f, sx=%.1f, sy=%.1f, mark-x=%.1f, y=%.1f"
-            #    % (window_pos[0], window_pos[1], sx, sy, mark_point_x, mark_point_y)
-            # )
             if is_x and is_y:
                 if self.scene.has_magnets():
                     self.scene.clear_magnets()
@@ -335,7 +397,7 @@ class GuideWidget(Widget):
                 value = float(Length("%.1f%s" % (mark_point_x, self.units)))
                 self.scene.toggle_x_magnet(value)
             elif is_y:
-                # Get the Y coordinate form space_pos [1]
+                # Get the Y coordinate from space_pos [1]
                 value = float(Length("%.1f%s" % (mark_point_y, self.units)))
                 self.scene.toggle_y_magnet(value)
 
@@ -377,7 +439,8 @@ class GuideWidget(Widget):
         offset_y = float(sy) % points
 
         # print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
-
+        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f" % (offset_x, offset_y, points))
+        # print("Start-location is at %.1f, %.1f" % (sx, sy))
         starts = []
         ends = []
         x = offset_x
@@ -449,7 +512,7 @@ class GuideWidget(Widget):
             ends_hi.append((w - length - edge_gap, sy))
 
         grid_line_high_pen = wx.Pen()
-        grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0))
+        grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0, 0x60))  # With alpha
         grid_line_high_pen.SetWidth(2)
 
         gc.SetPen(grid_line_high_pen)
