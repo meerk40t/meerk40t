@@ -61,8 +61,7 @@ class GridWidget(Widget):
             # print ("Calculate grid with %s" %s)
             step = float(Length(s))
             # The very first time we get absurd values, so let's do as if nothing had happened...
-            divider = units_width / step
-            if divider > 1000:  # Too many lines to draw?!
+            if units_width / step > 1000 or units_height / step > 1000:
                 # print ("Something strange happened: %s" %s)
                 step = 0
         if step == 0:
@@ -91,8 +90,8 @@ class GridWidget(Widget):
 
     def calculate_gridsize(self, w, h):
         # Establish the delta for about 15 ticks
-        wpoints = w / 15.0
-        hpoints = h / 15.0
+        wpoints = w / 30.0
+        hpoints = h / 20.0
         points = (wpoints + hpoints) / 2
         scaled_conversion = (
             self.scene.context.device.length(
@@ -127,7 +126,7 @@ class GridWidget(Widget):
             l_pref = 5.0
 
         delta = l_pref * factor
-        # print ("New Delta={delta}".format(delta=delta))
+        # print("New Delta={delta}".format(delta=delta))
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
         self.scene.tick_distance = delta
