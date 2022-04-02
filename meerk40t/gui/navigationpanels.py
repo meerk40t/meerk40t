@@ -1,4 +1,3 @@
-from wsgiref import validate
 import wx
 from wx import aui
 
