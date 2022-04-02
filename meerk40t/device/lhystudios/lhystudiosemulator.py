@@ -1,7 +1,6 @@
 from ...core.cutcode import CutCode, LaserSettings, RawCut
 from ...kernel import Module
 from ..lasercommandconstants import *
-from .laserspeed import LaserSpeed
 
 
 class LhystudiosEmulator(Module):
@@ -354,6 +353,7 @@ class LhystudiosParser:
                     if self.raster_step:
                         self.distance_y += self.raster_step
                 else:
+                    # vertical major
                     self.top = not self.top
                     self.x_on = False
                     self.y_on = True
