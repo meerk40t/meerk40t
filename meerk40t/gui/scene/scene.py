@@ -27,7 +27,8 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox
+from meerk40t.svgelements import Matrix, Point, Viewbox, Polygon, Circle, Ellipse
+from meerk40t.core.units import Length
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -70,6 +71,7 @@ class Scene(Module, Job):
         self.distance = None
         self._cursor = None
         self._reference = None  # Reference Object
+        self.attraction_points = []  # Clear all
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
@@ -137,7 +139,6 @@ class Scene(Module, Job):
         return delta, y_val
 
     def revised_magnet_bound(self, bounds=None):
-        from meerk40t.core.units import Length
 
         dx = 0
         dy = 0
@@ -170,7 +171,7 @@ class Scene(Module, Job):
                 if delta_x3 < attraction_len:
                     if not x3 is None:
                         dx = x3 - (bounds[0] + bounds[2]) / 2
-                        #print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
+                        # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
             elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
                 if delta_x1 < attraction_len:
                     if not x1 is None:
@@ -198,6 +199,96 @@ class Scene(Module, Job):
                         # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
 
         return dx, dy
+
+    def find_attraction_points(self, pos_x, pos_y, all_points=False):
+        """
+        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
+        attraction points (center, corners, sides)
+        """
+        from time import time
+
+        start_time = time()
+        type_point = 1
+        type_middle = 2
+        type_center = 3
+        self.attraction_points = []  # Clear all
+        if self.tick_distance > 0:
+            s = "{amount}{units}".format(
+                amount=self.tick_distance, units=self.context.units_name
+            )
+            len_tick = float(Length(s))
+            # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
+            # fmt: off
+            attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * len_tick
+
+            # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self.magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
+            # fmt: on
+        else:
+            attraction_len = float(Length("1mm"))
+
+        for e in self.context.elements.flat(types=("elem",)):
+            if all_points or not e.emphasized:
+                obj = e.object
+                bb = e.bounds
+                # Point in bbox?
+                if (
+                    bb[0] - attraction_len <= pos_x <= bb[2] + attraction_len
+                    and bb[1] - attraction_len <= pos_y <= bb[3] + attraction_len
+                ):
+                    pts = []
+                    pts.append([(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2, type_center])
+                    try:
+                        if obj.transform.is_identity():
+                            points = obj.points
+                        else:
+                            points = list(
+                                map(obj.transform.point_in_matrix_space, obj.points)
+                            )
+                        print("Has Points")
+                        if not obj.is_degenerate():
+                            # loop through all points
+                            last = points[0]
+                            pts.append([last[0], last[1], type_point])
+
+                            for i in range(1, len(points)):
+                                current = points[i]
+                                pts.append([current[0], current[1], type_point])
+                                pts.append(
+                                    [
+                                        (last[0] + current[0]) / 2,
+                                        (last[1] + current[1]) / 2,
+                                        type_middle,
+                                    ]
+                                )
+                                last = current
+                            if isinstance(obj, Polygon):
+                                current = points[0]
+                                pts.append(
+                                    [
+                                        (last[0] + current[0]) / 2,
+                                        (last[1] + current[1]) / 2,
+                                        type_middle,
+                                    ]
+                                )
+
+                    except AttributeError:
+                        pass
+                    try:
+                        if isinstance(obj, Circle) or isinstance(obj, Ellipse):
+                            print("Circle or Ellipse")
+
+                    except AttributeError:
+                        pass
+
+                    for p in pts:
+                        if (
+                            abs(pos_x - p[0]) <= attraction_len
+                            and abs(pos_y - p[1]) <= attraction_len
+                        ):
+                            print("Append: %")
+                            self.attraction_points.append([p[0], p[1], p[2]])
+        end_time = time()
+        print("Ready, time needed: %.1f" % (end_time - start_time))
 
     def has_magnets(self):
         return len(self.magnet_x) + len(self.magnet_y) > 0
@@ -491,6 +582,8 @@ class Scene(Module, Job):
             dx,
             dy,
         )
+        # Identify possible attraction_points
+        self.find_attraction_points(window_pos[0], window_pos[1])
         self.last_position = window_pos
         try:
             previous_top_element = self.hit_chain[0][0]
