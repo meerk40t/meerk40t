@@ -29,7 +29,12 @@ class PyEmbeddedImage(py_embedded_image):
                 image = image.Rotate180()
             elif rotate == 3:
                 image = image.Rotate90(False)
-        if color is not None:
+        if (
+            color is not None
+            and color.red is not None
+            and color.green is not None
+            and color.blue is not None
+        ):
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
             if DARKMODE and use_theme:
                 reverse = color.distance_to("black") <= 200
