@@ -6089,65 +6089,67 @@ class Elemental(Modifier):
             image_element.values["raster_step"] = step
             elements.add_elem(image_element)
 
-        def add_after_index(self):
+        def add_after_index(self, node=None):
             try:
+                if node is None:
+                    node = list(self.ops(emphasized=True))[-1]
                 operations = self._tree.get(type="branch ops").children
-                return operations.index(list(self.ops(emphasized=True))[-1]) + 1
-            except ValueError:
+                return operations.index(node) + 1
+            except (ValueError, IndexError):
                 return None
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Image"), node_type="op", help="")
         def add_operation_image(node, **kwargs):
-            append_operation_image(node, pos=add_after_index(self), **kwargs)
+            append_operation_image(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Raster"), node_type="op", help="")
         def add_operation_raster(node, **kwargs):
-            append_operation_raster(node, pos=add_after_index(self), **kwargs)
+            append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Engrave"), node_type="op", help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index(self), **kwargs)
+            append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Cut"), node_type="op", help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self), **kwargs)
+            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type="op", help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index(self), **kwargs)
+            append_operation_home(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type="op", help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(self), **kwargs)
+            append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type="op", help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index(self), **kwargs)
+            append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type="op", help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt (console)"), node_type="op", help="")
         def add_operation_interrupt_console(node, **kwargs):
             append_operation_interrupt_console(
-                node, pos=add_after_index(self), **kwargs
+                node, pos=add_after_index(self, node), **kwargs
             )
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type="op", help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
-            pos = add_after_index(self)
+            pos = add_after_index(self, node)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
