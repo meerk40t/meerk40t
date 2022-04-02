@@ -923,6 +923,7 @@ class CutPlan:
                     distance > 50
                     and last_segment.burns_done < last_segment.passes
                     and last_segment.reversible()
+                    and last_segment.next is not None
                 ):
                     # last_segment is a copy so we need to get original
                     closest = last_segment.next.previous
