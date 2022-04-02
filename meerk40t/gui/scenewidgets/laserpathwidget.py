@@ -47,7 +47,9 @@ class LaserPathWidget(Widget):
         """
         context = self.scene.context
         if context.draw_mode & DRAW_MODE_LASERPATH == 0:
-            gc.SetPen(wx.BLUE_PEN)
+            mycol = wx.Colour(0x00, 0x00, 0xFF, 0x40)
+            pen = wx.Pen(mycol)
+            gc.SetPen(pen)
             starts, ends = self.laserpath
             try:
                 gc.StrokeLineSegments(starts, ends)
