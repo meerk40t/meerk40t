@@ -1475,6 +1475,8 @@ class RasterScripts:
         else:
             half_tone = Image.new("L", size)
         draw = ImageDraw.Draw(half_tone)
+        if sample == 0:
+            sample = 1
         for x in range(0, image.size[0], sample):
             for y in range(0, image.size[1], sample):
                 box = image.crop(
