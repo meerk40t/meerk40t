@@ -449,6 +449,7 @@ class GuideWidget(Widget):
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
         gc.DrawText(self.units, edge_gap, edge_gap)
+        (t_width, t_height) = gc.GetTextExtent("0")
         while x < w:
             if x >= 45:
                 mark_point = (x - sx) / self.scaled_conversion
@@ -461,9 +462,10 @@ class GuideWidget(Widget):
 
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
-                # Show half distance as well
-                starts.append((x - 0.5 * points, edge_gap))
-                ends.append((x - 0.5 * points, 0.25 * length + edge_gap))
+                # Show half distance as well if there's enough room
+                if t_height < 0.5 * points:
+                    starts.append((x - 0.5 * points, edge_gap))
+                    ends.append((x - 0.5 * points, 0.25 * length + edge_gap))
 
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
@@ -484,8 +486,10 @@ class GuideWidget(Widget):
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
-                    starts.append((edge_gap, y - 0.5 * points))
-                    ends.append((0.25 * length + edge_gap, y - 0.5 * points))
+                    # if there is enough room for a mid distance stroke...
+                    if t_height < 0.5 * points:
+                        starts.append((edge_gap, y - 0.5 * points))
+                        ends.append((0.25 * length + edge_gap, y - 0.5 * points))
 
                     starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))
