@@ -479,7 +479,10 @@ class CutPlan:
                 return x1 - dx, y1 - dy, x2 + dx, y2 + dy
 
             groups = group_overlapped_rasters(
-                [(node, adjust_bbox(node.object.bbox(with_stroke=True))) for node in nodes]
+                [
+                    (node, adjust_bbox(node.object.bbox(with_stroke=True)))
+                    for node in nodes
+                ]
             )
         else:
             groups = [[(node, None) for node in nodes]]

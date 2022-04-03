@@ -3,8 +3,19 @@ from io import BytesIO
 from typing import Tuple, Union
 
 from ...core.cutcode import CutCode, LaserSettings, PlotCut
-from ...kernel import Module, get_safe_path, STATE_INITIALIZE, STATE_TERMINATE, STATE_END, STATE_PAUSE, STATE_BUSY, \
-    STATE_WAIT, STATE_ACTIVE, STATE_IDLE, STATE_UNKNOWN
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+    get_safe_path,
+)
 from ...svgelements import Color
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
@@ -630,7 +641,7 @@ class RuidaEmulator(Module):
             self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0xC7:
-            v0 = self.parse_power(array[1:3]) # TODO: Check command fewer values.
+            v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
             desc = "Imd Power 1 (%f)" % v0
         elif array[0] == 0xC2:
             v0 = self.parse_power(array[1:3])
@@ -1309,7 +1320,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 if v1 == 0:
                     for f in files:
                         os.remove(f)
@@ -1324,7 +1337,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 name = files[filenumber - 1]
                 name = os.path.split(name)[-1]
                 name = name.split(".")[0]
@@ -1341,7 +1356,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 name = files[filenumber - 1]
                 try:
                     with open(name, "rb") as f:

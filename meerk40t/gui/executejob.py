@@ -147,7 +147,6 @@ class PlannerPanel(wx.Panel):
         if cols == 0:
             return
 
-
         dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
         if dlg.ShowModal() == wx.ID_OK:
             try:

@@ -73,7 +73,10 @@ DEFAULT_KEYMAP = {
         "tree selected delete",
         "element delete",
     ),
-    "escape": ("", "pause",),
+    "escape": (
+        "",
+        "pause",
+    ),
     "home": ("home",),
     "numpad_down": ("+translate_down",),
     "numpad_up": ("+translate_up",),
@@ -84,14 +87,38 @@ DEFAULT_KEYMAP = {
     "numpad_add": ("+rotate_cw",),
     "numpad_subtract": ("+rotate_ccw",),
     "pause": ("pause",),
-    "alt+c": ("", "cut",),
-    "alt+e": ("", "engrave",),
-    "alt+f": ("", "dialog_fill",),
-    "alt+h": ("", "dialog_path",),
-    "alt+p": ("", "dialog_flip",),
-    "alt+r": ("", "raster",),
-    "alt+s": ("", "dialog_stroke",),
-    "alt+t": ("", "dialog_transform",),
+    "alt+c": (
+        "",
+        "cut",
+    ),
+    "alt+e": (
+        "",
+        "engrave",
+    ),
+    "alt+f": (
+        "",
+        "dialog_fill",
+    ),
+    "alt+h": (
+        "",
+        "dialog_path",
+    ),
+    "alt+p": (
+        "",
+        "dialog_flip",
+    ),
+    "alt+r": (
+        "",
+        "raster",
+    ),
+    "alt+s": (
+        "",
+        "dialog_stroke",
+    ),
+    "alt+t": (
+        "",
+        "dialog_transform",
+    ),
     "alt+f3": (
         "",
         "rotaryscale",
@@ -154,8 +181,11 @@ DEFAULT_KEYMAP = {
     "ctrl+shift+h": ("scale -1 1",),
     "ctrl+shift+o": ("outline 1mm",),
     "ctrl+shift+v": ("scale 1 -1",),
-    "ctrl+alt+shift+escape": ("", "reset_bind_alias",),
-    "ctrl+alt+shift+home": ("bind default;alias default", ),
+    "ctrl+alt+shift+escape": (
+        "",
+        "reset_bind_alias",
+    ),
+    "ctrl+alt+shift+home": ("bind default;alias default",),
 }
 DEFAULT_ALIAS = {
     "+scale_up": ("loop scale 1.02",),
@@ -190,7 +220,10 @@ DEFAULT_ALIAS = {
         "",
         "window open Terminal;channel save usb;channel save send;channel save recv",
     ),
-    "reset_bind_alias": ("", "bind default;alias default",),
+    "reset_bind_alias": (
+        "",
+        "bind default;alias default",
+    ),
 }
 
 
@@ -227,6 +260,7 @@ class BindAlias(Modifier):
             _ = self.context._
             if len(args) == 0:
                 channel(_("Binds:"))
+
                 def keymap_index(key):
                     mods, key = key.rsplit("+", 1) if "+" in key else ("", key)
                     return (
@@ -234,8 +268,11 @@ class BindAlias(Modifier):
                         len(key) if len(key) <= 2 else 3,
                         key,
                     )
+
                 channel(_("    Key                    Command"))
-                for i, key in enumerate(sorted(context.keymap.keys(), key=keymap_index)):
+                for i, key in enumerate(
+                    sorted(context.keymap.keys(), key=keymap_index)
+                ):
                     value = context.keymap[key]
                     channel("%2d: %s %s" % (i, key.ljust(22), value))
                 channel("----------")
@@ -284,10 +321,12 @@ class BindAlias(Modifier):
                 reverse_keymap = {v: k for k, v in context.keymap.items()}
                 channel(_("Aliases (keybind)`:"))
                 channel(_("    Alias                  Command(s)"))
-                for i, key in enumerate(sorted(
-                    context.alias.keys(),
-                    key=lambda x: x if x[0] not in "+-" else x[1:] + x[0]
-                )):
+                for i, key in enumerate(
+                    sorted(
+                        context.alias.keys(),
+                        key=lambda x: x if x[0] not in "+-" else x[1:] + x[0],
+                    )
+                ):
                     value = context.alias[key]
                     keystroke = reverse_keymap[key] if key in reverse_keymap else ""
                     if keystroke and len(key) + len(keystroke) < 18:

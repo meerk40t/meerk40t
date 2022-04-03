@@ -10,11 +10,10 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.wxutils import get_key_name
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
-
-from meerk40t.gui.wxutils import get_key_name
 
 MILS_IN_MM = 39.3701
 
@@ -884,6 +883,7 @@ class Scene(Module, Job):
         @return:
         """
         import platform
+
         custom1 = -1
         custom2 = -2
         if cursor == "sizing":

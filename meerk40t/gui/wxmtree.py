@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from ..core.bindalias import keymap_execute
 from ..core.cutcode import CutCode
 from ..core.elements import ConsoleOperation, LaserOperation, isDot
 from ..svgelements import (
@@ -27,7 +28,6 @@ from .icons import (
 from .laserrender import DRAW_MODE_ICONS, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
-from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 

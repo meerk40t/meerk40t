@@ -3,7 +3,7 @@ import os.path
 import re
 import time
 from copy import copy
-from math import sin, cos, pi, gcd, tau
+from math import cos, gcd, pi, sin, tau
 
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
@@ -21,6 +21,10 @@ from ..device.lasercommandconstants import (
 from ..image.actualize import actualize
 from ..kernel import Modifier
 from ..svgelements import (
+    PATTERN_FLOAT,
+    PATTERN_LENGTH_UNITS,
+    PATTERN_PERCENT,
+    REGEX_LENGTH,
     SVG_STRUCT_ATTRIB,
     Angle,
     Circle,
@@ -29,7 +33,9 @@ from ..svgelements import (
     CubicBezier,
     Ellipse,
     Group,
-    Length as SVGLength,
+)
+from ..svgelements import Length as SVGLength
+from ..svgelements import (
     Line,
     Matrix,
     Move,
@@ -45,10 +51,6 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
-    PATTERN_LENGTH_UNITS,
-    PATTERN_PERCENT,
-    PATTERN_FLOAT,
-    REGEX_LENGTH,
 )
 from ..tools.rastergrouping import group_overlapped_rasters
 from .cutcode import (
@@ -3355,7 +3357,7 @@ class Elemental(Modifier):
             if repeats is None:
                 raise SyntaxError
             if repeats <= 1:
-                raise SyntaxError (_("repeats should be greater or equal to 2"))
+                raise SyntaxError(_("repeats should be greater or equal to 2"))
             if radius is None:
                 radius = Length(0)
             else:
@@ -3532,7 +3534,11 @@ class Elemental(Modifier):
         @context.console_argument(
             "cy", type=Length, help=_("Y-Value of polygon's center")
         )
-        @context.console_argument("radius", type=Length, help=_("Radius (length of side if --side_length is used)"))
+        @context.console_argument(
+            "radius",
+            type=Length,
+            help=_("Radius (length of side if --side_length is used)"),
+        )
         @context.console_option(
             "startangle", "s", type=Angle.parse, help=_("Start-Angle")
         )
@@ -3548,9 +3554,10 @@ class Elemental(Modifier):
             "l",
             type=bool,
             action="store_true",
-            help=_("Do you want to treat the length value for radius as the length of one edge instead?"),
+            help=_(
+                "Do you want to treat the length value for radius as the length of one edge instead?"
+            ),
         )
-
         @context.console_option(
             "radius_inner",
             "r",
@@ -3566,7 +3573,7 @@ class Elemental(Modifier):
             ),
         )
         @context.console_option(
-            "density","d", type=int, help=_("Amount of vertices to skip")
+            "density", "d", type=int, help=_("Amount of vertices to skip")
         )
         @context.console_command(
             "shape",
@@ -3604,12 +3611,8 @@ class Elemental(Modifier):
                     cy = Length(0)
                 elif not cy.is_valid_length:
                     raise SyntaxError("cy: " + _("This is not a valid length"))
-                cx = cx.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                cy = cy.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 if radius is None:
                     radius = Length(0)
                 radius = radius.value(
@@ -3620,8 +3623,13 @@ class Elemental(Modifier):
                     startangle = Angle.parse("0deg")
 
                 starpts = [(cx, cy)]
-                if corners==2:
-                    starpts += [(cx + cos(startangle.as_radians) * radius, cy + sin(startangle.as_radians) * radius)]
+                if corners == 2:
+                    starpts += [
+                        (
+                            cx + cos(startangle.as_radians) * radius,
+                            cy + sin(startangle.as_radians) * radius,
+                        )
+                    ]
 
             else:
                 if cx is None:
@@ -3648,12 +3656,8 @@ class Elemental(Modifier):
                     if not radius.is_valid_length:
                         raise SyntaxError("radius: " + _("This is not a valid length"))
 
-                cx = cx.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
-                cy = cy.value(
-                    ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
-                )
+                cx = cx.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
+                cy = cy.value(ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM)
                 radius = radius.value(
                     ppi=1000, relative_length=bed_dim.bed_width * MILS_IN_MM
                 )
@@ -3676,7 +3680,7 @@ class Elemental(Modifier):
 
                 if density is None:
                     density = 1
-                if density<1 or density > corners:
+                if density < 1 or density > corners:
                     density = 1
 
                 # Do we have to consider the radius value as the length of one corner?
@@ -3692,7 +3696,7 @@ class Elemental(Modifier):
                     if not radius_inner.is_valid_length:
                         raise SyntaxError(
                             "radius_inner: " + _("This is not a valid length")
-                    )
+                        )
                     if isinstance(radius_inner, Length):
                         radius_inner = radius
 
@@ -3700,7 +3704,11 @@ class Elemental(Modifier):
                     if side_length is None:
                         radius = radius / cos(pi / corners)
                     else:
-                        channel(_("You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"))
+                        channel(
+                            _(
+                                "You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored"
+                            )
+                        )
 
                 if alternate_seq < 1:
                     radius_inner = radius
@@ -3752,9 +3760,15 @@ class Elemental(Modifier):
                         j = i + 2
                         if gcd(j, corners) == 1:
                             if ct % 3 == 0:
-                                possible_combinations += "\n shape %d ... -d %d" % (corners, j)
+                                possible_combinations += "\n shape %d ... -d %d" % (
+                                    corners,
+                                    j,
+                                )
                             else:
-                                possible_combinations += ", shape %d ... -d %d " % (corners, j)
+                                possible_combinations += ", shape %d ... -d %d " % (
+                                    corners,
+                                    j,
+                                )
                             ct += 1
                     channel(
                         _("Just for info: we have missed %d vertices...")
@@ -3772,7 +3786,6 @@ class Elemental(Modifier):
             else:
                 data.append(poly_path)
                 return "elements", data
-
 
         @context.console_option("step", "s", default=2.0, type=float)
         @context.console_command(
@@ -3972,7 +3985,9 @@ class Elemental(Modifier):
                 data.append(simple_line)
                 return "elements", data
 
-        @context.console_option("size", "s", type=float, help=_("font size to for object"))
+        @context.console_option(
+            "size", "s", type=float, help=_("font size to for object")
+        )
         @context.console_argument("text", type=str, help=_("quoted string of text"))
         @context.console_command(
             "text",
@@ -3980,7 +3995,9 @@ class Elemental(Modifier):
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
+        def element_text(
+            command, channel, _, data=None, text=None, size=None, **kwargs
+        ):
             if text is None:
                 channel(_("No text specified"))
                 return
@@ -4015,9 +4032,7 @@ class Elemental(Modifier):
                     ct += 1
                 element = Polygon(mlist)
             except ValueError:
-                raise SyntaxError(
-                    _("Must be a list of spaced delimited length pairs.")
-                )
+                raise SyntaxError(_("Must be a list of spaced delimited length pairs."))
             self.add_element(element)
             if data is None:
                 return "elements", [element]
@@ -4325,7 +4340,7 @@ class Elemental(Modifier):
             "hull",
             help=_("creates convex hull of current elements as an object"),
             input_type=(None, "elements"),
-            output_type="elements"
+            output_type="elements",
         )
         def element_hull(command, channel, _, data=None, **kwargs):
             if data is None:
@@ -5461,7 +5476,6 @@ class Elemental(Modifier):
                     yield COMMAND_MOVE, p[0], p[1]
 
             spooler.job(trace_command)
-
 
         # --------------------------- END COMMANDS ------------------------------
 

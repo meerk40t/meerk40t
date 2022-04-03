@@ -35,33 +35,33 @@ _CMD_RE = re.compile("|".join("(?P<%s>%s)" % pair for pair in _cmd_parse))
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
 BBCODE_LIST = {
-    "black":        "\033[30m",
-    "red":          "\033[31m",
-    "green":        "\033[32m",
-    "yellow":       "\033[33m",
-    "blue":         "\033[34m",
-    "magenta":      "\033[35m",
-    "cyan":         "\033[36m",
-    "white":        "\033[37m",
-    "bg-black":     "\033[40m",
-    "bg-red":       "\033[41m",
-    "bg-green":     "\033[42m",
-    "bg-yellow":    "\033[43m",
-    "bg-blue":      "\033[44m",
-    "bg-magenta":   "\033[45m",
-    "bg-cyan":      "\033[46m",
-    "bg-white":     "\033[47m",
-    "bold":         "\033[1m",
-    "/bold":        "\033[22m",
-    "italic":       "\033[3m",
-    "/italic":      "\033[3m",
-    "underline":    "\033[4m",
-    "/underline":   "\033[24m",
-    "underscore":   "\033[4m",
-    "/underscore":  "\033[24m",
-    "negative":     "\033[7m",
-    "positive":     "\033[27m",
-    "normal":       "\033[0m",
+    "black": "\033[30m",
+    "red": "\033[31m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "blue": "\033[34m",
+    "magenta": "\033[35m",
+    "cyan": "\033[36m",
+    "white": "\033[37m",
+    "bg-black": "\033[40m",
+    "bg-red": "\033[41m",
+    "bg-green": "\033[42m",
+    "bg-yellow": "\033[43m",
+    "bg-blue": "\033[44m",
+    "bg-magenta": "\033[45m",
+    "bg-cyan": "\033[46m",
+    "bg-white": "\033[47m",
+    "bold": "\033[1m",
+    "/bold": "\033[22m",
+    "italic": "\033[3m",
+    "/italic": "\033[3m",
+    "underline": "\033[4m",
+    "/underline": "\033[24m",
+    "underscore": "\033[4m",
+    "/underscore": "\033[24m",
+    "negative": "\033[7m",
+    "positive": "\033[27m",
+    "normal": "\033[0m",
 }
 
 # re for bbcode->ansi
@@ -69,7 +69,7 @@ RE_ANSI = re.compile(
     r"((?:\[raw\])(.*?)(?:\[/raw\]|$)|"
     + r"|".join([r"\[%s\]" % x for x in BBCODE_LIST])
     + r")",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 
@@ -760,7 +760,13 @@ class Kernel:
     """
 
     def __init__(
-        self, name: str, version: str, profile: str, path: str = "/", config=None, ansi=False,
+        self,
+        name: str,
+        version: str,
+        profile: str,
+        path: str = "/",
+        config=None,
+        ansi=False,
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessable to all modules.
@@ -2046,7 +2052,10 @@ class Kernel:
                     message = command_funct.help
                     if e.msg:
                         message = e.msg
-                    channel("[red][bold]" + _("Syntax Error (%s): %s") % (command, message), ansi=True)
+                    channel(
+                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message),
+                        ansi=True,
+                    )
                     return None
                 except CommandMatchRejected:
                     # If the command function raises a CommandMatchRejected more commands should be matched.
@@ -2058,9 +2067,11 @@ class Kernel:
                     ctx_name = "Base"
                 else:
                     ctx_name = input_type
-                channel("[red][bold]" +
-                    _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name), ansi=True
+                channel(
+                    "[red][bold]"
+                    + _("%s is not a registered command in this context: %s")
+                    % (command, ctx_name),
+                    ansi=True,
                 )
                 return None
         return data
@@ -2769,7 +2780,8 @@ class Channel:
             repr(self.line_end),
         )
 
-    def _call_raw(self,
+    def _call_raw(
+        self,
         message: Union[str, bytes, bytearray],
     ):
         for w in self.watchers:
@@ -2863,11 +2875,13 @@ class Channel:
         self.watchers.remove(monitor_function)
 
     def bbcode_to_ansi(self, text):
-        return "".join([
-            BBCODE_LIST["normal"],
-            RE_ANSI.sub(self.bbcode_to_ansi_match, text),
-            BBCODE_LIST["normal"],
-        ])
+        return "".join(
+            [
+                BBCODE_LIST["normal"],
+                RE_ANSI.sub(self.bbcode_to_ansi_match, text),
+                BBCODE_LIST["normal"],
+            ]
+        )
 
     def bbcode_to_ansi_match(self, m):
         tag = re.sub(r"\].*", "", m[0])[1:].lower()

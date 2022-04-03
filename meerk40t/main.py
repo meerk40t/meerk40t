@@ -133,7 +133,13 @@ def run():
         path = "profile%d" % args.profile
     else:
         path = ""
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, path, ansi=not args.disable_ansi)
+    kernel = Kernel(
+        APPLICATION_NAME,
+        APPLICATION_VERSION,
+        APPLICATION_NAME,
+        path,
+        ansi=not args.disable_ansi,
+    )
 
     """
     These are frozen bootstraps. They are not dynamically found by entry points they are the configured accepted

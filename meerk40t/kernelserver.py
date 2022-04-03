@@ -1,6 +1,6 @@
 import socket
 
-from .kernel import STATE_TERMINATE, Module, STATE_END
+from .kernel import STATE_END, STATE_TERMINATE, Module
 
 
 def plugin(kernel, lifecycle=None):

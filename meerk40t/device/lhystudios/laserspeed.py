@@ -440,7 +440,7 @@ class LaserSpeed:
         return (
             375.0
             * (LaserSpeed.ACCELERATION_DISTANCES[accel - 1] ** 1.36)
-            / (speed ** 0.75)
+            / (speed**0.75)
         )
 
     @staticmethod

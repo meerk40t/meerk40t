@@ -1,8 +1,7 @@
 import threading
 
 import wx
-from wx import aui
-from wx import richtext
+from wx import aui, richtext
 
 from ..icons import icons8_console_50
 from ..mwindow import MWindow
@@ -159,7 +158,9 @@ class ConsolePanel(wx.ScrolledWindow):
             self._update_text = self.update_text_rich
 
         except NameError:
-            self.text_main = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY)
+            self.text_main = wx.TextCtrl(
+                self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
+            )
             self.text_main.SetFont(font)
             self._update_text = self.update_text_text
 

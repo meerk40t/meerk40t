@@ -12,8 +12,8 @@ try:
     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
     # so we are doing it here even though we do not refer to it in this file
     # richtext is used for the Console panel.
-    from wx import richtext
     import wx
+    from wx import richtext
 except ImportError as e:
     from ..core.exceptions import Mk40tImportAbort
 
@@ -213,8 +213,10 @@ class wxMeerK40t(wx.App, Module):
 
     def InitLocale(self):
         import sys
-        if sys.platform.startswith('win') and sys.version_info > (3,8):
+
+        if sys.platform.startswith("win") and sys.version_info > (3, 8):
             import locale
+
             locale.setlocale(locale.LC_ALL, "C")
 
     def BringWindowToFront(self):
@@ -526,7 +528,6 @@ class wxMeerK40t(wx.App, Module):
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
-
 
     def initialize(self, *args, **kwargs):
         context = self.context

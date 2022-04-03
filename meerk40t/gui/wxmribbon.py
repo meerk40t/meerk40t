@@ -146,13 +146,13 @@ class RibbonPanel(wx.Panel):
             ID_OPEN,
             _("Open"),
             icons8_opened_folder_50.GetBitmap(),
-            _("Clear existing elements and notes and open a new file")
+            _("Clear existing elements and notes and open a new file"),
         )
         toolbar.AddButton(
             ID_SAVE,
             _("Save"),
             icons8_save_50.GetBitmap(),
-            _("Save the project as an SVG file (overwriting any existing file)")
+            _("Save the project as an SVG file (overwriting any existing file)"),
         )
         toolbar.AddButton(
             ID_JOB,
@@ -176,7 +176,9 @@ class RibbonPanel(wx.Panel):
             ID_RASTER,
             _("RasterWizard"),
             icons8_fantasy_50.GetBitmap(),
-            _("Prepare the selected image by dithering to a smaller number of B/W pixels"),
+            _(
+                "Prepare the selected image by dithering to a smaller number of B/W pixels"
+            ),
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -188,7 +190,7 @@ class RibbonPanel(wx.Panel):
             ID_NOTES,
             _("Notes"),
             icons8_comments_50.GetBitmap(),
-            _("Show/Hide the Notes window")
+            _("Show/Hide the Notes window"),
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -199,7 +201,7 @@ class RibbonPanel(wx.Panel):
             ID_CONSOLE,
             _("Console"),
             icons8_console_50.GetBitmap(),
-            _("Show/Hide the Console window")
+            _("Show/Hide the Console window"),
         )
         toolbar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -248,7 +250,7 @@ class RibbonPanel(wx.Panel):
             ID_NAV,
             _("Navigation"),
             icons8_move_50.GetBitmap(),
-            _("Show/Hide the Navigation window")
+            _("Show/Hide the Navigation window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -260,7 +262,7 @@ class RibbonPanel(wx.Panel):
                 ID_CAMERA,
                 _("Camera"),
                 icons8_camera_50.GetBitmap(),
-                _("Show/Hide the Camera window")
+                _("Show/Hide the Camera window"),
             )
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_camera_click, id=ID_CAMERA
@@ -280,7 +282,7 @@ class RibbonPanel(wx.Panel):
             ID_SPOOLER,
             _("Spooler"),
             icons8_route_50.GetBitmap(),
-            _("Show/Hide the Spooler window")
+            _("Show/Hide the Spooler window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -291,7 +293,7 @@ class RibbonPanel(wx.Panel):
             ID_CONTROLLER,
             _("Controller"),
             icons8_connected_50.GetBitmap(),
-            _("Show/Hide the Controller window")
+            _("Show/Hide the Controller window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,
@@ -302,7 +304,7 @@ class RibbonPanel(wx.Panel):
             ID_PAUSE,
             _("Pause"),
             icons8_pause_50.GetBitmap(),
-            _("Pause/Resume the laser")
+            _("Pause/Resume the laser"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED, self.on_click_pause, id=ID_PAUSE
@@ -383,7 +385,7 @@ class RibbonPanel(wx.Panel):
             ID_ROTARY,
             _("Rotary"),
             icons8_roll_50.GetBitmap(),
-            _("Show/Hide the Rotary Setttings window")
+            _("Show/Hide the Rotary Setttings window"),
         )
         button_bar.Bind(
             RB.EVT_RIBBONBUTTONBAR_CLICKED,

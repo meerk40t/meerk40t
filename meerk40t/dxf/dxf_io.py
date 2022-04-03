@@ -323,9 +323,9 @@ class DxfLoader:
                 except AttributeError:
                     # Version before 0.15
                     try:
-                        for bezier in entity.construction_tool().cubic_bezier_approximation(
-                            4
-                        ):
+                        for (
+                            bezier
+                        ) in entity.construction_tool().cubic_bezier_approximation(4):
                             b = bezier.control_points
                             if len(b) == 4:
                                 element.cubic(
