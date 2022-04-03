@@ -1,3 +1,4 @@
+from cmath import pi
 import math
 
 import wx
@@ -1026,12 +1027,37 @@ class SelectionWidget(Widget):
 
             # Improved code by tatarize to establish rotation angle
             current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
+            # boost the angle to allow for simpler bigger movements
+            if self.key_shift_pressed:
+                current_angle *= 2
+            elif self.key_control_pressed:
+                current_angle *= 4
+            # Bring back to 'regular' radians
+            while current_angle > math.tau:
+                current_angle -= 1 * math.tau
+            while current_angle < math.tau:
+                current_angle += 1 * math.tau
+
             if self.last_angle is None:
                 self.last_angle = current_angle
                 self.start_angle = current_angle
+
+            # Update Rotation angle...
+            if self.key_shift_pressed:
+                # Only steps of 5 deg
+                desired_step = math.pi / 36
+                old_angle = current_angle - self.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+            elif self.key_control_pressed:
+                # Only steps of 15 deg
+                desired_step = math.pi / 12
+                old_angle = current_angle - self.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+
             delta_angle = current_angle - self.last_angle
             self.last_angle = current_angle
-            # Update Rotation angle...
             self.rotated_angle = current_angle - self.start_angle
 
             # Bring back to 'regular' radians
