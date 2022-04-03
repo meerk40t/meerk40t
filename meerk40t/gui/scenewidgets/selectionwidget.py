@@ -423,9 +423,35 @@ class RotationWidget(Widget):
             # Improved code by tatarize to establish rotation angle
 
             current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
+            # boost the angle to allow for simpler bigger movements
+            if self.master.key_shift_pressed:
+                current_angle *= 2
+            elif self.master.key_control_pressed:
+                current_angle *= 4
+            # Bring back to 'regular' radians
+            while current_angle > math.tau:
+                current_angle -= 1 * math.tau
+            while current_angle < math.tau:
+                current_angle += 1 * math.tau
+
             if self.master.last_angle is None:
                 self.master.start_angle = current_angle
                 self.master.last_angle = current_angle
+
+            # Update Rotation angle...
+            if self.master.key_shift_pressed:
+                # Only steps of 5 deg
+                desired_step = math.pi / 36
+                old_angle = current_angle - self.master.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+            elif self.master.key_control_pressed:
+                # Only steps of 15 deg
+                desired_step = math.pi / 12
+                old_angle = current_angle - self.master.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+
             delta_angle = current_angle - self.master.last_angle
             self.master.last_angle = current_angle
             # Update Rotation angle...
@@ -1092,11 +1118,13 @@ class MoveWidget(Widget):
 
     def check_for_magnets(self):
         # print ("Shift-key-Status: self=%g, master=%g" % (self.key_shift_pressed, self.master.key_shift_pressed))
-        if not self.master.key_shift_pressed: # if Shift-Key pressed then ignore Magnets...
+        if (
+            not self.master.key_shift_pressed
+        ):  # if Shift-Key pressed then ignore Magnets...
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
             dx, dy = self.scene.revised_magnet_bound(b)
-            if dx != 0 or dy !=0:
+            if dx != 0 or dy != 0:
                 for e in elements.flat(types=("elem",), emphasized=True):
                     obj = e.object
                     obj.transform.post_translate(dx, dy)
