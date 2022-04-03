@@ -1,4 +1,4 @@
-from msilib.schema import Error
+from distutils.log import debug
 import platform
 import threading
 import time
@@ -24,6 +24,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
+    RESPONSE_CHGPOS,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
@@ -88,6 +89,9 @@ class Scene(Module, Job):
 
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
+        # Variables for an amended position
+        self.new_x_space = None
+        self.new_y_space = None
 
     def clear_magnets(self):
         self.magnet_x = []
@@ -227,66 +231,37 @@ class Scene(Module, Job):
                 segm = obj.segments(True)
                 has_segments = True
             except AttributeError:
-                print("Segments exited with Attribute-error %s" % Error)
+                # print("Segments exited with Attribute-error")
                 pass
             if has_segments:
-                ex = float("inf")
-                ey = float("inf")
+                ex = None
+                ey = None
+                sx = float("inf")
+                sy = float("inf")
+                ct = 0
                 for s in segm:
+                    ct += 1
                     xs = [p.x for p in s if p is not None]
                     ys = [p.y for p in s if p is not None]
                     for i in range(len(xs)):
+                        # print("Segment #%d-%d: %.1f, %.1f" % (ct, i, xs[i], ys[i]))
                         sx = xs[i]
                         sy = ys[i]
-                        if not (sx == ex and sy == ey):
+                        add_it = True
+                        if not ex is None:
+                            if sx == ex and sy == ey:
+                                add_it = False
+                        if add_it:
+                            # print("Added pt")
                             self.attraction_points.append([sx, sy, type_point, emph])
-                        ex = s.end.x
-                        ey = s.end.y
-                        self.attraction_points.append([ex, ey, type_point, emph])
-                        self.attraction_points.append(
-                            [(sx + ex) / 2, (sy + ey) / 2, type_middle, emph]
-                        )
-            """
-            has_points = False
-            try:
-                if obj.transform.is_identity():
-                    points = obj.points
-                else:
-                    points = list(map(obj.transform.point_in_matrix_space, obj.points))
-                has_points = True
-            except AttributeError:
-                pass
-            if has_points:
-                print("Has Points")
-                if not obj.is_degenerate():
-                    # loop through all points
-                    last = points[0]
-                    self.attraction_points.append(
-                        [last[0], last[1], type_point, e.emphasized]
-                    )
+                            if not ex is None:
+                                # print("Added middle")
+                                self.attraction_points.append(
+                                    [(sx + ex) / 2, (sy + ey) / 2, type_middle, emph]
+                                )
+                        ex = sx
+                        ey = sy
 
-                    for i in range(1, len(points)):
-                        current = points[i]
-                        self.attraction_points.append(
-                            [current[0], current[1], type_point, emph]
-                        )
-                        self.attraction_points.append(
-                            [
-                                (last[0] + current[0]) / 2,
-                                (last[1] + current[1]) / 2,
-                                type_middle,
-                                emph,
-                            ]
-                        )
-                        last = current
-            try:
-                if isinstance(obj, (Circle, Ellipse, Arc)):
-                    print("Circle or Ellipse, Arc")
-
-            except AttributeError:
-                print("isInstance failed")
-                pass
-            """
         end_time = time()
         print(
             "Ready, time needed: %.6f, points added=%d"
@@ -561,8 +536,10 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
+        RESPONSE_CHGPOS: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
+        need_refresh = False
         if self.log_events:
             self.log_events("%s: %s" % (event_type, str(window_pos)))
 
@@ -635,7 +612,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-
+        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -656,6 +633,11 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
+            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
+            # if debug_str != old_debug:
+            #    old_debug = debug_str
+            #    print("Space-Pos changed for widget %d: %s" % (i, debug_str))
+
             if (
                 i == 0
                 and event_type == "hover"
@@ -696,10 +678,86 @@ class Scene(Module, Job):
                 return
             elif response == RESPONSE_CHAIN:
                 continue
+            elif response == RESPONSE_CHGPOS:
+                # New position has been given:
+                print(
+                    "New position for %s: %s, %s"
+                    % (event_type, self.new_x_space, self.new_y_space)
+                )
+                new_x = window_pos[0]
+                new_y = window_pos[1]
+                if not self.new_x_space is None:
+                    sdx = self.new_x_space - space_pos[0]
+                    odx = sdx
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdx *= current_matrix.value_scale_x()
+                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
+                    new_x = window_pos[0] + sdx
+
+                if not self.new_y_space is None:
+                    sdy = self.new_y_space - space_pos[1]
+                    ody = sdy
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdy *= current_matrix.value_scale_y()
+                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
+                    new_y = window_pos[1] + sdy
+
+                dx = new_x - self.last_position[0]
+                dy = new_y - self.last_position[1]
+                window_pos = (
+                    new_x,
+                    new_y,
+                    self.last_position[0],
+                    self.last_position[1],
+                    dx,
+                    dy,
+                )
+                self.last_position = window_pos
+                self.new_x_space = None
+                self.new_y_space = None
+                need_refresh = True
+                # Hack to update the position of the elements: We run one call through all widgets and ask them to update...
+                """
+                if event_type != "leftdown":
+                    for i2, hit2 in enumerate(self.hit_chain):
+                        if hit2 is None or i == i2:
+                            continue  # Element was dropped, or identical to the current_widget
+                        current_widget2, current_matrix2 = hit
+                        space_pos2 = window_pos
+                        if (
+                            current_matrix2 is not None
+                            and not current_matrix2.is_identity()
+                        ):
+                            space_cur = current_matrix.point_in_inverse_space(
+                                window_pos[0:2]
+                            )
+                            space_last = current_matrix.point_in_inverse_space(
+                                window_pos[2:4]
+                            )
+                            sdx = space_cur[0] - space_last[0]
+                            sdy = space_cur[1] - space_last[1]
+                            space_pos2 = (
+                                space_cur[0],
+                                space_cur[1],
+                                space_last[0],
+                                space_last[1],
+                                sdx,
+                                sdy,
+                            )
+                        print("Tell widget #%d to move:" % i2)
+                        response2 = current_widget2.event(
+                            window_pos, space_pos2, "move"
+                        )
+                """
+                continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
             else:
                 break
+        if need_refresh:
+            print("Refresh...")
+            self.screen_refresh_is_requested = True
+            self.refresh_scene()
 
     def cursor(self, cursor, always=False):
         """
