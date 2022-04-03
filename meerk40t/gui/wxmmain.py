@@ -909,6 +909,11 @@ class MeerK40t(MWindow):
             self._mgr.Update()
 
     def on_pane_reset(self, event=None):
+        self.on_panes_closed()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_panes_closed(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
@@ -919,10 +924,8 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "finalize"):
                             page.finalize()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
-        self.on_config_panes()
 
-    def on_config_panes(self):
+    def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
@@ -941,6 +944,9 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "noninitialize"):
                             page.noninitialize()
+
+    def on_config_panes(self):
+        self.on_panes_opened()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -1009,7 +1015,6 @@ class MeerK40t(MWindow):
         context.listen("pipe;running", self.on_usb_running)
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
-        context.listen("spooler;thread", self.on_spooler_state)
         context.listen("warning", self.on_warning_signal)
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)  # Default Value
@@ -1845,10 +1850,7 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "finalize"):
-                    pane.window.finalize()
+        self.on_panes_closed()
         self._mgr.UnInit()
 
         if context.print_shutdown:
@@ -1863,7 +1865,6 @@ class MeerK40t(MWindow):
         context.unlisten("pipe;running", self.on_usb_running)
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
-        context.unlisten("spooler;thread", self.on_spooler_state)
         context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
@@ -1887,7 +1888,9 @@ class MeerK40t(MWindow):
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
-    def on_warning_signal(self, origin, message, caption, style):
+    def on_warning_signal(self, origin, message, caption="", style=None):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,
@@ -1937,12 +1940,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.SetStatusText(
             _("Controller: %s") % self.context.kernel.get_text_thread_state(state),
             2,
-        )
-
-    def on_spooler_state(self, origin, value):
-        self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value),
-            3,
         )
 
     def on_export_signal(self, origin, frame):

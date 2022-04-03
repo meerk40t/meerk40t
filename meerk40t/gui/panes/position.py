@@ -245,6 +245,8 @@ class PositionPanel(wx.Panel):
                     )
                 else:
                     return
+        if isinstance(w, Length):
+            return
         if abs(w) < 1e-8 or abs(self.position_w - w) < 1e-1:
             self._update_position()
             return
@@ -312,6 +314,8 @@ class PositionPanel(wx.Panel):
                     )
                 else:
                     return
+        if isinstance(h, Length):
+            return
         if abs(h) < 1e-8 or abs(self.position_h - h) < 1e-1:
             self._update_position()
             return
@@ -365,6 +369,10 @@ class PositionPanel(wx.Panel):
             elif self.position_units == 4:
                 ratio_x = float(self.text_x.GetValue()) / 100.0
                 x = self.position_x * ratio_x
+            else:
+                return
+        if isinstance(x, Length):
+            return
         if abs(x - self.position_x) < 1e-1:
             self._update_position()
             return
@@ -412,6 +420,10 @@ class PositionPanel(wx.Panel):
             elif self.position_units == 4:
                 ratio_y = float(self.text_y.GetValue()) / 100.0
                 y = self.position_y * ratio_y
+            else:
+                return
+        if isinstance(y, Length):
+            return
         if abs(y - self.position_y) < 1e-1:
             self._update_position()
             return

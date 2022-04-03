@@ -617,6 +617,9 @@ class LineCut(CutObject):
         )
         settings.raster_step = 0
 
+    def __repr__(self):
+        return f'LineCut({repr(self.start())}, {repr(self.end())}, settings="{self.settings}", passes={self.passes})'
+
     def generator(self):
         # pylint: disable=unsubscriptable-object
         start = self.start()
@@ -929,20 +932,20 @@ class PlotCut(CutObject):
         if self.settings.speed < 80:
             # Twitchless gets sketchy at 80.
             self.settings.force_twitchless = True
-            if self.max_dy >= 15 and self.max_dy >= 15:
-                return False  # This is probably a vector.
-
-        if self.settings.speed >= 80:
-            # Above 80 we're likely dealing with a raster.
-            self.settings.raster_step = min(self.max_dx, self.max_dy)
-            self.settings.raster_alt = True
-            if 0 < self.max_dx <= 15:
-                self.vertical_raster = True
-                self.settings.constant_move_y = True
-            if 0 < self.max_dy <= 15:
-                self.horizontal_raster = True
-                self.settings.constant_move_x = True
-            return True
+            return False
+            # if self.max_dy >= 15 and self.max_dy >= 15:
+            #     return False  # This is probably a vector.
+        # Above 80 we're likely dealing with a raster.
+        if 0 < self.max_dx <= 15:
+            self.vertical_raster = True
+            self.settings.constant_move_y = True
+        if 0 < self.max_dy <= 15:
+            self.horizontal_raster = True
+            self.settings.constant_move_x = True
+        # if self.vertical_raster or self.horizontal_raster:
+        self.settings.raster_step = min(self.max_dx, self.max_dy)
+        self.settings.raster_alt = True
+        return True
 
     def plot_extend(self, plot):
         for x, y, laser in plot:

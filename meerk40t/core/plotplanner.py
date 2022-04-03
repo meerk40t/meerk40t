@@ -45,6 +45,7 @@ class PlotPlanner:
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
+        self.smooth_limit = 15
 
         self.queue = []
 
@@ -406,19 +407,19 @@ class Smooth(PlotManipulation):
                 self.smooth_y = y
             total_dx = x - self.smooth_x
             total_dy = y - self.smooth_y
+            self.goal_x = x
+            self.goal_y = y
+            self.goal_on = on
             if total_dx == 0 and total_dy == 0:
                 continue
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            self.goal_x = x
-            self.goal_y = y
-            self.goal_on = on
             if self.planner.settings.constant_move_x and dx == 0:
                 # If we are moving x and we don't move x. Skip.
-                if abs(total_dy) < 15:
+                if abs(total_dy) < self.planner.smooth_limit:
                     continue
             if self.planner.settings.constant_move_y and dy == 0:
-                if abs(total_dx) < 15:
+                if abs(total_dx) < self.planner.smooth_limit:
                     continue
             self.smooth_x += dx
             self.smooth_y += dy

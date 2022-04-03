@@ -144,6 +144,9 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if cols == 0:
+            return
+
 
         dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
         if dlg.ShowModal() == wx.ID_OK:
@@ -156,6 +159,8 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if rows == 0:
+            return
 
         elems = []
         cutplan = self.context.default_plan()

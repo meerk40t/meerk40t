@@ -243,10 +243,10 @@ class ConsolePanel(wx.ScrolledWindow):
             self._update_text(text)
 
     def update_text_text(self, text):
-        self.process_text_text_line(text)
+        self.process_text_text_line(str(text))
 
     def update_text_rich(self, text):
-        self.process_text_rich_line(text)
+        self.process_text_rich_line(str(text))
 
     def process_text_text_line(self, lines):
         text = ""
