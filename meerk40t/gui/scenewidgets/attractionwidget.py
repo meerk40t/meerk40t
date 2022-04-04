@@ -14,15 +14,13 @@ class AttractionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.compute = True
-        self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0, 128))
-        self.grid_line_pen.SetWidth(1)
         self.my_x = 0
         self.my_y = 0
-        self.caret_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0x40))
-        self.midpoint_pen = wx.Pen(wx.Colour(0xFF, 0x00, 0x00, 0x40))
-        self.center_pen = wx.Pen(wx.Colour(0x00, 0x00, 0xFF, 0x40))
-        self.symbol_size = 10
+        self.visible_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0x40))
+        self.visible_pen.SetWidth(1)
+        self.closeup_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0xA0))
+        self.closeup_pen.SetWidth(1)
+        self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
         self.show_attract_len = 0
         self.action_attract_len = 0
@@ -78,8 +76,8 @@ class AttractionWidget(Widget):
                 if len(self.display_points) > 0:
                     # Has to be lower than the action threshold
                     min_delta = float("inf")  # self.action_attract_len
-                    new_x = self.my_x
-                    new_y = self.my_y
+                    new_x = None
+                    new_y = None
                     for pt in self.display_points:
                         delta = sqrt(
                             (pt[0] - self.my_x) * (pt[0] - self.my_x)
@@ -100,17 +98,25 @@ class AttractionWidget(Widget):
                     #        self.action_attract_len,
                     #    )
                     # )
-                    if min_delta < self.action_attract_len:
-                        # Is the distance small enough?
-                        self.scene.new_x_space = new_x
-                        self.scene.new_y_space = new_y
-                        response = RESPONSE_CHGPOS
+                    if not new_x is None:
+                        if (
+                            abs(new_x - self.my_x) <= self.action_attract_len
+                            and abs(new_y - self.my_y) <= self.action_attract_len
+                        ):
+                            # Is the distance small enough?
+                            self.scene.new_x_space = new_x
+                            self.scene.new_y_space = new_y
+                            response = RESPONSE_CHGPOS
 
         return response
 
-    def draw_caret(self, gc, x, y):
-        gc.SetPen(self.caret_pen)
-        brush = wx.Brush(colour=self.caret_pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
+    def draw_caret(self, gc, x, y, closeup):
+        if closeup:
+            pen = self.closeup_pen
+        else:
+            pen = self.visible_pen
+        gc.SetPen(pen)
+        brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         path = gc.CreatePath()
         path.MoveToPoint(x - self.symbol_size / 2, y)
@@ -120,9 +126,13 @@ class AttractionWidget(Widget):
         path.CloseSubpath()
         gc.DrawPath(path)
 
-    def draw_center(self, gc, x, y):
-        gc.SetPen(self.center_pen)
-        brush = wx.Brush(colour=self.center_pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
+    def draw_center(self, gc, x, y, closeup):
+        if closeup:
+            pen = self.closeup_pen
+        else:
+            pen = self.visible_pen
+        gc.SetPen(pen)
+        brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         path = gc.CreatePath()
         path.MoveToPoint(x - self.symbol_size / 2, y - self.symbol_size / 2)
@@ -134,16 +144,39 @@ class AttractionWidget(Widget):
         path.CloseSubpath()
         gc.DrawPath(path)
 
-    def draw_gridpoint(self, gc, x, y):
-        gc.SetPen(self.center_pen)
-        gc.DrawLine(x, y - self.symbol_size / 2, x, y + self.symbol_size / 2)
-        gc.DrawLine(x - self.symbol_size / 2, y, x + self.symbol_size / 2, y)
+    def draw_gridpoint(self, gc, x, y, closeup):
+        if closeup:
+            pen = self.closeup_pen
+        else:
+            pen = self.visible_pen
+        gc.SetPen(pen)
+        gc.SetPen(pen)
+        brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
+        gc.SetBrush(brush)
+        path = gc.CreatePath()
+        dsize = 1 / 8 * self.symbol_size
+        path.MoveToPoint(x - self.symbol_size / 2, y + dsize)
+        path.AddLineToPoint(x - dsize, y + dsize)
+        path.AddLineToPoint(x - dsize, y - self.symbol_size / 2)
+        path.AddLineToPoint(x + dsize, y - self.symbol_size / 2)
+        path.AddLineToPoint(x + dsize, y + dsize)
+        path.AddLineToPoint(x + self.symbol_size / 2, y + dsize)
+        path.AddLineToPoint(x + self.symbol_size / 2, y - dsize)
+        path.AddLineToPoint(x + dsize, y + dsize)
+        path.AddLineToPoint(x + dsize, y + self.symbol_size / 2)
+        path.AddLineToPoint(x - dsize, y + self.symbol_size / 2)
+        path.AddLineToPoint(x - dsize, y + dsize)
+        path.AddLineToPoint(x - self.symbol_size / 2, y + dsize)
+        path.CloseSubpath()
+        gc.DrawPath(path)
 
-    def draw_midpoint(self, gc, x, y):
-        gc.SetPen(self.midpoint_pen)
-        brush = wx.Brush(
-            colour=self.midpoint_pen.GetColour(), style=wx.BRUSHSTYLE_SOLID
-        )
+    def draw_midpoint(self, gc, x, y, closeup):
+        if closeup:
+            pen = self.closeup_pen
+        else:
+            pen = self.visible_pen
+        gc.SetPen(pen)
+        brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         path = gc.CreatePath()
         path.MoveToPoint(x - self.symbol_size / 2, y - self.symbol_size / 2)
@@ -166,11 +199,11 @@ class AttractionWidget(Widget):
         matrix = self.parent.matrix
         try:
             # Intentionally big to clearly see shape
-            self.symbol_size = 20 / matrix.value_scale_x()
+            self.symbol_size = 12 / matrix.value_scale_x()
         except ZeroDivisionError:
             matrix.reset()
             return
-        # Anything within a 10 Pixel Radius will be attracted, anything within a 30 Pixel Radius will be diplayed
+        # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be diplayed
         self.show_attract_len = 45 / matrix.value_scale_x()
         self.action_attract_len = 15 / matrix.value_scale_x()
 
@@ -182,15 +215,20 @@ class AttractionWidget(Widget):
                         abs(pts[0] - self.my_x) <= self.show_attract_len
                         and abs(pts[1] - self.my_y) <= self.show_attract_len
                     ):
+                        closeup = (
+                            abs(pts[0] - self.my_x) <= self.action_attract_len
+                            and abs(pts[1] - self.my_y) <= self.action_attract_len
+                        )
+
                         self.display_points.append([pts[0], pts[1]])
                         if pts[2] == type_point:
-                            self.draw_caret(gc, pts[0], pts[1])
+                            self.draw_caret(gc, pts[0], pts[1], closeup)
                         elif pts[2] == type_middle:
-                            self.draw_midpoint(gc, pts[0], pts[1])
+                            self.draw_midpoint(gc, pts[0], pts[1], closeup)
                         elif pts[2] == type_center:
-                            self.draw_center(gc, pts[0], pts[1])
+                            self.draw_center(gc, pts[0], pts[1], closeup)
                         elif pts[2] == type_grid:
-                            self.draw_grid_point(gc, pts[0], pts[1])
+                            self.draw_gridpoint(gc, pts[0], pts[1], closeup)
 
     def signal(self, signal, *args, **kwargs):
         """
