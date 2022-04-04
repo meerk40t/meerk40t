@@ -322,8 +322,8 @@ class RotationWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = abs(min(0, inner_wd_half - self.inner/2))
-        dy = abs(min(0, inner_ht_half - self.inner/2))
+        dx = abs(min(0, inner_wd_half - self.inner))
+        dy = abs(min(0, inner_ht_half - self.inner))
 
         if self.index == 0:
             pos_x = self.master.left - dx
@@ -632,8 +632,8 @@ class CornerWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = abs(min(0, inner_wd_half - self.half))
-        dy = abs(min(0, inner_ht_half - self.half))
+        dx = abs(min(0, inner_wd_half - 2 * self.half))
+        dy = abs(min(0, inner_ht_half - 2 * self.half))
 
         if self.index == 0:
             pos_x = self.master.left - dx
@@ -691,14 +691,26 @@ class CornerWidget(Widget):
             scalex = 1
             scaley = 1
             if "n" in self.method:
-                scaley = (self.master.bottom - position[1]) / self.save_height
+                try:
+                    scaley = (self.master.bottom - position[1]) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             elif "s" in self.method:
-                scaley = (position[1] - self.master.top) / self.save_height
+                try:
+                    scaley = (position[1] - self.master.top) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
 
             if "w" in self.method:
-                scalex = (self.master.right - position[0]) / self.save_width
+                try:
+                    scalex = (self.master.right - position[0]) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
             elif "e" in self.method:
-                scalex = (position[0] - self.master.left) / self.save_width
+                try:
+                    scalex = (position[0] - self.master.left) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
 
             if len(self.method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
@@ -801,8 +813,8 @@ class SideWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
-        dx = abs(min(0, inner_wd_half - self.half))
-        dy = abs(min(0, inner_ht_half - self.half))
+        dx = abs(min(0, inner_wd_half - 2 * self.half))
+        dy = abs(min(0, inner_ht_half - 2 * self.half))
 
         if self.index == 0:
             pos_x = mid_x
@@ -814,7 +826,7 @@ class SideWidget(Widget):
             pos_x = mid_x
             pos_y = self.master.bottom + dy
         else:
-            pos_x = self.master.left - dy
+            pos_x = self.master.left - dx
             pos_y = mid_y
         self.set_position(pos_x - self.half, pos_y - self.half)
 
