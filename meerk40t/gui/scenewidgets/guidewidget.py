@@ -338,43 +338,24 @@ class GuideWidget(Widget):
             if self.scaled_conversion == 0:
                 return
             p = self.scene.context
-            sx, sy = self.scene.convert_scene_to_window(
-                [
-                    p.device.unit_width * p.device.origin_x,
-                    p.device.unit_height * p.device.origin_y,
-                ]
-            )
             ox, oy = self.scene.convert_scene_to_window([0, 0])
-            mark_point_x = (window_pos[0] - sx) / self.scaled_conversion
-            mark_point_y = (window_pos[1] - sy) / self.scaled_conversion
-            m_p_x = (window_pos[0] - ox) / self.scaled_conversion
-            m_p_y = (window_pos[1] - oy) / self.scaled_conversion
 
             # print(
-            #    "SX=%.1f, Sy=%.1f, Mark before x=%.1f, y=%.1f"
-            #    % (
-            #        sx / self.scaled_conversion,
-            #        sy / self.scaled_conversion,
-            #        mark_point_x,
-            #        mark_point_y,
-            #    )
+            #    "Device-origin=%.1f, %.1f \n ox, oy=%.1f, %.1f"
+            #    % (p.device.origin_x, p.device.origin_y, ox, oy)
             # )
+            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion
+            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion
+
             # print(
             #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
             #    % (
             #        ox / self.scaled_conversion,
             #        oy / self.scaled_conversion,
-            #        m_p_x,
-            #        m_p_y,
+            #        mark_point_x,
+            #        mark_point_y,
             #    )
             # )
-            if p.device.flip_x:
-                mark_point_x = m_p_x
-            #    print("After flip, x=%.1f" % mark_point_x)
-
-            if p.device.flip_y:
-                mark_point_y = m_p_y
-            #    print("After flip, y=%.1f" % mark_point_y)
 
             # Make positions stick on ticks (or exactly inbetween)
             mark_point_x = (
@@ -449,6 +430,7 @@ class GuideWidget(Widget):
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
         gc.SetFont(font, wx.BLACK)
         gc.DrawText(self.units, edge_gap, edge_gap)
+        (t_width, t_height) = gc.GetTextExtent("0")
         while x < w:
             if x >= 45:
                 mark_point = (x - sx) / self.scaled_conversion
@@ -461,9 +443,10 @@ class GuideWidget(Widget):
 
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
-                # Show half distance as well
-                starts.append((x - 0.5 * points, edge_gap))
-                ends.append((x - 0.5 * points, 0.25 * length + edge_gap))
+                # Show half distance as well if there's enough room
+                if t_height < 0.5 * points:
+                    starts.append((x - 0.5 * points, edge_gap))
+                    ends.append((x - 0.5 * points, 0.25 * length + edge_gap))
 
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
@@ -484,8 +467,10 @@ class GuideWidget(Widget):
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
-                    starts.append((edge_gap, y - 0.5 * points))
-                    ends.append((0.25 * length + edge_gap, y - 0.5 * points))
+                    # if there is enough room for a mid distance stroke...
+                    if t_height < 0.5 * points:
+                        starts.append((edge_gap, y - 0.5 * points))
+                        ends.append((0.25 * length + edge_gap, y - 0.5 * points))
 
                     starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))

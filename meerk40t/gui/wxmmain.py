@@ -250,7 +250,7 @@ class CustomStatusBar(wx.StatusBar):
     def Reposition(self):
         rect = self.GetFieldRect(self.panelct - 1)
         ct = 4
-        wd = rect.width / ct
+        wd = int(round(rect.width / ct))
         rect.x += 1
         rect.y += 1
         rect.width = wd
