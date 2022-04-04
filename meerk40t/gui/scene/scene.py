@@ -80,9 +80,9 @@ class Scene(Module, Job):
         self.background_brush = wx.Brush("Grey")
         self.magnet_x = []
         self.magnet_y = []
-        self.magnet_attraction = (
-            2  # 0 off, 1..x increasing strength (quadratic behaviour)
-        )
+        self.magnet_attraction = 2
+        # 0 off, 1..x increasing strength (quadratic behaviour)
+
         self.magnet_attract_x = True  # Shall the X-Axis be affected
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
@@ -217,6 +217,7 @@ class Scene(Module, Job):
         type_point = 1
         type_middle = 2
         type_center = 3
+        type_grid = 4
         self.attraction_points = []  # Clear all
 
         for e in self.context.elements.flat(types=("elem",)):
@@ -261,6 +262,24 @@ class Scene(Module, Job):
                                 )
                         ex = sx
                         ey = sy
+
+        # Just for fun let's add grid points...
+        # Lets set the full grid
+        p = self.context
+        tlen = float(
+            Length(
+                "{value}{units}".format(value=self.tick_distance, units=p.units_name)
+            )
+        )
+        print("tlen=%.1f" % tlen)
+        if tlen >= 1000:
+            x = 0
+            while x <= p.device.unit_width:
+                y = 0
+                while y <= p.device.unit_height:
+                    self.attraction_points.append([x, y, type_grid, False])
+                    y += tlen
+                x += tlen
 
         end_time = time()
         print(
