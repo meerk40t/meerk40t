@@ -338,43 +338,24 @@ class GuideWidget(Widget):
             if self.scaled_conversion == 0:
                 return
             p = self.scene.context
-            sx, sy = self.scene.convert_scene_to_window(
-                [
-                    p.device.unit_width * p.device.origin_x,
-                    p.device.unit_height * p.device.origin_y,
-                ]
-            )
             ox, oy = self.scene.convert_scene_to_window([0, 0])
-            mark_point_x = (window_pos[0] - sx) / self.scaled_conversion
-            mark_point_y = (window_pos[1] - sy) / self.scaled_conversion
-            m_p_x = (window_pos[0] - ox) / self.scaled_conversion
-            m_p_y = (window_pos[1] - oy) / self.scaled_conversion
 
             # print(
-            #    "SX=%.1f, Sy=%.1f, Mark before x=%.1f, y=%.1f"
-            #    % (
-            #        sx / self.scaled_conversion,
-            #        sy / self.scaled_conversion,
-            #        mark_point_x,
-            #        mark_point_y,
-            #    )
+            #    "Device-origin=%.1f, %.1f \n ox, oy=%.1f, %.1f"
+            #    % (p.device.origin_x, p.device.origin_y, ox, oy)
             # )
+            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion
+            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion
+
             # print(
             #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
             #    % (
             #        ox / self.scaled_conversion,
             #        oy / self.scaled_conversion,
-            #        m_p_x,
-            #        m_p_y,
+            #        mark_point_x,
+            #        mark_point_y,
             #    )
             # )
-            if p.device.flip_x:
-                mark_point_x = m_p_x
-            #    print("After flip, x=%.1f" % mark_point_x)
-
-            if p.device.flip_y:
-                mark_point_y = m_p_y
-            #    print("After flip, y=%.1f" % mark_point_y)
 
             # Make positions stick on ticks (or exactly inbetween)
             mark_point_x = (
