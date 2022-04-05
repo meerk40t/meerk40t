@@ -1,3 +1,5 @@
+import wx
+
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.scene.widget import Widget
@@ -42,6 +44,14 @@ class ElementsWidget(Widget):
             draw_mode,
             zoomscale=zoom_scale,
         )
+        # gc.PushState()
+        # gc.SetPen(wx.BLACK_PEN)
+        # dif = 500
+        # for elemnode in context.elements.elems_nodes(emphasized=True):
+        #     for p in elemnode.points:
+        #         gc.StrokeLine(p[0] - dif, p[1], p[0] + dif, p[1])
+        #         gc.StrokeLine(p[0], p[1] - dif, p[0], p[1] + dif)
+        # gc.PopState()
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
