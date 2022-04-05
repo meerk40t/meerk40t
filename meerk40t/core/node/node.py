@@ -391,7 +391,7 @@ class Node:
         if bounds is None:
             return
         if len(self._points) < 5:
-            self._points.append([None] * (5 - len(self._points)))
+            self._points.extend([None] * (5 - len(self._points)))
         self._points[0] = [bounds[0], bounds[1], "bounds upper_left"]
         self._points[1] = [bounds[2], bounds[1], "bounds upper_right"]
         self._points[2] = [bounds[0], bounds[3], "bounds lower_left"]
@@ -554,6 +554,7 @@ class Node:
         """
         Invalidation of the individual node.
         """
+        self._points_dirty = True
         self._bounds_dirty = True
         self._bounds = None
 

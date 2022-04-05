@@ -31,7 +31,7 @@ class ElemNode(Node):
         if bounds is None:
             return
         if len(self._points) < 9:
-            self._points.append([None] * (9 - len(self._points)))
+            self._points.extend([None] * (9 - len(self._points)))
         self._points[0] = [bounds[0], bounds[1], "bounds top_left"]
         self._points[1] = [bounds[2], bounds[1], "bounds top_right"]
         self._points[2] = [bounds[0], bounds[3], "bounds bottom_left"]
@@ -46,7 +46,7 @@ class ElemNode(Node):
         obj = self.object
         if hasattr(obj, "point"):
             if len(self._points) <= 11:
-                self._points.append([None] * (11 - len(self._points)))
+                self._points.extend([None] * (11 - len(self._points)))
             start = obj.point(0)
             end = obj.point(1)
             self._points[9] = [start[0], start[1], "endpoint"]
