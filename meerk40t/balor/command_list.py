@@ -1186,3 +1186,16 @@ class CommandList(CommandSource):
 
     def raw_ready_mark(self, *args):
         self.append(OpReadyMark(*args))
+
+
+class Wobble:
+    def __init__(self, radius=50):
+        self._total_distance = 0
+        self.radius = radius
+
+    def wobble(self, x0, y0, x1, y1):
+        self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
+        t = self._total_distance / (math.tau * self.radius)
+        dx = self.radius * math.cos(t)
+        dy = self.radius * math.sin(t)
+        return x1 + dx, y1 + dy
