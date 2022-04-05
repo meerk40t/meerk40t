@@ -175,38 +175,45 @@ class SelectionWidget(Widget):
             self.selbox_wy = 10.0 / matrix.value_scale_y()
 
         checks = [[self.left, self.top, self.right, self.bottom]]
+        mid_x = (self.right + self.left)/2
+        mid_y = (self.bottom + self.top)/2
+        # Selection very small ? Relocate Handle
+        inner_wd_half = (self.right - self.left) / 2
+        inner_ht_half = (self.bottom - self.top) / 2
+        dx = abs(min(0, inner_wd_half - self.selbox_wx))
+        dy = abs(min(0, inner_ht_half - self.selbox_wy))
         # The 4 side handles
         if self.use_handle_size:
             checks.append(
                 [
-                    self.left - self.selbox_wx / 2,
-                    (self.top + self.bottom) / 2 - self.selbox_wy / 2,
+                    self.left - self.selbox_wx / 2 - dx,
+                    mid_y - self.selbox_wy / 2,
                     self.left,
-                    (self.top + self.bottom) / 2 + self.selbox_wy / 2,
+                    mid_y + self.selbox_wy / 2,
                 ]
             )
             checks.append(
                 [
                     self.right,
-                    (self.top + self.bottom) / 2 - self.selbox_wy / 2,
-                    self.right + self.selbox_wx / 2,
-                    (self.top + self.bottom) / 2 + self.selbox_wy / 2,
+                    mid_y - self.selbox_wy / 2,
+                    self.right + self.selbox_wx / 2 + dx,
+                    mid_y + self.selbox_wy / 2,
                 ]
             )
             checks.append(
                 [
-                    (self.left + self.right) / 2 - self.selbox_wx / 2,
-                    self.top - self.selbox_wy / 2,
-                    (self.left + self.right) / 2 + self.selbox_wx / 2,
+                    mid_x - self.selbox_wx / 2,
+                    self.top - self.selbox_wy / 2 - dy,
+                    mid_x + self.selbox_wx / 2,
                     self.top,
                 ]
             )
             checks.append(
                 [
-                    (self.left + self.right) / 2 - self.selbox_wx / 2,
+                    mid_x - self.selbox_wx / 2,
                     self.bottom,
-                    (self.left + self.right) / 2 + self.selbox_wx / 2,
-                    self.bottom + self.selbox_wy / 2,
+                    mid_x + self.selbox_wx / 2,
+                    self.bottom + self.selbox_wy / 2 + dy,
                 ]
             )
 
@@ -217,34 +224,34 @@ class SelectionWidget(Widget):
             h_factor = 0.5
         checks.append(
             [
-                self.left - h_factor * self.selbox_wx,
-                self.top - h_factor * self.selbox_wy,
-                self.left + h_factor * self.selbox_wx,
-                self.top + h_factor * self.selbox_wy,
+                self.left - h_factor * self.selbox_wx - dx,
+                self.top - h_factor * self.selbox_wy - dy,
+                self.left + h_factor * self.selbox_wx - dx,
+                self.top + h_factor * self.selbox_wy - dy,
             ]
         )
         checks.append(
             [
-                self.right - h_factor * self.selbox_wx,
-                self.top - h_factor * self.selbox_wy,
-                self.right + h_factor * self.selbox_wx,
-                self.top + h_factor * self.selbox_wy,
+                self.right - h_factor * self.selbox_wx + dx,
+                self.top - h_factor * self.selbox_wy -dy,
+                self.right + h_factor * self.selbox_wx + dx,
+                self.top + h_factor * self.selbox_wy - dy,
             ]
         )
         checks.append(
             [
-                self.left - h_factor * self.selbox_wx,
-                self.bottom - h_factor * self.selbox_wy,
-                self.left + h_factor * self.selbox_wx,
-                self.bottom + h_factor * self.selbox_wy,
+                self.left - h_factor * self.selbox_wx - dx,
+                self.bottom - h_factor * self.selbox_wy + dy,
+                self.left + h_factor * self.selbox_wx - dx,
+                self.bottom + h_factor * self.selbox_wy + dy,
             ]
         )
         checks.append(
             [
-                self.right - h_factor * self.selbox_wx,
-                self.bottom - h_factor * self.selbox_wy,
-                self.right + h_factor * self.selbox_wx,
-                self.bottom + h_factor * self.selbox_wy,
+                self.right - h_factor * self.selbox_wx + dx,
+                self.bottom - h_factor * self.selbox_wy + dy,
+                self.right + h_factor * self.selbox_wx + dx,
+                self.bottom + h_factor * self.selbox_wy + dy,
             ]
         )
         if self.use_handle_skew:
@@ -254,20 +261,20 @@ class SelectionWidget(Widget):
                     self.left
                     + 3 / 4 * (self.right - self.left)
                     - 1 / 3 * self.selbox_wx,
-                    self.bottom - 1 / 3 * self.selbox_wy,
+                    self.bottom - 1 / 3 * self.selbox_wy + dx,
                     self.left
                     + 3 / 4 * (self.right - self.left)
                     + 1 / 3 * self.selbox_wx,
-                    self.bottom + 1 / 3 * self.selbox_wy,
+                    self.bottom + 1 / 3 * self.selbox_wy + dx,
                 ]
             )
             checks.append(
                 [
-                    self.right - 1 / 3 * self.selbox_wx,
+                    self.right - 1 / 3 * self.selbox_wx + dx,
                     self.top
                     + 1 / 4 * (self.bottom - self.top)
                     - 1 / 3 * self.selbox_wy,
-                    self.right + 1 / 3 * self.selbox_wx,
+                    self.right + 1 / 3 * self.selbox_wx + dx,
                     self.top
                     + 1 / 4 * (self.bottom - self.top)
                     + 1 / 3 * self.selbox_wy,
@@ -386,7 +393,18 @@ class SelectionWidget(Widget):
                 ymax = self.bottom
                 xin = space_pos[0]
                 yin = space_pos[1]
-
+                mid_x = (self.right + self.left)/2
+                mid_y = (self.bottom + self.top)/2
+                # Selection very small ? Relocate Handle
+                inner_wd_half = (self.right - self.left) / 2
+                inner_ht_half = (self.bottom - self.top) / 2
+                dx = abs(min(0, inner_wd_half - self.selbox_wx))
+                dy = abs(min(0, inner_ht_half - self.selbox_wy))
+                # Correct position
+                xmin -= dx
+                xmax += dx
+                ymin -= dy
+                ymax += dy
                 # If there is at least on element in the selection with a lock status, then the only manipulation we allow is a move operation
                 for e in elements.elems(emphasized=True):
                     try:
@@ -411,10 +429,10 @@ class SelectionWidget(Widget):
                 # The centre for moving
                 checks = [
                     [
-                        (xmin + xmax) / 2 - center_size * self.selbox_wx,
-                        (ymin + ymax) / 2 - center_size * self.selbox_wy,
-                        (xmin + xmax) / 2 + center_size * self.selbox_wx,
-                        (ymin + ymax) / 2 + center_size * self.selbox_wy,
+                        mid_x - center_size * self.selbox_wx / 2,
+                        mid_y - center_size * self.selbox_wy / 2,
+                        mid_x + center_size * self.selbox_wx / 2,
+                        mid_y + center_size * self.selbox_wy / 2,
                         "move",
                     ]
                 ]
@@ -422,35 +440,35 @@ class SelectionWidget(Widget):
                 checks.append(
                     [
                         xmin - self.selbox_wx / 2,
-                        (ymin + ymax) / 2 - self.selbox_wy / 2,
+                        mid_y - self.selbox_wy / 2,
                         xmin + self.selbox_wx / 2,
-                        (ymin + ymax) / 2 + self.selbox_wy / 2,
+                        mid_y + self.selbox_wy / 2,
                         "size_l",
                     ]
                 )
                 checks.append(
                     [
                         xmax - self.selbox_wx / 2,
-                        (ymin + ymax) / 2 - self.selbox_wy / 2,
+                        mid_y - self.selbox_wy / 2,
                         xmax + self.selbox_wx / 2,
-                        (ymin + ymax) / 2 + self.selbox_wy / 2,
+                        mid_y + self.selbox_wy / 2,
                         "size_r",
                     ]
                 )
                 checks.append(
                     [
-                        (xmin + xmax) / 2 - self.selbox_wx / 2,
+                        mid_x - self.selbox_wx / 2,
                         ymin - self.selbox_wy / 2,
-                        (xmin + xmax) / 2 + self.selbox_wx / 2,
+                        mid_x + self.selbox_wx / 2,
                         ymin + self.selbox_wy / 2,
                         "size_t",
                     ]
                 )
                 checks.append(
                     [
-                        (xmin + xmax) / 2 - self.selbox_wx / 2,
+                        mid_x - self.selbox_wx / 2,
                         ymax - self.selbox_wy / 2,
-                        (xmin + xmax) / 2 + self.selbox_wx / 2,
+                        mid_x + self.selbox_wx / 2,
                         ymax + self.selbox_wy / 2,
                         "size_b",
                     ]
@@ -572,9 +590,9 @@ class SelectionWidget(Widget):
                     # The two skew handles
                     checks.append(
                         [
-                            xmin + 3 / 4 * (xmax - xmin) - 1 / 3 * self.selbox_wx,
+                            xmin + 3 / 2 * inner_wd_half - 1 / 3 * self.selbox_wx,
                             ymax - 1 / 3 * self.selbox_wy,
-                            xmin + 3 / 4 * (xmax - xmin) + 1 / 3 * self.selbox_wx,
+                            xmin + 3 / 2 * inner_wd_half + 1 / 3 * self.selbox_wx,
                             ymax + 1 / 3 * self.selbox_wy,
                             "skew_x",
                         ]
@@ -582,9 +600,9 @@ class SelectionWidget(Widget):
                     checks.append(
                         [
                             xmax - 1 / 3 * self.selbox_wx,
-                            ymin + 1 / 4 * (ymax - ymin) - 1 / 3 * self.selbox_wy,
+                            ymin + 1 / 2 * inner_ht_half - 1 / 3 * self.selbox_wy,
                             xmax + 1 / 3 * self.selbox_wx,
-                            ymin + 1 / 4 * (ymax - ymin) + 1 / 3 * self.selbox_wy,
+                            ymin + 1 / 2 * inner_ht_half + 1 / 3 * self.selbox_wy,
                             "skew_y",
                         ]
                     )
@@ -845,14 +863,26 @@ class SelectionWidget(Widget):
             scalex = 1
             scaley = 1
             if "n" in method:
-                scaley = (self.bottom - position[1]) / self.save_height
+                try:
+                    scaley = (self.bottom - position[1]) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             elif "s" in method:
-                scaley = (position[1] - self.top) / self.save_height
+                try:
+                    scaley = (position[1] - self.top) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
 
             if "w" in method:
-                scalex = (self.right - position[0]) / self.save_width
+                try:
+                    scalex = (self.right - position[0]) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
             elif "e" in method:
-                scalex = (position[0] - self.left) / self.save_width
+                try:
+                    scalex = (position[0] - self.left) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
 
             if self.key_shift_pressed:  # Override uniform behaviour
                 unif = False
@@ -1121,20 +1151,27 @@ class SelectionWidget(Widget):
         ]
 
         if self.use_handle_rotate:
+            mid_x = (x0 + y1)/2
+            mid_y = (y0 + y1)/2
+            # Selection very small ? Relocate Handle
+            inner_wd_half = (x1 - x0) / 2
+            inner_ht_half = (y1 - y0) / 2
+            dx = abs(min(0, inner_wd_half - wdx))
+            dy = abs(min(0, inner_ht_half - wdy))
             for i in range(2):
                 for j in range(2):
                     if i == 0:
                         signx = +1
-                        xx = x0
+                        xx = x0 - dx
                     else:
                         signx = -1
-                        xx = x1
+                        xx = x1 + dx
                     if j == 0:
                         signy = +1
-                        yy = y0
+                        yy = y0 - dy
                     else:
                         signy = -1
-                        yy = y1
+                        yy = y1 + dy
 
                     segment = []
                     for idx in range(len(self.arcsegment)):
@@ -1149,34 +1186,51 @@ class SelectionWidget(Widget):
 
     def draw_handles(self, gc, wdx, wdy, x0, y0, x1, y1):
         corners = []
+        mid_x = (x0 + x1)/2
+        mid_y = (y0 + y1)/2
+        # Selection very small ? Relocate Handle
+        inner_wd_half = (x1 - x0) / 2
+        inner_ht_half = (y1 - y0) / 2
+        dx = abs(min(0, inner_wd_half - wdx))
+        dy = abs(min(0, inner_ht_half - wdy))
         if self.use_handle_size:
             corners += [
                 # corners
-                [x0 - wdx / 2, y0 - wdy / 2, wdx, wdy],
-                [x1 - wdx / 2, y0 - wdy / 2, wdx, wdy],
-                [x0 - wdx / 2, y1 - wdy / 2, wdx, wdy],
-                [x1 - wdx / 2, y1 - wdy / 2, wdx, wdy],
+                [x0 - wdx / 2 - dx, y0 - wdy / 2 - dy, wdx, wdy],
+                [x1 - wdx / 2 + dx, y0 - wdy / 2 - dy, wdx, wdy],
+                [x0 - wdx / 2 - dx, y1 - wdy / 2 + dy, wdx, wdy],
+                [x1 - wdx / 2 + dx, y1 - wdy / 2 + dy, wdx, wdy],
                 # Middle of sides
-                [x0 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
-                [x1 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
-                [(x0 + x1) / 2 - wdx / 2, y0 - wdy / 2, wdx, wdy],
-                [(x0 + x1) / 2 - wdx / 2, y1 - wdy / 2, wdx, wdy],
+                [x0 - wdx / 2 - dx, mid_y - wdy / 2, wdx, wdy],
+                [x1 - wdx / 2 + dx, mid_y - wdy / 2, wdx, wdy],
+                [mid_x - wdx / 2, y0 - wdy / 2 - dy, wdx, wdy],
+                [mid_x - wdx / 2, y1 - wdy / 2 + dy, wdx, wdy],
                 # Center
-                [(x0 + x1) / 2 - wdx / 2, (y1 + y0) / 2 - wdy / 2, wdx, wdy],
+                [mid_x - wdx / 2, mid_y - wdy / 2, wdx, wdy],
             ]
         # Skew
-        if self.use_handle_skew:
+        show_skew_x = self.use_handle_skew
+        show_skew_y = self.use_handle_skew
+        # Let's check whether there is enough room...
+        # Top and bottom handle are overlapping by 1/2, middle 1, skew 2/3
+        if 2*inner_ht_half<(0.5 + 1 + 0.5 + 1) * wdy:
+            show_skew_y = False
+        if 2*inner_wd_half<(0.5 + 1 + 0.5 + 1) * wdx:
+            show_skew_x = False
+
+        if show_skew_x:
             corners.append(
                 [
                     x0 + 3 / 4 * (x1 - x0) - wdx / 3,
-                    y1 - wdy / 3,
+                    y1 - wdy / 3 + dy,
                     2 / 3 * wdx,
                     2 / 3 * wdy,
                 ]
             )  # skew x
+        if show_skew_y:
             corners.append(
                 [
-                    x1 - wdx / 3,
+                    x1 - wdx / 3 + dy,
                     y0 + 1 / 4 * (y1 - y0) - wdy / 3,
                     2 / 3 * wdx,
                     2 / 3 * wdy,
