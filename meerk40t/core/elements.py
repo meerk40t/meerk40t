@@ -3367,8 +3367,7 @@ class Elemental(Service):
         # ==========
         # TRACE OPERATIONS
         # ==========
-        # TODO: Trace operation is in 0.7.x code.
-        @context.console_command(
+        @self.console_command(
             "trace",
             help=_("trace the given element path"),
             input_type="elements",
@@ -3376,15 +3375,7 @@ class Elemental(Service):
         def trace_trace_spooler(command, channel, _, data=None, **kwargs):
             if not data:
                 return
-            active = self.context.active
-            try:
-                spooler, input_device, output = self.context.registered[
-                    "device/%s" % active
-                ]
-            except KeyError:
-                channel(_("No active device found."))
-                return
-
+            spooler = self.device.spooler
             pts = []
             for path in data:
                 if isinstance(path, Shape):
@@ -3396,10 +3387,10 @@ class Elemental(Service):
                 return
 
             def trace_command():
-                yield COMMAND_WAIT_FINISH
-                yield COMMAND_MODE_RAPID
+                yield "wait_finish"
+                yield "rapid_mode"
                 for p in pts:
-                    yield COMMAND_MOVE, p[0], p[1]
+                    yield "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
 
             spooler.job(trace_command)
 
