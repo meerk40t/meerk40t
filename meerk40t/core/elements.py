@@ -5068,7 +5068,7 @@ class Elemental(Service):
         for n in reversed(list(self.flat())):
             if not hasattr(n, "_mark_delete"):
                 continue
-            if n.type in ("root", "branch elems", "branch regmark", "branch ops"):
+            if n.type in ("root", "branch elems", "branch reg", "branch ops"):
                 continue
             n.remove_node(children=False, references=False)
 
