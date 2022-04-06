@@ -2,7 +2,8 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from meerk40t.kernel import Module, Service
+from meerk40t.kernel import Module, Service, STATE_INITIALIZE, STATE_TERMINATE, STATE_END, STATE_PAUSE, STATE_BUSY, \
+    STATE_WAIT, STATE_ACTIVE, STATE_IDLE, STATE_UNKNOWN, get_safe_path, signal_listener
 
 from ..core.cutcode import CutCode, LineCut, PlotCut
 from ..core.parameters import Parameters
@@ -322,15 +323,10 @@ class RuidaEmulator(Module, Parameters):
         self.swizzle_mode = True
         self.state = 22
 
-    def initialize(self, *args, **kwargs):
-        self.context.listen("pipe;thread", self.on_pipe_state)
-
-    def finalize(self, *args, **kwargs):
-        self.context.unlisten("pipe;thread", self.on_pipe_state)
-
     def __repr__(self):
         return "Ruida(%s, %d cuts)" % (self.name, len(self.cutcode))
 
+    @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
         if not self.control:
             return  # We are not using ruidacontrol mode. Do not update the state.
@@ -725,13 +721,13 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
-            desc = "Cut Horizontal Relative (%f mil)" % (dx / UM_PER_MIL)
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            desc = "Cut Horizontal Relative (%f mil)" % (dx / UNITS_PER_uM)
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
-            desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
+            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            desc = "Cut Vertical Relative (%f mil)" % (dy / UNITS_PER_uM)
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
             desc = "Imd Power 1 (%f)" % v0
