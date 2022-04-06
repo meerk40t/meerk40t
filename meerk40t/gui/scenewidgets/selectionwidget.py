@@ -317,8 +317,8 @@ class RotationWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left)/2
-        mid_y = (self.master.bottom + self.master.top)/2
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -487,10 +487,6 @@ class RotationWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -504,34 +500,37 @@ class RotationWidget(Widget):
         if y is None:
             y = x.y
             x = x.x
-        mid_x = (self.left + self.right)/2
-        mid_y = (self.top + self.bottom)/2
-        if self.index in (0, 3): # left
+        mid_x = (self.left + self.right) / 2
+        mid_y = (self.top + self.bottom) / 2
+        if self.index in (0, 3):  # left
             tx1 = self.left
-            tx2 = mid_x + self.inner/2
+            tx2 = mid_x + self.inner / 2
             bx1 = mid_x
             bx2 = self.right
         else:
-            tx1 = mid_x - self.inner/2
+            tx1 = mid_x - self.inner / 2
             tx2 = self.right
             bx1 = self.left
             bx2 = mid_x
 
-        if self.index in (0, 1): # top
+        if self.index in (0, 1):  # top
             ty1 = self.top
-            ty2 = mid_y + self.inner/2
+            ty2 = mid_y + self.inner / 2
             by1 = mid_y
             by2 = self.bottom
         else:
-            ty1 = mid_y - self.inner/2
+            ty1 = mid_y - self.inner / 2
             ty2 = self.bottom
             by1 = self.top
             by2 = mid_y
-        if tx1 <= x <= tx2 and ty1 <= y <= ty2: # outer part
+        if tx1 <= x <= tx2 and ty1 <= y <= ty2:  # outer part
             value = 1
-        elif bx1 <= x <= bx2 and by1 <= y <= by2: # inner  part
+        elif bx1 <= x <= bx2 and by1 <= y <= by2:  # inner  part
             value = 2
-        if mid_x - self.inner/2 <= x <= mid_x + self.inner / 2 and mid_y - self.inner/2 <= y <= mid_y + self.inner / 2:
+        if (
+            mid_x - self.inner / 2 <= x <= mid_x + self.inner / 2
+            and mid_y - self.inner / 2 <= y <= mid_y + self.inner / 2
+        ):
             # Corner-Handle
             value = 0
 
@@ -540,12 +539,12 @@ class RotationWidget(Widget):
     def contains(self, x, y=None):
         # Slightly more complex than usual due to the inner exclusion...
         value = self._contains(x, y)
-        return value!=0
+        return value != 0
 
     def inner_contains(self, x, y=None):
         # Slightly more complex than usual due to the inner exclusion...
         value = self._contains(x, y)
-        return value==2
+        return value == 2
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "rotation"
@@ -617,8 +616,8 @@ class CornerWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left)/2
-        mid_y = (self.master.bottom + self.master.top)/2
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -798,8 +797,8 @@ class SideWidget(Widget):
         self.update()
 
     def update(self):
-        mid_x = (self.master.right + self.master.left)/2
-        mid_y = (self.master.bottom + self.master.top)/2
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
@@ -910,11 +909,6 @@ class SideWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                # We leave that to the very end...
-                # try:
-                #    obj.node._bounds_dirty = True
-                # except AttributeError:
-                #    pass
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1041,10 +1035,6 @@ class SkewWidget(Widget):
                         (self.master.right + self.master.left) / 2,
                         (self.master.top + self.master.bottom) / 2,
                     )
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
 
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -1089,7 +1079,9 @@ class MoveWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
-        Widget.__init__(self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y)
+        Widget.__init__(
+            self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
+        )
         self.cursor = "sizing"
         self.update()
 
@@ -1097,10 +1089,14 @@ class MoveWidget(Widget):
         # Let's take into account small selections
         pos_x = (self.master.right + self.master.left) / 2
         pos_y = (self.master.bottom + self.master.top) / 2
-        inner_wd = (self.master.right - self.master.left) - (0.5 + 0.5) * 2 * self.drawhalf
-        self.half_x = max(self.drawhalf, min(self.action_size, inner_wd)/2)
-        inner_ht = (self.master.bottom - self.master.top) - (0.5 + 0.5) * 2 * self.drawhalf
-        self.half_y = max(self.drawhalf, min(self.action_size, inner_ht)/2)
+        inner_wd = (self.master.right - self.master.left) - (
+            0.5 + 0.5
+        ) * 2 * self.drawhalf
+        self.half_x = max(self.drawhalf, min(self.action_size, inner_wd) / 2)
+        inner_ht = (self.master.bottom - self.master.top) - (
+            0.5 + 0.5
+        ) * 2 * self.drawhalf
+        self.half_y = max(self.drawhalf, min(self.action_size, inner_ht) / 2)
         self.right = self.left + 2 * self.half_x
         self.bottom = self.top + 2 * self.half_y
         self.set_position(pos_x - self.half_x, pos_y - self.half_y)
@@ -1678,7 +1674,7 @@ class SelectionWidget(Widget):
             if not obj is refob:
                 obj.transform.post_translate(dx, dy)
                 try:
-                    obj.node._bounds_dirty = True
+                    obj.node.invalidated_node()
                 except AttributeError:
                     pass
         elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
@@ -1721,10 +1717,7 @@ class SelectionWidget(Widget):
                 pass
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
+
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):
@@ -1977,9 +1970,9 @@ class SelectionWidget(Widget):
             show_skew_y = self.use_handle_skew
             # Let's check whether there is enough room...
             # Top and bottom handle are overlapping by 1/2, middle 1, skew 2/3
-            if (self.bottom - self.top)<(0.5 + 1 + 0.5 + 1) * msize:
+            if (self.bottom - self.top) < (0.5 + 1 + 0.5 + 1) * msize:
                 show_skew_y = False
-            if (self.right - self.left)<(0.5 + 1 + 0.5 + 1) * msize:
+            if (self.right - self.left) < (0.5 + 1 + 0.5 + 1) * msize:
                 show_skew_x = False
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
