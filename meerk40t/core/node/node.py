@@ -95,6 +95,9 @@ class Node:
         self.object = data_object
         self.type = type
 
+        self._points = list()
+        self._points_dirty = True
+
         self._selected = False
         self._emphasized = False
         self._highlighted = False
@@ -362,6 +365,92 @@ class Node:
             self.node_bbox(self)
         return self._bounds
 
+    @property
+    def points(self):
+        """
+        Returns the node points values
+
+        @return: validated node point values, this is a list of lists of 3 elements.
+        """
+        if self._points_dirty:
+            self.revalidate_points()
+        self._points_dirty = False
+        return self._points
+
+    def revalidate_points(self):
+        """
+        Ensure the points values for the node are valid with regard to the node's
+        current state. By default, this calls bounds but valid nodes can be overloaded
+        based on specific node type.
+
+        Should be overloaded by subclasses.
+
+        @return:
+        """
+        bounds = self.bounds
+        if bounds is None:
+            return
+        if len(self._points) < 5:
+            self._points.extend([None] * (5 - len(self._points)))
+        self._points[0] = [bounds[0], bounds[1], "bounds upper_left"]
+        self._points[1] = [bounds[2], bounds[1], "bounds upper_right"]
+        self._points[2] = [bounds[0], bounds[3], "bounds lower_left"]
+        self._points[3] = [bounds[2], bounds[3], "bounds lower_right"]
+        cx = (bounds[0] + bounds[2]) / 2
+        cy = (bounds[1] + bounds[3]) / 2
+        self._points[4] = [cx, cy, "bounds center_center"]
+
+    def update_point(self, index, point):
+        """
+        Attempt to update a node value, located at a specific index with the new
+        point provided.
+
+        Should be overloaded by subclasses.
+
+        @param index: index of the updating point
+        @param point: Point to be updated
+        @return: Whether update was successful
+        """
+        return False
+
+    def add_point(self, point, index=None):
+        """
+        Attempts to add a point into node.points.
+
+        Should be overloaded by subclasses.
+
+        @param point: point to be added
+        @return: Whether append was successful
+        """
+        # return self._insert_point(point, index)
+        return False
+
+    def _insert_point(self, point, index=None):
+        """
+        Default implementation of inserting point into points.
+
+        @param point:
+        @param index:
+        @return:
+        """
+        x = None
+        y = None
+        point_type = None
+        try:
+            x = point[0]
+            y = point[1]
+            point_type = point[3]
+        except IndexError:
+            pass
+        if index is None:
+            self._points.append([x, y, point_type])
+        else:
+            try:
+                self._points.insert(index, [x, y, point_type])
+            except IndexError:
+                return False
+        return True
+
     def notify_created(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
@@ -465,6 +554,7 @@ class Node:
         """
         Invalidation of the individual node.
         """
+        self._points_dirty = True
         self._bounds_dirty = True
         self._bounds = None
 
@@ -820,18 +910,19 @@ class Node:
         self.unregister()
         return node
 
-    def remove_node(self):
+    def remove_node(self, children=True, references=True):
         """
         Remove the current node from the tree.
-
         This function must iterate down and first remove all children from the bottom.
         """
-        self.remove_all_children()
+        if children:
+            self.remove_all_children()
         self._parent._children.remove(self)
         self.notify_detached(self)
         self.notify_destroyed(self)
-        for ref in list(self._references):
-            ref.remove_node()
+        if references:
+            for ref in list(self._references):
+                ref.remove_node()
         self.item = None
         self._parent = None
         self._root = None

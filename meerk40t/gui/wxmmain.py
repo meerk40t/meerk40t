@@ -10,7 +10,6 @@ from wx import aui
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (
     Color,
@@ -161,7 +160,7 @@ class CustomStatusBar(wx.StatusBar):
         sizes = [-2] * self.panelct
         # Make the first Panel large
         sizes[0] = -3
-        # Make the last Panel smaller
+        # The most intelligent way would be  to calculate the needed size...
         sizes[self.panelct - 1] = -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
@@ -185,6 +184,10 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle.SetValue(self.context.enable_sel_size)
         self.cb_rotate.SetValue(self.context.enable_sel_rotate)
         self.cb_skew.SetValue(self.context.enable_sel_skew)
+        self.cb_move.SetToolTip(_("Toggle visibility of Move-Indicator"))
+        self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
+        self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
+        self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
         self.cb_enabled = False
 
         # set the initial position of the checkboxes
@@ -246,7 +249,8 @@ class CustomStatusBar(wx.StatusBar):
     # reposition the checkboxes
     def Reposition(self):
         rect = self.GetFieldRect(self.panelct - 1)
-        wd = rect.width / 4
+        ct = 4
+        wd = int(round(rect.width / ct))
         rect.x += 1
         rect.y += 1
         rect.width = wd
@@ -943,6 +947,11 @@ class MeerK40t(MWindow):
             self._mgr.Update()
 
     def on_pane_reset(self, event=None):
+        self.on_panes_closed()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_panes_closed(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
@@ -953,10 +962,8 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_hide"):
                             page.pane_hide()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
-        self.on_config_panes()
 
-    def on_config_panes(self):
+    def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
@@ -975,6 +982,9 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_noshow"):
                             page.pane_noshow()
+
+    def on_config_panes(self):
+        self.on_panes_opened()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -1239,10 +1249,7 @@ class MeerK40t(MWindow):
         )
         self.recent_file_menu = wx.Menu()
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
-            self.file_menu.AppendSubMenu(
-                self.recent_file_menu,
-                _("&Recent")
-                )
+            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(
             ID_MENU_IMPORT,
             _("&Import File"),
@@ -1772,10 +1779,7 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "pane_hide"):
-                    pane.window.pane_hide()
+        self.on_panes_closed()
         self._mgr.UnInit()
 
         if context.print_shutdown:
@@ -1798,6 +1802,8 @@ class MeerK40t(MWindow):
 
     @signal_listener("warning")
     def on_warning_signal(self, origin, message, caption, style):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,

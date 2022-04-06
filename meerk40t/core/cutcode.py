@@ -538,6 +538,9 @@ class LineCut(CutObject):
         )
         self.raster_step = 0
 
+    def __repr__(self):
+        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
+
     def generator(self):
         # pylint: disable=unsubscriptable-object
         start = self.start
@@ -885,30 +888,27 @@ class PlotCut(CutObject):
 
         @return: whether the plot can travel
         """
-        self.settings.raster_alt = False
-        self.settings.constant_move_x = False
-        self.settings.constant_move_y = False
-        self.settings.raster_step = 0
-        self.settings.force_twitchless = True
-        if (
-            not self.travels_left
-            and not self.travels_right
-            and not self.travels_bottom
-            and not self.travels_top
-        ):
+        # Default to vector settings.
+        self.settings["raster_alt"] = False
+        self.settings["constant_move_x"] = False
+        self.settings["constant_move_y"] = False
+        self.settings["raster_step"] = 0
+        if self.settings.get("speed",0) < 80:
+            # Twitchless gets sketchy at 80.
+            self.settings["force_twitchless"] = True
             return False
+            # if self.max_dy >= 15 and self.max_dy >= 15:
+            #     return False  # This is probably a vector.
+        # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.v_raster = True
-        elif 0 < self.max_dy <= 15:
+            self.settings["constant_move_y"] = True
+        if 0 < self.max_dy <= 15:
             self.h_raster = True
-        else:
-            return False
-        self.settings.raster_step = min(self.max_dx, self.max_dy)
-        self.settings.raster_alt = True
-        if self.horizontal_raster:
-            self.settings.constant_move_x = True
-        else:
-            self.settings.constant_move_y = True
+            self.settings["constant_move_x"] = True
+        # if self.vertical_raster or self.horizontal_raster:
+        self.settings["raster_step"] = min(self.max_dx, self.max_dy)
+        self.settings["raster_alt"] = True
         return True
 
     def plot_extend(self, plot):
@@ -944,10 +944,15 @@ class PlotCut(CutObject):
             self.max_y = y
 
     def major_axis(self):
-        if self.h_raster:
-            return 0
+        """
+        If both vertical and horizontal are set we prefer vertical as major axis because vertical rastering is heavier
+        with the movement of the gantry bar.
+        @return:
+        """
         if self.v_raster:
             return 1
+        if self.h_raster:
+            return 0
 
         if len(self.plot) < 2:
             return 0
@@ -1014,12 +1019,14 @@ class PlotCut(CutObject):
     def reverse(self):
         self.plot = list(reversed(self.plot))
 
+    @property
     def start(self):
         try:
             return Point(self.plot[0][:2])
         except IndexError:
             return None
 
+    @property
     def end(self):
         try:
             return Point(self.plot[-1][:2])

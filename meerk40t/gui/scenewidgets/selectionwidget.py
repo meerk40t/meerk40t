@@ -317,18 +317,26 @@ class RotationWidget(Widget):
         self.update()
 
     def update(self):
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
+        # Selection very small ? Relocate Handle
+        inner_wd_half = (self.master.right - self.master.left) / 2
+        inner_ht_half = (self.master.bottom - self.master.top) / 2
+        dx = abs(min(0, inner_wd_half - self.inner))
+        dy = abs(min(0, inner_ht_half - self.inner))
+
         if self.index == 0:
-            pos_x = self.master.left
-            pos_y = self.master.top
+            pos_x = self.master.left - dx
+            pos_y = self.master.top - dy
         elif self.index == 1:
-            pos_x = self.master.right
-            pos_y = self.master.top
+            pos_x = self.master.right + dx
+            pos_y = self.master.top - dy
         elif self.index == 2:
-            pos_x = self.master.right
-            pos_y = self.master.bottom
+            pos_x = self.master.right + dx
+            pos_y = self.master.bottom + dy
         else:
-            pos_x = self.master.left
-            pos_y = self.master.bottom
+            pos_x = self.master.left - dx
+            pos_y = self.master.bottom + dy
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
@@ -408,6 +416,7 @@ class RotationWidget(Widget):
                 except AttributeError:
                     pass
             self.master.last_angle = None
+            self.master.start_angle = None
             self.master.rotated_angle = 0
         elif event == 0:
 
@@ -422,12 +431,29 @@ class RotationWidget(Widget):
             # Improved code by tatarize to establish rotation angle
 
             current_angle = Point.angle(position[:2], (self.rotate_cx, self.rotate_cy))
+
             if self.master.last_angle is None:
+                self.master.start_angle = current_angle
                 self.master.last_angle = current_angle
+
+            # Update Rotation angle...
+            if self.master.key_shift_pressed:
+                # Only steps of 5 deg
+                desired_step = 5 * (math.tau / 360)
+                old_angle = current_angle - self.master.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+            elif self.master.key_control_pressed:
+                # Only steps of 15 deg
+                desired_step = 15 * (math.tau / 360)
+                old_angle = current_angle - self.master.start_angle
+                new_angle = round(old_angle / desired_step) * desired_step
+                current_angle += new_angle - old_angle
+
             delta_angle = current_angle - self.master.last_angle
             self.master.last_angle = current_angle
             # Update Rotation angle...
-            self.master.rotated_angle += delta_angle
+            self.master.rotated_angle = current_angle - self.master.start_angle
             # print(
             #    "Angle to Point=%.1f, last_angle=%.1f, total_angle=%.1f, delta=%.1f"
             #    % (
@@ -438,11 +464,10 @@ class RotationWidget(Widget):
             #    )
             # )
             # Bring back to 'regular' radians
-            while self.master.rotated_angle >= 1 * math.tau:
-                self.master.rotated_angle -= 1 * math.tau
-            while self.master.rotated_angle <= -1 * math.tau:
-                self.master.rotated_angle += 1 * math.tau
-
+            while self.master.rotated_angle > 0.5 * math.tau:
+                self.master.rotated_angle -= 1.0 * math.tau
+            while self.master.rotated_angle < -0.5 * math.tau:
+                self.master.rotated_angle += 1.0 * math.tau
             # Take representation rectangle and rotate it
             # if self.reference_rect is None:
             #    b = elements._emphasized_bounds
@@ -462,10 +487,6 @@ class RotationWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -473,63 +494,57 @@ class RotationWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def contains(self, x, y=None):
-        # Slightly more complex than usual due to the inner exclusion...
-        value = False
+    def _contains(self, x, y=None):
+        # result: 0 = No Hit, 1 = outer, 2 = Inner
+        value = 0
         if y is None:
             y = x.y
             x = x.x
-        if self.left <= x <= self.right and self.top <= y <= self.bottom:
-            # print ("rotation was queried:  x=%.1f, y=%.1f, left=%.1f, top=%.1f, right=%.1f, bottom=%.1f" % (x, y, self.left, self.top, self.right, self.bottom))
-            value = True
-            if (
-                self.left + self.half - self.inner / 2
-                <= x
-                <= self.right - self.half + self.inner / 2
-                and self.top + self.half - self.inner / 2
-                <= y
-                <= self.bottom - self.half + self.inner / 2
-            ):
-                # print("...but the inner part")
-                value = False
+        mid_x = (self.left + self.right) / 2
+        mid_y = (self.top + self.bottom) / 2
+        if self.index in (0, 3):  # left
+            tx1 = self.left
+            tx2 = mid_x + self.inner / 2
+            bx1 = mid_x
+            bx2 = self.right
+        else:
+            tx1 = mid_x - self.inner / 2
+            tx2 = self.right
+            bx1 = self.left
+            bx2 = mid_x
+
+        if self.index in (0, 1):  # top
+            ty1 = self.top
+            ty2 = mid_y + self.inner / 2
+            by1 = mid_y
+            by2 = self.bottom
+        else:
+            ty1 = mid_y - self.inner / 2
+            ty2 = self.bottom
+            by1 = self.top
+            by2 = mid_y
+        if tx1 <= x <= tx2 and ty1 <= y <= ty2:  # outer part
+            value = 1
+        elif bx1 <= x <= bx2 and by1 <= y <= by2:  # inner  part
+            value = 2
+        if (
+            mid_x - self.inner / 2 <= x <= mid_x + self.inner / 2
+            and mid_y - self.inner / 2 <= y <= mid_y + self.inner / 2
+        ):
+            # Corner-Handle
+            value = 0
+
         return value
+
+    def contains(self, x, y=None):
+        # Slightly more complex than usual due to the inner exclusion...
+        value = self._contains(x, y)
+        return value != 0
 
     def inner_contains(self, x, y=None):
         # Slightly more complex than usual due to the inner exclusion...
-        value = False
-        if y is None:
-            y = x.y
-            x = x.x
-        x0 = self.left
-        x1 = self.right
-        y0 = self.top
-        y1 = self.bottom
-        if self.index == 0:  # tl
-            x0 += self.half
-            y0 += self.half
-        elif self.index == 1:  # tr
-            x1 -= self.half
-            y0 += self.half
-        elif self.index == 2:  # br
-            x1 -= self.half
-            y1 -= self.half
-        elif self.index == 3:  # bl
-            x0 += self.half
-            y1 -= self.half
-
-        if x0 <= x <= x1 and y0 <= y <= y1:
-            value = True
-            if (
-                self.left + self.half - self.inner / 2
-                <= x
-                <= self.right - self.half + self.inner / 2
-                and self.top + self.half - self.inner / 2
-                <= y
-                <= self.bottom - self.half + self.inner / 2
-            ):
-                # print("...but the inner part")
-                value = False
-        return value
+        value = self._contains(x, y)
+        return value == 2
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "rotation"
@@ -601,18 +616,26 @@ class CornerWidget(Widget):
         self.update()
 
     def update(self):
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
+        # Selection very small ? Relocate Handle
+        inner_wd_half = (self.master.right - self.master.left) / 2
+        inner_ht_half = (self.master.bottom - self.master.top) / 2
+        dx = abs(min(0, inner_wd_half - 2 * self.half))
+        dy = abs(min(0, inner_ht_half - 2 * self.half))
+
         if self.index == 0:
-            pos_x = self.master.left
-            pos_y = self.master.top
+            pos_x = self.master.left - dx
+            pos_y = self.master.top - dy
         elif self.index == 1:
-            pos_x = self.master.right
-            pos_y = self.master.top
+            pos_x = self.master.right + dx
+            pos_y = self.master.top - dy
         elif self.index == 2:
-            pos_x = self.master.right
-            pos_y = self.master.bottom
+            pos_x = self.master.right + dx
+            pos_y = self.master.bottom + dy
         else:
-            pos_x = self.master.left
-            pos_y = self.master.bottom
+            pos_x = self.master.left - dx
+            pos_y = self.master.bottom + dy
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
@@ -657,14 +680,26 @@ class CornerWidget(Widget):
             scalex = 1
             scaley = 1
             if "n" in self.method:
-                scaley = (self.master.bottom - position[1]) / self.save_height
+                try:
+                    scaley = (self.master.bottom - position[1]) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             elif "s" in self.method:
-                scaley = (position[1] - self.master.top) / self.save_height
+                try:
+                    scaley = (position[1] - self.master.top) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
 
             if "w" in self.method:
-                scalex = (self.master.right - position[0]) / self.save_width
+                try:
+                    scalex = (self.master.right - position[0]) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
             elif "e" in self.method:
-                scalex = (position[0] - self.master.left) / self.save_width
+                try:
+                    scalex = (position[0] - self.master.left) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
 
             if len(self.method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
@@ -762,18 +797,26 @@ class SideWidget(Widget):
         self.update()
 
     def update(self):
+        mid_x = (self.master.right + self.master.left) / 2
+        mid_y = (self.master.bottom + self.master.top) / 2
+        # Selection very small ? Relocate Handle
+        inner_wd_half = (self.master.right - self.master.left) / 2
+        inner_ht_half = (self.master.bottom - self.master.top) / 2
+        dx = abs(min(0, inner_wd_half - 2 * self.half))
+        dy = abs(min(0, inner_ht_half - 2 * self.half))
+
         if self.index == 0:
-            pos_x = (self.master.left + self.master.right) / 2
-            pos_y = self.master.top
+            pos_x = mid_x
+            pos_y = self.master.top - dy
         elif self.index == 1:
-            pos_x = self.master.right
-            pos_y = (self.master.bottom + self.master.top) / 2
+            pos_x = self.master.right + dx
+            pos_y = mid_y
         elif self.index == 2:
-            pos_x = (self.master.left + self.master.right) / 2
-            pos_y = self.master.bottom
+            pos_x = mid_x
+            pos_y = self.master.bottom + dy
         else:
-            pos_x = self.master.left
-            pos_y = (self.master.bottom + self.master.top) / 2
+            pos_x = self.master.left - dx
+            pos_y = mid_y
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
@@ -866,11 +909,6 @@ class SideWidget(Widget):
                 except AttributeError:
                     pass
                 obj.transform.post_scale(scalex, scaley, orgx, orgy)
-                # We leave that to the very end...
-                # try:
-                #    obj.node._bounds_dirty = True
-                # except AttributeError:
-                #    pass
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -997,10 +1035,6 @@ class SkewWidget(Widget):
                         (self.master.right + self.master.left) / 2,
                         (self.master.top + self.master.bottom) / 2,
                     )
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
 
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -1033,7 +1067,9 @@ class MoveWidget(Widget):
     def __init__(self, master, scene, size, drawsize):
         self.master = master
         self.scene = scene
-        self.half = size / 2
+        self.action_size = size
+        self.half_x = size / 2
+        self.half_y = size / 2
         self.drawhalf = drawsize / 2
         self.key_shift_pressed = self.master.key_shift_pressed
         self.key_control_pressed = self.master.key_control_pressed
@@ -1043,14 +1079,27 @@ class MoveWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
-        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        Widget.__init__(
+            self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
+        )
         self.cursor = "sizing"
         self.update()
 
     def update(self):
+        # Let's take into account small selections
         pos_x = (self.master.right + self.master.left) / 2
         pos_y = (self.master.bottom + self.master.top) / 2
-        self.set_position(pos_x - self.half, pos_y - self.half)
+        inner_wd = (self.master.right - self.master.left) - (
+            0.5 + 0.5
+        ) * 2 * self.drawhalf
+        self.half_x = max(self.drawhalf, min(self.action_size, inner_wd) / 2)
+        inner_ht = (self.master.bottom - self.master.top) - (
+            0.5 + 0.5
+        ) * 2 * self.drawhalf
+        self.half_y = max(self.drawhalf, min(self.action_size, inner_ht) / 2)
+        self.right = self.left + 2 * self.half_x
+        self.bottom = self.top + 2 * self.half_y
+        self.set_position(pos_x - self.half_x, pos_y - self.half_y)
 
     def create_duplicate(self):
         from copy import copy
@@ -1080,8 +1129,8 @@ class MoveWidget(Widget):
         brush = wx.Brush(LINE_COLOR, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(
-            self.left + self.half - self.drawhalf,
-            self.top + self.half - self.drawhalf,
+            self.left + self.half_x - self.drawhalf,
+            self.top + self.half_y - self.drawhalf,
             2 * self.drawhalf,
             2 * self.drawhalf,
         )
@@ -1089,12 +1138,30 @@ class MoveWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
+    def check_for_magnets(self):
+        # print ("Shift-key-Status: self=%g, master=%g" % (self.key_shift_pressed, self.master.key_shift_pressed))
+        if (
+            not self.master.key_shift_pressed
+        ):  # if Shift-Key pressed then ignore Magnets...
+            elements = self.scene.context.elements
+            b = elements._emphasized_bounds
+            dx, dy = self.scene.revised_magnet_bound(b)
+            if dx != 0 or dy != 0:
+                for e in elements.flat(types=("elem",), emphasized=True):
+                    obj = e.object
+                    obj.transform.post_translate(dx, dy)
+
+                self.translate(dx, dy)
+
+                elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
     def tool(self, position, dx, dy, event=0):
         """
         Change the position of the selected elements.
         """
         elements = self.scene.context.elements
         if event == 1:  # end
+            self.check_for_magnets()
             for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
                 obj = e.object
                 try:
@@ -1548,6 +1615,7 @@ class SelectionWidget(Widget):
         self.is_ref = False
         self.show_border = True
         self.last_angle = None
+        self.start_angle = None
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1606,7 +1674,7 @@ class SelectionWidget(Widget):
             if not obj is refob:
                 obj.transform.post_translate(dx, dy)
                 try:
-                    obj.node._bounds_dirty = True
+                    obj.node.invalidated_node()
                 except AttributeError:
                     pass
         elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
@@ -1649,10 +1717,7 @@ class SelectionWidget(Widget):
                 pass
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
-                try:
-                    obj.node._bounds_dirty = True
-                except AttributeError:
-                    pass
+
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
     def show_reference_align_dialog(self, event):
@@ -1901,9 +1966,17 @@ class SelectionWidget(Widget):
             # Add all subwidgets in Inverse Order
             msize = 5 * self.line_width
             rotsize = 3 * msize
+            show_skew_x = self.use_handle_skew
+            show_skew_y = self.use_handle_skew
+            # Let's check whether there is enough room...
+            # Top and bottom handle are overlapping by 1/2, middle 1, skew 2/3
+            if (self.bottom - self.top) < (0.5 + 1 + 0.5 + 1) * msize:
+                show_skew_y = False
+            if (self.right - self.left) < (0.5 + 1 + 0.5 + 1) * msize:
+                show_skew_x = False
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if self.single_element and self.use_handle_skew:
+            if self.single_element and show_skew_y:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
@@ -1920,13 +1993,14 @@ class SelectionWidget(Widget):
                         master=self, scene=self.scene, size=rotsize, drawsize=msize
                     ),
                 )
-            if self.use_handle_skew:
+            if show_skew_y:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
                     ),
                 )
+            if show_skew_x:
                 self.add_widget(
                     -1,
                     SkewWidget(

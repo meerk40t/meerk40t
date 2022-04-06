@@ -257,8 +257,10 @@ class wxMeerK40t(wx.App, Module):
 
     def InitLocale(self):
         import sys
-        if sys.platform.startswith('win') and sys.version_info > (3, 8):
+
+        if sys.platform.startswith("win") and sys.version_info > (3, 8):
             import locale
+
             locale.setlocale(locale.LC_ALL, "C")
 
     def BringWindowToFront(self):

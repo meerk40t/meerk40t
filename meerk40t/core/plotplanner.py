@@ -46,6 +46,8 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
+        self.smooth_limit = 15
+
         self.queue = []
 
         self.single = None
@@ -381,9 +383,12 @@ class Smooth(PlotManipulation):
         )
 
     def flushed(self):
-        if self.smooth_y is None or self.smooth_y is None:
-            return True
-        return self.goal_x == self.smooth_x and self.goal_y == self.smooth_y
+        return (
+            self.goal_x == self.smooth_x
+            and self.goal_y == self.smooth_y
+            and self.goal_x is not None
+            and self.goal_y is not None
+        )
 
     def process(self, plot):
         """
@@ -416,19 +421,19 @@ class Smooth(PlotManipulation):
                 self.smooth_y = y
             total_dx = x - self.smooth_x
             total_dy = y - self.smooth_y
+            self.goal_x = x
+            self.goal_y = y
+            self.goal_on = on
             if total_dx == 0 and total_dy == 0:
                 continue
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            self.goal_x = x
-            self.goal_y = y
-            self.goal_on = on
             if self.planner.constant_move_x and dx == 0:
                 # If we are moving x and we don't move x. Skip.
-                if abs(total_dy) < 15:
+                if abs(total_dy) < self.planner.smooth_limit:
                     continue
             if self.planner.constant_move_y and dy == 0:
-                if abs(total_dx) < 15:
+                if abs(total_dx) < self.planner.smooth_limit:
                     continue
             self.smooth_x += dx
             self.smooth_y += dy
@@ -438,7 +443,11 @@ class Smooth(PlotManipulation):
         if not self.flushed():
             if self.goal_x is None or self.goal_y is None:
                 return
-            for x, y in ZinglPlotter.plot_line(self.smooth_x, self.smooth_y, self.goal_x, self.goal_y):
+            if self.smooth_x is None or self.smooth_y is None:
+                return
+            for x, y in ZinglPlotter.plot_line(
+                self.smooth_x, self.smooth_y, self.goal_x, self.goal_y
+            ):
                 yield x, y, self.goal_on
             self.goal_x = None
             self.goal_y = None

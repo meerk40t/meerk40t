@@ -2,6 +2,7 @@ import functools
 import os.path
 from os.path import realpath
 import re
+import time
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
@@ -3093,6 +3094,18 @@ class Elemental(Service):
             return "tree", list(self.flat(selected=True))
 
         @self.console_command(
+            "emphasized",
+            help=_("delegate commands to focused value"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def emphasized(channel, _, **kwargs):
+            """
+            Set tree list to emphasized node
+            """
+            return "tree", list(self.flat(emphasized=True))
+
+        @self.console_command(
             "highlighted",
             help=_("delegate commands to sub-focused value"),
             input_type="tree",
@@ -3125,13 +3138,10 @@ class Elemental(Service):
         def delete(channel, _, data=None, **kwargs):
             """
             Delete nodes.
-            Structural nodes such as root, elements, and operations are not able to be deleted
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
-            for n in data:
-                # Cannot delete structure nodes.
-                if n.type not in ("root", "branch elems", "branch ops", "branch reg"):
-                    if n._parent is not None:
-                        n.remove_node()
+            self.remove_nodes(data)
+            self.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
         @self.console_command(
@@ -3353,6 +3363,36 @@ class Elemental(Service):
                 ).length_mm
 
             spooler.job(trace_quick)
+
+        # ==========
+        # TRACE OPERATIONS
+        # ==========
+        @self.console_command(
+            "trace",
+            help=_("trace the given element path"),
+            input_type="elements",
+        )
+        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
+            if not data:
+                return
+            spooler = self.device.spooler
+            pts = []
+            for path in data:
+                if isinstance(path, Shape):
+                    path = abs(Path(path))
+                    pts.append(path.first_point)
+                    for segment in path:
+                        pts.append(segment.end)
+            if not pts:
+                return
+
+            def trace_command():
+                yield "wait_finish"
+                yield "rapid_mode"
+                for p in pts:
+                    yield "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
+
+            spooler.job(trace_command)
 
         # --------------------------- END COMMANDS ------------------------------
 
@@ -4050,65 +4090,67 @@ class Elemental(Service):
             image_element.values["raster_step"] = step
             self.add_elem(image_element)
 
-        def add_after_index(self):
+        def add_after_index(self, node=None):
             try:
+                if node is None:
+                    node = list(self.ops(emphasized=True))[-1]
                 operations = self._tree.get(type="branch ops").children
-                return operations.index(list(self.ops(emphasized=True))[-1]) + 1
-            except ValueError:
+                return operations.index(node) + 1
+            except (ValueError, IndexError):
                 return None
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
-            append_operation_image(node, pos=add_after_index(self), **kwargs)
+            append_operation_image(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
-            append_operation_raster(node, pos=add_after_index(self), **kwargs)
+            append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index(self), **kwargs)
+            append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add operation"))
         @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self), **kwargs)
+            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index(self), **kwargs)
+            append_operation_home(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(self), **kwargs)
+            append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index(self), **kwargs)
+            append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index(self), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Interrupt (console)"), node_type=op_nodes, help="")
         def add_operation_interrupt_console(node, **kwargs):
             append_operation_interrupt_console(
-                node, pos=add_after_index(self), **kwargs
+                node, pos=add_after_index(self, node), **kwargs
             )
 
         @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
-            pos = add_after_index(self)
+            pos = add_after_index(self, node)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
@@ -5016,6 +5058,19 @@ class Elemental(Service):
 
     def clear_note(self):
         self.note = None
+
+    def remove_nodes(self, node_list):
+        for node in node_list:
+            for n in node.flat():
+                n._mark_delete = True
+                for ref in list(n._references):
+                    ref._mark_delete = True
+        for n in reversed(list(self.flat())):
+            if not hasattr(n, "_mark_delete"):
+                continue
+            if n.type in ("root", "branch elems", "branch reg", "branch ops"):
+                continue
+            n.remove_node(children=False, references=False)
 
     def remove_elements(self, elements_list):
         for elem in elements_list:

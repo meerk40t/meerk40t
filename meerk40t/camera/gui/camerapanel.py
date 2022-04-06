@@ -595,9 +595,10 @@ class CamPerspectiveWidget(Widget):
             else:
                 self.cam.camera.perspective_x4 += space_pos[4]
                 self.cam.camera.perspective_y4 += space_pos[5]
-            for w in self.parent:
-                if isinstance(w, CamPerspectiveWidget):
-                    w.update()
+            if self.parent is not None:
+                for w in self.parent:
+                    if isinstance(w, CamPerspectiveWidget):
+                        w.update()
             self.cam.context.signal("refresh_scene", self.scene.name)
             return RESPONSE_CONSUME
 
