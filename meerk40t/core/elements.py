@@ -3141,7 +3141,7 @@ class Elemental(Service):
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
             self.remove_nodes(data)
-            self.context.signal("refresh_scene", 0)
+            self.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
         @self.console_command(
