@@ -962,8 +962,6 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_hide"):
                             page.pane_hide()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
-        self.on_config_panes()
 
     def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
@@ -984,6 +982,9 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_noshow"):
                             page.pane_noshow()
+
+    def on_config_panes(self):
+        self.on_panes_opened()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 

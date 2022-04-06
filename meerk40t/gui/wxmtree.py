@@ -2,6 +2,7 @@ import wx
 from wx import aui
 
 from ..core.node.node import is_dot
+from ..kernel import signal_listener
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
@@ -105,27 +106,20 @@ class TreePanel(wx.Panel):
             event.Skip()
 
     def pane_show(self):
-        self.context.listen("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.listen("element_property_update", self.on_element_update)
-        self.context.listen("element_property_reload", self.on_force_element_update)
-        self.context.listen(
-            "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
-        )
-        self.context.listen(
-            "activate_selected_nodes", self.shadow_tree.activate_selected_node
-        )
+        pass
 
     def pane_hide(self):
-        self.context.unlisten("rebuild_tree", self.on_rebuild_tree_signal)
-        self.context.unlisten("element_property_update", self.on_element_update)
-        self.context.unlisten("element_property_reload", self.on_force_element_update)
-        self.context.unlisten(
-            "select_emphasized_tree", self.shadow_tree.select_in_tree_by_emphasis
-        )
-        self.context.unlisten(
-            "activate_selected_nodes", self.shadow_tree.activate_selected_node
-        )
+        pass
 
+    @signal_listener("select_emphasized_tree")
+    def on_shadow_select_emphasized_tree(self, origin, *args):
+        self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
+
+    @signal_listener("activate_selected_nodes")
+    def on_shadow_select_activate_tree(self, origin, *args):
+        self.shadow_tree.activate_selected_node(origin, *args)
+
+    @signal_listener("element_property_update")
     def on_element_update(self, origin, *args):
         """
         Called by 'element_property_update' when the properties of an element are changed.
@@ -137,6 +131,7 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_element_update(*args)
 
+    @signal_listener("element_property_reload")
     def on_force_element_update(self, origin, *args):
         """
         Called by 'element_property_reload' when the properties of an element are changed.
@@ -148,6 +143,7 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
+    @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, *args):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly

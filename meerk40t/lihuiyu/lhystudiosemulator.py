@@ -1,6 +1,6 @@
-from ...core.cutcode import CutCode, LaserSettings, RawCut
-from ...kernel import Module
-from ..lasercommandconstants import *
+from meerk40t.core.cutcode import CutCode, RawCut
+from meerk40t.core.parameters import Parameters
+from meerk40t.kernel import Module
 
 
 class LhystudiosEmulator(Module):
@@ -49,7 +49,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = LaserSettings(speed=20.0, power=1000.0)
+        self.settings = Parameters({"speed": 20.0, "power": 1000.0})
 
         self.speed_code = None
 
@@ -89,7 +89,7 @@ class LhystudiosParser:
 
     @property
     def raster_mode(self):
-        return self.settings.raster_step != 0
+        return self.settings.get("raster_step", 0) != 0
 
     def new_file(self):
         self.header_skipped = False
@@ -428,7 +428,7 @@ class EGVBlob:
             if self._cut is not None and len(self._cut):
                 self._cutcode.append(self._cut)
             self._cut = RawCut()
-            self._cut.settings = LaserSettings(parser.settings)
+            self._cut.settings = dict(parser.settings)
 
         def position(p):
             if p is None or self._cut is None:
@@ -453,7 +453,7 @@ class EGVBlob:
         return cutcode
 
     def generate(self):
-        yield COMMAND_BLOB, "egv", LhystudiosParser.remove_header(self.data)
+        yield "blob", "egv", LhystudiosParser.remove_header(self.data)
 
 
 class EgvLoader:
