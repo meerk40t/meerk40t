@@ -356,7 +356,7 @@ class RuidaEmulator(Module, Parameters):
 
     def new_plot_cut(self):
         if len(self.plotcut):
-            self.plotcut.settings = self.cutset
+            self.plotcut.settings = self.cutset()
             self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)
             self.plotcut = PlotCut()
@@ -584,7 +584,7 @@ class RuidaEmulator(Module, Parameters):
                 desc = "Axis Z Move %f" % value
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
-            if self.settings.speed < 40:
+            if self.speed < 40:
                 self.new_plot_cut()
 
             self.x = self.abscoord(array[1:6])
@@ -593,7 +593,7 @@ class RuidaEmulator(Module, Parameters):
 
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
-                if self.settings.speed < 40:
+                if self.speed < 40:
                     self.new_plot_cut()
                 dx = self.relcoord(array[1:3])
                 dy = self.relcoord(array[3:5])
