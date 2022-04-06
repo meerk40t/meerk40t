@@ -78,14 +78,24 @@ class KeymapPanel(wx.Panel):
     def on_item_rightclick(self, event):
         element = event.Text
         menu = wx.Menu()
-        convert = menu.Append(
-            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_tree_popup_delete(element),
+            menu.Append(
+                wx.ID_ANY,
+                _("Remove %s") % str(element)[:16],
+                "",
+            ),
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
-        convert = menu.Append(
-            wx.ID_ANY, _("Reset Keymap to defaults"), "", wx.ITEM_NORMAL
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_tree_popup_clear(element),
+            menu.Append(
+                wx.ID_ANY,
+                _("Reset Keymap to defaults"),
+                "",
+            ),
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
         self.PopupMenu(menu)
         menu.Destroy()
 

@@ -1414,19 +1414,22 @@ class LhystudiosDriver(Parameters):
             self.data_output(self.CODE_LEFT)
         else:
             self.data_output(self.CODE_RIGHT)
-
         self.data_output(b"N")
         if delta != 0:
-            if self._topward:
+            if delta < 0:
                 self.data_output(self.CODE_TOP)
+                self._topward = True
             else:
                 self.data_output(self.CODE_BOTTOM)
+                self._topward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.native_y += delta
         self.data_output(b"SE")
         self.native_y += step_amount
 
         self._leftward = not self._leftward
+        self._x_engaged = True
+        self._y_engaged = False
         self.laser = False
         self.step_index += 1
 
@@ -1450,21 +1453,26 @@ class LhystudiosDriver(Parameters):
         step_amount = -set_step if self._leftward else set_step
         delta = delta - step_amount
 
+        # We force reenforce directional move.
         if self._topward:
             self.data_output(self.CODE_TOP)
         else:
             self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
         if delta != 0:
-            if self._leftward:
+            if delta < 0:
                 self.data_output(self.CODE_LEFT)
+                self._leftward = True
             else:
                 self.data_output(self.CODE_RIGHT)
+                self._leftward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.native_x += delta
         self.data_output(b"SE")
         self.native_x += step_amount
         self._topward = not self._topward
+        self._x_engaged = False
+        self._y_engaged = True
         self.laser = False
         self.step_index += 1
 

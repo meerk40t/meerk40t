@@ -947,6 +947,11 @@ class MeerK40t(MWindow):
             self._mgr.Update()
 
     def on_pane_reset(self, event=None):
+        self.on_panes_closed()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_panes_closed(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
@@ -960,7 +965,7 @@ class MeerK40t(MWindow):
         self._mgr.LoadPerspective(self.default_perspective, update=True)
         self.on_config_panes()
 
-    def on_config_panes(self):
+    def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
@@ -1773,10 +1778,7 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "pane_hide"):
-                    pane.window.pane_hide()
+        self.on_panes_closed()
         self._mgr.UnInit()
 
         if context.print_shutdown:
@@ -1799,6 +1801,8 @@ class MeerK40t(MWindow):
 
     @signal_listener("warning")
     def on_warning_signal(self, origin, message, caption, style):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,
