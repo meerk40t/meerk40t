@@ -214,54 +214,69 @@ class Scene(Module, Job):
         from time import time
 
         start_time = time()
+        type_bound = 0
         type_point = 1
         type_middle = 2
         type_center = 3
         type_grid = 4
+        translation_table = {
+            "bounds top_left": type_bound,
+            "bounds top_right": type_bound,
+            "bounds bottom_left": type_bound,
+            "bounds bottom_right": type_bound,
+            "bounds center_center": type_center,
+            "bounds top_center": type_middle,
+            "bounds bottom_center": type_middle,
+            "bounds center_left": type_middle,
+            "bounds center_right": type_middle,
+            "endpoint": type_point,
+        }
+
         self.attraction_points = []  # Clear all
 
         for e in self.context.elements.flat(types=("elem",)):
-            obj = e.object
-            bb = e.bounds
             emph = e.emphasized
-            self.attraction_points.append(
-                [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2, type_center, emph]
-            )
-            has_segments = False
-            try:
-                segm = obj.segments(True)
-                has_segments = True
-            except AttributeError:
-                # print("Segments exited with Attribute-error")
-                pass
-            if has_segments:
-                ex = None
-                ey = None
-                sx = float("inf")
-                sy = float("inf")
-                ct = 0
-                for s in segm:
-                    ct += 1
-                    xs = [p.x for p in s if p is not None]
-                    ys = [p.y for p in s if p is not None]
-                    for i in range(len(xs)):
-                        # print("Segment #%d-%d: %.1f, %.1f" % (ct, i, xs[i], ys[i]))
-                        sx = xs[i]
-                        sy = ys[i]
-                        add_it = True
-                        if not ex is None:
-                            if sx == ex and sy == ey:
-                                add_it = False
-                        if add_it:
-                            # print("Added pt")
-                            self.attraction_points.append([sx, sy, type_point, emph])
-                            if not ex is None:
-                                # print("Added middle")
-                                self.attraction_points.append(
-                                    [(sx + ex) / 2, (sy + ey) / 2, type_middle, emph]
-                                )
-                        ex = sx
-                        ey = sy
+            if hasattr(e, "points"):
+                for pt in e.points:
+                    pt_type = translation_table[pt[2]]
+                    self.attraction_points.append([pt[0], pt[1], pt_type, emph])
+
+            # has_segments = False
+            # obj = e.object
+            # try:
+            #    segm = obj.segments(True)
+            #    has_segments = True
+            # except AttributeError:
+            #    # print("Segments exited with Attribute-error")
+            #    pass
+            # if has_segments:
+            #    ex = None
+            #    ey = None
+            #    sx = float("inf")
+            #    sy = float("inf")
+            #    ct = 0
+            #    for s in segm:
+            #        ct += 1
+            #        xs = [p.x for p in s if p is not None]
+            #        ys = [p.y for p in s if p is not None]
+            #        for i in range(len(xs)):
+            #            # print("Segment #%d-%d: %.1f, %.1f" % (ct, i, xs[i], ys[i]))
+            #            sx = xs[i]
+            #            sy = ys[i]
+            #            add_it = True
+            #            if not ex is None:
+            #                if sx == ex and sy == ey:
+            #                    add_it = False
+            #            if add_it:
+            #                # print("Added pt")
+            #                self.attraction_points.append([sx, sy, type_point, emph])
+            #                if not ex is None:
+            #                    # print("Added middle")
+            #                    self.attraction_points.append(
+            #                        [(sx + ex) / 2, (sy + ey) / 2, type_middle, emph]
+            #                    )
+            #            ex = sx
+            #            ey = sy
 
         # Just for fun let's add grid points...
         # Lets set the full grid

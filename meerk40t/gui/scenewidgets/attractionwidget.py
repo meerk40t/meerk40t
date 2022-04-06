@@ -18,7 +18,7 @@ class AttractionWidget(Widget):
         self.my_y = 0
         self.visible_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0x40))
         self.visible_pen.SetWidth(1)
-        self.closeup_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0xA0))
+        self.closeup_pen = wx.Pen(wx.Colour(0xFF, 0x00, 0x00, 0x80))
         self.closeup_pen.SetWidth(1)
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
@@ -154,14 +154,14 @@ class AttractionWidget(Widget):
         brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         path = gc.CreatePath()
-        dsize = 1 / 8 * self.symbol_size
-        path.MoveToPoint(x - self.symbol_size / 2, y + dsize)
-        path.AddLineToPoint(x - dsize, y + dsize)
+        dsize = 1 / 12 * self.symbol_size
+        path.MoveToPoint(x - self.symbol_size / 2, y - dsize)
+        path.AddLineToPoint(x - dsize, y - dsize)
         path.AddLineToPoint(x - dsize, y - self.symbol_size / 2)
         path.AddLineToPoint(x + dsize, y - self.symbol_size / 2)
-        path.AddLineToPoint(x + dsize, y + dsize)
-        path.AddLineToPoint(x + self.symbol_size / 2, y + dsize)
+        path.AddLineToPoint(x + dsize, y - dsize)
         path.AddLineToPoint(x + self.symbol_size / 2, y - dsize)
+        path.AddLineToPoint(x + self.symbol_size / 2, y + dsize)
         path.AddLineToPoint(x + dsize, y + dsize)
         path.AddLineToPoint(x + dsize, y + self.symbol_size / 2)
         path.AddLineToPoint(x - dsize, y + self.symbol_size / 2)
