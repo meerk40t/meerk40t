@@ -1,4 +1,5 @@
 from meerk40t.core.cutcode import CutCode, RawCut
+from meerk40t.core.parameters import Parameters
 from meerk40t.kernel import Module
 
 
@@ -48,7 +49,7 @@ class LhystudiosParser:
         self.header_skipped = False
         self.count_lines = 0
         self.count_flag = 0
-        self.settings = { "speed": 20.0, "power": 1000.0 }
+        self.settings = Parameters({"speed": 20.0, "power": 1000.0})
 
         self.speed_code = None
 
