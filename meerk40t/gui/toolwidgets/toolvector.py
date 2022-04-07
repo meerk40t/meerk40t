@@ -37,6 +37,7 @@ class VectorTool(ToolWidget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
+            self.scene.tool_active = False
             if self.path is None:
                 self.path = Path(stroke="blue", stroke_width=1000)
                 self.path.move((space_pos[0], space_pos[1]))
@@ -44,16 +45,19 @@ class VectorTool(ToolWidget):
                 self.path.line((space_pos[0], space_pos[1]))
             self.c0 = None
         elif event_type == "rightdown":
+            self.scene.tool_active = False
             self.path = None
             self.mouse_position = None
             self.scene.request_refresh()
         elif event_type == "leftdown":
+            self.scene.tool_active = True
             self.c0 = (space_pos[0], space_pos[1])
         elif event_type == "move":
             self.c0 = (space_pos[0], space_pos[1])
             if self.path:
                 self.scene.request_refresh()
         elif event_type == "leftup":
+            self.scene.tool_active = False
             if self.c0 is not None and self.path:
                 self.path.smooth_cubic(self.c0, self.mouse_position)
                 self.scene.request_refresh()
@@ -64,8 +68,11 @@ class VectorTool(ToolWidget):
             if self.path:
                 self.scene.request_refresh()
         elif event_type == "doubleclick":
+            self.scene.tool_active = False
             t = self.path
             if len(t) != 0:
                 self.scene.context.elements.add_elem(t, classify=True)
             self.path = None
             self.mouse_position = None
+        elif event_type == "lost":
+            self.scene.tool_active = False

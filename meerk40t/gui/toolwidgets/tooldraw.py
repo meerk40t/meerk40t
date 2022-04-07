@@ -33,13 +33,16 @@ class DrawTool(ToolWidget):
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
+            self.scene.tool_active = True
             self.add_point(space_pos[:2])
         elif event_type == "move":
             if self.series is None:
+                self.scene.tool_active = False
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
         elif event_type == "lost":
+            self.scene.tool_active = False
             self.series = None
             return RESPONSE_DROP
         elif event_type == "leftup":
@@ -51,4 +54,5 @@ class DrawTool(ToolWidget):
                 self.scene.context.elements.add_elem(t, classify=True)
             except IndexError:
                 pass
+            self.scene.tool_active = False
             self.series = None

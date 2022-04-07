@@ -89,6 +89,7 @@ class Scene(Module, Job):
 
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
+        self.tool_active = False
         # Variables for an amended position
         self.new_x_space = None
         self.new_y_space = None
@@ -593,10 +594,13 @@ class Scene(Module, Job):
                         "Converted %s: %s" % ("hover_start", str(window_pos))
                     )
                 previous_top_element = current_widget
-            if event_type == "leftup" and time.time() - self.time <= 0.15:
+            delta_time = time.time() - self.time
+            if event_type == "leftup" and delta_time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
+            elif event_type == "leftup":
+                print ("Did not convert to click, event of my own right, %.2f" % delta_time)
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
 

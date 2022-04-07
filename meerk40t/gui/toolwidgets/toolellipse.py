@@ -29,11 +29,13 @@ class EllipseTool(ToolWidget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftdown":
+            self.scene.tool_active = True
             self.p1 = complex(space_pos[0], space_pos[1])
         elif event_type == "move":
             self.p2 = complex(space_pos[0], space_pos[1])
             self.scene.request_refresh()
         elif event_type == "leftup":
+            self.scene.tool_active = False
             try:
                 if self.p1 is None:
                     return
@@ -57,3 +59,5 @@ class EllipseTool(ToolWidget):
                 self.p2 = None
             except IndexError:
                 pass
+        elif event_type == "lost":
+            self.scene.tool_active = False
