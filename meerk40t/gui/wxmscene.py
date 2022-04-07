@@ -262,6 +262,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("modified", self.on_element_modified)
         context.listen("altered", self.on_element_modified)
         context.listen("units", self.space_changed)
+        context.listen("element_added", self.on_elements_added)
         context("scene focus -4% -4% 104% 104%\n")
 
     def pane_hide(self, *args):
@@ -310,6 +311,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh(origin)
 
     def on_emphasized_elements_changed(self, origin, *args):
+        self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
 
@@ -317,7 +319,11 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.request_refresh(*args)
 
     def on_element_modified(self, *args):
+        self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
+
+    def on_elements_added(self, *args):
+        self.scene.signal("element_added")
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
