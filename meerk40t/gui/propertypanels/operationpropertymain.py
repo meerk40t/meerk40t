@@ -1,8 +1,9 @@
 import wx
 
 from meerk40t.kernel import signal_listener
+from ...core.units import Length
 
-from ...svgelements import Color
+from ...svgelements import Color, Angle
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
@@ -822,7 +823,7 @@ class HatchSettingsPanel(wx.Panel):
         sizer_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch Distance:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
-        self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "1mm")
         sizer_distance.Add(self.text_distance, 0, 0, 0)
 
         sizer_angle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Angle"), wx.HORIZONTAL)
@@ -846,7 +847,7 @@ class HatchSettingsPanel(wx.Panel):
         sizer_fill = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL)
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
-        self.combo_fill_style = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+        self.combo_fill_style = wx.ComboBox(self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN)
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
         self.display_panel = wx.Panel(self, wx.ID_ANY)
@@ -858,9 +859,9 @@ class HatchSettingsPanel(wx.Panel):
 
         self.Bind(wx.EVT_TEXT, self.on_text_distance, self.text_distance)
         self.Bind(wx.EVT_TEXT, self.on_text_angle, self.text_angle)
-        self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_angle, self.slider_angle)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_TEXT, self.on_text_pass_inc, self.text_pass_inc)
-        self.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.on_slider_pass_inc, self.slider_pass_inc)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_pass_inc, self.slider_pass_inc)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
 
@@ -872,31 +873,49 @@ class HatchSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-
+        self.combo_fill_style.SetSelection(self.operation.hatch_type)
+        self.text_pass_inc.SetValue(str(self.operation.hatch_angle_inc))
+        self.text_angle.SetValue(str(self.operation.hatch_angle))
+        self.text_distance.SetValue(str(self.operation.hatch_distance))
+        try:
+            angle = float(Angle.parse(self.operation.hatch_angle_inc).as_degrees)
+            self.slider_pass_inc.SetValue(int(angle))
+        except ValueError:
+            pass
+        try:
+            angle_inc = float(Angle.parse(self.operation.hatch_angle).as_degrees)
+            self.slider_angle.SetValue(int(angle_inc))
+        except ValueError:
+            pass
 
     def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_text_distance' not implemented!")
-        event.Skip()
+        try:
+            self.operation.hatch_distance = Length(self.text_distance.GetValue()).length_mm
+        except ValueError:
+            pass
 
     def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_text_angle' not implemented!")
-        event.Skip()
+        try:
+            self.operation.hatch_angle = Angle.parse(self.text_angle.GetValue()).as_degrees
+        except ValueError:
+            return
 
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_slider_angle' not implemented!")
-        event.Skip()
+        value = self.slider_angle.GetValue()
+        self.text_angle.SetValue(f"{value}deg")
 
     def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_text_pass_inc' not implemented!")
-        event.Skip()
+        try:
+            self.operation.hatch_angle_inc = Angle.parse(self.text_pass_inc.GetValue()).as_degrees
+        except ValueError:
+            return
 
     def on_slider_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_slider_pass_inc' not implemented!")
-        event.Skip()
+        value = self.slider_pass_inc.GetValue()
+        self.text_pass_inc.SetValue(f"{value}deg")
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        print("Event handler 'on_combo_fill' not implemented!")
-        event.Skip()
+        self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
 
 
 # end of class HatchSettingsPanel

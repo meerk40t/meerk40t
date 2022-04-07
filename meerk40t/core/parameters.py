@@ -11,6 +11,7 @@ INT_PARAMETERS = (
     "dot_length",
     "passes",
     "jog_distance",
+    "hatch_type",
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
@@ -270,6 +271,38 @@ class Parameters:
     @raster_swing.setter
     def raster_swing(self, value):
         self.settings["raster_swing"] = value
+
+    @property
+    def hatch_type(self):
+        return self.settings.get("hatch_type", 0)
+
+    @hatch_type.setter
+    def hatch_type(self, value):
+        self.settings["hatch_type"] = value
+
+    @property
+    def hatch_angle(self):
+        return self.settings.get("hatch_angle", "0deg")
+
+    @hatch_angle.setter
+    def hatch_angle(self, value):
+        self.settings["hatch_angle"] = value
+
+    @property
+    def hatch_angle_inc(self):
+        return self.settings.get("hatch_angle_inc", "0deg")
+
+    @hatch_angle_inc.setter
+    def hatch_angle_inc(self, value):
+        self.settings["hatch_angle_inc"] = value
+
+    @property
+    def hatch_distance(self):
+        return self.settings.get("hatch_distance", "1mm")
+
+    @hatch_distance.setter
+    def hatch_distance(self, value):
+        self.settings["hatch_distance"] = value
 
     @property
     def acceleration(self):
