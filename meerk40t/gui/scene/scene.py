@@ -618,10 +618,10 @@ class Scene(Module, Job):
                 continue
             elif response == RESPONSE_CHGPOS:
                 # New position has been given:
-                print(
-                    "New position for %s: %s, %s"
-                    % (event_type, self.new_x_space, self.new_y_space)
-                )
+                #print(
+                #    "New position for %s: %s, %s"
+                #    % (event_type, self.new_x_space, self.new_y_space)
+                #)
                 new_x = window_pos[0]
                 new_y = window_pos[1]
                 if not self.new_x_space is None:
@@ -693,7 +693,7 @@ class Scene(Module, Job):
             else:
                 break
         if need_refresh:
-            print("Refresh...")
+            # print("Refresh...")
             self.screen_refresh_is_requested = True
             self.refresh_scene()
 
