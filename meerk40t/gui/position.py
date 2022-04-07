@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import ViewPort
+from meerk40t.core.units import ViewPort, Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 _ = wx.GetTranslation
@@ -155,7 +155,9 @@ class PositionPanel(wx.Panel):
             self.button_aspect_ratio.Enable(True)
 
         x0, y0, x1, y1 = bounds
-        conversion = ViewPort.conversion(self.position_units)
+        # conversion = ViewPort.conversion(self.position_units)
+        conversion=float(Length("{amount}{units}".format(units=self.position_units, amount=1)))
+        # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
         self.position_x = x0 / conversion
         self.position_y = y0 / conversion
         self.position_w = (x1 - x0) / conversion
