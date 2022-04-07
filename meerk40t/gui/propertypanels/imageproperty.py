@@ -150,7 +150,7 @@ class ImagePropertyPanel(wx.Panel):
 
     def on_combo_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         try:
-            current_step = self.element.values["raster_step"]
+            current_step = float(self.element.values["raster_step"])
         except KeyError:
             current_step = float(self.spin_step_size.GetValue())
         new_step = self.combo_dpi.GetSelection() + 1
