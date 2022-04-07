@@ -42,7 +42,7 @@ class SnapOptionPanel(wx.Panel):
         label_5 = wx.StaticText(self, wx.ID_ANY, _("Overall visibility"))
         sizer_snap_1.Add(label_5, 0, 0, 0)
 
-        self.slider_distance_points = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABEL)
+        self.slider_distance_points = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.slider_distance_points.SetToolTip(_("Set the distance inside which the cursor will snap to the next element point"))
         sizer_snap_1.Add(self.slider_distance_points, 1, wx.EXPAND, 0)
 
@@ -62,7 +62,7 @@ class SnapOptionPanel(wx.Panel):
         label_4 = wx.StaticText(self, wx.ID_ANY, _("Distance"))
         sizer_h2.Add(label_4, 0, 0, 0)
 
-        self.slider_visibility = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABEL)
+        self.slider_visibility = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.slider_visibility.SetToolTip(_("Defines until which distance snap points will be highlighted"))
         sizer_h2.Add(self.slider_visibility, 1, wx.EXPAND, 0)
 
@@ -82,7 +82,7 @@ class SnapOptionPanel(wx.Panel):
         label_3 = wx.StaticText(self, wx.ID_ANY, _("Distance"))
         sizer_h4.Add(label_3, 0, 0, 0)
 
-        self.slider_distance_grid = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABEL)
+        self.slider_distance_grid = wx.Slider(self, wx.ID_ANY, 1, 1, 50, style=wx.SL_HORIZONTAL | wx.SL_LABELS)
         self.slider_distance_grid.SetToolTip(_("Set the distance inside which the cursor will snap to the next grid intersection"))
         sizer_h4.Add(self.slider_distance_grid, 1, wx.EXPAND, 0)
 
