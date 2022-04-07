@@ -1,4 +1,4 @@
-from turtle import position
+
 import wx
 from wx import aui
 
