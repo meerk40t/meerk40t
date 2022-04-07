@@ -1,3 +1,4 @@
+from turtle import position
 import wx
 from wx import aui
 
@@ -143,9 +144,7 @@ class PositionPanel(wx.Panel):
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
             if self.position_units in self.choices:
-                self.combo_box_units.SetSelection(
-                    self.choices.index(self.position_units)
-                )
+                self.combo_box_units.SetSelection(self.choices.index(self.position_units))
             return
         if not self.text_x.IsEnabled():
             self.text_w.Enable(True)
@@ -321,6 +320,6 @@ class PositionPanel(wx.Panel):
         )
         self._update_position()
 
-    def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
-        self.position_units = self.combo_box_units.GetSelection()
+    def on_combo_box_units(self, event):
+        self.position_units = self.choices[self.combo_box_units.GetSelection()]
         self._update_position()
