@@ -600,7 +600,8 @@ class Scene(Module, Job):
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             elif event_type == "leftup":
-                print ("Did not convert to click, event of my own right, %.2f" % delta_time)
+                # print ("Did not convert to click, event of my own right, %.2f" % delta_time)
+                response = current_widget.event(window_pos, space_pos, event_type)
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
 
