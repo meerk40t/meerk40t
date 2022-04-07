@@ -392,10 +392,10 @@ class Node:
             return
         if len(self._points) < 5:
             self._points.extend([None] * (5 - len(self._points)))
-        self._points[0] = [bounds[0], bounds[1], "bounds upper_left"]
-        self._points[1] = [bounds[2], bounds[1], "bounds upper_right"]
-        self._points[2] = [bounds[0], bounds[3], "bounds lower_left"]
-        self._points[3] = [bounds[2], bounds[3], "bounds lower_right"]
+        self._points[0] = [bounds[0], bounds[1], "bounds top_left"]
+        self._points[1] = [bounds[2], bounds[1], "bounds top_right"]
+        self._points[2] = [bounds[0], bounds[3], "bounds bottom_left"]
+        self._points[3] = [bounds[2], bounds[3], "bounds bottom_right"]
         cx = (bounds[0] + bounds[2]) / 2
         cy = (bounds[1] + bounds[3]) / 2
         self._points[4] = [cx, cy, "bounds center_center"]
