@@ -69,6 +69,7 @@ DEFAULT_KEYMAP = {
         "window open Terminal",
     ),
     "delete": (
+        "tree emphasized delete",
         "tree selected delete",
         "element delete",
     ),
@@ -442,3 +443,19 @@ class Alias(Service):
             value = values[0]
             if value:
                 self.aliases[key] = value
+
+def keymap_execute(context, keyvalue, keydown=True):
+    """
+    Execute keybind accelerator if it exists and return true
+
+    Else return false
+    """
+    if keyvalue not in self.keymap:
+        return False
+    action = self.keymap[keyvalue]
+    if keydown or action.startswith("+"):
+        if not keydown and action.startswith("+"):
+            action = "-" + action[1:]
+        for cmd in action.split(";"):
+            self("%s\n" % cmd)
+    return True

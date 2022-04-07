@@ -170,6 +170,98 @@ class TestPlotplanner(unittest.TestCase):
             last_y = cy
             print(f"Moving to {x} {y}")
 
+    def test_plotplanner_constant_xy_end(self):
+        """
+        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+        @return:
+        """
+        for q in range(100):
+            settings = {
+                "power": 1000,
+                "constant_move_x": bool(random.randint(0, 1)),
+                "constant_move_y": bool(random.randint(0, 1)),
+            }
+            plan = PlotPlanner(settings)
+            goal_x = None
+            goal_y = None
+            for i in range(10):
+                goal_x = random.randint(0, 100)
+                goal_y = random.randint(0, 100)
+                plan.push(
+                    LineCut(
+                        Point(random.randint(0, 100), random.randint(0, 100)),
+                        Point(goal_x, goal_y),
+                        settings=settings,
+                    )
+                )
+            break_list = list(plan.queue)
+            last_x = None
+            last_y = None
+            for x, y, on in plan.gen():
+                if on == 4:
+                    last_x = x
+                    last_y = y
+                if on > 1:
+                    continue
+                last_x = x
+                last_y = y
+
+            if last_x != goal_x:
+                print(settings.get("constant_move_x"))
+                print(settings.get("constant_move_y"))
+                for seg in break_list:
+                    print(repr(seg))
+            self.assertEqual(last_x, goal_x)
+            if last_y != goal_y:
+                print(settings.get("constant_move_x"))
+                print(settings.get("constant_move_y"))
+                for seg in break_list:
+                    print(repr(seg))
+            self.assertEqual(last_y, goal_y)
+
+    def test_plotplanner_static_issue(self):
+        settings = {
+            "power": 1000,
+            "constant_move_x": True,
+            "constant_move_y": False,
+        }
+        plan = PlotPlanner(settings)
+        plan.debug = True
+        lines = (
+            ((41, 45), (14, 43)),
+            ((32, 67), (32, 61)),
+        )
+        for line in lines:
+            plan.push(
+                LineCut(
+                    Point(line[0][0], line[0][1]),
+                    Point(line[1][0], line[1][1]),
+                    settings=settings,
+                )
+            )
+        goal_x = lines[-1][-1][0]
+        goal_y = lines[-1][-1][1]
+        break_list = list(plan.queue)
+        last_x = None
+        last_y = None
+        for x, y, on in plan.gen():
+            if on == 4:
+                last_x = x
+                last_y = y
+            if on > 1:
+                continue
+            last_x = x
+            last_y = y
+
+        if last_x != goal_x:
+            for seg in break_list:
+                print(repr(seg))
+        self.assertEqual(last_x, goal_x)
+        if last_y != goal_y:
+            for seg in break_list:
+                print(repr(seg))
+        self.assertEqual(last_y, goal_y)
+
     def test_plotplanner_constant_move_xy_rect(self):
         """
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.

@@ -234,6 +234,7 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(data.matrix))
             return "scene", data
 
+    @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
@@ -245,6 +246,7 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
+    @signal_listener("magnet-attraction")
     def on_magnet(self, origin, strength, *args):
         strength = int(strength)
         if strength < 0:
@@ -252,29 +254,10 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        context = self.context
-        context.listen("driver;mode", self.on_driver_mode)
-        context.listen("refresh_scene", self.on_refresh_scene)
-        context.listen("magnet-attraction", self.on_magnet)
-        context.listen("background", self.on_background_signal)
-        context.listen("bed_size", self.bed_changed)
-        context.listen("emphasized", self.on_emphasized_elements_changed)
-        context.listen("modified", self.on_element_modified)
-        context.listen("altered", self.on_element_modified)
-        context.listen("units", self.space_changed)
-        context.listen("element_added", self.on_elements_added)
-        context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def pane_hide(self, *args):
-        context = self.context
-        context.unlisten("driver;mode", self.on_driver_mode)
-        context.unlisten("refresh_scene", self.on_refresh_scene)
-        context.unlisten("background", self.on_background_signal)
-        context.unlisten("bed_size", self.bed_changed)
-        context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        context.unlisten("modified", self.on_element_modified)
-        context.unlisten("altered", self.on_element_modified)
-        context.unlisten("units", self.space_changed)
+        pass
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
@@ -288,6 +271,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("guide")
         self.request_refresh()
 
+    @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
         if state == 0:
             self.widget_scene.background_brush = wx.Brush("Grey")
@@ -295,21 +279,26 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.background_brush = wx.Brush("Red")
         self.widget_scene.request_refresh_for_animation()
 
+    @signal_listener("background")
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
         self.scene.signal("background", background)
         self.request_refresh()
 
+    @signal_listener("units")
     def space_changed(self, origin, *args):
+        print("units")
         self.scene.signal("grid")
         self.scene.signal("guide")
         self.request_refresh(origin)
 
+    @signal_listener("bed_size")
     def bed_changed(self, origin, *args):
         self.scene.signal("grid")
         # self.scene.signal('guide')
         self.request_refresh(origin)
 
+    @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
         self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
@@ -318,6 +307,8 @@ class MeerK40tScenePanel(wx.Panel):
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
 
+    @signal_listener("altered")
+    @signal_listener("modified")
     def on_element_modified(self, *args):
         self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
