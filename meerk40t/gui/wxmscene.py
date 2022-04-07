@@ -340,6 +340,7 @@ class SceneWindow(MWindow):
         self.SetTitle(_("Scene"))
         self.Layout()
 
+
     def window_open(self):
         self.panel.pane_show()
 
