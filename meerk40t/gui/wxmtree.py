@@ -662,7 +662,7 @@ class ShadowTree:
                 except AttributeError:
                     c = None
                 self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
-            elif node.type in ("op engrave", "op cut"):
+            elif node.type in ("op engrave", "op cut", "op hatch"):
                 try:
                     c = node.color
                     self.set_color(node, c)

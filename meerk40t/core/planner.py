@@ -510,6 +510,7 @@ class Planner(Service):
                     "op image",
                     "op engrave",
                     "op dots",
+                    "op hatch",
                     "cutcode",
                     "cmdop",
                     "consoleop",

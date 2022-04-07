@@ -356,7 +356,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             try:
-                if op.type in ("op cut", "op engrave"):
+                if op.type in ("op cut", "op engrave", "op hatch"):
                     for i, e in enumerate(list(op.children)):
                         if isinstance(e.object, SVGText):
                             e.remove_node()
@@ -484,7 +484,7 @@ class CutPlan:
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
-            if op.type in ("op cut", "op engrave"):
+            if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
                     if not isinstance(e.object, SVGText):
                         continue  # make raster not needed since its a single real raster.
