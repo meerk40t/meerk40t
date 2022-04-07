@@ -52,6 +52,7 @@ class GuideWidget(Widget):
             self.scene.auto_tick = False
             self.scene.tick_distance = value
         self.scene.context.signal("grid")
+        self.scene.request_refresh()
 
     def change_tick_event(self, idx):
         value = self.options[idx]
