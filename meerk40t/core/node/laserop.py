@@ -900,12 +900,6 @@ class HatchOpNode(Node, Parameters):
         if self.power is not None:
             parts.append("%gppi" % self.power)
         parts.append("%s" % self.color.hex)
-        if self.dratio_custom:
-            parts.append("d:%g" % self.dratio)
-        if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
-        if self.dot_length_custom:
-            parts.append("dot: %d" % self.dot_length)
         return " ".join(parts)
 
     def __copy__(self):

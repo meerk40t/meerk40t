@@ -864,6 +864,16 @@ class HatchSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
 
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.operation = node
+
+
     def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         print("Event handler 'on_text_distance' not implemented!")
         event.Skip()
@@ -937,7 +947,7 @@ class ParameterPanel(wx.Panel):
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
-        if self.operation.type == "op hatch":
+        if self.operation.type != "op hatch":
             if self.hatch_panel.Shown:
                 self.hatch_panel.Hide()
         else:
@@ -949,6 +959,7 @@ class ParameterPanel(wx.Panel):
         else:
             if not self.raster_panel.Shown:
                 self.raster_panel.Show()
+        self.Layout()
 
     def set_widgets(self, node):
         self.operation = node
@@ -956,18 +967,21 @@ class ParameterPanel(wx.Panel):
         self.speedppi_panel.set_widgets(node)
         self.passes_panel.set_widgets(node)
         self.raster_panel.set_widgets(node)
+        self.hatch_panel.set_widgets(node)
 
     def pane_hide(self):
         self.layer_panel.pane_hide()
         self.speedppi_panel.pane_hide()
         self.passes_panel.pane_hide()
         self.raster_panel.pane_hide()
+        self.hatch_panel.pane_hide()
 
     def pane_show(self):
         self.layer_panel.pane_show()
         self.speedppi_panel.pane_show()
         self.passes_panel.pane_show()
         self.raster_panel.pane_show()
+        self.hatch_panel.pane_show()
 
 
 # end of class ParameterPanel
