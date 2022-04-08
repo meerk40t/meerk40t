@@ -1,7 +1,8 @@
+
 import wx
 from wx import aui
 
-from meerk40t.core.units import ViewPort
+from meerk40t.core.units import ViewPort, Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 _ = wx.GetTranslation
@@ -20,7 +21,7 @@ def register_panel_position(window, context):
     )
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)
-
+    pane.submenu = _("Editing")
     window.on_pane_add(pane)
     context.register("pane/position", pane)
 
@@ -143,9 +144,7 @@ class PositionPanel(wx.Panel):
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
             if self.position_units in self.choices:
-                self.combo_box_units.SetSelection(
-                    self.choices.index(self.position_units)
-                )
+                self.combo_box_units.SetSelection(self.choices.index(self.position_units))
             return
         if not self.text_x.IsEnabled():
             self.text_w.Enable(True)
@@ -155,7 +154,9 @@ class PositionPanel(wx.Panel):
             self.button_aspect_ratio.Enable(True)
 
         x0, y0, x1, y1 = bounds
-        conversion = ViewPort.conversion(self.position_units)
+        # conversion = ViewPort.conversion(self.position_units)
+        conversion=float(Length("{amount}{units}".format(units=self.position_units, amount=1)))
+        # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
         self.position_x = x0 / conversion
         self.position_y = y0 / conversion
         self.position_w = (x1 - x0) / conversion
@@ -319,6 +320,6 @@ class PositionPanel(wx.Panel):
         )
         self._update_position()
 
-    def on_combo_box_units(self, event):  # wxGlade: MyFrame.<event_handler>
-        self.position_units = self.combo_box_units.GetSelection()
+    def on_combo_box_units(self, event):
+        self.position_units = self.choices[self.combo_box_units.GetSelection()]
         self._update_position()

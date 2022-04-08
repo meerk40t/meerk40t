@@ -30,7 +30,9 @@ class PolygonTool(ToolWidget):
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
             self.point_series.append((space_pos[0], space_pos[1]))
+            self.scene.tool_active = True
         elif event_type == "rightdown":
+            self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
@@ -43,5 +45,11 @@ class PolygonTool(ToolWidget):
             t = Path(polyline)
             if len(t) != 0:
                 self.scene.context.elements.add_elem(t, classify=True)
+            self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
+        elif event_type == "lost":
+            self.scene.tool_active = False
+            self.point_series = []
+            self.mouse_position = None
+

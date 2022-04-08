@@ -18,6 +18,7 @@ class GridWidget(Widget):
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0, 128))
         self.grid_line_pen.SetWidth(1)
+        self.last_ticksize = 0
 
     def hit(self):
         return HITCHAIN_HIT
@@ -155,6 +156,10 @@ class GridWidget(Widget):
         if self.scene.auto_tick:
             w, h = gc.Size
             self.calculate_gridsize(w, h)
+
+        if self.last_ticksize != self.scene.tick_distance:
+            self.last_ticksize = self.scene.tick_distance
+            self.grid = None
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:

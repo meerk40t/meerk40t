@@ -1836,6 +1836,7 @@ class SelectionWidget(Widget):
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
             self.tool_running = False
+            self.scene.tool_active = False
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
@@ -1845,7 +1846,10 @@ class SelectionWidget(Widget):
                 self.scene.cursor(self.cursor)
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
+        elif event_type in ("leftdown", "leftup", "leftclick", "move"):
+            self.scene.tool_active = False
         elif event_type == "rightdown":
+            self.scene.tool_active = False
             elements.set_emphasized_by_position(space_pos)
             # Check if reference is still existing
             self.scene.validate_reference()
@@ -1856,6 +1860,7 @@ class SelectionWidget(Widget):
             )
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
+            self.scene.tool_active = False
             elements.set_emphasized_by_position(space_pos)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME

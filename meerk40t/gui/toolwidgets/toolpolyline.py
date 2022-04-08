@@ -28,10 +28,12 @@ class PolylineTool(ToolWidget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         if event_type == "leftclick":
+            self.scene.tool_active = True
             self.point_series.append((space_pos[0], space_pos[1]))
         elif event_type == "rightdown":
             self.point_series = []
             self.mouse_position = None
+            self.scene.tool_active = False
             self.scene.request_refresh()
         elif event_type == "hover":
             self.mouse_position = space_pos[0], space_pos[1]
@@ -42,5 +44,10 @@ class PolylineTool(ToolWidget):
             t = Path(polyline)
             if len(t) != 0:
                 self.scene.context.elements.add_elem(t, classify=True)
+            self.scene.tool_active = False
+            self.point_series = []
+            self.mouse_position = None
+        elif event_type == "lost":
+            self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None

@@ -23,11 +23,13 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
+    RESPONSE_CHGPOS,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox
+from meerk40t.svgelements import Matrix, Point, Viewbox, Polygon, Circle, Ellipse, Arc
+from meerk40t.core.units import Length
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -70,20 +72,26 @@ class Scene(Module, Job):
         self.distance = None
         self._cursor = None
         self._reference = None  # Reference Object
+        self.attraction_points = []  # Clear all
+        self.compute = True
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush("Grey")
         self.magnet_x = []
         self.magnet_y = []
-        self.magnet_attraction = (
-            2  # 0 off, 1..x increasing strength (quadratic behaviour)
-        )
+        self.magnet_attraction = 2
+        # 0 off, 1..x increasing strength (quadratic behaviour)
+
         self.magnet_attract_x = True  # Shall the X-Axis be affected
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
 
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
+        self.tool_active = False
+        # Variables for an amended position
+        self.new_x_space = None
+        self.new_y_space = None
 
     def clear_magnets(self):
         self.magnet_x = []
@@ -137,7 +145,6 @@ class Scene(Module, Job):
         return delta, y_val
 
     def revised_magnet_bound(self, bounds=None):
-        from meerk40t.core.units import Length
 
         dx = 0
         dy = 0
@@ -170,7 +177,7 @@ class Scene(Module, Job):
                 if delta_x3 < attraction_len:
                     if not x3 is None:
                         dx = x3 - (bounds[0] + bounds[2]) / 2
-                        #print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
+                        # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
             elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
                 if delta_x1 < attraction_len:
                     if not x1 is None:
@@ -198,6 +205,7 @@ class Scene(Module, Job):
                         # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
 
         return dx, dy
+
 
     def has_magnets(self):
         return len(self.magnet_x) + len(self.magnet_y) > 0
@@ -466,8 +474,10 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
+        RESPONSE_CHGPOS: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
+        need_refresh = False
         if self.log_events:
             self.log_events("%s: %s" % (event_type, str(window_pos)))
 
@@ -540,7 +550,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-
+        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -561,6 +571,11 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
+            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
+            # if debug_str != old_debug:
+            #    old_debug = debug_str
+            #    print("Space-Pos changed for widget %d: %s" % (i, debug_str))
+
             if (
                 i == 0
                 and event_type == "hover"
@@ -578,10 +593,14 @@ class Scene(Module, Job):
                         "Converted %s: %s" % ("hover_start", str(window_pos))
                     )
                 previous_top_element = current_widget
-            if event_type == "leftup" and time.time() - self.time <= 0.15:
+            delta_time = time.time() - self.time
+            if event_type == "leftup" and delta_time <= 0.15:
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
+            elif event_type == "leftup":
+                # print ("Did not convert to click, event of my own right, %.2f" % delta_time)
+                response = current_widget.event(window_pos, space_pos, event_type)
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
 
@@ -601,10 +620,86 @@ class Scene(Module, Job):
                 return
             elif response == RESPONSE_CHAIN:
                 continue
+            elif response == RESPONSE_CHGPOS:
+                # New position has been given:
+                #print(
+                #    "New position for %s: %s, %s"
+                #    % (event_type, self.new_x_space, self.new_y_space)
+                #)
+                new_x = window_pos[0]
+                new_y = window_pos[1]
+                if not self.new_x_space is None:
+                    sdx = self.new_x_space - space_pos[0]
+                    odx = sdx
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdx *= current_matrix.value_scale_x()
+                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
+                    new_x = window_pos[0] + sdx
+
+                if not self.new_y_space is None:
+                    sdy = self.new_y_space - space_pos[1]
+                    ody = sdy
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdy *= current_matrix.value_scale_y()
+                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
+                    new_y = window_pos[1] + sdy
+
+                dx = new_x - self.last_position[0]
+                dy = new_y - self.last_position[1]
+                window_pos = (
+                    new_x,
+                    new_y,
+                    self.last_position[0],
+                    self.last_position[1],
+                    dx,
+                    dy,
+                )
+                self.last_position = window_pos
+                self.new_x_space = None
+                self.new_y_space = None
+                need_refresh = True
+                # Hack to update the position of the elements: We run one call through all widgets and ask them to update...
+                """
+                if event_type != "leftdown":
+                    for i2, hit2 in enumerate(self.hit_chain):
+                        if hit2 is None or i == i2:
+                            continue  # Element was dropped, or identical to the current_widget
+                        current_widget2, current_matrix2 = hit
+                        space_pos2 = window_pos
+                        if (
+                            current_matrix2 is not None
+                            and not current_matrix2.is_identity()
+                        ):
+                            space_cur = current_matrix.point_in_inverse_space(
+                                window_pos[0:2]
+                            )
+                            space_last = current_matrix.point_in_inverse_space(
+                                window_pos[2:4]
+                            )
+                            sdx = space_cur[0] - space_last[0]
+                            sdy = space_cur[1] - space_last[1]
+                            space_pos2 = (
+                                space_cur[0],
+                                space_cur[1],
+                                space_last[0],
+                                space_last[1],
+                                sdx,
+                                sdy,
+                            )
+                        print("Tell widget #%d to move:" % i2)
+                        response2 = current_widget2.event(
+                            window_pos, space_pos2, "move"
+                        )
+                """
+                continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
             else:
                 break
+        if need_refresh:
+            # print("Refresh...")
+            self.screen_refresh_is_requested = True
+            self.refresh_scene()
 
     def cursor(self, cursor, always=False):
         """

@@ -130,7 +130,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 150
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = _("Editing")
 
     window.on_pane_add(pane)
     context.register("pane/objsizer", pane)
