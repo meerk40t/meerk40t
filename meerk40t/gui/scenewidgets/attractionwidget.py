@@ -60,7 +60,7 @@ class AttractionWidget(Widget):
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
-            if event_type in ("leftdown", "move", "hover") and self.scene.tool_active:
+            if event_type in ("leftdown", "move", "hover", "hover_start") and self.scene.tool_active:
                 self.showme = True
             else:
                 self.showme = False
@@ -224,6 +224,7 @@ class AttractionWidget(Widget):
             pixel1 = self.scene.context.show_attract_len
             pixel2 = self.scene.context.action_attract_len
             pixel3 = self.scene.context.grid_attract_len
+            # print ("Current values are: show=%d, points=%d, grid=%d" % ( pixel1, pixel2, pixel3))
             self.show_attract_len = pixel1 / matrix.value_scale_x()
             self.action_attract_len = pixel2 / matrix.value_scale_x()
             self.grid_attract_len = pixel3 / matrix.value_scale_x()
