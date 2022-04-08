@@ -23,7 +23,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
-    RESPONSE_CHGPOS,
+    RESPONSE_CHANGE_POSITION,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
@@ -474,7 +474,7 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
-        RESPONSE_CHGPOS: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
+        RESPONSE_CHANGE_POSITION: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
         need_refresh = False
@@ -620,7 +620,7 @@ class Scene(Module, Job):
                 return
             elif response == RESPONSE_CHAIN:
                 continue
-            elif response == RESPONSE_CHGPOS:
+            elif response == RESPONSE_CHANGE_POSITION:
                 # New position has been given:
                 #print(
                 #    "New position for %s: %s, %s"

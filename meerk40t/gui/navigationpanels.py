@@ -149,7 +149,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 230
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = _("Editing")
 
     window.on_pane_add(pane)
     context.register("pane/transform", pane)
@@ -908,8 +908,8 @@ class SizePanel(wx.Panel):
         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
-        self.text_width = wx.TextCtrl(self, wx.ID_ANY, "0")
-        self.text_height = wx.TextCtrl(self, wx.ID_ANY, "0")
+        self.text_width = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0")
+        self.text_height = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0")
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
 
         self.__set_properties()
@@ -920,6 +920,8 @@ class SizePanel(wx.Panel):
         )
         self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_w)
         self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_h)
+        self.text_width.Bind(wx.EVT_TEXT_ENTER, self.on_enter_w)
+        self.text_height.Bind(wx.EVT_TEXT_ENTER, self.on_enter_h)
         # self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_lock_toggle, self.btn_lock_ratio)
         # end wxGlade
 
@@ -1056,6 +1058,36 @@ class SizePanel(wx.Panel):
                 height=new_height,
             )
         )
+
+    def on_enter_w(self, event):  # wxGlade: SizePanel.<event_handler>
+        if self.btn_lock_ratio.GetValue():
+            p = self.context
+            units = p.units_name
+            new_width = Length(
+                self.text_width.Value,
+                relative_length=self.object_width,
+                preferred_units=units,
+                digits=3,
+            )
+            self.text_height.SetValue(
+                (new_width * (1.0 / self.object_ratio)).preferred_length
+            )
+        self.on_button_navigate_resize(event)
+        event.Skip()
+
+    def on_enter_h(self, event):  # wxGlade: SizePanel.<event_handler>
+        if self.btn_lock_ratio.GetValue():
+            p = self.context
+            units = p.units_name
+            new_height = Length(
+                self.text_height.Value,
+                relative_length=self.object_height,
+                preferred_units=units,
+                digits=3,
+            )
+            self.text_width.SetValue( (new_height * self.object_ratio).preferred_length )
+        self.on_button_navigate_resize(event)
+        event.Skip()
 
     def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
         if self.btn_lock_ratio.GetValue():
