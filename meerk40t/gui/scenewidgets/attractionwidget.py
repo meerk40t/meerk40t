@@ -125,7 +125,7 @@ class AttractionWidget(Widget):
     def draw_caret(self, gc, x, y, closeup):
         if closeup==2: # closest
             pen = self.closeup_pen
-            sym_size = self.symbol_size
+            sym_size = 1.5 * self.symbol_size
         elif closeup==1: # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
@@ -169,7 +169,7 @@ class AttractionWidget(Widget):
     def draw_gridpoint(self, gc, x, y, closeup):
         if closeup==2: # closest
             pen = self.closeup_pen
-            sym_size = self.symbol_size
+            sym_size = 1.5 * self.symbol_size
         elif closeup==1: # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
@@ -179,27 +179,14 @@ class AttractionWidget(Widget):
         gc.SetPen(pen)
         brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
-        path = gc.CreatePath()
         dsize = 1 / 8 * sym_size
-        path.MoveToPoint(x - sym_size / 2, y + dsize)
-        path.AddLineToPoint(x - dsize, y + dsize)
-        path.AddLineToPoint(x - dsize, y - sym_size / 2)
-        path.AddLineToPoint(x + dsize, y - sym_size / 2)
-        path.AddLineToPoint(x + dsize, y + dsize)
-        path.AddLineToPoint(x + sym_size / 2, y + dsize)
-        path.AddLineToPoint(x + sym_size / 2, y - dsize)
-        path.AddLineToPoint(x + dsize, y + dsize)
-        path.AddLineToPoint(x + dsize, y + sym_size / 2)
-        path.AddLineToPoint(x - dsize, y + sym_size / 2)
-        path.AddLineToPoint(x - dsize, y + dsize)
-        path.AddLineToPoint(x - sym_size / 2, y + dsize)
-        path.CloseSubpath()
-        gc.DrawPath(path)
+        gc.DrawRectangle(x - dsize, y - sym_size/2, 2 * dsize, sym_size)
+        gc.DrawRectangle(x - sym_size/2, y - dsize, sym_size, 2 * dsize,)
 
     def draw_midpoint(self, gc, x, y, closeup):
         if closeup==2: # closest
             pen = self.closeup_pen
-            sym_size = self.symbol_size
+            sym_size = 1.5 * self.symbol_size
         elif closeup==1: # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
@@ -227,7 +214,7 @@ class AttractionWidget(Widget):
             matrix = self.parent.matrix
             try:
                 # Intentionally big to clearly see shape
-                self.symbol_size = 12 / matrix.value_scale_x()
+                self.symbol_size = 10 / matrix.value_scale_x()
             except ZeroDivisionError:
                 matrix.reset()
                 return
@@ -373,11 +360,6 @@ class AttractionWidget(Widget):
                         abs(pts[0] - self.my_x) <= self.show_attract_len
                         and abs(pts[1] - self.my_y) <= self.show_attract_len
                     ):
-                        closeup = (
-                            abs(pts[0] - self.my_x) <= self.action_attract_len
-                            and abs(pts[1] - self.my_y) <= self.action_attract_len
-                        )
-
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
         if self.snap_grid and len(self.grid_points) > 0 and not self.my_x is None:
@@ -386,11 +368,6 @@ class AttractionWidget(Widget):
                     abs(pts[0] - self.my_x) <= self.show_attract_len
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
                 ):
-                    closeup = (
-                        abs(pts[0] - self.my_x) <= self.action_attract_len
-                        and abs(pts[1] - self.my_y) <= self.action_attract_len
-                    )
-
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
         end_time = time()

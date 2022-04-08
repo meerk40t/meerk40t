@@ -6095,7 +6095,7 @@ class Elemental(Service):
                         return False
                     else:
                         if results:
-                            self.signal("tree_changed\n")
+                            self.signal("tree_changed")
                             return True
         return False
 

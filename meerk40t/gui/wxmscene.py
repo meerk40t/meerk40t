@@ -313,6 +313,8 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
 
+    @signal_listener("element_added")
+    @signal_listener("tree_changed")
     def on_elements_added(self, *args):
         self.scene.signal("element_added")
 
