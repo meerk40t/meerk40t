@@ -12,6 +12,7 @@ class GraphNode(Point):
         Point.__init__(self, x, y)
         self.connections = []
         self.visited = 0
+        self.value = None
 
 
 class Segment:
@@ -414,9 +415,13 @@ class GraphWalker:
         :return:
         """
         for i in range(0, len(self.walk), 2):
-            if self.walk[i - 1] is None:
+            segment = self.walk[i - 1]
+            point = self.walk[i]
+            if segment is None:
                 points.append(None)
-            points.append(self.walk[i])
+            else:
+                point.value = segment.value
+            points.append(point)
 
     def remove_loop(self, from_pos, to_pos):
         """

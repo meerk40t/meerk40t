@@ -18,12 +18,10 @@ from copy import copy
 from math import ceil
 from os import times
 from time import time
-from typing import Any, List, Optional
-
-from PIL import Image
+from typing import Optional
 
 from ..image.actualize import actualize
-from ..svgelements import Group, Matrix, Path, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 
@@ -356,7 +354,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             try:
-                if op.type in ("op cut", "op engrave"):
+                if op.type in ("op cut", "op engrave", "op hatch"):
                     for i, e in enumerate(list(op.children)):
                         if isinstance(e.object, SVGText):
                             e.remove_node()
@@ -459,6 +457,8 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type.startswith("op"):
+                if hasattr(op, "scale_native"):
+                    op.scale_native(matrix)
                 for node in op.children:
                     e = node.object
                     try:
@@ -484,7 +484,7 @@ class CutPlan:
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
-            if op.type in ("op cut", "op engrave"):
+            if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
                     if not isinstance(e.object, SVGText):
                         continue  # make raster not needed since its a single real raster.

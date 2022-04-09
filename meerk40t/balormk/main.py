@@ -328,6 +328,7 @@ class BalorDevice(Service, ViewPort):
             self.lens_size,
             origin_x=0.5,
             origin_y=0.5,
+            flip_y=True
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)

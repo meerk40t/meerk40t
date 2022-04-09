@@ -1,8 +1,9 @@
 import wx
 
 from meerk40t.kernel import signal_listener
+from ...core.units import Length
 
-from ...svgelements import Color
+from ...svgelements import Color, Angle
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
@@ -99,15 +100,15 @@ class LayerSettingPanel(wx.Panel):
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, 0, 0)
 
-        self.combo_type = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["Engrave", "Cut", "Raster", "Image"],
-            style=wx.CB_DROPDOWN,
-        )
-        self.combo_type.SetToolTip(OPERATION_TYPE_TOOLTIP)
-        self.combo_type.SetSelection(0)
-        layer_sizer.Add(self.combo_type, 1, 0, 0)
+        # self.combo_type = wx.ComboBox(
+        #     self,
+        #     wx.ID_ANY,
+        #     choices=["Engrave", "Cut", "Raster", "Image", "Hatch", "Dots"],
+        #     style=wx.CB_DROPDOWN,
+        # )
+        # self.combo_type.SetToolTip(OPERATION_TYPE_TOOLTIP)
+        # self.combo_type.SetSelection(0)
+        # layer_sizer.Add(self.combo_type, 1, 0, 0)
 
         self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, "Enable")
         self.checkbox_output.SetToolTip(
@@ -126,7 +127,7 @@ class LayerSettingPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
+        # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_default, self.checkbox_default)
         # end wxGlade
@@ -141,19 +142,22 @@ class LayerSettingPanel(wx.Panel):
         self.operation = node
         if self.operation is not None:
             op = self.operation.type
-            if op == "op engrave":
-                self.combo_type.SetSelection(0)
-            elif op == "op cut":
-                self.combo_type.SetSelection(1)
-            elif op == "op raster":
-                self.combo_type.SetSelection(2)
-            elif op == "op image":
-                self.combo_type.SetSelection(3)
-            elif op == "op dots":
-                for m in self.GetParent().Children:
-                    if isinstance(m, wx.Window):
-                        m.Hide()
-                return
+            # if op == "op engrave":
+            #     self.combo_type.SetSelection(0)
+            # elif op == "op cut":
+            #     self.combo_type.SetSelection(1)
+            # elif op == "op raster":
+            #     self.combo_type.SetSelection(2)
+            # elif op == "op image":
+            #     self.combo_type.SetSelection(3)
+            # elif op == "op hatch":
+            #     self.combo_type.SetSelection(4)
+            # elif op == "op dots":
+            #     self.combo_type.SetSelection(5)
+            #     for m in self.GetParent().Children:
+            #         if isinstance(m, wx.Window):
+            #             m.Hide()
+            #     return
         self.button_layer_color.SetBackgroundColour(
             wx.Colour(swizzlecolor(self.operation.color))
         )
@@ -179,22 +183,24 @@ class LayerSettingPanel(wx.Panel):
             )
         self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_combo_operation(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
-
-        select = self.combo_type.GetSelection()
-        if select == 0:
-            self.context.elements.replace_node(self.operation, type="op engrave")
-        elif select == 1:
-            self.context.elements.replace_node(self.operation, type="op cut")
-        elif select == 2:
-            self.context.elements.replace_node(self.operation, type="op raster")
-        elif select == 3:
-            self.context.elements.replace_node(self.operation, type="op image")
-        elif select == 4:
-            self.context.elements.replace_node(self.operation, type="op dots")
-        self.context.elements.signal("element_property_reload", self.operation)
+    # def on_combo_operation(
+    #     self, event=None
+    # ):  # wxGlade: OperationProperty.<event_handler>
+    #
+    #     select = self.combo_type.GetSelection()
+    #     if select == 0:
+    #         self.operation.replace_node(self.operation.settings, type="op engrave")
+    #     elif select == 1:
+    #         self.operation.replace_node(self.operation.settings, type="op cut")
+    #     elif select == 2:
+    #         self.operation.replace_node(self.operation.settings, type="op raster")
+    #     elif select == 3:
+    #         self.operation.replace_node(self.operation.settings, type="op image")
+    #     elif select == 4:
+    #         self.operation.replace_node(self.operation.settings, type="op hatch")
+    #     elif select == 5:
+    #         self.operation.replace_node(self.operation.settings, type="op dots")
+    #     self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         self.operation.output = bool(self.checkbox_output.GetValue())
@@ -804,6 +810,116 @@ class RasterSettingsPanel(wx.Panel):
 
 # end of class RasterSettingsPanel
 
+class HatchSettingsPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: RasterSettingsPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.operation = node
+
+        raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch:"), wx.VERTICAL)
+
+        sizer_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch Distance:"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
+
+        self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "1mm")
+        sizer_distance.Add(self.text_distance, 0, 0, 0)
+
+        sizer_angle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Angle"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
+
+        self.text_angle = wx.TextCtrl(self, wx.ID_ANY, "0deg")
+        sizer_angle.Add(self.text_angle, 1, 0, 0)
+
+        self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
+        sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
+
+        sizer_pass_inc = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Pass Angle Increment"), wx.HORIZONTAL)
+        raster_sizer.Add(sizer_pass_inc, 1, wx.EXPAND, 0)
+
+        self.text_pass_inc = wx.TextCtrl(self, wx.ID_ANY, "0deg")
+        sizer_pass_inc.Add(self.text_pass_inc, 1, 0, 0)
+
+        self.slider_pass_inc = wx.Slider(self, wx.ID_ANY, 0, -180, 180)
+        sizer_pass_inc.Add(self.slider_pass_inc, 3, wx.EXPAND, 0)
+
+        sizer_fill = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL)
+        raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
+
+        self.combo_fill_style = wx.ComboBox(self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN)
+        sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
+
+        self.display_panel = wx.Panel(self, wx.ID_ANY)
+        sizer_fill.Add(self.display_panel, 6, wx.EXPAND, 0)
+
+        self.SetSizer(raster_sizer)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_distance, self.text_distance)
+        self.Bind(wx.EVT_TEXT, self.on_text_angle, self.text_angle)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
+        self.Bind(wx.EVT_TEXT, self.on_text_pass_inc, self.text_pass_inc)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_pass_inc, self.slider_pass_inc)
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.operation = node
+        self.combo_fill_style.SetSelection(self.operation.hatch_type)
+        self.text_pass_inc.SetValue(str(self.operation.hatch_angle_inc))
+        self.text_angle.SetValue(str(self.operation.hatch_angle))
+        self.text_distance.SetValue(str(self.operation.hatch_distance))
+        try:
+            angle = float(Angle.parse(self.operation.hatch_angle_inc).as_degrees)
+            self.slider_pass_inc.SetValue(int(angle))
+        except ValueError:
+            pass
+        try:
+            angle_inc = float(Angle.parse(self.operation.hatch_angle).as_degrees)
+            self.slider_angle.SetValue(int(angle_inc))
+        except ValueError:
+            pass
+
+    def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        try:
+            self.operation.hatch_distance = Length(self.text_distance.GetValue()).length_mm
+        except ValueError:
+            pass
+
+    def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        try:
+            self.operation.hatch_angle = Angle.parse(self.text_angle.GetValue()).as_degrees
+        except ValueError:
+            return
+
+    def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        value = self.slider_angle.GetValue()
+        self.text_angle.SetValue(f"{value}deg")
+
+    def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        try:
+            self.operation.hatch_angle_inc = Angle.parse(self.text_pass_inc.GetValue()).as_degrees
+        except ValueError:
+            return
+
+    def on_slider_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        value = self.slider_pass_inc.GetValue()
+        self.text_pass_inc.SetValue(f"{value}deg")
+
+    def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
+
+
+# end of class HatchSettingsPanel
+
 
 class ParameterPanel(wx.Panel):
     name = _("Properties")
@@ -834,6 +950,11 @@ class ParameterPanel(wx.Panel):
         )
         param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
 
+        self.hatch_panel = HatchSettingsPanel(
+            self, wx.ID_ANY, context=context, node=node
+        )
+        param_sizer.Add(self.hatch_panel, 0, wx.EXPAND, 0)
+
         self.SetSizer(param_sizer)
 
         self.Layout()
@@ -845,12 +966,19 @@ class ParameterPanel(wx.Panel):
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
+        if self.operation.type != "op hatch":
+            if self.hatch_panel.Shown:
+                self.hatch_panel.Hide()
+        else:
+            if not self.hatch_panel.Shown:
+                self.hatch_panel.Show()
         if self.operation.type not in ("op raster", "op image"):
             if self.raster_panel.Shown:
                 self.raster_panel.Hide()
         else:
             if not self.raster_panel.Shown:
                 self.raster_panel.Show()
+        self.Layout()
 
     def set_widgets(self, node):
         self.operation = node
@@ -858,18 +986,21 @@ class ParameterPanel(wx.Panel):
         self.speedppi_panel.set_widgets(node)
         self.passes_panel.set_widgets(node)
         self.raster_panel.set_widgets(node)
+        self.hatch_panel.set_widgets(node)
 
     def pane_hide(self):
         self.layer_panel.pane_hide()
         self.speedppi_panel.pane_hide()
         self.passes_panel.pane_hide()
         self.raster_panel.pane_hide()
+        self.hatch_panel.pane_hide()
 
     def pane_show(self):
         self.layer_panel.pane_show()
         self.speedppi_panel.pane_show()
         self.passes_panel.pane_show()
         self.raster_panel.pane_show()
+        self.hatch_panel.pane_show()
 
 
 # end of class ParameterPanel

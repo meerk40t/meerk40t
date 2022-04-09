@@ -314,6 +314,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
+        kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)

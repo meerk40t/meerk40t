@@ -9,7 +9,7 @@ from meerk40t.core.node.laserop import (
     DotsOpNode,
     EngraveOpNode,
     ImageOpNode,
-    RasterOpNode,
+    RasterOpNode, HatchOpNode,
 )
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.refnode import RefElemNode
@@ -37,6 +37,7 @@ class RootNode(Node):
             "op raster": RasterOpNode,
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
+            "op hatch": HatchOpNode,
             "cmdop": CommandOperation,
             "consoleop": ConsoleOperation,
             "lasercode": LaserCodeNode,

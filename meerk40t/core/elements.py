@@ -36,7 +36,7 @@ from .node.laserop import (
     DotsOpNode,
     EngraveOpNode,
     ImageOpNode,
-    RasterOpNode,
+    RasterOpNode, HatchOpNode,
 )
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
@@ -3407,6 +3407,7 @@ class Elemental(Service):
             "op image",
             "op engrave",
             "op dots",
+            "op hatch",
             "ref elem",
             "cmdop",
             "consoleop",
@@ -3423,6 +3424,7 @@ class Elemental(Service):
             "op image",
             "op engrave",
             "op dots",
+            "op hatch",
             "cmdop",
             "consoleop",
         )
@@ -3432,6 +3434,7 @@ class Elemental(Service):
             "op image",
             "op engrave",
             "op dots",
+            "op hatch",
             "cmdop",
             "consoleop",
         )
@@ -3548,7 +3551,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(
-            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave"), help=""
+            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave", "op hatch"), help=""
         )
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
@@ -3562,7 +3565,7 @@ class Elemental(Service):
         @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
         @self.tree_operation(
             _("%sppi") % "{power}",
-            node_type=("op cut", "op raster", "op image", "op engrave"),
+            node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
             help="",
         )
         def set_power(node, power=1000, **kwargs):
@@ -3711,6 +3714,7 @@ class Elemental(Service):
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "cmdop",
                 "consoleop",
                 "lasercode",
@@ -3800,6 +3804,7 @@ class Elemental(Service):
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "group",
                 "branch elems",
                 "file",
@@ -3907,6 +3912,11 @@ class Elemental(Service):
         def append_operation_cut(node, pos=None, **kwargs):
             self.add_op(CutOpNode(), pos=pos)
 
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Hatch"), node_type="branch ops", help="")
+        def append_operation_hatch(node, pos=None, **kwargs):
+            self.add_op(HatchOpNode(), pos=pos)
+
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
@@ -4005,7 +4015,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
         @self.tree_operation(
-            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut"), help=""
+            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut", "op hatch"), help=""
         )
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
@@ -4015,7 +4025,7 @@ class Elemental(Service):
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
             _("Add %s passes") % "{copies}",
-            node_type=("op image", "op engrave", "op cut"),
+            node_type=("op image", "op engrave", "op cut", "op hatch"),
             help="",
         )
         def add_n_passes(node, copies=1, **kwargs):
@@ -4518,6 +4528,7 @@ class Elemental(Service):
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "branch elems",
                 "branch ops",
                 "branch reg" "group",
@@ -4538,6 +4549,7 @@ class Elemental(Service):
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "branch elems",
                 "branch ops",
                 "branch reg" "group",
@@ -5310,7 +5322,7 @@ class Elemental(Service):
                         op.add(element, type="ref elem")
                         was_classified = True
                 elif (
-                    op.type in ("op engrave", "op cut")
+                    op.type in ("op engrave", "op cut", "op hatch")
                     and element.stroke is not None
                     and op.color == abs(element.stroke)
                     and not op.default

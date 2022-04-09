@@ -37,7 +37,7 @@ image_simplify_re = re.compile(
     re.IGNORECASE,
 )
 
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut"]
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
 
 from meerk40t.svgelements import (
     SVG_STRUCT_ATTRIB,
@@ -193,6 +193,7 @@ class Node:
             "op image",
             "op engrave",
             "op dots",
+            "op hatch",
             "cmdop",
             "consoleop",
         ):
@@ -202,6 +203,7 @@ class Node:
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "cmdop",
                 "consoleop",
             ):
@@ -219,6 +221,7 @@ class Node:
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
                 "cmdop",
                 "consoleop",
             ):
@@ -256,6 +259,7 @@ class Node:
                 "op image",
                 "op engrave",
                 "op dots",
+                "op hatch",
             ):
                 some_nodes = False
                 for e in drag_node.flat("elem"):
