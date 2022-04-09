@@ -198,18 +198,18 @@ class RibbonPanel(wx.Panel):
     def set_align_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.align_button_bar)
 
+    def enable_all_buttons_on_bar(self, button_bar, active):
+        for i in range(button_bar.GetButtonCount()):
+            btn = button_bar.GetItem(i)
+            b_id = button_bar.GetItemId(btn)
+            button_bar.EnableButton(b_id, active)
+
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
         active = self.context.elements.has_emphasis()
-        for i in range(self.geometry_button_bar.GetButtonCount()):
-            btn = self.geometry_button_bar.GetItem(i)
-            id = self.geometry_button_bar.GetItemId(btn)
-            self.geometry_button_bar.EnableButton(id, active)
-        for i in range(self.align_button_bar.GetButtonCount()):
-            btn = self.align_button_bar.GetItem(i)
-            id = self.align_button_bar.GetItemId(btn)
-            self.align_button_bar.EnableButton(id, active)
-
+        self.enable_all_buttons_on_bar(self.geometry_button_bar, active)
+        self.enable_all_buttons_on_bar(self.align_button_bar, active)
+        self.enable_all_buttons_on_bar(self.modify_button_bar, active)
 
     @property
     def is_dark(self):
@@ -280,16 +280,6 @@ class RibbonPanel(wx.Panel):
             icons8_opened_folder_50.GetBitmap(),
         )
 
-        self.modify_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Modification"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        button_bar = RB.RibbonButtonBar(self.modify_panel)
-        self.modify_button_bar = button_bar
-
         self.tool_panel = RB.RibbonPanel(
             tool,
             wx.ID_ANY,
@@ -299,6 +289,16 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
+
+        self.modify_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Modification"),
+            icons8_opened_folder_50.GetBitmap(),
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.modify_panel)
+        self.modify_button_bar = button_bar
 
         self.geometry_panel = RB.RibbonPanel(
             tool,
@@ -315,7 +315,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Alignment"),
             icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.align_panel)
         self.align_button_bar = button_bar

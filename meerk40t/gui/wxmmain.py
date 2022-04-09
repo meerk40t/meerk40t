@@ -408,24 +408,6 @@ class MeerK40t(MWindow):
                 "priority": -100,
             },
         )
-        kernel.register(
-            "button/modify/Flip",
-            {
-                "label": _("Flip Vertical"),
-                "icon": icons8_flip_vertical,
-                "tip": _("Flip the selected element vertically"),
-                "action": lambda v: kernel.elements("scale 1 -1\n"),
-            },
-        )
-        kernel.register(
-            "button/modify/Mirror",
-            {
-                "label": _("Mirror Horizontal"),
-                "icon": icons8_mirror_horizontal,
-                "tip": _("Mirror the selected element horizontally"),
-                "action": lambda v: kernel.elements("scale -1 1\n"),
-            },
-        )
 
         # Default Size for tool buttons - none: use icon size
         buttonsize = None
@@ -551,6 +533,28 @@ class MeerK40t(MWindow):
         )
         # Default Size for smaller buttons
         buttonsize = 25
+
+        kernel.register(
+            "button/modify/Flip",
+            {
+                "label": _("Flip Vertical"),
+                "icon": icons8_flip_vertical,
+                "tip": _("Flip the selected element vertically"),
+                "action": lambda v: kernel.elements("scale 1 -1\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/modify/Mirror",
+            {
+                "label": _("Mirror Horizontal"),
+                "icon": icons8_mirror_horizontal,
+                "tip": _("Mirror the selected element horizontally"),
+                "action": lambda v: kernel.elements("scale -1 1\n"),
+                "size": buttonsize
+            },
+        )
+
         kernel.register(
             "button/geometry/Union",
             {
