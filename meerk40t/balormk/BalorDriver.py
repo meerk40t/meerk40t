@@ -166,56 +166,6 @@ class BalorDriver(Parameters):
     #     job.light_off()
     #     return job
 
-    def cutcode_to_mark_job(self, queue):
-        """
-        Convert cutcode to a mark job.
-
-        @param queue:
-        @return:
-        """
-        cal = None
-        if self.service.calibration_file is not None:
-            try:
-                cal = Cal(self.service.calibration_file)
-            except TypeError:
-                pass
-        job = CommandList(cal=cal)
-        job.set_mark_settings(
-            travel_speed=self.service.travel_speed,
-            power=self.service.laser_power,
-            frequency=self.service.q_switch_frequency,
-            cut_speed=self.service.cut_speed,
-            laser_on_delay=100,
-            laser_off_delay=100,
-            polygon_delay=100,
-        )
-        job.set_write_port(self.connection.get_port())
-        job.goto(0x8000, 0x8000)
-        job.laser_control(True)
-        last_on = None
-        for plot in queue:
-            start = plot.start
-            job.goto(start[0], start[1])
-
-            for e in self.group(plot.generator()):
-                on = 1
-                if len(e) == 2:
-                    x, y = e
-                else:
-                    x, y, on = e
-                if on == 0:
-                    try:
-                        job.goto(x, y)
-                    except ValueError:
-                        print("Not including this stroke path:", file=sys.stderr)
-                else:
-                    if last_on is None or on != last_on:
-                        last_on = on
-                        job.set_power(self.service.laser_power * on)
-                    job.mark(x, y)
-        job.laser_control(False)
-        return job
-
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -297,7 +247,48 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        job = self.cutcode_to_mark_job(self.queue)
+        queue = self.queue
+        cal = None
+        if self.service.calibration_file is not None:
+            try:
+                cal = Cal(self.service.calibration_file)
+            except TypeError:
+                pass
+        job = CommandList(cal=cal)
+        job.set_mark_settings(
+            travel_speed=self.service.travel_speed,
+            power=self.service.laser_power,
+            frequency=self.service.q_switch_frequency,
+            cut_speed=self.service.cut_speed,
+            laser_on_delay=100,
+            laser_off_delay=100,
+            polygon_delay=100,
+        )
+        job.set_write_port(self.connection.get_port())
+        job.goto(0x8000, 0x8000)
+        job.laser_control(True)
+        last_on = None
+        for plot in queue:
+            start = plot.start
+            job.goto(start[0], start[1])
+
+            for e in self.group(plot.generator()):
+                on = 1
+                if len(e) == 2:
+                    x, y = e
+                else:
+                    x, y, on = e
+                if on == 0:
+                    try:
+                        job.goto(x, y)
+                    except ValueError:
+                        print("Not including this stroke path:", file=sys.stderr)
+                else:
+                    if last_on is None or on != last_on:
+                        last_on = on
+                        job.set_power(self.service.laser_power * on)
+                    job.mark(x, y)
+        job.laser_control(False)
         self.queue = []
         self.connection.execute(job, 1)
         if self.redlight_preferred:
