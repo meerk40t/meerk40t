@@ -38,6 +38,14 @@ from .icons import (
     icons8_type_50,
     icons8_union_50,
     icons8_vector_50,
+    icons8_align_bottom_50,
+    icons8_align_left_50,
+    icons8_align_right_50,
+    icons8_align_top_50,
+    icons_centerize,
+    icons_evenspace_horiz,
+    icons_evenspace_vert,
+
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -419,6 +427,9 @@ class MeerK40t(MWindow):
             },
         )
 
+        # Default Size for tool buttons - none: use icon size
+        buttonsize = None
+
         kernel.register(
             "button/tools/Scene",
             {
@@ -427,6 +438,7 @@ class MeerK40t(MWindow):
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -438,6 +450,7 @@ class MeerK40t(MWindow):
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -449,6 +462,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -460,6 +474,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -471,6 +486,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -482,6 +498,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -493,6 +510,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -504,6 +522,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -515,6 +534,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
 
@@ -526,8 +546,11 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "toggle": "tool",
+                "size": buttonsize
             },
         )
+        # Default Size for smaller buttons
+        buttonsize = 25
         kernel.register(
             "button/geometry/Union",
             {
@@ -535,6 +558,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_union_50,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
+                "size": buttonsize
             },
         )
         kernel.register(
@@ -544,6 +568,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_union_50,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
+                "size": buttonsize
             },
         )
         kernel.register(
@@ -553,6 +578,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_union_50,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
+                "size": buttonsize
             },
         )
         kernel.register(
@@ -562,8 +588,80 @@ class MeerK40t(MWindow):
                 "icon": icons8_union_50,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
+                "size": buttonsize
             },
         )
+        kernel.register(
+            "button/align/AlignLeft",
+            {
+                "label": _("Align Left"),
+                "icon": icons8_align_left_50,
+                "tip": _("Align selected elements at the leftmost position"),
+                "action": lambda v: kernel.elements("align left\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignRight",
+            {
+                "label": _("Align Right"),
+                "icon": icons8_align_right_50,
+                "tip": _("Align selected elements at the rightmost position"),
+                "action": lambda v: kernel.elements("align right\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignTop",
+            {
+                "label": _("Align Top"),
+                "icon": icons8_align_top_50,
+                "tip": _("Align selected elements at the topmost position"),
+                "action": lambda v: kernel.elements("align top\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignBottom",
+            {
+                "label": _("Align Bottom"),
+                "icon": icons8_align_bottom_50,
+                "tip": _("Align selected elements at the lowest position"),
+                "action": lambda v: kernel.elements("align bottom\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignCenter",
+            {
+                "label": _("Align Center"),
+                "icon": icons_centerize,
+                "tip": _("Align selected elements at their center"),
+                "action": lambda v: kernel.elements("align center\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignHorizontally",
+            {
+                "label": _("Distr. Hor."),
+                "icon": icons_evenspace_horiz,
+                "tip": _("Distribute Space Horizontally"),
+                "action": lambda v: kernel.elements("align spaceh\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/align/AlignVertically",
+            {
+                "label": _("Distr. Vert."),
+                "icon": icons_evenspace_vert,
+                "tip": _("Distribute Space Vertically"),
+                "action": lambda v: kernel.elements("align spacev\n"),
+                "size": buttonsize
+            },
+        )
+
 
     def window_menu(self):
         return False
