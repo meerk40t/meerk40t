@@ -200,7 +200,7 @@ class ViewPort:
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
         if self.swap_xy:
-            ops.append("scale(-1.0, -1.0) rotate(180deg)")
+            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def length(
