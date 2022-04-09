@@ -315,8 +315,7 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_x, unit_y = self.service.physical_to_device_position(x, y)
-        self.native_x, self.native_y = self.service.scene_to_device_position(unit_x, unit_y)
+        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -361,7 +360,7 @@ class BalorDriver(Parameters):
         :param y:
         :return:
         """
-        self.move_abs("50%", "50%")
+        self.move_abs(0, 0)
 
     def blob(self, data_type, data):
         """
