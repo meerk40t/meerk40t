@@ -6,7 +6,7 @@ import numpy as np
 
 from meerk40t import balor
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort
+from meerk40t.core.units import ViewPort, Length
 from meerk40t.kernel import Service
 
 from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
@@ -370,13 +370,19 @@ class BalorDevice(Service, ViewPort):
 
         self.state = 0
 
+        unit_size = float(Length(self.lens_size))
+        galvo_range = 0xFFFF
+        units_per_galvo = unit_size / galvo_range
+
         ViewPort.__init__(
             self,
             self.lens_size,
             self.lens_size,
+            native_scale_x=units_per_galvo,
+            native_scale_y=units_per_galvo,
             origin_x=0.5,
             origin_y=0.5,
-            flip_y=True,
+            # flip_y=True,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -923,7 +929,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(
             "lens",
-            help=_("give the galvo position of the selection"),
+            help=_("set the lens size"),
         )
         def galvo_lens(
             command, channel, _, data=None, lens_size=None, args=tuple(), **kwargs
