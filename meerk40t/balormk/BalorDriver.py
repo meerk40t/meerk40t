@@ -338,10 +338,9 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_x, unit_y = self.service.physical_to_device_position(dx, dy)
-        native_dx, native_dy = self.service.scene_to_device_position(unit_x, unit_y)
-        self.native_x += native_dx
-        self.native_y += native_dy
+        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        self.native_x += unit_dx
+        self.native_y += unit_dy
 
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
