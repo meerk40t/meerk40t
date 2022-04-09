@@ -542,6 +542,8 @@ class LaserRender:
                 width, height, pil_data.convert("RGBA").tobytes()
             )
 
+        if "transparency" in pil_data.info:
+            pil_data = pil_data.convert("RGBA")
         try:
             # If transparent we paste 0 into the pil_data
             mask = pil_data.getchannel("A").point(lambda e: 255 - e)
