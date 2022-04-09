@@ -315,17 +315,8 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_x = self.service.length(
-            x, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_y = self.service.length(
-            y, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_x *= self.service.get_native_scale_x
-        unit_y *= self.service.get_native_scale_y
-        self.native_x = unit_x
-        self.native_y = unit_y
-
+        unit_x, unit_y = self.service.physical_to_device_position(x, y)
+        self.native_x, self.native_y = self.service.scene_to_device_position(unit_x, unit_y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -347,18 +338,10 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_dx = self.service.length(
-            dx, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dy = self.service.length(
-            dy, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dx *= self.service.get_native_scale_x
-        unit_dy *= self.service.get_native_scale_y
-        self.native_x += unit_dx
-        self.native_y += unit_dy
-        self.native_x = int(self.native_x)
-        self.native_y = int(self.native_y)
+        unit_x, unit_y = self.service.physical_to_device_position(dx, dy)
+        native_dx, native_dy = self.service.scene_to_device_position(unit_x, unit_y)
+        self.native_x += native_dx
+        self.native_y += native_dy
 
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF

@@ -520,13 +520,11 @@ class BalorDevice(Service, ViewPort):
                 else:
                     continue
                 x, y = e.point(0)
-                x *= self.get_native_scale_x
-                y *= self.get_native_scale_y
+                x, y = self.scene_to_device_position(x, y)
                 job.goto(x, y)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
-                    x *= self.get_native_scale_x
-                    y *= self.get_native_scale_y
+                    x, y = self.scene_to_device_position(x, y)
                     job.mark(x, y)
             return "balor", job
 
@@ -596,18 +594,13 @@ class BalorDevice(Service, ViewPort):
                 else:
                     continue
                 x, y = e.point(0)
-                x *= self.get_native_scale_x
-                y *= self.get_native_scale_y
+                x, y = self.scene_to_device_position(x, y)
                 job.light(x, y, False, jump_delay=200)
                 if speed:
                     job.set_travel_speed(simulation_speed)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
-                    x *= self.get_native_scale_x
-                    y *= self.get_native_scale_y
-                    # if i == quantization:
-                    #     job.light(x, y, True, calibration=50)
-                    # else:
+                    x, y = self.scene_to_device_position(x, y)
                     job.light(x, y, True, jump_delay=0)
                 if speed:
                     job.set_travel_speed(travel_speed)
@@ -1340,18 +1333,17 @@ class BalorDevice(Service, ViewPort):
             elements = self.elements
             channel(_("Hatch Filling"))
             if distance is not None:
-                distance = self.length(distance, -1, as_float=True)
-                distance *= self.get_native_scale_x
-            else:
-                distance = self.length("1mm", -1, as_float=True)
-                distance *= self.get_native_scale_x
+                distance = "1mm"
+            distance = float(Length(distance))
+            transformed_vector = self._matrix.transform_vector([0, distance])
+            distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
             efill = EulerianFill(distance)
             for element in elements.elems(emphasized=True):
                 if not isinstance(element, Shape):
                     continue
                 e = abs(Path(element))
-                e *= Matrix.scale(self.get_native_scale_x, self.get_native_scale_y)
+                e *= self._matrix
                 if angle is not None:
                     e *= Matrix.rotate(angle)
 
