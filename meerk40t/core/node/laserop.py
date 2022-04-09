@@ -7,9 +7,11 @@ from meerk40t.core.cutcode import (
     LineCut,
     QuadCut,
     RasterCut,
+    PlotCut,
 )
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
     Close,
@@ -22,8 +24,9 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage,
+    SVGImage, Matrix, Angle,
 )
+from meerk40t.tools.pathtools import VectorMontonizer, EulerianFill
 
 MILS_IN_MM = 39.3701
 
@@ -873,6 +876,7 @@ class HatchOpNode(Node, Parameters):
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
+        self._hatch_distance_native = None
 
         if len(args) == 1:
             obj = args[0]
@@ -929,17 +933,7 @@ class HatchOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
-                try:
-                    length = e.length(error=1e-2, min_depth=2)
-                except AttributeError:
-                    length = 0
-                try:
-                    estimate += length / (MILS_IN_MM * self.speed)
-                except ZeroDivisionError:
-                    estimate = float("inf")
+        # TODO: Implement time_estimate.
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -948,101 +942,55 @@ class HatchOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
+    def scale_native(self, matrix):
+        distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
+        transformed_vector = matrix.transform_vector([0, distance_y])
+        self._hatch_distance_native = abs(complex(transformed_vector[0], transformed_vector[1]))
+
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
+        # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
+        distance = self._hatch_distance_native
+        angle = Angle.parse(settings.get("hatch_angle", "0deg"))
+        angle = 0
+        efill = EulerianFill(distance)
         for element in self.children:
             object_path = element.object
-            if isinstance(object_path, SVGImage):
-                box = object_path.bbox()
-                path = Path(
-                    Polygon(
-                        (box[0], box[1]),
-                        (box[0], box[3]),
-                        (box[2], box[3]),
-                        (box[2], box[1]),
-                    )
-                )
-            else:
-                # Is a shape or path.
-                if not isinstance(object_path, Path):
-                    path = abs(Path(object_path))
-                else:
-                    path = abs(object_path)
-                path.approximate_arcs_with_cubics()
-            settings["line_color"] = path.stroke
-            for subpath in path.as_subpaths():
+            if isinstance(object_path, Shape):
+                object_path = abs(Path(object_path))
+            if not isinstance(object_path, Path):
+                continue
+            object_path.approximate_arcs_with_cubics()
+            settings["line_color"] = object_path.stroke
+            for subpath in object_path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
                     continue
-                closed = (
-                    isinstance(sp[-1], Close)
-                    or abs(sp.z_point - sp.current_point) <= closed_distance
-                )
-                group = CutGroup(
-                    None,
-                    closed=closed,
-                    settings=settings,
-                    passes=passes,
-                )
-                group.path = Path(subpath)
-                group.original_op = self.type
-                for seg in subpath:
-                    if isinstance(seg, Move):
-                        pass  # Move operations are ignored.
-                    elif isinstance(seg, Close):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                    elif isinstance(seg, Line):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                    elif isinstance(seg, QuadraticBezier):
-                        group.append(
-                            QuadCut(
-                                seg.start,
-                                seg.control,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                            )
-                        )
-                    elif isinstance(seg, CubicBezier):
-                        group.append(
-                            CubicCut(
-                                seg.start,
-                                seg.control1,
-                                seg.control2,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                            )
-                        )
-                if len(group) > 0:
-                    group[0].first = True
-                for i, cut_obj in enumerate(group):
-                    cut_obj.closed = closed
-                    try:
-                        cut_obj.next = group[i + 1]
-                    except IndexError:
-                        cut_obj.last = True
-                        cut_obj.next = group[0]
-                    cut_obj.previous = group[i - 1]
-                yield group
+                if angle is not None:
+                    sp *= Matrix.rotate(angle)
+
+                pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                efill += pts
+        points = efill.get_fill()
+        counter_rotate = Matrix.rotate(-angle)
+
+        def split(points):
+            pos = 0
+            for i, pts in enumerate(points):
+                if pts is None:
+                    yield points[pos: i - 1]
+                    pos = i + 1
+            if pos != len(points):
+                yield points[pos: len(points)]
+
+        plot = PlotCut()
+        for s in split(points):
+            for p in s:
+                x, y = counter_rotate.point_in_matrix_space((p.x, p.y))
+                if p.value == "RUNG":
+                    plot.plot_append(int(round(x)), int(round(y)), 1)
+                if p.value == "EDGE":
+                    plot.plot_append(int(round(x)), int(round(y)), 0)
+        if len(plot):
+            yield plot

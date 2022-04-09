@@ -1,15 +1,11 @@
 from copy import copy
-from os import times
-from time import time
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import Service
 from .units import Length
 
-from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
-from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
-from ..tools.pathtools import VectorMontonizer
+from ..core.cutcode import CutCode
+from ..svgelements import SVGImage
 from .cutplan import CutPlan, CutPlanningFailedError
 from .node.laserop import (
     CutOpNode,
