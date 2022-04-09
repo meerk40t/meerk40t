@@ -380,8 +380,8 @@ class BalorDevice(Service, ViewPort):
             self.lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0.5,
-            origin_y=0.5,
+            origin_x=0,
+            origin_y=0,
             # flip_y=True,
         )
         self.spooler = Spooler(self)
