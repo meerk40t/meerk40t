@@ -8,7 +8,6 @@ class TestViewport(unittest.TestCase):
     def test_viewport_grbl(self):
         """
         Test GRBL-esque viewport.
-        Center x, y.
 
         :return:
         """
@@ -41,6 +40,42 @@ class TestViewport(unittest.TestCase):
         self.assertGreaterEqual(y, -10)
         self.assertGreaterEqual(10, y)
 
+    def test_viewport_grbl_user_scale(self):
+        """
+        Test GRBL-esque viewport. User-scaled to mm
+
+        :return:
+        """
+        bed_size = "225mm"
+
+        view = ViewPort(
+            bed_size,
+            bed_size,
+            user_scale_x=1.0/Length("1mil").mm,
+            user_scale_y=1.0/Length("1mil").mm,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            origin_x=0,
+            origin_y=1,
+            flip_y=True,
+        )
+        x, y = view.scene_to_device_position(0, 0)
+        self.assertGreaterEqual(x, -1)
+        self.assertGreaterEqual(1, x)
+        self.assertGreaterEqual(y, Length(bed_size).mm - 1)
+        self.assertGreaterEqual(Length(bed_size).mm + 1, y)
+
+        x, y = view.scene_to_device_position(0, float(Length(bed_size)))
+        self.assertGreaterEqual(x, -10)
+        self.assertGreaterEqual(10, x)
+        self.assertGreaterEqual(y, -10)
+        self.assertGreaterEqual(10, y)
+
+        x, y = view.device_to_scene_position(0, Length(bed_size).mm)
+        self.assertGreaterEqual(x, -10)
+        self.assertGreaterEqual(10, x)
+        self.assertGreaterEqual(y, -10)
+        self.assertGreaterEqual(10, y)
 
     def test_viewport_balor(self):
         """
