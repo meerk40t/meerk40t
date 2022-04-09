@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CHGPOS
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CHANGE_POSITION
 from meerk40t.gui.scene.widget import Widget
 from math import sqrt
 
@@ -35,7 +35,7 @@ class AttractionWidget(Widget):
         self.isShiftPressed = False
         self.isCtrlPressed = False
         self.isAltPressed = False
-        self.showme = False
+        self.show_snap_points = False
         self.scene.context.setting(bool, "snap_grid", True)
         self.scene.context.setting(bool, "snap_points", True)
         self.scene.context.setting(int, "show_attract_len", 45)
@@ -61,9 +61,9 @@ class AttractionWidget(Widget):
             self.my_y = space_pos[1]
             self.calculate_display_points()
             if event_type in ("leftdown", "move", "hover", "hover_start") and self.scene.tool_active:
-                self.showme = True
+                self.show_snap_points = True
             else:
-                self.showme = False
+                self.show_snap_points = False
         # print("Key-Down: %f - literal: %s" % (keycode, literal))
         if event_type == "kb_shift_press":
             if not self.isShiftPressed:  # ignore multiple calls
@@ -117,14 +117,17 @@ class AttractionWidget(Widget):
                             # Is the distance small enough?
                             self.scene.new_x_space = new_x
                             self.scene.new_y_space = new_y
-                            response = RESPONSE_CHGPOS
+                            response = RESPONSE_CHANGE_POSITION
             #print ("response: %d" % response)
 
         return response
 
     def draw_caret(self, gc, x, y, closeup):
-        if closeup:
+        if closeup==2: # closest
             pen = self.closeup_pen
+            sym_size = 1.5 * self.symbol_size
+        elif closeup==1: # within snap range
+            pen = self.visible_pen
             sym_size = self.symbol_size
         else:
             pen = self.visible_pen
@@ -141,8 +144,11 @@ class AttractionWidget(Widget):
         gc.DrawPath(path)
 
     def draw_center(self, gc, x, y, closeup):
-        if closeup:
+        if closeup==2: # closest
             pen = self.closeup_pen
+            sym_size = self.symbol_size
+        elif closeup==1: # within snap range
+            pen = self.visible_pen
             sym_size = self.symbol_size
         else:
             pen = self.visible_pen
@@ -161,36 +167,28 @@ class AttractionWidget(Widget):
         gc.DrawPath(path)
 
     def draw_gridpoint(self, gc, x, y, closeup):
-        if closeup:
+        if closeup==2: # closest
             pen = self.closeup_pen
+            sym_size = 1.5 * self.symbol_size
+        elif closeup==1: # within snap range
+            pen = self.visible_pen
             sym_size = self.symbol_size
         else:
             pen = self.visible_pen
             sym_size = 0.5 * self.symbol_size
         gc.SetPen(pen)
-        gc.SetPen(pen)
         brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
-        path = gc.CreatePath()
         dsize = 1 / 8 * sym_size
-        path.MoveToPoint(x - sym_size / 2, y + dsize)
-        path.AddLineToPoint(x - dsize, y + dsize)
-        path.AddLineToPoint(x - dsize, y - sym_size / 2)
-        path.AddLineToPoint(x + dsize, y - sym_size / 2)
-        path.AddLineToPoint(x + dsize, y + dsize)
-        path.AddLineToPoint(x + sym_size / 2, y + dsize)
-        path.AddLineToPoint(x + sym_size / 2, y - dsize)
-        path.AddLineToPoint(x + dsize, y + dsize)
-        path.AddLineToPoint(x + dsize, y + sym_size / 2)
-        path.AddLineToPoint(x - dsize, y + sym_size / 2)
-        path.AddLineToPoint(x - dsize, y + dsize)
-        path.AddLineToPoint(x - sym_size / 2, y + dsize)
-        path.CloseSubpath()
-        gc.DrawPath(path)
+        gc.DrawRectangle(x - dsize, y - sym_size/2, 2 * dsize, sym_size)
+        gc.DrawRectangle(x - sym_size/2, y - dsize, sym_size, 2 * dsize,)
 
     def draw_midpoint(self, gc, x, y, closeup):
-        if closeup:
+        if closeup==2: # closest
             pen = self.closeup_pen
+            sym_size = 1.5 * self.symbol_size
+        elif closeup==1: # within snap range
+            pen = self.visible_pen
             sym_size = self.symbol_size
         else:
             pen = self.visible_pen
@@ -212,11 +210,11 @@ class AttractionWidget(Widget):
         """
         Draw all attraction points on the scene.
         """
-        if self.showme:
+        if self.show_snap_points:
             matrix = self.parent.matrix
             try:
                 # Intentionally big to clearly see shape
-                self.symbol_size = 12 / matrix.value_scale_x()
+                self.symbol_size = 10 / matrix.value_scale_x()
             except ZeroDivisionError:
                 matrix.reset()
                 return
@@ -229,22 +227,31 @@ class AttractionWidget(Widget):
             self.action_attract_len = pixel2 / matrix.value_scale_x()
             self.grid_attract_len = pixel3 / matrix.value_scale_x()
 
-
+            min_delta = float("inf")
+            min_x = None
+            min_y = None
+            min_type = None
             for pts in self.display_points:
                 if (
                     abs(pts[0] - self.my_x) <= self.show_attract_len
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
                 ):
+                    closeup = 0
+                    delta = sqrt((pts[0] - self.my_x) * (pts[0] - self.my_x) + (pts[1] - self.my_y) * (pts[1] - self.my_y))
+                    dx = abs(pts[0] - self.my_x)
+                    dy = abs(pts[1] - self.my_y)
+
                     if pts[2] == TYPE_GRID:
-                        closeup = (
-                            abs(pts[0] - self.my_x) <= self.grid_attract_len
-                            and abs(pts[1] - self.my_y) <= self.grid_attract_len
-                        )
+                        distance = self.grid_attract_len
                     else:
-                        closeup = (
-                            abs(pts[0] - self.my_x) <= self.action_attract_len
-                            and abs(pts[1] - self.my_y) <= self.action_attract_len
-                        )
+                        distance = self.action_attract_len
+                    if dx<=distance and dy<=distance:
+                        closeup = 1
+                        if delta < min_delta:
+                            min_delta = delta
+                            min_x = pts[0]
+                            min_y = pts[1]
+                            min_type = pts[2]
 
                     if pts[2]in (TYPE_POINT, TYPE_BOUND):
                         self.draw_caret(gc, pts[0], pts[1], closeup)
@@ -254,6 +261,17 @@ class AttractionWidget(Widget):
                         self.draw_center(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_GRID:
                         self.draw_gridpoint(gc, pts[0], pts[1], closeup)
+            # Draw the closest point
+            if not min_x is None:
+                closeup = 2 # closest
+                if min_type in (TYPE_POINT, TYPE_BOUND):
+                    self.draw_caret(gc, min_x, min_y, closeup)
+                elif min_type  == TYPE_MIDDLE:
+                    self.draw_midpoint(gc, min_x, min_y, closeup)
+                elif min_type  == TYPE_CENTER:
+                    self.draw_center(gc, min_x, min_y, closeup)
+                elif min_type  == TYPE_GRID:
+                    self.draw_gridpoint(gc, min_x, min_y, closeup)
 
     def calculate_attraction_points(self):
         """
@@ -288,10 +306,10 @@ class AttractionWidget(Widget):
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
         end_time = time()
-        print(
-            "Ready, time needed: %.6f, attraction points added=%d"
-            % (end_time - start_time, len(self.attraction_points))
-        )
+        #print(
+        #    "Ready, time needed: %.6f, attraction points added=%d"
+        #    % (end_time - start_time, len(self.attraction_points))
+        #)
 
     def calculate_grid_points(self):
         """
@@ -319,10 +337,10 @@ class AttractionWidget(Widget):
                 x += tlen
 
         end_time = time()
-        print(
-            "Ready, time needed: %.6f, grid points added=%d"
-            % (end_time - start_time, len(self.grid_points))
-        )
+        #print(
+        #    "Ready, time needed: %.6f, grid points added=%d"
+        #    % (end_time - start_time, len(self.grid_points))
+        #)
 
     def calculate_display_points(self):
         from time import time
@@ -342,11 +360,6 @@ class AttractionWidget(Widget):
                         abs(pts[0] - self.my_x) <= self.show_attract_len
                         and abs(pts[1] - self.my_y) <= self.show_attract_len
                     ):
-                        closeup = (
-                            abs(pts[0] - self.my_x) <= self.action_attract_len
-                            and abs(pts[1] - self.my_y) <= self.action_attract_len
-                        )
-
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
         if self.snap_grid and len(self.grid_points) > 0 and not self.my_x is None:
@@ -355,11 +368,6 @@ class AttractionWidget(Widget):
                     abs(pts[0] - self.my_x) <= self.show_attract_len
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
                 ):
-                    closeup = (
-                        abs(pts[0] - self.my_x) <= self.action_attract_len
-                        and abs(pts[1] - self.my_y) <= self.action_attract_len
-                    )
-
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
         end_time = time()
