@@ -594,12 +594,13 @@ class Scene(Module, Job):
                     )
                 previous_top_element = current_widget
             delta_time = time.time() - self.time
-            if event_type == "leftup" and delta_time <= 0.15:
+            if event_type == "leftup" and delta_time <= 0.30: # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             elif event_type == "leftup":
-                # print ("Did not convert to click, event of my own right, %.2f" % delta_time)
+                if self.log_events:
+                    self.log_events("Did not convert to click, event of my own right, %.2f" % delta_time)
                 response = current_widget.event(window_pos, space_pos, event_type)
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
