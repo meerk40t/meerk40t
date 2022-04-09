@@ -365,10 +365,6 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Toolbars", register_toolbars)
 
-        from meerk40t.gui.toolbaralign import register_align_tools
-
-        kernel.register("wxpane/Tool-Align", register_align_tools)
-
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
         kernel.register("wxpane/Home", register_panel_home)

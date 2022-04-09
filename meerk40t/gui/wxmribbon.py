@@ -4,7 +4,7 @@ import wx
 import wx.ribbon as RB
 from wx import aui
 
-from meerk40t.kernel import Job, lookup_listener
+from meerk40t.kernel import Job, lookup_listener, signal_listener
 
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
@@ -111,11 +111,15 @@ class RibbonPanel(wx.Panel):
         for button in buttons:
             new_id = wx.NewId()
             toggle_grp = ""
+            if "size" in button:
+                resize_param = button["size"]
+            else:
+                resize_param = None
             if "alt-action" in button:
                 button_bar.AddHybridButton(
                     new_id,
                     button["label"],
-                    button["icon"].GetBitmap(),
+                    button["icon"].GetBitmap(resize=resize_param),
                     button["tip"],
                 )
 
@@ -145,7 +149,7 @@ class RibbonPanel(wx.Panel):
                 button_bar.AddButton(
                     new_id,
                     button["label"],
-                    button["icon"].GetBitmap(),
+                    button["icon"].GetBitmap(resize=resize_param),
                     button["tip"],
                     kind=bkind,
                 )
@@ -163,6 +167,8 @@ class RibbonPanel(wx.Panel):
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
             )
         self.ensure_realize()
+        # Disable buttons by default
+        self.on_emphasis_change(None)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
@@ -187,6 +193,23 @@ class RibbonPanel(wx.Panel):
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
+
+    @lookup_listener("button/align")
+    def set_align_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.align_button_bar)
+
+    @signal_listener("emphasized")
+    def on_emphasis_change(self, origin, *args):
+        active = self.context.elements.has_emphasis()
+        for i in range(self.geometry_button_bar.GetButtonCount()):
+            btn = self.geometry_button_bar.GetItem(i)
+            id = self.geometry_button_bar.GetItemId(btn)
+            self.geometry_button_bar.EnableButton(id, active)
+        for i in range(self.align_button_bar.GetButtonCount()):
+            btn = self.align_button_bar.GetItem(i)
+            id = self.align_button_bar.GetItemId(btn)
+            self.align_button_bar.EnableButton(id, active)
+
 
     @property
     def is_dark(self):
@@ -286,6 +309,16 @@ class RibbonPanel(wx.Panel):
         )
         button_bar = RB.RibbonButtonBar(self.geometry_panel)
         self.geometry_button_bar = button_bar
+
+        self.align_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Alignment"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.align_panel)
+        self.align_button_bar = button_bar
 
         self.ensure_realize()
 
