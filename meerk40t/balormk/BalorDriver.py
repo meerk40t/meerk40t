@@ -104,6 +104,7 @@ class BalorDriver(Parameters):
         :return:
         """
         plot = list(plot)
+        last_index = 0
         for i in range(0, len(plot)):
             if len(plot[i]) == 2:
                 try:
@@ -129,6 +130,10 @@ class BalorDriver(Parameters):
                 except IndexError:
                     pass
             yield plot[i]
+            last_index = i
+        if last_index != len(plot):
+            yield plot[-1]
+
 
     # def cutcode_to_light_job(self, queue):
     #     """
