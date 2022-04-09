@@ -376,7 +376,7 @@ class BalorDevice(Service, ViewPort):
             self.lens_size,
             origin_x=0.5,
             origin_y=0.5,
-            flip_y=True
+            flip_y=True,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -912,19 +912,11 @@ class BalorDevice(Service, ViewPort):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            cal = balor.Cal.Cal(self.calibration_file)
-
-            x0 = bounds[0] * self.get_native_scale_x
-            y0 = bounds[1] * self.get_native_scale_y
-            x1 = bounds[2] * self.get_native_scale_x
-            y1 = bounds[3] * self.get_native_scale_y
-            width = (bounds[2] - bounds[0]) * self.get_native_scale_x
-            height = (bounds[3] - bounds[1]) * self.get_native_scale_y
-            cx, cy = cal.interpolate(x0, y0)
-            mx, my = cal.interpolate(x1, y1)
+            x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
+            x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
             channel(
                 "Top Right: ({cx}, {cy}). Lower, Left: ({mx},{my})".format(
-                    cx=cx, cy=cy, mx=mx, my=my
+                    cx=x0, cy=y0, mx=x1, my=y1
                 )
             )
 
@@ -1389,38 +1381,6 @@ class BalorDevice(Service, ViewPort):
             self.driver.native_x,
             self.driver.native_y,
         )
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
-
-    @property
-    def get_native_scale_x(self):
-        """
-        Native x goes from 0x0000 to 0xFFFF with 0x8000 being zero.
-        :return:
-        """
-        unit_size = self.unit_width
-        galvo_range = 0xFFFF
-        unit_per_galvo = unit_size / galvo_range
-        return 1.0 / unit_per_galvo
-
-    @property
-    def get_native_scale_y(self):
-        unit_size = self.unit_height
-        galvo_range = 0xFFFF
-        unit_per_galvo = unit_size / galvo_range
-        return 1.0 / unit_per_galvo
 
     @property
     def calibration_file(self):
