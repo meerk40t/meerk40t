@@ -175,8 +175,8 @@ class SelectionWidget(Widget):
             self.selbox_wy = 10.0 / matrix.value_scale_y()
 
         checks = [[self.left, self.top, self.right, self.bottom]]
-        mid_x = (self.right + self.left)/2
-        mid_y = (self.bottom + self.top)/2
+        mid_x = (self.right + self.left) / 2
+        mid_y = (self.bottom + self.top) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.right - self.left) / 2
         inner_ht_half = (self.bottom - self.top) / 2
@@ -233,7 +233,7 @@ class SelectionWidget(Widget):
         checks.append(
             [
                 self.right - h_factor * self.selbox_wx + dx,
-                self.top - h_factor * self.selbox_wy -dy,
+                self.top - h_factor * self.selbox_wy - dy,
                 self.right + h_factor * self.selbox_wx + dx,
                 self.top + h_factor * self.selbox_wy - dy,
             ]
@@ -393,8 +393,8 @@ class SelectionWidget(Widget):
                 ymax = self.bottom
                 xin = space_pos[0]
                 yin = space_pos[1]
-                mid_x = (self.right + self.left)/2
-                mid_y = (self.bottom + self.top)/2
+                mid_x = (self.right + self.left) / 2
+                mid_y = (self.bottom + self.top) / 2
                 # Selection very small ? Relocate Handle
                 inner_wd_half = (self.right - self.left) / 2
                 inner_ht_half = (self.bottom - self.top) / 2
@@ -1151,8 +1151,8 @@ class SelectionWidget(Widget):
         ]
 
         if self.use_handle_rotate:
-            mid_x = (x0 + y1)/2
-            mid_y = (y0 + y1)/2
+            mid_x = (x0 + y1) / 2
+            mid_y = (y0 + y1) / 2
             # Selection very small ? Relocate Handle
             inner_wd_half = (x1 - x0) / 2
             inner_ht_half = (y1 - y0) / 2
@@ -1186,8 +1186,8 @@ class SelectionWidget(Widget):
 
     def draw_handles(self, gc, wdx, wdy, x0, y0, x1, y1):
         corners = []
-        mid_x = (x0 + x1)/2
-        mid_y = (y0 + y1)/2
+        mid_x = (x0 + x1) / 2
+        mid_y = (y0 + y1) / 2
         # Selection very small ? Relocate Handle
         inner_wd_half = (x1 - x0) / 2
         inner_ht_half = (y1 - y0) / 2
@@ -1213,9 +1213,9 @@ class SelectionWidget(Widget):
         show_skew_y = self.use_handle_skew
         # Let's check whether there is enough room...
         # Top and bottom handle are overlapping by 1/2, middle 1, skew 2/3
-        if 2*inner_ht_half<(0.5 + 1 + 0.5 + 1) * wdy:
+        if 2 * inner_ht_half < (0.5 + 1 + 0.5 + 1) * wdy:
             show_skew_y = False
-        if 2*inner_wd_half<(0.5 + 1 + 0.5 + 1) * wdx:
+        if 2 * inner_wd_half < (0.5 + 1 + 0.5 + 1) * wdx:
             show_skew_x = False
 
         if show_skew_x:
