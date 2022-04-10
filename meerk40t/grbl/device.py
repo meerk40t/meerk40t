@@ -587,16 +587,20 @@ class GRBLDriver(Parameters):
         for q in self.queue:
             x = self.native_x
             y = self.native_y
-
+            start_x, start_y = q.start
+            if x != start_x or y != start_y:
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                self.move(start_x, start_y)
+            if self.on_value != 1.0:
+                self.power_dirty = True
+            self.on_value = 1.0
             if q.power != self.power:
                 self.set("power", q.power)
             if q.speed != self.speed or q.raster_step != self.raster_step:
                 self.set("speed", q.speed)
             self.settings.update(q.settings)
-            start_x, start_y = q.start
-            if x != start_x or y != start_y:
-                self.move_mode = 0
-                self.move(start_x, start_y)
             if isinstance(q, LineCut):
                 self.move_mode = 1
                 self.move(*q.end)
