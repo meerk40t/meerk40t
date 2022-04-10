@@ -117,15 +117,15 @@ class SelectionWidget(Widget):
         self.elements = scene.context.elements
         # Make sure selection color is a setting
         self.color_selection = LINECOL_DEFAULT
-        scene.context.setting(str, "color_selection_rect", color_to_str(self.color_selection.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_selection_rect)
+        scene.context.setting(str, "color_manipulation", color_to_str(self.color_selection.GetRGBA()))
+        # print("Default-Value for Color %s" % scene.context.color_manipulation)
         try:
-            self.color_selection.SetRGB(str_to_color(scene.context.color_selection_rect))
+            self.color_selection.SetRGB(str_to_color(scene.context.color_manipulation))
         except (ValueError, TypeError):
             self.color_selection = None
         if self.color_selection is None:
             self.color_selection = LINECOL_DEFAULT
-            scene.context.color_selection_rect = color_to_str(self.color_selection.GetRGBA())
+            scene.context.color_manipulation = color_to_str(self.color_selection.GetRGBA())
 
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.color_selection)
@@ -1280,7 +1280,7 @@ class SelectionWidget(Widget):
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
         try:
-            self.color_selection.SetRGBA(str_to_color(context.color_selection_rect))
+            self.color_selection.SetRGBA(str_to_color(context.color_manipulation))
         except (ValueError, TypeError):
             self.color_selection = LINECOL_DEFAULT
 
@@ -1899,15 +1899,15 @@ class GridWidget(Widget):
         self.background = None
         self.col_default = wx.Colour(0xA0, 0xA0, 0xA0)
         self.color_grid = self.col_default
-        scene.context.setting(str, "color_grid_line", color_to_str(self.color_grid.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_grid_line)
+        scene.context.setting(str, "color_grid", color_to_str(self.color_grid.GetRGBA()))
+        # print("Default-Value for Color %s" % scene.context.color_grid)
         try:
-            self.color_grid.SetRGB(str_to_color(scene.context.color_grid_line))
+            self.color_grid.SetRGB(str_to_color(scene.context.color_grid))
         except (ValueError, TypeError):
             self.color_grid = None
         if self.color_grid is None:
             self.color_grid = self.col_default
-            scene.context.color_grid_line = color_to_str(self.color_grid.GetRGBA())
+            scene.context.color_grid = color_to_str(self.color_grid.GetRGBA())
 
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen.SetColour(self.color_grid)
@@ -1979,7 +1979,7 @@ class GridWidget(Widget):
         """
         context = self.scene.context
         try:
-            self.color_grid.SetRGB(str_to_color(context.color_grid_line))
+            self.color_grid.SetRGB(str_to_color(context.color_grid))
         except (ValueError, TypeError):
             self.color_grid = self.col_default
         self.grid_line_pen.SetColour(self.color_grid)
