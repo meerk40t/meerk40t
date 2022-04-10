@@ -3,6 +3,7 @@ import wx
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 from ...core.units import UNITS_PER_MM
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 
 class RelocateTool(ToolWidget):
@@ -22,6 +23,8 @@ class RelocateTool(ToolWidget):
         pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        # We dont use tool_active here, or should we?
+        response = RESPONSE_CHAIN
         if event_type == "leftdown":
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
@@ -38,3 +41,5 @@ class RelocateTool(ToolWidget):
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
             self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+            response = RESPONSE_CONSUME
+        return response
