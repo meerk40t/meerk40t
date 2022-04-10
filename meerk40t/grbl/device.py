@@ -195,6 +195,16 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
             },
+            {
+                "attr": "mock",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Run mock-usb backend"),
+                "tip": _(
+                    "This starts connects to fake software laser rather than real one for debugging."
+                ),
+            },
         ]
         self.register_choices("grbl-connection", choices)
 
@@ -1269,7 +1279,10 @@ class GrblController:
         self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel("send-%s" % self.com_port.lower())
         self.recv = self.service.channel("recv-%s" % self.com_port.lower())
-        self.connection = SerialConnection(self.service)
+        if not self.service.mock:
+            self.connection = SerialConnection(self.service)
+        else:
+            self.connection = MockConnection(self.service)
         self.driver = self.service.driver
         self.sending_thread = None
 
@@ -1473,6 +1486,52 @@ class SerialConnection:
             self.laser.close()
             del self.laser
             self.laser = None
+        self.service.signal("serial;status", "disconnected")
+
+
+class MockConnection:
+    def __init__(self, service):
+        self.service = service
+        self.channel = self.service.channel("grbl_state", buffer_size=20)
+        self.laser = None
+        self.read_buffer = bytearray()
+        self.just_connected = False
+        self.write_lines = 0
+
+    @property
+    def connected(self):
+        return self.laser is not None
+
+    def read(self):
+        if self.just_connected:
+            self.just_connected = False
+            return "grbl version fake"
+        if self.write_lines:
+            self.write_lines -= 1
+            return "ok"
+        else:
+            return ""
+
+    def write(self, line):
+        self.write_lines += 1
+
+    def connect(self):
+        if self.laser:
+            self.channel("Already connected")
+            return
+        try:
+            self.channel("Attempting to Connect...")
+            self.laser = True
+            self.just_connected = True
+            self.channel("Connected")
+            self.service.signal("serial;status", "connected")
+        except ConnectionError:
+            self.channel("Connection Failed.")
+        except SerialException:
+            self.channel("Serial connection could not be established.")
+
+    def disconnect(self):
+        self.channel("Disconnected")
         self.service.signal("serial;status", "disconnected")
 
 
