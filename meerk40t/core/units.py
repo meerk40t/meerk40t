@@ -86,6 +86,8 @@ class ViewPort:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
+        show_origin_x=None,
+        show_origin_y=None,
     ):
         self._matrix = None
         self._imatrix = None
@@ -100,6 +102,12 @@ class ViewPort:
         self.flip_x = flip_x
         self.flip_y = flip_y
         self.swap_xy = swap_xy
+        if show_origin_x is None:
+            show_origin_x = origin_x
+        if show_origin_y is None:
+            show_origin_y = origin_y
+        self.show_origin_x = show_origin_x
+        self.show_origin_y = show_origin_y
 
         self._width = None
         self._height = None
