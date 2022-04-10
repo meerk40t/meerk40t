@@ -576,9 +576,10 @@ class GRBLDriver(Parameters):
             self.grbl("M3\r")
         else:
             self.grbl("M4\r")
-        x = self.native_x
-        y = self.native_y
         for q in self.queue:
+            x = self.native_x
+            y = self.native_y
+
             if q.power != self.power:
                 self.set("power", q.power)
             if q.speed != self.speed or q.raster_step != self.raster_step:
@@ -587,19 +588,17 @@ class GRBLDriver(Parameters):
             start_x, start_y = q.start
             if x != start_x or y != start_y:
                 self.move_mode = 0
-                self.move(x, y)
+                self.move(start_x, start_y)
             if isinstance(q, LineCut):
-                x, y = q.end
                 self.move_mode = 1
-                self.move(x, y)
+                self.move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
                 points = list(q.generator())
                 self.move_mode = 1
                 for p in range(50, len(points), 50):
                     while self.hold_work():
                         time.sleep(0.05)
-                    px, py = points[p]
-                    self.move(px, py)
+                    self.move(*points[p])
                 last_x, last_y = points[-1]
                 self.move(last_x, last_y)
             else:
