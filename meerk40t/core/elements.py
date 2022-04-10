@@ -1989,7 +1989,11 @@ class Elemental(Modifier):
         bed_dim.setting(int, "bed_width", 310)
         bed_dim.setting(int, "bed_height", 210)
         context.root.setting(bool, "classify_reverse", False)
-        context.root.setting(bool, "legacy_classification", False)
+        context.root.setting(bool, "legacy_classification", True)
+        context.root.setting(bool, "force_legacy", True)
+        if context.root.force_legacy:
+            context.root.force_legacy = False
+            context.root.legacy_classification = True
 
         # ==========
         # OPERATION BASE
