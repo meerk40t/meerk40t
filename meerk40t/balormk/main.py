@@ -381,8 +381,10 @@ class BalorDevice(Service, ViewPort):
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
             origin_x=0,
-            origin_y=0,
-            # flip_y=True,
+            origin_y=1.0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
+            flip_y=True,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
