@@ -31,6 +31,8 @@ from ..device.basedevice import (
     PLOT_START,
 )
 
+MM_PER_MIL = UNITS_PER_MM / UNITS_PER_MIL
+
 STATE_ABORT = -1
 STATE_DEFAULT = 0
 STATE_CONCAT = 1
@@ -381,7 +383,6 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self.feed_invert = None
         self.g94_feedrate()  # G93 DEFAULT, mm mode
 
         self.unit_scale = None
@@ -507,26 +508,30 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.absolute_dirty = True
 
+    def _g93_mms_to_minutes_per_gunits(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return distance / millimeters_per_minute
+
     def g93_feedrate(self):
         if self.feed_mode == 93:
             return
         self.feed_mode = 93
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 * s) * self.stepper_step_size / UNITS_PER_MM
-        self.feed_invert = lambda s: (60.0 * s) * UNITS_PER_MM / self.stepper_step_size
+        self.feed_convert = self._g93_mms_to_minutes_per_gunits
         self.feedrate_dirty = True
+
+    def _g94_mms_to_gunits_per_minute(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return millimeters_per_minute / distance
 
     def g94_feedrate(self):
         if self.feed_mode == 94:
             return
         self.feed_mode = 94
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / (
-            (self.stepper_step_size / UNITS_PER_MM) / 60.0
-        )
-        self.feed_invert = lambda s: s * (
-            (self.stepper_step_size / UNITS_PER_MM) / 60.0
-        )
+        self.feed_convert = self._g94_mms_to_gunits_per_minute
         # units to mm, seconds to minutes.
         self.feedrate_dirty = True
 
