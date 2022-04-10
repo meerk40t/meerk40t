@@ -205,6 +205,14 @@ class GRBLDevice(Service, ViewPort):
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
             },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Distance of the curve interpolation in mils"),
+            },
         ]
         self.register_choices("grbl-connection", choices)
 
@@ -595,7 +603,8 @@ class GRBLDriver(Parameters):
             elif isinstance(q, (QuadCut, CubicCut)):
                 points = list(q.generator())
                 self.move_mode = 1
-                for p in range(50, len(points), 50):
+                interp = self.service.interpolate
+                for p in range(interp, len(points), interp):
                     while self.hold_work():
                         time.sleep(0.05)
                     self.move(*points[p])
