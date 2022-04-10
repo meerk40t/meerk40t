@@ -52,7 +52,7 @@ def str_to_color(value):
     if len(value)<=8:
         value = value + "FF" # append opacity
     result = value[:2] + value[8:] + value[6:8] + value[4:6]+ value[2:4]
-    return eval(result)
+    return int(result, base=16)
 
 class ElementsWidget(Widget):
     """
