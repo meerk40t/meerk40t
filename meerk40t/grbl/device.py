@@ -196,6 +196,14 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Size of Planning Buffer"),
             },
             {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Distance of the curve interpolation in mils"),
+            },
+            {
                 "attr": "mock",
                 "object": self,
                 "default": False,
@@ -204,14 +212,6 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
-            },
-            {
-                "attr": "interpolate",
-                "object": self,
-                "default": 50,
-                "type": int,
-                "label": _("Curve Interpolation"),
-                "tip": _("Distance of the curve interpolation in mils"),
             },
         ]
         self.register_choices("grbl-connection", choices)
