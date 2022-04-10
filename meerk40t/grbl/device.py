@@ -647,6 +647,7 @@ class GRBLDriver(Parameters):
                         self.power_dirty = True
                     self.on_value = on
                     self.move(x, y)
+        self.queue.clear()
         self.grbl("G1 S0\r")
         self.grbl("M5\r")
         self.power_dirty = True
