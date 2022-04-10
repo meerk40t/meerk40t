@@ -15,9 +15,6 @@ from meerk40t.gui.wxutils import create_menu_for_node
 
 from meerk40t.svgelements import Rect, Point
 
-TEXT_COLOR = wx.Colour(0xA0, 0x7F, 0xA0)
-LINE_COLOR = wx.Colour(0x7F, 0x7F, 0x7F)
-
 
 def process_event(
     widget,
@@ -227,7 +224,7 @@ class BorderWidget(Widget):
                 font = wx.Font(self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             except TypeError:
                 font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, TEXT_COLOR)
+            gc.SetFont(font, self.scene.colors.color_manipulation)
             gc.DrawText(
                 str(Length(amount=self.top, digits=3, preferred_units=units)),
                 center_x,
@@ -266,10 +263,10 @@ class BorderWidget(Widget):
                 font = wx.Font(
                     int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
                 )
-            gc.SetFont(font, LINE_COLOR)
+            gc.SetFont(font, self.scene.colors.color_manipulation)
             symbol = "%.0f°" % (360 * self.master.rotated_angle / math.tau)
             pen = wx.Pen()
-            pen.SetColour(LINE_COLOR)
+            pen.SetColour(self.scene.colors.color_manipulation)
             pen.SetStyle(wx.PENSTYLE_SOLID)
             gc.SetPen(pen)
             brush = wx.Brush(wx.WHITE, wx.SOLID)
@@ -343,7 +340,7 @@ class RotationWidget(Widget):
         if self.master.tool_running:  # We don't need that overhead
             return
         pen = wx.Pen()
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(0.75 * self.master.line_width)
         except TypeError:
@@ -643,9 +640,9 @@ class CornerWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
         pen = wx.Pen()
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(self.master.line_width)
         except TypeError:
@@ -824,9 +821,9 @@ class SideWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
         pen = wx.Pen()
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(self.master.line_width)
         except TypeError:
@@ -970,14 +967,14 @@ class SkewWidget(Widget):
 
         self.update()  # make sure coords are valid
         pen = wx.Pen()
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(self.master.line_width)
         except TypeError:
             pen.SetWidth(int(self.master.line_width))
         pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(pen)
-        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -1119,14 +1116,14 @@ class MoveWidget(Widget):
 
         self.update()  # make sure coords are valid
         pen = wx.Pen()
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(self.master.line_width)
         except TypeError:
             pen.SetWidth(int(self.master.line_width))
         pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(pen)
-        brush = wx.Brush(LINE_COLOR, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(
             self.left + self.half_x - self.drawhalf,
@@ -1243,7 +1240,7 @@ class MoveRotationOriginWidget(Widget):
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         # pen.SetColour(wx.RED)
-        pen.SetColour(LINE_COLOR)
+        pen.SetColour(self.scene.colors.color_manipulation)
         try:
             pen.SetWidth(0.75 * self.master.line_width)
         except TypeError:
@@ -1330,7 +1327,7 @@ class ReferenceWidget(Widget):
             bgcol = wx.YELLOW
             fgcol = wx.RED
         else:
-            bgcol = LINE_COLOR
+            bgcol = self.scene.colors.color_manipulation
             fgcol = wx.BLACK
         pen.SetColour(bgcol)
         try:
@@ -1573,7 +1570,7 @@ class SelectionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(LINE_COLOR)
+        self.selection_pen.SetColour(self.scene.colors.color_manipulation)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.popupID1 = None
         self.popupID2 = None
@@ -1936,7 +1933,7 @@ class SelectionWidget(Widget):
                 font = wx.Font(self.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
             except TypeError:
                 font = wx.Font(int(self.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-            gc.SetFont(font, TEXT_COLOR)
+            gc.SetFont(font, self.scene.colors.color_manipulation)
             gc.SetPen(self.selection_pen)
             self.left = bounds[0]
             self.top = bounds[1]

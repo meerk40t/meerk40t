@@ -30,6 +30,7 @@ from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox, Polygon, Circle, Ellipse, Arc
 from meerk40t.core.units import Length
+from meerk40t.gui.scene.guicolors import GuiColors
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -75,8 +76,10 @@ class Scene(Module, Job):
         self.attraction_points = []  # Clear all
         self.compute = True
 
+        self.colors = GuiColors(self.context)
+
         self.screen_refresh_is_requested = True
-        self.background_brush = wx.Brush("Grey")
+        self.background_brush = wx.Brush(self.colors.color_background)
         self.magnet_x = []
         self.magnet_y = []
         self.magnet_attraction = 2
@@ -303,6 +306,7 @@ class Scene(Module, Job):
             buf = self.gui._Buffer
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
+        self.background_brush.SetColour(self.colors.color_background)
         dc.SetBackground(self.background_brush)
         dc.Clear()
         w, h = dc.Size

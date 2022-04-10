@@ -16,7 +16,7 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0, 128))
+        self.grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.grid_line_pen.SetWidth(1)
         self.last_ticksize = 0
 
@@ -138,6 +138,7 @@ class GridWidget(Widget):
         Draw the grid on the scene.
         """
         # print ("GridWidget draw")
+        self.grid_line_pen.SetColour(self.scene.colors.color_grid)
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
@@ -145,7 +146,8 @@ class GridWidget(Widget):
             unit_height = context.device.unit_height
             background = self.background
             if background is None:
-                gc.SetBrush(wx.WHITE_BRUSH)
+                brush = wx.Brush(colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID)
+                gc.SetBrush(brush)
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
