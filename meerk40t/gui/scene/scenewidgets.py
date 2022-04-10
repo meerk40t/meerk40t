@@ -117,7 +117,7 @@ class SelectionWidget(Widget):
         self.elements = scene.context.elements
         # Make sure selection color is a setting
         self.color_selection = LINECOL_DEFAULT
-        scene.context.setting("str", "color_selection_rect", color_to_str(self.color_selection.GetRGBA()))
+        scene.context.setting(str, "color_selection_rect", color_to_str(self.color_selection.GetRGBA()))
         # print("Default-Value for Color %s" % scene.context.color_selection_rect)
         try:
             self.color_selection.SetRGB(str_to_color(scene.context.color_selection_rect))
@@ -1899,8 +1899,8 @@ class GridWidget(Widget):
         self.background = None
         self.col_default = wx.Colour(0xA0, 0xA0, 0xA0)
         self.color_grid = self.col_default
-        scene.context.setting("str", "color_grid_line", color_to_str(self.color_grid.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_grid_rect)
+        scene.context.setting(str, "color_grid_line", color_to_str(self.color_grid.GetRGBA()))
+        # print("Default-Value for Color %s" % scene.context.color_grid_line)
         try:
             self.color_grid.SetRGB(str_to_color(scene.context.color_grid_line))
         except (ValueError, TypeError):
