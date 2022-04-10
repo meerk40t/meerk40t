@@ -86,6 +86,8 @@ class ViewPort:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
+        show_origin_x=None,
+        show_origin_y=None,
     ):
         self._matrix = None
         self._imatrix = None
@@ -100,6 +102,12 @@ class ViewPort:
         self.flip_x = flip_x
         self.flip_y = flip_y
         self.swap_xy = swap_xy
+        if show_origin_x is None:
+            show_origin_x = origin_x
+        if show_origin_y is None:
+            show_origin_y = origin_y
+        self.show_origin_x = show_origin_x
+        self.show_origin_y = show_origin_y
 
         self._width = None
         self._height = None
@@ -183,10 +191,6 @@ class ViewPort:
 
     def scene_to_device_matrix(self):
         ops = []
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
         if self._scale_x != 1.0 or self._scale_y != 1.0:
             ops.append(
                 "scale({sx:.13f}, {sy:.13f})".format(
@@ -196,11 +200,15 @@ class ViewPort:
         if self._offset_x != 0 or self._offset_y != 0:
             ops.append(
                 "translate({dx:.13f}, {dy:.13f})".format(
-                    dx=-self._offset_x, dy=-self._offset_y
+                    dx=self._offset_x, dy=self._offset_y
                 )
             )
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
         if self.swap_xy:
-            ops.append("scale(-1.0, -1.0) rotate(180deg)")
+            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def length(

@@ -411,8 +411,8 @@ class GuideWidget(Widget):
 
         sx, sy = self.scene.convert_scene_to_window(
             [
-                p.device.unit_width * p.device.origin_x,
-                p.device.unit_height * p.device.origin_y,
+                p.device.unit_width * p.device.show_origin_x,
+                p.device.unit_height * p.device.show_origin_y,
             ]
         )
         if points == 0:

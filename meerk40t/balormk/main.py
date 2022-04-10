@@ -6,7 +6,7 @@ import numpy as np
 
 from meerk40t import balor
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort
+from meerk40t.core.units import ViewPort, Length
 from meerk40t.kernel import Service
 
 from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
@@ -80,6 +80,54 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Width"),
                 "tip": _("Lens Size"),
+            },
+            {
+                "attr": "offset_x",
+                "object": self,
+                "default": "0mm",
+                "type": float,
+                "label": _("Offset X"),
+                "tip": _("Offset in the X axis"),
+            },
+            {
+                "attr": "offset_y",
+                "object": self,
+                "default": "0mm",
+                "type": float,
+                "label": _("Offset Y"),
+                "tip": _("Offset in the Y axis"),
+            },
+            {
+                "attr": "offset_angle",
+                "object": self,
+                "default": "0",
+                "type": float,
+                "label": _("Angle"),
+                "tip": _("Angle to adjust fiber laser to match red laser"),
+            },
+            {
+                "attr": "scale_x",
+                "object": self,
+                "default": "0",
+                "type": float,
+                "label": _("Scale X"),
+                "tip": _("Scale the X axis"),
+            },
+            {
+                "attr": "scale_y",
+                "object": self,
+                "default": "0",
+                "type": float,
+                "label": _("Scale Y"),
+                "tip": _("Scale the Y axis"),
+            },
+            {
+                "attr": "redlight_speed",
+                "object": self,
+                "default": "8000",
+                "type": int,
+                "label": _("Redlight travel speed"),
+                "tip": _("Speed of the galvo when using the red laser."),
             },
             {
                 "attr": "redlight_offset_x",
@@ -322,13 +370,21 @@ class BalorDevice(Service, ViewPort):
 
         self.state = 0
 
+        unit_size = float(Length(self.lens_size))
+        galvo_range = 0xFFFF
+        units_per_galvo = unit_size / galvo_range
+
         ViewPort.__init__(
             self,
             self.lens_size,
             self.lens_size,
-            origin_x=0.5,
-            origin_y=0.5,
-            flip_y=True
+            native_scale_x=units_per_galvo,
+            native_scale_y=units_per_galvo,
+            origin_x=0,
+            origin_y=1.0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
+            flip_y=True,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -466,13 +522,11 @@ class BalorDevice(Service, ViewPort):
                 else:
                     continue
                 x, y = e.point(0)
-                x *= self.get_native_scale_x
-                y *= self.get_native_scale_y
+                x, y = self.scene_to_device_position(x, y)
                 job.goto(x, y)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
-                    x *= self.get_native_scale_x
-                    y *= self.get_native_scale_y
+                    x, y = self.scene_to_device_position(x, y)
                     job.mark(x, y)
             return "balor", job
 
@@ -542,18 +596,13 @@ class BalorDevice(Service, ViewPort):
                 else:
                     continue
                 x, y = e.point(0)
-                x *= self.get_native_scale_x
-                y *= self.get_native_scale_y
+                x, y = self.scene_to_device_position(x, y)
                 job.light(x, y, False, jump_delay=200)
                 if speed:
                     job.set_travel_speed(simulation_speed)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
-                    x *= self.get_native_scale_x
-                    y *= self.get_native_scale_y
-                    # if i == quantization:
-                    #     job.light(x, y, True, calibration=50)
-                    # else:
+                    x, y = self.scene_to_device_position(x, y)
                     job.light(x, y, True, jump_delay=0)
                 if speed:
                     job.set_travel_speed(travel_speed)
@@ -864,26 +913,18 @@ class BalorDevice(Service, ViewPort):
             if bounds is None:
                 channel(_("Nothing Selected"))
                 return
-            cal = balor.Cal.Cal(self.calibration_file)
-
-            x0 = bounds[0] * self.get_native_scale_x
-            y0 = bounds[1] * self.get_native_scale_y
-            x1 = bounds[2] * self.get_native_scale_x
-            y1 = bounds[3] * self.get_native_scale_y
-            width = (bounds[2] - bounds[0]) * self.get_native_scale_x
-            height = (bounds[3] - bounds[1]) * self.get_native_scale_y
-            cx, cy = cal.interpolate(x0, y0)
-            mx, my = cal.interpolate(x1, y1)
+            x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
+            x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
             channel(
                 "Top Right: ({cx}, {cy}). Lower, Left: ({mx},{my})".format(
-                    cx=cx, cy=cy, mx=mx, my=my
+                    cx=x0, cy=y0, mx=x1, my=y1
                 )
             )
 
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(
             "lens",
-            help=_("give the galvo position of the selection"),
+            help=_("set the lens size"),
         )
         def galvo_lens(
             command, channel, _, data=None, lens_size=None, args=tuple(), **kwargs
@@ -1294,18 +1335,17 @@ class BalorDevice(Service, ViewPort):
             elements = self.elements
             channel(_("Hatch Filling"))
             if distance is not None:
-                distance = self.length(distance, -1, as_float=True)
-                distance *= self.get_native_scale_x
-            else:
-                distance = self.length("1mm", -1, as_float=True)
-                distance *= self.get_native_scale_x
+                distance = "1mm"
+            distance = float(Length(distance))
+            transformed_vector = self._matrix.transform_vector([0, distance])
+            distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
             efill = EulerianFill(distance)
             for element in elements.elems(emphasized=True):
                 if not isinstance(element, Shape):
                     continue
                 e = abs(Path(element))
-                e *= Matrix.scale(self.get_native_scale_x, self.get_native_scale_y)
+                e *= self._matrix
                 if angle is not None:
                     e *= Matrix.rotate(angle)
 
@@ -1341,38 +1381,6 @@ class BalorDevice(Service, ViewPort):
             self.driver.native_x,
             self.driver.native_y,
         )
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
-
-    @property
-    def get_native_scale_x(self):
-        """
-        Native x goes from 0x0000 to 0xFFFF with 0x8000 being zero.
-        :return:
-        """
-        unit_size = self.unit_width
-        galvo_range = 0xFFFF
-        unit_per_galvo = unit_size / galvo_range
-        return 1.0 / unit_per_galvo
-
-    @property
-    def get_native_scale_y(self):
-        unit_size = self.unit_height
-        galvo_range = 0xFFFF
-        unit_per_galvo = unit_size / galvo_range
-        return 1.0 / unit_per_galvo
 
     @property
     def calibration_file(self):

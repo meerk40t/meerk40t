@@ -104,6 +104,7 @@ class BalorDriver(Parameters):
         :return:
         """
         plot = list(plot)
+        last_index = 0
         for i in range(0, len(plot)):
             if len(plot[i]) == 2:
                 try:
@@ -129,6 +130,10 @@ class BalorDriver(Parameters):
                 except IndexError:
                     pass
             yield plot[i]
+            last_index = i
+        if last_index != len(plot):
+            yield plot[-1]
+
 
     # def cutcode_to_light_job(self, queue):
     #     """
@@ -165,56 +170,6 @@ class BalorDriver(Parameters):
     #                 job.light(x, y, False)
     #     job.light_off()
     #     return job
-
-    def cutcode_to_mark_job(self, queue):
-        """
-        Convert cutcode to a mark job.
-
-        @param queue:
-        @return:
-        """
-        cal = None
-        if self.service.calibration_file is not None:
-            try:
-                cal = Cal(self.service.calibration_file)
-            except TypeError:
-                pass
-        job = CommandList(cal=cal)
-        job.set_mark_settings(
-            travel_speed=self.service.travel_speed,
-            power=self.service.laser_power,
-            frequency=self.service.q_switch_frequency,
-            cut_speed=self.service.cut_speed,
-            laser_on_delay=100,
-            laser_off_delay=100,
-            polygon_delay=100,
-        )
-        job.set_write_port(self.connection.get_port())
-        job.goto(0x8000, 0x8000)
-        job.laser_control(True)
-        last_on = None
-        for plot in queue:
-            start = plot.start
-            job.goto(start[0], start[1])
-
-            for e in self.group(plot.generator()):
-                on = 1
-                if len(e) == 2:
-                    x, y = e
-                else:
-                    x, y, on = e
-                if on == 0:
-                    try:
-                        job.goto(x, y)
-                    except ValueError:
-                        print("Not including this stroke path:", file=sys.stderr)
-                else:
-                    if last_on is None or on != last_on:
-                        last_on = on
-                        job.set_power(self.service.laser_power * on)
-                    job.mark(x, y)
-        job.laser_control(False)
-        return job
 
     def hold_work(self):
         """
@@ -297,7 +252,48 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        job = self.cutcode_to_mark_job(self.queue)
+        queue = self.queue
+        cal = None
+        if self.service.calibration_file is not None:
+            try:
+                cal = Cal(self.service.calibration_file)
+            except TypeError:
+                pass
+        job = CommandList(cal=cal)
+        job.set_mark_settings(
+            travel_speed=self.service.travel_speed,
+            power=self.service.laser_power,
+            frequency=self.service.q_switch_frequency,
+            cut_speed=self.service.cut_speed,
+            laser_on_delay=100,
+            laser_off_delay=100,
+            polygon_delay=100,
+        )
+        job.set_write_port(self.connection.get_port())
+        job.goto(0x8000, 0x8000)
+        job.laser_control(True)
+        last_on = None
+        for plot in queue:
+            start = plot.start
+            job.goto(start[0], start[1])
+
+            for e in self.group(plot.generator()):
+                on = 1
+                if len(e) == 2:
+                    x, y = e
+                else:
+                    x, y, on = e
+                if on == 0:
+                    try:
+                        job.goto(x, y)
+                    except ValueError:
+                        print("Not including this stroke path:", file=sys.stderr)
+                else:
+                    if last_on is None or on != last_on:
+                        last_on = on
+                        job.set_power(self.service.laser_power * on)
+                    job.mark(x, y)
+        job.laser_control(False)
         self.queue = []
         self.connection.execute(job, 1)
         if self.redlight_preferred:
@@ -315,17 +311,7 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_x = self.service.length(
-            x, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_y = self.service.length(
-            y, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_x *= self.service.get_native_scale_x
-        unit_y *= self.service.get_native_scale_y
-        self.native_x = unit_x
-        self.native_y = unit_y
-
+        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -347,18 +333,9 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        unit_dx = self.service.length(
-            dx, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dy = self.service.length(
-            dy, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dx *= self.service.get_native_scale_x
-        unit_dy *= self.service.get_native_scale_y
+        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
-        self.native_x = int(self.native_x)
-        self.native_y = int(self.native_y)
 
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
