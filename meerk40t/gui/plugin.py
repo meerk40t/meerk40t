@@ -158,6 +158,7 @@ def plugin(kernel, lifecycle):
     elif lifecycle == "mainloop":
         # Replace the default kernel data prompt for a wx Popup.
         def prompt_popup(data_type, prompt):
+            import wx
             with wx.TextEntryDialog(
                 None, prompt, _("Information Required:"), ""
             ) as dlg:
@@ -173,6 +174,7 @@ def plugin(kernel, lifecycle):
         kernel.prompt = prompt_popup
 
         def interrupt_popup():
+            import wx
             dlg = wx.MessageDialog(
                 None,
                 _("Spooling Interrupted. Press OK to Continue."),
