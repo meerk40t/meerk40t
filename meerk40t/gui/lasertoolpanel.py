@@ -7,6 +7,9 @@ from math import sqrt
 
 _ = wx.GetTranslation
 
+
+DEFAULT_LEN = "5cm"
+
 def register_panel_lasertool(window, context):
     panel = LaserToolPanel(window, wx.ID_ANY, context=context)
     pane = (
@@ -60,9 +63,9 @@ class LaserToolPanel(wx.Panel):
         label_1.SetMinSize((20, 23))
         sizer_1.Add(label_1, 0, 0, 0)
 
-        self.btnSet1 = wx.Button(self.nb_circle, wx.ID_ANY, _("Get"))
-        self.btnSet1.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_1.Add(self.btnSet1, 0, 0, 0)
+        self.btnSet1_circle = wx.Button(self.nb_circle, wx.ID_ANY, _("Use position"))
+        self.btnSet1_circle.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_1.Add(self.btnSet1_circle, 0, 0, 0)
 
         self.lbl_pos_1 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_1.Add(self.lbl_pos_1, 0, 0, 0)
@@ -74,9 +77,9 @@ class LaserToolPanel(wx.Panel):
         label_2.SetMinSize((20, 23))
         sizer_2.Add(label_2, 0, 0, 0)
 
-        self.btnSet2 = wx.Button(self.nb_circle, wx.ID_ANY, _("Get"))
-        self.btnSet2.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_2.Add(self.btnSet2, 0, 0, 0)
+        self.btnSet2_circle = wx.Button(self.nb_circle, wx.ID_ANY, _("Use position"))
+        self.btnSet2_circle.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_2.Add(self.btnSet2_circle, 0, 0, 0)
 
         self.lbl_pos_2 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_2.Add(self.lbl_pos_2, 0, 0, 0)
@@ -88,9 +91,9 @@ class LaserToolPanel(wx.Panel):
         label_3.SetMinSize((20, 23))
         sizer_3.Add(label_3, 0, 0, 0)
 
-        self.btnSet3 = wx.Button(self.nb_circle, wx.ID_ANY, _("Get"))
-        self.btnSet3.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_3.Add(self.btnSet3, 0, 0, 0)
+        self.btnSet3_circle = wx.Button(self.nb_circle, wx.ID_ANY, _("Use position"))
+        self.btnSet3_circle.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_3.Add(self.btnSet3_circle, 0, 0, 0)
 
         self.lbl_pos_3 = wx.StaticText(self.nb_circle, wx.ID_ANY, _("<empty>"))
         sizer_3.Add(self.lbl_pos_3, 0, 0, 0)
@@ -118,58 +121,75 @@ class LaserToolPanel(wx.Panel):
 
         sizer_rectangle = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_rectangle.Add(sizer_11, 0, wx.EXPAND, 0)
+        sizer_rect_hor = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_rectangle.Add(sizer_rect_hor, 0, wx.EXPAND, 0)
 
-        sizer_12 = wx.BoxSizer(wx.VERTICAL)
-        sizer_11.Add(sizer_12, 0, wx.EXPAND, 0)
+        sizer_rect_vert = wx.BoxSizer(wx.VERTICAL)
+        sizer_rect_hor.Add(sizer_rect_vert, 0, wx.EXPAND, 0)
 
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_rect_vert.Add(sizer_5, 1, wx.EXPAND, 0)
 
         label_4 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Side A 1"))
         label_4.SetMinSize((45, 23))
         sizer_5.Add(label_4, 0, 0, 0)
 
-        self.btnSet1_copy = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Get"))
-        self.btnSet1_copy.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_5.Add(self.btnSet1_copy, 0, 0, 0)
+        self.btnSet1_rect = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Use position"))
+        self.btnSet1_rect.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_5.Add(self.btnSet1_rect, 0, 0, 0)
 
         self.lbl_pos_4 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_5.Add(self.lbl_pos_4, 0, 0, 0)
 
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12.Add(sizer_6, 1, wx.EXPAND, 0)
+        sizer_rect_vert.Add(sizer_6, 1, wx.EXPAND, 0)
 
         label_5 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Side A 2"))
         label_5.SetMinSize((45, 23))
         sizer_6.Add(label_5, 0, 0, 0)
 
-        self.btnSet2_copy = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Get"))
-        self.btnSet2_copy.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_6.Add(self.btnSet2_copy, 0, 0, 0)
+        self.btnSet2_rect = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Use position"))
+        self.btnSet2_rect.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_6.Add(self.btnSet2_rect, 0, 0, 0)
 
         self.lbl_pos_5 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_6.Add(self.lbl_pos_5, 0, 0, 0)
 
         sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12.Add(sizer_7, 1, wx.EXPAND, 0)
+        sizer_rect_vert.Add(sizer_7, 1, wx.EXPAND, 0)
 
         label_6 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Side B"))
         label_6.SetMinSize((45, 23))
         sizer_7.Add(label_6, 0, 0, 0)
 
-        self.btnSet3_copy = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Get"))
-        self.btnSet3_copy.SetToolTip(_("Place the laser over the desired point and press..."))
-        sizer_7.Add(self.btnSet3_copy, 0, 0, 0)
+        self.btnSet3_rect = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Use position"))
+        self.btnSet3_rect.SetToolTip(_("Place the laser over the desired point and click..."))
+        sizer_7.Add(self.btnSet3_rect, 0, 0, 0)
 
         self.lbl_pos_6 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_7.Add(self.lbl_pos_6, 0, 0, 0)
 
+        size_width = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_rect_vert.Add(size_width, 1, wx.EXPAND, 0)
+
+        label_wd = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("Dimension"))
+        label_wd.SetMinSize((-1, 23))
+        size_width.Add(label_wd, 0, 0, 0)
+
+        self.txt_width = wx.TextCtrl(self.nb_rectangle, wx.ID_ANY, DEFAULT_LEN)
+        self.txt_width.SetToolTip(_("Width of the rectangle to create"))
+        self.txt_width.SetMinSize((60, -1))
+        size_width.Add(self.txt_width, 0, 0, 0)
+
+        self.txt_height = wx.TextCtrl(self.nb_rectangle, wx.ID_ANY, DEFAULT_LEN)
+        self.txt_height.SetToolTip(_("Height of the rectangle to create"))
+        self.txt_height.SetMinSize((60, -1))
+        size_width.Add(self.txt_height, 0, 0, 0)
+
         image2 = wx.StaticBitmap(self.nb_rectangle, wx.ID_ANY, instruction_rectangle.GetBitmap())
         instructions = _("Instruction: place the laser on two points of one side of a rectangle on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a rectangle for you for futher processing.")
         image2.SetToolTip(instructions)
-        sizer_11.Add(image2, 1, 0, 0)
+        sizer_rect_hor.Add(image2, 1, 0, 0)
 
         sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_rectangle.Add(sizer_8, 0, wx.EXPAND, 0)
@@ -190,14 +210,16 @@ class LaserToolPanel(wx.Panel):
 
         self.Layout()
 
-        self.btnSet1.Bind(wx.EVT_BUTTON, self.on_click_get1)
-        self.btnSet2.Bind(wx.EVT_BUTTON, self.on_click_get2)
-        self.btnSet3.Bind(wx.EVT_BUTTON, self.on_click_get3)
+        self.btnSet1_circle.Bind(wx.EVT_BUTTON, self.on_click_get1)
+        self.btnSet2_circle.Bind(wx.EVT_BUTTON, self.on_click_get2)
+        self.btnSet3_circle.Bind(wx.EVT_BUTTON, self.on_click_get3)
         self.btn_move_to_center.Bind(wx.EVT_BUTTON, self.on_btn_move_center)
         self.btn_create_circle.Bind(wx.EVT_BUTTON, self.on_btn_create_circle)
-        self.btnSet1_copy.Bind(wx.EVT_BUTTON, self.on_click_get1)
-        self.btnSet2_copy.Bind(wx.EVT_BUTTON, self.on_click_get2)
-        self.btnSet3_copy.Bind(wx.EVT_BUTTON, self.on_click_get3)
+        self.btnSet1_rect.Bind(wx.EVT_BUTTON, self.on_click_get1)
+        self.btnSet2_rect.Bind(wx.EVT_BUTTON, self.on_click_get2)
+        self.btnSet3_rect.Bind(wx.EVT_BUTTON, self.on_click_get3)
+        self.txt_height.Bind(wx.EVT_KILL_FOCUS, self.on_text_change)
+        self.txt_width.Bind(wx.EVT_KILL_FOCUS, self.on_text_change)
         self.btn_create_rectangle.Bind(wx.EVT_BUTTON, self.on_btn_create_rectangle)
         # end wxGlade
 
@@ -250,6 +272,17 @@ class LaserToolPanel(wx.Panel):
         self.set_coord(idx=2, position=self.laserposition)
         event.Skip()
 
+    def on_text_change(self, event):
+        event.Skip()
+        try:
+            l = Length(self.txt_height.GetValue())
+        except (ValueError, AttributeError):
+            self.txt_height.SetValue(DEFAULT_LEN)
+        try:
+            l = Length(self.txt_width.GetValue())
+        except (ValueError, AttributeError):
+            self.txt_width.SetValue(DEFAULT_LEN)
+
     def calculate_center(self):
         '''
         Let's recall how the equation of a circle looks like in general form:
@@ -286,15 +319,17 @@ class LaserToolPanel(wx.Panel):
 
         sx21 = pow(self.coord_b[0], 2) - pow(self.coord_a[0], 2)
         sy21 = pow(self.coord_b[1], 2) - pow(self.coord_a[1], 2)
+        try:
+            f = (((sx13) * (x12) + (sy13) *
+                (x12) + (sx21) * (x13) +
+                (sy21) * (x13)) // (2 *
+                ((y31) * (x12) - (y21) * (x13))))
 
-        f = (((sx13) * (x12) + (sy13) *
-            (x12) + (sx21) * (x13) +
-            (sy21) * (x13)) // (2 *
-            ((y31) * (x12) - (y21) * (x13))))
-
-        g = (((sx13) * (y12) + (sy13) * (y12) +
-            (sx21) * (y13) + (sy21) * (y13)) //
-            (2 * ((x31) * (y12) - (x21) * (y13))))
+            g = (((sx13) * (y12) + (sy13) * (y12) +
+                (sx21) * (y13) + (sy21) * (y13)) //
+                (2 * ((x31) * (y12) - (x21) * (y13))))
+        except (ZeroDivisionError, ArithmeticError):
+            return False, None, None
 
         c = (-pow(self.coord_a[0], 2) - pow(self.coord_a[1], 2) -
             2 * g * self.coord_a[0] - 2 * f * self.coord_a[1])
@@ -328,9 +363,10 @@ class LaserToolPanel(wx.Panel):
         result, center, radius = self.calculate_center()
         if result:
             p = self.context
+            units = p.units_name
             self.context("move_absolute {x} {y}\n".format(
-                x=str(Length(amount=center[0], digits=5, preferred_units=p.units)),
-                y=str(Length(amount=center[1], digits=5, preferred_units=p.units))
+                x=str(Length(amount=center[0], digits=5, preferred_units=units)),
+                y=str(Length(amount=center[1], digits=5, preferred_units=units))
             ))
         event.Skip()
 
@@ -339,10 +375,6 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
-            self.context("move_absolute {x} {y}\n".format(
-                x=str(Length(amount=center[0], digits=5, preferred_units=units)),
-                y=str(Length(amount=center[1], digits=5, preferred_units=units))
-            ))
             self.context("circle {x} {y} {r}\n".format(
                 x=str(Length(amount=center[0], digits=5, preferred_units=units)),
                 y=str(Length(amount=center[1], digits=5, preferred_units=units)),
@@ -353,9 +385,22 @@ class LaserToolPanel(wx.Panel):
         event.Skip()
 
     def on_btn_create_rectangle(self, event):  # wxGlade: clsLasertools.<event_handler>
+        try:
+            dim_x = Length(self.txt_width.GetValue())
+            dim_y = Length(self.txt_height.GetValue())
+        except ValueError:
+            dim_x = Length(DEFAULT_LEN)
+            dim_y = Length(DEFAULT_LEN)
         result, center, angle = self.calculate_rectangle()
         if result:
-            self.context("rect {x} {y} 5cm 5cm rotate {angle}\n".format(x=center[0], y=center[0], angle=angle))
+            p = self.context
+            units = p.units_name
+            self.context("rect {x} {y} {wd} {ht} rotate {angle} -x {x} -y {y}\n".format(
+                x=str(Length(amount=center[0], digits=5, preferred_units=units)),
+                y=str(Length(amount=center[1], digits=5, preferred_units=units)),
+                wd=str(dim_x.length_mm),
+                ht=str(dim_y.length_mm),
+                angle=angle))
             if self.check_reference_1.GetValue():
                 pass # Not yet implemented
         event.Skip()
