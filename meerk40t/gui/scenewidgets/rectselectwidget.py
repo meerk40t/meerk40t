@@ -20,24 +20,6 @@ class RectSelectWidget(Widget):
     SELECTION_TOUCH = 1
     SELECTION_CROSS = 2
     SELECTION_ENCLOSE = 3
-    # Color for selection rectangle (hit, cross, enclose)
-    selection_style = [
-        (
-            wx.RED,
-            wx.PENSTYLE_DOT_DASH,
-            "Select all elements the selection rectangle touches.",
-        ),
-        (
-            wx.GREEN,
-            wx.PENSTYLE_DOT,
-            "Select all elements the selection rectangle crosses.",
-        ),
-        (
-            wx.BLUE,
-            wx.PENSTYLE_SHORT_DASH,
-            "Select all elements the selection rectangle encloses.",
-        ),
-    ]
     selection_text_shift = " Previously selected remain selected!"
     selection_text_control = " Invert selection state of elements!"
 
@@ -59,6 +41,24 @@ class RectSelectWidget(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
+        # Color for selection rectangle (hit, cross, enclose)
+        self.selection_style = [
+            [
+                self.scene.colors.color_selection1,
+                wx.PENSTYLE_DOT_DASH,
+                "Select all elements the selection rectangle touches.",
+            ],
+            [
+                self.scene.colors.color_selection2,
+                wx.PENSTYLE_DOT,
+                "Select all elements the selection rectangle crosses.",
+            ],
+            [
+                self.scene.colors.color_selection3,
+                wx.PENSTYLE_SHORT_DASH,
+                "Select all elements the selection rectangle encloses.",
+            ],
+        ]
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.selection_style[0][0])
         self.selection_pen.SetWidth(25)
@@ -326,6 +326,9 @@ class RectSelectWidget(Widget):
         Draw the selection rectangle
         """
         if self.start_location is not None and self.end_location is not None:
+            self.selection_style[0][0] = self.scene.colors.color_selection1
+            self.selection_style[1][0] = self.scene.colors.color_selection2
+            self.selection_style[2][0] = self.scene.colors.color_selection3
             x0 = self.start_location[0]
             y0 = self.start_location[1]
             x1 = self.end_location[0]

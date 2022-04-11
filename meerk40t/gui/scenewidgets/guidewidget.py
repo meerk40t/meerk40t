@@ -395,7 +395,8 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         # print ("GuideWidget Draw")
-        gc.SetPen(wx.BLACK_PEN)
+        pen = wx.Pen(self.scene.colors.color_guide)
+        gc.SetPen(pen)
         w, h = gc.Size
         p = self.scene.context
         self.scaled_conversion = (
@@ -429,7 +430,7 @@ class GuideWidget(Widget):
         length = self.line_length
         edge_gap = self.edge_gap
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, wx.BLACK)
+        gc.SetFont(font, self.scene.colors.color_guide)
         gc.DrawText(self.units, edge_gap, edge_gap)
         (t_width, t_height) = gc.GetTextExtent("0")
         while x < w:
@@ -498,7 +499,7 @@ class GuideWidget(Widget):
             ends_hi.append((w - length - edge_gap, sy))
 
         grid_line_high_pen = wx.Pen()
-        grid_line_high_pen.SetColour(wx.Colour(0xFF, 0xA0, 0xA0, 0x60))  # With alpha
+        grid_line_high_pen.SetColour(self.scene.colors.color_magnetline)
         grid_line_high_pen.SetWidth(2)
 
         gc.SetPen(grid_line_high_pen)

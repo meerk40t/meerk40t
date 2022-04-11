@@ -47,7 +47,7 @@ class LaserPathWidget(Widget):
         """
         context = self.scene.context
         if context.draw_mode & DRAW_MODE_LASERPATH == 0:
-            mycol = wx.Colour(0x00, 0x00, 0xFF, 0x40)
+            mycol = self.scene.colors.color_laserpath
             pen = wx.Pen(mycol)
             gc.SetPen(pen)
             starts, ends = self.laserpath

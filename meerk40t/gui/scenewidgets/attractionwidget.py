@@ -24,9 +24,9 @@ class AttractionWidget(Widget):
         self.grid_points = None # Clear all
         self.my_x = None
         self.my_y = None
-        self.visible_pen = wx.Pen(wx.Colour(0xA0, 0xA0, 0xA0, 0x40))
+        self.visible_pen = wx.Pen(self.scene.colors.color_snap_visible)
         self.visible_pen.SetWidth(1)
-        self.closeup_pen = wx.Pen(wx.Colour(0x00, 0xFF, 0x00, 0xA0))
+        self.closeup_pen = wx.Pen(self.scene.colors.color_snap_closeup)
         self.closeup_pen.SetWidth(1)
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
@@ -211,6 +211,8 @@ class AttractionWidget(Widget):
         Draw all attraction points on the scene.
         """
         if self.show_snap_points:
+            self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
+            self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
             matrix = self.parent.matrix
             try:
                 # Intentionally big to clearly see shape

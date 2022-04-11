@@ -234,6 +234,11 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(data.matrix))
             return "scene", data
 
+        @context.console_command("colors_reset", hidden=True)
+        def reset_colors(**kwargs):
+            self.widget_scene.colors.set_default_colors()
+            self.request_refresh()
+
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """

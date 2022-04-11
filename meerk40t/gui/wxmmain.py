@@ -45,7 +45,8 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-
+    icons8_rotate_left_50,
+    icons8_rotate_right_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -554,7 +555,26 @@ class MeerK40t(MWindow):
                 "size": buttonsize
             },
         )
-
+        kernel.register(
+            "button/modify/Rotate90CW",
+            {
+                "label": _("Rotate CW"),
+                "icon": icons8_rotate_right_50,
+                "tip": _("Rotate the selected element clockwise by 90 deg"),
+                "action": lambda v: kernel.elements("rotate 90deg\n"),
+                "size": buttonsize
+            },
+        )
+        kernel.register(
+            "button/modify/Rotate90CCW",
+            {
+                "label": _("Rotate CCW"),
+                "icon": icons8_rotate_left_50,
+                "tip": _("Rotate the selected element counterclockwise by 90 deg"),
+                "action": lambda v: kernel.elements("rotate -90deg\n"),
+                "size": buttonsize
+            },
+        )
         kernel.register(
             "button/geometry/Union",
             {
