@@ -88,7 +88,8 @@ def process_event(
         widget.scene.cursor(widget.cursor)
         widget.hovering = True
         widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        # return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -98,12 +99,16 @@ def process_event(
         widget.hovering = True
         widget.scene.cursor(widget.cursor)
         widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
 
     # Now all Mouse-Click-Events
     elements = widget.scene.context.elements
     dx = space_pos[4]
     dy = space_pos[5]
+
+    if widget.scene.tool_active:
+        # print ("ignore")
+        return RESPONSE_CHAIN
 
     if event_type == "leftdown":
         if not (widget.key_control_pressed or widget.key_shift_pressed):
@@ -1833,7 +1838,7 @@ class SelectionWidget(Widget):
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
             self.tool_running = False
-            self.scene.tool_active = False
+
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
@@ -1844,7 +1849,8 @@ class SelectionWidget(Widget):
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            self.scene.tool_active = False
+            # self.scene.tool_active = False
+            pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
             elements.set_emphasized_by_position(space_pos)

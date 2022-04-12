@@ -115,10 +115,7 @@ class AttractionWidget(Widget):
                             and abs(new_y - self.my_y) <= self.action_attract_len
                         ):
                             # Is the distance small enough?
-                            self.scene.new_x_space = new_x
-                            self.scene.new_y_space = new_y
-                            response = RESPONSE_CHANGE_POSITION
-            #print ("response: %d" % response)
+                            response = (RESPONSE_CHANGE_POSITION, new_x, new_y)
 
         return response
 
@@ -357,7 +354,9 @@ class AttractionWidget(Widget):
         self.snap_points = self.scene.context.snap_points
         if self.snap_points and len(self.attraction_points) > 0 and not self.my_x is None:
             for pts in self.attraction_points:
-                if not pts[3]:  # not emphasized
+                # doit = not pts[3] # not emphasized
+                doit = True # Not sure why not :-)
+                if doit:
                     if (
                         abs(pts[0] - self.my_x) <= self.show_attract_len
                         and abs(pts[1] - self.my_y) <= self.show_attract_len

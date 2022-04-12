@@ -3,7 +3,7 @@ import wx
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
 
-from ..scene.sceneconst import RESPONSE_DROP
+from meerk40t.gui.scene.sceneconst import RESPONSE_DROP, RESPONSE_CONSUME, RESPONSE_CHAIN
 
 
 class DrawTool(ToolWidget):
@@ -30,19 +30,20 @@ class DrawTool(ToolWidget):
         self.series.append(point)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        # We don't set tool_active here, as this can't be properly honored...
+        response = RESPONSE_CHAIN
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
-            self.scene.tool_active = True
             self.add_point(space_pos[:2])
+            response = RESPONSE_CONSUME
         elif event_type == "move":
             if self.series is None:
-                self.scene.tool_active = False
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         elif event_type == "lost":
-            self.scene.tool_active = False
             self.series = None
             return RESPONSE_DROP
         elif event_type == "leftup":
@@ -54,5 +55,7 @@ class DrawTool(ToolWidget):
                 self.scene.context.elements.add_elem(t, classify=True)
             except IndexError:
                 pass
-            self.scene.tool_active = False
             self.series = None
+            self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        return response
