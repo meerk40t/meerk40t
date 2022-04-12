@@ -276,30 +276,21 @@ class BalorDriver(Parameters):
         for plot in queue:
             start = plot.start
             settings = plot.settings
-            travel_speed = settings.get("travel_speed")
-            if travel_speed:
-                job.set_travel_speed(travel_speed)
-            power = settings.get("laser_power")
-            if power:
-                job.set_power(power)
-            frequency = settings.get("q_switch_frequency")
-            if frequency:
-                job.set_frequency(frequency)
-            cut_speed = settings.get("cut_speed")
-            if cut_speed:
-                job.set_cut_speed(cut_speed)
-            delay_laser_on = settings.get("delay_laser_on")
-            if delay_laser_on:
-                job.set_laser_on_delay(delay_laser_on)
-            delay_laser_off = settings.get("delay_laser_off")
-            if delay_laser_off:
-                job.set_laser_off_delay(delay_laser_off)
-            delay_polygon = settings.get("delay_laser_polygon")
-            if delay_polygon:
-                job.set_polygon_delay(delay_polygon)
-
+            travel_speed = settings.get("travel_speed", self.service.travel_speed)
+            job.set_travel_speed(travel_speed)
+            power = settings.get("laser_power", self.service.laser_power)
+            job.set_power(power)
+            frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
+            job.set_frequency(frequency)
+            cut_speed = settings.get("cut_speed", self.service.cut_speed)
+            job.set_cut_speed(cut_speed)
+            delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+            job.set_laser_on_delay(delay_laser_on)
+            delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+            job.set_laser_off_delay(delay_laser_off)
+            delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+            job.set_polygon_delay(delay_polygon)
             job.goto(start[0], start[1])
-
             for e in self.group(plot.generator()):
                 on = 1
                 if len(e) == 2:
