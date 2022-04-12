@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from ..core.bindalias import keymap_execute
 from ..core.cutcode import CutCode
 from ..core.elements import ConsoleOperation, LaserOperation, isDot
 from ..svgelements import (
@@ -24,10 +25,9 @@ from .icons import (
     icons8_system_task_20,
     icons8_vector_20,
 )
-from .laserrender import DRAW_MODE_ICONS, DRAW_MODE_TREE, swizzlecolor
+from .laserrender import DRAW_MODE_ICONS, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name
-from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 
@@ -184,11 +184,7 @@ class TreePanel(wx.Panel):
         :param args:
         :return:
         """
-        if self.context.draw_mode & DRAW_MODE_TREE != 0:
-            self.wxtree.Hide()
-            return
-        else:
-            self.wxtree.Show()
+        # self.wxtree.Show()
         self.shadow_tree.rebuild_tree()
         self.request_refresh()
 
@@ -566,6 +562,8 @@ class ShadowTree:
         @return:
         """
         item = node.item
+        if item is None:
+            raise ValueError("Item was None for node " + repr(node))
         if not item.IsOk():
             raise ValueError("Bad Item")
         node.unregister_object()
@@ -729,14 +727,18 @@ class ShadowTree:
         self.wxtree.SetItemText(node.item, node.label)
         try:
             stroke = node.object.stroke
-            color = wx.Colour(swizzlecolor(Color(stroke).argb))
-            self.wxtree.SetItemTextColour(node.item, color)
+            wxcolor = Color(stroke).bgr
+            if wxcolor is not None:
+                color = wx.Colour(wxcolor)
+                self.wxtree.SetItemTextColour(node.item, color)
         except AttributeError:
             pass
         try:
             color = node.color
-            c = wx.Colour(swizzlecolor(Color(color)))
-            self.wxtree.SetItemTextColour(node.item, c)
+            wxcolor = Color(color).bgr
+            if wxcolor is not None:
+                c = wx.Colour(wxcolor)
+                self.wxtree.SetItemTextColour(node.item, c)
         except AttributeError:
             pass
 

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.10"
+SVGELEMENTS_VERSION = "1.6.12"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -4573,7 +4573,7 @@ class CubicBezier(Curve):
             return abs(
                 3 * (p1 - p0) * (1 - t) ** 2
                 + 6 * (p2 - p1) * (1 - t) * t
-                + 3 * (p3 - p2) * t ** 2
+                + 3 * (p3 - p2) * t**2
             )
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=error, limit=1000)[0]
@@ -6049,44 +6049,21 @@ class Path(Shape, MutableSequence):
         self._segments[0].start = prepoint
         return self
 
-    def _subpath_indices(self):
-        """
-        Returns the indexes of Move segments assuming that the first segment is a Move.
-
-        This can be used to count subpaths or to get segment start and end numbers for subpaths.
-        """
-        if len(self._segments) == 0:
-            return
-        yield 0
-        last = self._segments[0]
-        for i in range(1, len(self._segments)):
-            if isinstance(self._segments[i], Move) or isinstance(last, Close):
-                yield i
-            last = self._segments[i]
-
     def subpath(self, index):
-        if index < 0:
-            raise IndexError("Subpath negative index")
-        start = None
-        for i, end in enumerate(self._subpath_indices()):
-            if i > index:
-                return Subpath(self, start, end - 1)
-            start = end
-        if i == index:
-            return Subpath(self, start, len(self) - 1)
-        else:
-            raise IndexError("Subpath index out of range")
+        subpaths = list(self.as_subpaths())
+        return subpaths[index]
 
     def count_subpaths(self):
-        return len(tuple(self._subpath_indices()))
+        subpaths = list(self.as_subpaths())
+        return len(subpaths)
 
     def as_subpaths(self):
-        last = None
-        for end in self._subpath_indices():
-            if last is not None:
-                yield Subpath(self, last, end - 1)
-            last = end
-        yield Subpath(self, end, len(self) - 1)
+        last = 0
+        for current, seg in enumerate(self):
+            if current != last and isinstance(seg, Move):
+                yield Subpath(self, last, current - 1)
+                last = current
+        yield Subpath(self, last, len(self) - 1)
 
     def as_points(self):
         """Returns the list of defining points within path"""
@@ -7113,7 +7090,7 @@ class _Polyshape(Shape):
                 self.points = list()
                 return
         try:
-            if len(points) == 1:
+            if len(points) == 1 and isinstance(points[0], (list, tuple, str)):
                 points = points[0]
         except TypeError:
             pass

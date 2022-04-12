@@ -1,6 +1,8 @@
 import wx
 from wx import aui
 
+from ..core.bindalias import keymap_execute
+from ..svgelements import Angle, Length
 from .icons import icon_meerk40t
 from .laserrender import LaserRender
 from .mwindow import MWindow
@@ -17,8 +19,6 @@ from .scene.scenewidgets import (
 )
 from .scene.toolwidgets import DrawTool, RectTool, ToolContainer
 from .wxutils import get_key_name
-from ..svgelements import Angle, Length
-from ..core.bindalias import keymap_execute
 
 _ = wx.GetTranslation
 

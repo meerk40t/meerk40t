@@ -36,7 +36,6 @@ from .laserrender import (
     DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
-    DRAW_MODE_TREE,
     LaserRender,
     swizzlecolor,
 )
@@ -61,7 +60,6 @@ ID_MENU_HIDE_BACKGROUND = wx.NewId()
 ID_MENU_HIDE_LINEWIDTH = wx.NewId()
 ID_MENU_HIDE_STROKES = wx.NewId()
 ID_MENU_HIDE_ICONS = wx.NewId()
-ID_MENU_HIDE_TREE = wx.NewId()
 ID_MENU_HIDE_LASERPATH = wx.NewId()
 ID_MENU_HIDE_RETICLE = wx.NewId()
 ID_MENU_HIDE_SELECTION = wx.NewId()
@@ -126,6 +124,107 @@ ID_MAKERS_FORUM = wx.NewId()
 ID_IRC = wx.NewId()
 
 
+class CustomStatusBar(wx.StatusBar):
+    """Overloading of Statusbar to allow some checkboxes on it"""
+
+    panelct = 5
+    startup = True
+
+    def __init__(self, parent, panelct):
+        self.Startup = True
+        self.panelct = panelct
+        self.context = parent.context
+        wx.StatusBar.__init__(self, parent, -1)
+        self.SetFieldsCount(self.panelct)
+        self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
+        sizes = [-3] * self.panelct
+        # Make the first Panel large
+        sizes[0] = -4
+        # Make the last Panel smaller
+        # sizes[self.panelct - 1] = -2
+        self.SetStatusWidths(sizes)
+        self.sizeChanged = False
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+        # These will fall into the last field
+        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Scale"))
+        self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
+        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+        self.context.setting(bool, "enable_sel_handle", True)
+        self.context.setting(bool, "enable_sel_rotate", True)
+        self.context.setting(bool, "enable_sel_skew", False)
+        self.cb_handle.SetValue(self.context.enable_sel_handle)
+        self.cb_rotate.SetValue(self.context.enable_sel_rotate)
+        self.cb_skew.SetValue(self.context.enable_sel_skew)
+        self.cb_enabled = False
+
+        # set the initial position of the checkboxes
+        self.Reposition()
+        self.startup = False
+
+    @property
+    def cb_enabled(self):
+        return self._cb_enabled
+
+    @cb_enabled.setter
+    def cb_enabled(self, cb_enabled):
+        if cb_enabled:
+            self.cb_handle.Show()
+            self.cb_rotate.Show()
+            self.cb_skew.Show()
+        else:
+            self.cb_handle.Hide()
+            self.cb_rotate.Hide()
+            self.cb_skew.Hide()
+        self._cb_enabled = cb_enabled
+
+    # the checkbox was clicked
+    def on_toggle_handle(self, event):
+        if not self.startup:
+            valu = self.cb_handle.GetValue()
+            self.context.enable_sel_handle = valu
+            self.context.signal("refresh_scene", 0)
+
+    def on_toggle_rotate(self, event):
+        if not self.startup:
+            valu = self.cb_rotate.GetValue()
+            self.context.enable_sel_rotate = valu
+            self.context.signal("refresh_scene", 0)
+
+    def on_toggle_skew(self, event):
+        if not self.startup:
+            valu = self.cb_skew.GetValue()
+            self.context.enable_sel_skew = valu
+            self.context.signal("refresh_scene", 0)
+
+    def OnSize(self, evt):
+        evt.Skip()
+        self.Reposition()  # for normal size events
+        self.sizeChanged = True
+
+    def OnIdle(self, evt):
+        if self.sizeChanged:
+            self.Reposition()
+
+    # reposition the checkboxes
+    def Reposition(self):
+        rect = self.GetFieldRect(self.panelct - 1)
+        wd = rect.width / 3
+        rect.x += 1
+        rect.y += 1
+        rect.width = wd
+        self.cb_handle.SetRect(rect)
+        rect.x += wd
+        self.cb_rotate.SetRect(rect)
+        rect.x += wd
+        self.cb_skew.SetRect(rect)
+        self.sizeChanged = False
+
+
 class MeerK40t(MWindow):
     """MeerK40t main window"""
 
@@ -174,13 +273,11 @@ class MeerK40t(MWindow):
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
 
-        self.main_statusbar = self.CreateStatusBar(4)
-        self.main_statusbar.SetStatusStyles(
-            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
-        )
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        self.main_statusbar = CustomStatusBar(self, 5)
+        self.SetStatusBar(self.main_statusbar)
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText(_("Status..."), 0)
+
         self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
         self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
@@ -812,6 +909,11 @@ class MeerK40t(MWindow):
             self._mgr.Update()
 
     def on_pane_reset(self, event=None):
+        self.on_panes_closed()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_panes_closed(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
@@ -822,10 +924,8 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "finalize"):
                             page.finalize()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
-        self.on_config_panes()
 
-    def on_config_panes(self):
+    def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
@@ -844,6 +944,9 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "noninitialize"):
                             page.noninitialize()
+
+    def on_config_panes(self):
+        self.on_panes_opened()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -912,7 +1015,6 @@ class MeerK40t(MWindow):
         context.listen("pipe;running", self.on_usb_running)
         context.listen("pipe;usb_status", self.on_usb_state_text)
         context.listen("pipe;thread", self.on_pipe_state)
-        context.listen("spooler;thread", self.on_spooler_state)
         context.listen("warning", self.on_warning_signal)
         bed_dim = context.root
         bed_dim.setting(int, "bed_width", 310)  # Default Value
@@ -922,6 +1024,8 @@ class MeerK40t(MWindow):
         context.listen("modified", self.on_invalidate_save)
         context.listen("altered", self.on_invalidate_save)
         context.listen("statusmsg", self.on_update_statusmsg)
+        # context.listen("select_emphasized_tree", self.on_update_selwidget)
+        context.listen("emphasized", self.on_update_selwidget)
 
         @context.console_command(
             "theme", help=_("Theming information and assignments"), hidden=True
@@ -974,18 +1078,39 @@ class MeerK40t(MWindow):
         # FILE MENU
         # ==========
 
-        self.file_menu.Append(wx.ID_NEW, _("&New\tCtrl-N"), "")
-        self.file_menu.Append(wx.ID_OPEN, _("&Open Project\tCtrl-O"), "")
+        self.file_menu.Append(
+            wx.ID_NEW, _("&New\tCtrl-N"), _("Clear Operations, Elements and Notes")
+        )
+        self.file_menu.Append(
+            wx.ID_OPEN,
+            _("&Open Project\tCtrl-O"),
+            _("Clear existing elements and notes and open a new file"),
+        )
         self.recent_file_menu = wx.Menu()
-        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
-        self.file_menu.Append(ID_MENU_IMPORT, _("&Import File"), "")
+        if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        self.file_menu.Append(
+            ID_MENU_IMPORT,
+            _("&Import File"),
+            _("Import another file into the same project"),
+        )
         self.file_menu.AppendSeparator()
-        self.file_menu.Append(wx.ID_SAVE, _("&Save\tCtrl-S"), "")
-        self.file_menu.Append(wx.ID_SAVEAS, _("Save &As\tCtrl-Shift-S"), "")
+        self.file_menu.Append(
+            wx.ID_SAVE,
+            _("&Save\tCtrl-S"),
+            _("Save the project as an SVG file (overwriting any existing file)"),
+        )
+        self.file_menu.Append(
+            wx.ID_SAVEAS,
+            _("Save &As\tCtrl-Shift-S"),
+            _("Save the project in a new SVG file"),
+        )
         self.file_menu.AppendSeparator()
         if platform.system() == "Darwin":
-            self.file_menu.Append(wx.ID_CLOSE, _("&Close Window\tCtrl-W"), "")
-        self.file_menu.Append(wx.ID_EXIT, _("E&xit"), "")
+            self.file_menu.Append(
+                wx.ID_CLOSE, _("&Close Window\tCtrl-W"), _("Close Meerk40t")
+            )
+        self.file_menu.Append(wx.ID_EXIT, _("E&xit"), _("Close Meerk40t"))
         self.main_menubar.Append(self.file_menu, _("File"))
 
     def __set_view_menu(self):
@@ -994,57 +1119,123 @@ class MeerK40t(MWindow):
         # ==========
         self.view_menu = wx.Menu()
 
-        self.view_menu.Append(ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), "")
-        self.view_menu.Append(ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), "")
         self.view_menu.Append(
-            ID_MENU_ZOOM_SIZE, _("Zoom to &Selected\tCtrl-Shift-B"), ""
+            ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), _("Make the scene smaller")
         )
-        self.view_menu.Append(ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), "")
+        self.view_menu.Append(
+            ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), _("Make the scene larger")
+        )
+        self.view_menu.Append(
+            ID_MENU_ZOOM_SIZE,
+            _("Zoom to &Selected\tCtrl-Shift-B"),
+            _("Fill the scene area with the selected elements"),
+        )
+        self.view_menu.Append(
+            ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
+        )
         self.view_menu.AppendSeparator()
 
-        self.view_menu.Append(ID_MENU_HIDE_GRID, _("Hide Grid"), "", wx.ITEM_CHECK)
         self.view_menu.Append(
-            ID_MENU_HIDE_BACKGROUND, _("Hide Background"), "", wx.ITEM_CHECK
-        )
-        self.view_menu.Append(ID_MENU_HIDE_GUIDES, _("Hide Guides"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_PATH, _("Hide Paths"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_IMAGE, _("Hide Images"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_TEXT, _("Hide Text"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_FILLS, _("Hide Fills"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(
-            ID_MENU_HIDE_STROKES, _("Hide Strokes"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_GRID,
+            _("Hide Grid"),
+            _("Don't show the sizing grid"),
+            wx.ITEM_CHECK,
         )
         self.view_menu.Append(
-            ID_MENU_HIDE_LINEWIDTH, _("No Stroke-Width Render"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_BACKGROUND,
+            _("Hide Background"),
+            _("Don't show any background image"),
+            wx.ITEM_CHECK,
         )
         self.view_menu.Append(
-            ID_MENU_HIDE_LASERPATH, _("Hide Laserpath"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_GUIDES,
+            _("Hide Guides"),
+            _("Don't show the measurement guides"),
+            wx.ITEM_CHECK,
         )
         self.view_menu.Append(
-            ID_MENU_HIDE_RETICLE, _("Hide Reticle"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_PATH,
+            _("Hide Shapes"),
+            _("Don't show shapes (i.e. Rectangles, Paths etc.)"),
+            wx.ITEM_CHECK,
         )
         self.view_menu.Append(
-            ID_MENU_HIDE_SELECTION, _("Hide Selection"), "", wx.ITEM_CHECK
+            ID_MENU_HIDE_STROKES,
+            _("Hide Strokes"),
+            _("Don't show the strokes (i.e. the edges of SVG shapes)"),
+            wx.ITEM_CHECK,
         )
+        # TODO - this function doesn't work.
+        self.view_menu.Append(
+            ID_MENU_HIDE_LINEWIDTH,
+            _("No Stroke-Width Render"),
+            _("Ignore the stroke width when drawing the stroke"),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_FILLS,
+            _("Hide Fills"),
+            _("Don't show fills (i.e. the fill inside strokes)"),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_IMAGE, _("Hide Images"), _("Don't show images"), wx.ITEM_CHECK
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_TEXT,
+            _("Hide Text"),
+            _("Don't show text elements"),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_LASERPATH,
+            _("Hide Laserpath"),
+            _("Don't show the path that the laserhead has followed (blue line)"),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_RETICLE,
+            _("Hide Reticle"),
+            _(
+                "Don't show the small read circle showing the current laserhead position"
+            ),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_HIDE_SELECTION,
+            _("Hide Selection"),
+            _("Don't show the selection boundaries and dimensions"),
+            wx.ITEM_CHECK,
+        )
+        # TODO This menu does not clear existing icons or create icons when it is changed
         self.view_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_HIDE_TREE, _("Hide Tree"), "", wx.ITEM_CHECK)
         self.view_menu.Append(
-            ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
+            ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), _(""), wx.ITEM_CHECK
         )
         self.view_menu.Append(
             ID_MENU_PREVENT_ALPHABLACK,
             _("Do Not Alpha/Black Images"),
-            "",
+            _(""),
             wx.ITEM_CHECK,
         )
         self.view_menu.Append(
-            ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), "", wx.ITEM_CHECK
+            ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), _(""), wx.ITEM_CHECK
         )
         self.view_menu.Append(
-            ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), "", wx.ITEM_CHECK
+            ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), _(""), wx.ITEM_CHECK
         )
-        self.view_menu.Append(ID_MENU_SCREEN_INVERT, _("Invert"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(ID_MENU_SCREEN_FLIPXY, _("Flip XY"), "", wx.ITEM_CHECK)
+        self.view_menu.Append(
+            ID_MENU_SCREEN_INVERT,
+            _("Invert"),
+            _("Show a negative image of the scene by inverting colours"),
+            wx.ITEM_CHECK,
+        )
+        self.view_menu.Append(
+            ID_MENU_SCREEN_FLIPXY,
+            _("Flip XY"),
+            _("Effectively rotate the scene display by 180 degrees"),
+            wx.ITEM_CHECK,
+        )
 
         self.main_menubar.Append(self.view_menu, _("View"))
 
@@ -1086,7 +1277,8 @@ class MeerK40t(MWindow):
 
             if pane.caption:
                 id_new = wx.NewId()
-                menu_item = menu_context.AppendCheckItem(id_new, pane.caption, "")
+                showhide = _("Show/Hide the {name} pane").format(name=pane.caption)
+                menu_item = menu_context.AppendCheckItem(id_new, pane.caption, showhide)
                 menu_context.Bind(
                     wx.EVT_MENU,
                     toggle_pane(pane),
@@ -1100,12 +1292,19 @@ class MeerK40t(MWindow):
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
+            ID_MENU_PANE_LOCK,
+            _("Lock Panes"),
+            _(
+                "Hide title bars of docked panes and prevent drag and drop to a different location"
+            ),
+            wx.ITEM_CHECK,
         )
         item.Check(self.context.pane_lock)
         self.panes_menu.AppendSeparator()
         self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_RESET, _("Reset Panes"), ""
+            ID_MENU_PANE_RESET,
+            _("Reset Panes"),
+            _("Reset the pane layout to default"),
         )
         self.main_menubar.Append(self.panes_menu, _("Panes"))
 
@@ -1117,54 +1316,70 @@ class MeerK40t(MWindow):
         self.window_menu = wx.Menu()
 
         self.window_menu.executejob = self.window_menu.Append(
-            ID_MENU_JOB, _("E&xecute Job"), ""
+            ID_MENU_JOB,
+            _("E&xecute Job"),
+            _("Set execute options and burn the current project"),
         )
         self.window_menu.simulate = self.window_menu.Append(
-            ID_MENU_SIMULATE, _("&Simulate"), ""
+            ID_MENU_SIMULATE, _("&Simulate"), _("Plan a burn and display a simulation")
         )
         self.window_menu.rasterwizard = self.window_menu.Append(
-            ID_MENU_RASTER_WIZARD, _("&RasterWizard"), ""
+            ID_MENU_RASTER_WIZARD,
+            _("&RasterWizard"),
+            _(
+                "Prepare the selected image by dithering to a smaller number of B/W pixels"
+            ),
         )
-        self.window_menu.notes = self.window_menu.Append(ID_MENU_NOTES, _("&Notes"), "")
+        self.window_menu.notes = self.window_menu.Append(
+            ID_MENU_NOTES, _("&Notes"), _("Show/Hide the Notes window")
+        )
         self.window_menu.console = self.window_menu.Append(
-            ID_MENU_CONSOLE, _("&Console"), ""
+            ID_MENU_CONSOLE, _("&Console"), _("Show/Hide the Console window")
         )
 
         self.window_menu.navigation = self.window_menu.Append(
-            ID_MENU_NAVIGATION, _("N&avigation"), ""
+            ID_MENU_NAVIGATION, _("N&avigation"), _("Show/Hide the Navigation window")
         )
         if self.context.has_feature("modifier/Camera"):
             self.window_menu.camera = self.window_menu.Append(
-                ID_MENU_CAMERA, _("C&amera"), ""
+                ID_MENU_CAMERA, _("C&amera"), _("Show/Hide the Camera window")
             )
         self.window_menu.jobspooler = self.window_menu.Append(
-            ID_MENU_SPOOLER, _("S&pooler"), ""
+            ID_MENU_SPOOLER, _("S&pooler"), _("Show/Hide the Spooler window")
         )
 
         self.window_menu.controller = self.window_menu.Append(
-            ID_MENU_CONTROLLER, _("C&ontroller"), ""
+            ID_MENU_CONTROLLER, _("C&ontroller"), _("Show/Hide the Controller window")
         )
         self.window_menu.devices = self.window_menu.Append(
-            ID_MENU_DEVICE_MANAGER, _("&Devices"), ""
+            ID_MENU_DEVICE_MANAGER, _("&Devices"), _("Show/Hide the Devices list")
         )
         self.window_menu.config = self.window_menu.Append(
-            ID_MENU_CONFIG, _("Confi&g"), ""
+            ID_MENU_CONFIG, _("Confi&g"), _("Show/Hide the Device Configuration window")
         )
         self.window_menu.preferences = self.window_menu.Append(
-            wx.ID_PREFERENCES, _("Pr&eferences...\tCtrl-,"), ""
+            wx.ID_PREFERENCES,
+            _("Pr&eferences...\tCtrl-,"),
+            _("Show/Hide the Preferences window"),
         )
 
         self.window_menu.keymap = self.window_menu.Append(
-            ID_MENU_KEYMAP, _("&Keymap"), ""
+            ID_MENU_KEYMAP,
+            _("&Keymap"),
+            _("Show/Hide the Keymap window where you can set keyboard accelerators"),
         )
         self.window_menu.rotary = self.window_menu.Append(
-            ID_MENU_ROTARY, _("Rotar&y"), ""
+            ID_MENU_ROTARY, _("Rotar&y"), _("Show/Hide the Rotary Setttings window")
         )
-        self.window_menu.usb = self.window_menu.Append(ID_MENU_USB, _("&USB"), "")
+        self.window_menu.usb = self.window_menu.Append(
+            ID_MENU_USB, _("&USB"), _("Show/Hide the USB log")
+        )
 
         self.window_menu.AppendSeparator()
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
+            ID_MENU_WINDOW_RESET,
+            _("Reset Windows"),
+            _("Reset window positions and sizes to default"),
         )
 
         self.main_menubar.Append(self.window_menu, _("Tools"))
@@ -1211,28 +1426,69 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform.system() == "Darwin":
-            self.help_menu.Append(wx.ID_HELP, _("&MeerK40t Help"), "")
+            self.help_menu.Append(
+                wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
+            )
             self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
             ONLINE_HELP = wx.NewId()
-            self.help_menu.Append(ONLINE_HELP, _("&Online Help"), "")
+            self.help_menu.Append(
+                ONLINE_HELP, _("&Online Help"), _("Open the Meerk40t online wiki")
+            )
             self.Bind(
                 wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP
             )
         else:
-            self.help_menu.Append(wx.ID_HELP, _("&Help"), "")
+            self.help_menu.Append(
+                wx.ID_HELP,
+                _("&Help"),
+                _("Open the Meerk40t online wiki Beginners page"),
+            )
             self.Bind(
                 wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
             )
 
-        self.help_menu.Append(ID_BEGINNERS, _("&Beginners' Help"), "")
-        self.help_menu.Append(ID_HOMEPAGE, _("&Github"), "")
-        self.help_menu.Append(ID_RELEASES, _("&Releases"), "")
-        self.help_menu.Append(ID_FACEBOOK, _("&Facebook"), "")
-        self.help_menu.Append(ID_DISCORD, _("&Discord"), "")
-        self.help_menu.Append(ID_MAKERS_FORUM, _("&Makers Forum"), "")
-        self.help_menu.Append(ID_IRC, _("&IRC"), "")
+        self.help_menu.Append(
+            ID_BEGINNERS,
+            _("&Beginners' Help"),
+            _("Open the Meerk40t online wiki Beginners page"),
+        )
+        self.help_menu.Append(
+            ID_HOMEPAGE, _("&Github"), _("Visit Meerk40t's Github home page")
+        )
+        self.help_menu.Append(
+            ID_RELEASES,
+            _("&Releases"),
+            _("Check for a new release on Meerk40t's Github releases page"),
+        )
+        self.help_menu.Append(
+            ID_FACEBOOK,
+            _("&Facebook"),
+            _("Get help from the K40 Meerk40t Facebook group"),
+        )
+        self.help_menu.Append(
+            ID_DISCORD,
+            _("&Discord"),
+            _("Chat with developers to get help on the Meerk40t Discord server"),
+        )
+        self.help_menu.Append(
+            ID_MAKERS_FORUM,
+            _("&Makers Forum"),
+            _("Get help from the Meerk40t page on the Makers Forum"),
+        )
+        self.help_menu.Append(
+            ID_IRC,
+            _("&IRC"),
+            _("Chat with developers to get help on the Meerk40t IRC channel"),
+        )
         self.help_menu.AppendSeparator()
-        self.help_menu.Append(wx.ID_ABOUT, _("&About MeerK40t"), "")
+        self.help_menu.Append(
+            wx.ID_ABOUT,
+            _("&About MeerK40t"),
+            _(
+                "Toggle the About window acknowledging those who contributed to creating Meerk40t"
+            ),
+        )
+
         self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
@@ -1313,9 +1569,6 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ICONS), id=ID_MENU_HIDE_ICONS
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_TREE), id=ID_MENU_HIDE_TREE
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1522,8 +1775,6 @@ class MeerK40t(MWindow):
         m.Check(self.context.draw_mode & DRAW_MODE_STROKES != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_ICONS)
         m.Check(self.context.draw_mode & DRAW_MODE_ICONS != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TREE)
-        m.Check(self.context.draw_mode & DRAW_MODE_TREE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
         m.Check(self.context.draw_mode & DRAW_MODE_CACHE != 0)
         m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_ALPHABLACK)
@@ -1552,7 +1803,9 @@ class MeerK40t(MWindow):
             i = 0
             for lang in self.context.app.supported_languages:
                 language_code, language_name, language_index = lang
-                m = wxglade_tmp_menu.Append(wx.ID_ANY, language_name, "", wx.ITEM_RADIO)
+                m = wxglade_tmp_menu.Append(
+                    wx.ID_ANY, language_name, language_name, wx.ITEM_RADIO
+                )
                 if i == self.context.language:
                     m.Check(True)
 
@@ -1594,10 +1847,7 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "finalize"):
-                    pane.window.finalize()
+        self.on_panes_closed()
         self._mgr.UnInit()
 
         if context.print_shutdown:
@@ -1612,13 +1862,14 @@ class MeerK40t(MWindow):
         context.unlisten("pipe;running", self.on_usb_running)
         context.unlisten("pipe;usb_status", self.on_usb_state_text)
         context.unlisten("pipe;thread", self.on_pipe_state)
-        context.unlisten("spooler;thread", self.on_spooler_state)
         context.unlisten("warning", self.on_warning_signal)
 
         context.unlisten("active", self.on_active_change)
         context.unlisten("modified", self.on_invalidate_save)
         context.unlisten("altered", self.on_invalidate_save)
         context.unlisten("statusmsg", self.on_update_statusmsg)
+        # context.unlisten("select_emphasized_tree", self.on_update_selwidget)
+        context.unlisten("emphasized", self.on_update_selwidget)
 
         self.context("quit\n")
 
@@ -1634,7 +1885,9 @@ class MeerK40t(MWindow):
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
-    def on_warning_signal(self, origin, message, caption, style):
+    def on_warning_signal(self, origin, message, caption="", style=None):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,
@@ -1686,12 +1939,6 @@ class MeerK40t(MWindow):
             2,
         )
 
-    def on_spooler_state(self, origin, value):
-        self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value),
-            3,
-        )
-
     def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame
         if frame is not None:
@@ -1705,6 +1952,11 @@ class MeerK40t(MWindow):
 
     def on_update_statusmsg(self, origin, value):
         self.main_statusbar.SetStatusText(value, 0)
+
+    def on_update_selwidget(self, origin, *args):
+        elements = self.context.elements
+        valu = elements.has_emphasis()
+        self.main_statusbar.cb_enabled = valu
 
     def __set_titlebar(self):
         device_name = ""
@@ -1807,7 +2059,8 @@ class MeerK40t(MWindow):
 
         for file, id, shortcode in recents:
             if file is not None and file:
-                self.recent_file_menu.Append(id, shortcode + "  " + file, "")
+                shortfile = _("Load {file}...").format(file=os.path.basename(file))
+                self.recent_file_menu.Append(id, shortcode + "  " + file, shortfile)
                 self.Bind(
                     wx.EVT_MENU,
                     partial(lambda f, event: self.load_or_open(f), file),
@@ -1816,7 +2069,11 @@ class MeerK40t(MWindow):
 
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.AppendSeparator()
-            self.recent_file_menu.Append(ID_MENU_FILE_CLEAR, _("Clear Recent"), "")
+            self.recent_file_menu.Append(
+                ID_MENU_FILE_CLEAR,
+                _("Clear Recent"),
+                _("Delete the list of recent projects"),
+            )
             self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
 
     def clear_recent(self):
@@ -1925,10 +2182,10 @@ class MeerK40t(MWindow):
         self.clear_project()
 
     def on_click_open(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.context("dialog_load\n")
+        self.context(".dialog_load\n")
 
     def on_click_import(self, event=None):  # wxGlade: MeerK40t.<event_handler>
-        self.context("dialog_import\n")
+        self.context(".dialog_import\n")
 
     def on_click_stop(self, event=None):
         self.context("estop\n")
@@ -1937,10 +2194,10 @@ class MeerK40t(MWindow):
         self.context("pause\n")
 
     def on_click_save(self, event):
-        self.context("dialog_save\n")
+        self.context(".dialog_save\n")
 
     def on_click_save_as(self, event=None):
-        self.context("dialog_save_as\n")
+        self.context(".dialog_save_as\n")
 
     def on_click_close(self, event=None):
         try:

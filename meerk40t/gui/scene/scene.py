@@ -10,11 +10,10 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.wxutils import get_key_name
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point, Viewbox
-
-from meerk40t.gui.wxutils import get_key_name
 
 MILS_IN_MM = 39.3701
 
@@ -885,20 +884,26 @@ class Scene(Module, Job):
         """
         import platform
 
+        custom1 = -1
+        custom2 = -2
         if cursor == "sizing":
             new_cursor = wx.CURSOR_SIZING
         elif cursor in ("size_nw", "size_se"):
             new_cursor = wx.CURSOR_SIZENWSE
         elif cursor in ("size_sw", "size_ne"):
             new_cursor = wx.CURSOR_SIZENESW
-        elif cursor in ("size_n", "size_s"):
+        elif cursor in ("size_n", "size_s", "size_ns"):
             new_cursor = wx.CURSOR_SIZENS
-        elif cursor in ("size_e", "size_w"):
+        elif cursor in ("size_e", "size_w", "size_ew"):
             new_cursor = wx.CURSOR_SIZEWE
         elif cursor == "arrow":
             new_cursor = wx.CURSOR_ARROW
         elif cursor == "cross":
-            new_cursor = wx.CROSS_CURSOR
+            new_cursor = wx.CURSOR_CROSS
+        elif cursor == "rotate1":
+            new_cursor = wx.CURSOR_CROSS
+        elif cursor == "rotate2":
+            new_cursor = wx.CURSOR_CROSS
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")

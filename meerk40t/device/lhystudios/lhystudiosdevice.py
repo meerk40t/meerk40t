@@ -715,7 +715,7 @@ class LhystudiosDriver(Driver):
         context.setting(bool, "autolock", True)
 
         context.setting(str, "board", "M2")
-        context.setting(bool, "twitchless", False)
+        context.setting(bool, "twitchfull", False)
         context.setting(bool, "nse_raster", False)
         context.setting(bool, "nse_stepraster", False)
         context.setting(bool, "fix_speeds", False)
@@ -792,7 +792,6 @@ class LhystudiosDriver(Driver):
         for x, y, on in self.plot:
             sx = self.current_x
             sy = self.current_y
-            # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
             on = int(on)
             if on > 1:
                 # Special Command.
@@ -868,7 +867,7 @@ class LhystudiosDriver(Driver):
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.h_switch_g(dy)
+                            self.v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.current_x
                 dy = y - self.current_y
@@ -1173,9 +1172,11 @@ class LhystudiosDriver(Driver):
 
     def ensure_program_mode(self, *values, dx=0, dy=0):
         """
-        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchless is set to False.
+        Vector Mode implies but doesn't discount rastering. Twitches are used if twitchfull is set to True.
 
-        @param values:
+        @param values: passed information from the driver command
+        @param dx: change in dx that should be made while switching to program mode.
+        @param dy: change in dy that should be made while switching to program mode.
         @return:
         """
         if self.state == DRIVER_STATE_PROGRAM:
@@ -1196,7 +1197,7 @@ class LhystudiosDriver(Driver):
 
         suffix_c = None
         if (
-            self.context.twitchless or self.settings.force_twitchless
+            not self.context.twitchfull or self.settings.force_twitchless
         ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
@@ -1242,9 +1243,10 @@ class LhystudiosDriver(Driver):
         """
         NSE h_switches replace the mere reversal of direction with N<v><distance>SE
 
-        If a G-value is set we should subtract that from the step for our movement.
+        If a G-value is set we should subtract that from the step for our movement. Since triggering NSE will cause
+        that step to occur.
 
-        @param dy: The amount along the directional axis we should move.
+        @param dy: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1265,19 +1267,22 @@ class LhystudiosDriver(Driver):
             self.data_output(self.CODE_LEFT)
         else:
             self.data_output(self.CODE_RIGHT)
-
         self.data_output(b"N")
         if delta != 0:
-            if self._topward:
+            if delta < 0:
                 self.data_output(self.CODE_TOP)
+                self._topward = True
             else:
                 self.data_output(self.CODE_BOTTOM)
+                self._topward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.current_y += delta
         self.data_output(b"SE")
         self.current_y += step_amount
 
         self._leftward = not self._leftward
+        self._x_engaged = True
+        self._y_engaged = False
         self.laser = False
         self.step_index += 1
 
@@ -1285,7 +1290,7 @@ class LhystudiosDriver(Driver):
         """
         NSE v_switches replace the mere reversal of direction with N<h><distance>SE
 
-        @param dx: The amount along the directional axis we should move.
+        @param dx: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1301,21 +1306,26 @@ class LhystudiosDriver(Driver):
         step_amount = -set_step if self._leftward else set_step
         delta = delta - step_amount
 
+        # We force reenforce directional move.
         if self._topward:
             self.data_output(self.CODE_TOP)
         else:
             self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
         if delta != 0:
-            if self._leftward:
+            if delta < 0:
                 self.data_output(self.CODE_LEFT)
+                self._leftward = True
             else:
                 self.data_output(self.CODE_RIGHT)
+                self._leftward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.current_x += delta
         self.data_output(b"SE")
         self.current_x += step_amount
         self._topward = not self._topward
+        self._x_engaged = False
+        self._y_engaged = True
         self.laser = False
         self.step_index += 1
 
@@ -1645,6 +1655,7 @@ class LhystudiosController:
         return buffer_str
 
     def on_controller_ready(self, origin, *args):
+        self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
         self.start()
         self.context.root.unlisten("lifecycle;ready", self.on_controller_ready)
 

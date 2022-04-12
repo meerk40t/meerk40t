@@ -144,6 +144,8 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if cols == 0:
+            return
 
         dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
         if dlg.ShowModal() == wx.ID_OK:
@@ -156,6 +158,8 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if rows == 0:
+            return
 
         elems = []
         cutplan = self.context.default_plan()
@@ -355,6 +359,7 @@ class PlannerPanel(wx.Panel):
         self.context.setting(bool, "opt_reduce_directions", False)
         self.context.setting(bool, "opt_remove_overlap", False)
         self.context.setting(bool, "opt_rapid_between", True)
+        self.context.setting(bool, "opt_rasters_split", True)
         self.context.setting(int, "opt_jog_minimum", 256)
         self.context.setting(int, "opt_jog_mode", 0)
 

@@ -12,8 +12,8 @@ try:
     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
     # so we are doing it here even though we do not refer to it in this file
     # richtext is used for the Console panel.
-    from wx import richtext
     import wx
+    from wx import richtext
 except ImportError as e:
     from ..core.exceptions import Mk40tImportAbort
 
@@ -197,6 +197,9 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+        wx.ToolTip.SetAutoPop(10000)
+        wx.ToolTip.SetDelay(100)
+        wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
         try:
@@ -207,6 +210,14 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         return True
+
+    def InitLocale(self):
+        import sys
+
+        if sys.platform.startswith("win") and sys.version_info > (3, 8):
+            import locale
+
+            locale.setlocale(locale.LC_ALL, "C")
 
     def BringWindowToFront(self):
         try:  # it's possible for this event to come when the frame is closed
@@ -442,14 +453,15 @@ class wxMeerK40t(wx.App, Module):
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)
+                channel(_("Window opened: {window}").format(window=window))
 
             def window_close(*a, **k):
                 path.close(window_name, *args)
+                channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
                 if window_uri in context.registered:
                     kernel.run_later(window_open, None)
-                    channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError
@@ -461,7 +473,6 @@ class wxMeerK40t(wx.App, Module):
                         channel(_("Window closed: {window}").format(window=window))
                     except KeyError:
                         kernel.run_later(window_open, None)
-                        channel(_("Window opened: {window}").format(window=window))
                 else:
                     channel(_("No such window as %s" % window))
                     raise SyntaxError

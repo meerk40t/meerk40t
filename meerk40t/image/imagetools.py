@@ -37,6 +37,9 @@ def plugin(kernel, lifecycle=None):
     def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
         if data_type == "inkscape":
             inkscape_path, filename = data
+            if filename is None:
+                channel(_("File was not set."))
+                return
             if filename.endswith("png"):
                 from PIL import Image
 
@@ -1472,6 +1475,8 @@ class RasterScripts:
         else:
             half_tone = Image.new("L", size)
         draw = ImageDraw.Draw(half_tone)
+        if sample == 0:
+            sample = 1
         for x in range(0, image.size[0], sample):
             for y in range(0, image.size[1], sample):
                 box = image.crop(

@@ -3,7 +3,19 @@ from io import BytesIO
 from typing import Tuple, Union
 
 from ...core.cutcode import CutCode, LaserSettings, PlotCut
-from ...kernel import Module
+from ...kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+    STATE_WAIT,
+    Module,
+    get_safe_path,
+)
 from ...svgelements import Color
 from ..lasercommandconstants import COMMAND_PLOT, COMMAND_PLOT_START
 
@@ -28,8 +40,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("emulator/ruida", RuidaEmulator)
 
         @kernel.console_option(
-            "silent",
-            "s",
+            "verbose",
+            "v",
             type=bool,
             action="store_true",
             help=_("do not watch server channels"),
@@ -53,7 +65,7 @@ def plugin(kernel, lifecycle=None):
             help=_("activate the ruidaserver."),
         )
         def ruidaserver(
-            command, channel, _, laser=None, silent=False, quit=False, **kwargs
+            command, channel, _, laser=None, verbose=False, quit=False, **kwargs
         ):
             """
             The ruidaserver emulation methods provide a simulation of a ruida device.
@@ -108,7 +120,7 @@ def plugin(kernel, lifecycle=None):
                 if m2lj:
                     channel(_("Ruida Jog Destination opened on port %d.") % 40207)
 
-                if not silent:
+                if verbose:
                     console = kernel.channel("console")
                     chan = "ruida"
                     root.channel(chan).watch(console)
@@ -157,8 +169,9 @@ def plugin(kernel, lifecycle=None):
                     emulator.control = True
                 elif command == "ruidaemulator":
                     pass
-            except OSError:
+            except OSError as e:
                 channel(_("Server failed."))
+                channel(str(e.strerror))
             return
 
 
@@ -213,9 +226,38 @@ class RuidaEmulator(Module):
         self.process_commands = True
         self.parse_lasercode = True
         self.swizzle_mode = True
+        self.state = 22
+
+    def initialize(self, *args, **kwargs):
+        self.context.listen("pipe;thread", self.on_pipe_state)
+
+    def finalize(self, *args, **kwargs):
+        self.context.unlisten("pipe;thread", self.on_pipe_state)
 
     def __repr__(self):
         return "Ruida(%s, %d cuts)" % (self.name, len(self.cutcode))
+
+    def on_pipe_state(self, origin, state):
+        if not self.control:
+            return  # We are not using ruidacontrol mode. Do not update the state.
+        if state == STATE_INITIALIZE:
+            self.state = 22
+        elif state == STATE_TERMINATE:
+            self.state = 22
+        elif state == STATE_END:
+            self.state = 22
+        elif state == STATE_PAUSE:
+            self.state = 23
+        elif state == STATE_BUSY:
+            self.state = 23
+        elif state == STATE_WAIT:
+            self.state = 21
+        elif state == STATE_ACTIVE:
+            self.state = 21
+        elif state == STATE_IDLE:
+            self.state = 22
+        elif state == STATE_UNKNOWN:
+            self.state = 22
 
     def generate(self):
         for cutobject in self.cutcode:
@@ -364,7 +406,8 @@ class RuidaEmulator(Module):
         :return:
         """
         self.swizzle_mode = True
-
+        if len(sent_data) < 2:
+            return  # Cannot contain a checksum.
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
@@ -422,6 +465,7 @@ class RuidaEmulator(Module):
                 self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
             except Exception as e:
                 self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
+                self.ruida_channel(str(e))
                 raise e
 
     def process(self, array):
@@ -451,6 +495,9 @@ class RuidaEmulator(Module):
                 desc = "Axis Z Move %f" % value
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
+            if self.settings.speed < 40:
+                self.new_plot_cut()
+
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 0)
@@ -460,6 +507,8 @@ class RuidaEmulator(Module):
             )
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
+                if self.settings.speed < 40:
+                    self.new_plot_cut()
                 dx = self.relcoord(array[1:3])
                 dy = self.relcoord(array[3:5])
                 self.x += dx
@@ -592,7 +641,7 @@ class RuidaEmulator(Module):
             self.plotcut.plot_append(self.x / UM_PER_MIL, self.y / UM_PER_MIL, 1)
             desc = "Cut Vertical Relative (%f mil)" % (dy / UM_PER_MIL)
         elif array[0] == 0xC7:
-            v0 = self.parse_power(array[1:3])
+            v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
             desc = "Imd Power 1 (%f)" % v0
         elif array[0] == 0xC2:
             v0 = self.parse_power(array[1:3])
@@ -843,10 +892,16 @@ class RuidaEmulator(Module):
                 desc = "Start Process"
             if array[1] == 0x01:
                 desc = "Stop Process"
+                if self.control:
+                    self.context("estop\ntimer 1 1 home\n")
             if array[1] == 0x02:
                 desc = "Pause Process"
+                if self.control:
+                    self.context("pause\n")
             if array[1] == 0x03:
                 desc = "Restore Process"
+                if self.control:
+                    self.context("resume\n")
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
@@ -1136,7 +1191,7 @@ class RuidaEmulator(Module):
                     self.filename += chr(a)
                 desc = "Filename: %s" % self.filename
                 if self.saving:
-                    self.filestream = open("%s.rd" % self.filename, "wb")
+                    self.filestream = open(get_safe_path("%s.rd" % self.filename), "wb")
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / UM_PER_MIL
                 c_y = self.abscoord(array[7:12]) / UM_PER_MIL
@@ -1265,7 +1320,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 if v1 == 0:
                     for f in files:
                         os.remove(f)
@@ -1280,7 +1337,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 name = files[filenumber - 1]
                 name = os.path.split(name)[-1]
                 name = name.split(".")[0]
@@ -1297,7 +1356,9 @@ class RuidaEmulator(Module):
                 from glob import glob
                 from os.path import join, realpath
 
-                files = [name for name in glob(join(realpath("."), "*.rd"))]
+                files = [
+                    name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
+                ]
                 name = files[filenumber - 1]
                 try:
                     with open(name, "rb") as f:
@@ -1309,7 +1370,7 @@ class RuidaEmulator(Module):
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = "Calculate Document Time %d" % filenumber
         elif array[0] == 0xEA:
-            index = array[1]
+            index = array[1]  # TODO: Index error raised here.
             desc = "Array Start (%d)" % index
         elif array[0] == 0xEB:
             desc = "Array End"
@@ -1925,7 +1986,7 @@ class RuidaEmulator(Module):
         if mem == 0x01B2:
             return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
-            return "Machine Status", 22
+            return "Machine Status", self.state  # 22 ok, 23 paused. 21 running.
         if mem == 0x0201:
             return "Total Open Time (s)", 0
         if mem == 0x0202:
@@ -1936,21 +1997,21 @@ class RuidaEmulator(Module):
             from glob import glob
             from os.path import join, realpath
 
-            files = [name for name in glob(join(realpath("."), "*.rd"))]
+            files = [name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))]
             v = len(files)
             return "Total Doc Number", v
         if mem == 0x0206:
             from os.path import realpath
             from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath("."))
+            total, used, free = disk_usage(realpath(get_safe_path(".")))
             v = min(total, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0207:
             from os.path import realpath
             from shutil import disk_usage
 
-            total, used, free = disk_usage(realpath("."))
+            total, used, free = disk_usage(realpath(get_safe_path(".")))
             v = min(free, 100000000)  # Max 100 megs.
             return "Flash Space", v
         if mem == 0x0208:

@@ -54,6 +54,8 @@ class LaserSettings:
 
         self.force_twitchless = False
         self.raster_alt = False
+        self.constant_move_x = False
+        self.constant_move_y = False
         self.raster_step = 0
         self.raster_direction = 1  # Bottom To Top - Default.
         self.raster_swing = False  # False = bidirectional, True = Unidirectional
@@ -615,6 +617,9 @@ class LineCut(CutObject):
         )
         settings.raster_step = 0
 
+    def __repr__(self):
+        return f'LineCut({repr(self.start())}, {repr(self.end())}, settings="{self.settings}", passes={self.passes})'
+
     def generator(self):
         # pylint: disable=unsubscriptable-object
         start = self.start()
@@ -914,26 +919,30 @@ class PlotCut(CutObject):
 
     def check_if_rasterable(self):
         """
-        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+        Rasterable plotcuts are heuristically defined as having a max step of less than 15 and
+        must have an unused travel direction.
 
         @return: whether the plot can travel
         """
+        # Default to vector settings.
         self.settings.raster_alt = False
+        self.settings.constant_move_x = False
+        self.settings.constant_move_y = False
         self.settings.raster_step = 0
-        self.settings.force_twitchless = True
-        if (
-            not self.travels_left
-            and not self.travels_right
-            and not self.travels_bottom
-            and not self.travels_top
-        ):
+        if self.settings.speed < 80:
+            # Twitchless gets sketchy at 80.
+            self.settings.force_twitchless = True
             return False
+            # if self.max_dy >= 15 and self.max_dy >= 15:
+            #     return False  # This is probably a vector.
+        # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.vertical_raster = True
-        elif 0 < self.max_dy <= 15:
+            self.settings.constant_move_y = True
+        if 0 < self.max_dy <= 15:
             self.horizontal_raster = True
-        else:
-            return False
+            self.settings.constant_move_x = True
+        # if self.vertical_raster or self.horizontal_raster:
         self.settings.raster_step = min(self.max_dx, self.max_dy)
         self.settings.raster_alt = True
         return True
@@ -971,10 +980,15 @@ class PlotCut(CutObject):
             self.max_y = y
 
     def major_axis(self):
-        if self.horizontal_raster:
-            return 0
+        """
+        If both vertical and horizontal are set we prefer vertical as major axis because vertical rastering is heavier
+        with the movement of the gantry bar.
+        @return:
+        """
         if self.vertical_raster:
             return 1
+        if self.horizontal_raster:
+            return 0
 
         if len(self.plot) < 2:
             return 0
@@ -1058,59 +1072,15 @@ class PlotCut(CutObject):
         last_yy = None
         ix = 0
         iy = 0
-        # last_dx = None
-        # last_dy = None
         for x, y, on in self.plot:
             idx = int(round(x - ix))
             idy = int(round(y - iy))
             ix += idx
             iy += idy
             if last_xx is not None:
-                # if self.horizontal_raster and idx:
-                #     if idx > 0 > last_dx or idx < 0 < last_dx:
-                #         # If this idx is different direction as the last one, we step y first
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #                 yield zx, zy, on
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, iy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idx is the same direction as the last one, we step x first
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #             yield zx, zy, on
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # elif self.vertical_raster and idy:
-                #     if idy > 0 > last_dy or idy < 0 < last_dy:
-                #         # If this idy is different direction as the last one, we step x first
-                #         if idx:
-                #             # step x
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #                 yield zx, zy, on
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idy is the same direction as the last one, we step y first
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #             yield zx, zy, on
-                #         if idx:
-                #             #step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # else:
-                #     # Non-raster go directly to result.
                 for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
                     yield zx, zy, on
             last_xx = ix
             last_yy = iy
-            # last_dx = idx
-            # last_dy = idy
 
         return self.plot
