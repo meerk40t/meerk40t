@@ -239,6 +239,15 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.colors.set_default_colors()
             self.request_refresh()
 
+        @context.console_command("reference")
+        def make_reference(**kwargs):
+            # Take first emphasized element
+            for e in self.context.elements.flat(types=("elem"), emphasized=True):
+                obj = e.object
+                self.widget_scene.reference_object = obj
+                break
+
+
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """
