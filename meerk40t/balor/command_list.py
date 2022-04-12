@@ -946,8 +946,8 @@ class CommandList(CommandSource):
             raise ValueError("LaserOff Delay must be set before a mark(x,y)")
         if self._poly_delay is None:
             raise ValueError("Polygon Delay must be set before a mark(x,y)")
-        dx = self._last_x - x
-        dy = self._last_y - y
+        dx = x - self._last_x
+        dy = y - self._last_y
         if self._interpolations:
             distance = math.sqrt(dx*dx + dy*dy)
             segments = math.ceil(distance / self._interpolations)
@@ -963,8 +963,8 @@ class CommandList(CommandSource):
             else:
                 cut_x = next_x
                 cut_y = next_y
-            self._last_x += cut_x
-            self._last_y += cut_y
+            self._last_x = cut_x
+            self._last_y = cut_y
             self.append(OpCut(*self.pos(cut_x, cut_y)))
 
     def jump_delay(self, delay=0x0008):
