@@ -42,5 +42,16 @@ class BalorConfiguration(MWindow):
         self.add_module_delegate(self.panel_main)
         self.add_module_delegate(self.panel_global)
 
+    def window_close(self):
+        self.context.unlisten("flip_x", self.on_viewport_update)
+        self.context.unlisten("flip_y", self.on_viewport_update)
+
+    def window_open(self):
+        self.context.listen("flip_x", self.on_viewport_update)
+        self.context.listen("flip_y", self.on_viewport_update)
+
+    def on_viewport_update(self, origin, *args):
+        self.context("viewport_update\n")
+
     def window_preserve(self):
         return False
