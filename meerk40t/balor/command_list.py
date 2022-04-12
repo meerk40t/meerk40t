@@ -657,6 +657,8 @@ class CommandList(CommandSource):
         self._scale_x = 1.0
         self._scale_y = 1.0
         self._units = "galvo"
+        self._mark_modification = None
+        self._interpolations = None
 
     @property
     def position(self):
@@ -944,9 +946,26 @@ class CommandList(CommandSource):
             raise ValueError("LaserOff Delay must be set before a mark(x,y)")
         if self._poly_delay is None:
             raise ValueError("Polygon Delay must be set before a mark(x,y)")
-        self._last_x = x
-        self._last_y = y
-        self.append(OpCut(*self.pos(x, y)))
+        dx = self._last_x - x
+        dy = self._last_y - y
+        if self._interpolations:
+            distance = math.sqrt(dx*dx + dy*dy)
+            segments = math.ceil(distance / self._interpolations)
+            dx /= segments
+            dy /= segments
+        else:
+            segments = 1
+        for segment in range(1, segments+1):
+            next_x = self._last_x + dx * segment
+            next_y = self._last_y + dy * segment
+            if self._mark_modification:
+                cut_x, cut_y = self._mark_modification(self._last_x, self._last_y, next_x, next_y)
+            else:
+                cut_x = next_x
+                cut_y = next_y
+            self._last_x += cut_x
+            self._last_y += cut_y
+            self.append(OpCut(*self.pos(cut_x, cut_y)))
 
     def jump_delay(self, delay=0x0008):
         if self._jump_delay == delay:
@@ -1167,3 +1186,16 @@ class CommandList(CommandSource):
 
     def raw_ready_mark(self, *args):
         self.append(OpReadyMark(*args))
+
+
+class Wobble:
+    def __init__(self, radius=50):
+        self._total_distance = 0
+        self.radius = radius
+
+    def wobble(self, x0, y0, x1, y1):
+        self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
+        t = self._total_distance / (math.tau * self.radius)
+        dx = self.radius * math.cos(t)
+        dy = self.radius * math.sin(t)
+        return x1 + dx, y1 + dy
