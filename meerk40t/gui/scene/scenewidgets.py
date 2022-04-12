@@ -39,8 +39,10 @@ ORIENTATION_GRID = 0b00000100000000
 ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
 
-# LINECOL = wx.Colour(0x7F, 0x7F, 0x7F)
-LINECOL = wx.Colour(0xA0, 0x7F, 0xA0)
+
+def str_to_color(value):
+    c = Color(value)
+    return c.alpha << 24 | c.bgr
 
 
 class ElementsWidget(Widget):
@@ -104,9 +106,13 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.start_angle = None
         self.elements = scene.context.elements
+        self.color_border = None
+        self.color_handle = None
+
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(LINECOL)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.handle_pen = wx.Pen()
+        self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
         self.save_width = None
         self.save_height = None
         self.tool = self.tool_translate
@@ -117,9 +123,27 @@ class SelectionWidget(Widget):
         self.tool_running = False
         self.arcsegment = None
         self.draw_border = True
+        self.set_colors()
+
+    def set_colors(self, default=False):
+        color_manipulation = "#A07FA0"
+        self.scene.context.setting(str, "color_manipulation", color_manipulation)
+        self.scene.context.setting(str, "color_manipulation_handles", color_manipulation)
+        if default:
+            self.scene.context.color_manipulation = color_manipulation
+            self.scene.context.color_manipulation_handles = color_manipulation
+        try:
+            color1 = wx.Colour(str_to_color(self.scene.context.color_manipulation))
+            self.selection_pen.SetColour(color1)
+            self.color_border = color1
+
+            color2 = wx.Colour(str_to_color(self.scene.context.color_manipulation_handles))
+            self.handle_pen.SetColour(color2)
+            self.color_handle = color2
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
-
         elements = self.elements
         bounds = elements.selected_area()
         if bounds is not None:
@@ -159,6 +183,13 @@ class SelectionWidget(Widget):
             self.bottom = -float("inf")
             self.clear()
             return HITCHAIN_DELEGATE
+
+    def signal(self, signal, *args, **kwargs):
+        """
+        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        """
+        if signal == "theme":
+            self.set_colors(args[0])
 
     def contains(self, x, y=None):
         """
@@ -1178,9 +1209,8 @@ class SelectionWidget(Widget):
                         x = xx + signx * self.arcsegment[idx][0]
                         y = yy + signy * self.arcsegment[idx][1]
                         segment += [(x, y)]
-                    pen = wx.Pen(LINECOL, 2, wx.SOLID)
+                    pen = self.handle_pen
                     pen.SetWidth(0.75 * self.selection_pen.GetWidth())
-                    pen.SetStyle(wx.PENSTYLE_SOLID)
                     gc.SetPen(pen)
                     gc.StrokeLines(segment)
 
@@ -1238,9 +1268,9 @@ class SelectionWidget(Widget):
             )  # skew y
 
         if len(corners) > 0:
-            pen = wx.Pen(LINECOL, 1, wx.SOLID)
-            pen.SetStyle(wx.PENSTYLE_SOLID)
-            brush = wx.Brush(LINECOL, wx.SOLID)
+
+            pen = self.handle_pen
+            brush = wx.Brush(self.color_handle, wx.SOLID)
             gc.SetPen(pen)
             gc.SetBrush(brush)
 
@@ -1291,7 +1321,7 @@ class SelectionWidget(Widget):
             except TypeError:
                 font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
 
-            gc.SetFont(font, LINECOL)
+            gc.SetFont(font, self.color_border)
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
@@ -1869,8 +1899,19 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
         self.grid_line_pen.SetWidth(1)
+        self.set_colors()
+
+    def set_colors(self, default=False):
+        color_grid = "#A0A0A0"
+        self.scene.context.setting(str, "color_grid", color_grid)
+        if default:
+            self.scene.context.color_grid = color_grid
+        try:
+            grid_color = wx.Colour(str_to_color(self.scene.context.color_grid))
+            self.grid_line_pen.SetColour(grid_color)
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1936,8 +1977,9 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
+        context = self.scene.context
+
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            context = self.scene.context
             if context is not None:
                 bed_dim = context.root
                 wmils = bed_dim.bed_width * MILS_IN_MM
@@ -1983,6 +2025,8 @@ class GridWidget(Widget):
             self.grid = None
         elif signal == "background":
             self.background = args[0]
+        elif signal == "theme":
+            self.set_colors(args[0])
 
 
 class GuideWidget(Widget):
