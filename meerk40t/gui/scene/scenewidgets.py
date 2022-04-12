@@ -106,10 +106,13 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.start_angle = None
         self.elements = scene.context.elements
-        self.color_selection = None
+        self.color_border = None
+        self.color_handle = None
 
         self.selection_pen = wx.Pen()
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.handle_pen = wx.Pen()
+        self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
         self.save_width = None
         self.save_height = None
         self.tool = self.tool_translate
@@ -125,12 +128,18 @@ class SelectionWidget(Widget):
     def set_colors(self, default=False):
         color_manipulation = "#A07FA0"
         self.scene.context.setting(str, "color_manipulation", color_manipulation)
+        self.scene.context.setting(str, "color_manipulation_handles", color_manipulation)
         if default:
             self.scene.context.color_manipulation = color_manipulation
+            self.scene.context.color_manipulation_handles = color_manipulation
         try:
-            color = wx.Colour(str_to_color(self.scene.context.color_manipulation))
-            self.selection_pen.SetColour(color)
-            self.color_selection = color
+            color1 = wx.Colour(str_to_color(self.scene.context.color_manipulation))
+            self.selection_pen.SetColour(color1)
+            self.color_border = color1
+
+            color2 = wx.Colour(str_to_color(self.scene.context.color_manipulation_handles))
+            self.handle_pen.SetColour(color2)
+            self.color_handle = color2
         except (ValueError, TypeError):
             pass
 
@@ -1200,9 +1209,8 @@ class SelectionWidget(Widget):
                         x = xx + signx * self.arcsegment[idx][0]
                         y = yy + signy * self.arcsegment[idx][1]
                         segment += [(x, y)]
-                    pen = wx.Pen(self.color_selection, 2, wx.SOLID)
+                    pen = self.handle_pen
                     pen.SetWidth(0.75 * self.selection_pen.GetWidth())
-                    pen.SetStyle(wx.PENSTYLE_SOLID)
                     gc.SetPen(pen)
                     gc.StrokeLines(segment)
 
@@ -1260,9 +1268,9 @@ class SelectionWidget(Widget):
             )  # skew y
 
         if len(corners) > 0:
-            pen = wx.Pen(self.color_selection, 1, wx.SOLID)
-            pen.SetStyle(wx.PENSTYLE_SOLID)
-            brush = wx.Brush(self.color_selection, wx.SOLID)
+
+            pen = self.handle_pen
+            brush = wx.Brush(self.color_handle, wx.SOLID)
             gc.SetPen(pen)
             gc.SetBrush(brush)
 
@@ -1313,7 +1321,7 @@ class SelectionWidget(Widget):
             except TypeError:
                 font = wx.Font(int(font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
 
-            gc.SetFont(font, self.color_selection)
+            gc.SetFont(font, self.color_border)
             gc.SetPen(self.selection_pen)
             x0, y0, x1, y1 = bounds
             center_x = (x0 + x1) / 2.0
