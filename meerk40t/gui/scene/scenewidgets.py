@@ -1892,21 +1892,18 @@ class GridWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.grid = None
         self.background = None
-        self.col_default = wx.Colour(0xA0, 0xA0, 0xA0)
-        self.color_grid = self.col_default
-        scene.context.setting(str, "color_grid", color_to_str(self.color_grid.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_grid)
-        try:
-            self.color_grid.SetRGBA(str_to_color(scene.context.color_grid))
-        except (ValueError, TypeError):
-            self.color_grid = None
-        if self.color_grid is None:
-            self.color_grid = self.col_default
-            scene.context.color_grid = color_to_str(self.color_grid.GetRGBA())
-
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(self.color_grid)
         self.grid_line_pen.SetWidth(1)
+        self.set_colors()
+
+    def set_colors(self):
+        grid_color = wx.Colour(0xA0, 0xA0, 0xA0)
+        try:
+            self.scene.context.setting(str, "color_grid", color_to_str(grid_color.GetRGBA()))
+            grid_color.SetRGBA(str_to_color(self.scene.context.color_grid))
+            self.grid_line_pen.SetColour(grid_color)
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1973,11 +1970,6 @@ class GridWidget(Widget):
         Draw the grid on the scene.
         """
         context = self.scene.context
-        try:
-            self.color_grid.SetRGBA(str_to_color(context.color_grid))
-        except (ValueError, TypeError):
-            self.color_grid = self.col_default
-        self.grid_line_pen.SetColour(self.color_grid)
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             if context is not None:
@@ -2025,6 +2017,8 @@ class GridWidget(Widget):
             self.grid = None
         elif signal == "background":
             self.background = args[0]
+        elif signal == "theme":
+            self.set_colors()
 
 
 class GuideWidget(Widget):
