@@ -1079,6 +1079,14 @@ class BalorDevice(Service, ViewPort):
                 points_list.append(list(ant_points(points, int(quantization / 10))))
             return "elements", [Polygon(*p) for p in points_list]
 
+        @self.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update balor flips for movement"),
+        )
+        def codes_update(**kwargs):
+            self.realize()
+
         @self.console_option(
             "raster-x-res",
             help="X resolution (in mm) of the laser.",
