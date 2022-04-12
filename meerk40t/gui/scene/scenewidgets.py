@@ -39,20 +39,11 @@ ORIENTATION_GRID = 0b00000100000000
 ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
 
-LINECOL_DEFAULT = wx.Colour(0xA0, 0x7F, 0xA0)
-
-def color_to_str(value):
-    temp = hex(value)
-    # The representation is backwards ABGR --> change
-    result = temp[:2] + temp[8:] + temp[6:8] + temp[4:6]+ temp[2:4]
-    return result
 
 def str_to_color(value):
-    # The representation needs to be ABGR --> change
-    if len(value)<=8:
-        value = value + "FF" # append opacity
-    result = value[:2] + value[8:] + value[6:8] + value[4:6]+ value[2:4]
-    return int(result, base=16)
+    c = Color(value)
+    return c.alpha << 24 | c.bgr
+
 
 class ElementsWidget(Widget):
     """
@@ -115,20 +106,9 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.start_angle = None
         self.elements = scene.context.elements
-        # Make sure selection color is a setting
-        self.color_selection = LINECOL_DEFAULT
-        scene.context.setting(str, "color_manipulation", color_to_str(self.color_selection.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_manipulation)
-        try:
-            self.color_selection.SetRGB(str_to_color(scene.context.color_manipulation))
-        except (ValueError, TypeError):
-            self.color_selection = None
-        if self.color_selection is None:
-            self.color_selection = LINECOL_DEFAULT
-            scene.context.color_manipulation = color_to_str(self.color_selection.GetRGBA())
+        self.color_selection = None
 
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(self.color_selection)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.save_width = None
         self.save_height = None
@@ -140,9 +120,21 @@ class SelectionWidget(Widget):
         self.tool_running = False
         self.arcsegment = None
         self.draw_border = True
+        self.set_colors()
+
+    def set_colors(self, default=False):
+        color_manipulation = "#A07FA0"
+        self.scene.context.setting(str, "color_manipulation", color_manipulation)
+        if default:
+            self.scene.context.color_manipulation = color_manipulation
+        try:
+            color = wx.Colour(str_to_color(self.scene.context.color_manipulation))
+            self.selection_pen.SetColour(color)
+            self.color_selection = color
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
-
         elements = self.elements
         bounds = elements.selected_area()
         if bounds is not None:
@@ -182,6 +174,13 @@ class SelectionWidget(Widget):
             self.bottom = -float("inf")
             self.clear()
             return HITCHAIN_DELEGATE
+
+    def signal(self, signal, *args, **kwargs):
+        """
+        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        """
+        if signal == "theme":
+            self.set_colors(args[0])
 
     def contains(self, x, y=None):
         """
@@ -1279,12 +1278,6 @@ class SelectionWidget(Widget):
         context = self.scene.context
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
-        try:
-            self.color_selection.SetRGBA(str_to_color(context.color_manipulation))
-        except (ValueError, TypeError):
-            self.color_selection = LINECOL_DEFAULT
-
-        self.selection_pen.SetColour(self.color_selection)
         # bounds = elements.selected_area()
         bounds = elements._emphasized_bounds
         if bounds is None:
@@ -1897,21 +1890,20 @@ class GridWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.grid = None
         self.background = None
-        self.col_default = wx.Colour(0xA0, 0xA0, 0xA0)
-        self.color_grid = self.col_default
-        scene.context.setting(str, "color_grid", color_to_str(self.color_grid.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_grid)
-        try:
-            self.color_grid.SetRGB(str_to_color(scene.context.color_grid))
-        except (ValueError, TypeError):
-            self.color_grid = None
-        if self.color_grid is None:
-            self.color_grid = self.col_default
-            scene.context.color_grid = color_to_str(self.color_grid.GetRGBA())
-
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(self.color_grid)
         self.grid_line_pen.SetWidth(1)
+        self.set_colors()
+
+    def set_colors(self, default=False):
+        color_grid = "#A0A0A0"
+        self.scene.context.setting(str, "color_grid", color_grid)
+        if default:
+            self.scene.context.color_grid = color_grid
+        try:
+            grid_color = wx.Colour(str_to_color(self.scene.context.color_grid))
+            self.grid_line_pen.SetColour(grid_color)
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1978,11 +1970,6 @@ class GridWidget(Widget):
         Draw the grid on the scene.
         """
         context = self.scene.context
-        try:
-            self.color_grid.SetRGB(str_to_color(context.color_grid))
-        except (ValueError, TypeError):
-            self.color_grid = self.col_default
-        self.grid_line_pen.SetColour(self.color_grid)
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             if context is not None:
@@ -2030,6 +2017,8 @@ class GridWidget(Widget):
             self.grid = None
         elif signal == "background":
             self.background = args[0]
+        elif signal == "theme":
+            self.set_colors(args[0])
 
 
 class GuideWidget(Widget):
