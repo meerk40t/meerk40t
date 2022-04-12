@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.bindalias import keymap_execute
-from ..svgelements import Angle, Length
+from ..svgelements import Angle, Length, Color
 from .icons import icon_meerk40t
 from .laserrender import LaserRender
 from .mwindow import MWindow
@@ -125,6 +125,29 @@ class MeerK40tScenePanel(wx.Panel):
         def scene(command, _, channel, **kwargs):
             channel("scene: %s" % str(self.widget_scene))
             return "scene", self.widget_scene
+
+        @self.context.console_argument(
+            "aspect", type=str, help="aspect of the scene to color"
+        )
+        @self.context.console_argument(
+            "color", type=Color, help="color to apply to scene"
+        )
+        @self.context.console_command("color", input_type="scene")
+        def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            if aspect is None:
+                for key in dir(self.context):
+                    if key.startswith("color_"):
+                        channel(key[6:])
+            else:
+                color_key = f"color_{aspect}"
+                if hasattr(self.context, color_key):
+                    setattr(self.context, color_key, color.hexa)
+                    channel(_("Scene aspect color is set."))
+                    data.request_refresh()  # 0.8.x has this changed.
+                else:
+                    channel(_("%s is not a known scene color command") % aspect)
+
+            return "scene", data
 
         @self.context.console_argument(
             "zoom_x", type=float, help="zoom amount from current"
