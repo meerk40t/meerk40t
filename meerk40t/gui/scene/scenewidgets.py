@@ -39,11 +39,6 @@ ORIENTATION_GRID = 0b00000100000000
 ORIENTATION_NO_BUFFER = 0b00001000000000
 BUFFER = 10.0
 
-LINECOL_DEFAULT = wx.Colour(0xA0, 0x7F, 0xA0)
-
-def color_to_str(value):
-    c = Color(rgba=value)
-    return c.hexa
 
 def str_to_color(value):
     c = Color(value)
