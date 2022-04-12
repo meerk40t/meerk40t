@@ -139,11 +139,16 @@ class MeerK40tScenePanel(wx.Panel):
                     if key.startswith("color_"):
                         channel(key[6:])
             else:
+                if aspect == "unset":
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if color is None:
+                    raise SyntaxError(_("No color given."))
                 color_key = f"color_{aspect}"
                 if hasattr(self.context, color_key):
                     setattr(self.context, color_key, color.hexa)
                     channel(_("Scene aspect color is set."))
-                    self.context.signal("theme", color_key)
+                    self.context.signal("theme", False)
                 else:
                     channel(_("%s is not a known scene color command") % aspect)
 
