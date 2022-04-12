@@ -339,15 +339,7 @@ class RotationWidget(Widget):
     def process_draw(self, gc):
         if self.master.tool_running:  # We don't need that overhead
             return
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(0.75 * self.master.line_width)
-        except TypeError:
-            pen.SetWidth(0.75 * int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
         self.update()  # make sure coords are valid
-        gc.SetPen(pen)
 
         cx = (self.left + self.right) / 2
         cy = (self.top + self.bottom) / 2
@@ -396,7 +388,7 @@ class RotationWidget(Widget):
         ]
         segment += [(x, y)]
         segment += [(x + signx * 1 / 2 * self.inner, y - signy * 1 / 2 * self.inner)]
-        gc.SetPen(pen)
+        gc.SetPen(self.master.handle_pen)
         gc.StrokeLines(segment)
 
     def tool(self, position, dx, dy, event=0):
@@ -640,15 +632,8 @@ class CornerWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -821,15 +806,8 @@ class SideWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -966,15 +944,8 @@ class SkewWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -1115,15 +1086,8 @@ class MoveWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(
             self.left + self.half_x - self.drawhalf,
@@ -1240,13 +1204,7 @@ class MoveRotationOriginWidget(Widget):
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         # pen.SetColour(wx.RED)
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(0.75 * self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(0.75 * self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.StrokeLine(
             self.left,
@@ -1327,7 +1285,7 @@ class ReferenceWidget(Widget):
             bgcol = wx.YELLOW
             fgcol = wx.RED
         else:
-            bgcol = self.scene.colors.color_manipulation
+            bgcol = self.scene.colors.color_manipulation_handle
             fgcol = wx.BLACK
         pen.SetColour(bgcol)
         try:
@@ -1572,6 +1530,10 @@ class SelectionWidget(Widget):
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.handle_pen = wx.Pen()
+        self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
+        self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
+
         self.popupID1 = None
         self.popupID2 = None
         self.popupID3 = None
@@ -1923,10 +1885,14 @@ class SelectionWidget(Widget):
             except ZeroDivisionError:
                 matrix.reset()
                 return
+            self.selection_pen.SetColour(self.scene.colors.color_manipulation)
+            self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
             try:
                 self.selection_pen.SetWidth(self.line_width)
+                self.handle_pen.SetWidth(0.75*self.line_width)
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
+                self.handle_pen.SetWidth(int(0.75*self.line_width))
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:

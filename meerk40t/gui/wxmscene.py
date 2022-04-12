@@ -26,7 +26,7 @@ from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Angle
+from meerk40t.svgelements import Angle, Color
 
 _ = wx.GetTranslation
 
@@ -154,6 +154,41 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", self.widget_scene
 
         @self.context.console_argument(
+            "aspect", type=str, help="aspect of the scene to color"
+        )
+        @self.context.console_argument(
+            "color", type=Color, help="color to apply to scene"
+        )
+        @self.context.console_command("color", input_type="scene")
+        def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            if aspect is None:
+                for key in dir(self.context):
+                    if key.startswith("color_"):
+                        channel(key[6:])
+            else:
+                color_key = f"color_{aspect}"
+                if aspect == "unset": # reset all
+                    self.widget_scene.colors.set_default_colors()
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if color == "unset": # reset one
+                    setattr(self.context, color_key, "default")
+                    self.context.signal("theme", True)
+                    return "scene", data
+
+                if color is None:
+                    channel(_("No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"))
+                else:
+                    if hasattr(self.context, color_key):
+                        setattr(self.context, color_key, color.hexa)
+                        channel(_("Scene aspect color is set."))
+                        self.context.signal("theme", False)
+                    else:
+                        channel(_("%s is not a known scene color command") % aspect)
+
+            return "scene", data
+
+        @self.context.console_argument(
             "zoom_x", type=float, help="zoom amount from current"
         )
         @self.context.console_argument(
@@ -233,11 +268,6 @@ class MeerK40tScenePanel(wx.Panel):
             data.request_refresh()
             channel(str(data.matrix))
             return "scene", data
-
-        @context.console_command("colors_reset", hidden=True)
-        def reset_colors(**kwargs):
-            self.widget_scene.colors.set_default_colors()
-            self.request_refresh()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
@@ -322,6 +352,12 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("tree_changed")
     def on_elements_added(self, *args):
         self.scene.signal("element_added")
+
+
+    @signal_listener("theme")
+    def on_theme_change(self, origin, theme=None):
+        self.scene.signal("theme", theme)
+        self.request_refresh(origin)
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

@@ -24,10 +24,11 @@ class AttractionWidget(Widget):
         self.grid_points = None # Clear all
         self.my_x = None
         self.my_y = None
-        self.visible_pen = wx.Pen(self.scene.colors.color_snap_visible)
+        self.visible_pen = wx.Pen()
         self.visible_pen.SetWidth(1)
-        self.closeup_pen = wx.Pen(self.scene.colors.color_snap_closeup)
+        self.closeup_pen = wx.Pen()
         self.closeup_pen.SetWidth(1)
+        self.load_colors()
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
         self.show_attract_len = 0
@@ -44,6 +45,11 @@ class AttractionWidget(Widget):
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
+
+
+    def load_colors(self):
+        self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
+        self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
 
     def hit(self):
         """
@@ -393,5 +399,9 @@ class AttractionWidget(Widget):
         if signal in ("grid", "guide"):
             consumed = True
             self.grid_points = None
+        if signal == "theme":
+            consumed = True
+            self.load_colors()
         if not consumed:
-            print ("Dont know what to do with signal %s" % signal)
+            # print ("Dont know what to do with signal %s" % signal)
+            pass

@@ -27,6 +27,17 @@ class GuideWidget(Widget):
         self.scaled_conversion = 0
         self.units = None
         self.options = []
+        self.pen_guide = wx.Pen()
+        self.pen_magnets = wx.Pen()
+        self.color_guide = None
+        self.set_colors()
+
+    def set_colors(self):
+        self.color_guide = self.scene.colors.color_guide
+        self.pen_guide.SetColour(self.color_guide)
+        self.pen_magnets.SetColour(self.scene.colors.color_magnetline)
+        self.pen_magnets.SetWidth(2)
+
 
     def hit(self):
         return HITCHAIN_HIT
@@ -395,8 +406,7 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         # print ("GuideWidget Draw")
-        pen = wx.Pen(self.scene.colors.color_guide)
-        gc.SetPen(pen)
+        gc.SetPen(self.pen_guide)
         w, h = gc.Size
         p = self.scene.context
         self.scaled_conversion = (
@@ -430,7 +440,7 @@ class GuideWidget(Widget):
         length = self.line_length
         edge_gap = self.edge_gap
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, self.scene.colors.color_guide)
+        gc.SetFont(font, self.color_guide)
         gc.DrawText(self.units, edge_gap, edge_gap)
         (t_width, t_height) = gc.GetTextExtent("0")
         while x < w:
@@ -498,11 +508,7 @@ class GuideWidget(Widget):
             starts_hi.append((length + edge_gap, sy))
             ends_hi.append((w - length - edge_gap, sy))
 
-        grid_line_high_pen = wx.Pen()
-        grid_line_high_pen.SetColour(self.scene.colors.color_magnetline)
-        grid_line_high_pen.SetWidth(2)
-
-        gc.SetPen(grid_line_high_pen)
+        gc.SetPen(self.pen_magnets)
         if starts_hi and ends_hi:
             gc.StrokeLineSegments(starts_hi, ends_hi)
 
@@ -512,3 +518,5 @@ class GuideWidget(Widget):
         """
         if signal == "guide":
             pass
+        elif signal == "theme":
+            self.set_colors()
