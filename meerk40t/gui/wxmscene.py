@@ -143,7 +143,7 @@ class MeerK40tScenePanel(wx.Panel):
                 if hasattr(self.context, color_key):
                     setattr(self.context, color_key, color.hexa)
                     channel(_("Scene aspect color is set."))
-                    data.request_refresh()  # 0.8.x has this changed.
+                    self.context.signal("theme", color_key)
                 else:
                     channel(_("%s is not a known scene color command") % aspect)
 
@@ -243,6 +243,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("background", self.on_background_signal)
+        context.listen("theme", self.on_theme_change)
         context.listen("bed_size", self.bed_changed)
         context.listen("emphasized", self.on_emphasized_elements_changed)
         context.listen("modified", self.on_element_modified)
@@ -255,6 +256,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("refresh_scene", self.on_refresh_scene)
         context.unlisten("background", self.on_background_signal)
+        context.unlisten("theme", self.on_theme_change)
         context.unlisten("bed_size", self.bed_changed)
         context.unlisten("emphasized", self.on_emphasized_elements_changed)
         context.unlisten("modified", self.on_element_modified)
@@ -274,6 +276,10 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             self.widget_scene.background_brush = wx.Brush("Red")
         self.widget_scene.request_refresh_for_animation()
+
+    def on_theme_change(self, origin, theme=None):
+        self.scene.signal("theme", theme)
+        self.request_refresh(origin)
 
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
