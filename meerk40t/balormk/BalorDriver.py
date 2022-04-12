@@ -265,9 +265,9 @@ class BalorDriver(Parameters):
             power=self.service.laser_power,
             frequency=self.service.q_switch_frequency,
             cut_speed=self.service.cut_speed,
-            laser_on_delay=100,
-            laser_off_delay=100,
-            polygon_delay=100,
+            laser_on_delay=self.service.delay_laser_on,
+            laser_off_delay=self.service.delay_laser_off,
+            polygon_delay=self.service.delay_polygon,
         )
         job.set_write_port(self.connection.get_port())
         job.goto(0x8000, 0x8000)
