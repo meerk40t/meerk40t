@@ -110,20 +110,9 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.start_angle = None
         self.elements = scene.context.elements
-        # Make sure selection color is a setting
         self.color_selection = LINECOL_DEFAULT
-        scene.context.setting(str, "color_manipulation", color_to_str(self.color_selection.GetRGBA()))
-        # print("Default-Value for Color %s" % scene.context.color_manipulation)
-        try:
-            self.color_selection.SetRGBA(str_to_color(scene.context.color_manipulation))
-        except (ValueError, TypeError):
-            self.color_selection = None
-        if self.color_selection is None:
-            self.color_selection = LINECOL_DEFAULT
-            scene.context.color_manipulation = color_to_str(self.color_selection.GetRGBA())
 
         self.selection_pen = wx.Pen()
-        self.selection_pen.SetColour(self.color_selection)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
         self.save_width = None
         self.save_height = None
@@ -135,9 +124,19 @@ class SelectionWidget(Widget):
         self.tool_running = False
         self.arcsegment = None
         self.draw_border = True
+        self.set_colors()
+
+    def set_colors(self):
+        color = LINECOL_DEFAULT
+        try:
+            self.scene.context.setting(str, "color_manipulation", color_to_str(color.GetRGBA()))
+            color.SetRGBA(str_to_color(self.scene.context.color_manipulation))
+            self.selection_pen.SetColour(color)
+            self.color_selection = color
+        except (ValueError, TypeError):
+            pass
 
     def hit(self):
-
         elements = self.elements
         bounds = elements.selected_area()
         if bounds is not None:
@@ -177,6 +176,13 @@ class SelectionWidget(Widget):
             self.bottom = -float("inf")
             self.clear()
             return HITCHAIN_DELEGATE
+
+    def signal(self, signal, *args, **kwargs):
+        """
+        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        """
+        if signal == "theme":
+            self.set_colors()
 
     def contains(self, x, y=None):
         """
@@ -1274,12 +1280,6 @@ class SelectionWidget(Widget):
         context = self.scene.context
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
-        try:
-            self.color_selection.SetRGBA(str_to_color(context.color_manipulation))
-        except (ValueError, TypeError):
-            self.color_selection = LINECOL_DEFAULT
-
-        self.selection_pen.SetColour(self.color_selection)
         # bounds = elements.selected_area()
         bounds = elements._emphasized_bounds
         if bounds is None:
