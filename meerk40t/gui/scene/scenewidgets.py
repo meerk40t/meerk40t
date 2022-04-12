@@ -49,6 +49,7 @@ def str_to_color(value):
     c = Color(value)
     return c.alpha << 24 | c.bgr
 
+
 class ElementsWidget(Widget):
     """
     The ElementsWidget is tasked with drawing the elements within the scene. It also
@@ -110,7 +111,7 @@ class SelectionWidget(Widget):
         self.last_angle = None
         self.start_angle = None
         self.elements = scene.context.elements
-        self.color_selection = LINECOL_DEFAULT
+        self.color_selection = None
 
         self.selection_pen = wx.Pen()
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
@@ -126,11 +127,13 @@ class SelectionWidget(Widget):
         self.draw_border = True
         self.set_colors()
 
-    def set_colors(self):
-        color = LINECOL_DEFAULT
+    def set_colors(self, default=False):
+        color_manipulation = "#A07FA0"
+        self.scene.context.setting(str, "color_manipulation", color_manipulation)
+        if default:
+            self.scene.context.color_manipulation = color_manipulation
         try:
-            self.scene.context.setting(str, "color_manipulation", color_to_str(color.GetRGBA()))
-            color.SetRGBA(str_to_color(self.scene.context.color_manipulation))
+            color = wx.Colour(str_to_color(self.scene.context.color_manipulation))
             self.selection_pen.SetColour(color)
             self.color_selection = color
         except (ValueError, TypeError):
@@ -182,7 +185,7 @@ class SelectionWidget(Widget):
         Signal commands which draw the background and updates the grid when needed recalculate the lines
         """
         if signal == "theme":
-            self.set_colors()
+            self.set_colors(args[0])
 
     def contains(self, x, y=None):
         """
@@ -1896,11 +1899,13 @@ class GridWidget(Widget):
         self.grid_line_pen.SetWidth(1)
         self.set_colors()
 
-    def set_colors(self):
-        grid_color = wx.Colour(0xA0, 0xA0, 0xA0)
+    def set_colors(self, default=False):
+        color_grid = "#A0A0A0"
+        self.scene.context.setting(str, "color_grid", color_grid)
+        if default:
+            self.scene.context.color_grid = color_grid
         try:
-            self.scene.context.setting(str, "color_grid", color_to_str(grid_color.GetRGBA()))
-            grid_color.SetRGBA(str_to_color(self.scene.context.color_grid))
+            grid_color = wx.Colour(str_to_color(self.scene.context.color_grid))
             self.grid_line_pen.SetColour(grid_color)
         except (ValueError, TypeError):
             pass
@@ -2018,7 +2023,7 @@ class GridWidget(Widget):
         elif signal == "background":
             self.background = args[0]
         elif signal == "theme":
-            self.set_colors()
+            self.set_colors(args[0])
 
 
 class GuideWidget(Widget):
