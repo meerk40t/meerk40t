@@ -42,17 +42,12 @@ BUFFER = 10.0
 LINECOL_DEFAULT = wx.Colour(0xA0, 0x7F, 0xA0)
 
 def color_to_str(value):
-    temp = hex(value)
-    # The representation is backwards ABGR --> change
-    result = temp[:2] + temp[8:] + temp[6:8] + temp[4:6]+ temp[2:4]
-    return result
+    c = Color(rgba=value)
+    return c.hexa
 
 def str_to_color(value):
-    # The representation needs to be ABGR --> change
-    if len(value)<=8:
-        value = value + "FF" # append opacity
-    result = value[:2] + value[8:] + value[6:8] + value[4:6]+ value[2:4]
-    return int(result, base=16)
+    c = Color(value)
+    return c.alpha << 24 | c.bgr
 
 class ElementsWidget(Widget):
     """
@@ -120,7 +115,7 @@ class SelectionWidget(Widget):
         scene.context.setting(str, "color_manipulation", color_to_str(self.color_selection.GetRGBA()))
         # print("Default-Value for Color %s" % scene.context.color_manipulation)
         try:
-            self.color_selection.SetRGB(str_to_color(scene.context.color_manipulation))
+            self.color_selection.SetRGBA(str_to_color(scene.context.color_manipulation))
         except (ValueError, TypeError):
             self.color_selection = None
         if self.color_selection is None:
@@ -1902,7 +1897,7 @@ class GridWidget(Widget):
         scene.context.setting(str, "color_grid", color_to_str(self.color_grid.GetRGBA()))
         # print("Default-Value for Color %s" % scene.context.color_grid)
         try:
-            self.color_grid.SetRGB(str_to_color(scene.context.color_grid))
+            self.color_grid.SetRGBA(str_to_color(scene.context.color_grid))
         except (ValueError, TypeError):
             self.color_grid = None
         if self.color_grid is None:
@@ -1979,7 +1974,7 @@ class GridWidget(Widget):
         """
         context = self.scene.context
         try:
-            self.color_grid.SetRGB(str_to_color(context.color_grid))
+            self.color_grid.SetRGBA(str_to_color(context.color_grid))
         except (ValueError, TypeError):
             self.color_grid = self.col_default
         self.grid_line_pen.SetColour(self.color_grid)
