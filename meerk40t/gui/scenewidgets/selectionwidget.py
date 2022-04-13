@@ -1418,6 +1418,7 @@ class RefAlign(wx.Dialog):
         self.cancelled = False
         self.option_pos = ""
         self.option_scale = ""
+        self.option_rotate = False
         self.context = context
         _ = context._
         # begin wxGlade: RefAlign.__init__
@@ -1500,27 +1501,33 @@ class RefAlign(wx.Dialog):
         sizer_8.Add(self.radio_btn_9, 0, 0, 0)
 
         sizer_scale = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Scaling"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Scaling")), wx.VERTICAL
         )
         sizer_options.Add(sizer_scale, 1, wx.EXPAND, 0)
 
         self.radio_btn_10 = wx.RadioButton(
-            self, wx.ID_ANY, "Unchanged", style=wx.RB_GROUP
+            self, wx.ID_ANY, _("Unchanged"), style=wx.RB_GROUP
         )
         self.radio_btn_10.SetToolTip(_("Don't change the size of the object(s)"))
         sizer_scale.Add(self.radio_btn_10, 0, 0, 0)
 
-        self.radio_btn_11 = wx.RadioButton(self, wx.ID_ANY, "Fit")
+        self.radio_btn_11 = wx.RadioButton(self, wx.ID_ANY, _("Fit"))
         self.radio_btn_11.SetToolTip(
             _("Scale the object(s) while maintaining the aspect ratio")
         )
         sizer_scale.Add(self.radio_btn_11, 0, 0, 0)
 
-        self.radio_btn_12 = wx.RadioButton(self, wx.ID_ANY, "Squeeze")
+        self.radio_btn_12 = wx.RadioButton(self, wx.ID_ANY, _("Squeeze"))
         self.radio_btn_11.SetToolTip(
             _("Scale the object(s) to make them fit the target")
         )
         sizer_scale.Add(self.radio_btn_12, 0, 0, 0)
+
+        self.chk_auto_rotate = wx.CheckBox(self, wx.ID_ANY, _("Autorotate"))
+        self.chk_auto_rotate.SetToolTip(
+            _("Rotate the object(s) if they would fit better")
+        )
+        sizer_scale.Add(self.chk_auto_rotate, 0, 0, 0)
 
         sizer_buttons = wx.StdDialogButtonSizer()
         sizer_ref_align.Add(sizer_buttons, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
@@ -1549,6 +1556,7 @@ class RefAlign(wx.Dialog):
 
     def results(self):
         self.cancelled = False
+        self.option_rotate = self.chk_auto_rotate.GetValue()
         if self.radio_btn_10.GetValue():
             self.option_scale = "none"
         elif self.radio_btn_11.GetValue():
@@ -1570,7 +1578,7 @@ class RefAlign(wx.Dialog):
                 s = radio.GetLabel()
                 self.option_pos = s.lower()
                 break
-        return self.option_pos, self.option_scale
+        return self.option_pos, self.option_scale, self.option_rotate
 
 
 class SelectionWidget(Widget):
@@ -1692,6 +1700,35 @@ class SelectionWidget(Widget):
                     pass
         elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
 
+    def rotate_elements_if_needed(self, doit):
+        if not doit:
+            return
+        refob = self.scene.reference_object
+        if refob is None:
+            return
+        bb = refob.bbox()
+        elements = self.scene.context.elements
+        cc = elements.selected_area()
+
+        ratio_ref = (bb[3]-bb[1]) > (bb[2] - bb[0])
+        ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
+        if ratio_ref != ratio_sel:
+            angle = math.tau / 4
+            cx = (cc[0] + cc[2]) / 2
+            cy = (cc[1] + cc[3]) / 2
+            dx = cc[2] - cc[0]
+            dy = cc[3] - cc[1]
+            for e in elements.flat(types=("elem",), emphasized=True):
+                obj = e.object
+                obj.transform.post_rotate(angle, cx, cy)
+            # Update bbox
+            cc[0] = cx - dy / 2
+            cc[2] = cc [0] + dy
+            cc[1] = cy - dx / 2
+            cc[3] = cc [1] + dx
+            elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
+
+
     def scale_selection_to_ref(self, method="none"):
         refob = self.scene.reference_object
         if refob is None:
@@ -1721,13 +1758,7 @@ class SelectionWidget(Widget):
         dy = (scaley - 1) * (cc[3] - cc[1])
 
         for e in elements.flat(types=("elem",), emphasized=True):
-            # Here we acknowledge the lock-status of an element
             obj = e.object
-            try:
-                if obj.lock:
-                    continue
-            except AttributeError:
-                pass
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
 
@@ -1736,14 +1767,16 @@ class SelectionWidget(Widget):
     def show_reference_align_dialog(self, event):
         opt_pos = None
         opt_scale = None
+        opt_rotate = False
         dlgRefAlign = RefAlign(self.scene.context, None, wx.ID_ANY, "")
         # SetTopWindow(self.dlgRefAlign)
         if dlgRefAlign.ShowModal() == wx.ID_OK:
-            opt_pos, opt_scale = dlgRefAlign.results()
+            opt_pos, opt_scale, opt_rotate = dlgRefAlign.results()
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
         if not opt_pos is None:
             elements = self.scene.context.elements
+            self.rotate_elements_if_needed(opt_rotate)
             self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
