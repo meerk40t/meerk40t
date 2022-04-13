@@ -24,10 +24,11 @@ class AttractionWidget(Widget):
         self.grid_points = None # Clear all
         self.my_x = None
         self.my_y = None
-        self.visible_pen = wx.Pen(self.scene.colors.color_snap_visible)
+        self.visible_pen = wx.Pen()
         self.visible_pen.SetWidth(1)
-        self.closeup_pen = wx.Pen(self.scene.colors.color_snap_closeup)
+        self.closeup_pen = wx.Pen()
         self.closeup_pen.SetWidth(1)
+        self.load_colors()
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
         self.show_attract_len = 0
@@ -44,6 +45,11 @@ class AttractionWidget(Widget):
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
+
+
+    def load_colors(self):
+        self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
+        self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
 
     def hit(self):
         """
@@ -115,10 +121,7 @@ class AttractionWidget(Widget):
                             and abs(new_y - self.my_y) <= self.action_attract_len
                         ):
                             # Is the distance small enough?
-                            self.scene.new_x_space = new_x
-                            self.scene.new_y_space = new_y
-                            response = RESPONSE_CHANGE_POSITION
-            #print ("response: %d" % response)
+                            response = (RESPONSE_CHANGE_POSITION, new_x, new_y)
 
         return response
 
@@ -357,7 +360,9 @@ class AttractionWidget(Widget):
         self.snap_points = self.scene.context.snap_points
         if self.snap_points and len(self.attraction_points) > 0 and not self.my_x is None:
             for pts in self.attraction_points:
-                if not pts[3]:  # not emphasized
+                # doit = not pts[3] # not emphasized
+                doit = True # Not sure why not :-)
+                if doit:
                     if (
                         abs(pts[0] - self.my_x) <= self.show_attract_len
                         and abs(pts[1] - self.my_y) <= self.show_attract_len
@@ -393,5 +398,9 @@ class AttractionWidget(Widget):
         if signal in ("grid", "guide"):
             consumed = True
             self.grid_points = None
+        if signal == "theme":
+            consumed = True
+            self.load_colors()
         if not consumed:
-            print ("Dont know what to do with signal %s" % signal)
+            # print ("Dont know what to do with signal %s" % signal)
+            pass

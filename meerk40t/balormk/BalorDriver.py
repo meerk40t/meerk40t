@@ -265,9 +265,9 @@ class BalorDriver(Parameters):
             power=self.service.laser_power,
             frequency=self.service.q_switch_frequency,
             cut_speed=self.service.cut_speed,
-            laser_on_delay=100,
-            laser_off_delay=100,
-            polygon_delay=100,
+            laser_on_delay=self.service.delay_laser_on,
+            laser_off_delay=self.service.delay_laser_off,
+            polygon_delay=self.service.delay_polygon,
         )
         job.set_write_port(self.connection.get_port())
         job.goto(0x8000, 0x8000)
@@ -275,8 +275,22 @@ class BalorDriver(Parameters):
         last_on = None
         for plot in queue:
             start = plot.start
+            settings = plot.settings
+            travel_speed = settings.get("travel_speed", self.service.travel_speed)
+            job.set_travel_speed(travel_speed)
+            power = settings.get("laser_power", self.service.laser_power)
+            job.set_power(power)
+            frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
+            job.set_frequency(frequency)
+            cut_speed = settings.get("cut_speed", self.service.cut_speed)
+            job.set_cut_speed(cut_speed)
+            delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+            job.set_laser_on_delay(delay_laser_on)
+            delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+            job.set_laser_off_delay(delay_laser_off)
+            delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+            job.set_polygon_delay(delay_polygon)
             job.goto(start[0], start[1])
-
             for e in self.group(plot.generator()):
                 on = 1
                 if len(e) == 2:

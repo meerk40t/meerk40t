@@ -4,6 +4,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import SVGText
 
 from ...core.units import UNITS_PER_PIXEL
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 
 class TextTool(ToolWidget):
@@ -27,6 +28,7 @@ class TextTool(ToolWidget):
             gc.DrawText(self.text.text, self.x, self.y)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.p1 = complex(space_pos[0], space_pos[1])
             _ = self.scene.context._
@@ -48,3 +50,5 @@ class TextTool(ToolWidget):
                 self.text = None
             dlg.Destroy()
             self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        return response

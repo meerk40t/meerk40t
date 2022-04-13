@@ -122,6 +122,26 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Scale the Y axis"),
             },
             {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _(
+                    "Flip the X axis for the Balor device"
+                ),
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _(
+                    "Flip the Y axis for the Balor device"
+                ),
+            },
+            {
                 "attr": "redlight_speed",
                 "object": self,
                 "default": "8000",
@@ -380,11 +400,12 @@ class BalorDevice(Service, ViewPort):
             self.lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0,
-            origin_y=1.0,
+            origin_x=1.0 if self.flip_x else 0.0,
+            origin_y=1.0 if self.flip_y else 0.0,
             show_origin_x=0.5,
             show_origin_y=0.5,
-            flip_y=True,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
@@ -1057,6 +1078,14 @@ class BalorDevice(Service, ViewPort):
                     points.append((x, y))
                 points_list.append(list(ant_points(points, int(quantization / 10))))
             return "elements", [Polygon(*p) for p in points_list]
+
+        @self.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update balor flips for movement"),
+        )
+        def codes_update(**kwargs):
+            self.realize()
 
         @self.console_option(
             "raster-x-res",

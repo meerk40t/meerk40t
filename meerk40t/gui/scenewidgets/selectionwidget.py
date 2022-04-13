@@ -88,7 +88,8 @@ def process_event(
         widget.scene.cursor(widget.cursor)
         widget.hovering = True
         widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        # return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -98,15 +99,25 @@ def process_event(
         widget.hovering = True
         widget.scene.cursor(widget.cursor)
         widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        return RESPONSE_CHAIN
 
     # Now all Mouse-Click-Events
     elements = widget.scene.context.elements
     dx = space_pos[4]
     dy = space_pos[5]
 
+    if widget.scene.tool_active:
+        # print ("ignore")
+        return RESPONSE_CHAIN
+
     if event_type == "leftdown":
-        if not (widget.key_control_pressed or widget.key_shift_pressed):
+        # We want to establish that we dont have a singular Shift key or a singular ctrl-key
+        different_event = False
+        if (widget.key_control_pressed and not widget.key_shift_pressed and not widget.key_alt_pressed):
+            different_event = True
+        if (widget.key_shift_pressed and not widget.key_control_pressed and not widget.key_alt_pressed):
+            different_event = True
+        if not different_event:
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
@@ -339,15 +350,7 @@ class RotationWidget(Widget):
     def process_draw(self, gc):
         if self.master.tool_running:  # We don't need that overhead
             return
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(0.75 * self.master.line_width)
-        except TypeError:
-            pen.SetWidth(0.75 * int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
         self.update()  # make sure coords are valid
-        gc.SetPen(pen)
 
         cx = (self.left + self.right) / 2
         cy = (self.top + self.bottom) / 2
@@ -396,7 +399,7 @@ class RotationWidget(Widget):
         ]
         segment += [(x, y)]
         segment += [(x + signx * 1 / 2 * self.inner, y - signy * 1 / 2 * self.inner)]
-        gc.SetPen(pen)
+        gc.SetPen(self.master.handle_pen)
         gc.StrokeLines(segment)
 
     def tool(self, position, dx, dy, event=0):
@@ -640,15 +643,8 @@ class CornerWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -703,10 +699,6 @@ class CornerWidget(Widget):
                 scalex = scale
                 scaley = scale
 
-            self.save_width *= scalex
-            self.save_height *= scaley
-            # Correct, but slow...
-            # b = elements.selected_area()
             b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
@@ -718,15 +710,33 @@ class CornerWidget(Widget):
             else:
                 orgx = self.master.left
 
+            grow = 1
+            # If the crtl+shift-Keys are pressed then size equally on both opposing sides at the same time
+            if self.master.key_shift_pressed and self.master.key_control_pressed:
+                orgy  = (self.master.bottom + self.master.top) / 2
+                orgx  = (self.master.left + self.master.right) / 2
+                grow = 0.5
+
+            oldvalue = self.save_width
+            self.save_width *= scalex
+            deltax = self.save_width - oldvalue
+            oldvalue = self.save_height
+            self.save_height *= scaley
+            deltay = self.save_height - oldvalue
+
             if "n" in self.method:
-                b[1] = b[3] - self.save_height
+                b[1] -= grow * deltay
+                b[3] += (1 - grow) * deltay
             elif "s" in self.method:
-                b[3] = b[1] + self.save_height
+                b[3] += grow * deltay
+                b[1] -= (1 - grow) * deltay
 
             if "e" in self.method:
-                b[2] = b[0] + self.save_width
+                b[2] += grow * deltax
+                b[0] -= (1 - grow) * deltax
             elif "w" in self.method:
-                b[0] = b[2] - self.save_width
+                b[0] -= grow * deltax
+                b[2] += (1 - grow) * deltax
 
             for obj in elements.elems(emphasized=True):
                 try:
@@ -751,7 +761,7 @@ class CornerWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
-            helptext="Size element (with Alt-Key freely)",
+            helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
         return response
 
@@ -821,15 +831,8 @@ class SideWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -858,23 +861,33 @@ class SideWidget(Widget):
             # Establish scales
             scalex = 1
             scaley = 1
+            deltax = 0
+            deltay = 0
             if "n" in self.method:
-                scaley = (self.master.bottom - position[1]) / self.save_height
+                try:
+                    scaley = (self.master.bottom - position[1]) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             elif "s" in self.method:
-                scaley = (position[1] - self.master.top) / self.save_height
-
+                try:
+                    scaley = (position[1] - self.master.top) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             if "w" in self.method:
-                scalex = (self.master.right - position[0]) / self.save_width
+                try:
+                    scalex = (self.master.right - position[0]) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
             elif "e" in self.method:
-                scalex = (position[0] - self.master.left) / self.save_width
+                try:
+                    scalex = (position[0] - self.master.left) / self.save_width
+                except ZeroDivisionError:
+                    scaley = 1
 
             if len(self.method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
-
-            self.save_width *= scalex
-            self.save_height *= scaley
 
             # Correct, but slow...
             # b = elements.selected_area()
@@ -888,16 +901,34 @@ class SideWidget(Widget):
                 orgx = self.master.right
             else:
                 orgx = self.master.left
+            grow = 1
+            # If the Ctr+Shift-Keys are pressed then size equally on both opposing sides at the same time
+            if self.master.key_shift_pressed and self.master.key_control_pressed:
+                orgy  = (self.master.bottom + self.master.top) / 2
+                orgx  = (self.master.left + self.master.right) / 2
+                grow = 0.5
+
+            oldvalue = self.save_width
+            self.save_width *= scalex
+            deltax = self.save_width - oldvalue
+            oldvalue = self.save_height
+            self.save_height *= scaley
+            deltay = self.save_height - oldvalue
+
 
             if "n" in self.method:
-                b[1] = b[3] - self.save_height
+                b[1] -= grow * deltay
+                b[3] += (1 - grow) * deltay
             elif "s" in self.method:
-                b[3] = b[1] + self.save_height
+                b[3] += grow * deltay
+                b[1] -= (1 - grow) * deltay
 
             if "e" in self.method:
-                b[2] = b[0] + self.save_width
+                b[2] += grow * deltax
+                b[0] -= (1 - grow) * deltax
             elif "w" in self.method:
-                b[0] = b[2] - self.save_width
+                b[0] -= grow * deltax
+                b[2] += (1 - grow) * deltax
 
             for obj in elements.elems(emphasized=True):
                 try:
@@ -916,7 +947,8 @@ class SideWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "side"
-        s_help = "Size element in %s-direction" % ("Y" if self.index in (0, 2) else "X")
+        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % ("Y" if self.index in (0, 2) else "X")
+
         response = process_event(
             widget=self,
             widget_identifier=s_me,
@@ -966,15 +998,8 @@ class SkewWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -1115,15 +1140,8 @@ class MoveWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        pen = wx.Pen()
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation, wx.SOLID)
+        gc.SetPen(self.master.handle_pen)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(
             self.left + self.half_x - self.drawhalf,
@@ -1240,13 +1258,7 @@ class MoveRotationOriginWidget(Widget):
         self.update()  # make sure coords are valid
         pen = wx.Pen()
         # pen.SetColour(wx.RED)
-        pen.SetColour(self.scene.colors.color_manipulation)
-        try:
-            pen.SetWidth(0.75 * self.master.line_width)
-        except TypeError:
-            pen.SetWidth(int(0.75 * self.master.line_width))
-        pen.SetStyle(wx.PENSTYLE_SOLID)
-        gc.SetPen(pen)
+        gc.SetPen(self.master.handle_pen)
         gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.StrokeLine(
             self.left,
@@ -1327,7 +1339,7 @@ class ReferenceWidget(Widget):
             bgcol = wx.YELLOW
             fgcol = wx.RED
         else:
-            bgcol = self.scene.colors.color_manipulation
+            bgcol = self.scene.colors.color_manipulation_handle
             fgcol = wx.BLACK
         pen.SetColour(bgcol)
         try:
@@ -1572,6 +1584,10 @@ class SelectionWidget(Widget):
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.handle_pen = wx.Pen()
+        self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
+        self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
+
         self.popupID1 = None
         self.popupID2 = None
         self.popupID3 = None
@@ -1833,7 +1849,7 @@ class SelectionWidget(Widget):
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
             self.tool_running = False
-            self.scene.tool_active = False
+
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
@@ -1844,7 +1860,8 @@ class SelectionWidget(Widget):
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
-            self.scene.tool_active = False
+            # self.scene.tool_active = False
+            pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
             elements.set_emphasized_by_position(space_pos)
@@ -1923,10 +1940,14 @@ class SelectionWidget(Widget):
             except ZeroDivisionError:
                 matrix.reset()
                 return
+            self.selection_pen.SetColour(self.scene.colors.color_manipulation)
+            self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
             try:
                 self.selection_pen.SetWidth(self.line_width)
+                self.handle_pen.SetWidth(0.75*self.line_width)
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
+                self.handle_pen.SetWidth(int(0.75*self.line_width))
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
