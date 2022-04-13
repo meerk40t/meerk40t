@@ -111,7 +111,13 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "leftdown":
-        if not (widget.key_control_pressed or widget.key_shift_pressed):
+        # We want to establish that we dont have a singular Shift key or a singular ctrl-key
+        different_event = False
+        if (widget.key_control_pressed and not widget.key_shift_pressed and not widget.key_alt_pressed):
+            different_event = True
+        if (widget.key_shift_pressed and not widget.key_control_pressed and not widget.key_alt_pressed):
+            different_event = True
+        if not different_event:
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
@@ -708,10 +714,6 @@ class CornerWidget(Widget):
                 scalex = scale
                 scaley = scale
 
-            self.save_width *= scalex
-            self.save_height *= scaley
-            # Correct, but slow...
-            # b = elements.selected_area()
             b = elements._emphasized_bounds
             if "n" in self.method:
                 orgy = self.master.bottom
@@ -723,15 +725,33 @@ class CornerWidget(Widget):
             else:
                 orgx = self.master.left
 
+            grow = 1
+            # If the alt-Key is pressed then size equally on both sides at the same time
+            if self.master.key_shift_pressed and self.master.key_control_pressed:
+                orgy  = (self.master.bottom + self.master.top) / 2
+                orgx  = (self.master.left + self.master.right) / 2
+                grow = 0.5
+
+            oldvalue = self.save_width
+            self.save_width *= scalex
+            deltax = self.save_width - oldvalue
+            oldvalue = self.save_height
+            self.save_height *= scaley
+            deltay = self.save_height - oldvalue
+
             if "n" in self.method:
-                b[1] = b[3] - self.save_height
+                b[1] -= grow * deltay
+                b[3] += (1 - grow) * deltay
             elif "s" in self.method:
-                b[3] = b[1] + self.save_height
+                b[3] += grow * deltay
+                b[1] -= (1 - grow) * deltay
 
             if "e" in self.method:
-                b[2] = b[0] + self.save_width
+                b[2] += grow * deltax
+                b[0] -= (1 - grow) * deltax
             elif "w" in self.method:
-                b[0] = b[2] - self.save_width
+                b[0] -= grow * deltax
+                b[2] += (1 - grow) * deltax
 
             for obj in elements.elems(emphasized=True):
                 try:
@@ -863,23 +883,33 @@ class SideWidget(Widget):
             # Establish scales
             scalex = 1
             scaley = 1
+            deltax = 0
+            deltay = 0
             if "n" in self.method:
-                scaley = (self.master.bottom - position[1]) / self.save_height
+                try:
+                    scaley = (self.master.bottom - position[1]) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             elif "s" in self.method:
-                scaley = (position[1] - self.master.top) / self.save_height
-
+                try:
+                    scaley = (position[1] - self.master.top) / self.save_height
+                except ZeroDivisionError:
+                    scaley = 1
             if "w" in self.method:
-                scalex = (self.master.right - position[0]) / self.save_width
+                try:
+                    scalex = (self.master.right - position[0]) / self.save_width
+                except ZeroDivisionError:
+                    scalex = 1
             elif "e" in self.method:
-                scalex = (position[0] - self.master.left) / self.save_width
+                try:
+                    scalex = (position[0] - self.master.left) / self.save_width
+                except ZeroDivisionError:
+                    scaley = 1
 
             if len(self.method) > 1 and self.uniform:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
-
-            self.save_width *= scalex
-            self.save_height *= scaley
 
             # Correct, but slow...
             # b = elements.selected_area()
@@ -893,16 +923,34 @@ class SideWidget(Widget):
                 orgx = self.master.right
             else:
                 orgx = self.master.left
+            grow = 1
+            # If the alt-Key is pressed then size equally on both sides at the same time
+            if self.master.key_shift_pressed and self.master.key_control_pressed:
+                orgy  = (self.master.bottom + self.master.top) / 2
+                orgx  = (self.master.left + self.master.right) / 2
+                grow = 0.5
+
+            oldvalue = self.save_width
+            self.save_width *= scalex
+            deltax = self.save_width - oldvalue
+            oldvalue = self.save_height
+            self.save_height *= scaley
+            deltay = self.save_height - oldvalue
+
 
             if "n" in self.method:
-                b[1] = b[3] - self.save_height
+                b[1] -= grow * deltay
+                b[3] += (1 - grow) * deltay
             elif "s" in self.method:
-                b[3] = b[1] + self.save_height
+                b[3] += grow * deltay
+                b[1] -= (1 - grow) * deltay
 
             if "e" in self.method:
-                b[2] = b[0] + self.save_width
+                b[2] += grow * deltax
+                b[0] -= (1 - grow) * deltax
             elif "w" in self.method:
-                b[0] = b[2] - self.save_width
+                b[0] -= grow * deltax
+                b[2] += (1 - grow) * deltax
 
             for obj in elements.elems(emphasized=True):
                 try:

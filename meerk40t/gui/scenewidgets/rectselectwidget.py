@@ -112,7 +112,14 @@ class RectSelectWidget(Widget):
         elif event_type == "kb_shift_press":
             if not self.key_shift_pressed:
                 self.key_shift_pressed = True
+                ignore = False
                 if self.start_location is None:
+                    ignore = True
+                if self.key_control_pressed or self.key_alt_pressed:
+                    # Dont care about multi-keypresses
+                    ignore = True
+
+                if ignore:
                     return RESPONSE_CHAIN
                 else:
                     self.scene.request_refresh()
@@ -132,7 +139,14 @@ class RectSelectWidget(Widget):
         elif event_type == "kb_ctrl_press":
             if not self.key_control_pressed:
                 self.key_control_pressed = True
+                ignore = False
                 if self.start_location is None:
+                    ignore = True
+                if self.key_shift_pressed or self.key_alt_pressed:
+                    # Dont care about multi-keypresses
+                    ignore = True
+
+                if ignore:
                     return RESPONSE_CHAIN
                 else:
                     self.scene.request_refresh()
