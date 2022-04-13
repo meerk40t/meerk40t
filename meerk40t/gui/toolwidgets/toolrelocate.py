@@ -23,9 +23,11 @@ class RelocateTool(ToolWidget):
         pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        # We dont use tool_active here, or should we?
+        # Add snap behaviour
         response = RESPONSE_CHAIN
-        if event_type == "leftdown":
+        if event_type in ("hover", "hover_start"):
+            self.scene.tool_active = True
+        elif event_type == "leftdown":
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
             x = space_pos[0]
@@ -42,4 +44,7 @@ class RelocateTool(ToolWidget):
             y /= UNITS_PER_MM
             self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
             response = RESPONSE_CONSUME
+            self.scene.tool_active = False
+        elif event_type == "lost":
+            self.scene.tool_active = False
         return response
