@@ -356,6 +356,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Position", register_panel_position)
 
+        from meerk40t.gui.lasertoolpanel import register_panel_lasertool
+
+        kernel.register("wxpane/Lasertool", register_panel_lasertool)
+
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
