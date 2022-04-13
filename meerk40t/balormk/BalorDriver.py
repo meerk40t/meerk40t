@@ -260,18 +260,9 @@ class BalorDriver(Parameters):
             except TypeError:
                 pass
         job = CommandList(cal=cal)
-        job.set_mark_settings(
-            travel_speed=self.service.travel_speed,
-            power=self.service.laser_power,
-            frequency=self.service.q_switch_frequency,
-            cut_speed=self.service.cut_speed,
-            laser_on_delay=self.service.delay_laser_on,
-            laser_off_delay=self.service.delay_laser_off,
-            polygon_delay=self.service.delay_polygon,
-        )
+        job.ready()
         job.set_write_port(self.connection.get_port())
         job.goto(0x8000, 0x8000)
-        job.laser_control(True)
         last_on = None
         for plot in queue:
             start = plot.start
@@ -290,7 +281,11 @@ class BalorDriver(Parameters):
             job.set_laser_off_delay(delay_laser_off)
             delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
             job.set_polygon_delay(delay_polygon)
-            job.goto(start[0], start[1])
+            x, y = job.get_last_xy()
+            if start[0] != x or start[1] != y:
+                job.laser_control(False)
+                job.goto(start[0], start[1])
+            job.laser_control(True)
             for e in self.group(plot.generator()):
                 on = 1
                 if len(e) == 2:
