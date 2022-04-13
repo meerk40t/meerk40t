@@ -15,7 +15,7 @@ def register_panel_lasertool(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(150, 165)
+        .MinSize(220, 165)
         .FloatingSize(240, 195)
         .Hide()
         .Caption(_("Lasertools"))
@@ -48,10 +48,10 @@ class LaserToolPanel(wx.Panel):
         self.nb_circle = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
         self.nbook_lasertools.AddPage(self.nb_circle, _("Find center"))
 
-        sizer_circle = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_circle = wx.BoxSizer(wx.VERTICAL)
 
         sizer_9 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_circle.Add(sizer_9, 0, wx.EXPAND, 0)
+        self.sizer_circle.Add(sizer_9, 0, wx.EXPAND, 0)
 
         sizer_10 = wx.BoxSizer(wx.VERTICAL)
         sizer_9.Add(sizer_10, 0, wx.EXPAND, 0)
@@ -104,7 +104,7 @@ class LaserToolPanel(wx.Panel):
         sizer_9.Add(image1, 1, 0, 0)
 
         sizer_chk = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_circle.Add(sizer_chk, 0, wx.EXPAND, 0)
+        self.sizer_circle.Add(sizer_chk, 0, wx.EXPAND, 0)
         self.check_reference_1 = wx.CheckBox(self.nb_circle, wx.ID_ANY, _("Make reference"))
         self.check_reference_1.SetMinSize((-1, 23))
         sizer_chk.Add(self.check_reference_1, 0, 0, 0)
@@ -113,7 +113,7 @@ class LaserToolPanel(wx.Panel):
         sizer_chk.Add(self.check_mark1, 0, 0, 0)
 
         sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_circle.Add(sizer_4, 0, wx.EXPAND, 0)
+        self.sizer_circle.Add(sizer_4, 0, wx.EXPAND, 0)
 
         self.btn_move_to_center = wx.Button(self.nb_circle, wx.ID_ANY, _("Move to center"))
         sizer_4.Add(self.btn_move_to_center, 0, 0, 0)
@@ -124,10 +124,10 @@ class LaserToolPanel(wx.Panel):
         self.nb_square = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
         self.nbook_lasertools.AddPage(self.nb_square, _("Place square"))
 
-        sizer_square = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_square = wx.BoxSizer(wx.VERTICAL)
 
         sizer_rect_hor = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_square.Add(sizer_rect_hor, 0, wx.EXPAND, 0)
+        self.sizer_square.Add(sizer_rect_hor, 0, wx.EXPAND, 0)
 
         sizer_rect_vert = wx.BoxSizer(wx.VERTICAL)
         sizer_rect_hor.Add(sizer_rect_vert, 0, wx.EXPAND, 0)
@@ -193,7 +193,7 @@ class LaserToolPanel(wx.Panel):
 
 
         sizer_chk2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_square.Add(sizer_chk2, 0, wx.EXPAND, 0)
+        self.sizer_square.Add(sizer_chk2, 0, wx.EXPAND, 0)
         self.check_reference_2 = wx.CheckBox(self.nb_square, wx.ID_ANY, _("Make reference"))
         self.check_reference_2.SetMinSize((-1, 23))
         sizer_chk2.Add(self.check_reference_2, 0, 0, 0)
@@ -202,15 +202,15 @@ class LaserToolPanel(wx.Panel):
         sizer_chk2.Add(self.check_mark2, 0, 0, 0)
 
         sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_square.Add(sizer_8, 0, wx.EXPAND, 0)
+        self.sizer_square.Add(sizer_8, 0, wx.EXPAND, 0)
 
         self.btn_create_square = wx.Button(self.nb_square, wx.ID_ANY, _("Create square"))
         sizer_8.Add(self.btn_create_square, 0, 0, 0)
 
 
-        self.nb_square.SetSizer(sizer_square)
+        self.nb_square.SetSizer(self.sizer_square)
 
-        self.nb_circle.SetSizer(sizer_circle)
+        self.nb_circle.SetSizer(self.sizer_circle)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -270,8 +270,8 @@ class LaserToolPanel(wx.Panel):
             p = self.context
             units = p.units_name
             label_string = "({x}, {y})".format(
-                x=str(Length(amount=position[0], digits=3, preferred_units=units)),
-                y=str(Length(amount=position[1], digits=3, preferred_units=units)))
+                x=str(Length(amount=position[0], digits=1, preferred_units=units)),
+                y=str(Length(amount=position[1], digits=1, preferred_units=units)))
         if idx == 0:
             self.lbl_pos_1.Label = label_string
             self.lbl_pos_4.Label = label_string
@@ -287,6 +287,8 @@ class LaserToolPanel(wx.Panel):
             self.lbl_pos_6.Label = label_string
             self.coord_c = position
             self.check_input()
+        self.sizer_circle.Layout()
+        self.sizer_square.Layout()
 
     def check_input(self):
         if self.coord_a is None or self.coord_b is None or self.coord_c is None:
