@@ -726,7 +726,7 @@ class CornerWidget(Widget):
                 orgx = self.master.left
 
             grow = 1
-            # If the alt-Key is pressed then size equally on both sides at the same time
+            # If the crtl+shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
                 orgy  = (self.master.bottom + self.master.top) / 2
                 orgx  = (self.master.left + self.master.right) / 2
@@ -776,7 +776,7 @@ class CornerWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
-            helptext="Size element (with Alt-Key freely)",
+            helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
         return response
 
@@ -924,7 +924,7 @@ class SideWidget(Widget):
             else:
                 orgx = self.master.left
             grow = 1
-            # If the alt-Key is pressed then size equally on both sides at the same time
+            # If the Ctr+Shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
                 orgy  = (self.master.bottom + self.master.top) / 2
                 orgx  = (self.master.left + self.master.right) / 2
@@ -969,7 +969,8 @@ class SideWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "side"
-        s_help = "Size element in %s-direction" % ("Y" if self.index in (0, 2) else "X")
+        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % ("Y" if self.index in (0, 2) else "X")
+
         response = process_event(
             widget=self,
             widget_identifier=s_me,
