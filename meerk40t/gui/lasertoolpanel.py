@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import ViewPort, Length, UNITS_PER_MM
+from meerk40t.core.units import Length, UNITS_PER_MM
 from meerk40t.gui.icons import instruction_circle, instruction_rectangle
 from math import sqrt, tau, atan
 
