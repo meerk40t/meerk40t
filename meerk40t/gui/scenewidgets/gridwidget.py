@@ -16,9 +16,12 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
+        self.last_ticksize = 0
+        self.set_colors()
+
+    def set_colors(self):
         self.grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.grid_line_pen.SetWidth(1)
-        self.last_ticksize = 0
 
     def hit(self):
         return HITCHAIN_HIT
@@ -138,7 +141,6 @@ class GridWidget(Widget):
         Draw the grid on the scene.
         """
         # print ("GridWidget draw")
-        self.grid_line_pen.SetColour(self.scene.colors.color_grid)
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
@@ -192,6 +194,7 @@ class GridWidget(Widget):
         """
         if signal == "grid":
             self.grid = None
-
         elif signal == "background":
             self.background = args[0]
+        elif signal == "theme":
+            self.set_colors()
