@@ -1,11 +1,13 @@
 import sys
 import time
 
+from meerk40t.core.drivers import PLOT_SETTING, PLOT_FINISH, PLOT_RAPID, PLOT_JOG
 from meerk40t.core.parameters import Parameters
 
 from meerk40t.balor.Cal import Cal
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balor.sender import Sender, BalorMachineException
+from meerk40t.core.plotplanner import PlotPlanner
 
 
 class BalorDriver(Parameters):
@@ -26,8 +28,9 @@ class BalorDriver(Parameters):
 
         self._shutdown = False
 
-        self.queue = []
         self.redlight_preferred = False
+
+        self.plot_planner = PlotPlanner(self.settings, single=True, smooth=False, ppi=False, shift=False, group=True)
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -224,7 +227,7 @@ class BalorDriver(Parameters):
         :param plot:
         :return:
         """
-        self.queue.append(plot)
+        self.plot_planner.push(plot)
 
     def light(self, job):
         """
@@ -252,7 +255,6 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        queue = self.queue
         cal = None
         if self.service.calibration_file is not None:
             try:
@@ -261,47 +263,48 @@ class BalorDriver(Parameters):
                 pass
         job = CommandList(cal=cal)
         job.set_write_port(self.connection.get_port())
+        job.set_travel_speed(self.service.travel_speed)
         job.goto(0x8000, 0x8000)
         last_on = None
-        for plot in queue:
-            start = plot.start
-            settings = plot.settings
-            travel_speed = settings.get("travel_speed", self.service.travel_speed)
-            job.set_travel_speed(travel_speed)
-            power = settings.get("laser_power", self.service.laser_power)
-            job.set_power(power)
-            frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
-            job.set_frequency(frequency)
-            cut_speed = settings.get("cut_speed", self.service.cut_speed)
-            job.set_cut_speed(cut_speed)
-            delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
-            job.set_laser_on_delay(delay_laser_on)
-            delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
-            job.set_laser_off_delay(delay_laser_off)
-            delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
-            job.set_polygon_delay(delay_polygon)
-            x, y = job.get_last_xy()
-            if start[0] != x or start[1] != y:
-                job.laser_control(False)
-                job.goto(start[0], start[1])
-            job.laser_control(True)
-            for e in self.group(plot.generator()):
-                on = 1
-                if len(e) == 2:
-                    x, y = e
-                else:
-                    x, y, on = e
-                if on == 0:
+        for x, y, on in self.plot_planner.gen():
+            while self.hold_work():
+                time.sleep(0.05)
+            if on > 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    settings = self.plot_planner.settings
+                    travel_speed = settings.get("travel_speed", self.service.travel_speed)
+                    job.set_travel_speed(travel_speed)
+                    power = settings.get("laser_power", self.service.laser_power)
+                    job.set_power(power)
+                    frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
+                    job.set_frequency(frequency)
+                    cut_speed = settings.get("cut_speed", self.service.cut_speed)
+                    job.set_cut_speed(cut_speed)
+                    delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+                    job.set_laser_on_delay(delay_laser_on)
+                    delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+                    job.set_laser_off_delay(delay_laser_off)
+                    delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+                    job.set_polygon_delay(delay_polygon)
+                elif on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
                     job.laser_control(False)
                     job.goto(x, y)
-                else:
-                    if last_on is None or on != last_on:
-                        last_on = on
-                        job.set_power(self.service.laser_power * on)
-                    job.laser_control(True)
-                    job.mark(x, y)
+                continue
+            if on == 0:
+                job.laser_control(False)
+                job.goto(x, y)
+            else:
+                if last_on is None or on != last_on:
+                    last_on = on
+                    job.set_power(self.service.laser_power * on)
+                job.laser_control(True)
+                job.mark(x, y)
         job.laser_control(False)
-        self.queue = []
         self.connection.execute(job, 1)
         if self.redlight_preferred:
             self.connection.light_on()
