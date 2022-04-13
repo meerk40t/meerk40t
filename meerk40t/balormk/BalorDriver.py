@@ -260,7 +260,6 @@ class BalorDriver(Parameters):
             except TypeError:
                 pass
         job = CommandList(cal=cal)
-        job.ready()
         job.set_write_port(self.connection.get_port())
         job.goto(0x8000, 0x8000)
         last_on = None
@@ -293,14 +292,13 @@ class BalorDriver(Parameters):
                 else:
                     x, y, on = e
                 if on == 0:
-                    try:
-                        job.goto(x, y)
-                    except ValueError:
-                        print("Not including this stroke path:", file=sys.stderr)
+                    job.laser_control(False)
+                    job.goto(x, y)
                 else:
                     if last_on is None or on != last_on:
                         last_on = on
                         job.set_power(self.service.laser_power * on)
+                    job.laser_control(True)
                     job.mark(x, y)
         job.laser_control(False)
         self.queue = []
