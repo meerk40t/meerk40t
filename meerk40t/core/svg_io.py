@@ -391,15 +391,22 @@ class SVGProcessor:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
                 if tag == "operation":
+                    if node_type == "op":
+                        # Meerk40t 0.7.x fallback node types.
+                        op_type = element.values.get("operation")
+                        if op_type is None:
+                            return
+                        node_type = "op %s" % op_type.lower()
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
+
                     op = self.elements.op_branch.add(type=node_type)
                     try:
-                        # If op.settings exist update with element values.
                         op.settings.update(element.values)
                     except AttributeError:
-                        pass
+                        # This operation is invalid.
+                        op.remove_node()
                     try:
                         op.validate()
                     except AttributeError:
