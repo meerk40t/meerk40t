@@ -395,7 +395,11 @@ class SVGProcessor:
                         self.elements.clear_operations()
                         self.operations_cleared = True
                     op = self.elements.op_branch.add(type=node_type)
-                    op.settings.update(element.values)
+                    try:
+                        # If op.settings exist update with element values.
+                        op.settings.update(element.values)
+                    except AttributeError:
+                        pass
                     try:
                         op.validate()
                     except AttributeError:
