@@ -71,12 +71,6 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.SetSizer(sizer_1)
         self.Layout()
 
-    def window_open(self):
-        self.context.channel("balor").watch(self.update_text)
-
-    def window_close(self):
-        self.context.channel("balor").unwatch(self.update_text)
-
     def update_text(self, text):
         self.log_append += text + "\n"
         self.context.signal("usb_log_update")
@@ -91,7 +85,7 @@ class BalorControllerPanel(wx.ScrolledWindow):
 
     @signal_listener("pipe;usb_status")
     def on_usb_update(self, origin=None, status=None):
-        if status == None:
+        if status is None:
             status = "Unknown"
         try:
             connected = self.context.device.driver.connected
@@ -122,10 +116,10 @@ class BalorControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        pass
+        self.context.channel("balor").watch(self.update_text)
 
     def pane_hide(self):
-        pass
+        self.context.channel("balor").unwatch(self.update_text)
 
 
 class BalorController(MWindow):
