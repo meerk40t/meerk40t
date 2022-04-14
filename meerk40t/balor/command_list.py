@@ -629,13 +629,17 @@ class CommandList(CommandSource):
         mark_speed=None,
         goto_speed=None,
         light_speed=None,
+        dark_speed=None,
     ):
         self.machine = machine
         self.tick = tick
 
         # Forced override speeds.
+        if dark_speed is None:
+            dark_speed = goto_speed
         self._goto_speed = goto_speed
         self._light_speed = light_speed
+        self._dark_speed = dark_speed
         self._mark_speed = mark_speed
 
         self._last_x = x
@@ -1011,8 +1015,8 @@ class CommandList(CommandSource):
                 self.set_travel_speed(self._light_speed)
         else:
             self.light_off()
-            if self._goto_speed is not None:
-                self.set_travel_speed(self._goto_speed)
+            if self._dark_speed is not None:
+                self.set_travel_speed(self._dark_speed)
         if not self._travel_speed:
             raise ValueError("Travel speed must be set before a jumping")
         self._last_x = x
