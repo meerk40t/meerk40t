@@ -195,6 +195,8 @@ class SVGWriter:
         try:
             settings = node.settings
             for key in settings:
+                if not key:
+                    continue
                 value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
@@ -402,11 +404,18 @@ class SVGProcessor:
                         self.operations_cleared = True
 
                     op = self.elements.op_branch.add(type=node_type)
+
                     try:
-                        op.settings.update(element.values)
+                        op.settings.update(element.values["attributes"])
                     except AttributeError:
                         # This operation is invalid.
                         op.remove_node()
+                    except KeyError:
+                        try:
+                            op.settings.update(element.values)
+                        except AttributeError:
+                            # This operation is invalid.
+                            op.remove_node()
                     try:
                         op.validate()
                     except AttributeError:
