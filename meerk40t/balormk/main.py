@@ -190,14 +190,6 @@ class BalorDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "travel_speed",
-                "object": self,
-                "default": 2000.0,
-                "type": float,
-                "label": _("Travel Speed"),
-                "tip": _("How fast do we travel when not cutting?"),
-            },
-            {
                 "attr": "laser_power",
                 "object": self,
                 "default": 50.0,
@@ -220,6 +212,22 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Q Switch Frequency"),
                 "tip": _("QSwitch Frequency value"),
+            },
+            {
+                "attr": "travel_speed",
+                "object": self,
+                "default": 2000.0,
+                "type": float,
+                "label": _("Travel Speed"),
+                "tip": _("How fast do we travel when not cutting?"),
+            },
+            {
+                "attr": "redlight_speed",
+                "object": self,
+                "default": 2000.0,
+                "type": float,
+                "label": _("Redlight Speed"),
+                "tip": _("How fast do we travel when outlining?"),
             },
             {
                 "attr": "delay_laser_on",
@@ -599,15 +607,12 @@ class BalorDevice(Service, ViewPort):
                     cal = Cal(self.calibration_file)
                 except TypeError:
                     pass
-            job = CommandList(cal=cal)
-            if travel_speed is None:
-                travel_speed = self.travel_speed
+            job = CommandList(cal=cal, light_speed=self.redlight_speed, goto_speed=self.travel_speed)
             if simulation_speed is None:
                 simulation_speed = self.cut_speed
             else:
                 # If we set a sim-speed we should go at that speed
                 speed = True
-            job.set_travel_speed(travel_speed)
 
             for e in paths:
                 if isinstance(e, Shape):
