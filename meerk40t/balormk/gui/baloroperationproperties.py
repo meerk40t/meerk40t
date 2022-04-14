@@ -121,10 +121,10 @@ class BalorOperationPanel(wx.Panel):
         self.Layout()
 
     def pane_hide(self):
-        pass
+        self.panel.pane_hide()
 
     def pane_show(self):
-        pass
+        self.panel.pane_show()
 
     def set_widgets(self, node):
         self.operation = node

@@ -183,3 +183,6 @@ class ChoicePropertyPanel(wx.Panel):
     def pane_hide(self):
         for attr, listener in self.listeners:
             self.context.unlisten(attr, listener)
+
+    def pane_show(self):
+        pass
