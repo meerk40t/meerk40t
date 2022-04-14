@@ -18,6 +18,7 @@ class ChoicePropertyPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.listeners = list()
         if choices is None:
             return
         if isinstance(choices, str):
@@ -55,7 +56,6 @@ class ChoicePropertyPanel(wx.Panel):
                     data = c["default"]
                 except KeyError:
                     continue
-
             data_type = type(data)
             try:
                 # if type is explicitly given, use that to define data_type.
@@ -71,6 +71,7 @@ class ChoicePropertyPanel(wx.Panel):
                 label = attr
 
             if data_type == bool:
+                # Bool type objects get a checkbox.
                 control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
 
@@ -85,6 +86,7 @@ class ChoicePropertyPanel(wx.Panel):
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
                 sizer_main.Add(control, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
+                # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
@@ -108,6 +110,7 @@ class ChoicePropertyPanel(wx.Panel):
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
+                # Color data_type objects are get a button with the background.
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
@@ -145,6 +148,29 @@ class ChoicePropertyPanel(wx.Panel):
             else:
                 # Requires a registered data_type
                 continue
+
+            # Get enabled value
+            try:
+                enabled = c["enabled"]
+                control.Enable(enabled)
+            except KeyError:
+                try:
+                    conditional = c["conditional"]
+                    c_obj, c_attr = conditional
+                    enabled = bool(getattr(c_obj, c_attr))
+                    control.Enable(enabled)
+
+                    def on_enable_listener(param, ctrl, obj):
+                        def listen(origin, value):
+                            enabled = bool(getattr(obj, param))
+                            ctrl.Enable(enabled)
+                        return listen
+                    listener = on_enable_listener(c_attr, control, c_obj)
+                    self.listeners.append((c_attr, listener))
+                    context.listen(c_attr, listener)
+                except KeyError:
+                    pass
+
             try:
                 # Set the tool tip if 'tip' is available
                 control.SetToolTip(c["tip"])
@@ -153,3 +179,7 @@ class ChoicePropertyPanel(wx.Panel):
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
+
+    def pane_hide(self):
+        for attr, listener in self.listeners:
+            self.context.unlisten(attr, listener)
