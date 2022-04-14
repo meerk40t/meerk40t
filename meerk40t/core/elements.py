@@ -1340,8 +1340,8 @@ class Elemental(Service):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             for node in data:
-                device_width = self.device.width
-                device_height = self.device.height
+                device_width = self.length_x("100%")
+                device_height = self.length_y("100%")
                 dx = (device_width - left_edge - right_edge) / 2.0
                 dy = (device_height - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
@@ -1442,8 +1442,8 @@ class Elemental(Service):
                 "none",
             ):
                 for node in data:
-                    device_width = self.device.width
-                    device_height = self.device.height
+                    device_width = self.length_x("100%")
+                    device_height = self.length_y("100%")
 
                     matrix = Viewbox.viewbox_transform(
                         0,
