@@ -17,7 +17,7 @@ class BalorDriver(Parameters):
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.channel = self.service.channel("balor", buffer_size=50)
+        self.channel = self.service.channel("balor")
         self.connection = Sender(debug=self.channel)
         self.paused = False
 

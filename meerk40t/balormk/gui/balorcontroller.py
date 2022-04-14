@@ -67,7 +67,7 @@ class BalorController(MWindow):
         self.Layout()
 
     def window_open(self):
-        self.context.channel("balor", buffer_size=500).watch(self.update_text)
+        self.context.channel("balor").watch(self.update_text)
 
     def window_close(self):
         self.context.channel("balor").unwatch(self.update_text)
