@@ -2000,6 +2000,38 @@ class Elemental(Service):
             return "image", [image_element]
 
         # ==========
+        # REGMARK COMMANDS
+        # ==========
+        @self.console_argument("command", type=str, help=_("free, clear, add"))
+        @self.console_command(
+            "regmark",
+            help=_("regmark command"),
+            input_type=(None, "elements"),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def regmark(self, command=None, data=None, **kwargs):
+            # Move all regmarks into the regular element tree
+            if command == "free":
+                if data is None:
+                    data = list()
+                elements = self._tree.get(type="branch reg")
+                for item in elements.flat(types=("elem",), **kwargs):
+                    pass
+                # for e in self.reg_branch.
+                # data.append(circ)
+            elif command == "clear":
+                self.reg_branch.remove_all_children()
+                data = None
+            elif command == "add":
+                 result = self.add_regs(data)
+            else:
+                # Unknown command
+                data = None
+            return "elements", data
+
+
+        # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
         @self.console_argument("x_pos", type=Length)

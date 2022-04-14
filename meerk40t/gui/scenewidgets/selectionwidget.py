@@ -1706,28 +1706,45 @@ class SelectionWidget(Widget):
         refob = self.scene.reference_object
         if refob is None:
             return
+        # Let's establish whether there is rotation in the object
+        ref_angle = refob.rotation.as_radians
+        angle = None
         bb = refob.bbox()
         elements = self.scene.context.elements
         cc = elements.selected_area()
+        if ref_angle == 0:
+            simple_rotation = True
 
-        ratio_ref = (bb[3]-bb[1]) > (bb[2] - bb[0])
-        ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
-        if ratio_ref != ratio_sel:
-            angle = math.tau / 4
-            cx = (cc[0] + cc[2]) / 2
-            cy = (cc[1] + cc[3]) / 2
-            dx = cc[2] - cc[0]
-            dy = cc[3] - cc[1]
+            ratio_ref = (bb[3]-bb[1]) > (bb[2] - bb[0])
+            ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
+            if ratio_ref != ratio_sel:
+                angle = math.tau / 4
+        else:
+            simple_rotation = False
+            angle = ref_angle
+        cx = (cc[0] + cc[2]) / 2
+        cy = (cc[1] + cc[3]) / 2
+        dx = cc[2] - cc[0]
+        dy = cc[3] - cc[1]
+        if not angle is None:
             for e in elements.flat(types=("elem",), emphasized=True):
                 obj = e.object
                 obj.transform.post_rotate(angle, cx, cy)
-            # Update bbox
-            cc[0] = cx - dy / 2
-            cc[2] = cc [0] + dy
-            cc[1] = cy - dx / 2
-            cc[3] = cc [1] + dx
-            elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
+                if not simple_rotation:
+                    try:
+                        obj.node.modified()
+                    except AttributeError:
+                        pass
 
+            # Update bbox
+            if simple_rotation:
+                cc[0] = cx - dy / 2
+                cc[2] = cc [0] + dy
+                cc[1] = cy - dx / 2
+                cc[3] = cc [1] + dx
+                elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
+            else: # time consuming but well...
+                elements.validate_selected_area()
 
     def scale_selection_to_ref(self, method="none"):
         refob = self.scene.reference_object

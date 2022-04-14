@@ -38,6 +38,7 @@ class LaserToolPanel(wx.Panel):
         self.coord_a = None
         self.coord_b = None
         self.coord_c = None
+        self.additional_coords = None
         self.laserposition = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -123,7 +124,7 @@ class LaserToolPanel(wx.Panel):
         self.btn_create_circle = wx.Button(self.nb_circle, wx.ID_ANY, _("Create circle"))
         sizer_4.Add(self.btn_create_circle, 0, 0, 0)
 
-        # ------------------------ Rectangle with 2 points
+        # ------------------------ Rectangle with 2 (or more) points
 
         self.nb_rectangle = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
         self.nbook_lasertools.AddPage(self.nb_rectangle, _("Place frame"))
@@ -164,6 +165,19 @@ class LaserToolPanel(wx.Panel):
         self.lbl_pos_8 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
         sizer_6a.Add(self.lbl_pos_8, 0, 0, 0)
 
+        sizer_6b = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_rect_vert.Add(sizer_6b, 1, wx.EXPAND, 0)
+
+        self.btn_set_rect_3 = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Add. point"))
+        self.btn_set_rect_3.SetToolTip(_("If the shape is more complex then you can add additional corner points"))
+        sizer_6b.Add(self.btn_set_rect_3, 0, 0, 0)
+        self.btn_set_rect_4 = wx.Button(self.nb_rectangle, wx.ID_ANY, _("Clear"))
+        self.btn_set_rect_4.SetToolTip(_("Clear additional points"))
+        sizer_6b.Add(self.btn_set_rect_4, 0, 0, 0)
+
+        self.lbl_pos_9 = wx.StaticText(self.nb_rectangle, wx.ID_ANY, _("<empty>"))
+        sizer_6b.Add(self.lbl_pos_9, 0, 0, 0)
+
         self.img_instruction_2 = wx.StaticBitmap(self.nb_rectangle, wx.ID_ANY, instruction_frame.GetBitmap())
         instructions = _("Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for futher processing.")
         self.img_instruction_2.SetToolTip(instructions)
@@ -184,7 +198,7 @@ class LaserToolPanel(wx.Panel):
         # ------------------------ Square with 3 points
 
         self.nb_square = wx.Panel(self.nbook_lasertools, wx.ID_ANY)
-        self.nbook_lasertools.AddPage(self.nb_square, _("Place square"))
+        self.nbook_lasertools.AddPage(self.nb_square, _("Place rectangle"))
 
         self.sizer_square = wx.BoxSizer(wx.VERTICAL)
 
@@ -197,7 +211,7 @@ class LaserToolPanel(wx.Panel):
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_5, 1, wx.EXPAND, 0)
 
-        label_4 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 1"))
+        label_4 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Corner A"))
         label_4.SetMinSize((45, 23))
         sizer_5.Add(label_4, 0, 0, 0)
 
@@ -211,7 +225,7 @@ class LaserToolPanel(wx.Panel):
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_6, 1, wx.EXPAND, 0)
 
-        label_5 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side A 2"))
+        label_5 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Corner B"))
         label_5.SetMinSize((45, 23))
         sizer_6.Add(label_5, 0, 0, 0)
 
@@ -225,7 +239,7 @@ class LaserToolPanel(wx.Panel):
         sizer_7 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sqare_vert.Add(sizer_7, 1, wx.EXPAND, 0)
 
-        label_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Side B"))
+        label_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("Corner C"))
         label_6.SetMinSize((45, 23))
         sizer_7.Add(label_6, 0, 0, 0)
 
@@ -236,23 +250,10 @@ class LaserToolPanel(wx.Panel):
         self.lbl_pos_6 = wx.StaticText(self.nb_square, wx.ID_ANY, _("<empty>"))
         sizer_7.Add(self.lbl_pos_6, 0, 0, 0)
 
-        size_width = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_sqare_vert.Add(size_width, 1, wx.EXPAND, 0)
-
-        label_wd = wx.StaticText(self.nb_square, wx.ID_ANY, _("Dimension"))
-        label_wd.SetMinSize((-1, 23))
-        size_width.Add(label_wd, 0, 0, 0)
-
-        self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
-        self.txt_width.SetToolTip(_("Extension of the square to create "))
-        self.txt_width.SetMinSize((60, -1))
-        size_width.Add(self.txt_width, 0, 0, 0)
-
         self.img_instruction_3 = wx.StaticBitmap(self.nb_square, wx.ID_ANY, instruction_rectangle.GetBitmap())
-        instructions = _("Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for futher processing.")
+        instructions = _("Instruction: place the laser on three corners of rectangle on the bed and confirm the position by clicking on the buttons below.\nMK will create a rectangle for you for futher processing.")
         self.img_instruction_3.SetToolTip(instructions)
         sizer_sqare_hor.Add(self.img_instruction_3, 1, 0, 0)
-
 
         sizer_chk_square = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_square.Add(sizer_chk_square, 0, wx.EXPAND, 0)
@@ -268,7 +269,6 @@ class LaserToolPanel(wx.Panel):
 
         self.btn_create_square = wx.Button(self.nb_square, wx.ID_ANY, _("Create square"))
         sizer_8.Add(self.btn_create_square, 0, 0, 0)
-
 
         self.nb_square.SetSizer(self.sizer_square)
 
@@ -288,12 +288,13 @@ class LaserToolPanel(wx.Panel):
         self.btn_create_circle.Bind(wx.EVT_BUTTON, self.on_btn_create_circle)
         self.btn_set_rect_1.Bind(wx.EVT_BUTTON, self.on_click_get1)
         self.btn_set_rect_2.Bind(wx.EVT_BUTTON, self.on_click_get2)
+        self.btn_set_rect_3.Bind(wx.EVT_BUTTON, self.on_click_get_additional)
+        self.btn_set_rect_4.Bind(wx.EVT_BUTTON, self.on_click_clear_additional)
         self.btn_create_frame.Bind(wx.EVT_BUTTON, self.on_btn_create_frame)
 
         self.btn_set_square_1.Bind(wx.EVT_BUTTON, self.on_click_get1)
         self.btn_set_square_2.Bind(wx.EVT_BUTTON, self.on_click_get2)
         self.btn_set_square_3.Bind(wx.EVT_BUTTON, self.on_click_get3)
-        self.txt_width.Bind(wx.EVT_KILL_FOCUS, self.on_text_change)
         self.btn_create_square.Bind(wx.EVT_BUTTON, self.on_btn_create_square)
         # self.img_instruction_3.Bind(wx.EVT_LEFT_DCLICK, self.create_scenario)
         # end wxGlade
@@ -330,6 +331,21 @@ class LaserToolPanel(wx.Panel):
     #    if self.scenario>=9:
     #        self.scenario = 0
 
+    def on_click_clear_additional(self, event):
+        self.additional_coords = None
+        self.lbl_pos_9.Label= _("<empty>")
+        self.sizer_rectangle.Layout()
+        event.Skip()
+
+
+    def on_click_get_additional(self, event):
+        if self.additional_coords is None:
+            self.additional_coords = [self.laserposition]
+        else:
+            self.additional_coords.append(self.laserposition)
+        self.lbl_pos_9.Label = _("%d points") % len(self.additional_coords)
+        self.sizer_rectangle.Layout()
+        event.Skip()
 
     def set_coord(self, idx=0, position=None):
         if position is None:
@@ -468,6 +484,9 @@ class LaserToolPanel(wx.Panel):
         return result, center, radius
 
     def calculate_square(self):
+        # We have three corners, they should represent a rectangle.
+        # We will check whether this is the case. If the delta is smaller than 5 degrees
+        # then we will correct the shape, if its bigger then we will create a rhombus...
         result = True
         center = None
         angle = 0
@@ -559,12 +578,21 @@ class LaserToolPanel(wx.Panel):
             x1 = self.coord_b[0]
             y0 = self.coord_a[1]
             y1 = self.coord_b[1]
-            width = abs(x0 - x1)
-            height = abs(y0 - y1)
-            xx = min(x0, x1)
-            yy = min(y0, y1)
+            xmin = min(x0, x1)
+            xmax = max(x0, x1)
+            ymin = min(y0, y1)
+            ymax = max(y0, y1)
+            if not self.additional_coords is None:
+                for pt in self.additional_coords:
+                    xmin = min(xmin, pt[0])
+                    xmax = max(xmax, pt[0])
+                    ymin = min(ymin, pt[1])
+                    ymax = max(ymax, pt[1])
+
+            width = xmax - xmin
+            height = ymax - ymin
             if width != 0 and height != 0:
-                left_top = (xx, yy)
+                left_top = (xmin, ymin)
                 result = True
         return result, left_top, width, height
 
@@ -628,9 +656,7 @@ class LaserToolPanel(wx.Panel):
         except ValueError:
             dim_x = Length(DEFAULT_LEN)
             dim_y = Length(DEFAULT_LEN)
-        result, center, angle, signx, signy = self.calculate_square()
-        dim_x *= signx
-        dim_y *= signy
+        result, center, angle, dim_x, dim_y = self.calculate_square()
         angle = angle * 360 / tau
         if result:
             p = self.context
