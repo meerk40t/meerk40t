@@ -222,14 +222,6 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("How fast do we travel when not cutting?"),
             },
             {
-                "attr": "redlight_speed",
-                "object": self,
-                "default": 2000.0,
-                "type": float,
-                "label": _("Redlight Speed"),
-                "tip": _("How fast do we travel when outlining?"),
-            },
-            {
                 "attr": "delay_laser_on",
                 "object": self,
                 "default": 100.0,
