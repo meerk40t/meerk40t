@@ -277,7 +277,7 @@ class BalorDriver(Parameters):
                     settings = self.plot_planner.settings
                     travel_speed = settings.get("travel_speed", self.service.travel_speed)
                     job.set_travel_speed(travel_speed)
-                    power = settings.get("laser_power", self.service.laser_power)
+                    power = settings.get("power", self.service.laser_power)
                     job.set_power(power)
                     frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
                     job.set_frequency(frequency)
