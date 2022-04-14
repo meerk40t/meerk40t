@@ -626,9 +626,17 @@ class CommandList(CommandSource):
         cal=None,
         sender=None,
         tick=None,
+        mark_speed=None,
+        goto_speed=None,
+        light_speed=None,
     ):
         self.machine = machine
         self.tick = tick
+
+        # Forced override speeds.
+        self._goto_speed = goto_speed
+        self._light_speed = light_speed
+        self._mark_speed = mark_speed
 
         self._last_x = x
         self._last_y = y
@@ -852,6 +860,12 @@ class CommandList(CommandSource):
             self.append(OpLaserControl(0x0000))
 
     def set_travel_speed(self, speed):
+        """
+        Set travel speed sets the direct speed for the travel appending the op.
+
+        @param speed: Speed to set.
+        @return:
+        """
         if self._travel_speed == speed:
             return
         self.ready()
@@ -859,6 +873,12 @@ class CommandList(CommandSource):
         self.append(OpSetTravelSpeed(self.convert_speed(speed)))
 
     def set_cut_speed(self, speed):
+        """
+        Set cut speed sets the direct speed for the cutting appending the op.
+
+        @param speed: Speed to set.
+        @return:
+        """
         if self._cut_speed == speed:
             return
         self.ready()
@@ -934,6 +954,8 @@ class CommandList(CommandSource):
         :return:
         """
         self.ready()
+        if self._mark_speed is not None:
+            self.set_cut_speed(self._mark_speed)
         if self._q_switch_frequency is None:
             raise ValueError("Qswitch frequency must be set before a mark(x,y)")
         if self._power is None:
@@ -985,20 +1007,31 @@ class CommandList(CommandSource):
         """
         if light:
             self.light_on()
+            if self._light_speed is not None:
+                self.set_travel_speed(self._light_speed)
         else:
             self.light_off()
-        self.goto(x, y, jump_delay=jump_delay)
+            if self._goto_speed is not None:
+                self.set_travel_speed(self._goto_speed)
+        if not self._travel_speed:
+            raise ValueError("Travel speed must be set before a jumping")
+        self._last_x = x
+        self._last_y = y
+        if jump_delay is not None:
+            self.jump_delay(jump_delay)
+        self.append(OpTravel(*self.pos(x, y)))
 
     def goto(self, x, y, jump_delay=None):
         """
         Move to a new location without laser or light.
         :param x:
         :param y:
-        :param light:
-        :param jump_delay:
+        :param jump_delay:8
         :return:
         """
         self.ready()
+        if self._goto_speed is not None:
+            self.set_travel_speed(self._goto_speed)
         if not self._travel_speed:
             raise ValueError("Travel speed must be set before a jumping")
         self._last_x = x
