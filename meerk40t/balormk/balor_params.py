@@ -9,6 +9,17 @@ FLOAT_PARAMETERS = (
     "delay_laser_on",
     "delay_laser_off",
     "delay_polygon",
+    "wobble_radius",
+    "wobble_interval"
+)
+
+BOOL_PARAMETERS = (
+    "wobble_enabled",
+)
+
+
+STRING_PARAMETERS = (
+    "wobble_type",
 )
 
 
@@ -35,6 +46,44 @@ class Parameters:
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
+        for v in BOOL_PARAMETERS:
+            if v in settings:
+                settings[v] = bool(settings[v])
+        for v in STRING_PARAMETERS:
+            if v in settings:
+                settings[v] = str(settings[v])
+
+    @property
+    def wobble_enabled(self):
+        return self.settings.get("wobble_enabled", False)
+
+    @wobble_enabled.setter
+    def wobble_enabled(self, value):
+        self.settings["wobble_enabled"] = value
+
+    @property
+    def wobble_radius(self):
+        return self.settings.get("wobble_radius", 50.0)
+
+    @wobble_radius.setter
+    def wobble_radius(self, value):
+        self.settings["wobble_radius"] = value
+
+    @property
+    def wobble_interval(self):
+        return self.settings.get("wobble_interval", 10.0)
+
+    @wobble_interval.setter
+    def wobble_interval(self, value):
+        self.settings["wobble_interval"] = value
+
+    @property
+    def wobble_type(self):
+        return self.settings.get("wobble_type", "circle")
+
+    @wobble_type.setter
+    def wobble_type(self, value):
+        self.settings["wobble_type"] = value
 
     @property
     def cut_speed(self):

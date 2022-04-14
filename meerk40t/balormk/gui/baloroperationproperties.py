@@ -73,6 +73,38 @@ class BalorOperationPanel(wx.Panel):
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
             },
+            {
+                "attr": "wobble_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Wobble"),
+                "tip": _("Enable wobble for this particular cut"),
+            },
+            {
+                "attr": "wobble_radius",
+                "object": params,
+                "default": 10.0,
+                "type": float,
+                "label": _("Radius of wobble"),
+                "tip": _("Radius of the wobble for this cut, if wobble is enabled."),
+            },
+            {
+                "attr": "wobble_interval",
+                "object": params,
+                "default": 50.0,
+                "type": float,
+                "label": _("Wobble Sampling Interval"),
+                "tip": _("Sample interval for the wobble of this cut"),
+            },
+            {
+                "attr": "wobble_type",
+                "object": params,
+                "default": "circle",
+                "type": str,
+                "label": _("Wobble Pattern Type"),
+                "tip": _("Pattern type for the given wobble."),
+            },
         ]
 
         self.panel = ChoicePropertyPanel(
