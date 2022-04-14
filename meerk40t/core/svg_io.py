@@ -195,6 +195,8 @@ class SVGWriter:
         try:
             settings = node.settings
             for key in settings:
+                if not key:
+                    continue
                 value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
