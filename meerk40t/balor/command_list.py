@@ -956,15 +956,15 @@ class CommandList(CommandSource):
         else:
             segments = 1
         for segment in range(1, segments+1):
-            next_x = self._last_x + dx * segment
-            next_y = self._last_y + dy * segment
+            next_x = self._last_x + dx
+            next_y = self._last_y + dy
             if self._mark_modification:
                 cut_x, cut_y = self._mark_modification(self._last_x, self._last_y, next_x, next_y)
             else:
                 cut_x = next_x
                 cut_y = next_y
-            self._last_x = cut_x
-            self._last_y = cut_y
+            self._last_x = next_x
+            self._last_y = next_y
             self.append(OpCut(*self.pos(cut_x, cut_y)))
 
     def jump_delay(self, delay=0x0008):
