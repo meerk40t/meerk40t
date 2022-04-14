@@ -11,6 +11,7 @@ FLOAT_PARAMETERS = (
     "delay_polygon",
     "wobble_radius",
     "wobble_interval"
+    "wobble_speed"
 )
 
 BOOL_PARAMETERS = (
@@ -68,6 +69,15 @@ class Parameters:
     @wobble_radius.setter
     def wobble_radius(self, value):
         self.settings["wobble_radius"] = value
+
+    @property
+    def wobble_speed(self):
+        return self.settings.get("wobble_speed", 50.0)
+
+    @wobble_speed.setter
+    def wobble_speed(self, value):
+        self.settings["wobble_speed"] = value
+
 
     @property
     def wobble_interval(self):

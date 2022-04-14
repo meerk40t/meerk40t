@@ -1189,13 +1189,14 @@ class CommandList(CommandSource):
 
 
 class Wobble:
-    def __init__(self, radius=50):
+    def __init__(self, radius=50, speed=50):
         self._total_distance = 0
         self.radius = radius
+        self.speed = speed
 
     def wobble(self, x0, y0, x1, y1):
         self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
         t = self._total_distance / (math.tau * self.radius)
-        dx = self.radius * math.cos(t)
-        dy = self.radius * math.sin(t)
+        dx = self.radius * math.cos(t * self.speed)
+        dy = self.radius * math.sin(t * self.speed)
         return x1 + dx, y1 + dy

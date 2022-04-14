@@ -293,8 +293,9 @@ class BalorDriver(Parameters):
                     wobble_enabled = settings.get("wobble_enabled", False)
                     if wobble_enabled:
                         wobble_radius = settings.get("wobble_radius", 50.0)
+                        wobble_speed = settings.get("wobble_speed", 50.0)
                         wobble_interval = settings.get("wobble_interval", 10.0)
-                        wobble = Wobble(radius=wobble_radius)
+                        wobble = Wobble(radius=wobble_radius, speed=wobble_speed)
                         job._mark_modification = wobble.wobble
                         job._interpolations = wobble_interval
                     else:

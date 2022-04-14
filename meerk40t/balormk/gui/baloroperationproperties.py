@@ -100,6 +100,15 @@ class BalorOperationPanel(wx.Panel):
                 "tip": _("Sample interval for the wobble of this cut"),
             },
             {
+                "attr": "wobble_speed",
+                "object": params,
+                "default": 50.0,
+                "type": float,
+                "conditional": (params, "wobble_enabled"),
+                "label": _("Wobble Speed Multiplier"),
+                "tip": _("Wobble rotation speed multiplier"),
+            },
+            {
                 "attr": "wobble_type",
                 "object": params,
                 "default": "circle",
