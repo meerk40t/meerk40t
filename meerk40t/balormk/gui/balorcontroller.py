@@ -7,9 +7,18 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 
-class BalorController(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(499, 170, *args, **kwds)
+class BalorControllerPanel(wx.ScrolledWindow):
+    def __init__(self, *args, context=None, **kwargs):
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.ScrolledWindow.__init__(self, *args, **kwargs)
+        self.context = context
+
+        font = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.log_append = ""
@@ -17,6 +26,7 @@ class BalorController(MWindow):
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
+        self.text_usb_log.SetFont(font)
 
         self.__set_properties()
         self.__do_layout()
@@ -29,11 +39,6 @@ class BalorController(MWindow):
         self.state = None
 
     def __set_properties(self):
-        # begin wxGlade: Controller.__set_properties
-        self.SetTitle(_("Balor-Controller"))
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
-        self.SetIcon(_icon)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
@@ -115,3 +120,27 @@ class BalorController(MWindow):
             self.context("usb_disconnect\n")
         else:
             self.context("usb_connect\n")
+
+    def pane_show(self):
+        pass
+
+    def pane_hide(self):
+        pass
+
+
+class BalorController(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(499, 170, *args, **kwds)
+        self.panel = BalorControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
+        self.SetTitle(_("Balor-Controller"))
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.Layout()
+
+    def window_open(self):
+        self.panel.pane_show()
+
+    def window_close(self):
+        self.panel.pane_hide()
