@@ -5,7 +5,7 @@ from meerk40t.core.drivers import PLOT_SETTING, PLOT_FINISH, PLOT_RAPID, PLOT_JO
 from meerk40t.core.parameters import Parameters
 
 from meerk40t.balor.Cal import Cal
-from meerk40t.balor.command_list import CommandList
+from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import Sender, BalorMachineException
 from meerk40t.core.plotplanner import PlotPlanner
 
@@ -289,6 +289,17 @@ class BalorDriver(Parameters):
                     job.set_laser_off_delay(delay_laser_off)
                     delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
                     job.set_polygon_delay(delay_polygon)
+
+                    wobble_enabled = settings.get("wobble_enabled", False)
+                    if wobble_enabled:
+                        wobble_radius = settings.get("wobble_radius", 50.0)
+                        wobble_interval = settings.get("wobble_interval", 10.0)
+                        wobble = Wobble(radius=wobble_radius)
+                        job._mark_modification = wobble.wobble
+                        job._interpolations = wobble_interval
+                    else:
+                        job._mark_modification = None
+                        job._interpolations = None
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
