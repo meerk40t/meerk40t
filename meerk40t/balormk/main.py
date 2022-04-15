@@ -1,22 +1,13 @@
 import os
-import sys
 
-import scipy
-import numpy as np
-
-from meerk40t import balor
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import ViewPort, Length
 from meerk40t.kernel import Service
 
 from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
 
-from meerk40t.balor.Cal import Cal
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.BalorDriver import BalorDriver
-
-
-from meerk40t.balormk.pathtools import EulerianFill
 
 
 class BalorDevice(Service, ViewPort):
@@ -500,15 +491,7 @@ class BalorDevice(Service, ViewPort):
             """
             channel("Creating mark job out of elements.")
             paths = data
-            from meerk40t.balor.Cal import Cal
-
-            cal = None
-            if self.calibration_file is not None:
-                try:
-                    cal = Cal(self.calibration_file)
-                except TypeError:
-                    pass
-            job = CommandList(cal=cal)
+            job = CommandList()
             job.set_mark_settings(
                 travel_speed=self.travel_speed
                 if travel_speed is None
@@ -588,12 +571,6 @@ class BalorDevice(Service, ViewPort):
             """
             channel("Creating light job out of elements.")
             paths = data
-            cal = None
-            if self.calibration_file is not None:
-                try:
-                    cal = Cal(self.calibration_file)
-                except TypeError:
-                    pass
             if simulation_speed is not None:
                 # Simulation_speed implies speed
                 speed = True
@@ -603,10 +580,10 @@ class BalorDevice(Service, ViewPort):
                 if simulation_speed is None:
                     # if simulation speed was not set travel at cut_speed
                     simulation_speed = self.cut_speed
-                job = CommandList(cal=cal, light_speed=simulation_speed, goto_speed=self.travel_speed)
+                job = CommandList(light_speed=simulation_speed, goto_speed=self.travel_speed)
             else:
                 # Travel at redlight speed
-                job = CommandList(cal=cal, light_speed=self.redlight_speed, goto_speed=self.travel_speed)
+                job = CommandList(light_speed=self.redlight_speed, goto_speed=self.travel_speed)
             for e in paths:
                 if isinstance(e, Shape):
                     if not isinstance(e, Path):
@@ -840,43 +817,43 @@ class BalorDevice(Service, ViewPort):
                     )
                 )
 
-        @self.console_argument("filename", type=str, default=None)
-        @self.console_command(
-            "calibrate",
-            help=_("set the calibration file"),
-        )
-        def set_calfile(command, channel, _, filename=None, remainder=None, **kwgs):
-            if filename is None:
-                calfile = self.calfile
-                if calfile is None:
-                    channel("No calibration file set.")
-                else:
-                    channel(
-                        "Calibration file is set to: {file}".format(file=self.calfile)
-                    )
-                    from os.path import exists
-
-                    if exists(calfile):
-                        channel("Calibration file exists!")
-                        cal = balor.Cal.Cal(calfile)
-                        if cal.enabled:
-                            channel("Calibration file successfully loads.")
-                        else:
-                            channel("Calibration file does not load.")
-                    else:
-                        channel("WARNING: Calibration file does not exist.")
-            else:
-                from os.path import exists
-
-                if exists(filename):
-                    self.calfile = filename
-                else:
-                    channel(
-                        "The file at {filename} does not exist.".format(
-                            filename=os.path.realpath(filename)
-                        )
-                    )
-                    channel("Calibration file was not set.")
+        # @self.console_argument("filename", type=str, default=None)
+        # @self.console_command(
+        #     "calibrate",
+        #     help=_("set the calibration file"),
+        # )
+        # def set_calfile(command, channel, _, filename=None, remainder=None, **kwgs):
+        #     if filename is None:
+        #         calfile = self.calfile
+        #         if calfile is None:
+        #             channel("No calibration file set.")
+        #         else:
+        #             channel(
+        #                 "Calibration file is set to: {file}".format(file=self.calfile)
+        #             )
+        #             from os.path import exists
+        #
+        #             if exists(calfile):
+        #                 channel("Calibration file exists!")
+        #                 cal = balor.Cal.Cal(calfile)
+        #                 if cal.enabled:
+        #                     channel("Calibration file successfully loads.")
+        #                 else:
+        #                     channel("Calibration file does not load.")
+        #             else:
+        #                 channel("WARNING: Calibration file does not exist.")
+        #     else:
+        #         from os.path import exists
+        #
+        #         if exists(filename):
+        #             self.calfile = filename
+        #         else:
+        #             channel(
+        #                 "The file at {filename} does not exist.".format(
+        #                     filename=os.path.realpath(filename)
+        #                 )
+        #             )
+        #             channel("Calibration file was not set.")
 
         @self.console_argument("filename", type=str, default=None)
         @self.console_command(
@@ -896,11 +873,6 @@ class BalorDevice(Service, ViewPort):
 
                     if exists(file):
                         channel("Correction file exists!")
-                        cal = balor.Cal.Cal(file)
-                        if cal.enabled:
-                            channel("Correction file successfully loads.")
-                        else:
-                            channel("Correction file does not load.")
                     else:
                         channel("WARNING: Correction file does not exist.")
             else:
@@ -908,6 +880,7 @@ class BalorDevice(Service, ViewPort):
 
                 if exists(filename):
                     self.corfile = filename
+                    self.signal("corfile", filename)
                 else:
                     channel(
                         "The file at {filename} does not exist.".format(

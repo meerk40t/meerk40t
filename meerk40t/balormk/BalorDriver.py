@@ -1,10 +1,8 @@
-import sys
 import time
 
 from meerk40t.core.drivers import PLOT_SETTING, PLOT_FINISH, PLOT_RAPID, PLOT_JOG
 from meerk40t.core.parameters import Parameters
 
-from meerk40t.balor.Cal import Cal
 from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import Sender, BalorMachineException
 from meerk40t.core.plotplanner import PlotPlanner
@@ -255,13 +253,7 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        cal = None
-        if self.service.calibration_file is not None:
-            try:
-                cal = Cal(self.service.calibration_file)
-            except TypeError:
-                pass
-        job = CommandList(cal=cal)
+        job = CommandList()
         job.set_write_port(self.connection.get_port())
         job.set_travel_speed(self.service.travel_speed)
         job.goto(0x8000, 0x8000)
