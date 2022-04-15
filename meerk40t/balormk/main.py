@@ -42,22 +42,6 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
             },
             {
-                "attr": "calfile_enabled",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Enable Calibration File"),
-                "tip": _("Use calibration file?"),
-            },
-            {
-                "attr": "calfile",
-                "object": self,
-                "default": None,
-                "type": str,
-                "label": _("Calibration File"),
-                "tip": _("Provide a calibration file for the machine"),
-            },
-            {
                 "attr": "corfile_enabled",
                 "object": self,
                 "default": False,
@@ -70,6 +54,7 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": None,
                 "type": str,
+                "style": "file",
                 "label": _("Correction File"),
                 "tip": _("Provide a correction file for the machine"),
             },
@@ -77,7 +62,7 @@ class BalorDevice(Service, ViewPort):
                 "attr": "lens_size",
                 "object": self,
                 "default": "110mm",
-                "type": float,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Lens Size"),
             },
@@ -85,7 +70,7 @@ class BalorDevice(Service, ViewPort):
                 "attr": "offset_x",
                 "object": self,
                 "default": "0mm",
-                "type": float,
+                "type": Length,
                 "label": _("Offset X"),
                 "tip": _("Offset in the X axis"),
             },
@@ -93,7 +78,7 @@ class BalorDevice(Service, ViewPort):
                 "attr": "offset_y",
                 "object": self,
                 "default": "0mm",
-                "type": float,
+                "type": Length,
                 "label": _("Offset Y"),
                 "tip": _("Offset in the Y axis"),
             },
@@ -101,7 +86,7 @@ class BalorDevice(Service, ViewPort):
                 "attr": "offset_angle",
                 "object": self,
                 "default": "0",
-                "type": float,
+                "type": Angle.parse,
                 "label": _("Angle"),
                 "tip": _("Angle to adjust fiber laser to match red laser"),
             },
@@ -142,30 +127,6 @@ class BalorDevice(Service, ViewPort):
                 ),
             },
             {
-                "attr": "redlight_speed",
-                "object": self,
-                "default": "8000",
-                "type": int,
-                "label": _("Redlight travel speed"),
-                "tip": _("Speed of the galvo when using the red laser."),
-            },
-            {
-                "attr": "redlight_offset_x",
-                "object": self,
-                "default": "0mm",
-                "type": float,
-                "label": _("Redlight X Offset"),
-                "tip": _("Offset the redlight positions by this amount in x"),
-            },
-            {
-                "attr": "redlight_offset_y",
-                "object": self,
-                "default": "0mm",
-                "type": float,
-                "label": _("Redlight Y Offset"),
-                "tip": _("Offset the redlight positions by this amount in y"),
-            },
-            {
                 "attr": "mock",
                 "object": self,
                 "default": False,
@@ -187,6 +148,33 @@ class BalorDevice(Service, ViewPort):
             },
         ]
         self.register_choices("balor", choices)
+        choices = [
+            {
+                "attr": "redlight_speed",
+                "object": self,
+                "default": "8000",
+                "type": int,
+                "label": _("Redlight travel speed"),
+                "tip": _("Speed of the galvo when using the red laser."),
+            },
+            {
+                "attr": "redlight_offset_x",
+                "object": self,
+                "default": "0mm",
+                "type": Length,
+                "label": _("Redlight X Offset"),
+                "tip": _("Offset the redlight positions by this amount in x"),
+            },
+            {
+                "attr": "redlight_offset_y",
+                "object": self,
+                "default": "0mm",
+                "type": Length,
+                "label": _("Redlight Y Offset"),
+                "tip": _("Offset the redlight positions by this amount in y"),
+            },
+        ]
+        self.register_choices("balor-redlight", choices)
 
         choices = [
             {
@@ -221,6 +209,10 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Travel Speed"),
                 "tip": _("How fast do we travel when not cutting?"),
             },
+        ]
+        self.register_choices("balor-global", choices)
+
+        choices = [
             {
                 "attr": "delay_laser_on",
                 "object": self,
@@ -246,7 +238,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount between different points in the path travel."),
             },
         ]
-        self.register_choices("balor-global", choices)
+        self.register_choices("balor-global-timing", choices)
 
         choices = [
             {
@@ -1415,7 +1407,4 @@ class BalorDevice(Service, ViewPort):
 
     @property
     def calibration_file(self):
-        if self.calfile_enabled:
-            return self.calfile
-        else:
-            return None
+        return None
