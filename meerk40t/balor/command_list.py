@@ -633,10 +633,13 @@ class CommandList(CommandSource):
     ):
         self.machine = machine
         self.tick = tick
-
-        # Forced override speeds.
+        if light_speed is None:
+            # Default light speed is goto_speed
+            light_speed = goto_speed
         if dark_speed is None:
+            # Default dark speed is goto_speed
             dark_speed = goto_speed
+
         self._goto_speed = goto_speed
         self._light_speed = light_speed
         self._dark_speed = dark_speed
