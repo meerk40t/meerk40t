@@ -105,7 +105,7 @@ class BalorOperationPanel(wx.Panel):
             {
                 "attr": "wobble_radius",
                 "object": params,
-                "default": 10.0,
+                "default": "1.5mm",
                 "type": Length,
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Radius of wobble"),
@@ -114,7 +114,7 @@ class BalorOperationPanel(wx.Panel):
             {
                 "attr": "wobble_interval",
                 "object": params,
-                "default": 50.0,
+                "default": "1.5mm",
                 "type": Length,
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Sampling Interval"),

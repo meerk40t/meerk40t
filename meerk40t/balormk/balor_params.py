@@ -82,7 +82,7 @@ class Parameters:
 
     @property
     def wobble_radius(self):
-        return self.settings.get("wobble_radius", "50.0")
+        return self.settings.get("wobble_radius", "1.5mm")
 
     @wobble_radius.setter
     def wobble_radius(self, value):
@@ -98,7 +98,7 @@ class Parameters:
 
     @property
     def wobble_interval(self):
-        return self.settings.get("wobble_interval", "10.0")
+        return self.settings.get("wobble_interval", "0.3mm")
 
     @wobble_interval.setter
     def wobble_interval(self, value):
