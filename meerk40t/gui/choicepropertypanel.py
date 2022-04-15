@@ -75,7 +75,7 @@ class ChoicePropertyPanel(wx.Panel):
                 def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
                         v = ctrl.GetValue()
-                        setattr(obj, param, v)
+                        setattr(obj, param, bool(v))
                         self.context.signal(param, v)
 
                     return check
