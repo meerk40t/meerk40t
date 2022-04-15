@@ -996,7 +996,7 @@ class HatchOpNode(Node, Parameters):
             if pos != len(points):
                 yield points[pos: len(points)]
 
-        plot = PlotCut()
+        plot = PlotCut(settings=settings, passes=passes)
         for s in split(points):
             for p in s:
                 x, y = counter_rotate.point_in_matrix_space((p.x, p.y))

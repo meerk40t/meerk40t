@@ -853,8 +853,8 @@ class PlotCut(CutObject):
     There is a raster-create value.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=None):
+        CutObject.__init__(self, settings=settings, passes=passes)
         self.plot = []
         self.max_dx = None
         self.max_dy = None
