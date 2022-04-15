@@ -189,12 +189,12 @@ class Parameters:
         self.settings["frequency"] = value
 
     @property
-    def move_speed(self):
+    def rapid_speed(self):
         return self.settings.get("rapid_speed", 100.0)
 
-    @move_speed.setter
-    def move_speed(self, value):
-        self.settings["move_speed"] = value
+    @rapid_speed.setter
+    def rapid_speed(self, value):
+        self.settings["rapid_speed"] = value
 
     @property
     def line_color(self):
