@@ -46,6 +46,7 @@ class BalorDevice(Service, ViewPort):
                 "default": None,
                 "type": str,
                 "style": "file",
+                "conditional": (self, "corfile_enabled"),
                 "label": _("Correction File"),
                 "tip": _("Provide a correction file for the machine"),
             },
@@ -139,6 +140,7 @@ class BalorDevice(Service, ViewPort):
             },
         ]
         self.register_choices("balor", choices)
+
         choices = [
             {
                 "attr": "redlight_speed",
