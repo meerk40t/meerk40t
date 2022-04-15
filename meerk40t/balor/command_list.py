@@ -623,7 +623,7 @@ class CommandList(CommandSource):
         machine=None,
         x=0x8000,
         y=0x8000,
-        cal=None,
+        # cal=None,
         sender=None,
         tick=None,
         mark_speed=None,
@@ -649,7 +649,7 @@ class CommandList(CommandSource):
         self._last_y = y
         self._start_x = x
         self._start_y = y
-        self.cal = cal
+        # self.cal = cal
         self._sender = sender
         self.operations = []
 
@@ -796,16 +796,11 @@ class CommandList(CommandSource):
         for n in range(segs):
             # print ("*", xs[n], ys[n], self.cal.interpolate(xs[n], ys[n]), file=sys.stderr)
             self._last_x, self._last_y = xs[n], ys[n]
-            self.append(Op(*self.pos(xs[n], ys[n])))
+            self.append(Op(xs[n], ys[n]))
 
     ######################
     # UNIT CONVERSION
     ######################
-
-    def pos(self, x, y):
-        if self.cal is None:
-            return x, y
-        return self.cal.interpolate(x, y)
 
     def convert_time(self, time):
         # TODO: WEAK IMPLEMENTATION
@@ -994,7 +989,7 @@ class CommandList(CommandSource):
                 cut_y = next_y
             self._last_x = next_x
             self._last_y = next_y
-            self.append(OpCut(*self.pos(cut_x, cut_y)))
+            self.append(OpCut(cut_x, cut_y))
 
     def jump_delay(self, delay=0x0008):
         if self._jump_delay == delay:
@@ -1026,7 +1021,7 @@ class CommandList(CommandSource):
         self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
-        self.append(OpTravel(*self.pos(x, y)))
+        self.append(OpTravel(x, y))
 
     def goto(self, x, y, jump_delay=None):
         """
@@ -1045,7 +1040,7 @@ class CommandList(CommandSource):
         self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
-        self.append(OpTravel(*self.pos(x, y)))
+        self.append(OpTravel(x, y))
 
     def init(self, x, y):
         """
