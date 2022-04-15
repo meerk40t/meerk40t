@@ -1081,318 +1081,318 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
-        @self.console_option(
-            "raster-x-res",
-            help="X resolution (in mm) of the laser.",
-            default=0.15,
-            type=float,
-        )
-        @self.console_option(
-            "raster-y-res",
-            help="X resolution (in mm) of the laser.",
-            default=0.15,
-            type=float,
-        )
-        @self.console_option(
-            "x",
-            "xoffs",
-            help="Specify an x offset for the image (mm.)",
-            default=0.0,
-            type=float,
-        )
-        @self.console_option(
-            "y",
-            "yoffs",
-            help="Specify an y offset for the image (mm.)",
-            default=0.0,
-            type=float,
-        )
-        @self.console_option(
-            "d", "dither", help="Configure dithering", default=0.1, type=float
-        )
-        @self.console_option(
-            "s",
-            "scale",
-            help="Pixels per mm (default 23.62 px/mm - 600 DPI)",
-            default=23.622047,
-            type=float,
-        )
-        @self.console_option(
-            "t",
-            "threshold",
-            help="Greyscale threshold for burning (default 0.5, negative inverts)",
-            default=0.5,
-            type=float,
-        )
-        @self.console_option(
-            "g",
-            "grayscale",
-            help="Greyscale rastering (power, speed, q_switch_frequency, passes)",
-            default=False,
-            type=bool,
-        )
-        @self.console_option(
-            "grayscale-min",
-            help="Minimum (black=1) value of the gray scale",
-            default=None,
-            type=float,
-        )
-        @self.console_option(
-            "grayscale-max",
-            help="Maximum (white=255) value of the gray scale",
-            default=None,
-            type=float,
-        )
-        @self.console_command("balor-raster", input_type="image", output_type="balor")
-        def balor_raster(
-            command,
-            channel,
-            _,
-            data=None,
-            raster_x_res=0.15,
-            raster_y_res=0.15,
-            xoffs=0.0,
-            yoffs=0.0,
-            dither=0.1,
-            scale=23.622047,
-            threshold=0.5,
-            grayscale=False,
-            grayscale_min=None,
-            grayscale_max=None,
-            **kwgs,
-        ):
-            # def raster_render(self, job, cal, in_file, out_file, args):
-            if len(data) == 0:
-                channel("No image selected.")
-                return
-            in_file = data[0].image
-            width = in_file.size[0] / scale
-            height = in_file.size[1] / scale
-            x0, y0 = xoffs, yoffs
+        # @self.console_option(
+        #     "raster-x-res",
+        #     help="X resolution (in mm) of the laser.",
+        #     default=0.15,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "raster-y-res",
+        #     help="X resolution (in mm) of the laser.",
+        #     default=0.15,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "x",
+        #     "xoffs",
+        #     help="Specify an x offset for the image (mm.)",
+        #     default=0.0,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "y",
+        #     "yoffs",
+        #     help="Specify an y offset for the image (mm.)",
+        #     default=0.0,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "d", "dither", help="Configure dithering", default=0.1, type=float
+        # )
+        # @self.console_option(
+        #     "s",
+        #     "scale",
+        #     help="Pixels per mm (default 23.62 px/mm - 600 DPI)",
+        #     default=23.622047,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "t",
+        #     "threshold",
+        #     help="Greyscale threshold for burning (default 0.5, negative inverts)",
+        #     default=0.5,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "g",
+        #     "grayscale",
+        #     help="Greyscale rastering (power, speed, q_switch_frequency, passes)",
+        #     default=False,
+        #     type=bool,
+        # )
+        # @self.console_option(
+        #     "grayscale-min",
+        #     help="Minimum (black=1) value of the gray scale",
+        #     default=None,
+        #     type=float,
+        # )
+        # @self.console_option(
+        #     "grayscale-max",
+        #     help="Maximum (white=255) value of the gray scale",
+        #     default=None,
+        #     type=float,
+        # )
+        # @self.console_command("balor-raster", input_type="image", output_type="balor")
+        # def balor_raster(
+        #     command,
+        #     channel,
+        #     _,
+        #     data=None,
+        #     raster_x_res=0.15,
+        #     raster_y_res=0.15,
+        #     xoffs=0.0,
+        #     yoffs=0.0,
+        #     dither=0.1,
+        #     scale=23.622047,
+        #     threshold=0.5,
+        #     grayscale=False,
+        #     grayscale_min=None,
+        #     grayscale_max=None,
+        #     **kwgs,
+        # ):
+        #     # def raster_render(self, job, cal, in_file, out_file, args):
+        #     if len(data) == 0:
+        #         channel("No image selected.")
+        #         return
+        #     in_file = data[0].image
+        #     width = in_file.size[0] / scale
+        #     height = in_file.size[1] / scale
+        #     x0, y0 = xoffs, yoffs
+        #
+        #     invert = False
+        #     if threshold < 0:
+        #         invert = True
+        #         threshold *= -1.0
+        #     dither = 0
+        #     passes = 1
+        #     if grayscale:
+        #         gsmin = grayscale_min
+        #         gsmax = grayscale_max
+        #         gsslope = (gsmax - gsmin) / 256.0
+        #     cal = None
+        #     if self.calibration_file is not None:
+        #         try:
+        #             cal = Cal(self.calibration_file)
+        #         except TypeError:
+        #             pass
+        #     job = CommandList(cal=cal)
+        #
+        #     img = scipy.interpolate.RectBivariateSpline(
+        #         np.linspace(y0, y0 + height, in_file.size[1]),
+        #         np.linspace(x0, x0 + width, in_file.size[0]),
+        #         np.asarray(in_file),
+        #     )
+        #
+        #     dither = 0
+        #     job.set_mark_settings(
+        #         travel_speed=self.travel_speed,
+        #         power=self.laser_power,
+        #         frequency=self.q_switch_frequency,
+        #         cut_speed=self.cut_speed,
+        #         laser_on_delay=self.delay_laser_on,
+        #         laser_off_delay=self.delay_laser_off,
+        #         polygon_delay=self.delay_polygon,
+        #     )
+        #     y = y0
+        #     count = 0
+        #     burning = False
+        #     old_y = y0
+        #     while y < y0 + height:
+        #         x = x0
+        #         job.goto(x, y)
+        #         old_x = x0
+        #         while x < x0 + width:
+        #             px = img(y, x)[0][0]
+        #             if invert:
+        #                 px = 255.0 - px
+        #
+        #             if grayscale:
+        #                 if px > 0:
+        #                     gsval = gsmin + gsslope * px
+        #                     if grayscale == "power":
+        #                         job.set_power(gsval)
+        #                     elif grayscale == "speed":
+        #                         job.set_cut_speed(gsval)
+        #                     elif grayscale == "q_switch_frequency":
+        #                         job.set_frequency(gsval)
+        #                     elif grayscale == "passes":
+        #                         passes = int(round(gsval))
+        #                         # Would probably be better to do this over the course of multiple
+        #                         # rasters for heat disappation during 2.5D engraving
+        #                     # pp = int(round((int(px)/255) * args.laser_power * 40.95))
+        #                     # job.change_settings(q_switch_period, pp, cut_speed)
+        #
+        #                     if not burning:
+        #                         job.laser_control(True)  # laser turn on
+        #                     i = passes
+        #                     while i > 1:
+        #                         job.mark(x, y)
+        #                         job.mark(old_x, old_y)
+        #                         i -= 2
+        #                     job.mark(x, y)
+        #                     burning = True
+        #
+        #                 else:
+        #                     if burning:
+        #                         # laser turn off
+        #                         job.laser_control(False)
+        #                     job.goto(x, y)
+        #                     burning = False
+        #             else:
+        #
+        #                 if px + dither > threshold:
+        #                     if not burning:
+        #                         job.laser_control(True)  # laser turn on
+        #                     job.mark(x, y)
+        #                     burning = True
+        #                     dither = 0.0
+        #                 else:
+        #                     if burning:
+        #                         # laser turn off
+        #                         job.laser_control(False)
+        #                     job.goto(x, y)
+        #                     dither += abs(px + dither - threshold) * dither
+        #                     burning = False
+        #             old_x = x
+        #             x += raster_x_res
+        #         if burning:
+        #             # laser turn off
+        #             job.laser_control(False)
+        #             burning = False
+        #
+        #         old_y = y
+        #         y += raster_y_res
+        #         count += 1
+        #         if not (count % 20):
+        #             print("\ty = %.3f" % y, file=sys.stderr)
+        #
+        #     return "balor", job
 
-            invert = False
-            if threshold < 0:
-                invert = True
-                threshold *= -1.0
-            dither = 0
-            passes = 1
-            if grayscale:
-                gsmin = grayscale_min
-                gsmax = grayscale_max
-                gsslope = (gsmax - gsmin) / 256.0
-            cal = None
-            if self.calibration_file is not None:
-                try:
-                    cal = Cal(self.calibration_file)
-                except TypeError:
-                    pass
-            job = CommandList(cal=cal)
-
-            img = scipy.interpolate.RectBivariateSpline(
-                np.linspace(y0, y0 + height, in_file.size[1]),
-                np.linspace(x0, x0 + width, in_file.size[0]),
-                np.asarray(in_file),
-            )
-
-            dither = 0
-            job.set_mark_settings(
-                travel_speed=self.travel_speed,
-                power=self.laser_power,
-                frequency=self.q_switch_frequency,
-                cut_speed=self.cut_speed,
-                laser_on_delay=self.delay_laser_on,
-                laser_off_delay=self.delay_laser_off,
-                polygon_delay=self.delay_polygon,
-            )
-            y = y0
-            count = 0
-            burning = False
-            old_y = y0
-            while y < y0 + height:
-                x = x0
-                job.goto(x, y)
-                old_x = x0
-                while x < x0 + width:
-                    px = img(y, x)[0][0]
-                    if invert:
-                        px = 255.0 - px
-
-                    if grayscale:
-                        if px > 0:
-                            gsval = gsmin + gsslope * px
-                            if grayscale == "power":
-                                job.set_power(gsval)
-                            elif grayscale == "speed":
-                                job.set_cut_speed(gsval)
-                            elif grayscale == "q_switch_frequency":
-                                job.set_frequency(gsval)
-                            elif grayscale == "passes":
-                                passes = int(round(gsval))
-                                # Would probably be better to do this over the course of multiple
-                                # rasters for heat disappation during 2.5D engraving
-                            # pp = int(round((int(px)/255) * args.laser_power * 40.95))
-                            # job.change_settings(q_switch_period, pp, cut_speed)
-
-                            if not burning:
-                                job.laser_control(True)  # laser turn on
-                            i = passes
-                            while i > 1:
-                                job.mark(x, y)
-                                job.mark(old_x, old_y)
-                                i -= 2
-                            job.mark(x, y)
-                            burning = True
-
-                        else:
-                            if burning:
-                                # laser turn off
-                                job.laser_control(False)
-                            job.goto(x, y)
-                            burning = False
-                    else:
-
-                        if px + dither > threshold:
-                            if not burning:
-                                job.laser_control(True)  # laser turn on
-                            job.mark(x, y)
-                            burning = True
-                            dither = 0.0
-                        else:
-                            if burning:
-                                # laser turn off
-                                job.laser_control(False)
-                            job.goto(x, y)
-                            dither += abs(px + dither - threshold) * dither
-                            burning = False
-                    old_x = x
-                    x += raster_x_res
-                if burning:
-                    # laser turn off
-                    job.laser_control(False)
-                    burning = False
-
-                old_y = y
-                y += raster_y_res
-                count += 1
-                if not (count % 20):
-                    print("\ty = %.3f" % y, file=sys.stderr)
-
-            return "balor", job
-
-        @self.console_option(
-            "travel_speed", "t", type=float, help="Set the travel speed."
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "frequency", "q", type=float, help="Set the device's qswitch frequency"
-        )
-        @self.console_option(
-            "cut_speed", "s", type=float, help="Set the cut speed of the device"
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "laser_on_delay", "n", type=float, help="Sets the device's laser on delay"
-        )
-        @self.console_option(
-            "laser_off_delay", "f", type=float, help="Sets the device's laser off delay"
-        )
-        @self.console_option(
-            "polygon_delay",
-            "n",
-            type=float,
-            help="Sets the device's laser polygon delay",
-        )
-        @self.console_option(
-            "angle", "a", type=Angle.parse, default=0, help=_("Angle of the fill")
-        )
-        @self.console_option(
-            "distance", "d", type=str, default="1mm", help=_("distance between rungs")
-        )
-        @self.console_command(
-            "hatch",
-            help=_("hatch <angle> <distance>"),
-            output_type="balor",
-        )
-        def hatch(
-            command,
-            channel,
-            _,
-            angle=None,
-            distance=None,
-            travel_speed=None,
-            power=None,
-            frequency=None,
-            cut_speed=None,
-            laser_on_delay=None,
-            laser_off_delay=None,
-            polygon_delay=None,
-            **kwargs,
-        ):
-            from meerk40t.balor.Cal import Cal
-
-            cal = None
-            if self.calibration_file is not None:
-                try:
-                    cal = Cal(self.calibration_file)
-                except TypeError:
-                    pass
-            job = CommandList(cal=cal)
-            job.set_mark_settings(
-                travel_speed=self.travel_speed
-                if travel_speed is None
-                else travel_speed,
-                power=self.laser_power if power is None else power,
-                frequency=self.q_switch_frequency if frequency is None else frequency,
-                cut_speed=self.cut_speed if cut_speed is None else cut_speed,
-                laser_on_delay=self.delay_laser_on
-                if laser_on_delay is None
-                else laser_on_delay,
-                laser_off_delay=self.delay_laser_off
-                if laser_off_delay is None
-                else laser_off_delay,
-                polygon_delay=self.delay_polygon
-                if polygon_delay is None
-                else polygon_delay,
-            )
-            job.light_on()
-            elements = self.elements
-            channel(_("Hatch Filling"))
-            if distance is not None:
-                distance = "1mm"
-            distance = float(Length(distance))
-            transformed_vector = self._matrix.transform_vector([0, distance])
-            distance = abs(complex(transformed_vector[0], transformed_vector[1]))
-
-            efill = EulerianFill(distance)
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, Shape):
-                    continue
-                e = abs(Path(element))
-                e *= self._matrix
-                if angle is not None:
-                    e *= Matrix.rotate(angle)
-
-                pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
-                efill += pts
-
-            points = efill.get_fill()
-
-            def split(points):
-                pos = 0
-                for i, pts in enumerate(points):
-                    if pts is None:
-                        yield points[pos : i - 1]
-                        pos = i + 1
-                if pos != len(points):
-                    yield points[pos : len(points)]
-
-            for s in split(points):
-                for p in s:
-                    if p.value == "RUNG":
-                        job.mark(p.x, p.y)
-                    if p.value == "EDGE":
-                        job.goto(p.x, p.y)
-            return "balor", job
+        # @self.console_option(
+        #     "travel_speed", "t", type=float, help="Set the travel speed."
+        # )
+        # @self.console_option("power", "p", type=float, help="Set the power level")
+        # @self.console_option(
+        #     "frequency", "q", type=float, help="Set the device's qswitch frequency"
+        # )
+        # @self.console_option(
+        #     "cut_speed", "s", type=float, help="Set the cut speed of the device"
+        # )
+        # @self.console_option("power", "p", type=float, help="Set the power level")
+        # @self.console_option(
+        #     "laser_on_delay", "n", type=float, help="Sets the device's laser on delay"
+        # )
+        # @self.console_option(
+        #     "laser_off_delay", "f", type=float, help="Sets the device's laser off delay"
+        # )
+        # @self.console_option(
+        #     "polygon_delay",
+        #     "n",
+        #     type=float,
+        #     help="Sets the device's laser polygon delay",
+        # )
+        # @self.console_option(
+        #     "angle", "a", type=Angle.parse, default=0, help=_("Angle of the fill")
+        # )
+        # @self.console_option(
+        #     "distance", "d", type=str, default="1mm", help=_("distance between rungs")
+        # )
+        # @self.console_command(
+        #     "hatch",
+        #     help=_("hatch <angle> <distance>"),
+        #     output_type="balor",
+        # )
+        # def hatch(
+        #     command,
+        #     channel,
+        #     _,
+        #     angle=None,
+        #     distance=None,
+        #     travel_speed=None,
+        #     power=None,
+        #     frequency=None,
+        #     cut_speed=None,
+        #     laser_on_delay=None,
+        #     laser_off_delay=None,
+        #     polygon_delay=None,
+        #     **kwargs,
+        # ):
+        #     from meerk40t.balor.Cal import Cal
+        #
+        #     cal = None
+        #     if self.calibration_file is not None:
+        #         try:
+        #             cal = Cal(self.calibration_file)
+        #         except TypeError:
+        #             pass
+        #     job = CommandList(cal=cal)
+        #     job.set_mark_settings(
+        #         travel_speed=self.travel_speed
+        #         if travel_speed is None
+        #         else travel_speed,
+        #         power=self.laser_power if power is None else power,
+        #         frequency=self.q_switch_frequency if frequency is None else frequency,
+        #         cut_speed=self.cut_speed if cut_speed is None else cut_speed,
+        #         laser_on_delay=self.delay_laser_on
+        #         if laser_on_delay is None
+        #         else laser_on_delay,
+        #         laser_off_delay=self.delay_laser_off
+        #         if laser_off_delay is None
+        #         else laser_off_delay,
+        #         polygon_delay=self.delay_polygon
+        #         if polygon_delay is None
+        #         else polygon_delay,
+        #     )
+        #     job.light_on()
+        #     elements = self.elements
+        #     channel(_("Hatch Filling"))
+        #     if distance is not None:
+        #         distance = "1mm"
+        #     distance = float(Length(distance))
+        #     transformed_vector = self._matrix.transform_vector([0, distance])
+        #     distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+        #
+        #     efill = EulerianFill(distance)
+        #     for element in elements.elems(emphasized=True):
+        #         if not isinstance(element, Shape):
+        #             continue
+        #         e = abs(Path(element))
+        #         e *= self._matrix
+        #         if angle is not None:
+        #             e *= Matrix.rotate(angle)
+        #
+        #         pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
+        #         efill += pts
+        #
+        #     points = efill.get_fill()
+        #
+        #     def split(points):
+        #         pos = 0
+        #         for i, pts in enumerate(points):
+        #             if pts is None:
+        #                 yield points[pos : i - 1]
+        #                 pos = i + 1
+        #         if pos != len(points):
+        #             yield points[pos : len(points)]
+        #
+        #     for s in split(points):
+        #         for p in s:
+        #             if p.value == "RUNG":
+        #                 job.mark(p.x, p.y)
+        #             if p.value == "EDGE":
+        #                 job.goto(p.x, p.y)
+        #     return "balor", job
 
     @property
     def current(self):
