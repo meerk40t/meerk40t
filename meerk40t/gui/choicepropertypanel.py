@@ -58,12 +58,8 @@ class ChoicePropertyPanel(wx.Panel):
                 except KeyError:
                     continue
             data_type = type(data)
-            try:
-                # if type is explicitly given, use that to define data_type.
-                data_type = c["type"]
-            except KeyError:
-                pass
-
+            data_type = c.get("type", data_type)
+            data_style = c.get("style", None)
             try:
                 # Get label
                 label = c["label"]
@@ -86,6 +82,39 @@ class ChoicePropertyPanel(wx.Panel):
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
                 sizer_main.Add(control, 0, wx.EXPAND, 0)
+            elif data_type == str and data_style == "file":
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
+                control = wx.Button(self, -1)
+
+                def set_file(filename: str):
+                    if not filename:
+                        filename = _("No File")
+                    control.SetLabel(filename)
+
+                def on_button_filename(param, ctrl, obj):
+                    def click(event=None):
+                        with wx.FileDialog(
+                                self, label, wildcard=c.get("wildcard", "*"), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                        ) as fileDialog:
+                            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                                return  # the user changed their mind
+                            pathname = str(fileDialog.GetPath())
+                            ctrl.SetLabel(pathname)
+                            self.Layout()
+                            try:
+                                setattr(obj, param, pathname)
+                            except ValueError:
+                                # If cannot cast to data_type, pass
+                                pass
+
+                    return click
+
+                set_file(data)
+                control_sizer.Add(control)
+                control.Bind(wx.EVT_BUTTON, on_button_filename(attr, control, obj))
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
