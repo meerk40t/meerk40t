@@ -910,7 +910,7 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_import", hidden=True)
         def import_dialog(**kwargs):
-            files = context.load_types()
+            files = context.elements.load_types()
             with wx.FileDialog(
                 gui,
                 _("Import"),
