@@ -216,13 +216,13 @@ class PositionPanel(wx.Panel):
             "resize %f%s %f%s %f%s %f%s\n"
             % (
                 self.position_x,
-                self.position_name,
+                self.position_units,
                 self.position_y,
-                self.position_name,
+                self.position_units,
                 self.position_w,
-                self.position_name,
+                self.position_units,
                 self.position_h,
-                self.position_name,
+                self.position_units,
             )
         )
         self._update_position()
