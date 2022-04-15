@@ -591,6 +591,9 @@ class BalorDevice(Service, ViewPort):
             data=None,
             **kwgs,
         ):
+            """
+            Creates a light job out of elements. If speed is set then
+            """
             channel("Creating light job out of elements.")
             paths = data
             cal = None
@@ -599,13 +602,19 @@ class BalorDevice(Service, ViewPort):
                     cal = Cal(self.calibration_file)
                 except TypeError:
                     pass
-            job = CommandList(cal=cal, light_speed=self.redlight_speed, goto_speed=self.travel_speed)
-            if simulation_speed is None:
-                simulation_speed = self.cut_speed
-            else:
-                # If we set a sim-speed we should go at that speed
+            if simulation_speed is not None:
+                # Simulation_speed implies speed
                 speed = True
 
+            if speed:
+                # Travel at simulation speed.
+                if simulation_speed is None:
+                    # if simulation speed was not set travel at cut_speed
+                    simulation_speed = self.cut_speed
+                job = CommandList(cal=cal, light_speed=simulation_speed, goto_speed=self.travel_speed)
+            else:
+                # Travel at redlight speed
+                job = CommandList(cal=cal, light_speed=self.redlight_speed, goto_speed=self.travel_speed)
             for e in paths:
                 if isinstance(e, Shape):
                     if not isinstance(e, Path):
@@ -616,14 +625,10 @@ class BalorDevice(Service, ViewPort):
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
                 job.light(x, y, False, jump_delay=200)
-                if speed:
-                    job.set_travel_speed(simulation_speed)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
                     x, y = self.scene_to_device_position(x, y)
                     job.light(x, y, True, jump_delay=0)
-                if speed:
-                    job.set_travel_speed(travel_speed)
             job.light_off()
             return "balor", job
 
