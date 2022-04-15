@@ -69,6 +69,8 @@ class CutOpNode(Node, Parameters):
             parts.append("%gmm/s" % self.speed)
         if self.power is not None:
             parts.append("%gppi" % self.power)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         parts.append("%s" % self.color.hex)
         if self.dratio_custom:
             parts.append("d:%g" % self.dratio)
@@ -266,6 +268,8 @@ class EngraveOpNode(Node, Parameters):
             parts.append("%gmm/s" % self.speed)
         if self.power is not None:
             parts.append("%gppi" % self.power)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         parts.append("%s" % self.color.hex)
         if self.dratio_custom:
             parts.append("d:%g" % self.dratio)
@@ -461,6 +465,8 @@ class RasterOpNode(Node, Parameters):
         parts.append("Raster{step}".format(step=self.raster_step))
         if self.speed is not None:
             parts.append("%gmm/s" % self.speed)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         if self.raster_swing:
             raster_dir = "-"
         else:
@@ -626,6 +632,8 @@ class ImageOpNode(Node, Parameters):
         parts.append("Image")
         if self.speed is not None:
             parts.append("%gmm/s" % self.speed)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         if self.raster_swing:
             raster_dir = "-"
         else:
@@ -799,6 +807,8 @@ class DotsOpNode(Node, Parameters):
             parts.append("✓")
         if self.passes_custom and self.passes != 1:
             parts.append("%dX" % self.passes)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         parts.append("Dots")
         parts.append("%gms dwell" % self.dwell_time)
         return " ".join(parts)
@@ -901,6 +911,8 @@ class HatchOpNode(Node, Parameters):
         parts.append("Hatch")
         if self.speed is not None:
             parts.append("%gmm/s" % self.speed)
+        if self.frequency is not None:
+            parts.append("%gkHz" % self.frequency)
         if self.power is not None:
             parts.append("%gppi" % self.power)
         parts.append("%s" % self.color.hex)
