@@ -181,6 +181,22 @@ class Parameters:
         self.settings["power"] = value
 
     @property
+    def frequency(self):
+        return self.settings.get("frequency", 20.0)
+
+    @frequency.setter
+    def frequency(self, value):
+        self.settings["frequency"] = value
+
+    @property
+    def move_speed(self):
+        return self.settings.get("rapid_speed", 100.0)
+
+    @move_speed.setter
+    def move_speed(self, value):
+        self.settings["move_speed"] = value
+
+    @property
     def line_color(self):
         return self.settings.get("line_color", 0)
 
@@ -431,7 +447,6 @@ class Parameters:
     @force_twitchless.setter
     def force_twitchless(self, value):
         self.settings["force_twitchless"] = value
-
 
     @property
     def constant_move_x(self):
