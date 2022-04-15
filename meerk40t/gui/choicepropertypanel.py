@@ -158,9 +158,8 @@ class ChoicePropertyPanel(wx.Panel):
                             ctrl.SetBackgroundColour(wx.RED)
                             ctrl.Refresh()
                             return
-
                         try:
-                            setattr(obj, param, v)
+                            setattr(obj, param, v.preferred_length)
                         except ValueError:
                             # If cannot cast to data_type, pass
                             pass
