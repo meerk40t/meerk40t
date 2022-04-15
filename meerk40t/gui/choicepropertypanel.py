@@ -93,10 +93,10 @@ class ChoicePropertyPanel(wx.Panel):
                         filename = _("No File")
                     control.SetLabel(filename)
 
-                def on_button_filename(param, ctrl, obj):
+                def on_button_filename(param, ctrl, obj, wildcard):
                     def click(event=None):
                         with wx.FileDialog(
-                                self, label, wildcard=c.get("wildcard", "*"), style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                                self, label, wildcard=wildcard if wildcard else "*", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
                         ) as fileDialog:
                             if fileDialog.ShowModal() == wx.ID_CANCEL:
                                 return  # the user changed their mind
@@ -113,7 +113,7 @@ class ChoicePropertyPanel(wx.Panel):
 
                 set_file(data)
                 control_sizer.Add(control)
-                control.Bind(wx.EVT_BUTTON, on_button_filename(attr, control, obj))
+                control.Bind(wx.EVT_BUTTON, on_button_filename(attr, control, obj, c.get("wildcard", "*")))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
