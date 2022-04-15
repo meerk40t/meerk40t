@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -99,6 +100,38 @@ class ChoicePropertyPanel(wx.Panel):
                         v = ctrl.GetValue()
                         try:
                             setattr(obj, param, dtype(v))
+                        except ValueError:
+                            # If cannot cast to data_type, pass
+                            pass
+
+                    return text
+
+                control.Bind(
+                    wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
+                )
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type == Length:
+                # Length type is a TextCtrl with special checks
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
+                control = wx.TextCtrl(self, -1)
+                control.SetValue(str(data))
+                control_sizer.Add(control)
+
+                def on_textbox_text(param, ctrl, obj, dtype):
+                    def text(event=None):
+                        try:
+                            v = Length(ctrl.GetValue())
+                            ctrl.SetBackgroundColour(None)
+                            ctrl.Refresh()
+                        except ValueError:
+                            ctrl.SetBackgroundColour(wx.RED)
+                            ctrl.Refresh()
+                            return
+
+                        try:
+                            setattr(obj, param, v)
                         except ValueError:
                             # If cannot cast to data_type, pass
                             pass
