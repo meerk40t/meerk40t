@@ -268,22 +268,35 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-                    rapid_speed = settings.get("rapid_speed", self.service.default_rapid_speed)
-                    job.set_travel_speed(float(rapid_speed))
-                    current_power = settings.get("power", self.service.default_power)
-                    job.set_power(float(current_power) / 10)  # Convert power, out of 1000
+
+                    rapid_enabled = str(settings.get("rapid_enabled", False)).lower() == "true"
+                    if rapid_enabled:
+                        rapid_speed = settings.get("rapid_speed", self.service.default_rapid_speed)
+                        job.set_travel_speed(float(rapid_speed))
+                    else:
+                        job.set_travel_speed(self.service.default_rapid_speed)
+                    current_power = float(settings.get("power", self.service.default_power)) / 10.0
+                    job.set_power(current_power)  # Convert power, out of 1000
                     frequency = settings.get("frequency", self.service.default_frequency)
                     job.set_frequency(float(frequency))
                     cut_speed = settings.get("speed", self.service.default_speed)
                     job.set_cut_speed(float(cut_speed))
-                    delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
-                    job.set_laser_on_delay(delay_laser_on)
-                    delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
-                    job.set_laser_off_delay(delay_laser_off)
-                    delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
-                    job.set_polygon_delay(delay_polygon)
 
-                    wobble_enabled = settings.get("wobble_enabled", False)
+                    timing_enabled = str(settings.get("timing_enabled", False)).lower() == "true"
+                    if timing_enabled:
+                        delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+                        job.set_laser_on_delay(delay_laser_on)
+                        delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+                        job.set_laser_off_delay(delay_laser_off)
+                        delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+                        job.set_polygon_delay(delay_polygon)
+                    else:
+                        # Use globals
+                        job.set_laser_on_delay(self.service.delay_laser_on)
+                        job.set_laser_off_delay(self.service.delay_laser_off)
+                        job.set_polygon_delay(self.service.delay_polygon)
+
+                    wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
                     if wobble_enabled:
                         wobble_radius = settings.get("wobble_radius", 50.0)
                         wobble_interval = settings.get("wobble_interval", 10.0)

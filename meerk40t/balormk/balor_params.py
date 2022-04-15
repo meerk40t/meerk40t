@@ -51,7 +51,7 @@ class Parameters:
                 settings[v] = float(settings[v])
         for v in BOOL_PARAMETERS:
             if v in settings:
-                settings[v] = bool(settings[v])
+                settings[v] = str(settings[v]).lower() == "true"
         for v in STRING_PARAMETERS:
             if v in settings:
                 settings[v] = str(settings[v])

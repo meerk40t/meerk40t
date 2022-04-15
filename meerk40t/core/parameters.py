@@ -71,7 +71,7 @@ class Parameters:
                 settings[v] = int(float(settings[v]))
         for v in BOOL_PARAMETERS:
             if v in settings:
-                settings[v] = settings[v].lower() == "true"
+                settings[v] = str(settings[v]).lower() == "true"
         for v in ("color", "line_color"):
             if v in settings:
                 settings[v] = Color(settings[v])

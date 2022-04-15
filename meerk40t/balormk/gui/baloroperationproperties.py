@@ -18,14 +18,23 @@ class BalorOperationPanel(wx.Panel):
         params.validate()
 
         choices = [
-            # {
-            #     "attr": "travel_speed",
-            #     "object": params,
-            #     "default": 2000.0,
-            #     "type": float,
-            #     "label": _("Travel Speed"),
-            #     "tip": _("How fast do we travel when not cutting?"),
-            # },
+            {
+                "attr": "rapid_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Custom Rapid-Speed"),
+                "tip": _("Enable custom jump speed for this operation"),
+            },
+            {
+                "attr": "rapid_speed",
+                "object": params,
+                "default": 2000.0,
+                "type": float,
+                "conditional": (params, "rapid_enabled"),
+                "label": _("Travel Speed"),
+                "tip": _("How fast do we travel when not cutting?"),
+            },
             # {
             #     "attr": "laser_power",
             #     "object": params,
@@ -51,10 +60,19 @@ class BalorOperationPanel(wx.Panel):
             #     "tip": _("QSwitch Frequency value"),
             # },
             {
+                "attr": "timing_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Custom Timings"),
+                "tip": _("Enable custom timings for this operation"),
+            },
+            {
                 "attr": "delay_laser_on",
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Laser On Delay"),
                 "tip": _("Delay for the start of the laser"),
             },
@@ -63,6 +81,7 @@ class BalorOperationPanel(wx.Panel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Laser Off Delay"),
                 "tip": _("Delay amount for the end of the laser"),
             },
@@ -71,6 +90,7 @@ class BalorOperationPanel(wx.Panel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
             },
