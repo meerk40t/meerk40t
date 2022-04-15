@@ -189,6 +189,18 @@ class CustomStatusBar(wx.StatusBar):
         self.context.setting(bool, "enable_sel_size", True)
         self.context.setting(bool, "enable_sel_rotate", True)
         self.context.setting(bool, "enable_sel_skew", False)
+        choices = [
+        {
+            "attr": "show_colorbar",
+            "object": self.context.root,
+            "default": True,
+            "type": bool,
+            "label": _("Display colorbar in statusbar"),
+            "tip": _("Enable the display of a colorbar at the bottom of the screen."),
+        },
+        ]
+        self.context.kernel.register_choices("preferences", choices)
+
         self.cb_move.SetValue(self.context.enable_sel_move)
         self.cb_handle.SetValue(self.context.enable_sel_size)
         self.cb_rotate.SetValue(self.context.enable_sel_rotate)
@@ -197,9 +209,17 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
         self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
         self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
-        self.cb_enabled = False
-
+        # And now 8 Buttons for Stroke / Fill:
+        colors = (0xFFFFFF, 0x000000, 0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF, 0x00FFFF)
+        self.button_color = []
+        for idx in range(len(colors)):
+            self.button_color.append(wx.Button(self, id=wx.ID_ANY, label=""))
+            self.button_color[idx].SetBackgroundColour( wx.Colour(colors[idx]))
+            self.button_color[idx].SetToolTip(_("Set stroke-color (right click set fill color)"))
+            self.Bind(wx.EVT_BUTTON, self.on_button_color_left, self.button_color[idx])
+            self.button_color[idx].Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
         # set the initial position of the checkboxes
+        self.cb_enabled = False
         self.Reposition()
         self.startup = False
 
@@ -214,11 +234,17 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_handle.Show()
             self.cb_rotate.Show()
             self.cb_skew.Show()
+            if self.context.show_colorbar:
+                for btn in self.button_color:
+                    btn.Show()
         else:
             self.cb_move.Hide()
             self.cb_handle.Hide()
             self.cb_rotate.Hide()
             self.cb_skew.Hide()
+            if not self.button_color is None:
+                for btn in self.button_color:
+                    btn.Hide()
         self._cb_enabled = cb_enabled
 
     # the checkbox was clicked
@@ -246,6 +272,23 @@ class CustomStatusBar(wx.StatusBar):
             self.context.enable_sel_skew = valu
             self.context.signal("refresh_scene", "Scene")
 
+    def on_button_color_left(self, event):
+        # Okay my backgroundcolor is...
+        button = event.EventObject
+        color=button.GetBackgroundColour()
+        rgb = [color.Red(), color.Green(), color.Blue()]
+        mysignal = "selstroke"
+        self.context.signal(mysignal, rgb)
+
+    def on_button_color_right(self, event):
+        # Okay my backgroundcolor is...
+        button = event.EventObject
+        color=button.GetBackgroundColour()
+        rgb = [color.Red(), color.Green(), color.Blue()]
+        mysignal = "selfill"
+        self.context.signal(mysignal, rgb)
+
+
     def OnSize(self, evt):
         evt.Skip()
         self.Reposition()  # for normal size events
@@ -270,6 +313,17 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_rotate.SetRect(rect)
         rect.x += wd
         self.cb_skew.SetRect(rect)
+
+        rect = self.GetFieldRect(self.panelct - 2)
+        ct = len(self.button_color)
+        wd = int(round(rect.width / ct)) - 1
+        rect.x += 1
+        rect.y += 1
+        rect.width = wd
+        for btn in self.button_color:
+            btn.SetRect (rect)
+            rect.x += wd
+
         self.sizeChanged = False
 
 
