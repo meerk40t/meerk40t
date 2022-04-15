@@ -14,6 +14,8 @@ FLOAT_PARAMETERS = (
 
 BOOL_PARAMETERS = (
     "wobble_enabled",
+    "timing_enabled",
+    "rapid_enabled",
 )
 
 
@@ -53,6 +55,22 @@ class Parameters:
         for v in STRING_PARAMETERS:
             if v in settings:
                 settings[v] = str(settings[v])
+
+    @property
+    def rapid_enabled(self):
+        return self.settings.get("rapid_enabled", False)
+
+    @rapid_enabled.setter
+    def rapid_enabled(self, value):
+        self.settings["rapid_enabled"] = value
+
+    @property
+    def timing_enabled(self):
+        return self.settings.get("timing_enabled", False)
+
+    @timing_enabled.setter
+    def timing_enabled(self, value):
+        self.settings["timing_enabled"] = value
 
     @property
     def wobble_enabled(self):
