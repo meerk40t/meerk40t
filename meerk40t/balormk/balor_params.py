@@ -2,15 +2,13 @@ from typing import Dict
 
 
 FLOAT_PARAMETERS = (
-    "travel_speed",
-    "cut_speed",
-    "q_switch_frequency",
+    "speed",
+    "frequency",
     "power",
+    "rapid_speed",
     "delay_laser_on",
     "delay_laser_off",
     "delay_polygon",
-    "wobble_radius",
-    "wobble_interval"
     "wobble_speed"
 )
 
@@ -21,6 +19,8 @@ BOOL_PARAMETERS = (
 
 STRING_PARAMETERS = (
     "wobble_type",
+    "wobble_radius",
+    "wobble_interval"
 )
 
 
@@ -64,7 +64,7 @@ class Parameters:
 
     @property
     def wobble_radius(self):
-        return self.settings.get("wobble_radius", 50.0)
+        return self.settings.get("wobble_radius", "50.0")
 
     @wobble_radius.setter
     def wobble_radius(self, value):
@@ -78,10 +78,9 @@ class Parameters:
     def wobble_speed(self, value):
         self.settings["wobble_speed"] = value
 
-
     @property
     def wobble_interval(self):
-        return self.settings.get("wobble_interval", 10.0)
+        return self.settings.get("wobble_interval", "10.0")
 
     @wobble_interval.setter
     def wobble_interval(self, value):
@@ -96,36 +95,36 @@ class Parameters:
         self.settings["wobble_type"] = value
 
     @property
-    def cut_speed(self):
-        return self.settings.get("cut_speed", 100.0)
+    def speed(self):
+        return self.settings.get("speed", 100.0)
 
-    @cut_speed.setter
-    def cut_speed(self, value):
-        self.settings["cut_speed"] = value
-
-    @property
-    def travel_speed(self):
-        return self.settings.get("travel_speed", 2000.0)
-
-    @travel_speed.setter
-    def travel_speed(self, value):
-        self.settings["travel_speed"] = value
+    @speed.setter
+    def speed(self, value):
+        self.settings["speed"] = value
 
     @property
-    def laser_power(self):
-        return self.settings.get("laser_power", 50.0)
+    def rapid_speed(self):
+        return self.settings.get("rapid_speed", 2000.0)
 
-    @laser_power.setter
-    def laser_power(self, value):
-        self.settings["laser_power"] = value
+    @rapid_speed.setter
+    def rapid_speed(self, value):
+        self.settings["rapid_speed"] = value
 
     @property
-    def q_switch_frequency(self):
-        return self.settings.get("q_switch_frequency", 30.0)
+    def power(self):
+        return self.settings.get("power", 500)
 
-    @q_switch_frequency.setter
-    def q_switch_frequency(self, value):
-        self.settings["q_switch_frequency"] = value
+    @power.setter
+    def power(self, value):
+        self.settings["power"] = value
+
+    @property
+    def frequency(self):
+        return self.settings.get("frequency", 30.0)
+
+    @frequency.setter
+    def frequency(self, value):
+        self.settings["frequency"] = value
 
     @property
     def delay_laser_on(self):

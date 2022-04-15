@@ -1,6 +1,7 @@
 import wx
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from ..balor_params import Parameters
+from ...core.units import Length
 
 _ = wx.GetTranslation
 
@@ -17,38 +18,38 @@ class BalorOperationPanel(wx.Panel):
         params.validate()
 
         choices = [
-            {
-                "attr": "travel_speed",
-                "object": params,
-                "default": 2000.0,
-                "type": float,
-                "label": _("Travel Speed"),
-                "tip": _("How fast do we travel when not cutting?"),
-            },
-            {
-                "attr": "laser_power",
-                "object": params,
-                "default": 50.0,
-                "type": float,
-                "label": _("Laser Power"),
-                "tip": _("How what power level do we cut at?"),
-            },
-            {
-                "attr": "cut_speed",
-                "object": params,
-                "default": 100.0,
-                "type": float,
-                "label": _("Cut Speed"),
-                "tip": _("How fast do we cut?"),
-            },
-            {
-                "attr": "q_switch_frequency",
-                "object": params,
-                "default": 30.0,
-                "type": float,
-                "label": _("Q Switch Frequency"),
-                "tip": _("QSwitch Frequency value"),
-            },
+            # {
+            #     "attr": "travel_speed",
+            #     "object": params,
+            #     "default": 2000.0,
+            #     "type": float,
+            #     "label": _("Travel Speed"),
+            #     "tip": _("How fast do we travel when not cutting?"),
+            # },
+            # {
+            #     "attr": "laser_power",
+            #     "object": params,
+            #     "default": 50.0,
+            #     "type": float,
+            #     "label": _("Laser Power"),
+            #     "tip": _("How what power level do we cut at?"),
+            # },
+            # {
+            #     "attr": "cut_speed",
+            #     "object": params,
+            #     "default": 100.0,
+            #     "type": float,
+            #     "label": _("Cut Speed"),
+            #     "tip": _("How fast do we cut?"),
+            # },
+            # {
+            #     "attr": "q_switch_frequency",
+            #     "object": params,
+            #     "default": 30.0,
+            #     "type": float,
+            #     "label": _("Q Switch Frequency"),
+            #     "tip": _("QSwitch Frequency value"),
+            # },
             {
                 "attr": "delay_laser_on",
                 "object": params,
@@ -85,7 +86,7 @@ class BalorOperationPanel(wx.Panel):
                 "attr": "wobble_radius",
                 "object": params,
                 "default": 10.0,
-                "type": float,
+                "type": Length,
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Radius of wobble"),
                 "tip": _("Radius of the wobble for this cut, if wobble is enabled."),
@@ -94,7 +95,7 @@ class BalorOperationPanel(wx.Panel):
                 "attr": "wobble_interval",
                 "object": params,
                 "default": 50.0,
-                "type": float,
+                "type": Length,
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Sampling Interval"),
                 "tip": _("Sample interval for the wobble of this cut"),

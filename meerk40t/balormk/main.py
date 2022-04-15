@@ -172,7 +172,7 @@ class BalorDevice(Service, ViewPort):
 
         choices = [
             {
-                "attr": "laser_power",
+                "attr": "default_power",
                 "object": self,
                 "default": 50.0,
                 "type": float,
@@ -180,7 +180,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("How what power level do we cut at?"),
             },
             {
-                "attr": "cut_speed",
+                "attr": "default_speed",
                 "object": self,
                 "default": 100.0,
                 "type": float,
@@ -188,7 +188,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("How fast do we cut?"),
             },
             {
-                "attr": "q_switch_frequency",
+                "attr": "default_frequency",
                 "object": self,
                 "default": 30.0,
                 "type": float,
@@ -196,7 +196,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("QSwitch Frequency value"),
             },
             {
-                "attr": "travel_speed",
+                "attr": "default_rapid_speed",
                 "object": self,
                 "default": 2000.0,
                 "type": float,
@@ -496,12 +496,12 @@ class BalorDevice(Service, ViewPort):
             paths = data
             job = CommandList()
             job.set_mark_settings(
-                travel_speed=self.travel_speed
+                travel_speed=self.default_rapid_speed
                 if travel_speed is None
                 else travel_speed,
-                power=self.laser_power if power is None else power,
-                frequency=self.q_switch_frequency if frequency is None else frequency,
-                cut_speed=self.cut_speed if cut_speed is None else cut_speed,
+                power=self.default_power if power is None else power,
+                frequency=self.default_frequency if frequency is None else frequency,
+                cut_speed=self.default_speed if cut_speed is None else cut_speed,
                 laser_on_delay=self.delay_laser_on
                 if laser_on_delay is None
                 else laser_on_delay,
@@ -577,16 +577,17 @@ class BalorDevice(Service, ViewPort):
             if simulation_speed is not None:
                 # Simulation_speed implies speed
                 speed = True
-
+            if travel_speed is None:
+                travel_speed = self.default_rapid_speed
             if speed:
                 # Travel at simulation speed.
                 if simulation_speed is None:
                     # if simulation speed was not set travel at cut_speed
-                    simulation_speed = self.cut_speed
-                job = CommandList(light_speed=simulation_speed, goto_speed=self.travel_speed)
+                    simulation_speed = self.default_speed
+                job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
             else:
                 # Travel at redlight speed
-                job = CommandList(light_speed=self.redlight_speed, goto_speed=self.travel_speed)
+                job = CommandList(light_speed=self.redlight_speed, goto_speed=travel_speed)
             for e in paths:
                 if isinstance(e, Shape):
                     if not isinstance(e, Path):

@@ -255,9 +255,10 @@ class BalorDriver(Parameters):
         self.connect_if_needed()
         job = CommandList()
         job.set_write_port(self.connection.get_port())
-        job.set_travel_speed(self.service.travel_speed)
+        job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
         last_on = None
+        current_power = None
         for x, y, on in self.plot_planner.gen():
             while self.hold_work():
                 time.sleep(0.05)
@@ -267,14 +268,14 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-                    travel_speed = settings.get("travel_speed", self.service.travel_speed)
-                    job.set_travel_speed(travel_speed)
-                    power = settings.get("power", self.service.laser_power)
-                    job.set_power(power)
-                    frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
-                    job.set_frequency(frequency)
-                    cut_speed = settings.get("cut_speed", self.service.cut_speed)
-                    job.set_cut_speed(cut_speed)
+                    rapid_speed = settings.get("rapid_speed", self.service.default_rapid_speed)
+                    job.set_travel_speed(float(rapid_speed))
+                    current_power = settings.get("power", self.service.default_power)
+                    job.set_power(float(current_power) / 10)  # Convert power, out of 1000
+                    frequency = settings.get("frequency", self.service.default_frequency)
+                    job.set_frequency(float(frequency))
+                    cut_speed = settings.get("speed", self.service.default_speed)
+                    job.set_cut_speed(float(cut_speed))
                     delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
                     job.set_laser_on_delay(delay_laser_on)
                     delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
@@ -285,11 +286,11 @@ class BalorDriver(Parameters):
                     wobble_enabled = settings.get("wobble_enabled", False)
                     if wobble_enabled:
                         wobble_radius = settings.get("wobble_radius", 50.0)
-                        wobble_speed = settings.get("wobble_speed", 50.0)
                         wobble_interval = settings.get("wobble_interval", 10.0)
-                        wobble = Wobble(radius=wobble_radius, speed=wobble_speed)
+                        wobble_speed = settings.get("wobble_speed", 50.0)
+                        wobble = Wobble(radius=self.service.physical_to_device_length(wobble_radius, 0)[0], speed=wobble_speed)
                         job._mark_modification = wobble.wobble
-                        job._interpolations = wobble_interval
+                        job._interpolations = self.service.physical_to_device_length(wobble_interval, 0)[0]
                     else:
                         job._mark_modification = None
                         job._interpolations = None
@@ -305,7 +306,7 @@ class BalorDriver(Parameters):
             else:
                 if last_on is None or on != last_on:
                     last_on = on
-                    job.set_power(self.service.laser_power * on)
+                    job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
         job.laser_control(False)
