@@ -7,9 +7,7 @@ def plugin(kernel, lifecycle):
         try:
 
             import numpy as np
-            import scipy.interpolate
             import numpy
-            import scipy
         except ImportError:
             return True
     if lifecycle == "register":

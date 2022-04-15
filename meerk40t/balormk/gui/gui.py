@@ -4,7 +4,6 @@ def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:
             import numpy
-            import scipy
         except ImportError:
             return True
         return not service.has_feature("wx")
@@ -16,10 +15,8 @@ def plugin(service, lifecycle):
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
-            icons8_emergency_stop_button_50,
             icons8_light_off_50,
             icons8_light_on_50,
-            icons8_pause_50,
         )
 
         service.register("window/Controller", BalorController)
