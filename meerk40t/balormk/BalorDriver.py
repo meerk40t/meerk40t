@@ -55,7 +55,7 @@ class BalorDriver(Parameters):
                 self.connected = self.connection.open(
                     mock=self.service.mock,
                     machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile,
+                    cor_file=self.service.corfile if self.service.corfile_enabled else None,
                     first_pulse_killer=self.service.first_pulse_killer,
                     pwm_pulse_width=self.service.pwm_pulse_width,
                     pwm_half_period=self.service.pwm_half_period,
