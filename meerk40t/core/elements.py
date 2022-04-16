@@ -636,6 +636,7 @@ class Elemental(Service):
                     return HatchOpNode()
                 else:
                     raise ValueError
+
             if parallel:
                 if data is None:
                     return "op", []
@@ -735,12 +736,19 @@ class Elemental(Service):
             action="store_true",
             help=_("Change speed by this amount."),
         )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change speed for each item in order"),
+        )
         @self.console_argument("speed", type=str, help=_("operation speed in mm/s"))
         @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
         def op_speed(
-            command, channel, _, speed=None, difference=None, data=None, **kwrgs
+            command, channel, _, speed=None, difference=False, progress=False, data=None, **kwrgs
         ):
             if speed is None:
                 for op in data:
@@ -758,7 +766,7 @@ class Elemental(Service):
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
-
+            delta = 0
             for op in data:
                 old_speed = op.speed
                 if percent and difference:
@@ -767,6 +775,9 @@ class Elemental(Service):
                     s = old_speed + new_speed
                 elif percent:
                     s = old_speed * (new_speed / 100.0)
+                elif progress:
+                    s = old_speed + delta
+                    delta += new_speed
                 else:
                     s = new_speed
                 op.speed = s
