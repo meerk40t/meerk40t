@@ -4902,6 +4902,7 @@ class Elemental(Service):
         return decorator
 
     def validate_ids(self):
+        idx = 1
         uid = {}
         missing = list()
         for node in self.flat():
@@ -4911,11 +4912,11 @@ class Elemental(Service):
                 node.id = e.id
             else:
                 missing.append(node)
-        idx = 1
         for m in missing:
-            while "meerk40t:%d" % idx in uid:
+            while f"meerk40t:{idx}" in uid:
                 idx += 1
-            m.id = "meerk40t:%d" % idx
+            m.id = f"meerk40t:{idx}"
+            uid[m.id] = m
 
     @property
     def reg_branch(self):
