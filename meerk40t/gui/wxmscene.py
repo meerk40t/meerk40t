@@ -26,6 +26,7 @@ from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import signal_listener
+from meerk40t.core.units import Length
 from meerk40t.svgelements import Angle, Color, SVG_ATTR_FILL, SVG_ATTR_STROKE
 
 _ = wx.GetTranslation
@@ -376,14 +377,13 @@ class MeerK40tScenePanel(wx.Panel):
         for e in self.context.elements.flat(types=("elem"), emphasized=True):
             obj = e.object
             try:
-                if color is not None:
-                    obj.stroke = color
-                    obj.values[SVG_ATTR_STROKE] = color.hex
-                    e.altered()
-                else:
+                if color is None:
                     obj.stroke = Color("none")
                     obj.values[SVG_ATTR_STROKE] = "none"
-                    e.altered()
+                else:
+                    obj.stroke = color
+                    obj.values[SVG_ATTR_STROKE] = color.hex
+                e.altered()
             except AttributeError:
                 # Ignore and carry on...
                 continue
@@ -402,19 +402,33 @@ class MeerK40tScenePanel(wx.Panel):
         for e in self.context.elements.flat(types=("elem"), emphasized=True):
             obj = e.object
             try:
-                if color is not None:
-                    obj.fill = color
-                    obj.values[SVG_ATTR_FILL] = color.hex
-                    e.altered()
-                else:
+                if color is None:
                     obj.fill = Color("none")
                     obj.values[SVG_ATTR_FILL] = "none"
-                    e.altered()
+                else:
+                    obj.fill = color
+                    obj.values[SVG_ATTR_FILL] = color.hex
+                e.altered()
             except AttributeError:
                 # Ignore and carry on...
                 continue
         # Reclassify selection...
         self.context("declassify\nclassify\n")
+        self.request_refresh()
+
+    @signal_listener("selstrokewidth")
+    def on_selstrokewidth(self, origin, stroke_width, *args):
+        # Stroke_width is a text
+        # print("Signal with %s" % stroke_width)
+        sw = float(Length(stroke_width))
+        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            obj = e.object
+            try:
+                obj.stroke_width = sw
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
         self.request_refresh()
 
     def on_key_down(self, event):

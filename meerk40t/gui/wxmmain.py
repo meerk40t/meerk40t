@@ -154,9 +154,13 @@ ID_IRC = wx.NewId()
 
 
 class CustomStatusBar(wx.StatusBar):
-    """Overloading of Statusbar to allow some checkboxes on it"""
+    """Overloading of Statusbar to allow some elements on it"""
 
     panelct = 5
+    # Where shall the different controls be placed?
+    pos_handle_options = 4
+    pos_colorbar = 3
+    pos_stroke = 2
     startup = True
 
     def __init__(self, parent, panelct):
@@ -169,13 +173,14 @@ class CustomStatusBar(wx.StatusBar):
         sizes = [-2] * self.panelct
         # Make the first Panel large
         sizes[0] = -3
+        self.status_text = [""] * self.panelct
+        self.previous_text = [""] * self.panelct
         # The most intelligent way would be  to calculate the needed size...
-        sizes[self.panelct - 1] = -1
+        sizes[self.pos_handle_options] = -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-
         # These will fall into the last field
         self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
@@ -218,10 +223,33 @@ class CustomStatusBar(wx.StatusBar):
             self.button_color[idx].SetToolTip(_("Set stroke-color (right click set fill color)"))
             self.Bind(wx.EVT_BUTTON, self.on_button_color_left, self.button_color[idx])
             self.button_color[idx].Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
+        # Plus one combobox + value field for stroke width
+        self.strokewidth_label = wx.StaticText(self, id=wx.ID_ANY, label=_("Stroke-Width:"))
+        self.spin_width = wx.SpinCtrlDouble(self, value='0.10', min=0, max=25, inc=0.10)
+        self.spin_width.SetDigits(2)
+
+        self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+        self.combo_units = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_units.SetSelection(0)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+
         # set the initial position of the checkboxes
+        self._cb_enabled = None
         self.cb_enabled = False
         self.Reposition()
         self.startup = False
+
+    def SetStatusText(self, message="", panel=0):
+        if panel>=0 and panel < self.panelct:
+            self.status_text[panel] = message
+        super().SetStatusText(message, panel)
 
     @property
     def cb_enabled(self):
@@ -235,14 +263,44 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_rotate.Show()
             self.cb_skew.Show()
             if self.context.show_colorbar:
+                if self._cb_enabled == cb_enabled:
+                    # Keep old values...
+                    for idx, text in enumerate(self.status_text):
+                        self.previous_text[idx] = text
+                    self.SetStatusText("", self.pos_handle_options)
+                    self.SetStatusText("", self.pos_stroke)
+                    self.SetStatusText("", self.pos_colorbar)
+                sw_default = None
+                for e in self.context.elements.flat(types=("elem"), emphasized=True):
+                    if hasattr(e.object, "stroke_width"):
+                        if sw_default is None:
+                            sw_default = e.object.stroke_width
+                            break
+                if not sw_default is None:
+                    # Set Values
+                    self.startup = True
+                    stdlen = float(Length("1mm"))
+                    value = sw_default / stdlen
+                    self.spin_width.SetValue(value)
+                    self.combo_units.SetSelection(self.choices.index("mm"))
+                    self.startup = False
+                self.spin_width.Show()
+                self.combo_units.Show()
+                self.strokewidth_label.Show()
                 for btn in self.button_color:
                     btn.Show()
         else:
+            self.SetStatusText(self.previous_text[self.pos_handle_options], self.pos_handle_options)
+            self.SetStatusText(self.previous_text[self.pos_stroke], self.pos_stroke)
+            self.SetStatusText(self.previous_text[self.pos_colorbar], self.pos_colorbar)
             self.cb_move.Hide()
             self.cb_handle.Hide()
             self.cb_rotate.Hide()
             self.cb_skew.Hide()
             if not self.button_color is None:
+                self.spin_width.Hide()
+                self.combo_units.Hide()
+                self.strokewidth_label.Hide()
                 for btn in self.button_color:
                     btn.Hide()
         self._cb_enabled = cb_enabled
@@ -274,20 +332,33 @@ class CustomStatusBar(wx.StatusBar):
 
     def on_button_color_left(self, event):
         # Okay my backgroundcolor is...
-        button = event.EventObject
-        color=button.GetBackgroundColour()
-        rgb = [color.Red(), color.Green(), color.Blue()]
-        mysignal = "selstroke"
-        self.context.signal(mysignal, rgb)
+        if not self.startup:
+            button = event.EventObject
+            color = button.GetBackgroundColour()
+            rgb = [color.Red(), color.Green(), color.Blue()]
+            mysignal = "selstroke"
+            self.context.signal(mysignal, rgb)
 
     def on_button_color_right(self, event):
         # Okay my backgroundcolor is...
-        button = event.EventObject
-        color=button.GetBackgroundColour()
-        rgb = [color.Red(), color.Green(), color.Blue()]
-        mysignal = "selfill"
-        self.context.signal(mysignal, rgb)
+        if not self.startup:
+            button = event.EventObject
+            color = button.GetBackgroundColour()
+            rgb = [color.Red(), color.Green(), color.Blue()]
+            mysignal = "selfill"
+            self.context.signal(mysignal, rgb)
 
+    def on_stroke_width(self, event):
+        if not self.startup:
+            chg = False
+            if self.combo_units.GetSelection()>=0:
+                newunit = self.choices[self.combo_units.GetSelection()]
+                newval = self.spin_width.GetValue()
+                chg = True
+            if chg:
+                value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
+                mysignal = "selstrokewidth"
+                self.context.signal(mysignal, value)
 
     def OnSize(self, evt):
         evt.Skip()
@@ -300,7 +371,7 @@ class CustomStatusBar(wx.StatusBar):
 
     # reposition the checkboxes
     def Reposition(self):
-        rect = self.GetFieldRect(self.panelct - 1)
+        rect = self.GetFieldRect(self.pos_handle_options)
         ct = 4
         wd = int(round(rect.width / ct))
         rect.x += 1
@@ -314,7 +385,22 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += wd
         self.cb_skew.SetRect(rect)
 
-        rect = self.GetFieldRect(self.panelct - 2)
+        rect = self.GetFieldRect(self.pos_stroke)
+        ct = 2
+        wd = int(round(rect.width / ct))
+        rect.x += 1
+        rect.y += 1
+        rect.width = wd
+        self.strokewidth_label.SetRect(rect)
+        rect.x += wd
+        # Make the next two elements smaller
+        wd = wd/2
+        rect.width = wd
+        self.spin_width.SetRect(rect)
+        rect.x += wd
+        self.combo_units.SetRect(rect)
+
+        rect = self.GetFieldRect(self.pos_colorbar)
         ct = len(self.button_color)
         wd = int(round(rect.width / ct)) - 1
         rect.x += 1
