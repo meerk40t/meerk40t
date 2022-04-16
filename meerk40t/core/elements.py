@@ -598,26 +598,28 @@ class Elemental(Service):
             parallel=False,
             **kwargs,
         ):
+            def make_op():
+                if command == "cut":
+                    return CutOpNode()
+                elif command == "engrave":
+                    return EngraveOpNode()
+                elif command == "raster":
+                    return RasterOpNode()
+                elif command == "imageop":
+                    return ImageOpNode()
+                elif command == "dots":
+                    return DotsOpNode()
+                elif command == "hatch":
+                    return HatchOpNode()
+                else:
+                    raise ValueError
             if parallel:
                 if data is None:
                     return "op", []
 
                 op_list = []
                 for item in data:
-                    if command == "cut":
-                        op = CutOpNode()
-                    elif command == "engrave":
-                        op = EngraveOpNode()
-                    elif command == "raster":
-                        op = RasterOpNode()
-                    elif command == "imageop":
-                        op = ImageOpNode()
-                    elif command == "dots":
-                        op = DotsOpNode()
-                    elif command == "hatch":
-                        op = HatchOpNode()
-                    else:
-                        return
+                    op = make_op()
 
                     if color is not None:
                         op.color = color
@@ -639,21 +641,7 @@ class Elemental(Service):
                     op_list.append(op)
                 return "ops", op_list
             else:
-                if command == "cut":
-                    op = CutOpNode()
-                elif command == "engrave":
-                    op = EngraveOpNode()
-                elif command == "raster":
-                    op = RasterOpNode()
-                elif command == "imageop":
-                    op = ImageOpNode()
-                elif command == "dots":
-                    op = DotsOpNode()
-                elif command =="hatch":
-                    op = HatchOpNode()
-                else:
-                    return
-
+                op = make_op()
                 if color is not None:
                     op.color = color
                 if default is not None:
