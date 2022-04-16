@@ -620,6 +620,7 @@ class Elemental(Service):
             **kwargs,
         ):
             op_list = []
+
             def make_op():
                 if command == "cut":
                     return CutOpNode()
@@ -656,7 +657,6 @@ class Elemental(Service):
                         op.raster_step = step
                     if overscan is not None:
                         op.overscan = overscan
-                    self.add_op(op)
                     op.add(item, type="ref elem")
                     op_list.append(op)
             else:
@@ -676,7 +676,6 @@ class Elemental(Service):
                     op.raster_step = step
                 if overscan is not None:
                     op.overscan = overscan
-                self.add_op(op)
                 if data is not None:
                     for item in data:
                         op.add(item, type="ref elem")
@@ -704,6 +703,8 @@ class Elemental(Service):
                         except AttributeError:
                             continue
                         op.color = obj_color
+            for op in op_list:
+                self.add_op(op)
             return "ops", op_list
 
         @self.console_argument("step_size", type=int, help=_("raster step size"))
