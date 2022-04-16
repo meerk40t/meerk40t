@@ -576,6 +576,7 @@ class Elemental(Service):
         @self.console_option("step", "S", type=int)
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
+        @self.console_option("parallel", "P", type=bool, action="store_true")
         @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots", "hatch"),
             help=_(
@@ -594,43 +595,85 @@ class Elemental(Service):
             step=None,
             overscan=None,
             passes=None,
+            parallel=False,
             **kwargs,
         ):
-            if command == "cut":
-                op = CutOpNode()
-            elif command == "engrave":
-                op = EngraveOpNode()
-            elif command == "raster":
-                op = RasterOpNode()
-            elif command == "imageop":
-                op = ImageOpNode()
-            elif command == "dots":
-                op = DotsOpNode()
-            elif command =="hatch":
-                op = HatchOpNode()
-            else:
-                return
+            if parallel:
+                if data is None:
+                    return "op", []
 
-            if color is not None:
-                op.color = color
-            if default is not None:
-                op.default = default
-            if speed is not None:
-                op.speed = speed
-            if power is not None:
-                op.power = power
-            if passes is not None:
-                op.passes_custom = True
-                op.passes = passes
-            if step is not None:
-                op.raster_step = step
-            if overscan is not None:
-                op.overscan = overscan
-            self.add_op(op)
-            if data is not None:
+                op_list = []
                 for item in data:
+                    if command == "cut":
+                        op = CutOpNode()
+                    elif command == "engrave":
+                        op = EngraveOpNode()
+                    elif command == "raster":
+                        op = RasterOpNode()
+                    elif command == "imageop":
+                        op = ImageOpNode()
+                    elif command == "dots":
+                        op = DotsOpNode()
+                    elif command == "hatch":
+                        op = HatchOpNode()
+                    else:
+                        return
+
+                    if color is not None:
+                        op.color = color
+                    if default is not None:
+                        op.default = default
+                    if speed is not None:
+                        op.speed = speed
+                    if power is not None:
+                        op.power = power
+                    if passes is not None:
+                        op.passes_custom = True
+                        op.passes = passes
+                    if step is not None:
+                        op.raster_step = step
+                    if overscan is not None:
+                        op.overscan = overscan
+                    self.add_op(op)
                     op.add(item, type="ref elem")
-            return "ops", [op]
+                    op_list.append(op)
+                return "ops", op_list
+            else:
+                if command == "cut":
+                    op = CutOpNode()
+                elif command == "engrave":
+                    op = EngraveOpNode()
+                elif command == "raster":
+                    op = RasterOpNode()
+                elif command == "imageop":
+                    op = ImageOpNode()
+                elif command == "dots":
+                    op = DotsOpNode()
+                elif command =="hatch":
+                    op = HatchOpNode()
+                else:
+                    return
+
+                if color is not None:
+                    op.color = color
+                if default is not None:
+                    op.default = default
+                if speed is not None:
+                    op.speed = speed
+                if power is not None:
+                    op.power = power
+                if passes is not None:
+                    op.passes_custom = True
+                    op.passes = passes
+                if step is not None:
+                    op.raster_step = step
+                if overscan is not None:
+                    op.overscan = overscan
+                self.add_op(op)
+                if data is not None:
+                    for item in data:
+                        op.add(item, type="ref elem")
+                return "ops", [op]
 
         @self.console_argument("step_size", type=int, help=_("raster step size"))
         @self.console_command(
