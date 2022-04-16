@@ -833,6 +833,28 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
+        @self.console_argument("distance", type=Length, help=_("Set hatch-distance of operations"))
+        @self.console_command(
+            "hatch-distance", help=_("hatch_distance <passes>"), input_type="ops", output_type="ops"
+        )
+        def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
+            if distance is None:
+                for op in data:
+                    old_hatch_distance = op.hatch_distance
+                    channel(
+                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old_hatch_distance)
+                    )
+                return
+            for op in data:
+                old_hatch_distance = op.hatch_distance
+                op.hatch_distance = distance.preferred_length
+                channel(
+                    _("Hatch Distance for '%s' updated %s -> %s")
+                    % (str(op), old_hatch_distance, distance)
+                )
+                op.notify_update()
+            return "ops", data
+
         @self.console_command(
             "disable",
             help=_("Disable the given operations"),
