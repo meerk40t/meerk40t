@@ -577,9 +577,9 @@ class Elemental(Service):
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
         @self.console_command(
-            ("cut", "engrave", "raster", "imageop", "dots"),
+            ("cut", "engrave", "raster", "imageop", "dots", "hatch"),
             help=_(
-                "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
+                "<cut/engrave/raster/imageop/dots/hatch> - group the elements into this operation"
             ),
             input_type=(None, "elements"),
             output_type="ops",
@@ -606,6 +606,8 @@ class Elemental(Service):
                 op = ImageOpNode()
             elif command == "dots":
                 op = DotsOpNode()
+            elif command =="hatch":
+                op = HatchOpNode()
             else:
                 return
 
