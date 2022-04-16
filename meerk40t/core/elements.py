@@ -36,7 +36,8 @@ from .node.laserop import (
     DotsOpNode,
     EngraveOpNode,
     ImageOpNode,
-    RasterOpNode, HatchOpNode,
+    RasterOpNode,
+    HatchOpNode,
 )
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
@@ -577,6 +578,24 @@ class Elemental(Service):
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
         @self.console_option("parallel", "P", type=bool, action="store_true")
+        @self.console_option(
+            "stroke",
+            "K",
+            type=bool,
+            action="store_true",
+            help=_(
+                "Set the operation color based on the stroke if the first stroked item added to this operation"
+            ),
+        )
+        @self.console_option(
+            "fill",
+            "F",
+            type=bool,
+            action="store_true",
+            help=_(
+                "Set the operation color based on the fill if the first filled item added to this operation"
+            ),
+        )
         @self.console_command(
             ("cut", "engrave", "raster", "imageop", "dots", "hatch"),
             help=_(
@@ -596,8 +615,11 @@ class Elemental(Service):
             overscan=None,
             passes=None,
             parallel=False,
+            stroke=False,
+            fill=False,
             **kwargs,
         ):
+            op_list = []
             def make_op():
                 if command == "cut":
                     return CutOpNode()
@@ -616,8 +638,6 @@ class Elemental(Service):
             if parallel:
                 if data is None:
                     return "op", []
-
-                op_list = []
                 for item in data:
                     op = make_op()
 
@@ -639,7 +659,6 @@ class Elemental(Service):
                     self.add_op(op)
                     op.add(item, type="ref elem")
                     op_list.append(op)
-                return "ops", op_list
             else:
                 op = make_op()
                 if color is not None:
@@ -661,7 +680,31 @@ class Elemental(Service):
                 if data is not None:
                     for item in data:
                         op.add(item, type="ref elem")
-                return "ops", [op]
+                op_list.append(op)
+
+            if fill:
+                for op in op_list:
+                    for c in op.children:
+                        obj = c.object
+                        if c.object is None:
+                            continue
+                        try:
+                            obj_color = obj.fill
+                        except AttributeError:
+                            continue
+                        op.color = obj_color
+            if stroke:
+                for op in op_list:
+                    for c in op.children:
+                        obj = c.object
+                        if c.object is None:
+                            continue
+                        try:
+                            obj_color = obj.stroke
+                        except AttributeError:
+                            continue
+                        op.color = obj_color
+            return "ops", op_list
 
         @self.console_argument("step_size", type=int, help=_("raster step size"))
         @self.console_command(
@@ -1924,10 +1967,10 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                #print(
+                # print(
                 #   "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d, angle=%.1f"
                 #   % (cx, cy, radius, radius_inner, corners, density, alternate_seq, startangle)
-                #)
+                # )
                 pts = []
                 i_angle = startangle.as_radians
                 delta_angle = tau / corners
@@ -3423,7 +3466,9 @@ class Elemental(Service):
                 yield "wait_finish"
                 yield "rapid_mode"
                 for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
+                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
+                        amount=p[1]
+                    ).length_mm
 
             spooler.job(trace_command)
 
@@ -3584,7 +3629,9 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(
-            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave", "op hatch"), help=""
+            _("%smm/s") % "{speed}",
+            node_type=("op cut", "op engrave", "op hatch"),
+            help="",
         )
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
@@ -4048,7 +4095,9 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
         @self.tree_operation(
-            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut", "op hatch"), help=""
+            _("Add 1 pass"),
+            node_type=("op image", "op engrave", "op cut", "op hatch"),
+            help="",
         )
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
