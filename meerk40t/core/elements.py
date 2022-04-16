@@ -835,7 +835,7 @@ class Elemental(Service):
 
         @self.console_argument("distance", type=Length, help=_("Set hatch-distance of operations"))
         @self.console_command(
-            "hatch-distance", help=_("hatch_distance <passes>"), input_type="ops", output_type="ops"
+            "hatch-distance", help=_("hatch-distance <distance>"), input_type="ops", output_type="ops"
         )
         def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
             if distance is None:
@@ -851,6 +851,33 @@ class Elemental(Service):
                 channel(
                     _("Hatch Distance for '%s' updated %s -> %s")
                     % (str(op), old_hatch_distance, distance)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @self.console_argument("angle", type=Angle.parse, help=_("Set hatch-angle of operations"))
+        @self.console_command(
+            "hatch-angle", help=_("hatch-angle <angle>"), input_type="ops", output_type="ops"
+        )
+        def op_hatch_distance(command, channel, _, angle=None, data=None, **kwrgs):
+            if angle is None:
+                for op in data:
+                    old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                    old_hatch_angle_deg = f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
+                    channel(
+                        _("Hatch Distance for '%s' is currently: %s (%s)") % (str(op), old_hatch_angle, old_hatch_angle_deg)
+                    )
+                return
+            for op in data:
+                old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                new_hatch_angle = f"{angle.as_turns}turn"
+                new_hatch_angle_turn = f"{angle.as_turns:.4f}turn"
+                new_hatch_angle_deg = f"{angle.as_degrees:.4f}deg"
+                op.hatch_angle = new_hatch_angle
+
+                channel(
+                    _("Hatch Angle for '%s' updated %s -> %s (%s)")
+                    % (str(op), old_hatch_angle, new_hatch_angle_turn, new_hatch_angle_deg)
                 )
                 op.notify_update()
             return "ops", data
