@@ -502,6 +502,7 @@ class RasterOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
+        self.notify_update()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -670,6 +671,7 @@ class ImageOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
+        self.notify_update()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -824,6 +826,7 @@ class DotsOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
+        self.notify_update()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -929,6 +932,7 @@ class HatchOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
+        self.notify_update()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
