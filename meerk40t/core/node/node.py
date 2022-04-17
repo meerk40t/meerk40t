@@ -107,7 +107,6 @@ class Node:
 
         self._bounds = None
         self._bounds_dirty = True
-        self.label = None
 
         self.item = None
         self.icon = None
@@ -122,7 +121,7 @@ class Node:
         return other is self
 
     def is_movable(self):
-        return self.type not in ("branch elems", "branch ops", "branch reg", "root")
+        return True
 
     def drop(self, drag_node):
         # TODO: Parse this code off to the individual nodes themselves.
@@ -287,6 +286,11 @@ class Node:
 
     def save(self, settings, section):
         pass
+
+
+    @property
+    def label(self):
+        return str(self)
 
     @property
     def children(self):
@@ -626,7 +630,7 @@ class Node:
             if pos is not None:
                 pos += 1
 
-    def add(self, data_object=None, type=None, label=None, pos=None):
+    def add(self, data_object=None, type=None, id=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
@@ -653,16 +657,11 @@ class Node:
                     pass
                 # except AttributeError:
                 #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
-            node = node_class(data_object)
-            try:
-                node.set_label(label)
-            except TypeError:
-                node.set_label("Unknown")
-
+            node = node_class(data_object, **kwargs)
             if self._root is not None:
                 self._root.notify_created(node)
         node.type = type
-
+        node.id = id
         node._parent = self
         node._root = self._root
         if pos is None:
@@ -746,9 +745,6 @@ class Node:
             pass
 
         return desc if desc else str(element)
-
-    def set_label(self, name=None):
-        self.label = self.create_label(name)
 
     def create_label(self, name=None):
         """

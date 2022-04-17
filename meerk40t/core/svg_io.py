@@ -321,9 +321,8 @@ class SVGProcessor:
     def process(self, svg, pathname):
         self.pathname = pathname
         context_node = self.elements.get(type="branch elems")
-        file_node = context_node.add(type="file", label=os.path.basename(self.pathname))
+        file_node = context_node.add(type="file", filepath=pathname)
         self.regmark = self.elements.reg_branch
-        file_node.filepath = self.pathname
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
@@ -372,7 +371,8 @@ class SVGProcessor:
             except OSError:
                 pass
         elif isinstance(element, (Group, SVG)):
-            context_node = context_node.add(element, type="group")
+            ident = element.id
+            context_node = context_node.add(type="group", id=ident)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):

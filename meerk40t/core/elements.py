@@ -30,14 +30,12 @@ from ..svgelements import (
 from .cutcode import CutCode
 from .node.commandop import CommandOperation
 from .node.consoleop import ConsoleOperation
-from .node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-    HatchOpNode,
-)
+from .node.op_cut import CutOpNode
+from .node.op_dots import DotsOpNode
+from .node.op_engrave import EngraveOpNode
+from .node.op_image import ImageOpNode
+from .node.op_raster import RasterOpNode
+from .node.op_hatch import HatchOpNode
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
 from .units import UNITS_PER_PIXEL, Length
@@ -4434,9 +4432,7 @@ class Elemental(Service):
             "angle",
             (
                 180,
-                150,
                 135,
-                120,
                 90,
                 60,
                 45,
@@ -4444,10 +4440,6 @@ class Elemental(Service):
                 20,
                 15,
                 10,
-                9,
-                8,
-                7,
-                6,
                 5,
                 4,
                 3,
@@ -4458,10 +4450,6 @@ class Elemental(Service):
                 -3,
                 -4,
                 -5,
-                -6,
-                -7,
-                -8,
-                -9,
                 -10,
                 -15,
                 -20,
@@ -4469,9 +4457,6 @@ class Elemental(Service):
                 -45,
                 -60,
                 -90,
-                -120,
-                -135,
-                -150,
             ),
         )
         @self.tree_operation(
@@ -4673,7 +4658,8 @@ class Elemental(Service):
                 "op hatch",
                 "branch elems",
                 "branch ops",
-                "branch reg" "group",
+                "branch reg",
+                "group",
                 "file",
                 "root",
             ),
@@ -4694,7 +4680,8 @@ class Elemental(Service):
                 "op hatch",
                 "branch elems",
                 "branch ops",
-                "branch reg" "group",
+                "branch reg",
+                "group",
                 "file",
                 "root",
             ),

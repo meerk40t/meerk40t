@@ -6,7 +6,7 @@ class ElemNode(Node):
     ElemNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
     """
 
-    def __init__(self, data_object):
+    def __init__(self, data_object, **kwargs):
         super(ElemNode, self).__init__(data_object)
         self.last_transform = None
         data_object.node = self

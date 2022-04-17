@@ -1,16 +1,19 @@
+from meerk40t.core.node.branch_elems import BranchElementsNode
+from meerk40t.core.node.branch_ops import BranchOperationsNode
+from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.commandop import CommandOperation
 from meerk40t.core.node.consoleop import ConsoleOperation
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elemnode import ElemNode
+from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
-from meerk40t.core.node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode, HatchOpNode,
-)
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.refnode import RefElemNode
 
@@ -26,7 +29,6 @@ class RootNode(Node):
         _ = context._
         super().__init__(None)
         self._root = self
-        self.set_label("Project")
         self.type = "root"
         self.context = context
         self.listeners = []
@@ -45,6 +47,10 @@ class RootNode(Node):
             "elem": ElemNode,
             "ref elem": RefElemNode,
             "cutcode": CutNode,
+            "branch ops": BranchOperationsNode,
+            "branch elems": BranchElementsNode,
+            "branch reg": BranchRegmarkNode,
+            "file": FileNode,
         }
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
@@ -52,6 +58,9 @@ class RootNode(Node):
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
+
+    def is_movable(self):
+        return False
 
     def listen(self, listener):
         self.listeners.append(listener)

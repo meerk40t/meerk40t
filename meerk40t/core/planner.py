@@ -7,13 +7,12 @@ from .units import Length
 from ..core.cutcode import CutCode
 from ..svgelements import SVGImage
 from .cutplan import CutPlan, CutPlanningFailedError
-from .node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
+from .node.op_cut import CutOpNode
+from .node.op_dots import DotsOpNode
+from .node.op_engrave import EngraveOpNode
+from .node.op_image import ImageOpNode
+from .node.op_raster import RasterOpNode
+from .node.op_hatch import HatchOpNode
 
 
 def plugin(kernel, lifecycle=None):
