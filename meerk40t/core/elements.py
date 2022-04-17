@@ -38,7 +38,7 @@ from .node.op_hatch import HatchOpNode
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
 from .units import UNITS_PER_PIXEL, Length
-
+from .element_types import *
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -102,79 +102,6 @@ def plugin(kernel, lifecycle=None):
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
-
-non_structural_nodes = (
-    "op cut",
-    "op raster",
-    "op image",
-    "op engrave",
-    "op dots",
-    "op hatch",
-    "op console",
-    "ref elem",
-    "lasercode",
-    "cutcode",
-    "blob",
-    "elem ellipse",
-    "elem image",
-    "elem path",
-    "elem point",
-    "elem polyline",
-    "elem rect",
-    "elem text",
-    "file",
-    "group",
-)
-operate_nodes = (
-    "op cut",
-    "op raster",
-    "op image",
-    "op engrave",
-    "op dots",
-    "op hatch",
-    "op console",
-
-)
-op_nodes = (
-    "op cut",
-    "op raster",
-    "op image",
-    "op engrave",
-    "op dots",
-    "op hatch",
-    "op console",
-)
-elem_nodes = (
-    "elem ellipse",
-    "elem image",
-    "elem path",
-    "elem point",
-    "elem polyline",
-    "elem rect",
-    "elem text",
-)
-elem_group_nodes = (
-    "elem ellipse",
-    "elem image",
-    "elem path",
-    "elem point",
-    "elem polyline",
-    "elem rect",
-    "elem text",
-    "group",
-    "file",
-)
-elem_ref_nodes = (
-    "elem ellipse",
-    "elem image",
-    "elem path",
-    "elem point",
-    "elem polyline",
-    "elem rect",
-    "elem text",
-    "ref elem",
-)
-
 
 class Elemental(Service):
     """

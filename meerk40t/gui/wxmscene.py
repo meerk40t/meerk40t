@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.elements import elem_nodes
+from meerk40t.core.element_types import elem_nodes
 from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow

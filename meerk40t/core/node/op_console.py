@@ -1,5 +1,5 @@
 from meerk40t.core.node.node import Node
-
+from meerk40t.core.element_types import *
 
 class ConsoleOperation(Node):
     """
@@ -36,15 +36,7 @@ class ConsoleOperation(Node):
 
     def drop(self, drag_node):
         drop_node = self
-        if drag_node.type in (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "op console",
-        ):
+        if drag_node.type in op_nodes:
             drop_node.insert_sibling(drag_node)
             return True
         elif drop_node.type == "branch ops":

@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.core.elements import elem_nodes
+from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CHANGE_POSITION
 from meerk40t.gui.scene.widget import Widget

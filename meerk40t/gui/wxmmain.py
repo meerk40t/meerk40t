@@ -9,7 +9,7 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
-from ..core.elements import elem_nodes
+from ..core.element_types import elem_nodes
 
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (

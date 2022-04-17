@@ -1,5 +1,6 @@
 from copy import copy
 
+from meerk40t.core.element_types import *
 from meerk40t.core.cutcode import (
     CubicCut,
     CutGroup,
@@ -115,15 +116,7 @@ class ImageOpNode(Node, Parameters):
             # Move an refelem to end of op.
             self.append_child(drag_node)
             return True
-        elif drag_node.type in (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "op console",
-        ):
+        elif drag_node.type in op_nodes:
             # Move operation to a different position.
             self.insert_sibling(drag_node)
             return True
