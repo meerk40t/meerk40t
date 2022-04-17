@@ -5,6 +5,13 @@ from meerk40t.core.node.commandop import CommandOperation
 from meerk40t.core.node.consoleop import ConsoleOperation
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elemnode import ElemNode
+
+from meerk40t.core.node.elem_circle import CircleNode
+from meerk40t.core.node.elem_ellipse import EllipseNode
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.elem_point import PointNode
+from meerk40t.core.node.elem_polyline import PolylineNode
+from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
@@ -45,6 +52,12 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem": ElemNode,
+            "elem circle": CircleNode,
+            "elem ellipse": EllipseNode,
+            "elem rect": RectNode,
+            "elem path": PathNode,
+            "elem point": PointNode,
+            "elem polyline": PolylineNode,
             "ref elem": RefElemNode,
             "cutcode": CutNode,
             "branch ops": BranchOperationsNode,
