@@ -364,7 +364,7 @@ class Node:
                 )
         else:
             e = node.object
-            if node.type == "elem" and hasattr(e, "bbox"):
+            if node.type.startswith("elem") and hasattr(e, "bbox"):
                 node._bounds = e.bbox()
 
     @property

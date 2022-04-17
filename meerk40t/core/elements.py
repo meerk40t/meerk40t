@@ -5139,14 +5139,12 @@ class Elemental(Service):
         :return:
         """
         operation_branch = self._tree.get(type="branch ops")
-        op.set_label(str(op))
         operation_branch.add(op, type=op.type, pos=pos)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
         items = []
         for op in adding_ops:
-            op.set_label(str(op))
             operation_branch.add(op, type=op.type)
             items.append(op)
         return items
