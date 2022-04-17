@@ -26,7 +26,8 @@ from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Angle, Color
+from meerk40t.core.units import Length
+from meerk40t.svgelements import Angle, Color, SVG_ATTR_FILL, SVG_ATTR_STROKE
 
 _ = wx.GetTranslation
 
@@ -361,11 +362,74 @@ class MeerK40tScenePanel(wx.Panel):
     def on_elements_added(self, *args):
         self.scene.signal("element_added")
 
-
     @signal_listener("theme")
     def on_theme_change(self, origin, theme=None):
         self.scene.signal("theme", theme)
         self.request_refresh(origin)
+
+    @signal_listener("selstroke")
+    def on_selstroke(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            obj = e.object
+            try:
+                if color is None:
+                    obj.stroke = Color("none")
+                    obj.values[SVG_ATTR_STROKE] = "none"
+                else:
+                    obj.stroke = color
+                    obj.values[SVG_ATTR_STROKE] = color.hex
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        # Reclassify selection...
+        self.context("declassify\nclassify\n")
+        self.request_refresh()
+
+    @signal_listener("selfill")
+    def on_selfill(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+
+        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            obj = e.object
+            try:
+                if color is None:
+                    obj.fill = Color("none")
+                    obj.values[SVG_ATTR_FILL] = "none"
+                else:
+                    obj.fill = color
+                    obj.values[SVG_ATTR_FILL] = color.hex
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        # Reclassify selection...
+        self.context("declassify\nclassify\n")
+        self.request_refresh()
+
+    @signal_listener("selstrokewidth")
+    def on_selstrokewidth(self, origin, stroke_width, *args):
+        # Stroke_width is a text
+        # print("Signal with %s" % stroke_width)
+        sw = float(Length(stroke_width))
+        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            obj = e.object
+            try:
+                obj.stroke_width = sw
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        self.request_refresh()
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

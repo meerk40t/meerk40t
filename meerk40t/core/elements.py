@@ -2,7 +2,6 @@ import functools
 import os.path
 from os.path import realpath
 import re
-import time
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
@@ -36,7 +35,8 @@ from .node.laserop import (
     DotsOpNode,
     EngraveOpNode,
     ImageOpNode,
-    RasterOpNode, HatchOpNode,
+    RasterOpNode,
+    HatchOpNode,
 )
 from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
@@ -576,10 +576,29 @@ class Elemental(Service):
         @self.console_option("step", "S", type=int)
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
-        @self.console_command(
-            ("cut", "engrave", "raster", "imageop", "dots"),
+        @self.console_option("parallel", "P", type=bool, action="store_true")
+        @self.console_option(
+            "stroke",
+            "K",
+            type=bool,
+            action="store_true",
             help=_(
-                "<cut/engrave/raster/imageop/dots> - group the elements into this operation"
+                "Set the operation color based on the stroke if the first stroked item added to this operation"
+            ),
+        )
+        @self.console_option(
+            "fill",
+            "F",
+            type=bool,
+            action="store_true",
+            help=_(
+                "Set the operation color based on the fill if the first filled item added to this operation"
+            ),
+        )
+        @self.console_command(
+            ("cut", "engrave", "raster", "imageop", "dots", "hatch"),
+            help=_(
+                "<cut/engrave/raster/imageop/dots/hatch> - group the elements into this operation"
             ),
             input_type=(None, "elements"),
             output_type="ops",
@@ -594,41 +613,99 @@ class Elemental(Service):
             step=None,
             overscan=None,
             passes=None,
+            parallel=False,
+            stroke=False,
+            fill=False,
             **kwargs,
         ):
-            if command == "cut":
-                op = CutOpNode()
-            elif command == "engrave":
-                op = EngraveOpNode()
-            elif command == "raster":
-                op = RasterOpNode()
-            elif command == "imageop":
-                op = ImageOpNode()
-            elif command == "dots":
-                op = DotsOpNode()
-            else:
-                return
+            op_list = []
 
-            if color is not None:
-                op.color = color
-            if default is not None:
-                op.default = default
-            if speed is not None:
-                op.speed = speed
-            if power is not None:
-                op.power = power
-            if passes is not None:
-                op.passes_custom = True
-                op.passes = passes
-            if step is not None:
-                op.raster_step = step
-            if overscan is not None:
-                op.overscan = overscan
-            self.add_op(op)
-            if data is not None:
+            def make_op():
+                if command == "cut":
+                    return CutOpNode()
+                elif command == "engrave":
+                    return EngraveOpNode()
+                elif command == "raster":
+                    return RasterOpNode()
+                elif command == "imageop":
+                    return ImageOpNode()
+                elif command == "dots":
+                    return DotsOpNode()
+                elif command == "hatch":
+                    return HatchOpNode()
+                else:
+                    raise ValueError
+
+            if parallel:
+                if data is None:
+                    return "op", []
                 for item in data:
+                    op = make_op()
+
+                    if color is not None:
+                        op.color = color
+                    if default is not None:
+                        op.default = default
+                    if speed is not None:
+                        op.speed = speed
+                    if power is not None:
+                        op.power = power
+                    if passes is not None:
+                        op.passes_custom = True
+                        op.passes = passes
+                    if step is not None:
+                        op.raster_step = step
+                    if overscan is not None:
+                        op.overscan = overscan
                     op.add(item, type="ref elem")
-            return "ops", [op]
+                    op_list.append(op)
+            else:
+                op = make_op()
+                if color is not None:
+                    op.color = color
+                if default is not None:
+                    op.default = default
+                if speed is not None:
+                    op.speed = speed
+                if power is not None:
+                    op.power = power
+                if passes is not None:
+                    op.passes_custom = True
+                    op.passes = passes
+                if step is not None:
+                    op.raster_step = step
+                if overscan is not None:
+                    op.overscan = overscan
+                if data is not None:
+                    for item in data:
+                        op.add(item, type="ref elem")
+                op_list.append(op)
+
+            if fill:
+                for op in op_list:
+                    for c in op.children:
+                        obj = c.object
+                        if c.object is None:
+                            continue
+                        try:
+                            obj_color = obj.fill
+                        except AttributeError:
+                            continue
+                        op.color = obj_color
+            if stroke:
+                for op in op_list:
+                    for c in op.children:
+                        obj = c.object
+                        if c.object is None:
+                            continue
+                        try:
+                            obj_color = obj.stroke
+                        except AttributeError:
+                            continue
+                        op.color = obj_color
+            for op in op_list:
+                self.add_op(op)
+            return "ops", op_list
 
         @self.console_argument("step_size", type=int, help=_("raster step size"))
         @self.console_command(
@@ -658,12 +735,19 @@ class Elemental(Service):
             action="store_true",
             help=_("Change speed by this amount."),
         )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change speed for each item in order"),
+        )
         @self.console_argument("speed", type=str, help=_("operation speed in mm/s"))
         @self.console_command(
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
         def op_speed(
-            command, channel, _, speed=None, difference=None, data=None, **kwrgs
+            command, channel, _, speed=None, difference=False, progress=False, data=None, **kwrgs
         ):
             if speed is None:
                 for op in data:
@@ -681,7 +765,7 @@ class Elemental(Service):
             except ValueError:
                 channel(_("Not a valid speed or percent."))
                 return
-
+            delta = 0
             for op in data:
                 old_speed = op.speed
                 if percent and difference:
@@ -690,6 +774,9 @@ class Elemental(Service):
                     s = old_speed + new_speed
                 elif percent:
                     s = old_speed * (new_speed / 100.0)
+                elif progress:
+                    s = old_speed + delta
+                    delta += new_speed
                 else:
                     s = new_speed
                 op.speed = s
@@ -741,6 +828,55 @@ class Elemental(Service):
                 channel(
                     _("Passes for '%s' updated %d -> %d")
                     % (str(op), old_passes, passes)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @self.console_argument("distance", type=Length, help=_("Set hatch-distance of operations"))
+        @self.console_command(
+            "hatch-distance", help=_("hatch-distance <distance>"), input_type="ops", output_type="ops"
+        )
+        def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
+            if distance is None:
+                for op in data:
+                    old_hatch_distance = op.hatch_distance
+                    channel(
+                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old_hatch_distance)
+                    )
+                return
+            for op in data:
+                old_hatch_distance = op.hatch_distance
+                op.hatch_distance = distance.preferred_length
+                channel(
+                    _("Hatch Distance for '%s' updated %s -> %s")
+                    % (str(op), old_hatch_distance, distance)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @self.console_argument("angle", type=Angle.parse, help=_("Set hatch-angle of operations"))
+        @self.console_command(
+            "hatch-angle", help=_("hatch-angle <angle>"), input_type="ops", output_type="ops"
+        )
+        def op_hatch_distance(command, channel, _, angle=None, data=None, **kwrgs):
+            if angle is None:
+                for op in data:
+                    old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                    old_hatch_angle_deg = f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
+                    channel(
+                        _("Hatch Distance for '%s' is currently: %s (%s)") % (str(op), old_hatch_angle, old_hatch_angle_deg)
+                    )
+                return
+            for op in data:
+                old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                new_hatch_angle = f"{angle.as_turns}turn"
+                new_hatch_angle_turn = f"{angle.as_turns:.4f}turn"
+                new_hatch_angle_deg = f"{angle.as_degrees:.4f}deg"
+                op.hatch_angle = new_hatch_angle
+
+                channel(
+                    _("Hatch Angle for '%s' updated %s -> %s (%s)")
+                    % (str(op), old_hatch_angle, new_hatch_angle_turn, new_hatch_angle_deg)
                 )
                 op.notify_update()
             return "ops", data
@@ -1340,8 +1476,8 @@ class Elemental(Service):
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             for node in data:
-                device_width = self.device.width
-                device_height = self.device.height
+                device_width = self.length_x("100%")
+                device_height = self.length_y("100%")
                 dx = (device_width - left_edge - right_edge) / 2.0
                 dy = (device_height - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
@@ -1442,8 +1578,8 @@ class Elemental(Service):
                 "none",
             ):
                 for node in data:
-                    device_width = self.device.width
-                    device_height = self.device.height
+                    device_width = self.length_x("100%")
+                    device_height = self.length_y("100%")
 
                     matrix = Viewbox.viewbox_transform(
                         0,
@@ -1891,10 +2027,10 @@ class Elemental(Service):
                 if alternate_seq < 1:
                     radius_inner = radius
 
-                #print(
+                # print(
                 #   "Your parameters are:\n cx=%.1f, cy=%.1f\n radius=%.1f, inner=%.1f\n corners=%d, density=%d\n seq=%d, angle=%.1f"
                 #   % (cx, cy, radius, radius_inner, corners, density, alternate_seq, startangle)
-                #)
+                # )
                 pts = []
                 i_angle = startangle.as_radians
                 delta_angle = tau / corners
@@ -3422,7 +3558,9 @@ class Elemental(Service):
                 yield "wait_finish"
                 yield "rapid_mode"
                 for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(amount=p[1]).length_mm
+                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
+                        amount=p[1]
+                    ).length_mm
 
             spooler.job(trace_command)
 
@@ -3583,7 +3721,9 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(
-            _("%smm/s") % "{speed}", node_type=("op cut", "op engrave", "op hatch"), help=""
+            _("%smm/s") % "{speed}",
+            node_type=("op cut", "op engrave", "op hatch"),
+            help="",
         )
         def set_speed_vector(node, speed=35, **kwargs):
             node.speed = float(speed)
@@ -4047,7 +4187,9 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
         @self.tree_operation(
-            _("Add 1 pass"), node_type=("op image", "op engrave", "op cut", "op hatch"), help=""
+            _("Add 1 pass"),
+            node_type=("op image", "op engrave", "op cut", "op hatch"),
+            help="",
         )
         def add_1_pass(node, **kwargs):
             add_n_passes(node, copies=1, **kwargs)
@@ -4901,6 +5043,7 @@ class Elemental(Service):
         return decorator
 
     def validate_ids(self):
+        idx = 1
         uid = {}
         missing = list()
         for node in self.flat():
@@ -4910,11 +5053,11 @@ class Elemental(Service):
                 node.id = e.id
             else:
                 missing.append(node)
-        idx = 1
         for m in missing:
-            while "meerk40t:%d" % idx in uid:
+            while f"meerk40t:{idx}" in uid:
                 idx += 1
-            m.id = "meerk40t:%d" % idx
+            m.id = f"meerk40t:{idx}"
+            uid[m.id] = m
 
     @property
     def reg_branch(self):

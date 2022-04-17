@@ -28,19 +28,30 @@ class BalorConfiguration(MWindow):
         self.panel_main = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor"
         )
+        self.panel_red = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="balor-redlight"
+        )
         self.panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor-global"
+        )
+        self.panel_timing = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="balor-global-timing"
         )
         self.panel_extra = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="balor-extra"
         )
         self.notebook_main.AddPage(self.panel_main, _("Balor"))
-        self.notebook_main.AddPage(self.panel_global, _("Global Settings"))
+        self.notebook_main.AddPage(self.panel_red, _("Redlight"))
+        self.notebook_main.AddPage(self.panel_global, _("Global"))
+        self.notebook_main.AddPage(self.panel_timing, _("Timings"))
         self.notebook_main.AddPage(self.panel_extra, _("Extras"))
         self.Layout()
 
         self.add_module_delegate(self.panel_main)
+        self.add_module_delegate(self.panel_red)
         self.add_module_delegate(self.panel_global)
+        self.add_module_delegate(self.panel_timing)
+        self.add_module_delegate(self.panel_extra)
 
     def window_close(self):
         self.context.unlisten("flip_x", self.on_viewport_update)
