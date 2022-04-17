@@ -332,6 +332,7 @@ class BalorDriver(Parameters):
                                 speed=wobble_speed,
                             )
                         else:
+                            # set our parameterizations
                             wobble.radius = wobble_r
                             wobble.speed = wobble_speed
                         if wobble_type == "circle":
