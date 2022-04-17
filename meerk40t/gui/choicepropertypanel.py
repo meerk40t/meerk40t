@@ -125,7 +125,6 @@ class ChoicePropertyPanel(wx.Panel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = wx.ComboCtrl(self, -1)
                 control = wx.ComboBox(
                     self,
                     wx.ID_ANY,
