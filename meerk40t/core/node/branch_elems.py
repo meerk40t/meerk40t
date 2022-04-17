@@ -13,5 +13,11 @@ class BranchElementsNode(Node):
     def __str__(self):
         return "Elements"
 
+    def drop(self, drag_node):
+        if drag_node.type.startswith("elem"):
+            self.append_child(drag_node)
+            return True
+        return False
+
     def is_movable(self):
         return False

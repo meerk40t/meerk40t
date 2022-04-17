@@ -7,17 +7,16 @@ class ConsoleOperation(Node):
 
     NOTE: This will eventually replace ConsoleOperation.
 
-    Node type "consoleop"
+    Node type "op console"
     """
 
     def __init__(self, command=None, **kwargs):
-        super().__init__(type="consoleop")
+        super().__init__(type="op console")
         self.command = command
         self.output = True
 
     def set_command(self, command):
         self.command = command
-        self.label = command
 
     def __repr__(self):
         return "ConsoleOperation('%s', '%s')" % (self.command)
@@ -34,6 +33,25 @@ class ConsoleOperation(Node):
 
     def __len__(self):
         return 1
+
+    def drop(self, drag_node):
+        drop_node = self
+        if drag_node.type in (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "op hatch",
+            "op console",
+        ):
+            drop_node.insert_sibling(drag_node)
+            return True
+        elif drop_node.type == "branch ops":
+            # Dragging operation to op branch to effectively move to bottom.
+            drop_node.append_child(drag_node)
+            return True
+        return False
 
     def load(self, settings, section):
         command = settings.read_persistent(int, section, "command")

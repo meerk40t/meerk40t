@@ -80,6 +80,41 @@ class CutOpNode(Node, Parameters):
     def __copy__(self):
         return CutOpNode(self)
 
+    def drop(self, drag_node):
+        if drag_node.type.startswith("elem"):
+            if drag_node.type == "elem image":
+                return False
+            # Dragging element onto operation adds that element to the op.
+            self.add(drag_node.object, type="ref elem", pos=0)
+            return True
+        elif drag_node.type == "ref elem":
+            # Disallow drop of image refelems onto a Dot op.
+            if drag_node.type == "elem image":
+                return False
+            # Move an refelem to end of op.
+            self.append_child(drag_node)
+            return True
+        elif drag_node.type in (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "op hatch",
+            "op console",
+        ):
+            # Move operation to a different position.
+            self.insert_sibling(drag_node)
+            return True
+        elif drag_node.type in ("file", "group"):
+            some_nodes = False
+            for e in drag_node.flat("elem"):
+                # Add element to operation
+                self.add(e.object, type="ref elem")
+                some_nodes = True
+            return some_nodes
+        return False
+
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)

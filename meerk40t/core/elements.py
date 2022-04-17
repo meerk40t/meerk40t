@@ -29,7 +29,7 @@ from ..svgelements import (
 )
 from .cutcode import CutCode
 from .node.commandop import CommandOperation
-from .node.consoleop import ConsoleOperation
+from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
@@ -111,9 +111,9 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "op console",
     "ref elem",
     "cmdop",
-    "consoleop",
     "lasercode",
     "cutcode",
     "blob",
@@ -134,8 +134,9 @@ operate_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "op console",
     "cmdop",
-    "consoleop",
+
 )
 op_nodes = (
     "op cut",
@@ -144,8 +145,8 @@ op_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "op console",
     "cmdop",
-    "consoleop",
 )
 elem_nodes = (
     "elem ellipse",
@@ -3622,9 +3623,9 @@ class Elemental(Service):
                 activate(node)
 
         @self.tree_separator_after()
-        @self.tree_operation(_("Edit"), node_type="consoleop", help="")
+        @self.tree_operation(_("Edit"), node_type="op console", help="")
         def edit_console_command(node, **kwargs):
-            self.context.open("window/ConsoleProperty", self.context.gui, node=node)
+            self.open("window/ConsoleProperty", self.gui, node=node)
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
@@ -3890,7 +3891,7 @@ class Elemental(Service):
                 "op dots",
                 "op hatch",
                 "cmdop",
-                "consoleop",
+                "op console",
                 "lasercode",
                 "cutcode",
                 "blob",
@@ -4090,7 +4091,11 @@ class Elemental(Service):
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
-            self.op_branch.add(CommandOperation("Home", "home"), type="cmdop", pos=pos)
+            self.op_branch.add(
+                ConsoleOperation('home -f'),
+                type="op console",
+                pos=pos,
+            )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
@@ -4098,35 +4103,28 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation("Origin", "home", 0, 0), type="cmdop", pos=pos
+                ConsoleOperation('move_abs 0 0'),
+                type="op console",
+                pos=pos,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
-            self.op_branch.add(CommandOperation("Beep", "beep"), type="cmdop", pos=pos)
-
-        @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(
-            _("Append Interrupt (console)"), node_type="branch ops", help=""
-        )
-        def append_operation_interrupt_console(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('interrupt "Spooling was interrupted"'),
-                type="consoleop",
+                ConsoleOperation('beep'),
+                type="op console",
                 pos=pos,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
+        @self.tree_operation(
+            _("Append Interrupt"), node_type="branch ops", help=""
+        )
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation(
-                    "Interrupt",
-                    "function",
-                    self.lookup("function/interrupt"),
-                ),
-                type="cmdop",
+                ConsoleOperation('interrupt "Spooling was interrupted"'),
+                type="op console",
                 pos=pos,
             )
 
@@ -4138,18 +4136,13 @@ class Elemental(Service):
             append_operation_home(node, **kwargs)
             append_operation_beep(node, **kwargs)
             append_operation_interrupt(node, **kwargs)
-            append_operation_interrupt_console(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
-                CommandOperation(
-                    "Shutdown",
-                    "function",
-                    self.console_function("quit\n"),
-                ),
-                type="cmdop",
+                ConsoleOperation('quit'),
+                type="op console",
                 pos=pos,
             )
 

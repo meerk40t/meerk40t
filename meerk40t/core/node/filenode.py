@@ -18,6 +18,11 @@ class FileNode(Node):
             return "File: None"
         return os.path.basename(self._filepath)
 
+    def drop(self, drag_node):
+        if drag_node.type == "group":
+            self.append_child(drag_node)
+        return False
+
     @property
     def filepath(self):
         return self._filepath

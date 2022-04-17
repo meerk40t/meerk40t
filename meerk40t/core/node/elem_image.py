@@ -19,10 +19,8 @@ class ImageNode(Node):
         )
 
     def drop(self, drag_node):
-        drop_node = self
-        # Dragging element into element.
-        if drag_node.type == "elem image":
-            drop_node.insert_sibling(drag_node)
+        if drag_node.type.startswith("elem"):
+            self.insert_sibling(drag_node)
             return True
         return False
 

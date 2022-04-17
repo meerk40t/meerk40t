@@ -10,7 +10,7 @@ class CommandOperation(Node):
 
     def __init__(self, name=None, command=None, *args, **kwargs):
         super().__init__(type="cmdop")
-        self.label = self.name = name
+        self.name = name
         self.command = command
         self.args = args
         self.output = True
@@ -30,6 +30,24 @@ class CommandOperation(Node):
 
     def __len__(self):
         return 1
+
+    def drop(self, drag_node):
+        if drag_node.type in (
+            "op cut",
+            "op raster",
+            "op image",
+            "op engrave",
+            "op dots",
+            "op hatch",
+            "op console",
+        ):
+            self.insert_sibling(drag_node)
+            return True
+        elif self.type == "branch ops":
+            # Dragging operation to op branch to effectively move to bottom.
+            self.append_child(drag_node)
+            return True
+        return False
 
     def load(self, settings, section):
         self.name = settings.read_persistent(str, section, "label")

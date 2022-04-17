@@ -18,16 +18,19 @@ class GroupNode(Node):
             str(self._parent),
         )
 
+    def drop(self, drag_node):
+        if drag_node.type.startswith("elem"):
+            # Dragging element onto a group moves it to the group node.
+            self.append_child(drag_node)
+            return True
+        elif drag_node.type == "group":
+            # Move a group
+            self.append_child(drag_node)
+            return True
+        return False
+
     @property
     def label(self):
         if self.id is None:
             return f"Group {len(self.children)}"
         return f"Group {len(self.children)}: %s" % self.id
-
-    def drop(self, drag_node):
-        drop_node = self
-        # Dragging element into group.
-        if drag_node.type.startswith("elem"):
-            drop_node.insert_sibling(drag_node)
-            return True
-        return False

@@ -21,7 +21,7 @@ class PolylineNode(Node):
     def drop(self, drag_node):
         drop_node = self
         # Dragging element into element.
-        if drag_node.type == "elem polyline":
+        if drag_node.type.startswith("elem"):
             drop_node.insert_sibling(drag_node)
             return True
         return False

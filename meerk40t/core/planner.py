@@ -508,7 +508,7 @@ class Planner(Service):
                     "op hatch",
                     "cutcode",
                     "cmdop",
-                    "consoleop",
+                    "op console",
                     "lasercode",
                     "blob",
                 ),
