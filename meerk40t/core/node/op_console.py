@@ -26,7 +26,8 @@ class ConsoleOperation(Node):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
-        parts.append(self.command)
+        if self.command is not None:
+            parts.append(self.command)
         return " ".join(parts)
 
     def __copy__(self):

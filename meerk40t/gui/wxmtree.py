@@ -693,16 +693,15 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_label(self, node, force=False):
+    def update_label(self, node):
         """
         Updates the label if the label is currently blank or force was set to true.
         @param node:
         @param force:
         @return:
         """
-        if node.label is None or force:
-            node.label = node.create_label()
-            self.set_icon(node)
+        # node.label = node.create_label()
+        self.set_icon(node)
         if node.item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()

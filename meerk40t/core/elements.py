@@ -4689,7 +4689,7 @@ class Elemental(Service):
         operation_branch = self._tree.get(type="branch ops")
         for section in subitems:
             op_type = settings.read_persistent(str, section, "type")
-            if op_type in ("op", "ref elem"):
+            if op_type in ("op", "ref elem", "cmdop"):
                 continue
             op = operation_branch.add(None, type=op_type)
             op.load(settings, section)
