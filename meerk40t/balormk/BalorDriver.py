@@ -343,6 +343,8 @@ class BalorDriver(Parameters):
                             job._mark_modification = wobble.sawtooth
                         elif wobble_type == "jigsaw":
                             job._mark_modification = wobble.jigsaw
+                        elif wobble_type == "slowtooth":
+                            job._mark_modification = wobble.slowtooth
                         else:
                             raise ValueError
                         job._interpolations = self.service.physical_to_device_length(

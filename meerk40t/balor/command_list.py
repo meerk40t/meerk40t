@@ -1250,6 +1250,7 @@ class Wobble:
     def __init__(self, radius=50, speed=50):
         self._total_count = 0
         self._total_distance = 0
+        self.previous_angle = None
         self.radius = radius
         self.speed = speed
 
@@ -1298,4 +1299,18 @@ class Wobble:
         d = -1 if (self._total_count // 2) % 2 else 1
         dx = self.radius * d * math.cos(angle)
         dy = self.radius * d * math.sin(angle)
+        return x1 + dx, y1 + dy
+
+    def slowtooth(self, x0, y0, x1, y1):
+        self._total_count += 1
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        if self.previous_angle is None:
+            self.previous_angle = angle
+        amount = 1.0 / self.speed
+        angle = amount * (angle - self.previous_angle) + self.previous_angle
+        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
+        d = -1 if self._total_count % 2 else 1
+        dx = self.radius * d * math.cos(angle)
+        dy = self.radius * d * math.sin(angle)
+        self.previous_angle = angle
         return x1 + dx, y1 + dy
