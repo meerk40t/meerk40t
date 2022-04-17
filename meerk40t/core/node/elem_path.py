@@ -3,7 +3,7 @@ from meerk40t.core.node.node import Node
 
 class PathNode(Node):
     """
-    ElemNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
+    PathNode is the bootstrapped node type for the 'elem path' type.
     """
 
     def __init__(self, data_object, **kwargs):
@@ -12,7 +12,7 @@ class PathNode(Node):
         data_object.node = self
 
     def __repr__(self):
-        return "ElemNode('%s', %s, %s)" % (
+        return "PathNode('%s', %s, %s)" % (
             self.type,
             str(self.object),
             str(self._parent),

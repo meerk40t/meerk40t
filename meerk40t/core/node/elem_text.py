@@ -3,7 +3,7 @@ from meerk40t.core.node.node import Node
 
 class TextNode(Node):
     """
-    ElemNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
+    TextNode is the bootstrapped node type for the 'elem text' type.
     """
 
     def __init__(self, data_object, **kwargs):

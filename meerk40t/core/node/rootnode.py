@@ -4,7 +4,6 @@ from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.commandop import CommandOperation
 from meerk40t.core.node.consoleop import ConsoleOperation
 from meerk40t.core.node.cutnode import CutNode
-from meerk40t.core.node.elemnode import ElemNode
 
 from meerk40t.core.node.elem_circle import CircleNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
@@ -51,7 +50,6 @@ class RootNode(Node):
             "consoleop": ConsoleOperation,
             "lasercode": LaserCodeNode,
             "group": GroupNode,
-            "elem": ElemNode,
             "elem circle": CircleNode,
             "elem ellipse": EllipseNode,
             "elem rect": RectNode,

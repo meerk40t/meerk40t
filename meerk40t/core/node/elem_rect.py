@@ -3,7 +3,7 @@ from meerk40t.core.node.node import Node
 
 class RectNode(Node):
     """
-    RectNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
+    RectNode is the bootstrapped node type for the 'elem rect' type.
     """
 
     def __init__(self, data_object, **kwargs):

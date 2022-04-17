@@ -3,7 +3,7 @@ from meerk40t.core.node.node import Node
 
 class PolylineNode(Node):
     """
-    ElemNode is the bootstrapped node type for the elem type. All elem types are bootstrapped into this node object.
+    PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
 
     def __init__(self, data_object, **kwargs):
