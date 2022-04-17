@@ -239,7 +239,10 @@ class OpSetLaserOnDelay(Operation):
     opcode = 0x8007
 
     def text_decode(self):
-        return "Set on time compensation = %d us" % (self.params[0])
+        time = self.params[0]
+        if self.params[1] == 0x8000:
+            time = -time
+        return "Set on time compensation = %d us" % (time)
 
 
 class OpSetLaserOffDelay(Operation):
@@ -247,7 +250,10 @@ class OpSetLaserOffDelay(Operation):
     opcode = 0x8008
 
     def text_decode(self):
-        return "Set off time compensation = %d us" % (self.params[0])
+        time = self.params[0]
+        if self.params[1] == 0x8000:
+            time = -time
+        return "Set off time compensation = %d us" % (time)
 
 
 class OpMarkFrequency(Operation):
@@ -916,21 +922,37 @@ class CommandList(CommandSource):
         self.append(OpWritePort(port))
         self._write_port = port
 
-    def set_laser_on_delay(self, *args):
-        # TODO: WEAK IMPLEMENTATION
-        if self._laser_on_delay == args:
+    def set_laser_on_delay(self, delay):
+        """
+        Time in us (microseconds)
+        @param delay: delay in microseconds
+        @return:
+        """
+        if self._laser_on_delay == delay:
             return
         self.ready()
-        self._laser_on_delay = args
-        self.append(OpSetLaserOnDelay(*args))
+        self._laser_on_delay = delay
+        if delay < 0:
+            delay = abs(delay)
+            self.append(OpSetLaserOnDelay(delay, 0x8000))
+        else:
+            self.append(OpSetLaserOnDelay(delay))
 
     def set_laser_off_delay(self, delay):
-        # TODO: WEAK IMPLEMENTATION
+        """
+        Time in us (microseconds)
+        @param delay: delay in microseconds
+        @return:
+        """
         if self._laser_off_delay == delay:
             return
         self.ready()
         self._laser_off_delay = delay
-        self.append(OpSetLaserOffDelay(delay))
+        if delay < 0:
+            delay = abs(delay)
+            self.append(OpSetLaserOffDelay(delay, 0x8000))
+        else:
+            self.append(OpSetLaserOffDelay(delay))
 
     def set_polygon_delay(self, delay):
         # TODO: WEAK IMPLEMENTATION
