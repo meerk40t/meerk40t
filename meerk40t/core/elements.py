@@ -104,6 +104,80 @@ def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
 
+non_structural_nodes = (
+    "op cut",
+    "op raster",
+    "op image",
+    "op engrave",
+    "op dots",
+    "op hatch",
+    "ref elem",
+    "cmdop",
+    "consoleop",
+    "lasercode",
+    "cutcode",
+    "blob",
+    "elem ellipse",
+    "elem image",
+    "elem path",
+    "elem point",
+    "elem polyline",
+    "elem rect",
+    "elem text",
+    "file",
+    "group",
+)
+operate_nodes = (
+    "op cut",
+    "op raster",
+    "op image",
+    "op engrave",
+    "op dots",
+    "op hatch",
+    "cmdop",
+    "consoleop",
+)
+op_nodes = (
+    "op cut",
+    "op raster",
+    "op image",
+    "op engrave",
+    "op dots",
+    "op hatch",
+    "cmdop",
+    "consoleop",
+)
+elem_nodes = (
+    "elem ellipse",
+    "elem image",
+    "elem path",
+    "elem point",
+    "elem polyline",
+    "elem rect",
+    "elem text",
+)
+elem_group_nodes = (
+    "elem ellipse",
+    "elem image",
+    "elem path",
+    "elem point",
+    "elem polyline",
+    "elem rect",
+    "elem text",
+    "group",
+    "file",
+)
+elem_ref_nodes = (
+    "elem ellipse",
+    "elem image",
+    "elem path",
+    "elem point",
+    "elem polyline",
+    "elem rect",
+    "elem text",
+    "ref elem",
+)
+
 
 class Elemental(Service):
     """
@@ -1167,7 +1241,7 @@ class Elemental(Service):
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
                     elements.append(subelement)
-                    group_node.add(subelement, type="elem")
+                    group_node.add(subelement, type="elem path")
                 elements_nodes.append(group_node)
                 self.classify(elements)
             return "elements", elements_nodes
@@ -1223,7 +1297,7 @@ class Elemental(Service):
                 top = subbox[1] - top_edge
                 matrix = "translate(0, %f)" % -top
                 if top != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1248,7 +1322,7 @@ class Elemental(Service):
                 bottom = subbox[3] - bottom_edge
                 matrix = "translate(0, %f)" % -bottom
                 if bottom != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1273,7 +1347,7 @@ class Elemental(Service):
                 left = subbox[0] - left_edge
                 matrix = "translate(%f, 0)" % -left
                 if left != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1298,7 +1372,7 @@ class Elemental(Service):
                 right = subbox[2] - right_edge
                 matrix = "translate(%f, 0)" % -right
                 if right != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1326,7 +1400,7 @@ class Elemental(Service):
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (-dx, -dy)
-                for q in node.flat(types="elem"):
+                for q in node.flat(types=elem_nodes):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
@@ -1351,7 +1425,7 @@ class Elemental(Service):
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 matrix = "translate(%f, 0)" % -dx
-                for q in node.flat(types="elem"):
+                for q in node.flat(types=elem_nodes):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
@@ -1376,7 +1450,7 @@ class Elemental(Service):
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
                 matrix = "translate(0, %f)" % -dy
-                for q in node.flat(types="elem"):
+                for q in node.flat(types=elem_nodes):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
@@ -1412,7 +1486,7 @@ class Elemental(Service):
                 delta = subbox[0] - dim_pos
                 matrix = "translate(%f, 0)" % -delta
                 if delta != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1449,7 +1523,7 @@ class Elemental(Service):
                 delta = subbox[1] - dim_pos
                 matrix = "translate(0, %f)" % -delta
                 if delta != 0:
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -1479,7 +1553,7 @@ class Elemental(Service):
                 dx = (device_width - left_edge - right_edge) / 2.0
                 dy = (device_height - top_edge - bottom_edge) / 2.0
                 matrix = "translate(%f, %f)" % (dx, dy)
-                for q in node.flat(types="elem"):
+                for q in node.flat(types=elem_nodes):
                     obj = q.object
                     if obj is not None:
                         obj *= matrix
@@ -1590,7 +1664,7 @@ class Elemental(Service):
                         bottom_edge - top_edge,
                         preserve_aspect_ratio,
                     )
-                    for q in node.flat(types="elem"):
+                    for q in node.flat(types=elem_nodes):
                         obj = q.object
                         if obj is not None:
                             obj *= matrix
@@ -3291,7 +3365,7 @@ class Elemental(Service):
             for item in self.flat(emphasized=True):
                 if item.type.startswith("op"):
                     return "ops", list(self.ops(emphasized=True))
-                if item.type in ("elem", "group", "file"):
+                if item.type in elem_nodes or item.type in ("group", "file"):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
@@ -3355,7 +3429,7 @@ class Elemental(Service):
                     e *= m
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
-                group.add(p, type="elem")
+                group.add(p, type=p.type)
             self.set_emphasis([group])
             return "elements", pasted
 
@@ -3537,44 +3611,6 @@ class Elemental(Service):
         _ = kernel.translation
         # --------------------------- TREE OPERATIONS ---------------------------
 
-        non_structural_nodes = (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "ref elem",
-            "cmdop",
-            "consoleop",
-            "lasercode",
-            "cutcode",
-            "blob",
-            "elem",
-            "file",
-            "group",
-        )
-        operate_nodes = (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "cmdop",
-            "consoleop",
-        )
-        op_nodes = (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "cmdop",
-            "consoleop",
-        )
-
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(
@@ -3592,7 +3628,7 @@ class Elemental(Service):
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, Shape))
-        @self.tree_operation(_("Element properties"), node_type="elem", help="")
+        @self.tree_operation(_("Element properties"), node_type=elem_nodes, help="")
         def path_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -3608,7 +3644,7 @@ class Elemental(Service):
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGText))
-        @self.tree_operation(_("Text properties"), node_type="elem", help="")
+        @self.tree_operation(_("Text properties"), node_type=elem_nodes, help="")
         def text_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -3616,7 +3652,7 @@ class Elemental(Service):
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
-        @self.tree_operation(_("Image properties"), node_type="elem", help="")
+        @self.tree_operation(_("Image properties"), node_type=elem_nodes, help="")
         def image_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -3630,7 +3666,7 @@ class Elemental(Service):
                 node.insert_sibling(n)
             node.remove_node()  # Removing group/file node.
 
-        @self.tree_operation(_("Group elements"), node_type="elem", help="")
+        @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
             # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
@@ -3871,11 +3907,7 @@ class Elemental(Service):
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
             _("Remove %s elements") % "{ecount}",
-            node_type=(
-                "elem",
-                "file",
-                "group",
-            ),
+            node_type=elem_group_nodes,
             help="",
         )
         def remove_n_elements(node, **kwargs):
@@ -3911,7 +3943,7 @@ class Elemental(Service):
             elements = list(cutcode.as_elements())
             n = None
             for element in elements:
-                n = self.elem_branch.add(element, type="elem")
+                n = self.elem_branch.add(element, type="elem path")
             node.remove_node()
             if n is not None:
                 n.focus()
@@ -4216,7 +4248,7 @@ class Elemental(Service):
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            subitems = list(node.flat(types=("elem", "ref elem")))
+            subitems = list(node.flat(types=elem_ref_nodes))
             reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
@@ -4343,14 +4375,14 @@ class Elemental(Service):
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
         @self.tree_submenu(_("Duplicate element(s)"))
-        @self.tree_operation(_("Make 1 copy"), node_type="elem", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type=elem_nodes, help="")
         def duplicate_element_1(node, **kwargs):
             duplicate_element_n(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="elem", help=""
+            _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
         )
         def duplicate_element_n(node, copies, **kwargs):
             adding_elements = [
@@ -4364,7 +4396,7 @@ class Elemental(Service):
             lambda node: isinstance(node.object, Shape)
             and not isinstance(node.object, Path)
         )
-        @self.tree_operation(_("Convert to path"), node_type=("elem",), help="")
+        @self.tree_operation(_("Convert to path"), node_type=(elem_nodes,), help="")
         def convert_to_path(node, copies=1, **kwargs):
             node.replace_object(abs(Path(node.object)))
             node.altered()
@@ -4374,7 +4406,7 @@ class Elemental(Service):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Horizontally"),
-            node_type=("elem", "group", "file"),
+            node_type=elem_group_nodes,
             help=_("Mirror Horizontally"),
         )
         def mirror_elem(node, **kwargs):
@@ -4391,7 +4423,7 @@ class Elemental(Service):
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Vertically"),
-            node_type=("elem", "group", "file"),
+            node_type=elem_group_nodes,
             help=_("Flip Vertically"),
         )
         def flip_elem(node, **kwargs):
@@ -4411,7 +4443,7 @@ class Elemental(Service):
         @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
         @self.tree_operation(
             _("Scale %s%%") % "{scale_percent}",
-            node_type=("elem", "group", "file"),
+            node_type=elem_group_nodes,
             help=_("Scale Element"),
         )
         def scale_elem_amount(node, scale, **kwargs):
@@ -4460,7 +4492,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _("Rotate %s°") % ("{angle}"), node_type=("elem", "group", "file"), help=""
+            _("Rotate %s°") % ("{angle}"), node_type=elem_group_nodes, help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
@@ -4476,7 +4508,7 @@ class Elemental(Service):
 
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reify User Changes"), node_type=("elem", "group", "file"), help=""
+            _("Reify User Changes"), node_type=elem_group_nodes, help=""
         )
         def reify_elem_changes(node, **kwargs):
             self("reify\n")
@@ -4484,14 +4516,14 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Break Subpaths"), node_type="elem", help="")
+        @self.tree_operation(_("Break Subpaths"), node_type=elem_nodes, help="")
         def break_subpath_elem(node, **kwargs):
             self("element subpath\n")
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", "elem"), help=""
+            _("Reset user changes"), node_type=("branch elem", elem_nodes), help=""
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self("reset\n")
@@ -4521,7 +4553,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Step"))
         @self.tree_radio(radio_match)
         @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem", help="")
+        @self.tree_operation(_("Step %s") % "{i}", node_type=elem_nodes, help="")
         def set_step_n_elem(node, i=1, **kwargs):
             step_value = i
             element = node.object
@@ -4537,7 +4569,7 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional_try(lambda node: not node.object.lock)
-        @self.tree_operation(_("Actualize pixels"), node_type="elem", help="")
+        @self.tree_operation(_("Actualize pixels"), node_type=elem_nodes, help="")
         def image_actualize_pixels(node, **kwargs):
             self("image resample\n")
 
@@ -4545,7 +4577,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Z-depth divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
-            _("Divide into %s images") % "{divide}", node_type="elem", help=""
+            _("Divide into %s images") % "{divide}", node_type=elem_nodes, help=""
         )
         def image_zdepth(node, divide=1, **kwargs):
             element = node.object
@@ -4566,82 +4598,72 @@ class Elemental(Service):
             except AttributeError:
                 return False
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_conditional(is_locked)
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Unlock manipulations"), node_type="elem", help="")
+        @self.tree_operation(_("Unlock manipulations"), node_type="elem image", help="")
         def image_unlock_manipulations(node, **kwargs):
             self("image unlock\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Dither to 1 bit"), node_type="elem", help="")
+        @self.tree_operation(_("Dither to 1 bit"), node_type="elem image", help="")
         def image_dither(node, **kwargs):
             self("image dither\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Invert image"), node_type="elem", help="")
+        @self.tree_operation(_("Invert image"), node_type="elem image", help="")
         def image_invert(node, **kwargs):
             self("image invert\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Mirror horizontal"), node_type="elem", help="")
+        @self.tree_operation(_("Mirror horizontal"), node_type="elem image", help="")
         def image_mirror(node, **kwargs):
             self("image mirror\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Flip vertical"), node_type="elem", help="")
+        @self.tree_operation(_("Flip vertical"), node_type="elem image", help="")
         def image_flip(node, **kwargs):
             self("image flip\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Rotate 90° CW"), node_type="elem", help="")
+        @self.tree_operation(_("Rotate 90° CW"), node_type="elem image", help="")
         def image_cw(node, **kwargs):
             self("image cw\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Rotate 90° CCW"), node_type="elem", help="")
+        @self.tree_operation(_("Rotate 90° CCW"), node_type="elem image", help="")
         def image_ccw(node, **kwargs):
             self("image ccw\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Image"))
-        @self.tree_operation(_("Save output.png"), node_type="elem", help="")
+        @self.tree_operation(_("Save output.png"), node_type="elem image", help="")
         def image_save(node, **kwargs):
             self("image save output.png\n")
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
         @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem", help=""
+            _("RasterWizard: %s") % "{script}", node_type="elem image", help=""
         )
         def image_rasterwizard_open(node, script=None, **kwargs):
             self("window open RasterWizard %s\n" % script)
 
-        @self.tree_conditional(lambda node: isinstance(node.object, SVGImage))
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
-        @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem", help="")
+        @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem image", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
             self("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "as_elements"))
-        @self.tree_operation(_("Convert to SVG"), node_type="elem", help="")
+        @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
         def cutcode_convert_svg(node, **kwargs):
             self.add_elems(list(node.object.as_elements()))
 
         @self.tree_conditional_try(lambda node: hasattr(node.object, "generate"))
-        @self.tree_operation(_("Process as Operation"), node_type="elem", help="")
+        @self.tree_operation(_("Process as Operation"), node_type=op_nodes, help="")
         def cutcode_operation(node, **kwargs):
             self.add_op(node.object)
 
@@ -5035,25 +5057,25 @@ class Elemental(Service):
 
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=("elem",), **kwargs):
+        for item in elements.flat(types=elem_nodes, **kwargs):
             yield item.object
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
         for item in elements.flat(
-            types=("elem", "group", "file"), depth=depth, **kwargs
+            types=elem_group_nodes, depth=depth, **kwargs
         ):
             yield item
 
     def regmarks(self, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(types=("elem",), **kwargs):
+        for item in elements.flat(types=elem_nodes, **kwargs):
             yield item.object
 
     def regmarks_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch reg")
         for item in elements.flat(
-            types=("elem", "group", "file"), depth=depth, **kwargs
+            types=elem_group_nodes, depth=depth, **kwargs
         ):
             yield item
 
@@ -5137,18 +5159,46 @@ class Elemental(Service):
         :param classify: Should this element be automatically classified.
         :return:
         """
-        element_branch = self._tree.get(type="branch elems")
-        node = element_branch.add(element, type="elem")
+        branch = self._tree.get(type="branch elems")
+        if isinstance(element, Path):
+            node = branch.add(element, type="elem path")
+        elif isinstance(element, SVGImage):
+            node = branch.add(element, type="elem image")
+        elif isinstance(element, Rect):
+            node = branch.add(element, type="elem rect")
+        elif isinstance(element, (Ellipse, Circle)):
+            node = branch.add(element, type="elem ellipse")
+        elif isinstance(element, (Polygon, Polyline)):
+            node = branch.add(element, type="elem polyline")
+        elif isinstance(element, Point):
+            node = branch.add(element, type="elem point")
+        elif isinstance(element, SVGText):
+            node = branch.add(element, type="elem text")
+        else:
+            raise ValueError("add elem called on non svgelement")
         self.signal("element_added", element)
         if classify:
             self.classify([element])
         return node
 
     def add_elems(self, adding_elements):
-        element_branch = self._tree.get(type="branch elems")
+        branch = self._tree.get(type="branch elems")
         items = []
         for element in adding_elements:
-            items.append(element_branch.add(element, type="elem"))
+            if isinstance(element, Path):
+                items.append(branch.add(element, type="elem path"))
+            elif isinstance(element, SVGImage):
+                items.append(branch.add(element, type="elem image"))
+            elif isinstance(element, Rect):
+                items.append(branch.add(element, type="elem rect"))
+            elif isinstance(element, (Ellipse, Circle)):
+                items.append(branch.add(element, type="elem ellipse"))
+            elif isinstance(element, (Polygon, Polyline)):
+                items.append(branch.add(element, type="elem polyline"))
+            elif isinstance(element, Point):
+                items.append(branch.add(element, type="elem point"))
+            elif isinstance(element, SVGText):
+                items.append(branch.add(element, type="elem text"))
         self.signal("element_added", adding_elements)
         return items
 
@@ -5159,16 +5209,44 @@ class Elemental(Service):
         :param element:
         :return:
         """
-        reg_branch = self._tree.get(type="branch reg")
-        node = reg_branch.add(element, type="elem")
+        branch = self._tree.get(type="branch reg")
+        if isinstance(element, Path):
+            node = branch.add(element, type="elem path")
+        elif isinstance(element, SVGImage):
+            node = branch.add(element, type="elem image")
+        elif isinstance(element, Rect):
+            node = branch.add(element, type="elem rect")
+        elif isinstance(element, (Ellipse, Circle)):
+            node = branch.add(element, type="elem ellipse")
+        elif isinstance(element, (Polygon, Polyline)):
+            node = branch.add(element, type="elem polyline")
+        elif isinstance(element, Point):
+            node = branch.add(element, type="elem point")
+        elif isinstance(element, SVGText):
+            node = branch.add(element, type="elem text")
+        else:
+            raise ValueError("add elem called on non svgelement")
         self.signal("regmark_added", element)
         return node
 
     def add_regs(self, adding_elements):
-        reg_branch = self._tree.get(type="branch reg")
+        branch = self._tree.get(type="branch reg")
         items = []
         for element in adding_elements:
-            items.append(reg_branch.add(element, type="elem"))
+            if isinstance(element, Path):
+                items.append(branch.add(element, type="elem path"))
+            elif isinstance(element, SVGImage):
+                items.append(branch.add(element, type="elem image"))
+            elif isinstance(element, Rect):
+                items.append(branch.add(element, type="elem rect"))
+            elif isinstance(element, (Ellipse, Circle)):
+                items.append(branch.add(element, type="elem ellipse"))
+            elif isinstance(element, (Polygon, Polyline)):
+                items.append(branch.add(element, type="elem polyline"))
+            elif isinstance(element, Point):
+                items.append(branch.add(element, type="elem point"))
+            elif isinstance(element, SVGText):
+                items.append(branch.add(element, type="elem text"))
         self.signal("regmark_added", adding_elements)
         return items
 
@@ -5245,7 +5323,7 @@ class Elemental(Service):
     def validate_selected_area(self):
         boundary_points = []
         for e in self.elem_branch.flat(
-            types="elem",
+            types=elem_nodes,
             emphasized=True,
         ):
             if e.bounds is None:

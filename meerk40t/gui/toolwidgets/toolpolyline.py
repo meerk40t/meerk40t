@@ -45,9 +45,7 @@ class PolylineTool(ToolWidget):
             response = RESPONSE_CHAIN
         elif event_type == "doubleclick":
             polyline = Polyline(*self.point_series, stroke="blue", stroke_width=1000)
-            t = Path(polyline)
-            if len(t) != 0:
-                self.scene.context.elements.add_elem(t, classify=True)
+            self.scene.context.elements.add_elem(polyline, classify=True)
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None

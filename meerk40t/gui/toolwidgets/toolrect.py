@@ -49,9 +49,8 @@ class RectTool(ToolWidget):
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
                 rect = Rect(x0, y0, x1 - x0, y1 - y0, stroke="blue", stroke_width=1000)
-                t = Path(rect)
-                if len(t) != 0:
-                    self.scene.context.elements.add_elem(t, classify=True)
+                if not rect.is_degenerate():
+                    self.scene.context.elements.add_elem(rect, classify=True)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

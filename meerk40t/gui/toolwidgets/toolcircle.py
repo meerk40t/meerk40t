@@ -61,9 +61,9 @@ class CircleTool(ToolWidget):
                     stroke="blue",
                     stroke_width=1000
                 )
-                t = Path(ellipse)
-                if len(t) != 0:
-                    self.scene.context.elements.add_elem(t, classify=True)
+
+                if not ellipse.is_degenerate():
+                    self.scene.context.elements.add_elem(ellipse, classify=True)
                 self.p1 = None
                 self.p2 = None
             except IndexError:
