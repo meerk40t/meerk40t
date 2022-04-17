@@ -188,7 +188,7 @@ class ShadowTree:
     """
 
     def __init__(self, service, gui, wxtree):
-        self.context = service
+        self.elements = service
         self.gui = gui
         self.wxtree = wxtree
         self.renderer = LaserRender(service.root)
@@ -201,10 +201,10 @@ class ShadowTree:
         service.add_service_delegate(self)
 
     def service_attach(self, *args):
-        self.context.listen_tree(self)
+        self.elements.listen_tree(self)
 
     def service_detach(self, *args):
-        self.context.unlisten_tree(self)
+        self.elements.unlisten_tree(self)
 
     def node_created(self, node, **kwargs):
         """
@@ -268,7 +268,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("selected", node)
+        self.elements.signal("selected", node)
 
     def emphasized(self, node):
         """
@@ -283,7 +283,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("emphasized", node)
+        self.elements.signal("emphasized", node)
 
     def targeted(self, node):
         """
@@ -298,7 +298,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("targeted", node)
+        self.elements.signal("targeted", node)
 
     def highlighted(self, node):
         """
@@ -314,7 +314,7 @@ class ShadowTree:
             raise ValueError("Bad Item")
         self.update_label(node)
         self.set_enhancements(node)
-        self.context.signal("highlighted", node)
+        self.elements.signal("highlighted", node)
 
     def modified(self, node):
         """
@@ -332,7 +332,7 @@ class ShadowTree:
             self.set_color(node, c)
         except AttributeError:
             pass
-        self.context.signal("modified", node)
+        self.elements.signal("modified", node)
 
     def altered(self, node):
         """
@@ -344,14 +344,15 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node, force=True)
+        node.label = None
+        self.update_label(node)
         try:
             c = node.color
             self.set_color(node, c)
         except AttributeError:
             pass
         self.set_icon(node)
-        self.context.signal("altered", node)
+        self.elements.signal("altered", node)
 
     def expand(self, node):
         """
@@ -380,9 +381,9 @@ class ShadowTree:
             item is self.wxtree.GetRootItem()
             or self.wxtree.GetItemParent(item) is self.wxtree.GetRootItem()
         ):
-            self.wxtree.Expand(self.element_root.get(type="branch ops").item)
-            self.wxtree.Expand(self.element_root.get(type="branch elems").item)
-            self.wxtree.Expand(self.element_root.get(type="branch reg").item)
+            self.wxtree.Expand(self.elements.get(type="branch ops").item)
+            self.wxtree.Expand(self.elements.get(type="branch elems").item)
+            self.wxtree.Expand(self.elements.get(type="branch reg").item)
 
     def reorder(self, node):
         """
@@ -432,9 +433,10 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            self.update_label(element.node, force=True)
+            element.node.label = None
+            self.update_label(element.node)
         else:
-            self.update_label(element, force=True)
+            self.update_label(element)
 
     def on_element_update(self, *args):
         """
@@ -452,7 +454,7 @@ class ShadowTree:
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
         if node is None:
-            elemtree = self.context._tree
+            elemtree = self.elements._tree
             node = elemtree.item
         if node is None:
             return
@@ -471,7 +473,7 @@ class ShadowTree:
 
         @return:
         """
-        elemtree = self.context._tree
+        elemtree = self.elements._tree
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
 
@@ -619,7 +621,7 @@ class ShadowTree:
         @return:
         """
         root = self
-        drawmode = self.context.root.draw_mode
+        drawmode = self.elements.root.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
             return
         try:
@@ -801,7 +803,7 @@ class ShadowTree:
             return
         node = self.wxtree.GetItemData(item)
 
-        create_menu(self.gui, node, self.context)
+        create_menu(self.gui, node, self.elements)
 
     def on_item_activated(self, event):
         """
@@ -812,7 +814,7 @@ class ShadowTree:
         """
         item = event.GetItem()
         node = self.wxtree.GetItemData(item)
-        activate = self.context.lookup("function/open_property_window_for_node")
+        activate = self.elements.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(node)
 
@@ -823,9 +825,9 @@ class ShadowTree:
         @param args:
         @return:
         """
-        first_element = self.context.first_element(emphasized=True)
+        first_element = self.elements.first_element(emphasized=True)
         if hasattr(first_element, "node"):
-            activate = self.context.lookup("function/open_property_window_for_node")
+            activate = self.elements.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(first_element.node)
 
@@ -843,7 +845,7 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        self.context.set_selected(selected)
+        self.elements.set_selected(selected)
 
         emphasized = list(selected)
         for i in range(len(emphasized)):
@@ -857,7 +859,7 @@ class ShadowTree:
                     except Exception:
                         pass
 
-        self.context.set_emphasis(emphasized)
+        self.elements.set_emphasis(emphasized)
         self.refresh_tree()
         event.Allow()
 
@@ -868,6 +870,6 @@ class ShadowTree:
         :return:
         """
         self.do_not_select = True
-        for e in self.context.elems_nodes(emphasized=True):
+        for e in self.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False
