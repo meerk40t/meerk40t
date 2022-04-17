@@ -116,7 +116,7 @@ class BalorOperationPanel(wx.Panel):
             {
                 "attr": "wobble_interval",
                 "object": params,
-                "default": "1.5mm",
+                "default": "0.2mm",
                 "type": Length,
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Sampling Interval"),
@@ -137,7 +137,7 @@ class BalorOperationPanel(wx.Panel):
                 "default": "circle",
                 "type": str,
                 "style": "combo",
-                "choices": ("circle","sawtooth", "sinewave"),
+                "choices": ("circle", "sawtooth", "sinewave", "jigsaw"),
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Pattern Type"),
                 "tip": _("Pattern type for the given wobble."),
