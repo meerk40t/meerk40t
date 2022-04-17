@@ -1,3 +1,23 @@
+from meerk40t.svgelements import Path, SVGImage, Rect, Ellipse, Circle, Polygon, Polyline, Point, SVGText
+
+
+def get_type_from_element(element):
+    if isinstance(element, Path):
+        return "elem path"
+    elif isinstance(element, SVGImage):
+        return "elem image"
+    elif isinstance(element, Rect):
+        return "elem rect"
+    elif isinstance(element, (Ellipse, Circle)):
+        return "elem ellipse"
+    elif isinstance(element, (Polygon, Polyline)):
+        return "elem polyline"
+    elif isinstance(element, Point):
+        return "elem point"
+    elif isinstance(element, SVGText):
+        return "elem text"
+
+
 non_structural_nodes = (
     "op cut",
     "op raster",
@@ -68,3 +88,4 @@ elem_ref_nodes = (
     "elem text",
     "ref elem",
 )
+

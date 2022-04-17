@@ -3381,7 +3381,7 @@ class Elemental(Service):
                     e *= m
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
-                group.add(p, type=p.type)
+                group.add(p, type=get_type_from_element(p))
             self.set_emphasis([group])
             return "elements", pasted
 
@@ -5088,20 +5088,9 @@ class Elemental(Service):
         @return:
         """
         branch = self._tree.get(type=branch_type)
-        if isinstance(element, Path):
-            node = branch.add(element, type="elem path")
-        elif isinstance(element, SVGImage):
-            node = branch.add(element, type="elem image")
-        elif isinstance(element, Rect):
-            node = branch.add(element, type="elem rect")
-        elif isinstance(element, (Ellipse, Circle)):
-            node = branch.add(element, type="elem ellipse")
-        elif isinstance(element, (Polygon, Polyline)):
-            node = branch.add(element, type="elem polyline")
-        elif isinstance(element, Point):
-            node = branch.add(element, type="elem point")
-        elif isinstance(element, SVGText):
-            node = branch.add(element, type="elem text")
+        node_type = get_type_from_element(element)
+        if node_type:
+            node = branch.add(element, type=node_type)
         else:
             raise ValueError("add elem called on non svgelement")
         self.signal("element_added", element)
@@ -5121,24 +5110,13 @@ class Elemental(Service):
         branch = self._tree.get(type=branch_type)
         items = []
         for element in adding_elements:
-            if isinstance(element, Path):
-                items.append(branch.add(element, type="elem path"))
-            elif isinstance(element, SVGImage):
-                items.append(branch.add(element, type="elem image"))
-            elif isinstance(element, Rect):
-                items.append(branch.add(element, type="elem rect"))
-            elif isinstance(element, (Ellipse, Circle)):
-                items.append(branch.add(element, type="elem ellipse"))
-            elif isinstance(element, (Polygon, Polyline)):
-                items.append(branch.add(element, type="elem polyline"))
-            elif isinstance(element, Point):
-                items.append(branch.add(element, type="elem point"))
-            elif isinstance(element, SVGText):
-                items.append(branch.add(element, type="elem text"))
+            node_type = get_type_from_element(element)
+            if node_type:
+                items.append(branch.add(element, type=node_type))
         if branch_type == "branch elems":
             self.signal("element_added", adding_elements)
         elif branch_type == "branch reg":
-            self.signal("regmark_added", element)
+            self.signal("regmark_added", adding_elements)
         if classify:
             self.classify(adding_elements)
         return items
