@@ -88,7 +88,7 @@ class DotsOpNode(Node, Parameters):
             self.add(drag_node.object, type="ref elem", pos=0)
             return True
         elif drag_node.type == "ref elem":
-            # Move an refelem to end of op.
+            # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:

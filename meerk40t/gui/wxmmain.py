@@ -2442,8 +2442,8 @@ class MeerK40t(MWindow):
     def toggle_draw_mode(self, bits):
         """
         Toggle the draw mode.
-        :param bits: Bit to toggle.
-        :return: Toggle function.
+        @param bits: Bit to toggle.
+        @return: Toggle function.
         """
 
         def toggle(event=None):

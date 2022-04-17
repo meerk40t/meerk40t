@@ -1,18 +1,18 @@
 """
-The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
+The 'elements' service stores all the element types in a bootstrapped tree. Specific node types added to the tree become
 particular class types and the interactions between these types and functions applied are registered in the kernel.
 
 Types:
-root: Root Tree element
-branch ops: Operation Branch
-branch elems: Elements Branch
-branch reg: Regmark Branch
-ref elem: Element below op branch which stores specific data.
-op: LayerOperation within Operation Branch.
-elem: Element with Element Branch or subgroup.
-file: File Group within Elements Branch
-group: Group type within Branch Elems or refelem.
-cutcode: CutCode type within Operation Branch and Element Branch.
+* root: Root Tree element
+* branch ops: Operation Branch
+* branch elems: Elements Branch
+* branch reg: Regmark Branch
+* ref elem: Element below op branch which stores specific data.
+* op: LayerOperation within Operation Branch.
+* elem: Element with Element Branch or subgroup.
+* file: File Group within Elements Branch
+* group: Group type within Branch Elems or refelem.
+* cutcode: CutCode type within Operation Branch and Element Branch.
 
 rasternode: theoretical: would store all the refelems to be rastered. Such that we could store rasters in images.
 
@@ -482,11 +482,11 @@ class Node:
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
-        :param data_object:
-        :param type:
-        :param label: display name for this node
-        :param pos:
-        :return:
+        @param data_object:
+        @param type:
+        @param label: display name for this node
+        @param pos:
+        @return:
         """
         if isinstance(data_object, Node):
             node = data_object
@@ -598,8 +598,8 @@ class Node:
         Create a label for this node.
         If a name is not specified either use a cascade (primarily for elements) or
         use the string representation
-        :param name: Name to be set for this node.
-        :return: label
+        @param name: Name to be set for this node.
+        @return: label
         """
         if name is not None:
             return name
@@ -611,8 +611,8 @@ class Node:
         """
         Yield this node and all descendants in a flat generation.
 
-        :param node: starting node
-        :return:
+        @param node: starting node
+        @return:
         """
         yield node
         for c in self._flatten_children(node):
@@ -622,8 +622,8 @@ class Node:
         """
         Yield all descendants in a flat generation.
 
-        :param node: starting node
-        :return:
+        @param node: starting node
+        @return:
         """
         for child in node.children:
             yield child
@@ -645,14 +645,14 @@ class Node:
         of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
         the criteria with respect to either the depth or the emphases.
 
-        :param types: types of nodes permitted to be returned
-        :param cascade: cascade all subitems if a group matches the criteria.
-        :param depth: depth to search within the tree.
-        :param selected: match only selected nodes
-        :param emphasized: match only emphasized nodes.
-        :param targeted: match only targeted nodes
-        :param highlighted: match only highlighted nodes
-        :return:
+        @param types: types of nodes permitted to be returned
+        @param cascade: cascade all subitems if a group matches the criteria.
+        @param depth: depth to search within the tree.
+        @param selected: match only selected nodes
+        @param emphasized: match only emphasized nodes.
+        @param targeted: match only targeted nodes
+        @param highlighted: match only highlighted nodes
+        @return:
         """
         node = self
         if (

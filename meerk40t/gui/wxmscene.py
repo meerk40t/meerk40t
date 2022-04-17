@@ -287,9 +287,9 @@ class MeerK40tScenePanel(wx.Panel):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if scene_name == "Scene":
             self.request_refresh()

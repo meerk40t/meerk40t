@@ -46,10 +46,10 @@ def _trace(pixels, x, y, width, height):
     (x - 1, y - 1),   (x    , y - 1)
                     X
     (x - 1, y    ),   (x    , y    )
-    :param pixels:
-    :param x:
-    :param y:
-    :return:
+    @param pixels:
+    @param x:
+    @param y:
+    @return:
     """
     start_y = y
     start_x = x

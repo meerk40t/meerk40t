@@ -237,7 +237,7 @@ class AttractionWidget(Widget):
             except ZeroDivisionError:
                 matrix.reset()
                 return
-            # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be diplayed
+            # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
             pixel1 = self.scene.context.show_attract_len
             pixel2 = self.scene.context.action_attract_len
             pixel3 = self.scene.context.grid_attract_len
@@ -411,7 +411,7 @@ class AttractionWidget(Widget):
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         # print ("AttractionWidget receives signal: %s" % signal)
         consumed = False
@@ -428,5 +428,5 @@ class AttractionWidget(Widget):
             consumed = True
             self.load_colors()
         if not consumed:
-            # print ("Dont know what to do with signal %s" % signal)
+            # print ("Don't know what to do with signal %s" % signal)
             pass

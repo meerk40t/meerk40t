@@ -96,7 +96,7 @@ class HatchOpNode(Node, Parameters):
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
-            # Move an refelem to end of op.
+            # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:

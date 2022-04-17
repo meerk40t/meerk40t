@@ -360,7 +360,7 @@ class Planner(Service):
         def plan_alias(command, channel, _, alias=None, remainder=None, **kwgs):
             """
             Plan alias allows the user to define a spoolable console command.
-            eg. plan-alias export egv_export myfile.egv
+            e.g. plan-alias export egv_export myfile.egv
 
             This creates a plan command called "export" that executes "egv_export myfile.egv".
             This can then be placed into the spooler during the planning stages.

@@ -2250,7 +2250,7 @@ class Elemental(Service):
             x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
         ):
             """
-            Draws an svg rectangle with optional rounded corners.
+            Draws a svg rectangle with optional rounded corners.
             """
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
             self.add_element(rect)
@@ -2272,7 +2272,7 @@ class Elemental(Service):
         )
         def element_line(command, x0, y0, x1, y1, data=None, **kwargs):
             """
-            Draws an svg line in the scene.
+            Draws a svg line in the scene.
             """
             simple_line = SimpleLine(x0, y0, x1, y1)
             self.add_element(simple_line)
@@ -3136,7 +3136,7 @@ class Elemental(Service):
         def tree_dnd(command, channel, _, data=None, drag=None, drop=None, **kwargs):
             """
             Drag and Drop command performs a console based drag and drop operation
-            Eg. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
+            E.g. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
             """
             if data is None:
                 data = [self._tree]
@@ -4264,13 +4264,6 @@ class Elemental(Service):
             append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Add special operation(s)"))
-        @self.tree_operation(_("Add Interrupt (console)"), node_type=op_nodes, help="")
-        def add_operation_interrupt_console(node, **kwargs):
-            append_operation_interrupt_console(
-                node, pos=add_after_index(self, node), **kwargs
-            )
-
-        @self.tree_submenu(_("Add special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self, node)
@@ -5072,10 +5065,7 @@ class Elemental(Service):
     def add_op(self, op, pos=None):
         """
         Add an operation. Wraps it within a node, and appends it to the tree.
-
-        :param element:
-        :param classify: Should this element be automatically classified.
-        :return:
+        @return:
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add(op, type=op.type, pos=pos)
@@ -5092,10 +5082,10 @@ class Elemental(Service):
         """
         Add an element. Wraps it within a node, and appends it to the tree.
 
-        :param element:
-        :param classify: Should this element be automatically classified.
-        :param branch_type: Branch type to add this to
-        :return:
+        @param element:
+        @param classify: Should this element be automatically classified.
+        @param branch_type: Branch type to add this to
+        @return:
         """
         branch = self._tree.get(type=branch_type)
         if isinstance(element, Path):
@@ -5257,8 +5247,8 @@ class Elemental(Service):
     def highlight_children(self, node_context):
         """
         Recursively highlight the children.
-        :param node_context:
-        :return:
+        @param node_context:
+        @return:
         """
         for child in node_context.children:
             child.highlighted = True
@@ -5268,10 +5258,10 @@ class Elemental(Service):
         """
         Recursively highlight the children.
 
-        :param node_context: context node to search from
-        :param node_exclude: excluded nodes
-        :param object_search: Specific searched for object.
-        :return:
+        @param node_context: context node to search from
+        @param node_exclude: excluded nodes
+        @param object_search: Specific searched for object.
+        @return:
         """
         for child in node_context.children:
             self.target_clones(child, node_exclude, object_search)
@@ -5390,10 +5380,10 @@ class Elemental(Service):
         If element strokes are red they get classed as cut operations
         If they are otherwise they get classed as engrave.
         However, this differs based on the ops in question.
-        :param elements: list of elements to classify.
-        :param operations: operations list to classify into.
-        :param add_op_function: function to add a new operation, because of a lack of classification options.
-        :return:
+        @param elements: list of elements to classify.
+        @param operations: operations list to classify into.
+        @param add_op_function: function to add a new operation, because of a lack of classification options.
+        @return:
         """
         if elements is None:
             return
@@ -5494,7 +5484,8 @@ class Elemental(Service):
         perhaps with an Image or Raster or Dots operation in there as well, instead  we need to try
         to group operations together, adding the new operation:
         1. After the last operation of the same type if one exists; or if not
-        2. After the last operation of the highest priority existing operation (where Dots is the lowest priority and Cut is the highest.
+        2. After the last operation of the highest priority existing operation, where `Dots` is the lowest priority and
+            Cut is the highest.
         """
         operations = self._tree.get(type="branch ops").children
         for pos, old_op in reversed_enumerate(operations):
@@ -5579,7 +5570,7 @@ class Elemental(Service):
             1. Redish strokes are considered cuts
             2. Other colours are considered engraves
         If a default Cut/Engrave operation exists then the element is classified to it.
-        Otherwise a new operation of matching color and type is created.
+        Otherwise, a new operation of matching color and type is created.
         New White Engrave operations are created disabled by default.
 
         SIMPLE RASTER CLASSIFICATION
@@ -5610,7 +5601,7 @@ class Elemental(Service):
 
         1.  Group rasters by whether they have overlapping bounding boxes.
             After this, if rasters are in separate groups then they are in entirely separate
-            areas of the burn which do not overlap. Consequently they can be allocated
+            areas of the burn which do not overlap. Consequently, they can be allocated
             to different operations without causing incorrect results.
 
             Note 1: It is difficult to ensure that elements are retained in sequence when doing
@@ -5631,7 +5622,7 @@ class Elemental(Service):
             A)  If there are Default Raster Operation(s), then the remaining raster elements are
                 allocated to those.
             B)  Otherwise, if there are any non-default raster operations that are empty and those
-                raster operations are all of the same colour, then the remaining raster operations
+                raster operations are all the same colour, then the remaining raster operations
                 will be allocated to those Raster operations.
             C)  Otherwise, a new Default Raster operation will be created and remaining
                 Raster elements will be added to that.
@@ -5648,17 +5639,17 @@ class Elemental(Service):
 
         It may be that we will need to:
 
-        1.  Use the total list of Shape / Text elements loaded in the Elements Branch sequence
+        1.  Use the total list of Shape / Text elements loaded in the `Elements Branch` sequence
             to keep elements in the correct sequence in an operation.
         2.  Handle cases where the user resequences elements by ensuring that a drag and drop
             of elements in the Elements branch of the tree is reflected in the sequence in Operations
             and vice versa. This could, however, get messy.
 
 
-        :param elements: list of elements to classify.
-        :param operations: operations list to classify into.
-        :param add_op_function: function to add a new operation, because of a lack of classification options.
-        :return:
+        @param elements: list of elements to classify.
+        @param operations: operations list to classify into.
+        @param add_op_function: function to add a new operation, because of a lack of classification options.
+        @return:
         """
         debug = self.kernel.channel("classify", timestamp=True)
 
@@ -6043,7 +6034,7 @@ class Elemental(Service):
         raster_elements = [e[0] for e in raster_elements]
         # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
 
-        # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
+        # We are using old-fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
         for i in range(len(raster_groups) - 2, -1, -1):
             g1 = raster_groups[i]
             for j in range(len(raster_groups) - 1, i, -1):
@@ -6068,7 +6059,7 @@ class Elemental(Service):
         )
 
         # Remove bbox and add element colour from groups
-        # Change list to groups which are a list of tuples, each tuple being element and its classification color
+        # Change `list` to `groups` which are a list of tuples, each tuple being element and its classification color
         raster_groups = list(
             map(
                 lambda g: tuple(((e[0], self.element_classify_color(e[0])) for e in g)),
@@ -6139,7 +6130,7 @@ class Elemental(Service):
 
         # Remaining elements are added to one of the following groups of operations:
         # 1. to default raster ops if they exist; otherwise
-        # 2. to empty raster ops if they exist and are all of same color; otherwise to
+        # 2. to empty raster ops if they exist and are all the same color; otherwise to
         # 3. a new default Raster operation.
         if not default_raster_ops:
             # Because this is a check for an empty operation, this functionality relies on all elements being classified at the same time.

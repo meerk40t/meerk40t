@@ -6,7 +6,7 @@ from datetime import datetime
 
 # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-# so we are doing it here even though we do not refer to it in this file
+# so, we are doing it here even though we do not refer to it in this file
 # richtext is used for the Console panel.
 import wx
 from wx import aui, richtext
@@ -709,10 +709,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
 
-    :param exc_type:
-    :param exc_value:
-    :param exc_traceback:
-    :return:
+    @param exc_type:
+    @param exc_value:
+    @param exc_traceback:
+    @return:
     """
     wxversion = "wx"
     try:

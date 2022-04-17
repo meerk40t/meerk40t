@@ -86,7 +86,7 @@ class Scene(Module, Job):
         self.magnet_x = []
         self.magnet_y = []
         self.magnet_attraction = 2
-        # 0 off, 1..x increasing strength (quadratic behaviour)
+        # 0 off, `1..x` increasing strength (quadratic behaviour)
 
         self.magnet_attract_x = True  # Shall the X-Axis be affected
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
@@ -297,7 +297,7 @@ class Scene(Module, Job):
                 self.screen_refresh_is_requested = False
 
     def update_buffer_ui_thread(self):
-        """Performs the redraw of the data in the UI thread."""
+        """Performs redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
         buf = self.gui._Buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
@@ -357,7 +357,7 @@ class Scene(Module, Job):
 
     def notify_removed_from_parent(self, parent):
         """
-        Called when a widget is removed from it's parent. Notifies scene as a whole.
+        Called when a widget is removed from its parent. Notifies scene as a whole.
         """
         pass
 
@@ -412,7 +412,7 @@ class Scene(Module, Job):
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """
         Iterates through the hit chain to find elements which respond to their hit() function that they are HITCHAIN_HIT
-        and registers this within the hittable_elements list if they are able to be hit at the current time. Given the
+        and registers this within the hittable_elements list if they are able to hit at the current time. Given the
         dimensions of the widget and the current matrix within the widget tree.
 
         HITCHAIN_HIT means that this is a hit value and should the termination of this branch of the widget tree.
@@ -538,7 +538,7 @@ class Scene(Module, Job):
                         sdy,
                     )
                 try:
-                    # We ignore the consume etc. for the time being...
+                    # We ignore the 'consume' etc. for the time being...
                     response = current_widget.event(window_pos, space_pos, event_type)
                 except AttributeError:
                     pass

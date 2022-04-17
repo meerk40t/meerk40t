@@ -76,9 +76,9 @@ class UDPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module.
-        :param port: UDP listen port.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module.
+        @param port: UDP listen port.
         """
         Module.__init__(self, context, name)
         self.port = port
@@ -97,7 +97,7 @@ class UDPServer(Module):
         _ = self.context._
         self.context.channel("%s/send" % self.name).unwatch(
             self.send
-        )  # We stop watching the send channel
+        )  # We stop watching the `send channel`
         self.events_channel(_("Shutting down server."))
         if self.socket is not None:
             self.socket.close()
@@ -140,9 +140,9 @@ class TCPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module
-        :param port: Port being used for the server.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module
+        @param port: Port being used for the server.
         """
         Module.__init__(self, context, name)
         self.port = port

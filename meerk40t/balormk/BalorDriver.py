@@ -48,7 +48,7 @@ class BalorDriver(Parameters):
         """
         Connect to the Balor Sender
 
-        :return:
+        @return:
         """
         self.connected = False
         while not self.connected:
@@ -105,7 +105,7 @@ class BalorDriver(Parameters):
 
         This might be a little naive compared to other methods of plotplanning but a general solution does not
         necessarily exist.
-        :return:
+        @return:
         """
         plot = list(plot)
         last_index = 0
@@ -144,8 +144,8 @@ class BalorDriver(Parameters):
     #
     #     The cutcode objects will have properties like speed. These are currently not being respected.
     #
-    #     :param queue:
-    #     :return:
+    #     @param queue:
+    #     @return:
     #     """
     #     cal = None
     #     if self.service.calibration_file is not None:
@@ -181,7 +181,7 @@ class BalorDriver(Parameters):
         For example if we pause, we don't want it trying to call some functions. Only priority jobs will execute if
         we hold the work queue. This is so that "resume" commands can be processed.
 
-        :return:
+        @return:
         """
         return self.paused
 
@@ -189,7 +189,7 @@ class BalorDriver(Parameters):
         """
         This is checked by the spooler to see if we should abort checking if there's any idle job after the work queue
         was found to be empty.
-        :return:
+        @return:
         """
         return False
 
@@ -224,8 +224,8 @@ class BalorDriver(Parameters):
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
         bits of cutcode data with settings on them from paths etc.
 
-        :param plot:
-        :return:
+        @param plot:
+        @return:
         """
         self.plot_planner.push(plot)
 
@@ -252,7 +252,7 @@ class BalorDriver(Parameters):
         """
         This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
 
-        :return:
+        @return:
         """
         self.connect_if_needed()
         job = CommandList()
@@ -361,9 +361,9 @@ class BalorDriver(Parameters):
         This is called with the actual x and y values with units. If without units we should expect to move in native
         units.
 
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self.connect_if_needed()
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
@@ -383,9 +383,9 @@ class BalorDriver(Parameters):
         """
         This is called with dx and dy values to move a relative amount.
 
-        :param dx:
-        :param dy:
-        :return:
+        @param dx:
+        @param dy:
+        @return:
         """
         self.connect_if_needed()
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
@@ -407,9 +407,9 @@ class BalorDriver(Parameters):
     def home(self, x=None, y=None):
         """
         This is called with x, and y, to set an adjusted home or use whatever home we have.
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self.move_abs("50%", "50%")
 
@@ -417,9 +417,9 @@ class BalorDriver(Parameters):
         """
         This is called to give pure data to the backend. Data is assumed to be native data-type as loaded from a file.
 
-        :param data_type:
-        :param data:
-        :return:
+        @param data_type:
+        @param data:
+        @return:
         """
         if data_type == "balor":
             self.connect_if_needed()
@@ -431,9 +431,9 @@ class BalorDriver(Parameters):
         there is a need to set these outside that context. This can also set the default values to be used inside
         the cutcode being processed.
 
-        :param attribute:
-        :param value:
-        :return:
+        @param attribute:
+        @param value:
+        @return:
         """
         if attribute == "speed":
             pass
@@ -442,14 +442,14 @@ class BalorDriver(Parameters):
     def rapid_mode(self):
         """
         Expects to be in rapid jogging mode.
-        :return:
+        @return:
         """
         pass
 
     def program_mode(self):
         """
         Expects to run jobs at a speed in a programmed mode.
-        :return:
+        @return:
         """
         pass
 
@@ -458,7 +458,7 @@ class BalorDriver(Parameters):
         Expects to run a raster job. Raster information is set in special modes to stop the laser head from moving
         too far.
 
-        :return:
+        @return:
         """
         pass
 
@@ -466,7 +466,7 @@ class BalorDriver(Parameters):
         """
         Expects to be caught up such that the next command will happen immediately rather than get queued.
 
-        :return:
+        @return:
         """
         pass
 
@@ -483,7 +483,7 @@ class BalorDriver(Parameters):
         """
         Wants a system beep to be issued.
 
-        :return:
+        @return:
         """
         self.service("beep\n")
 
@@ -491,16 +491,16 @@ class BalorDriver(Parameters):
         """
         Wants a system signal to be sent.
 
-        :param signal:
-        :param args:
-        :return:
+        @param signal:
+        @param args:
+        @return:
         """
         self.service.signal(signal, *args)
 
     def pause(self):
         """
         Wants the driver to pause.
-        :return:
+        @return:
         """
         self.connect_if_needed()
         if self.paused:
@@ -516,7 +516,7 @@ class BalorDriver(Parameters):
         This typically issues from the realtime queue which means it will call even if we tell work_hold that we should
         hold the work.
 
-        :return:
+        @return:
         """
         self.connect_if_needed()
         self.paused = False
@@ -526,13 +526,13 @@ class BalorDriver(Parameters):
         """
         Wants the job to be aborted and action to be stopped.
 
-        :return:
+        @return:
         """
         self.connection.abort()
 
     def status(self):
         """
         Wants a status report of what the driver is doing.
-        :return:
+        @return:
         """
         pass

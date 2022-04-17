@@ -28,7 +28,7 @@ class GridWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
-        Capture and deal with the doubleclick event.
+        Capture and deal with the double click event.
 
         Doubleclick in the grid loads a menu to remove the background.
         """
@@ -108,7 +108,7 @@ class GridWidget(Widget):
         # tweak the scaled points into being useful.
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
         delta = points / scaled_conversion
-        # Lets establish a proper delta: we want to understand the log and x.yyy multiplikator
+        # Let's establish a proper delta: we want to understand the log and x.yyy multiplikator
         x = delta
         factor = 1
         if x >= 1:
@@ -192,7 +192,7 @@ class GridWidget(Widget):
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "grid":
             self.grid = None

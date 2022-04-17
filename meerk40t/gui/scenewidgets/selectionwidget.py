@@ -112,7 +112,7 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "leftdown":
-        # We want to establish that we dont have a singular Shift key or a singular ctrl-key
+        # We want to establish that we don't have a singular Shift key or a singular ctrl-key
         different_event = False
         if (
             widget.key_control_pressed
@@ -229,7 +229,7 @@ class BorderWidget(Widget):
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
         gc.SetPen(self.master.selection_pen)
-        # Wont be display when rotating...
+        # Won't be display when rotating...
         if self.master.show_border:
             gc.StrokeLine(center_x, 0, center_x, self.top)
             gc.StrokeLine(0, center_y, self.left, center_y)
@@ -405,8 +405,8 @@ class RotationWidget(Widget):
             # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
             segment += [(x, y)]
 
-        # End arrow at 90deg, cos = 0, sin = 1
-        # End Arrow
+        # End-arrow at 90deg, cos = 0, sin = 1
+        # End-Arrow
         x = cx + signx * 0 * self.half
         y = cy + signy * 1 * self.half
         segment += [

@@ -124,9 +124,9 @@ class TreePanel(wx.Panel):
         """
         Called by 'element_property_update' when the properties of an element are changed.
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if self.shadow_tree is not None:
             self.shadow_tree.on_element_update(*args)
@@ -136,9 +136,9 @@ class TreePanel(wx.Panel):
         """
         Called by 'element_property_reload' when the properties of an element are changed.
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
@@ -148,9 +148,9 @@ class TreePanel(wx.Panel):
         """
         Called by 'rebuild_tree' signal. To refresh tree directly
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         self.shadow_tree.rebuild_tree()
 
@@ -181,9 +181,9 @@ class ElementsTree(MWindow):
 
 class ShadowTree:
     """
-    The shadowTree creates a wx.Tree structure from the elements.tree structure. It listens to updates to the elements
+    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the elements
     tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends any
-    requested alterations to the elements.tree or the elements.elements or elements.operations and when those are
+    requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.'operations' and when those are
     reflected in the tree, the shadow tree is updated accordingly.
     """
 
@@ -730,8 +730,8 @@ class ShadowTree:
         """
         Drag handler begin for the tree.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.dragging_nodes = None
 
@@ -763,8 +763,8 @@ class ShadowTree:
         """
         Drag end handler for the tree
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         if self.dragging_nodes is None:
             event.Skip()
@@ -795,8 +795,8 @@ class ShadowTree:
         """
         Right click of element in tree.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         item = event.GetItem()
         if item is None:
@@ -809,8 +809,8 @@ class ShadowTree:
         """
         Tree item is double-clicked. Launches PropertyWindow associated with that object.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         item = event.GetItem()
         node = self.wxtree.GetItemData(item)
@@ -835,8 +835,8 @@ class ShadowTree:
         """
         Tree menu item is changed. Modify the selection.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         if self.do_not_select:
             # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
@@ -865,9 +865,9 @@ class ShadowTree:
 
     def select_in_tree_by_emphasis(self, origin, *args):
         """
-        Selected the actual wx.tree control those items which are currently emphasized.
+        Selected the actual `wx.tree` control those items which are currently emphasized.
 
-        :return:
+        @return:
         """
         self.do_not_select = True
         for e in self.elements.elems_nodes(emphasized=True):

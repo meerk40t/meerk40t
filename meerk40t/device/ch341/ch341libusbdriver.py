@@ -36,7 +36,7 @@ def convert_to_list_bytes(data):
 class Ch341LibusbDriver:
     """
     Libusb driver for the CH341 chip. The CH341x is a USB interface chip that can emulate UART, parallel port,
-    and synchronous serial (EPP, I2C, SPI). The Lhystudios boards (M2Nano, et al) and Moshiboards and likely others
+    and synchronous serial (EPP, I2C, SPI). The Lhystudios boards (M2Nano, et al.) and Moshiboards and likely others
     use this in EPP 1.9 mode. This class is not and not intended to be a full driver for that chip. Rather we are
     duplicating the function calls and implementing compatible operations to permit a stand-in for the default CH341
     driver. Using libusb to do the usb connection to the chip as well as permitting easy swapping that for the default

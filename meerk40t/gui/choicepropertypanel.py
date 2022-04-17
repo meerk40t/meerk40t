@@ -109,7 +109,7 @@ class ChoicePropertyPanel(wx.Panel):
                             try:
                                 setattr(obj, param, pathname)
                             except ValueError:
-                                # If cannot cast to data_type, pass
+                                # cannot cast to data_type, pass
                                 pass
 
                     return click
@@ -136,7 +136,7 @@ class ChoicePropertyPanel(wx.Panel):
                         try:
                             setattr(obj, param, dtype(v))
                         except ValueError:
-                            # If cannot cast to data_type, pass
+                            # cannot cast to data_type, pass
                             pass
 
                     return text
@@ -167,7 +167,7 @@ class ChoicePropertyPanel(wx.Panel):
                         try:
                             setattr(obj, param, v.preferred_length)
                         except ValueError:
-                            # If cannot cast to data_type, pass
+                            # cannot cast to data_type, pass
                             pass
 
                     return text
@@ -202,7 +202,7 @@ class ChoicePropertyPanel(wx.Panel):
                             try:
                                 setattr(obj, param, data_type(data))
                             except ValueError:
-                                # If cannot cast to data_type, pass
+                                # cannot cast to data_type, pass
                                 pass
 
                     return click

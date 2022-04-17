@@ -366,8 +366,8 @@ class CutPlan:
 
     def strip_rasters(self):
         """
-        Strip rasters if there is no method of converting vectors to rasters rasters must
-        be stripped at the validate stage.
+        Strip rasters if there is no method of converting vectors to rasters. Rasters must
+        be stripped at the `validate` stage.
         @return:
         """
         stripped = False
@@ -488,7 +488,7 @@ class CutPlan:
             if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
                     if not isinstance(e.object, SVGText):
-                        continue  # make raster not needed since its a single real raster.
+                        continue  # make raster not needed since it's a single real raster.
                     self.commands.append(self.strip_text)
                     return True
         return False
@@ -505,7 +505,7 @@ class CutPlan:
                 if len(op.children) == 0:
                     continue
                 if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                    continue  # make raster not needed since its a single real raster.
+                    continue  # make raster not needed since it's a single real raster.
                 make_raster = self.context.lookup("render-op/make_raster")
 
                 if make_raster is None:
@@ -547,9 +547,9 @@ class CutPlan:
 def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
-    :param inner_path: inner path
-    :param outer_path: outer path
-    :return: whether path1 is wholly inside path2.
+    @param inner: inner path
+    @param outer: outer path
+    @return: whether path1 is wholly inside path2.
     """
     inner_path = inner
     outer_path = outer
@@ -789,7 +789,7 @@ def short_travel_cutcode(
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
 
-    We start at either 0,0 or the value given in context.start
+    We start at either 0,0 or the value given in `context.start`
 
     This is time-intense hyper-optimized code, so it contains several seemingly redundant
     checks.
@@ -844,7 +844,7 @@ def short_travel_cutcode(
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):
-                # last_segment is a copy so we need to get original
+                # last_segment is a copy, so we need to get original
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning

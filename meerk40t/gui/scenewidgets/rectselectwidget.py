@@ -304,7 +304,7 @@ class RectSelectWidget(Widget):
         delta_X = 15.0 / matrix.value_scale_x()
         delta_Y = 15.0 / matrix.value_scale_y()
         if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
-            # Draw tiny + in Corner in corner of pointer
+            # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
             y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
             ax1 = x1 - x_signum

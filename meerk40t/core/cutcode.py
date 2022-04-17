@@ -291,7 +291,7 @@ class CutGroup(list, CutObject, ABC):
             #   b2. An outer which has all inner burned.
             # by removing from the list:
             #   1. Candidates already burned
-            #   2. Candidates which are neither inner or outer
+            #   2. Candidates which are neither inner nor outer
             #   3. Candidates which are outer and have at least one inner not yet burned
             #   4. Candidates which are inner and all outers have no inners burned
             # If the resulting list is empty then normal rules apply instead.
@@ -393,9 +393,9 @@ class CutCode(CutGroup):
         Reverses subpaths flipping the individual elements from position j inclusive to
         k exclusive.
 
-        :param j:
-        :param k:
-        :return:
+        @param j:
+        @param k:
+        @return:
         """
         for q in range(j, k):
             self[q].direct_close()
@@ -646,7 +646,7 @@ class CubicCut(CutObject):
 
 class RasterCut(CutObject):
     """
-    Rastercut accepts a image of type "L" or "1", and an offset in the x and y and information as to whether
+    Rastercut accepts an image of type "L" or "1", and an offset in the x and y and information whether
     this is a crosshatched cut or not.
     """
 
@@ -848,7 +848,7 @@ class DwellCut(CutObject):
 
 class PlotCut(CutObject):
     """
-    Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
+    Plot cuts are a series of lineto values with laser on and off info. These positions are not necessarily next
     to each other and can be any distance apart. This is a compact way of writing a large series of line positions.
 
     There is a raster-create value.

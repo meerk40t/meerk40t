@@ -250,7 +250,7 @@ class Kernel(Settings):
 
     def services(self, domain: str, active: bool = False):
         """
-        Fetch the active or available servers from the kernel.lookup
+        Fetch the active or available servers from the 'kernel.lookup'
         @param domain: domain of service to lookup
         @param active: look up active or available
         @return:
@@ -1577,7 +1577,7 @@ class Kernel(Settings):
         will wait until such time as it stops.
 
         result is a threadsafe execution. It will execute if the crashes or exits normally. If there was a return from
-        the function call the result will be passed this value. If there is not one or it is None, None will be passed.
+        the function call the result will be passed this value. If there is not one or, it is None, None will be passed.
         result must take 1 argument. This permits final calls to the thread.
 
         @param func: The function to be executed.
@@ -3066,7 +3066,7 @@ def lookup_listener(param):
 
 def signal_listener(param):
     """
-    Flags a method as a @signal_listener. This will listened when the module is opened.
+    Flags a method as a @signal_listener. This will be listened when the module is opened.
 
     @param param: function being attached to
     @return:

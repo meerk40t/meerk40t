@@ -415,7 +415,7 @@ class Alias(Service):
         @self.console_command(".*", regex=True, hidden=True)
         def alias_execute(command, **kwgs):
             """
-            Alias execution code. Checks values for matching alias and utilizes that.
+            Alias execution code. Checks value for matching alias and utilizes that.
 
             Aliases with ; delimit multipart commands
             """
@@ -451,12 +451,12 @@ def keymap_execute(context, keyvalue, keydown=True):
 
     Else return false
     """
-    if keyvalue not in self.keymap:
+    if keyvalue not in context.keymap:
         return False
-    action = self.keymap[keyvalue]
+    action = context.keymap[keyvalue]
     if keydown or action.startswith("+"):
         if not keydown and action.startswith("+"):
             action = "-" + action[1:]
         for cmd in action.split(";"):
-            self("%s\n" % cmd)
+            context("%s\n" % cmd)
     return True

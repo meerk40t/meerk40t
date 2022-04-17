@@ -614,7 +614,7 @@ class PanelStartPreference(wx.Panel):
         self.direction_lines = d_start, d_end
 
     def refresh_in_ui(self):
-        """Performs the redraw of the data in the UI thread."""
+        """Performs redrawing of the data in the UI thread."""
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)

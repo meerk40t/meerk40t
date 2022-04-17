@@ -102,7 +102,7 @@ class PlotPlanner(Parameters):
         * Flush steps from planner if going to new location or using new settings.
              * If new position is far
                   * Send jog if too far away.
-        * Send PLOT_SETTING: None None - if settings have changed.
+        * Send PLOT_SETTING: None, None - if settings have changed.
         * Send PLOT_AXIS: major_axis, None - Major axis is horizontal vs. vertical raster
         * Send PLOT_DIRECTION: x_dir(), y_dir() - Direction X, Direction Y for initial cut.
         * Send PLOT_LEFT_UPPER: left point, upper point - Point at upper left
@@ -114,7 +114,7 @@ class PlotPlanner(Parameters):
 
         cut.settings can be the same object between different cut.
 
-        :return:
+        @return:
         """
         self.pos_x = None
         self.pos_y = None
@@ -204,11 +204,11 @@ class PlotPlanner(Parameters):
         Processes can buffer data and return None. Processes are required to surrender any buffer they have if the
         given sequence ends with, or is None. This flushes out any data.
 
-        If an input sequence still lacks a on-value then the single_default value will be utilized.
+        If an input sequence still lacks an on-value then the single_default value will be utilized.
         Output sequences are iterables of x, y, on positions.
 
-        :param plot: plottable element that should be wrapped
-        :return: generator to produce plottable elements.
+        @param plot: plottable element that should be wrapped
+        @return: generator to produce plottable elements.
         """
 
         def debug(plot, manipulator):
@@ -323,8 +323,8 @@ class Single(PlotManipulation):
         single_x sets the last known x position this routine has encountered.
         single_y sets the last known y position this routine has encountered.
 
-        :param plot: plot generator
-        :return:
+        @param plot: plot generator
+        @return:
         """
         if plot is None:
             # None calls for a flush routine.
@@ -403,8 +403,8 @@ class Smooth(PlotManipulation):
     def process(self, plot):
         """
 
-        :param plot: single stepped plots to be smoothed into orth/diag sequences.
-        :return:
+        @param plot: single stepped plots to be smoothed into orth/diag sequences.
+        @return:
         """
         px = None
         py = None
@@ -436,7 +436,7 @@ class Smooth(PlotManipulation):
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
             if self.planner.constant_move_x and dx == 0:
-                # If we are moving x and we don't move x. Skip.
+                # If we are moving x and, we don't move x: skip.
                 if abs(total_dy) < self.planner.smooth_limit:
                     continue
             if self.planner.constant_move_y and dy == 0:
@@ -490,8 +490,8 @@ class PPI(PlotManipulation):
 
         Implements PPI power modulation.
 
-        :param plot: generator of single stepped plots, with PPI.
-        :return:
+        @param plot: generator of single stepped plots, with PPI.
+        @return:
         """
         px = None
         py = None
@@ -541,8 +541,8 @@ class Shift(PlotManipulation):
 
         This code requires a buffer of 4 path plots.
 
-        :param plot: generator of single stepped plots
-        :return:
+        @param plot: generator of single stepped plots
+        @return:
         """
         for x, y, on in plot:
             if (x is None or y is None) or (
@@ -629,8 +629,8 @@ class Group(PlotManipulation):
         group_x, group_y: is the last known inputted. This is not necessarily the current position given by the planner.
         If group_dx and group_dy are not zero, then we have buffered a move.
 
-        :param plot: single stepped plots to be grouped into orth/diag sequences.
-        :return:
+        @param plot: single stepped plots to be grouped into orth/diag sequences.
+        @return:
         """
         px = None
         py = None
@@ -717,8 +717,8 @@ def grouped(plot):
     """
     Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
 
-    :param plot: single stepped plots to be grouped into orth/diag sequences.
-    :return:
+    @param plot: single stepped plots to be grouped into orth/diag sequences.
+    @return:
     """
     group_x = None
     group_y = None

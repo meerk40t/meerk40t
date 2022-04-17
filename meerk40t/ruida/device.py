@@ -82,7 +82,7 @@ def plugin(kernel, lifecycle=None):
             somewhat agnostic fashion. Commands like Ruida ACS's pause and stop require
             that the meerk40t device has a "pause" command and stop requires it has an
             "estop". You cannot stop a file output for example. Most of the other commands
-            are device agnostic, including the data sent.
+            are device-agnostic, including the data sent.
 
             Laser is optional and only useful for a man-in-the-middle decoding
 
@@ -502,10 +502,10 @@ class RuidaEmulator(Module, Parameters):
 
     def checksum_write(self, sent_data):
         """
-        This is a write with a checksum and swizzling. This is how the 50200 packets arrive and need to be processed.
+        This is `write` with a checksum and swizzling. This is how the 50200 packets arrive and need to be processed.
 
-        :param sent_data: Packet data.
-        :return:
+        @param sent_data: Packet data.
+        @return:
         """
         self.swizzle_mode = True
         if len(sent_data) < 2:
@@ -544,8 +544,8 @@ class RuidaEmulator(Module, Parameters):
         """
         Real time commands are replied to and sent in realtime. For Ruida devices these are sent along udp 50207.
 
-        :param bytes_to_write: bytes to write.
-        :return:
+        @param bytes_to_write:
+        @return: bytes to write.
         """
         self.swizzle_mode = False
         self.reply(b"\xCC")  # Clear ACK.
@@ -557,8 +557,8 @@ class RuidaEmulator(Module, Parameters):
         expected to be unswizzled with the swizzle_mode set for the reply. Write will parse out the individual commands
         and send those to the command routine.
 
-        :param data:
-        :return:
+        @param data:
+        @return:
         """
         for array in self.parse_commands(data):
             try:
@@ -575,8 +575,8 @@ class RuidaEmulator(Module, Parameters):
         Parses an individual unswizzled ruida command, updating the emulator state.
 
         These commands can change the position, settings, speed, color, power, create elements, creates lasercode.
-        :param array:
-        :return:
+        @param array:
+        @return:
         """
         desc = ""
         respond = None
@@ -974,7 +974,7 @@ class RuidaEmulator(Module, Parameters):
             if array[1] == 0x29:
                 desc = "Unknown LB Command"
         elif array[0] == 0xD7:
-            # If not saving send to spooler in control or elements if design.
+            # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
                     self.spooler.append(self.cutcode)

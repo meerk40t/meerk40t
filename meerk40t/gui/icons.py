@@ -10,11 +10,19 @@ class PyEmbeddedImage(py_embedded_image):
         super().__init__(data)
 
     def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None):
-        # Assumes greyscale icon black on transparent background using alpha for shading
-        # Ready for Dark Theme
-        # If color is provided, the black is changed to this
-        # If color is close to background, alpha is removed and negative background added
-        # so we don't get black icon on black background or white on white background.
+        """
+        Assumes greyscale icon black on transparent background using alpha for shading
+        Ready for Dark Theme
+        If color is provided, the black is changed to this
+        If color is close to background, alpha is removed and negative background added
+        so, we don't get black icon on black background or white on white background.
+
+        @param use_theme:
+        @param resize:
+        @param color:
+        @param rotate:
+        @return:
+        """
 
         image = py_embedded_image.GetImage(self)
         if resize is not None:

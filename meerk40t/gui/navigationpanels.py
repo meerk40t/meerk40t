@@ -1384,8 +1384,8 @@ class Transform(wx.Panel):
     def select_ready(self, v):
         """
         Enables the relevant buttons when there is a selection in the elements.
-        :param v: whether selection is currently drag ready.
-        :return:
+        @param v: whether selection is currently drag ready.
+        @return:
         """
         self.button_scale_down.Enable(v)
         self.button_scale_up.Enable(v)

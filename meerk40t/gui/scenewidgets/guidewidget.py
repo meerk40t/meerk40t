@@ -80,7 +80,7 @@ class GuideWidget(Widget):
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
 
     def fill_magnets(self):
-        # Lets set the full grid
+        # Let's set the full grid
         p = self.scene.context
         tlen = float(
             Length(
@@ -102,7 +102,7 @@ class GuideWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
-        Capture and deal with the doubleclick event.
+        Capture and deal with the double click event.
         Doubleclick in the grid loads a menu to remove the background.
         """
         _ = self.scene.context._
@@ -400,7 +400,7 @@ class GuideWidget(Widget):
 
     def process_draw(self, gc):
         """
-        Draw the guide lines
+        Draw the guidelines
         """
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
@@ -478,7 +478,7 @@ class GuideWidget(Widget):
                 if mark_point >= 0 or p.show_negative_guide:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
-                    # if there is enough room for a mid distance stroke...
+                    # if there is enough room for a mid-distance stroke...
                     if t_height < 0.5 * points:
                         starts.append((edge_gap, y - 0.5 * points))
                         ends.append((0.25 * length + edge_gap, y - 0.5 * points))

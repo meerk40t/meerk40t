@@ -22,7 +22,7 @@ class Service(Context):
     Each service has its own registered lookup of data. This extends the lookup of the kernel but only for those
     services which are currently active. This extends to various data types that are registered in the kernel such
     as choices and console commands. The currently active service can modify these simply by being activated. A command
-    registered in a deactivate service cannot be executed from the console, only the activated service's command is
+    registered in a deactivated service cannot be executed from the console, only the activated service's command is
     executed in that case.
 
     Unlike contexts which should be derived or gotten at a particular path. Services can be directly instanced.

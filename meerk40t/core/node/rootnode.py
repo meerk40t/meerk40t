@@ -158,7 +158,7 @@ class RootNode(Node):
 
     def notify_altered(self, node=None, **kwargs):
         """
-        Notifies any listeners that a value in the tree has had it's underlying data fundamentally changed and while
+        Notifies any listeners that a value in the tree has had its underlying data fundamentally changed and while
         this may not be reflected by the properties any assumptions about the content of this node are no longer
         valid.
 

@@ -116,7 +116,7 @@ SET_FPK_PARAM = 0x0062  # Probably "first pulse killer" = fpk
 class Sender:
     """This is a simplified control class for the BJJCZ (Golden Orange,
     Beijing JCZ) LMCV4-FIBER-M and compatible boards. All operations are blocking
-    so it should probably run in its own thread for nontrivial applications.
+    so, it should probably run in its own thread for nontrivial applications.
     It does have an .abort() method that it is expected will be called
     asynchronously from another thread."""
 
@@ -250,7 +250,7 @@ class Sender:
         # high impedance state (based on the name in the DLL,
         # ENABLEZ)
         # Based on how it's used, it could also be about latching out
-        # some of the data that has been set up.
+        # of the data that has been set up.
         self.raw_enable_z()
 
         # We don't know what this does, since this laser's power is set
@@ -422,7 +422,7 @@ class Sender:
     def raw_disable_laser(self):
         """
         No parameters.
-        :return:
+        @return:
         """
         return self._send_command(DISABLE_LASER)
 
@@ -432,30 +432,30 @@ class Sender:
     def raw_enable_laser(self):
         """
         No parameters.
-        :return:
+        @return:
         """
         return self._send_command(ENABLE_LASER)
 
     def raw_execute_list(self):
         """
         No parameters.
-        :return: value response
+        @return: value response
         """
         return self._send_command(EXECUTE_LIST)
 
     def raw_set_pwm_pulse_width(self, s1: int, value: int):
         """
         2 Param: Stack, Value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_PWM_PULSE_WIDTH, s1, value)
 
     def raw_get_version(self):
         """
         No set parameters but 1 is always sent.
-        :return: value response
+        @return: value response
         """
         return self._send_command(GET_REGISTER, 1)
 
@@ -463,14 +463,14 @@ class Sender:
         """
         No parameters
         Reply is presumably a serial number.
-        :return: value response
+        @return: value response
         """
         return self._send_command(GET_SERIAL_NUMBER)
 
     def raw_get_list_status(self):
         """
         No parameters
-        :return:  value response
+        @return:  value response
         """
         return self._send_command(GET_LIST_STATUS)
 
@@ -478,30 +478,30 @@ class Sender:
         """
         No parameters
         The reply to this is the x, y coords and should be parsed.
-        :return: value response
+        @return: value response
         """
         return self._send_command(GET_XY_POSITION)
 
     def raw_set_xy_position(self, x, y):
         """
         Move to X Y location
-        :param x:
-        :param y:
-        :return: value response
+        @param x:
+        @param y:
+        @return: value response
         """
         return self._send_command(SET_XY_POSITION, int(x), int(y))
 
     def raw_laser_signal_off(self):
         """
         No parameters
-        :return: value response
+        @return: value response
         """
         return self._send_command(LASER_SIGNAL_OFF)
 
     def raw_laser_signal_on(self):
         """
         No parameters
-        :return: value response
+        @return: value response
         """
         return self._send_command(LASER_SIGNAL_ON)
 
@@ -511,24 +511,24 @@ class Sender:
         Writes a single line of a correction table. 1 entries.
         dx, dy, first, 0.
         Does not read reply.
-        :param dx:
-        :param dy:
-        :param nonfirst: either 0x0000 for first entry or 0x0100 for non-first.
-        :return:
+        @param dx:
+        @param dy:
+        @param nonfirst: either 0x0000 for first entry or 0x0100 for non-first.
+        @return:
         """
         self._send_command(WRITE_CORRECTION_LINE, dx, dy, nonfirst, read=False)
 
     def raw_reset_list(self):
         """
         No parameters.
-        :return: value response
+        @return: value response
         """
         return self._send_command(RESET_LIST)
 
     def raw_restart_list(self):
         """
         No parameters.
-        :return: value response
+        @return: value response
         """
         return self._send_command(RESTART_LIST)
 
@@ -538,8 +538,8 @@ class Sender:
 
         If the parameter is true, no table needs to be sent.
 
-        :param has_table:
-        :return: value response
+        @param has_table:
+        @return: value response
         """
         return self._send_command(WRITE_CORRECTION_TABLE, int(has_table))
 
@@ -547,9 +547,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_CONTROL_MODE, int(s1), int(value))
 
@@ -557,9 +557,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_DELAY_MODE, int(s1), int(value))
 
@@ -567,16 +567,16 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_MAX_POLY_DELAY, int(s1), int(value))
 
     def raw_set_end_of_list(self, a=0, b=0):
         """
         No parameters
-        :return: value response
+        @return: value response
         """
         # It does so have parameters, in the pcap...
         return self._send_command(SET_END_OF_LIST, a, b)
@@ -585,9 +585,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_FIRST_PULSE_KILLER, s1, value)
 
@@ -595,9 +595,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_LASER_MODE, s1, value)
 
@@ -605,9 +605,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_TIMING, s1, value)
 
@@ -615,11 +615,11 @@ class Sender:
         """
         4 parameters
         variable, variable, variable, value
-        :param v1:
-        :param v2:
-        :param v3:
-        :param value:
-        :return: value response
+        @param v1:
+        @param v2:
+        @param v3:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_STANDBY, v1, v2, v3, value)
 
@@ -627,23 +627,23 @@ class Sender:
         """
         2 parameters
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(SET_PWM_HALF_PERIOD, s1, value)
 
     def raw_stop_execute(self):
         """
         No parameters.
-        :return: value response
+        @return: value response
         """
         return self._send_command(STOP_EXECUTE)
 
     def raw_stop_list(self):
         """
         No parameters
-        :return: value response
+        @return: value response
         """
         return self._send_command(STOP_LIST)
 
@@ -651,10 +651,10 @@ class Sender:
         """
         3 parameters.
         variable, stack, value
-        :param v1:
-        :param s1:
-        :param value:
-        :return: value response
+        @param v1:
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(WRITE_PORT, v1, s1, value)
 
@@ -662,9 +662,9 @@ class Sender:
         """
         2 parameters.
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(WRITE_ANALOG_PORT_1, s1, value)
 
@@ -672,9 +672,9 @@ class Sender:
         """
         3 parameters.
         0, stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(WRITE_ANALOG_PORT_2, 0, s1, value)
 
@@ -682,17 +682,17 @@ class Sender:
         """
         3 parameters.
         variable, stack, value
-        :param v1:
-        :param s1:
-        :param value:
-        :return: value response
+        @param v1:
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(WRITE_ANALOG_PORT_X, v1, s1, value)
 
     def raw_read_port(self):
         """
         No parameters
-        :return: Status Information
+        @return: Status Information
         """
         return self._send_command(READ_PORT)
 
@@ -700,7 +700,7 @@ class Sender:
         """
         3 parameters.
         variable, stack, value
-        :return: value response
+        @return: value response
         """
         return self._send_command(SET_AXIS_MOTION_PARAM, v1, s1, value)
 
@@ -708,7 +708,7 @@ class Sender:
         """
         3 parameters.
         variable, stack, value
-        :return: value response
+        @return: value response
         """
         return self._send_command(SET_AXIS_ORIGIN_PARAM, v1, s1, value)
 
@@ -716,17 +716,17 @@ class Sender:
         """
         1 parameter
         variable
-        :param v0:
-        :return: value response
+        @param v0:
+        @return: value response
         """
         return self._send_command(GO_TO_AXIS_ORIGIN, v0)
 
     def raw_move_axis_to(self, axis, coord):
         """
         This typically accepted 1 32 bit int and used bits 1:8 and then 16:24 as parameters.
-        :param axis: axis being moved
-        :param coord: coordinate being matched
-        :return: value response
+        @param axis: axis being moved
+        @param coord: coordinate being matched
+        @return: value response
         """
         return self._send_command(MOVE_AXIS_TO, axis, coord)
 
@@ -734,9 +734,9 @@ class Sender:
         """
         2 parameters
         stack, value
-        :param s1:
-        :param value:
-        :return: axis position?
+        @param s1:
+        @param value:
+        @return: axis position?
         """
         return self._send_command(GET_AXIS_POSITION, s1, value)
 
@@ -744,8 +744,8 @@ class Sender:
         """
         1 parameter
         bool
-        :param b1:
-        :return: flywaitcount?
+        @param b1:
+        @return: flywaitcount?
         """
         return self._send_command(GET_FLY_WAIT_COUNT, int(b1))
 
@@ -753,8 +753,8 @@ class Sender:
         """
         1 parameter
         bool
-        :param p1:
-        :return: markcount?
+        @param p1:
+        @return: markcount?
         """
         return self._send_command(GET_MARK_COUNT, int(p1))
 
@@ -762,20 +762,20 @@ class Sender:
         """
         4 parameters
         variable, variable, variable stack
-        :param v1:
-        :param v2:
-        :param v3:
-        :param s1:
-        :return:  value response
+        @param v1:
+        @param v2:
+        @param v3:
+        @param s1:
+        @return:  value response
         """
         return self._send_command(SET_FPK_2E, v1, v2, v3, s1)
 
     def raw_set_fiber_config(self, p1, p2):
         """
         Calls fiber_config_2 with setting parameters
-        :param p1:
-        :param p2:
-        :return:
+        @param p1:
+        @param p2:
+        @return:
         """
         self.raw_fiber_config_1(0, p1, p2)
 
@@ -783,7 +783,7 @@ class Sender:
         """
         Calls fiber_config_1 with getting parameters.
 
-        :return:
+        @return:
         """
         self.raw_fiber_config_1(1, 0, 0)
 
@@ -791,10 +791,10 @@ class Sender:
         """
         Seen to call both a get and set config value.
 
-        :param p1:
-        :param p2:
-        :param p3:
-        :return:
+        @param p1:
+        @param p2:
+        @param p3:
+        @return:
         """
         return self._send_command(FIBER_CONFIG_1, p1, p2, p3)
 
@@ -804,8 +804,8 @@ class Sender:
     def raw_lock_input_port(self, p1):
         """
         p1 varies based on call., 1 for get, 2, for enable, 4 for clear
-        :param p1:
-        :return:
+        @param p1:
+        @return:
         """
         self._send_command(LOCK_INPUT_PORT, p1)
 
@@ -821,11 +821,11 @@ class Sender:
     def raw_set_fly_res(self, p1, p2, p3, p4):
         """
         On-the-fly settings.
-        :param p1:
-        :param p2:
-        :param p3:
-        :param p4:
-        :return:
+        @param p1:
+        @param p2:
+        @param p3:
+        @param p4:
+        @return:
         """
         return self._send_command(SET_FLY_RES, p1, p2, p3, p4)
 
@@ -833,47 +833,47 @@ class Sender:
         """
         2 parameters
         stack, value
-        :param s1:
-        :param value:
-        :return: value response
+        @param s1:
+        @param value:
+        @return: value response
         """
         return self._send_command(FIBER_OPEN_MO, s1, value)
 
     def raw_get_st_mo_ap(self):
         """
         No parameters
-        :return: value response
+        @return: value response
         """
         return self._send_command(FIBER_GET_StMO_AP)
 
     def raw_get_user_data(self):
         """
         No parameters
-        :return: user_parameters
+        @return: user_parameters
         """
         return self._send_command(GET_USER_DATA)
 
     def raw_get_fly_pulse_count(self):
         """
 
-        :return: fly pulse count
+        @return: fly pulse count
         """
         return self._send_command(GET_FLY_PULSE_COUNT)
 
     def raw_get_fly_speed(self, p1, p2, p3, p4):
         """
-        :param p1:
-        :param p2:
-        :param p3:
-        :param p4:
-        :return:
+        @param p1:
+        @param p2:
+        @param p3:
+        @param p4:
+        @return:
         """
         self._send_command(GET_FLY_SPEED, p1, p2, p3, p4)
 
     def raw_enable_z(self):
         """
         No parameters. Autofocus on/off
-        :return: value response
+        @return: value response
         """
         return self._send_command(ENABLE_Z)
 
@@ -881,7 +881,7 @@ class Sender:
         """
         No parameters
         Alternate command. Autofocus on/off
-        :return: value response
+        @return: value response
         """
         return self._send_command(ENABLE_Z_2)
 
@@ -889,10 +889,10 @@ class Sender:
         """
         3 parameters
         variable, stack, variable
-        :param v1:
-        :param s1:
-        :param v2:
-        :return: value response
+        @param v1:
+        @param s1:
+        @param v2:
+        @return: value response
         """
         return self._send_command(SET_Z_DATA, v1, s1, v2)
 
@@ -900,9 +900,9 @@ class Sender:
         """
         2 parameters
         variable, stack
-        :param v1:
-        :param s1:
-        :return: value response
+        @param v1:
+        @param s1:
+        @return: value response
         """
         return self._send_command(SET_SPI_SIMMER_CURRENT, v1, s1)
 
@@ -910,7 +910,7 @@ class Sender:
         """
         no parameters.
         Only called for true.
-        :return: value response
+        @return: value response
         """
         return self._send_command(IS_LITE_VERSION, 1)
 
@@ -918,7 +918,7 @@ class Sender:
         """
         Parameter is always set to 3.
 
-        :return:
+        @return:
         """
         self._send_command(GET_MARK_TIME, 3)
 
@@ -927,11 +927,11 @@ class Sender:
         Probably "first pulse killer" = fpk
         4 parameters
         variable, variable, variable, stack
-        :param v1:
-        :param v2:
-        :param v3:
-        :param s1:
-        :return: value response
+        @param v1:
+        @param v2:
+        @param v3:
+        @param s1:
+        @return: value response
         """
         return self._send_command(SET_FPK_PARAM, v1, v2, v3, s1)
 
