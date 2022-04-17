@@ -1248,6 +1248,7 @@ class CommandList(CommandSource):
 
 class Wobble:
     def __init__(self, radius=50, speed=50):
+        self._total_count = 0
         self._total_distance = 0
         self.radius = radius
         self.speed = speed
@@ -1263,6 +1264,15 @@ class Wobble:
         angle = math.atan2(y1-y0, x1-x0) + math.tau/4.0
         self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
         d = math.sin(self._total_distance / self.speed)
+        dx = self.radius * d * math.cos(angle)
+        dy = self.radius * d * math.sin(angle)
+        return x1 + dx, y1 + dy
+
+    def sawtooth(self, x0, y0, x1, y1):
+        self._total_count += 1
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
+        d = -1 if self._total_count % 2 else 1
         dx = self.radius * d * math.cos(angle)
         dy = self.radius * d * math.sin(angle)
         return x1 + dx, y1 + dy
