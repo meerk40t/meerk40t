@@ -5739,7 +5739,9 @@ class Elemental(Service):
         rasters_one_pass = None
 
         for op in operations:
-            if not op.type.startswith("op "):
+            if not op.type.startswith("op"):
+                continue
+            if op.type == "op console":
                 continue
             if op.default:
                 if op.type == "op cut":
