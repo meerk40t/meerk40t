@@ -31,6 +31,13 @@ The wxMeerK40t is the GUI and is written in wxPython.
 *   Pixel perfect curve cutting.
 *   Command Line Interface
 
+## Supported devices
+*   M2-Nano
+*   Moshiboard
+*   GRBL
+*   Fibre Lasers based on the JCZ controllers (still experimental)
+*   Ruida-Emulation (Middleman between Lightburn and K40)
+
 ## Support
 The primary source for help and documentation is the [MeerK40t Wiki - please click here](https://github.com/meerk40t/meerk40t/wiki).
 
