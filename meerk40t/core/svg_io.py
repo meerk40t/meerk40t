@@ -210,7 +210,8 @@ class SVGWriter:
         contains = list()
         for c in node.children:
             contains.append(c.id)
-        subelement.set("references", " ".join(contains))
+        if contains:
+            subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod

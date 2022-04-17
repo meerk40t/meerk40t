@@ -13,11 +13,21 @@ class ConsoleOperation(Node):
 
     def __init__(self, command=None, **kwargs):
         super().__init__(type="op console")
-        self.command = command
-        self.output = True
+        self.settings = {}
+        if command is not None:
+            self.settings['command'] = command
+        self.settings['output'] = True
 
     def set_command(self, command):
-        self.command = command
+        self.settings['command'] = command
+
+    @property
+    def command(self):
+        return self.settings.get('command')
+
+    @property
+    def output(self):
+        return self.settings.get('output', True)
 
     def __repr__(self):
         return "ConsoleOperation('%s', '%s')" % (self.command)
@@ -48,12 +58,11 @@ class ConsoleOperation(Node):
         return False
 
     def load(self, settings, section):
-        command = settings.read_persistent(int, section, "command")
-        self.command = command
-        settings.read_persistent_attributes(section, self)
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        self.settings.update(update_dict)
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
+        settings.write_persistent_dict(section, self.settings)
 
     def generate(self):
         command = self.command
