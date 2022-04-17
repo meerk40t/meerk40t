@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.core.elements import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CHANGE_POSITION
 from meerk40t.gui.scene.widget import Widget
@@ -299,7 +300,7 @@ class AttractionWidget(Widget):
             "endpoint": TYPE_POINT,
         }
 
-        for e in self.scene.context.elements.flat(types=("elem",)):
+        for e in self.scene.context.elements.flat(types=elem_nodes):
             emph = e.emphasized
             if hasattr(e, "points"):
                 for pt in e.points:

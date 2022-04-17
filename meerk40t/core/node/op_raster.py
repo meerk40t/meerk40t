@@ -121,7 +121,7 @@ class RasterOpNode(Node, Parameters):
 
     def deep_copy_children(self, obj):
         for element in obj.children:
-            self.add(copy(element.object), type="elem")
+            self.add(copy(element.object), type=element.type)
 
     def time_estimate(self):
         # TODO: Strictly speaking this is wrong. The time estimate is raster of non-svgimage objects.

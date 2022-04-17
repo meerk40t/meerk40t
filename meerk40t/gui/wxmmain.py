@@ -9,6 +9,7 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
+from ..core.elements import elem_nodes
 
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import (
@@ -271,7 +272,7 @@ class CustomStatusBar(wx.StatusBar):
                     self.SetStatusText("", self.pos_stroke)
                     self.SetStatusText("", self.pos_colorbar)
                 sw_default = None
-                for e in self.context.elements.flat(types=("elem"), emphasized=True):
+                for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                     if hasattr(e.object, "stroke_width"):
                         if sw_default is None:
                             sw_default = e.object.stroke_width

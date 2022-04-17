@@ -732,7 +732,7 @@ class Scene(Module, Job):
         """
         found = False
         if not self._reference is None:
-            for e in self.context.elements.flat(types=("elem",)):
+            for e in self.context.elements.flat(types=elem_nodes):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 if obj is self._reference:

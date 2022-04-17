@@ -134,7 +134,7 @@ class SVGWriter:
         @return:
         """
         for c in elem_tree.children:
-            if c.type == "elem":
+            if c.type.starts_with("elem"):
                 # This is an element node.
                 SVGWriter._write_element(xml_tree, c)
             else:

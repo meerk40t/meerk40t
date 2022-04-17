@@ -103,7 +103,7 @@ class HatchOpNode(Node, Parameters):
 
     def deep_copy_children(self, obj):
         for element in obj.children:
-            self.add(copy(element.object), type="elem")
+            self.add(copy(element.object), type=element.type)
 
     def time_estimate(self):
         estimate = 0

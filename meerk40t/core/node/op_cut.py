@@ -11,8 +11,6 @@ from meerk40t.core.cutcode import (
 )
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
     Close,
     Color,
@@ -26,7 +24,6 @@ from meerk40t.svgelements import (
     SVGElement,
     SVGImage, Matrix, Angle,
 )
-from meerk40t.tools.pathtools import VectorMontonizer, EulerianFill
 
 MILS_IN_MM = 39.3701
 
@@ -103,7 +100,7 @@ class CutOpNode(Node, Parameters):
 
     def deep_copy_children(self, obj):
         for element in obj.children:
-            self.add(copy(element.object), type="elem")
+            self.add(copy(element.object), type=element.type)
 
     def time_estimate(self):
         estimate = 0

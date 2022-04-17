@@ -1,6 +1,7 @@
 import math
 import wx
 
+from meerk40t.core.elements import elem_group_nodes, elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -406,7 +407,7 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     obj = e.object
                     obj.node.modified()
@@ -476,7 +477,7 @@ class RotationWidget(Widget):
             # )
             # b = self.reference_rect.bbox()
 
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     if obj.lock:
@@ -648,7 +649,7 @@ class CornerWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -836,7 +837,7 @@ class SideWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1012,7 +1013,7 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1035,7 +1036,7 @@ class SkewWidget(Widget):
             delta_angle = current_angle - self.master.rotated_angle
             self.master.rotated_angle = current_angle
 
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     if obj.lock:
@@ -1159,7 +1160,7 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             dx, dy = self.scene.revised_magnet_bound(b)
             if dx != 0 or dy != 0:
-                for e in elements.flat(types=("elem",), emphasized=True):
+                for e in elements.flat(types=elem_nodes, emphasized=True):
                     obj = e.object
                     obj.transform.post_translate(dx, dy)
 
@@ -1174,7 +1175,7 @@ class MoveWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:  # end
             self.check_for_magnets()
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1187,7 +1188,7 @@ class MoveWidget(Widget):
 
             # b = elements.selected_area()  # correct, but slow...
             b = elements._emphasized_bounds
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
@@ -1381,7 +1382,7 @@ class ReferenceWidget(Widget):
             if self.is_reference_object:
                 self.scene.reference_object = None
             else:
-                for e in elements.flat(types=("elem",), emphasized=True):
+                for e in elements.flat(types=elem_nodes, emphasized=True):
                     try:
                         # First object
                         obj = e.object
@@ -1686,7 +1687,7 @@ class SelectionWidget(Widget):
         dy = ty - cc[1]
         # print ("Moving from (%.1f, %.1f) to (%.1f, %.1f) translate by (%.1f, %.1f)" % (cc[0], cc[1], tx, ty, dx, dy ))
 
-        for e in elements.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=elem_nodes, emphasized=True):
             # Here we ignore the lock-status of an element, as this is just a move...
             obj = e.object
             if not obj is refob:
@@ -1715,7 +1716,7 @@ class SelectionWidget(Widget):
             cy = (cc[1] + cc[3]) / 2
             dx = cc[2] - cc[0]
             dy = cc[3] - cc[1]
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 obj.transform.post_rotate(angle, cx, cy)
             # Update bbox
@@ -1754,7 +1755,7 @@ class SelectionWidget(Widget):
         dx = (scalex - 1) * (cc[2] - cc[0])
         dy = (scaley - 1) * (cc[3] - cc[1])
 
-        for e in elements.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
@@ -1779,7 +1780,7 @@ class SelectionWidget(Widget):
             self.scene.request_refresh()
 
     def become_reference(self, event):
-        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
                 # First object
                 obj = e.object
@@ -1806,7 +1807,7 @@ class SelectionWidget(Widget):
         obj = self.scene.reference_object
         if not obj is None:
             # Okay, just lets make sure we are not doing this on the refobject itself...
-            for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
                 # Here we acknowledge the lock-status of an element
                 if obj == e.object:
                     obj = None
@@ -2004,7 +2005,7 @@ class SelectionWidget(Widget):
             if not self.scene.reference_object is None:
 
                 for idx, e in enumerate(
-                    elements.flat(types=("elem",), emphasized=True)
+                    elements.flat(types=elem_nodes, emphasized=True)
                 ):
                     obj = e.object
                     if obj is self.scene.reference_object:

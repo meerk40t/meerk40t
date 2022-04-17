@@ -27,7 +27,7 @@ class GroupNode(Node):
     def drop(self, drag_node):
         drop_node = self
         # Dragging element into group.
-        if drag_node.type == "elem":
+        if drag_node.type.starts_with("elem"):
             drop_node.insert_sibling(drag_node)
             return True
         return False

@@ -20,6 +20,7 @@ from os import times
 from time import time
 from typing import Optional
 
+from .elements import elem_ref_nodes
 from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -384,7 +385,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def _make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "ref elem")))
+        subitems = list(op.flat(types=elem_ref_nodes))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))

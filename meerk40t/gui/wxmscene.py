@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.elements import elem_nodes
 from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -273,7 +274,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command("reference")
         def make_reference(**kwargs):
             # Take first emphasized element
-            for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 self.widget_scene.reference_object = obj
                 break
@@ -374,7 +375,7 @@ class MeerK40tScenePanel(wx.Panel):
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 if color is None:
@@ -399,7 +400,7 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
 
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 if color is None:
@@ -421,7 +422,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Stroke_width is a text
         # print("Signal with %s" % stroke_width)
         sw = float(Length(stroke_width))
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 obj.stroke_width = sw

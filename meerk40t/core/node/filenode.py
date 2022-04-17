@@ -25,4 +25,3 @@ class FileNode(Node):
     @filepath.setter
     def filepath(self, value):
         self._filepath = value
-        self.label = None

@@ -5151,15 +5151,16 @@ class Elemental(Service):
             items.append(op)
         return items
 
-    def add_elem(self, element, classify=False):
+    def add_elem(self, element, classify=False, branch_type="branch elems"):
         """
         Add an element. Wraps it within a node, and appends it to the tree.
 
         :param element:
         :param classify: Should this element be automatically classified.
+        :param branch_type: Branch type to add this to
         :return:
         """
-        branch = self._tree.get(type="branch elems")
+        branch = self._tree.get(type=branch_type)
         if isinstance(element, Path):
             node = branch.add(element, type="elem path")
         elif isinstance(element, SVGImage):
@@ -5181,8 +5182,16 @@ class Elemental(Service):
             self.classify([element])
         return node
 
-    def add_elems(self, adding_elements):
-        branch = self._tree.get(type="branch elems")
+    def add_elems(self, adding_elements, classify=False, branch_type="branch elems"):
+        """
+        Add multiple svg elements to the tree.
+
+        @param adding_elements:
+        @param classify:
+        @param branch_type:
+        @return:
+        """
+        branch = self._tree.get(type=branch_type)
         items = []
         for element in adding_elements:
             if isinstance(element, Path):
@@ -5199,55 +5208,12 @@ class Elemental(Service):
                 items.append(branch.add(element, type="elem point"))
             elif isinstance(element, SVGText):
                 items.append(branch.add(element, type="elem text"))
-        self.signal("element_added", adding_elements)
-        return items
-
-    def add_reg(self, element):
-        """
-        Add an registaration. Wraps it within a node, and appends it to the tree.
-
-        :param element:
-        :return:
-        """
-        branch = self._tree.get(type="branch reg")
-        if isinstance(element, Path):
-            node = branch.add(element, type="elem path")
-        elif isinstance(element, SVGImage):
-            node = branch.add(element, type="elem image")
-        elif isinstance(element, Rect):
-            node = branch.add(element, type="elem rect")
-        elif isinstance(element, (Ellipse, Circle)):
-            node = branch.add(element, type="elem ellipse")
-        elif isinstance(element, (Polygon, Polyline)):
-            node = branch.add(element, type="elem polyline")
-        elif isinstance(element, Point):
-            node = branch.add(element, type="elem point")
-        elif isinstance(element, SVGText):
-            node = branch.add(element, type="elem text")
-        else:
-            raise ValueError("add elem called on non svgelement")
-        self.signal("regmark_added", element)
-        return node
-
-    def add_regs(self, adding_elements):
-        branch = self._tree.get(type="branch reg")
-        items = []
-        for element in adding_elements:
-            if isinstance(element, Path):
-                items.append(branch.add(element, type="elem path"))
-            elif isinstance(element, SVGImage):
-                items.append(branch.add(element, type="elem image"))
-            elif isinstance(element, Rect):
-                items.append(branch.add(element, type="elem rect"))
-            elif isinstance(element, (Ellipse, Circle)):
-                items.append(branch.add(element, type="elem ellipse"))
-            elif isinstance(element, (Polygon, Polyline)):
-                items.append(branch.add(element, type="elem polyline"))
-            elif isinstance(element, Point):
-                items.append(branch.add(element, type="elem point"))
-            elif isinstance(element, SVGText):
-                items.append(branch.add(element, type="elem text"))
-        self.signal("regmark_added", adding_elements)
+        if branch_type == "branch elems":
+            self.signal("element_added", adding_elements)
+        elif branch_type == "branch reg":
+            self.signal("regmark_added", element)
+        if classify:
+            self.classify(adding_elements)
         return items
 
     def clear_operations(self):
