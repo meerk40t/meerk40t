@@ -23,7 +23,9 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage, Matrix, Angle,
+    SVGImage,
+    Matrix,
+    Angle,
 )
 
 MILS_IN_MM = 39.3701

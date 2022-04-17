@@ -21,7 +21,7 @@ from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .propertypanels.consoleproperty import  ConsolePropertiesPanel
+from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
 from .propertypanels.groupproperties import GroupPropertiesPanel

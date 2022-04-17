@@ -1,10 +1,12 @@
 import wx
 from meerk40t.svgelements import Color
 
-class GuiColors():
-    '''
+
+class GuiColors:
+    """
     Provides and stores all relevant colors for a scene
-    '''
+    """
+
     def __init__(self, context):
         self.context = context
         self.default_color = {
@@ -23,12 +25,14 @@ class GuiColors():
             "bed": "#FFFFFF",
         }
         for key in self.default_color:
-            self.context.setting(str, "color_{key}".format(key=key), self.default_color[key])
+            self.context.setting(
+                str, "color_{key}".format(key=key), self.default_color[key]
+            )
 
     def set_default_colors(self):
-        '''
+        """
         Reset all colors to default values...
-        '''
+        """
         for key in self.default_color:
             color_key = f"color_{key}"
             setattr(self.context, color_key, self.default_color[key])

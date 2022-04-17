@@ -1,6 +1,7 @@
 from meerk40t.core.node.node import Node
 from meerk40t.core.element_types import *
 
+
 class ConsoleOperation(Node):
     """
     ConsoleOperation contains a console command (as a string) to be run.

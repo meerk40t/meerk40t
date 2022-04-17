@@ -40,6 +40,7 @@ from .node.rootnode import RootNode
 from .units import UNITS_PER_PIXEL, Length
 from .element_types import *
 
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "register":
@@ -102,6 +103,7 @@ def plugin(kernel, lifecycle=None):
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
+
 
 class Elemental(Service):
     """
@@ -743,7 +745,14 @@ class Elemental(Service):
             "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
         )
         def op_speed(
-            command, channel, _, speed=None, difference=False, progress=False, data=None, **kwrgs
+            command,
+            channel,
+            _,
+            speed=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if speed is None:
                 for op in data:
@@ -828,16 +837,22 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @self.console_argument("distance", type=Length, help=_("Set hatch-distance of operations"))
+        @self.console_argument(
+            "distance", type=Length, help=_("Set hatch-distance of operations")
+        )
         @self.console_command(
-            "hatch-distance", help=_("hatch-distance <distance>"), input_type="ops", output_type="ops"
+            "hatch-distance",
+            help=_("hatch-distance <distance>"),
+            input_type="ops",
+            output_type="ops",
         )
         def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
             if distance is None:
                 for op in data:
                     old_hatch_distance = op.hatch_distance
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old_hatch_distance)
+                        _("Hatch Distance for '%s' is currently: %s")
+                        % (str(op), old_hatch_distance)
                     )
                 return
             for op in data:
@@ -850,17 +865,25 @@ class Elemental(Service):
                 op.notify_update()
             return "ops", data
 
-        @self.console_argument("angle", type=Angle.parse, help=_("Set hatch-angle of operations"))
+        @self.console_argument(
+            "angle", type=Angle.parse, help=_("Set hatch-angle of operations")
+        )
         @self.console_command(
-            "hatch-angle", help=_("hatch-angle <angle>"), input_type="ops", output_type="ops"
+            "hatch-angle",
+            help=_("hatch-angle <angle>"),
+            input_type="ops",
+            output_type="ops",
         )
         def op_hatch_distance(command, channel, _, angle=None, data=None, **kwrgs):
             if angle is None:
                 for op in data:
                     old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
-                    old_hatch_angle_deg = f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
+                    old_hatch_angle_deg = (
+                        f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
+                    )
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s (%s)") % (str(op), old_hatch_angle, old_hatch_angle_deg)
+                        _("Hatch Distance for '%s' is currently: %s (%s)")
+                        % (str(op), old_hatch_angle, old_hatch_angle_deg)
                     )
                 return
             for op in data:
@@ -872,7 +895,12 @@ class Elemental(Service):
 
                 channel(
                     _("Hatch Angle for '%s' updated %s -> %s (%s)")
-                    % (str(op), old_hatch_angle, new_hatch_angle_turn, new_hatch_angle_deg)
+                    % (
+                        str(op),
+                        old_hatch_angle,
+                        new_hatch_angle_turn,
+                        new_hatch_angle_deg,
+                    )
                 )
                 op.notify_update()
             return "ops", data
@@ -4014,7 +4042,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('home -f'),
+                ConsoleOperation("home -f"),
                 type="op console",
                 pos=pos,
             )
@@ -4025,7 +4053,7 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('move_abs 0 0'),
+                ConsoleOperation("move_abs 0 0"),
                 type="op console",
                 pos=pos,
             )
@@ -4034,15 +4062,13 @@ class Elemental(Service):
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('beep'),
+                ConsoleOperation("beep"),
                 type="op console",
                 pos=pos,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
-        @self.tree_operation(
-            _("Append Interrupt"), node_type="branch ops", help=""
-        )
+        @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.op_branch.add(
                 ConsoleOperation('interrupt "Spooling was interrupted"'),
@@ -4063,7 +4089,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('quit'),
+                ConsoleOperation("quit"),
                 type="op console",
                 pos=pos,
             )
@@ -4568,7 +4594,9 @@ class Elemental(Service):
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
-        @self.tree_operation(_("Apply: %s") % "{script}", node_type="elem image", help="")
+        @self.tree_operation(
+            _("Apply: %s") % "{script}", node_type="elem image", help=""
+        )
         def image_rasterwizard_apply(node, script=None, **kwargs):
             self("image wizard %s\n" % script)
 
@@ -4977,9 +5005,7 @@ class Elemental(Service):
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(
-            types=elem_group_nodes, depth=depth, **kwargs
-        ):
+        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
             yield item
 
     def regmarks(self, **kwargs):
@@ -4989,9 +5015,7 @@ class Elemental(Service):
 
     def regmarks_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(
-            types=elem_group_nodes, depth=depth, **kwargs
-        ):
+        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
             yield item
 
     def top_element(self, **kwargs):

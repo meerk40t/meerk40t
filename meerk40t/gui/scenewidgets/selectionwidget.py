@@ -114,9 +114,17 @@ def process_event(
     if event_type == "leftdown":
         # We want to establish that we dont have a singular Shift key or a singular ctrl-key
         different_event = False
-        if (widget.key_control_pressed and not widget.key_shift_pressed and not widget.key_alt_pressed):
+        if (
+            widget.key_control_pressed
+            and not widget.key_shift_pressed
+            and not widget.key_alt_pressed
+        ):
             different_event = True
-        if (widget.key_shift_pressed and not widget.key_control_pressed and not widget.key_alt_pressed):
+        if (
+            widget.key_shift_pressed
+            and not widget.key_control_pressed
+            and not widget.key_alt_pressed
+        ):
             different_event = True
         if not different_event:
             widget.was_lb_raised = True
@@ -250,16 +258,25 @@ class BorderWidget(Widget):
             s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             pos = self.left / 2.0 - t_width / 2
-            if pos + t_width + distance >=self.left:
+            if pos + t_width + distance >= self.left:
                 pos = self.left - t_width - distance
             gc.DrawText(s_txt, pos, center_y)
             # Display height
-            s_txt = str(Length(amount=(self.bottom - self.top), digits=2, preferred_units=units))
+            s_txt = str(
+                Length(amount=(self.bottom - self.top), digits=2, preferred_units=units)
+            )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
-            gc.DrawText(s_txt, self.right + 0.5 * t_height, center_y + 0.5 * t_width, math.tau / 4)
+            gc.DrawText(
+                s_txt,
+                self.right + 0.5 * t_height,
+                center_y + 0.5 * t_width,
+                math.tau / 4,
+            )
 
             # Display width
-            s_txt = str(Length(amount=(self.right - self.left), digits=2, preferred_units=units))
+            s_txt = str(
+                Length(amount=(self.right - self.left), digits=2, preferred_units=units)
+            )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
         # But show the angle
@@ -711,8 +728,8 @@ class CornerWidget(Widget):
             grow = 1
             # If the crtl+shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
-                orgy  = (self.master.bottom + self.master.top) / 2
-                orgx  = (self.master.left + self.master.right) / 2
+                orgy = (self.master.bottom + self.master.top) / 2
+                orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
 
             oldvalue = self.save_width
@@ -902,8 +919,8 @@ class SideWidget(Widget):
             grow = 1
             # If the Ctr+Shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
-                orgy  = (self.master.bottom + self.master.top) / 2
-                orgx  = (self.master.left + self.master.right) / 2
+                orgy = (self.master.bottom + self.master.top) / 2
+                orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
 
             oldvalue = self.save_width
@@ -912,7 +929,6 @@ class SideWidget(Widget):
             oldvalue = self.save_height
             self.save_height *= scaley
             deltay = self.save_height - oldvalue
-
 
             if "n" in self.method:
                 b[1] -= grow * deltay
@@ -945,7 +961,9 @@ class SideWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "side"
-        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % ("Y" if self.index in (0, 2) else "X")
+        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
+            "Y" if self.index in (0, 2) else "X"
+        )
 
         response = process_event(
             widget=self,
@@ -1708,8 +1726,8 @@ class SelectionWidget(Widget):
         elements = self.scene.context.elements
         cc = elements.selected_area()
 
-        ratio_ref = (bb[3]-bb[1]) > (bb[2] - bb[0])
-        ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
+        ratio_ref = (bb[3] - bb[1]) > (bb[2] - bb[0])
+        ratio_sel = (cc[3] - cc[1]) > (cc[2] - cc[0])
         if ratio_ref != ratio_sel:
             angle = math.tau / 4
             cx = (cc[0] + cc[2]) / 2
@@ -1721,11 +1739,10 @@ class SelectionWidget(Widget):
                 obj.transform.post_rotate(angle, cx, cy)
             # Update bbox
             cc[0] = cx - dy / 2
-            cc[2] = cc [0] + dy
+            cc[2] = cc[0] + dy
             cc[1] = cy - dx / 2
-            cc[3] = cc [1] + dx
+            cc[3] = cc[1] + dx
             elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
-
 
     def scale_selection_to_ref(self, method="none"):
         refob = self.scene.reference_object
@@ -1807,7 +1824,9 @@ class SelectionWidget(Widget):
         obj = self.scene.reference_object
         if not obj is None:
             # Okay, just lets make sure we are not doing this on the refobject itself...
-            for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+            for e in self.scene.context.elements.flat(
+                types=elem_nodes, emphasized=True
+            ):
                 # Here we acknowledge the lock-status of an element
                 if obj == e.object:
                     obj = None
@@ -1975,10 +1994,10 @@ class SelectionWidget(Widget):
             self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
             try:
                 self.selection_pen.SetWidth(self.line_width)
-                self.handle_pen.SetWidth(0.75*self.line_width)
+                self.handle_pen.SetWidth(0.75 * self.line_width)
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
-                self.handle_pen.SetWidth(int(0.75*self.line_width))
+                self.handle_pen.SetWidth(int(0.75 * self.line_width))
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:

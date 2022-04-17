@@ -57,4 +57,3 @@ class PolygonTool(ToolWidget):
             self.point_series = []
             self.mouse_position = None
         return response
-

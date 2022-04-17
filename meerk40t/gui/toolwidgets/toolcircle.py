@@ -59,7 +59,7 @@ class CircleTool(ToolWidget):
                     (y1 + y0) / 2.0,
                     abs(self.p1 - self.p2) / 2,
                     stroke="blue",
-                    stroke_width=1000
+                    stroke_width=1000,
                 )
 
                 if not ellipse.is_degenerate():

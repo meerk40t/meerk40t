@@ -43,7 +43,12 @@ from ..svgelements import (
     SVGElement,
     SVGImage,
     SVGText,
-    SVG_TAG_GROUP, Polygon, Polyline, Circle, Ellipse, Rect,
+    SVG_TAG_GROUP,
+    Polygon,
+    Polyline,
+    Circle,
+    Ellipse,
+    Rect,
 )
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
 

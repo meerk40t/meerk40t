@@ -36,6 +36,7 @@ class CutObject(Parameters):
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
+
     #         self.constant_move_x = False
     #         self.constant_move_y = False
     def __init__(
@@ -893,7 +894,7 @@ class PlotCut(CutObject):
         self.settings["constant_move_x"] = False
         self.settings["constant_move_y"] = False
         self.settings["raster_step"] = 0
-        if self.settings.get("speed",0) < 80:
+        if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
             self.settings["force_twitchless"] = True
             return False

@@ -148,7 +148,9 @@ class GridWidget(Widget):
             unit_height = context.device.unit_height
             background = self.background
             if background is None:
-                brush = wx.Brush(colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID)
+                brush = wx.Brush(
+                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
+                )
                 gc.SetBrush(brush)
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             elif isinstance(background, int):

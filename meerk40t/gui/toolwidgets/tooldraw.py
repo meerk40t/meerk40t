@@ -3,7 +3,11 @@ import wx
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
 
-from meerk40t.gui.scene.sceneconst import RESPONSE_DROP, RESPONSE_CONSUME, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    RESPONSE_DROP,
+    RESPONSE_CONSUME,
+    RESPONSE_CHAIN,
+)
 
 
 class DrawTool(ToolWidget):

@@ -2,8 +2,21 @@ import os
 from io import BytesIO
 from typing import Tuple, Union
 
-from meerk40t.kernel import Module, Service, STATE_INITIALIZE, STATE_TERMINATE, STATE_END, STATE_PAUSE, STATE_BUSY, \
-    STATE_WAIT, STATE_ACTIVE, STATE_IDLE, STATE_UNKNOWN, get_safe_path, signal_listener
+from meerk40t.kernel import (
+    Module,
+    Service,
+    STATE_INITIALIZE,
+    STATE_TERMINATE,
+    STATE_END,
+    STATE_PAUSE,
+    STATE_BUSY,
+    STATE_WAIT,
+    STATE_ACTIVE,
+    STATE_IDLE,
+    STATE_UNKNOWN,
+    get_safe_path,
+    signal_listener,
+)
 
 from ..core.cutcode import CutCode, LineCut, PlotCut
 from ..core.parameters import Parameters

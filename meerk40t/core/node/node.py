@@ -135,7 +135,6 @@ class Node:
     def save(self, settings, section):
         pass
 
-
     @property
     def label(self):
         return str(self)

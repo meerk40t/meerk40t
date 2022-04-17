@@ -369,7 +369,9 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
-        self.plot_planner = PlotPlanner(self.settings, single=True, smooth=False, ppi=False, shift=False, group=True)
+        self.plot_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
         self.queue = []
         self.plot_data = None
 
@@ -661,7 +663,6 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         return False
-
 
     def plot_start2(self):
         """

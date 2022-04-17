@@ -42,7 +42,7 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str, ansi: bool=True):
+    def __init__(self, name: str, version: str, profile: str, ansi: bool = True):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -2110,7 +2110,8 @@ class Kernel(Settings):
                     if str(e):
                         message = str(e)
                     channel(
-                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message), ansi=True
+                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message),
+                        ansi=True,
                     )
                     return None
                 except CommandMatchRejected:
@@ -2126,7 +2127,8 @@ class Kernel(Settings):
                 channel(
                     "[red][bold]"
                     + _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name), ansi=True
+                    % (command, ctx_name),
+                    ansi=True,
                 )
                 return None
         return data

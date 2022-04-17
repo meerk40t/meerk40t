@@ -1,4 +1,3 @@
-
 import wx
 from wx import aui
 
@@ -144,7 +143,9 @@ class PositionPanel(wx.Panel):
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
             if self.position_units in self.choices:
-                self.combo_box_units.SetSelection(self.choices.index(self.position_units))
+                self.combo_box_units.SetSelection(
+                    self.choices.index(self.position_units)
+                )
             return
         if not self.text_x.IsEnabled():
             self.text_w.Enable(True)
@@ -155,7 +156,9 @@ class PositionPanel(wx.Panel):
 
         x0, y0, x1, y1 = bounds
         # conversion = ViewPort.conversion(self.position_units)
-        conversion=float(Length("{amount}{units}".format(units=self.position_units, amount=1)))
+        conversion = float(
+            Length("{amount}{units}".format(units=self.position_units, amount=1))
+        )
         # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
         self.position_x = x0 / conversion
         self.position_y = y0 / conversion

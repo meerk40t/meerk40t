@@ -119,7 +119,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         # Don't let grid resize itself
         self.widget_scene.auto_tick = False
-        self.widget_scene.tick_distance = 10 # mm
+        self.widget_scene.tick_distance = 10  # mm
 
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene, self)

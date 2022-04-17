@@ -60,4 +60,3 @@ class RectTool(ToolWidget):
         elif event_type == "lost":
             self.scene.tool_active = False
         return response
-

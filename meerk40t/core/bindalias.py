@@ -444,6 +444,7 @@ class Alias(Service):
             if value:
                 self.aliases[key] = value
 
+
 def keymap_execute(context, keyvalue, keydown=True):
     """
     Execute keybind accelerator if it exists and return true

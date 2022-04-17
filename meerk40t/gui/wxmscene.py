@@ -169,17 +169,21 @@ class MeerK40tScenePanel(wx.Panel):
                         channel(key[6:])
             else:
                 color_key = f"color_{aspect}"
-                if aspect == "unset": # reset all
+                if aspect == "unset":  # reset all
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
-                if color == "unset": # reset one
+                if color == "unset":  # reset one
                     setattr(self.context, color_key, "default")
                     self.context.signal("theme", True)
                     return "scene", data
 
                 if color is None:
-                    channel(_("No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"))
+                    channel(
+                        _(
+                            "No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"
+                        )
+                    )
                 else:
                     if hasattr(self.context, color_key):
                         setattr(self.context, color_key, color.hexa)
@@ -371,7 +375,7 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("selstroke")
     def on_selstroke(self, origin, rgb, *args):
         # print (origin, rgb, args)
-        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
@@ -395,7 +399,7 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("selfill")
     def on_selfill(self, origin, rgb, *args):
         # print (origin, rgb, args)
-        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
@@ -455,7 +459,6 @@ class SceneWindow(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
-
 
     def window_open(self):
         self.panel.pane_show()

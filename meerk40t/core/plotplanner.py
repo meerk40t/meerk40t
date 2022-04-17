@@ -39,7 +39,16 @@ of zero will remain zero.
 
 
 class PlotPlanner(Parameters):
-    def __init__(self, settings, single=True, smooth=True, ppi=True, shift=True, group=True, **kwargs):
+    def __init__(
+        self,
+        settings,
+        single=True,
+        smooth=True,
+        ppi=True,
+        shift=True,
+        group=True,
+        **kwargs,
+    ):
         super().__init__(settings, **kwargs)
         self.debug = False
 
@@ -201,6 +210,7 @@ class PlotPlanner(Parameters):
         :param plot: plottable element that should be wrapped
         :return: generator to produce plottable elements.
         """
+
         def debug(plot, manipulator):
             for q in plot:
                 print("Manipulator: %s, %s" % (str(q), str(manipulator)))
@@ -404,10 +414,7 @@ class Smooth(PlotManipulation):
                 yield from self.flush()
                 yield x, y, on
                 continue
-            if (
-                not self.planner.constant_move_x
-                and not self.planner.constant_move_y
-            ):
+            if not self.planner.constant_move_x and not self.planner.constant_move_y:
                 yield x, y, on
                 continue  # We are not smoothing.
             if px is not None and py is not None:

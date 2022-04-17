@@ -25,7 +25,9 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage, Matrix, Angle,
+    SVGImage,
+    Matrix,
+    Angle,
 )
 from meerk40t.tools.pathtools import VectorMontonizer, EulerianFill
 
@@ -150,7 +152,9 @@ class HatchOpNode(Node, Parameters):
     def scale_native(self, matrix):
         distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
         transformed_vector = matrix.transform_vector([0, distance_y])
-        self._hatch_distance_native = abs(complex(transformed_vector[0], transformed_vector[1]))
+        self._hatch_distance_native = abs(
+            complex(transformed_vector[0], transformed_vector[1])
+        )
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
@@ -184,10 +188,10 @@ class HatchOpNode(Node, Parameters):
             pos = 0
             for i, pts in enumerate(points):
                 if pts is None:
-                    yield points[pos: i - 1]
+                    yield points[pos : i - 1]
                     pos = i + 1
             if pos != len(points):
-                yield points[pos: len(points)]
+                yield points[pos : len(points)]
 
         plot = PlotCut(settings=settings, passes=passes)
         for s in split(points):

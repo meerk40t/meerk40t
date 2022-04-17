@@ -25,7 +25,9 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Shape,
     SVGElement,
-    SVGImage, Matrix, Angle,
+    SVGImage,
+    Matrix,
+    Angle,
 )
 from meerk40t.tools.pathtools import VectorMontonizer, EulerianFill
 

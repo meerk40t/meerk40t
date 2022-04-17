@@ -1,4 +1,3 @@
-
 non_structural_nodes = (
     "op cut",
     "op raster",
@@ -29,7 +28,6 @@ operate_nodes = (
     "op dots",
     "op hatch",
     "op console",
-
 )
 op_nodes = (
     "op cut",

@@ -28,7 +28,9 @@ class BalorDriver(Parameters):
 
         self.redlight_preferred = False
 
-        self.plot_planner = PlotPlanner(self.settings, single=True, smooth=False, ppi=False, shift=False, group=True)
+        self.plot_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -55,7 +57,9 @@ class BalorDriver(Parameters):
                 self.connected = self.connection.open(
                     mock=self.service.mock,
                     machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile if self.service.corfile_enabled else None,
+                    cor_file=self.service.corfile
+                    if self.service.corfile_enabled
+                    else None,
                     first_pulse_killer=self.service.first_pulse_killer,
                     pwm_pulse_width=self.service.pwm_pulse_width,
                     pwm_half_period=self.service.pwm_half_period,
@@ -134,7 +138,6 @@ class BalorDriver(Parameters):
             last_index = i
         if last_index != len(plot):
             yield plot[-1]
-
 
     # def cutcode_to_light_job(self, queue):
     #     """
@@ -269,26 +272,42 @@ class BalorDriver(Parameters):
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
 
-                    rapid_enabled = str(settings.get("rapid_enabled", False)).lower() == "true"
+                    rapid_enabled = (
+                        str(settings.get("rapid_enabled", False)).lower() == "true"
+                    )
                     if rapid_enabled:
-                        rapid_speed = settings.get("rapid_speed", self.service.default_rapid_speed)
+                        rapid_speed = settings.get(
+                            "rapid_speed", self.service.default_rapid_speed
+                        )
                         job.set_travel_speed(float(rapid_speed))
                     else:
                         job.set_travel_speed(self.service.default_rapid_speed)
-                    current_power = float(settings.get("power", self.service.default_power)) / 10.0
+                    current_power = (
+                        float(settings.get("power", self.service.default_power)) / 10.0
+                    )
                     job.set_power(current_power)  # Convert power, out of 1000
-                    frequency = settings.get("frequency", self.service.default_frequency)
+                    frequency = settings.get(
+                        "frequency", self.service.default_frequency
+                    )
                     job.set_frequency(float(frequency))
                     cut_speed = settings.get("speed", self.service.default_speed)
                     job.set_cut_speed(float(cut_speed))
 
-                    timing_enabled = str(settings.get("timing_enabled", False)).lower() == "true"
+                    timing_enabled = (
+                        str(settings.get("timing_enabled", False)).lower() == "true"
+                    )
                     if timing_enabled:
-                        delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+                        delay_laser_on = settings.get(
+                            "delay_laser_on", self.service.delay_laser_on
+                        )
                         job.set_laser_on_delay(delay_laser_on)
-                        delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+                        delay_laser_off = settings.get(
+                            "delay_laser_off", self.service.delay_laser_off
+                        )
                         job.set_laser_off_delay(delay_laser_off)
-                        delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+                        delay_polygon = settings.get(
+                            "delay_laser_polygon", self.service.delay_polygon
+                        )
                         job.set_polygon_delay(delay_polygon)
                     else:
                         # Use globals
@@ -296,14 +315,23 @@ class BalorDriver(Parameters):
                         job.set_laser_off_delay(self.service.delay_laser_off)
                         job.set_polygon_delay(self.service.delay_polygon)
 
-                    wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
+                    wobble_enabled = (
+                        str(settings.get("wobble_enabled", False)).lower() == "true"
+                    )
                     if wobble_enabled:
                         wobble_radius = settings.get("wobble_radius", "1.5mm")
                         wobble_interval = settings.get("wobble_interval", "0.3mm")
                         wobble_speed = settings.get("wobble_speed", 50.0)
-                        wobble = Wobble(radius=self.service.physical_to_device_length(wobble_radius, 0)[0], speed=wobble_speed)
+                        wobble = Wobble(
+                            radius=self.service.physical_to_device_length(
+                                wobble_radius, 0
+                            )[0],
+                            speed=wobble_speed,
+                        )
                         job._mark_modification = wobble.wobble
-                        job._interpolations = self.service.physical_to_device_length(wobble_interval, 0)[0]
+                        job._interpolations = self.service.physical_to_device_length(
+                            wobble_interval, 0
+                        )[0]
                     else:
                         job._mark_modification = None
                         job._interpolations = None

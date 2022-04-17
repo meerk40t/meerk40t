@@ -296,7 +296,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Modification"),
             icons8_opened_folder_50.GetBitmap(),
-            style = RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
             # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.modify_panel)
@@ -307,7 +307,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Geometry"),
             icons8_opened_folder_50.GetBitmap(),
-            style = RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
             # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.geometry_panel)
@@ -318,7 +318,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Alignment"),
             icons8_opened_folder_50.GetBitmap(),
-            style = RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
             # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.align_panel)

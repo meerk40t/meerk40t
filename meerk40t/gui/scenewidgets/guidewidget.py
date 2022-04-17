@@ -38,7 +38,6 @@ class GuideWidget(Widget):
         self.pen_magnets.SetColour(self.scene.colors.color_magnetline)
         self.pen_magnets.SetWidth(2)
 
-
     def hit(self):
         return HITCHAIN_HIT
 

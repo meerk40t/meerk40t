@@ -995,17 +995,19 @@ class CommandList(CommandSource):
         dx = x - self._last_x
         dy = y - self._last_y
         if self._interpolations:
-            distance = math.sqrt(dx*dx + dy*dy)
+            distance = math.sqrt(dx * dx + dy * dy)
             segments = math.ceil(distance / self._interpolations)
             dx /= segments
             dy /= segments
         else:
             segments = 1
-        for segment in range(1, segments+1):
+        for segment in range(1, segments + 1):
             next_x = self._last_x + dx
             next_y = self._last_y + dy
             if self._mark_modification:
-                cut_x, cut_y = self._mark_modification(self._last_x, self._last_y, next_x, next_y)
+                cut_x, cut_y = self._mark_modification(
+                    self._last_x, self._last_y, next_x, next_y
+                )
             else:
                 cut_x = next_x
                 cut_y = next_y
@@ -1252,7 +1254,7 @@ class Wobble:
         self.speed = speed
 
     def wobble(self, x0, y0, x1, y1):
-        self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
+        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
         t = self._total_distance / (math.tau * self.radius)
         dx = self.radius * math.cos(t * self.speed)
         dy = self.radius * math.sin(t * self.speed)
