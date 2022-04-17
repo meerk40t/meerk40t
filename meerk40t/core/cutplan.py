@@ -124,9 +124,9 @@ class CutPlan:
         blob converts User operations to CutCode objects.
 
         In order to have CutCode objects in the correct sequence for merging we need to:
-        a. Break operations into grouped sequences of LaserOperations and special operations.
+        1. Break operations into grouped sequences of LaserOperations and special operations.
            We can only merge within groups of Laser operations.
-        b. The sequence of CutObjects needs to reflect merge settings
+        2. The sequence of CutObjects needs to reflect merge settings
            Normal sequence is to iterate operations and then passes for each operation.
            With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
         """
