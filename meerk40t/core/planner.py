@@ -507,7 +507,6 @@ class Planner(Service):
                     "op dots",
                     "op hatch",
                     "cutcode",
-                    "cmdop",
                     "op console",
                     "lasercode",
                     "blob",

@@ -9,7 +9,6 @@ branch elems: Elements Branch
 branch reg: Regmark Branch
 ref elem: Element below op branch which stores specific data.
 op: LayerOperation within Operation Branch.
-opcmd: CommandOperation within Operation Branch.
 elem: Element with Element Branch or subgroup.
 file: File Group within Elements Branch
 group: Group type within Branch Elems or refelem.

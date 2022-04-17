@@ -28,7 +28,6 @@ from ..svgelements import (
     Viewbox,
 )
 from .cutcode import CutCode
-from .node.commandop import CommandOperation
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -113,7 +112,6 @@ non_structural_nodes = (
     "op hatch",
     "op console",
     "ref elem",
-    "cmdop",
     "lasercode",
     "cutcode",
     "blob",
@@ -135,7 +133,6 @@ operate_nodes = (
     "op dots",
     "op hatch",
     "op console",
-    "cmdop",
 
 )
 op_nodes = (
@@ -146,7 +143,6 @@ op_nodes = (
     "op dots",
     "op hatch",
     "op console",
-    "cmdop",
 )
 elem_nodes = (
     "elem ellipse",
@@ -3890,7 +3886,6 @@ class Elemental(Service):
                 "op engrave",
                 "op dots",
                 "op hatch",
-                "cmdop",
                 "op console",
                 "lasercode",
                 "cutcode",

@@ -1,7 +1,6 @@
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
-from meerk40t.core.node.commandop import CommandOperation
 from meerk40t.core.node.op_console import ConsoleOperation
 from meerk40t.core.node.cutnode import CutNode
 
@@ -47,7 +46,6 @@ class RootNode(Node):
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
             "op hatch": HatchOpNode,
-            "cmdop": CommandOperation,
             "op console": ConsoleOperation,
             "lasercode": LaserCodeNode,
             "group": GroupNode,
