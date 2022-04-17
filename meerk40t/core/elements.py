@@ -2,7 +2,6 @@ import functools
 import os.path
 from os.path import realpath
 import re
-import time
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
