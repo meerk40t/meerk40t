@@ -1,13 +1,11 @@
 import os
 
-from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort, Length
-from meerk40t.kernel import Service
-
-from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
-
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.BalorDriver import BalorDriver
+from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import Length, ViewPort
+from meerk40t.kernel import Service
+from meerk40t.svgelements import Angle, Matrix, Path, Point, Polygon, Shape, SVGImage
 
 
 class BalorDevice(Service, ViewPort):

@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.kernel import signal_listener
-from ...core.units import Length
 
-from ...svgelements import Color, Angle
+from ...core.units import Length
+from ...svgelements import Angle, Color
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation

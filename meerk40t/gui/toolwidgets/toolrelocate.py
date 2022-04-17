@@ -1,9 +1,9 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 from ...core.units import UNITS_PER_MM
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 
 class RelocateTool(ToolWidget):

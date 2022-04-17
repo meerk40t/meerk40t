@@ -1,7 +1,9 @@
 import wx
+
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
-from ..balor_params import Parameters
+
 from ...core.units import Length
+from ..balor_params import Parameters
 
 _ = wx.GetTranslation
 

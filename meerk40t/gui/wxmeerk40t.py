@@ -15,32 +15,31 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .propertypanels.groupproperties import GroupPropertiesPanel
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .propertypanels.imageproperty import ImagePropertyPanel
 from .keymap import Keymap
 from .notes import Notes
-from .propertypanels.propertywindow import PropertyWindow
+from .preferences import Preferences
+from .propertypanels.consoleproperty import ConsolePropertiesPanel
+from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.imageproperty import ImagePropertyPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
-from .preferences import Preferences
+from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.textproperty import TextPropertyPanel
 from .rasterwizard import RasterWizard
 from .simulation import Simulation
-from .propertypanels.textproperty import TextPropertyPanel
 from .wxmmain import MeerK40t
 
 """

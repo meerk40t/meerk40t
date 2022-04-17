@@ -27,6 +27,7 @@ from ..svgelements import (
     SVG_ATTR_XMLNS_LINK,
     SVG_ATTR_Y,
     SVG_NAME_TAG,
+    SVG_TAG_GROUP,
     SVG_TAG_IMAGE,
     SVG_TAG_PATH,
     SVG_TAG_TEXT,
@@ -35,22 +36,21 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
+    Circle,
     Color,
+    Ellipse,
     Group,
     Matrix,
     Path,
+    Polygon,
+    Polyline,
+    Rect,
     Shape,
     SVGElement,
     SVGImage,
     SVGText,
-    SVG_TAG_GROUP,
-    Polygon,
-    Polyline,
-    Circle,
-    Ellipse,
-    Rect,
 )
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
+from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):

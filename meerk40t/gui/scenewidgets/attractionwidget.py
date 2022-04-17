@@ -1,3 +1,5 @@
+from math import sqrt
+
 import wx
 
 from meerk40t.core.element_types import elem_nodes
@@ -8,7 +10,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHANGE_POSITION,
 )
 from meerk40t.gui.scene.widget import Widget
-from math import sqrt
 
 TYPE_BOUND = 0
 TYPE_POINT = 1

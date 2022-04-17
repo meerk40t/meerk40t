@@ -1,8 +1,7 @@
 import math
+import sys
 
 import numpy as np
-
-import sys
 
 
 class Simulation:

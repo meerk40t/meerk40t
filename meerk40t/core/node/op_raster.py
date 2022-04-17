@@ -1,24 +1,26 @@
 from copy import copy
 
-from meerk40t.core.element_types import *
 from meerk40t.core.cutcode import (
     CubicCut,
     CutGroup,
     DwellCut,
     LineCut,
+    PlotCut,
     QuadCut,
     RasterCut,
-    PlotCut,
 )
+from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
+    Angle,
     Close,
     Color,
     CubicBezier,
     Line,
+    Matrix,
     Move,
     Path,
     Polygon,
@@ -26,10 +28,8 @@ from meerk40t.svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    Matrix,
-    Angle,
 )
-from meerk40t.tools.pathtools import VectorMontonizer, EulerianFill
+from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 MILS_IN_MM = 39.3701
 

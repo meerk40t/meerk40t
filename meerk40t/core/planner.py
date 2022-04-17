@@ -1,8 +1,6 @@
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import Service
-from .units import Length
+from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.cutcode import CutCode
 from ..svgelements import SVGImage
@@ -10,9 +8,10 @@ from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
+from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
-from .node.op_hatch import HatchOpNode
+from .units import Length
 
 
 def plugin(kernel, lifecycle=None):

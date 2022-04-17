@@ -9,17 +9,16 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
-from ..core.element_types import elem_nodes
 
+from ..core.element_types import elem_nodes
 from ..core.units import UNITS_PER_INCH, Length
-from ..svgelements import (
-    Color,
-    Matrix,
-    Path,
-    SVGImage,
-)
+from ..svgelements import Color, Matrix, Path, SVGImage
 from .icons import (
     icon_meerk40t,
+    icons8_align_bottom_50,
+    icons8_align_left_50,
+    icons8_align_right_50,
+    icons8_align_top_50,
     icons8_circle_50,
     icons8_cursor_50,
     icons8_emergency_stop_button_50,
@@ -35,19 +34,15 @@ from .icons import (
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
+    icons8_rotate_left_50,
+    icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
     icons8_union_50,
     icons8_vector_50,
-    icons8_align_bottom_50,
-    icons8_align_left_50,
-    icons8_align_right_50,
-    icons8_align_top_50,
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_rotate_left_50,
-    icons8_rotate_right_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,

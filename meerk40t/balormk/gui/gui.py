@@ -9,15 +9,17 @@ def plugin(service, lifecycle):
         return not service.has_feature("wx")
     if lifecycle == "added":
         import wx
-        from .balorcontroller import BalorController
-        from .balorconfig import BalorConfiguration
-        from .baloroperationproperties import BalorOperationPanel
+
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
             icons8_light_off_50,
             icons8_light_on_50,
         )
+
+        from .balorconfig import BalorConfiguration
+        from .balorcontroller import BalorController
+        from .baloroperationproperties import BalorOperationPanel
 
         service.register("window/Controller", BalorController)
         service.register("window/Configuration", BalorConfiguration)

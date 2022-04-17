@@ -8,8 +8,8 @@ import serial
 from serial import SerialException
 
 from meerk40t.kernel import Service
-from ..core.cutcode import LineCut, QuadCut, CubicCut
 
+from ..core.cutcode import CubicCut, LineCut, QuadCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler

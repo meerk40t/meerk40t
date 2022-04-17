@@ -1,10 +1,10 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import SVGText
 
 from ...core.units import UNITS_PER_PIXEL
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 
 class TextTool(ToolWidget):

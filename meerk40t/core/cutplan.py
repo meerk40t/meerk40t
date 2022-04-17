@@ -20,11 +20,11 @@ from os import times
 from time import time
 from typing import Optional
 
-from .elements import elem_ref_nodes
 from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .elements import elem_ref_nodes
 
 
 class CutPlanningFailedError(Exception):

@@ -1,4 +1,5 @@
 import math
+
 import wx
 
 from meerk40t.core.element_types import *
@@ -13,8 +14,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
-
-from meerk40t.svgelements import Rect, Point
+from meerk40t.svgelements import Point, Rect
 
 
 def process_event(

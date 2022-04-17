@@ -1,9 +1,9 @@
 import functools
 import os.path
-from os.path import realpath
 import re
 from copy import copy
 from math import cos, gcd, pi, sin, tau
+from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
@@ -28,17 +28,17 @@ from ..svgelements import (
     Viewbox,
 )
 from .cutcode import CutCode
+from .element_types import *
+from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
+from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
-from .node.op_hatch import HatchOpNode
-from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.rootnode import RootNode
 from .units import UNITS_PER_PIXEL, Length
-from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):

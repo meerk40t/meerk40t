@@ -5,7 +5,6 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -17,16 +16,16 @@ from meerk40t.kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
+    CommandSyntaxError,
     Module,
     Service,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 from ..core.cutcode import CutCode, RawCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -44,6 +43,7 @@ from ..device.basedevice import (
     PLOT_START,
 )
 from .laserspeed import LaserSpeed
+from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100

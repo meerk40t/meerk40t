@@ -1,9 +1,7 @@
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
-from meerk40t.core.node.op_console import ConsoleOperation
 from meerk40t.core.node.cutnode import CutNode
-
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
@@ -14,13 +12,14 @@ from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
+from meerk40t.core.node.node import Node
+from meerk40t.core.node.op_console import ConsoleOperation
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.refnode import RefElemNode
 
 

@@ -1,10 +1,9 @@
 import time
 
-from meerk40t.core.drivers import PLOT_SETTING, PLOT_FINISH, PLOT_RAPID, PLOT_JOG
-from meerk40t.core.parameters import Parameters
-
 from meerk40t.balor.command_list import CommandList, Wobble
-from meerk40t.balor.sender import Sender, BalorMachineException
+from meerk40t.balor.sender import BalorMachineException, Sender
+from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 
 

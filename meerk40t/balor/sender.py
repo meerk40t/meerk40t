@@ -13,12 +13,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import threading
+import time
+
 import usb.core
 import usb.util
-import time
-import threading
 
-from meerk40t.balor.command_list import CommandSource, CommandList
+from meerk40t.balor.command_list import CommandList, CommandSource
 
 
 class BalorException(Exception):

@@ -2,6 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.planner import CutPlanningFailedError
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     icons8_delete_50,
     icons8_emergency_stop_button_50,
@@ -11,7 +12,6 @@ from meerk40t.gui.icons import (
     icons8_pause_50,
     icons8_pentagon_50,
 )
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
 

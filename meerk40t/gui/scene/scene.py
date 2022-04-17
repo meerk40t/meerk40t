@@ -3,17 +3,17 @@ import threading
 import time
 from math import isinf, isnan, tau
 
-# from weakref import ref
-
 import wx
 
 from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
@@ -22,16 +22,18 @@ from meerk40t.gui.scene.sceneconst import (
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
+    RESPONSE_CHANGE_POSITION,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
-    RESPONSE_CHANGE_POSITION,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox, Polygon, Circle, Ellipse, Arc
-from meerk40t.core.units import Length
-from meerk40t.gui.scene.guicolors import GuiColors
+from meerk40t.svgelements import Arc, Circle, Ellipse, Matrix, Point, Polygon, Viewbox
+
+# from weakref import ref
+
+
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 

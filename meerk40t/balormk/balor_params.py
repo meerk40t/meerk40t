@@ -1,6 +1,5 @@
 from typing import Dict
 
-
 FLOAT_PARAMETERS = (
     "speed",
     "frequency",
