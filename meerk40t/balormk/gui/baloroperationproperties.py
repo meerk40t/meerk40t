@@ -136,6 +136,8 @@ class BalorOperationPanel(wx.Panel):
                 "object": params,
                 "default": "circle",
                 "type": str,
+                "style": "combo",
+                "choices": ("circle","sawtooth", "sinewave"),
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Pattern Type"),
                 "tip": _("Pattern type for the given wobble."),
