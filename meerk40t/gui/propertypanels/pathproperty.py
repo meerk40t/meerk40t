@@ -81,9 +81,16 @@ class PathPropertyPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if isinstance(node.object, Path):
-            return True
-        return False
+        result = True
+        try:
+            id = node.object.id
+            stroke = node.object.stroke
+            fill = node.object.fill
+            if hasattr(node.object, "text"):
+                result = False
+        except AttributeError:
+            result = False
+        return result
 
     def set_widgets(self, node):
         if node is not None:
