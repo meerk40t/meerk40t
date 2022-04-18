@@ -196,6 +196,7 @@ class SVGWriter:
             settings = node.settings
             for key in settings:
                 if not key:
+                    # If key is None, do not save.
                     continue
                 value = settings[key]
                 subelement.set(key, str(value))

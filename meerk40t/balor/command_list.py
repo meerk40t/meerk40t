@@ -239,7 +239,10 @@ class OpSetLaserOnDelay(Operation):
     opcode = 0x8007
 
     def text_decode(self):
-        return "Set on time compensation = %d us" % (self.params[0])
+        time = self.params[0]
+        if self.params[1] == 0x8000:
+            time = -time
+        return "Set on time compensation = %d us" % (time)
 
 
 class OpSetLaserOffDelay(Operation):
@@ -247,7 +250,10 @@ class OpSetLaserOffDelay(Operation):
     opcode = 0x8008
 
     def text_decode(self):
-        return "Set off time compensation = %d us" % (self.params[0])
+        time = self.params[0]
+        if self.params[1] == 0x8000:
+            time = -time
+        return "Set off time compensation = %d us" % (time)
 
 
 class OpMarkFrequency(Operation):
@@ -623,18 +629,33 @@ class CommandList(CommandSource):
         machine=None,
         x=0x8000,
         y=0x8000,
-        cal=None,
+        # cal=None,
         sender=None,
         tick=None,
+        mark_speed=None,
+        goto_speed=None,
+        light_speed=None,
+        dark_speed=None,
     ):
         self.machine = machine
         self.tick = tick
+        if light_speed is None:
+            # Default light speed is goto_speed
+            light_speed = goto_speed
+        if dark_speed is None:
+            # Default dark speed is goto_speed
+            dark_speed = goto_speed
+
+        self._goto_speed = goto_speed
+        self._light_speed = light_speed
+        self._dark_speed = dark_speed
+        self._mark_speed = mark_speed
 
         self._last_x = x
         self._last_y = y
         self._start_x = x
         self._start_y = y
-        self.cal = cal
+        # self.cal = cal
         self._sender = sender
         self.operations = []
 
@@ -781,16 +802,11 @@ class CommandList(CommandSource):
         for n in range(segs):
             # print ("*", xs[n], ys[n], self.cal.interpolate(xs[n], ys[n]), file=sys.stderr)
             self._last_x, self._last_y = xs[n], ys[n]
-            self.append(Op(*self.pos(xs[n], ys[n])))
+            self.append(Op(xs[n], ys[n]))
 
     ######################
     # UNIT CONVERSION
     ######################
-
-    def pos(self, x, y):
-        if self.cal is None:
-            return x, y
-        return self.cal.interpolate(x, y)
 
     def convert_time(self, time):
         # TODO: WEAK IMPLEMENTATION
@@ -852,6 +868,12 @@ class CommandList(CommandSource):
             self.append(OpLaserControl(0x0000))
 
     def set_travel_speed(self, speed):
+        """
+        Set travel speed sets the direct speed for the travel appending the op.
+
+        @param speed: Speed to set.
+        @return:
+        """
         if self._travel_speed == speed:
             return
         self.ready()
@@ -859,6 +881,12 @@ class CommandList(CommandSource):
         self.append(OpSetTravelSpeed(self.convert_speed(speed)))
 
     def set_cut_speed(self, speed):
+        """
+        Set cut speed sets the direct speed for the cutting appending the op.
+
+        @param speed: Speed to set.
+        @return:
+        """
         if self._cut_speed == speed:
             return
         self.ready()
@@ -894,21 +922,37 @@ class CommandList(CommandSource):
         self.append(OpWritePort(port))
         self._write_port = port
 
-    def set_laser_on_delay(self, *args):
-        # TODO: WEAK IMPLEMENTATION
-        if self._laser_on_delay == args:
+    def set_laser_on_delay(self, delay):
+        """
+        Time in us (microseconds)
+        @param delay: delay in microseconds
+        @return:
+        """
+        if self._laser_on_delay == delay:
             return
         self.ready()
-        self._laser_on_delay = args
-        self.append(OpSetLaserOnDelay(*args))
+        self._laser_on_delay = delay
+        if delay < 0:
+            delay = abs(delay)
+            self.append(OpSetLaserOnDelay(delay, 0x8000))
+        else:
+            self.append(OpSetLaserOnDelay(delay))
 
     def set_laser_off_delay(self, delay):
-        # TODO: WEAK IMPLEMENTATION
+        """
+        Time in us (microseconds)
+        @param delay: delay in microseconds
+        @return:
+        """
         if self._laser_off_delay == delay:
             return
         self.ready()
         self._laser_off_delay = delay
-        self.append(OpSetLaserOffDelay(delay))
+        if delay < 0:
+            delay = abs(delay)
+            self.append(OpSetLaserOffDelay(delay, 0x8000))
+        else:
+            self.append(OpSetLaserOffDelay(delay))
 
     def set_polygon_delay(self, delay):
         # TODO: WEAK IMPLEMENTATION
@@ -934,6 +978,8 @@ class CommandList(CommandSource):
         :return:
         """
         self.ready()
+        if self._mark_speed is not None:
+            self.set_cut_speed(self._mark_speed)
         if self._q_switch_frequency is None:
             raise ValueError("Qswitch frequency must be set before a mark(x,y)")
         if self._power is None:
@@ -956,16 +1002,16 @@ class CommandList(CommandSource):
         else:
             segments = 1
         for segment in range(1, segments+1):
-            next_x = self._last_x + dx * segment
-            next_y = self._last_y + dy * segment
+            next_x = self._last_x + dx
+            next_y = self._last_y + dy
             if self._mark_modification:
                 cut_x, cut_y = self._mark_modification(self._last_x, self._last_y, next_x, next_y)
             else:
                 cut_x = next_x
                 cut_y = next_y
-            self._last_x = cut_x
-            self._last_y = cut_y
-            self.append(OpCut(*self.pos(cut_x, cut_y)))
+            self._last_x = next_x
+            self._last_y = next_y
+            self.append(OpCut(cut_x, cut_y))
 
     def jump_delay(self, delay=0x0008):
         if self._jump_delay == delay:
@@ -985,27 +1031,38 @@ class CommandList(CommandSource):
         """
         if light:
             self.light_on()
+            if self._light_speed is not None:
+                self.set_travel_speed(self._light_speed)
         else:
             self.light_off()
-        self.goto(x, y, jump_delay=jump_delay)
-
-    def goto(self, x, y, jump_delay=None):
-        """
-        Move to a new location without laser or light.
-        :param x:
-        :param y:
-        :param light:
-        :param jump_delay:
-        :return:
-        """
-        self.ready()
+            if self._dark_speed is not None:
+                self.set_travel_speed(self._dark_speed)
         if not self._travel_speed:
             raise ValueError("Travel speed must be set before a jumping")
         self._last_x = x
         self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
-        self.append(OpTravel(*self.pos(x, y)))
+        self.append(OpTravel(x, y))
+
+    def goto(self, x, y, jump_delay=None):
+        """
+        Move to a new location without laser or light.
+        :param x:
+        :param y:
+        :param jump_delay:8
+        :return:
+        """
+        self.ready()
+        if self._goto_speed is not None:
+            self.set_travel_speed(self._goto_speed)
+        if not self._travel_speed:
+            raise ValueError("Travel speed must be set before a jumping")
+        self._last_x = x
+        self._last_y = y
+        if jump_delay is not None:
+            self.jump_delay(jump_delay)
+        self.append(OpTravel(x, y))
 
     def init(self, x, y):
         """
@@ -1189,13 +1246,14 @@ class CommandList(CommandSource):
 
 
 class Wobble:
-    def __init__(self, radius=50):
+    def __init__(self, radius=50, speed=50):
         self._total_distance = 0
         self.radius = radius
+        self.speed = speed
 
     def wobble(self, x0, y0, x1, y1):
         self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
         t = self._total_distance / (math.tau * self.radius)
-        dx = self.radius * math.cos(t)
-        dy = self.radius * math.sin(t)
+        dx = self.radius * math.cos(t * self.speed)
+        dy = self.radius * math.sin(t * self.speed)
         return x1 + dx, y1 + dy

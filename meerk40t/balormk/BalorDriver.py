@@ -1,11 +1,9 @@
-import sys
 import time
 
 from meerk40t.core.drivers import PLOT_SETTING, PLOT_FINISH, PLOT_RAPID, PLOT_JOG
 from meerk40t.core.parameters import Parameters
 
-from meerk40t.balor.Cal import Cal
-from meerk40t.balor.command_list import CommandList
+from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import Sender, BalorMachineException
 from meerk40t.core.plotplanner import PlotPlanner
 
@@ -17,7 +15,7 @@ class BalorDriver(Parameters):
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.channel = self.service.channel("balor", buffer_size=50)
+        self.channel = self.service.channel("balor")
         self.connection = Sender(debug=self.channel)
         self.paused = False
 
@@ -57,7 +55,7 @@ class BalorDriver(Parameters):
                 self.connected = self.connection.open(
                     mock=self.service.mock,
                     machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile,
+                    cor_file=self.service.corfile if self.service.corfile_enabled else None,
                     first_pulse_killer=self.service.first_pulse_killer,
                     pwm_pulse_width=self.service.pwm_pulse_width,
                     pwm_half_period=self.service.pwm_half_period,
@@ -255,17 +253,12 @@ class BalorDriver(Parameters):
         :return:
         """
         self.connect_if_needed()
-        cal = None
-        if self.service.calibration_file is not None:
-            try:
-                cal = Cal(self.service.calibration_file)
-            except TypeError:
-                pass
-        job = CommandList(cal=cal)
+        job = CommandList()
         job.set_write_port(self.connection.get_port())
-        job.set_travel_speed(self.service.travel_speed)
+        job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
         last_on = None
+        current_power = None
         for x, y, on in self.plot_planner.gen():
             while self.hold_work():
                 time.sleep(0.05)
@@ -275,20 +268,45 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-                    travel_speed = settings.get("travel_speed", self.service.travel_speed)
-                    job.set_travel_speed(travel_speed)
-                    power = settings.get("laser_power", self.service.laser_power)
-                    job.set_power(power)
-                    frequency = settings.get("q_switch_frequency", self.service.q_switch_frequency)
-                    job.set_frequency(frequency)
-                    cut_speed = settings.get("cut_speed", self.service.cut_speed)
-                    job.set_cut_speed(cut_speed)
-                    delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
-                    job.set_laser_on_delay(delay_laser_on)
-                    delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
-                    job.set_laser_off_delay(delay_laser_off)
-                    delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
-                    job.set_polygon_delay(delay_polygon)
+
+                    rapid_enabled = str(settings.get("rapid_enabled", False)).lower() == "true"
+                    if rapid_enabled:
+                        rapid_speed = settings.get("rapid_speed", self.service.default_rapid_speed)
+                        job.set_travel_speed(float(rapid_speed))
+                    else:
+                        job.set_travel_speed(self.service.default_rapid_speed)
+                    current_power = float(settings.get("power", self.service.default_power)) / 10.0
+                    job.set_power(current_power)  # Convert power, out of 1000
+                    frequency = settings.get("frequency", self.service.default_frequency)
+                    job.set_frequency(float(frequency))
+                    cut_speed = settings.get("speed", self.service.default_speed)
+                    job.set_cut_speed(float(cut_speed))
+
+                    timing_enabled = str(settings.get("timing_enabled", False)).lower() == "true"
+                    if timing_enabled:
+                        delay_laser_on = settings.get("delay_laser_on", self.service.delay_laser_on)
+                        job.set_laser_on_delay(delay_laser_on)
+                        delay_laser_off = settings.get("delay_laser_off", self.service.delay_laser_off)
+                        job.set_laser_off_delay(delay_laser_off)
+                        delay_polygon = settings.get("delay_laser_polygon", self.service.delay_polygon)
+                        job.set_polygon_delay(delay_polygon)
+                    else:
+                        # Use globals
+                        job.set_laser_on_delay(self.service.delay_laser_on)
+                        job.set_laser_off_delay(self.service.delay_laser_off)
+                        job.set_polygon_delay(self.service.delay_polygon)
+
+                    wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
+                    if wobble_enabled:
+                        wobble_radius = settings.get("wobble_radius", "1.5mm")
+                        wobble_interval = settings.get("wobble_interval", "0.3mm")
+                        wobble_speed = settings.get("wobble_speed", 50.0)
+                        wobble = Wobble(radius=self.service.physical_to_device_length(wobble_radius, 0)[0], speed=wobble_speed)
+                        job._mark_modification = wobble.wobble
+                        job._interpolations = self.service.physical_to_device_length(wobble_interval, 0)[0]
+                    else:
+                        job._mark_modification = None
+                        job._interpolations = None
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
@@ -301,7 +319,7 @@ class BalorDriver(Parameters):
             else:
                 if last_on is None or on != last_on:
                     last_on = on
-                    job.set_power(self.service.laser_power * on)
+                    job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
         job.laser_control(False)

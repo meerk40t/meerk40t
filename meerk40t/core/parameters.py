@@ -71,7 +71,7 @@ class Parameters:
                 settings[v] = int(float(settings[v]))
         for v in BOOL_PARAMETERS:
             if v in settings:
-                settings[v] = settings[v].lower() == "true"
+                settings[v] = str(settings[v]).lower() == "true"
         for v in ("color", "line_color"):
             if v in settings:
                 settings[v] = Color(settings[v])
@@ -179,6 +179,22 @@ class Parameters:
     @power.setter
     def power(self, value):
         self.settings["power"] = value
+
+    @property
+    def frequency(self):
+        return self.settings.get("frequency", 20.0)
+
+    @frequency.setter
+    def frequency(self, value):
+        self.settings["frequency"] = value
+
+    @property
+    def rapid_speed(self):
+        return self.settings.get("rapid_speed", 100.0)
+
+    @rapid_speed.setter
+    def rapid_speed(self, value):
+        self.settings["rapid_speed"] = value
 
     @property
     def line_color(self):
@@ -431,7 +447,6 @@ class Parameters:
     @force_twitchless.setter
     def force_twitchless(self, value):
         self.settings["force_twitchless"] = value
-
 
     @property
     def constant_move_x(self):

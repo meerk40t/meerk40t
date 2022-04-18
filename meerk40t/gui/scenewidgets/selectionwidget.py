@@ -236,34 +236,31 @@ class BorderWidget(Widget):
             except TypeError:
                 font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, self.scene.colors.color_manipulation)
-            gc.DrawText(
-                str(Length(amount=self.top, digits=3, preferred_units=units)),
-                center_x,
-                self.top / 2.0,
-            )
-            gc.DrawText(
-                str(Length(amount=self.left, digits=3, preferred_units=units)),
-                self.left / 2.0,
-                center_y,
-            )
-            gc.DrawText(
-                str(
-                    Length(
-                        amount=(self.bottom - self.top), digits=3, preferred_units=units
-                    )
-                ),
-                self.right,
-                center_y,
-            )
-            gc.DrawText(
-                str(
-                    Length(
-                        amount=(self.right - self.left), digits=3, preferred_units=units
-                    )
-                ),
-                center_x,
-                self.bottom,
-            )
+            # Show Y-Value
+            s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
+            (t_width, t_height) = gc.GetTextExtent(s_txt)
+            distance = 0.25 * t_height
+            pos = self.top / 2.0 - t_height / 2
+            if pos + t_height + distance >= self.top:
+                pos = self.top - t_height - distance
+            gc.DrawText(s_txt, center_x - t_width / 2, pos)
+
+            # Display X-Coordinate
+            s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
+            (t_width, t_height) = gc.GetTextExtent(s_txt)
+            pos = self.left / 2.0 - t_width / 2
+            if pos + t_width + distance >=self.left:
+                pos = self.left - t_width - distance
+            gc.DrawText(s_txt, pos, center_y)
+            # Display height
+            s_txt = str(Length(amount=(self.bottom - self.top), digits=2, preferred_units=units))
+            (t_width, t_height) = gc.GetTextExtent(s_txt)
+            gc.DrawText(s_txt, self.right + 0.5 * t_height, center_y + 0.5 * t_width, math.tau / 4)
+
+            # Display width
+            s_txt = str(Length(amount=(self.right - self.left), digits=2, preferred_units=units))
+            (t_width, t_height) = gc.GetTextExtent(s_txt)
+            gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
         # But show the angle
         if abs(self.master.rotated_angle) > 0.001:
             try:

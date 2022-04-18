@@ -242,6 +242,15 @@ class SpeedPpiPanel(wx.Panel):
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, 0, 0)
 
+        frequency_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Frequency (kHz)"), wx.HORIZONTAL
+        )
+        speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
+
+        self.text_frequency = wx.TextCtrl(self, wx.ID_ANY, "20.0")
+        # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        frequency_sizer.Add(self.text_frequency, 1, 0, 0)
+
         self.SetSizer(speed_power_sizer)
 
         self.Layout()
@@ -250,6 +259,10 @@ class SpeedPpiPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
         self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
+
+        self.Bind(wx.EVT_TEXT, self.on_text_frequency, self.text_frequency)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency, self.text_frequency)
+
         # end wxGlade
 
     def pane_hide(self):
@@ -265,10 +278,19 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.power is not None:
             self.update_power_label()
             self.text_power.SetValue(str(self.operation.power))
+        if self.operation.frequency is not None:
+            self.text_frequency.SetValue(str(self.operation.frequency))
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.speed = float(self.text_speed.GetValue())
+        except ValueError:
+            return
+        self.context.elements.signal("element_property_reload", self.operation)
+
+    def on_text_frequency(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        try:
+            self.operation.frequency = float(self.text_frequency.GetValue())
         except ValueError:
             return
         self.context.elements.signal("element_property_reload", self.operation)
