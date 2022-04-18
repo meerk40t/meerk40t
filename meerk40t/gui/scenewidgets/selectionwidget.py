@@ -1700,79 +1700,92 @@ class SelectionWidget(Widget):
                     pass
         elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
 
-    def rotate_elements_if_needed(self, doit):
+    def get_refob_dimensions(self):
+        refob_width = None
+        refob_height = None
+        refob = self.scene.reference_object
+        angle = None
+        if not refob is None:
+            ref_angle = refob.rotation.as_radians
+            bb = refob.bbox()
+            elements = self.scene.context.elements
+            cc = elements.selected_area()
+            ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
+            from meerk40t.core.units import UNITS_PER_MM
+            #bb = refob.bbox()
+            #refob_width = bb[2] - bb[0]
+            #refob_height = bb[3] - bb[1]
+            #print ("Before Width= %.1f, Height=%.1f" % (refob_width/ UNITS_PER_MM, refob_height/ UNITS_PER_MM))
+            bb = refob.bbox(transformed=False)
+            refob_width = bb[2] - bb[0]
+            refob_height = bb[3] - bb[1]
+            print ("After Width= %.1f, Height=%.1f" % (refob_width / UNITS_PER_MM, refob_height/ UNITS_PER_MM))
+            ratio_ref = refob_height > refob_width
+            angle = ref_angle
+            if ratio_ref != ratio_sel:
+                angle += math.tau / 4
+
+        return (refob_width, refob_height, angle)
+
+
+    def rotate_elements_if_needed(self, doit, r_wd=None, r_ht=None, angle=None):
         if not doit:
             return
         refob = self.scene.reference_object
-        if refob is None:
+        if refob is None or angle is None:
             return
         # Let's establish whether there is rotation in the object
-        ref_angle = refob.rotation.as_radians
-        angle = None
-        bb = refob.bbox()
         elements = self.scene.context.elements
         cc = elements.selected_area()
-        if ref_angle == 0:
-            simple_rotation = True
-
-            ratio_ref = (bb[3]-bb[1]) > (bb[2] - bb[0])
-            ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
-            if ratio_ref != ratio_sel:
-                angle = math.tau / 4
-        else:
-            simple_rotation = False
-            angle = ref_angle
         cx = (cc[0] + cc[2]) / 2
         cy = (cc[1] + cc[3]) / 2
-        dx = cc[2] - cc[0]
-        dy = cc[3] - cc[1]
-        if not angle is None:
-            for e in elements.flat(types=("elem",), emphasized=True):
-                obj = e.object
-                obj.transform.post_rotate(angle, cx, cy)
-                if not simple_rotation:
-                    try:
-                        obj.node.modified()
-                    except AttributeError:
-                        pass
+        for e in elements.flat(types=("elem",), emphasized=True):
+            obj = e.object
+            obj.transform.post_rotate(angle, cx, cy)
+            obj.node.modified()
 
-            # Update bbox
-            if simple_rotation:
-                cc[0] = cx - dy / 2
-                cc[2] = cc [0] + dy
-                cc[1] = cy - dx / 2
-                cc[3] = cc [1] + dx
-                elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
-            else: # time consuming but well...
-                elements.validate_selected_area()
+        elements.validate_selected_area()
 
-    def scale_selection_to_ref(self, method="none"):
+    def scale_selection_to_ref(self, method="none", r_wd=None, r_ht=None, angle=None):
         refob = self.scene.reference_object
         if refob is None:
             return
-        bb = refob.bbox()
         elements = self.scene.context.elements
         cc = elements.selected_area()
 
-        if bb is None or cc is None:
+        if cc is None or r_wd is None:
             return
         try:
-            b_ratio = (bb[2] - bb[0]) / (bb[3] - bb[1])
+            b_ratio = r_wd / r_ht
             c_ratio = (cc[2] - cc[0]) / (cc[3] - cc[1])
+
         except ZeroDivisionError:
             return
+        dx = (cc[2] - cc[0])
+        dy = (cc[3] - cc[1])
+        aa  = abs(angle)
+        # Swap sides if rotation btween 60..120 or 240..300
+        swap_it = False
+        if 1 * math.tau / 6 <= aa <= 2 * math.tau/6:
+            swap_it = True
+        elif 4 * math.tau / 6 <= aa <= 5 * math.tau/6:
+            swap_it = True
+        if swap_it:
+            c = dx
+            dx = dy
+            dy = c
         if method == "fit":
-            scalex = (bb[2] - bb[0]) / (cc[2] - cc[0])
-            scaley = (bb[3] - bb[1]) / (cc[3] - cc[1])
+            scalex = r_wd / dx
+            scaley = r_ht / dy
             scalex = min(scalex, scaley)
             scaley = scalex
         elif method == "squeeze":
-            scalex = (bb[2] - bb[0]) / (cc[2] - cc[0])
-            scaley = (bb[3] - bb[1]) / (cc[3] - cc[1])
+            scalex = r_wd / dx
+            scaley = r_ht / dy
         else:
             return
-        dx = (scalex - 1) * (cc[2] - cc[0])
-        dy = (scaley - 1) * (cc[3] - cc[1])
+        dx = (scalex - 1) * dx
+        dy = (scaley - 1) * dy
 
         for e in elements.flat(types=("elem",), emphasized=True):
             obj = e.object
@@ -1792,9 +1805,9 @@ class SelectionWidget(Widget):
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
         if not opt_pos is None:
-            elements = self.scene.context.elements
-            self.rotate_elements_if_needed(opt_rotate)
-            self.scale_selection_to_ref(opt_scale)
+            (r_wd, r_ht, angle) = self.get_refob_dimensions()
+            self.scale_selection_to_ref(opt_scale, r_wd, r_ht, angle)
+            self.rotate_elements_if_needed(opt_rotate, r_wd, r_ht,)
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
 
