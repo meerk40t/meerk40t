@@ -164,6 +164,8 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        # Make sure that the statusbar elements are visible fully
+        self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         sizes = [-2] * self.panelct
@@ -398,30 +400,39 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += wd
         self.cb_skew.SetRect(rect)
 
-        rect = self.GetFieldRect(self.pos_stroke)
-        ct = 2
-        wd = int(round(rect.width / ct))
-        rect.x += 1
-        rect.y += 1
-        rect.width = wd
-        self.strokewidth_label.SetRect(rect)
-        rect.x += wd
-        # Make the next two elements smaller
-        wd = wd / 2
-        rect.width = wd
-        self.spin_width.SetRect(rect)
-        rect.x += wd
-        self.combo_units.SetRect(rect)
-
-        rect = self.GetFieldRect(self.pos_colorbar)
-        ct = len(self.button_color)
-        wd = int(round(rect.width / ct)) - 1
-        rect.x += 1
-        rect.y += 1
-        rect.width = wd
-        for btn in self.button_color:
-            btn.SetRect(rect)
+        if self.context.show_colorbar:
+            rect = self.GetFieldRect(self.pos_stroke)
+            ct = 2
+            wd = int(round(rect.width / ct))
+            #print ("Width:", wd)
+            toosmall = wd<=100
+            rect.x += 1
+            rect.y += 1
+            rect.width = wd
+            if toosmall:
+                if self.cb_enabled:
+                    self.strokewidth_label.Hide()
+            else:
+                if self.cb_enabled:
+                    self.strokewidth_label.Show()
+                self.strokewidth_label.SetRect(rect)
+                rect.x += wd
+                # Make the next two elements smaller
+                wd = wd / 2
+            rect.width = wd
+            self.spin_width.SetRect(rect)
             rect.x += wd
+            self.combo_units.SetRect(rect)
+
+            rect = self.GetFieldRect(self.pos_colorbar)
+            ct = len(self.button_color)
+            wd = int(round(rect.width / ct)) - 1
+            rect.x += 1
+            rect.y += 1
+            rect.width = wd
+            for btn in self.button_color:
+                btn.SetRect(rect)
+                rect.x += wd
 
         self.sizeChanged = False
 
