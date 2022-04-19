@@ -590,6 +590,15 @@ class QuadCut(CutObject):
             end[1],
         )
 
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c()
+        x2, y2 = self.end
+        e = (1 - t)
+        x = e * e * x0 + 2 * e * t * x1 + t * t * x2
+        y = e * e * y0 + 2 * e * t * y1 + t * t * y2
+        return x, y
+
 
 class CubicCut(CutObject):
     def __init__(
@@ -642,6 +651,16 @@ class CubicCut(CutObject):
             end[0],
             end[1],
         )
+
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c1()
+        x2, y2 = self.c2()
+        x3, y3 = self.end
+        e = (1 - t)
+        x = e * e * e * x0 + 3 * e * e * t * x1 + 3 * e * t * t * x2 + t * t * t * x3
+        y = e * e * e * y0 + 3 * e * e * t * y1 + 3 * e * t * t * y2 + t * t * t * y3
+        return x, y
 
 
 class RasterCut(CutObject):
