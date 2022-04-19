@@ -640,7 +640,7 @@ class ShadowTree:
                     c = Color("black")
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return
-            elif node.type.startswith('elem'):
+            elif node.type.startswith('elem') or node.type.startswith('ref'):
                 image = self.renderer.make_raster(
                     node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
