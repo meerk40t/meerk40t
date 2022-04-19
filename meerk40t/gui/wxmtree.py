@@ -62,6 +62,7 @@ def register_panel_tree(window, context):
     context.register("format/group", "{element_type} {id}")
     context.register("format/file", "{element_type}: {filename}")
     context.register("format/lasercode", "{element_type}")
+    context.register("format/cutcode", "{element_type}")
     context.register("format/op console", "{command}")
     context.register("format/branch ops", _("Operations"))
     context.register("format/branch elems", _("Elements"))
