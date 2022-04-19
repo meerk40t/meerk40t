@@ -21,6 +21,14 @@ class BalorDevice(Service, ViewPort):
 
         _ = kernel.translation
 
+        self.register("format/op cut", "{element_type} {speed}mm/s @{power} {frequency}kHz")
+        self.register("format/op engrave", "{element_type} {speed}mm/s @{power} {frequency}kHz")
+        self.register("format/op hatch", "{element_type} {speed}mm/s @{power} {frequency}kHz")
+        self.register("format/op raster", "{element_type} {speed}mm/s @{power} {frequency}kHz")
+        self.register("format/op image", "{element_type} {speed}mm/s @{power} {frequency}kHz")
+        self.register("format/op dots", "{element_type} {dwell_time}ms dwell {frequency}kHz")
+        self.register("format/op console", "{command}")
+
         choices = [
             {
                 "attr": "label",
