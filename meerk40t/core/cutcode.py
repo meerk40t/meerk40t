@@ -37,8 +37,6 @@ class CutObject(Parameters):
     reversed.
     """
 
-    #         self.constant_move_x = False
-    #         self.constant_move_y = False
     def __init__(
         self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
     ):
@@ -176,6 +174,9 @@ class CutObject(Parameters):
         self.normal = not self.normal
 
     def generator(self):
+        raise NotImplementedError
+
+    def point(self, t):
         raise NotImplementedError
 
     def contains_burned_groups(self):
@@ -548,6 +549,13 @@ class LineCut(CutObject):
         end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
 
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.end
+        x = x1 * t + x0
+        y = y1 * t + y0
+        return x, y
+
 
 class QuadCut(CutObject):
     def __init__(
@@ -589,6 +597,15 @@ class QuadCut(CutObject):
             end[0],
             end[1],
         )
+
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c()
+        x2, y2 = self.end
+        e = (1 - t)
+        x = e * e * x0 + 2 * e * t * x1 + t * t * x2
+        y = e * e * y0 + 2 * e * t * y1 + t * t * y2
+        return x, y
 
 
 class CubicCut(CutObject):
@@ -642,6 +659,16 @@ class CubicCut(CutObject):
             end[0],
             end[1],
         )
+
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c1()
+        x2, y2 = self.c2()
+        x3, y3 = self.end
+        e = (1 - t)
+        x = e * e * e * x0 + 3 * e * e * t * x1 + 3 * e * t * t * x2 + t * t * t * x3
+        y = e * e * e * y0 + 3 * e * e * t * y1 + 3 * e * t * t * y2 + t * t * t * y3
+        return x, y
 
 
 class RasterCut(CutObject):
@@ -869,6 +896,8 @@ class PlotCut(CutObject):
         self.travels_bottom = False
         self.travels_right = False
         self.travels_left = False
+        self._calc_lengths = None
+        self._length = None
 
     def __len__(self):
         return len(self.plot)
@@ -917,6 +946,8 @@ class PlotCut(CutObject):
             self.plot_append(x, y, laser)
 
     def plot_append(self, x, y, laser):
+        self._length = None
+        self._calc_lengths = None
         if self.plot:
             last_x, last_y, last_laser = self.plot[-1]
             dx = x - last_x
@@ -1051,3 +1082,37 @@ class PlotCut(CutObject):
             last_yy = iy
 
         return self.plot
+
+    def point(self, t):
+        if len(self.plot) == 0:
+            raise ValueError
+        if t == 0:
+            return self.plot[0]
+        if t == 1:
+            return self.plot[-1]
+        if self._calc_lengths is None:
+            # Need to calculate lengths
+            lengths = list()
+            total_length = 0
+            for i in range(len(self.plot)-1):
+                x0, y0, _ = self.plot[i]
+                x1, y1, _ = self.plot[i + 1]
+                length = abs(complex(x0,y0) - complex(x1,y1))
+                lengths.append(length)
+                total_length += length
+            self._calc_lengths = lengths
+            self._length = total_length
+        if self._length == 0:
+            # Degenerate fallback. (All points are coincident)
+            v = int((len(self.plot)-1) * t)
+            return self.plot[v]
+        v = t * self._length
+        for length in self._calc_lengths:
+            if v < length:
+                x0, y0 = self.start
+                x1, y1 = self.end
+                x = x1 * v + x0
+                y = y1 * v + y0
+                return x, y
+            v -= length
+        raise ValueError
