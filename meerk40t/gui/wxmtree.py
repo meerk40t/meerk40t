@@ -44,6 +44,14 @@ def register_panel_tree(window, context):
     window.on_pane_add(pane)
     context.register("pane/tree", pane)
 
+    context.register("format/op cut", "{element_type} {speed}mm/s @{power}")
+    context.register("format/op engrave", "{element_type} {speed}mm/s @{power}")
+    context.register("format/op hatch", "{element_type} {speed}mm/s @{power}")
+    context.register("format/op raster", "{element_type} {speed}mm/s @{power}")
+    context.register("format/op image", "{element_type} {speed}mm/s @{power}")
+    context.register("format/op dots", "{element_type} {dwell_time}ms dwell")
+    context.register("format/op console", "{command}")
+
 
 class TreePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

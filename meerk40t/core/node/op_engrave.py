@@ -90,6 +90,12 @@ class EngraveOpNode(Node, Parameters):
     def __copy__(self):
         return EngraveOpNode(self)
 
+    def default_map(self, default_map=None):
+        default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Engrave"
+        default_map.update(self.settings)
+        return default_map
+
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
             if drag_node.type == "elem image":
