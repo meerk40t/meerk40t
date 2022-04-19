@@ -94,6 +94,9 @@ class EngraveOpNode(Node, Parameters):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Engrave"
         default_map['enabled'] = "(Disabled) " if not self.output else ""
+        default_map['speed'] = "default"
+        default_map['power'] = "default"
+        default_map['frequency'] = "default"
         default_map.update(self.settings)
         return default_map
 

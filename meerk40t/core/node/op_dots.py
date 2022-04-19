@@ -84,6 +84,7 @@ class DotsOpNode(Node, Parameters):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Dots"
         default_map['enabled'] = "(Disabled) " if not self.output else ""
+        default_map['dwell_time'] = "default"
         default_map.update(self.settings)
         return default_map
 

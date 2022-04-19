@@ -86,6 +86,9 @@ class CutOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(CutOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Cut"
+        default_map['speed'] = "default"
+        default_map['power'] = "default"
+        default_map['frequency'] = "default"
         default_map['enabled'] = "(Disabled) " if not self.output else ""
         default_map.update(self.settings)
         return default_map
