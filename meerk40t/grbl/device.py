@@ -616,12 +616,12 @@ class GRBLDriver(Parameters):
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
                 t = 0
-                for p in range(int(interp) + 1):
+                for p in range(int(interp)):
                     while self.hold_work():
                         time.sleep(0.05)
                     self.move(*q.point(t))
                     t += step_size
-                last_x, last_y = q.point(1)
+                last_x, last_y = q.end
                 self.move(last_x, last_y)
             else:
                 self.plot_planner.push(q)
