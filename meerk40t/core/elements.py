@@ -5685,15 +5685,15 @@ class Elemental(Service):
                 special_ops.append(op)
         if rasters_one_pass is not False:
             rasters_one_pass = True
-
-        debug(
-            "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
-                passes="one pass" if rasters_one_pass else "two passes",
-                v=len(vector_ops),
-                r=len(raster_ops),
-                s=len(special_ops),
+        if debug:
+            debug(
+                "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
+                    passes="one pass" if rasters_one_pass else "two passes",
+                    v=len(vector_ops),
+                    r=len(raster_ops),
+                    s=len(special_ops),
+                )
             )
-        )
 
         elements_to_classify = []
         for element in elements:
@@ -5702,11 +5702,12 @@ class Elemental(Service):
                 continue
             if hasattr(element, "operation"):
                 add_op_function(element)
-                debug(
-                    "classify: added element as op: {op}".format(
-                        op=str(op),
+                if debug:
+                    debug(
+                        "classify: added element as op: {op}".format(
+                            op=str(op),
+                        )
                     )
-                )
                 continue
 
             dot = is_dot(element)
@@ -5743,12 +5744,12 @@ class Elemental(Service):
                     straight_line,
                 )
             )
-
-        debug(
-            "classify: elements: {e} elements to classify".format(
-                e=len(elements_to_classify),
+        if debug:
+            debug(
+                "classify: elements: {e} elements to classify".format(
+                    e=len(elements_to_classify),
+                )
             )
-        )
 
         # Handle edge cases
         # Convert raster elements with white fill and no raster elements behind to vector
@@ -5789,11 +5790,12 @@ class Elemental(Service):
                         break
                 else:
                     # No rasters underneath - convert to vector
-                    debug(
-                        "classify: edge-case: treating raster as vector: {label}".format(
-                            label=self.element_label_id(element),
+                    if debug:
+                        debug(
+                            "classify: edge-case: treating raster as vector: {label}".format(
+                                label=self.element_label_id(element),
+                            )
                         )
-                    )
 
                     element_vector = True
                     elements_to_classify[i] = (
@@ -5839,11 +5841,12 @@ class Elemental(Service):
                     # We have an element with a matching color
                     if self.bbox_overlap(bbox, e[0].bbox()):
                         # Rasters on top - convert to raster
-                        debug(
-                            "classify: edge-case: treating vector as raster: {label}".format(
-                                label=self.element_label_id(element),
+                        if debug:
+                            debug(
+                                "classify: edge-case: treating vector as raster: {label}".format(
+                                    label=self.element_label_id(element),
+                                )
                             )
-                        )
 
                         element_vector = False
                         elements_to_classify[i] = (
@@ -5866,11 +5869,12 @@ class Elemental(Service):
             if isinstance(element, (Shape, SVGText)) and (
                 element_color is None or element_color.rgb is None
             ):
-                debug(
-                    "classify: not classifying -  no stroke or fill color: {e}".format(
-                        e=self.element_label_id(element, short=False),
+                if debug:
+                    debug(
+                        "classify: not classifying -  no stroke or fill color: {e}".format(
+                            e=self.element_label_id(element, short=False),
+                        )
                     )
-                )
                 continue
 
             element_added = False
@@ -5910,11 +5914,12 @@ class Elemental(Service):
                     or element.stroke.rgb is None
                     or element.stroke.rgb == 0xFFFFFF
                 ):
-                    debug(
-                        "classify: not classifying - white element at back: {e}".format(
-                            e=self.element_label_id(element, short=False),
+                    if debug:
+                        debug(
+                            "classify: not classifying - white element at back: {e}".format(
+                                e=self.element_label_id(element, short=False),
+                            )
                         )
-                    )
                     continue
 
             elif rasters_one_pass:
@@ -5982,11 +5987,12 @@ class Elemental(Service):
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise refelem is not created.
                 op.add(element, type="ref elem", pos=element_pos)
-                debug(
-                    "classify: added op: {op}".format(
-                        op=str(op),
+                if debug:
+                    debug(
+                        "classify: added op: {op}".format(
+                            op=str(op),
+                        )
                     )
-                )
 
         # End loop "for element in elements"
 
@@ -5997,11 +6003,12 @@ class Elemental(Service):
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
-        debug(
-            "classify: raster pass two: {n} elements".format(
-                n=len(raster_elements),
+        if debug:
+            debug(
+                "classify: raster pass two: {n} elements".format(
+                    n=len(raster_elements),
+                )
             )
-        )
 
         # Debugging print statements have been left in as comments as this code can
         # be complex to debug and even print statements can be difficult to craft
@@ -6029,12 +6036,12 @@ class Elemental(Service):
 
                     # print("g1+g2", list(map(lambda e: e[0].id,g1)))
                     # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
-
-        debug(
-            "classify: condensed to {n} raster groups".format(
-                n=len(raster_groups),
+        if debug:
+            debug(
+                "classify: condensed to {n} raster groups".format(
+                    n=len(raster_groups),
+                )
             )
-        )
 
         # Remove bbox and add element colour from groups
         # Change `list` to `groups` which are a list of tuples, each tuple being element and its classification color
@@ -6070,13 +6077,14 @@ class Elemental(Service):
                             groups_count += 1
                             break  # to next group
                 if elements_to_add:
-                    debug(
-                        "classify: adding {e} elements in {g} groups to {label}".format(
-                            e=len(elements_to_add),
-                            g=groups_count,
-                            label=str(op),
+                    if debug:
+                        debug(
+                            "classify: adding {e} elements in {g} groups to {label}".format(
+                                e=len(elements_to_add),
+                                g=groups_count,
+                                label=str(op),
+                            )
                         )
-                    )
                     # Create simple list of elements sorted by original element order
                     elements_to_add = sorted(
                         [e[0] for e in elements_to_add], key=raster_elements.index
@@ -6098,13 +6106,13 @@ class Elemental(Service):
         elements_to_add = sorted(
             [e[0] for e in elements_to_add], key=raster_elements.index
         )
-
-        debug(
-            "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
-                e=len(elements_to_add),
-                g=len(raster_groups),
+        if debug:
+            debug(
+                "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
+                    e=len(elements_to_add),
+                    g=len(raster_groups),
+                )
             )
-        )
 
         # Remaining elements are added to one of the following groups of operations:
         # 1. to default raster ops if they exist; otherwise
@@ -6129,14 +6137,16 @@ class Elemental(Service):
             op = RasterOpNode(color="Transparent", default=True)
             default_raster_ops.append(op)
             add_op_function(op)
-            debug(
-                "classify: default raster op added: {op}".format(
-                    op=str(op),
+            if debug:
+                debug(
+                    "classify: default raster op added: {op}".format(
+                        op=str(op),
+                    )
                 )
-            )
         else:
-            for op in default_raster_ops:
-                debug("classify: default raster op selected: {op}".format(op=str(op)))
+            if debug:
+                for op in default_raster_ops:
+                    debug("classify: default raster op selected: {op}".format(op=str(op)))
 
         for element in elements_to_add:
             for op in default_raster_ops:
