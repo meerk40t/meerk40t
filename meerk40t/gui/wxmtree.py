@@ -50,7 +50,22 @@ def register_panel_tree(window, context):
     context.register("format/op raster", "{element_type} {speed}mm/s @{power}")
     context.register("format/op image", "{element_type} {speed}mm/s @{power}")
     context.register("format/op dots", "{element_type} {dwell_time}ms dwell")
+    context.register("format/elem ellipse", "{element_type} {id}")
+    context.register("format/elem image", "{element_type} {id}")
+    context.register("format/elem line", "{element_type} {id}")
+    context.register("format/elem path", "{element_type} {id}")
+    context.register("format/elem point", "{element_type} {id}")
+    context.register("format/elem polyline", "{element_type} {id}")
+    context.register("format/elem rect", "{element_type} {id}")
+    context.register("format/elem text", "{element_type} {id}: {text}")
+    context.register("format/ref elem", "{element_type}: {ref_id}")
+    context.register("format/group", "{element_type} {id}")
+    context.register("format/file", "{element_type}: {filename}")
+    context.register("format/lasercode", "{element_type}")
     context.register("format/op console", "{command}")
+    context.register("format/branch ops", _("Operations"))
+    context.register("format/branch elems", _("Elements"))
+    context.register("format/branch reg", _("Regmarks"))
 
 
 class TreePanel(wx.Panel):
