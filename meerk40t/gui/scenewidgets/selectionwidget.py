@@ -89,8 +89,7 @@ def process_event(
         widget.scene.cursor(widget.cursor)
         widget.hovering = True
         widget.scene.context.signal("statusmsg", _(helptext))
-        # return RESPONSE_CONSUME
-        return RESPONSE_CHAIN
+        return RESPONSE_CONSUME
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -100,7 +99,7 @@ def process_event(
         widget.hovering = True
         widget.scene.cursor(widget.cursor)
         widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CHAIN
+        return RESPONSE_CONSUME
 
     # Now all Mouse-Click-Events
     elements = widget.scene.context.elements
