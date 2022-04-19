@@ -685,19 +685,20 @@ class ShadowTree:
 
     def update_decorations(self, node):
         """
-        Updates the label if the label is currently blank or force was set to true.
+        Updates the decorations for a particular node/tree item
+
         @param node:
-        @param force:
         @return:
         """
-        # node.label = node.create_label()
         self.set_icon(node)
         if node.item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
 
-        self.wxtree.SetItemText(node.item, node.label)
+        formatter = self.elements.lookup(f"format/{node.type}")
+        label = node.create_label(formatter)
+        self.wxtree.SetItemText(node.item, label)
         try:
             stroke = node.object.stroke
             wxcolor = Color(stroke).bgr

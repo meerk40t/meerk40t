@@ -160,7 +160,9 @@ class Node:
         self._points_dirty = False
         return self._points
 
-    def create_label(self, text="{element_type}:{id}"):
+    def create_label(self, text=None):
+        if text is None:
+            text = "{element_type}:{id}"
         return text.format_map(self.default_map())
 
     def default_map(self, default_map=None):
