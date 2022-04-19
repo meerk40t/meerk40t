@@ -88,6 +88,7 @@ class HatchOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Hatch"
+        default_map['enabled'] = "(Disabled) " if not self.output else ""
         default_map.update(self.settings)
         return default_map
 
