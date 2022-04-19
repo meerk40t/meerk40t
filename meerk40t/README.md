@@ -1,6 +1,6 @@
 # Meerk40t structure
 
-This ReadMe page describes how the Meerk40t python code is structured and provides a very brief description of each of the major sub-directories.
+This ReadMe page describes how the Meerk40t python code is structured and provides a very brief description of each of the major subdirectories.
 
 ## Kernel
 The Kernel serves as the central code that binds modules together within Meerk40t.
@@ -45,8 +45,7 @@ Image modules are tools dealing with Pillow (Python Image Library).
 ## Tools
 
 Tools are simple stand-alone datastructure/algorithms that perform non-kernel operations
-which may be considerably useful to many different modules,
-or which simply do not require any ecosystem functionality.
+which may be considerably useful to many modules, or which simply do not require any ecosystem functionality.
 
 ## Kernel Server
 The Server governs interactions within TCP and UDP sockets.

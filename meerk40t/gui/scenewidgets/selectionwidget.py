@@ -1,6 +1,8 @@
 import math
+
 import wx
 
+from meerk40t.core.element_types import *
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -12,8 +14,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
-
-from meerk40t.svgelements import Rect, Point
+from meerk40t.svgelements import Point, Rect
 
 
 def process_event(
@@ -111,11 +112,19 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "leftdown":
-        # We want to establish that we dont have a singular Shift key or a singular ctrl-key
+        # We want to establish that we don't have a singular Shift key or a singular ctrl-key
         different_event = False
-        if (widget.key_control_pressed and not widget.key_shift_pressed and not widget.key_alt_pressed):
+        if (
+            widget.key_control_pressed
+            and not widget.key_shift_pressed
+            and not widget.key_alt_pressed
+        ):
             different_event = True
-        if (widget.key_shift_pressed and not widget.key_control_pressed and not widget.key_alt_pressed):
+        if (
+            widget.key_shift_pressed
+            and not widget.key_control_pressed
+            and not widget.key_alt_pressed
+        ):
             different_event = True
         if not different_event:
             widget.was_lb_raised = True
@@ -220,7 +229,7 @@ class BorderWidget(Widget):
         center_x = (self.left + self.right) / 2.0
         center_y = (self.top + self.bottom) / 2.0
         gc.SetPen(self.master.selection_pen)
-        # Wont be display when rotating...
+        # Won't be display when rotating...
         if self.master.show_border:
             gc.StrokeLine(center_x, 0, center_x, self.top)
             gc.StrokeLine(0, center_y, self.left, center_y)
@@ -249,16 +258,25 @@ class BorderWidget(Widget):
             s_txt = str(Length(amount=self.left, digits=2, preferred_units=units))
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             pos = self.left / 2.0 - t_width / 2
-            if pos + t_width + distance >=self.left:
+            if pos + t_width + distance >= self.left:
                 pos = self.left - t_width - distance
             gc.DrawText(s_txt, pos, center_y)
             # Display height
-            s_txt = str(Length(amount=(self.bottom - self.top), digits=2, preferred_units=units))
+            s_txt = str(
+                Length(amount=(self.bottom - self.top), digits=2, preferred_units=units)
+            )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
-            gc.DrawText(s_txt, self.right + 0.5 * t_height, center_y + 0.5 * t_width, math.tau / 4)
+            gc.DrawText(
+                s_txt,
+                self.right + 0.5 * t_height,
+                center_y + 0.5 * t_width,
+                math.tau / 4,
+            )
 
             # Display width
-            s_txt = str(Length(amount=(self.right - self.left), digits=2, preferred_units=units))
+            s_txt = str(
+                Length(amount=(self.right - self.left), digits=2, preferred_units=units)
+            )
             (t_width, t_height) = gc.GetTextExtent(s_txt)
             gc.DrawText(s_txt, center_x - 0.5 * t_width, self.bottom + 0.5 * t_height)
         # But show the angle
@@ -387,8 +405,8 @@ class RotationWidget(Widget):
             # print ("Radian=%.1f (%.1f°), sx=%.1f, sy=%.1f, x=%.1f, y=%.1f" % (radi, (radi/math.pi*180), sy, sy, x, y))
             segment += [(x, y)]
 
-        # End arrow at 90deg, cos = 0, sin = 1
-        # End Arrow
+        # End-arrow at 90deg, cos = 0, sin = 1
+        # End-Arrow
         x = cx + signx * 0 * self.half
         y = cy + signy * 1 * self.half
         segment += [
@@ -406,7 +424,7 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     obj = e.object
                     obj.node.modified()
@@ -476,7 +494,7 @@ class RotationWidget(Widget):
             # )
             # b = self.reference_rect.bbox()
 
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     if obj.lock:
@@ -648,7 +666,7 @@ class CornerWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -710,8 +728,8 @@ class CornerWidget(Widget):
             grow = 1
             # If the crtl+shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
-                orgy  = (self.master.bottom + self.master.top) / 2
-                orgx  = (self.master.left + self.master.right) / 2
+                orgy = (self.master.bottom + self.master.top) / 2
+                orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
 
             oldvalue = self.save_width
@@ -836,7 +854,7 @@ class SideWidget(Widget):
     def tool(self, position, dx, dy, event=0):
         elements = self.scene.context.elements
         if event == 1:
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -901,8 +919,8 @@ class SideWidget(Widget):
             grow = 1
             # If the Ctr+Shift-Keys are pressed then size equally on both opposing sides at the same time
             if self.master.key_shift_pressed and self.master.key_control_pressed:
-                orgy  = (self.master.bottom + self.master.top) / 2
-                orgx  = (self.master.left + self.master.right) / 2
+                orgy = (self.master.bottom + self.master.top) / 2
+                orgx = (self.master.left + self.master.right) / 2
                 grow = 0.5
 
             oldvalue = self.save_width
@@ -911,7 +929,6 @@ class SideWidget(Widget):
             oldvalue = self.save_height
             self.save_height *= scaley
             deltay = self.save_height - oldvalue
-
 
             if "n" in self.method:
                 b[1] -= grow * deltay
@@ -944,7 +961,9 @@ class SideWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         s_me = "side"
-        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % ("Y" if self.index in (0, 2) else "X")
+        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
+            "Y" if self.index in (0, 2) else "X"
+        )
 
         response = process_event(
             widget=self,
@@ -1012,7 +1031,7 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1035,7 +1054,7 @@ class SkewWidget(Widget):
             delta_angle = current_angle - self.master.rotated_angle
             self.master.rotated_angle = current_angle
 
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 try:
                     if obj.lock:
@@ -1159,7 +1178,7 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             dx, dy = self.scene.revised_magnet_bound(b)
             if dx != 0 or dy != 0:
-                for e in elements.flat(types=("elem",), emphasized=True):
+                for e in elements.flat(types=elem_nodes, emphasized=True):
                     obj = e.object
                     obj.transform.post_translate(dx, dy)
 
@@ -1174,7 +1193,7 @@ class MoveWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:  # end
             self.check_for_magnets()
-            for e in elements.flat(types=("elem", "group", "file"), emphasized=True):
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 obj = e.object
                 try:
                     obj.node.modified()
@@ -1187,7 +1206,7 @@ class MoveWidget(Widget):
 
             # b = elements.selected_area()  # correct, but slow...
             b = elements._emphasized_bounds
-            for e in elements.flat(types=("elem",), emphasized=True):
+            for e in elements.flat(types=elem_nodes, emphasized=True):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 obj.transform.post_translate(dx, dy)
@@ -1381,7 +1400,7 @@ class ReferenceWidget(Widget):
             if self.is_reference_object:
                 self.scene.reference_object = None
             else:
-                for e in elements.flat(types=("elem",), emphasized=True):
+                for e in elements.flat(types=elem_nodes, emphasized=True):
                     try:
                         # First object
                         obj = e.object
@@ -1686,7 +1705,7 @@ class SelectionWidget(Widget):
         dy = ty - cc[1]
         # print ("Moving from (%.1f, %.1f) to (%.1f, %.1f) translate by (%.1f, %.1f)" % (cc[0], cc[1], tx, ty, dx, dy ))
 
-        for e in elements.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=elem_nodes, emphasized=True):
             # Here we ignore the lock-status of an element, as this is just a move...
             obj = e.object
             if not obj is refob:
@@ -1784,7 +1803,7 @@ class SelectionWidget(Widget):
         dx = (scalex - 1) * dx
         dy = (scaley - 1) * dy
 
-        for e in elements.flat(types=("elem",), emphasized=True):
+        for e in elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             if not obj is refob:
                 obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
@@ -1809,7 +1828,7 @@ class SelectionWidget(Widget):
             self.scene.request_refresh()
 
     def become_reference(self, event):
-        for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
                 # First object
                 obj = e.object
@@ -1836,7 +1855,9 @@ class SelectionWidget(Widget):
         obj = self.scene.reference_object
         if not obj is None:
             # Okay, just lets make sure we are not doing this on the refobject itself...
-            for e in self.scene.context.elements.flat(types=("elem",), emphasized=True):
+            for e in self.scene.context.elements.flat(
+                types=elem_nodes, emphasized=True
+            ):
                 # Here we acknowledge the lock-status of an element
                 if obj == e.object:
                     obj = None
@@ -2004,10 +2025,10 @@ class SelectionWidget(Widget):
             self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
             try:
                 self.selection_pen.SetWidth(self.line_width)
-                self.handle_pen.SetWidth(0.75*self.line_width)
+                self.handle_pen.SetWidth(0.75 * self.line_width)
             except TypeError:
                 self.selection_pen.SetWidth(int(self.line_width))
-                self.handle_pen.SetWidth(int(0.75*self.line_width))
+                self.handle_pen.SetWidth(int(0.75 * self.line_width))
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
@@ -2034,7 +2055,7 @@ class SelectionWidget(Widget):
             if not self.scene.reference_object is None:
 
                 for idx, e in enumerate(
-                    elements.flat(types=("elem",), emphasized=True)
+                    elements.flat(types=elem_nodes, emphasized=True)
                 ):
                     obj = e.object
                     if obj is self.scene.reference_object:

@@ -3,16 +3,17 @@ import threading
 import time
 from math import isinf, isnan, tau
 
-# from weakref import ref
-
 import wx
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
@@ -21,16 +22,18 @@ from meerk40t.gui.scene.sceneconst import (
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
+    RESPONSE_CHANGE_POSITION,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
-    RESPONSE_CHANGE_POSITION,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox, Polygon, Circle, Ellipse, Arc
-from meerk40t.core.units import Length
-from meerk40t.gui.scene.guicolors import GuiColors
+from meerk40t.svgelements import Arc, Circle, Ellipse, Matrix, Point, Polygon, Viewbox
+
+# from weakref import ref
+
+
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -83,7 +86,7 @@ class Scene(Module, Job):
         self.magnet_x = []
         self.magnet_y = []
         self.magnet_attraction = 2
-        # 0 off, 1..x increasing strength (quadratic behaviour)
+        # 0 off, `1..x` increasing strength (quadratic behaviour)
 
         self.magnet_attract_x = True  # Shall the X-Axis be affected
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
@@ -206,7 +209,6 @@ class Scene(Module, Job):
 
         return dx, dy
 
-
     def has_magnets(self):
         return len(self.magnet_x) + len(self.magnet_y) > 0
 
@@ -295,7 +297,7 @@ class Scene(Module, Job):
                 self.screen_refresh_is_requested = False
 
     def update_buffer_ui_thread(self):
-        """Performs the redraw of the data in the UI thread."""
+        """Performs redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
         buf = self.gui._Buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
@@ -355,7 +357,7 @@ class Scene(Module, Job):
 
     def notify_removed_from_parent(self, parent):
         """
-        Called when a widget is removed from it's parent. Notifies scene as a whole.
+        Called when a widget is removed from its parent. Notifies scene as a whole.
         """
         pass
 
@@ -410,7 +412,7 @@ class Scene(Module, Job):
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """
         Iterates through the hit chain to find elements which respond to their hit() function that they are HITCHAIN_HIT
-        and registers this within the hittable_elements list if they are able to be hit at the current time. Given the
+        and registers this within the hittable_elements list if they are able to hit at the current time. Given the
         dimensions of the widget and the current matrix within the widget tree.
 
         HITCHAIN_HIT means that this is a hit value and should the termination of this branch of the widget tree.
@@ -433,7 +435,7 @@ class Scene(Module, Job):
         response = current_widget.hit()
         if response == HITCHAIN_HIT:
             self.hittable_elements.append((current_widget, matrix_within_scene))
-        #elif response == HITCHAIN_HIT_WITH_PRIORITY:
+        # elif response == HITCHAIN_HIT_WITH_PRIORITY:
         #    self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
         elif response == HITCHAIN_DELEGATE:
             for w in current_widget:
@@ -536,7 +538,7 @@ class Scene(Module, Job):
                         sdy,
                     )
                 try:
-                    # We ignore the consume etc. for the time being...
+                    # We ignore the 'consume' etc. for the time being...
                     response = current_widget.event(window_pos, space_pos, event_type)
                 except AttributeError:
                     pass
@@ -553,7 +555,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-        #old_debug = ""
+        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -574,8 +576,8 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
-            #debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
-            #if debug_str != old_debug:
+            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
+            # if debug_str != old_debug:
             #   old_debug = debug_str
             #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
 
@@ -597,13 +599,18 @@ class Scene(Module, Job):
                     )
                 previous_top_element = current_widget
             delta_time = time.time() - self.time
-            if event_type == "leftup" and delta_time <= 0.30: # Anything within 0.3 seconds will be converted to a leftclick
+            if (
+                event_type == "leftup" and delta_time <= 0.30
+            ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             elif event_type == "leftup":
                 if self.log_events:
-                    self.log_events("Did not convert to click, event of my own right, %.2f" % delta_time)
+                    self.log_events(
+                        "Did not convert to click, event of my own right, %.2f"
+                        % delta_time
+                    )
                 response = current_widget.event(window_pos, space_pos, event_type)
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
@@ -627,13 +634,13 @@ class Scene(Module, Job):
                 continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
-            elif response==RESPONSE_CHANGE_POSITION:
+            elif response == RESPONSE_CHANGE_POSITION:
                 # New position has been given:
-                #print("New position")
+                # print("New position")
                 if not params is None:
                     new_x_space = params[0]
                     new_y_space = params[1]
-                #print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
+                # print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
                 new_x = window_pos[0]
                 new_y = window_pos[1]
                 if not new_x_space is None:
@@ -641,13 +648,13 @@ class Scene(Module, Job):
                     odx = sdx
                     if current_matrix is not None and not current_matrix.is_identity():
                         sdx *= current_matrix.value_scale_x()
-                    #print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
+                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
                     new_x = window_pos[0] + sdx
                     sdy = new_y_space - space_pos[1]
                     ody = sdy
                     if current_matrix is not None and not current_matrix.is_identity():
                         sdy *= current_matrix.value_scale_y()
-                    #print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
+                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
                     new_y = window_pos[1] + sdy
 
                 dx = new_x - self.last_position[0]
@@ -732,7 +739,7 @@ class Scene(Module, Job):
         """
         found = False
         if not self._reference is None:
-            for e in self.context.elements.flat(types=("elem",)):
+            for e in self.context.elements.flat(types=elem_nodes):
                 # Here we ignore the lock-status of an element
                 obj = e.object
                 if obj is self._reference:

@@ -362,8 +362,8 @@ class MoshiBlob:
         """
         Writes data to the queue, this will be moved into the buffer by the thread in a threadsafe manner.
 
-        :param bytes_to_write: data to write to the queue.
-        :return:
+        @param bytes_to_write: data to write to the queue.
+        @return:
         """
         self.data += bytes_to_write
         return self
@@ -374,7 +374,7 @@ class MoshiBlob:
         Jog and Normal Speed. These values are limited to integer values which
         are 1 to 256.
 
-        :return:
+        @return:
         """
         assert self._stage == 0
         self._stage = 1
@@ -408,7 +408,7 @@ class MoshiBlob:
     def set_offset(self, z, x, y):
         """
         2nd Command For Jump. (0x03 position), followed by 3 int16le (2)
-        :return:
+        @return:
         """
         assert self._stage == 1
         self._stage = 2
@@ -426,7 +426,7 @@ class MoshiBlob:
         """
         Terminal Commands for Jump/Program. (last 7 bytes). (4)
 
-        :return:
+        @return:
         """
         # assert self._stage == 3
         self._stage = 4

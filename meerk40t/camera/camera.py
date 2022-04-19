@@ -94,8 +94,8 @@ class Camera(Service):
 
         This attempts to perform checkerboard detection.
 
-        :param frame:
-        :return:
+        @param frame:
+        @return:
         """
         _ = self._
         frame = self.last_raw
@@ -175,8 +175,8 @@ class Camera(Service):
         """
         Open Camera device.
 
-        :param camera_index:
-        :return:
+        @param camera_index:
+        @return:
         """
         self.quit_thread = False
         if self.uri is not None:
@@ -194,7 +194,7 @@ class Camera(Service):
         """
         Disconnect from the current camera.
 
-        :return:
+        @return:
         """
         self.quit_thread = True
 
@@ -349,8 +349,8 @@ class Camera(Service):
         """
         Reset the perspective settings.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.perspective_x1 = None
         self.perspective_y1 = None
@@ -370,8 +370,8 @@ class Camera(Service):
         """
         Reset the fisheye settings.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.fisheye_k = None
         self.fisheye_d = None
@@ -390,8 +390,8 @@ class Camera(Service):
     def background(self):
         """
         Sets image background to main scene.
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         frame = self.last_frame
         if frame is not None:

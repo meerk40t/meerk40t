@@ -52,22 +52,22 @@ class RasterPlotter:
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
 
-        :param data: pixel data accessed through data[x,y] parameters
-        :param width: Width of the given data.
-        :param height: Height of the given data.
-        :param traversal: Flags for how the pixel traversal should be conducted.
-        :param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
-        :param overscan: The extra amount of padding to add to the end scanline.
-        :param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
-        :param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
-        :param step: The amount units per pixel. This is both scanline gap and pixel step.
-        :param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
-                            implementation is agnostic with regards to what data is provided. The filter is expected
+        @param data: pixel data accessed through data[x,y] parameters
+        @param width: Width of the given data.
+        @param height: Height of the given data.
+        @param traversal: Flags for how the pixel traversal should be conducted.
+        @param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
+        @param overscan: The extra amount of padding to add to the end scanline.
+        @param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
+        @param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
+        @param step: The amount units per pixel. This is both scanline gap and pixel step.
+        @param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
+                            implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
-        :param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
+        @param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
                             static. But, an alternative backswing filter could allow for that some plotting to occur
-                            on the backswing based on a different criteria than forward swing. By default this returns
+                            on the backswing based on a different criteria than forward swing. By default, this returns
                             skip pixels, which will not plot anything.
         """
         self.data = data
@@ -97,7 +97,7 @@ class RasterPlotter:
     def swap(self):
         """
         Swaps the px_filter
-        :return:
+        @return:
         """
         if self.filter == self.main_filter:
             self.filter = self.alt_filter
@@ -108,9 +108,9 @@ class RasterPlotter:
         """
         Returns the filtered pixel
 
-        :param x:
-        :param y:
-        :return: Filtered Pixel
+        @param x:
+        @param y:
+        @return: Filtered Pixel
         """
         if 0 <= y < self.height and 0 <= x < self.width:
             if self.filter is None:
@@ -119,7 +119,7 @@ class RasterPlotter:
         raise IndexError
 
     def leftmost_not_equal(self, y):
-        """ "
+        """
         Determine the leftmost pixel that is not equal to the skip_pixel value.
 
         if all pixels skipped returns None
@@ -255,10 +255,10 @@ class RasterPlotter:
         Find the horizontal extreme at the given y-scanline, stepping by dy in the target image.
         This can be done on either the rightside (True) or leftside (False).
 
-        :param y: y-scanline
-        :param dy: dy-step amount (usually should be -1 or 1)
-        :param rightside: rightside / leftside.
-        :return:
+        @param y: y-scanline
+        @param dy: dy-step amount (usually should be -1 or 1)
+        @param rightside: rightside / leftside.
+        @return:
         """
         try:
             if rightside:
@@ -283,10 +283,10 @@ class RasterPlotter:
         Find the vertical extreme at the given x-scanline, stepping by dx in the target image.
         This can be done on either the bottomside (True) or topide (False).
 
-        :param x: x-scanline
-        :param dx: dx-step amount (usually should be -1 or 1)
-        :param bottomside: bottomside / topside.
-        :return:
+        @param x: x-scanline
+        @param dx: dx-step amount (usually should be -1 or 1)
+        @param bottomside: bottomside / topside.
+        @return:
         """
         try:
             if bottomside:
@@ -317,7 +317,7 @@ class RasterPlotter:
         This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
         The start edge and the start point.
 
-        :return: x,y coordinates of first pixel.
+        @return: x,y coordinates of first pixel.
         """
         if self.traversal & Y_AXIS:
             x = 0
@@ -346,7 +346,7 @@ class RasterPlotter:
 
         This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
 
-        :return: x,y coordinates of last pixel.
+        @return: x,y coordinates of last pixel.
         """
         if self.traversal & Y_AXIS:
             x = 0
@@ -372,14 +372,14 @@ class RasterPlotter:
     def initial_position(self):
         """
         Returns raw initial position for the relevant pixel within the data.
-        :return: initial position within the data.
+        @return: initial position within the data.
         """
         return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
         """
         Returns the initial position for this within the scene. Taking into account start corner, and step size.
-        :return: initial position within scene. The first plot location.
+        @return: initial position within scene. The first plot location.
         """
         if self.initial_x is None:  # image is blank.
             return self.offset_x, self.offset_y
@@ -392,7 +392,7 @@ class RasterPlotter:
         """
         Returns best guess of final position relative to the scene offset. Taking into account start corner, and parity
         of the width and height.
-        :return:
+        @return:
         """
         if self.final_x is None:  # image is blank.
             return self.offset_x, self.offset_y
@@ -421,7 +421,7 @@ class RasterPlotter:
     def horizontal(self):
         """
         Major raster axis is horizontal
-        :return:
+        @return:
         """
         return not bool(self.traversal & Y_AXIS)
 
@@ -429,7 +429,7 @@ class RasterPlotter:
     def vertical(self):
         """
         Major raster axis is vertical
-        :return:
+        @return:
         """
         return bool(self.traversal & Y_AXIS)
 
@@ -437,7 +437,7 @@ class RasterPlotter:
     def rightward(self):
         """
         Raster will progress towards right
-        :return:
+        @return:
         """
         return self.left  # starting on left and moving horizontal.
 
@@ -445,7 +445,7 @@ class RasterPlotter:
     def leftward(self):
         """
         Raster will progress towards left
-        :return:
+        @return:
         """
         return self.right
 
@@ -453,7 +453,7 @@ class RasterPlotter:
     def topward(self):
         """
         Raster will progress towards top
-        :return:
+        @return:
         """
         return self.bottom
 
@@ -461,7 +461,7 @@ class RasterPlotter:
     def bottomward(self):
         """
         Raster will progress towards bottom
-        :return:
+        @return:
         """
         return self.top
 
@@ -469,7 +469,7 @@ class RasterPlotter:
     def rightward_major(self):
         """
         Raster major movements are right.
-        :return:
+        @return:
         """
         return self.left and self.horizontal  # starting on left and moving horizontal.
 
@@ -477,7 +477,7 @@ class RasterPlotter:
     def leftward_major(self):
         """
         Raster major movements are left
-        :return:
+        @return:
         """
         return self.right and self.horizontal
 
@@ -485,7 +485,7 @@ class RasterPlotter:
     def topward_major(self):
         """
         Raster major movements are top
-        :return:
+        @return:
         """
         return self.bottom and self.vertical
 
@@ -493,7 +493,7 @@ class RasterPlotter:
     def bottomward_major(self):
         """
         Raster major movements are bottom.
-        :return:
+        @return:
         """
         return self.top and self.vertical
 
@@ -501,7 +501,7 @@ class RasterPlotter:
     def rightward_minor(self):
         """
         Raster minor scanline ticks are right.
-        :return:
+        @return:
         """
         return self.left and self.vertical  # starting on left and moving horizontal.
 
@@ -509,7 +509,7 @@ class RasterPlotter:
     def leftward_minor(self):
         """
         Raster minor scanline ticks are left.
-        :return:
+        @return:
         """
         return self.right and self.vertical
 
@@ -517,7 +517,7 @@ class RasterPlotter:
     def topward_minor(self):
         """
         Raster minor scanline ticks are top.
-        :return:
+        @return:
         """
         return self.bottom and self.horizontal
 
@@ -525,7 +525,7 @@ class RasterPlotter:
     def bottomward_minor(self):
         """
         Raster minor scanline ticks are bottom.
-        :return:
+        @return:
         """
         return self.top and self.horizontal
 

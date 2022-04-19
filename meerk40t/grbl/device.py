@@ -8,8 +8,8 @@ import serial
 from serial import SerialException
 
 from meerk40t.kernel import Service
-from ..core.cutcode import LineCut, QuadCut, CubicCut
 
+from ..core.cutcode import CubicCut, LineCut, QuadCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -369,7 +369,9 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
-        self.plot_planner = PlotPlanner(self.settings, single=True, smooth=False, ppi=False, shift=False, group=True)
+        self.plot_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
         self.queue = []
         self.plot_data = None
 
@@ -662,7 +664,6 @@ class GRBLDriver(Parameters):
         self.units_dirty = True
         return False
 
-
     def plot_start2(self):
         """
         Called at the end of plot commands to ensure the driver can deal with them all as a group.
@@ -799,7 +800,7 @@ class GRBLDriver(Parameters):
     def set_position(self, x, y):
         """
         This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
         used in step-repeat.
 
         @param x:

@@ -1,19 +1,17 @@
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import Service
-from .units import Length
+from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.cutcode import CutCode
 from ..svgelements import SVGImage
 from .cutplan import CutPlan, CutPlanningFailedError
-from .node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
+from .node.op_cut import CutOpNode
+from .node.op_dots import DotsOpNode
+from .node.op_engrave import EngraveOpNode
+from .node.op_hatch import HatchOpNode
+from .node.op_image import ImageOpNode
+from .node.op_raster import RasterOpNode
+from .units import Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -362,7 +360,7 @@ class Planner(Service):
         def plan_alias(command, channel, _, alias=None, remainder=None, **kwgs):
             """
             Plan alias allows the user to define a spoolable console command.
-            eg. plan-alias export egv_export myfile.egv
+            e.g. plan-alias export egv_export myfile.egv
 
             This creates a plan command called "export" that executes "egv_export myfile.egv".
             This can then be placed into the spooler during the planning stages.
@@ -508,8 +506,7 @@ class Planner(Service):
                     "op dots",
                     "op hatch",
                     "cutcode",
-                    "cmdop",
-                    "consoleop",
+                    "op console",
                     "lasercode",
                     "blob",
                 ),

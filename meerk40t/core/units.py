@@ -1,8 +1,8 @@
 import re
 from copy import copy
 
-from meerk40t.svgelements import Matrix
 from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -225,7 +225,7 @@ class ViewPort:
         Axis 0 is X
         Axis 1 is Y
 
-        Axis -1 is 1D in x, y space. eg. a line width.
+        Axis -1 is 1D in x, y space. e.g. a line width.
 
         Convert a length of distance {value} to new native values.
 
@@ -327,20 +327,20 @@ class ViewPort:
         Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
         respectively.
 
-        Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
         Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
         or if meetOrSlice is missing from this value.
 
-        :param e_x: element_x value
-        :param e_y: element_y value
-        :param e_width: element_width value
-        :param e_height: element_height value
-        :param vb_x: viewbox_x value
-        :param vb_y: viewbox_y value
-        :param vb_width: viewbox_width value
-        :param vb_height: viewbox_height value
-        :param aspect: preserve aspect ratio value
-        :return: string of the SVG transform commands to account for the viewbox.
+        @param e_x: element_x value
+        @param e_y: element_y value
+        @param e_width: element_width value
+        @param e_height: element_height value
+        @param vb_x: viewbox_x value
+        @param vb_y: viewbox_y value
+        @param vb_width: viewbox_width value
+        @param vb_height: viewbox_height value
+        @param aspect: preserve aspect ratio value
+        @return: string of the SVG transform commands to account for the viewbox.
         """
         if (
             e_x is None

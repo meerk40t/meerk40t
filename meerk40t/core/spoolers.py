@@ -341,7 +341,7 @@ class Spooler:
         (str, attribute, ...) calls self.driver.str(*attributes)
         str, calls self.driver.str()
         callable, callable()
-        has_attribute(generator), recursive call to list of lines produced by generator
+        has_attribute(generator), recursive call to list of lines produced by
         generator, recursive call to list of lines produced by generator
 
         @param program: line to be executed.
@@ -457,8 +457,8 @@ class Spooler:
         The job can be a single command with ("move" 20 20) or without parameters ("home"), or a generator
         which can yield many lasercode commands.
 
-        :param job: job to send to the spooler.
-        :return:
+        @param job: job to send to the spooler.
+        @return:
         """
         with self._lock:
             if len(job) == 1:
@@ -471,10 +471,10 @@ class Spooler:
         """
         Send several jobs be appended to the end of the queue.
 
-        The jobs parameter must be suitable to be .extended to the end of the queue list.
+        The 'jobs' parameter must be suitable to be .extended to the end of the queue list.
 
-        :param jobs: jobs to extend
-        :return:
+        @param jobs: jobs to extend
+        @return:
         """
         with self._lock:
             if isinstance(jobs, (list, tuple)):

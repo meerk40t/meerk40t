@@ -25,7 +25,6 @@ def foreground_color(colour):
     return style_color
 
 
-
 def style_bold(style):
     style.SetFontWeight(wx.FONTWEIGHT_BOLD)
     return style
@@ -54,7 +53,6 @@ def style_underline(style):
 def style_ununderline(style):
     style.SetFontUnderlined(False)
     return style
-
 
 
 def style_negate(style):

@@ -1,8 +1,8 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse, Path
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 
 
 class EllipseTool(ToolWidget):
@@ -56,9 +56,8 @@ class EllipseTool(ToolWidget):
                     stroke="blue",
                     stroke_width=1000,
                 )
-                t = Path(ellipse)
-                if len(t) != 0:
-                    self.scene.context.elements.add_elem(t, classify=True)
+                if not ellipse.is_degenerate():
+                    self.scene.context.elements.add_elem(ellipse, classify=True)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

@@ -496,7 +496,7 @@ class MoshiDriver:
         Ensure the laser is currently in a program state. If it is not currently in a program state we begin
         a program state.
 
-        If the the driver is currently in a program state the assurance is made.
+        If the driver is currently in a program state the assurance is made.
         """
         if self.state == DRIVER_STATE_PROGRAM:
             return
@@ -657,7 +657,7 @@ class MoshiDriver:
     def set_position(self, x, y):
         """
         This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
         used in step-repeat.
 
         @param x:
@@ -774,7 +774,7 @@ class MoshiDriver:
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
         movements. Or updating the laser state based on the settings of the cutcode.
 
-        :return:
+        @return:
         """
         if self.plot_data is None:
             return False
@@ -1006,10 +1006,10 @@ class MoshiController:
 
     def realtime_read(self):
         """
-        The a7xx values used before the AC01 commands. Read preamble.
+        The `a7xx` values used before the AC01 commands. Read preamble.
 
         Also seen randomly 3.2 seconds apart. Maybe keep-alive.
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: Read...")
         self.realtime_pipe(swizzle_table[MOSHI_READ][0])
@@ -1017,7 +1017,7 @@ class MoshiController:
     def realtime_prologue(self):
         """
         Before a jump / program / turned on:
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: Prologue")
         self.realtime_pipe(swizzle_table[MOSHI_PROLOGUE][0])
@@ -1028,7 +1028,7 @@ class MoshiController:
         After a jump / program
         Status 207
         Status 205 Done.
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: Epilogue")
         self.realtime_pipe(swizzle_table[MOSHI_EPILOGUE][0])
@@ -1036,7 +1036,7 @@ class MoshiController:
     def realtime_freemotor(self):
         """
         Freemotor command
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: FreeMotor")
         self.realtime_pipe(swizzle_table[MOSHI_FREEMOTOR][0])
@@ -1044,7 +1044,7 @@ class MoshiController:
     def realtime_laser(self):
         """
         Laser Command Toggle.
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: Laser Active")
         self.realtime_pipe(swizzle_table[MOSHI_LASER][0])
@@ -1052,7 +1052,7 @@ class MoshiController:
     def realtime_stop(self):
         """
         Stop command (likely same as freemotor):
-        :return:
+        @return:
         """
         self.pipe_channel("Realtime: Stop")
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
@@ -1107,8 +1107,8 @@ class MoshiController:
 
     def start(self):
         """
-        Controller state change to Started.
-        :return:
+        Controller state change to `Started`.
+        @return:
         """
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
@@ -1123,7 +1123,7 @@ class MoshiController:
         Pause simply holds the controller from sending any additional packets.
 
         If this state change is done from INITIALIZE it will start the processing.
-        Otherwise it must be done from ACTIVE or IDLE.
+        Otherwise, it must be done from ACTIVE or IDLE.
         """
         if self.state == STATE_INITIALIZE:
             self.start()
@@ -1276,7 +1276,7 @@ class MoshiController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
-                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
@@ -1300,7 +1300,7 @@ class MoshiController:
         """
         Attempts to process the program send from the buffer.
 
-        :return: queue process success.
+        @return: queue process success.
         """
         if len(self._buffer) > 0:
             buffer = self._buffer

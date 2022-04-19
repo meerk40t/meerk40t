@@ -18,7 +18,7 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
 
     There is a small amount of slop at the edge of converted images sometimes, so it's essential
     to mark the image as inverted if black should be treated as empty pixels. The scaled down image
-    cannot lose the edge pixels since they could be important, but also dim may not be be a multiple
+    cannot lose the edge pixels since they could be important, but also dim may not be a multiple
     of step level which requires an introduced empty edge pixel to be added.
 
     @param image: image to be actualized

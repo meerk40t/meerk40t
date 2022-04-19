@@ -35,12 +35,12 @@ def plugin(kernel, lifecycle):
             then we get the release list and iterate through
             to find the latest full and beta releases that are > currently running
 
-            If check_for_betas is false
+            If check_for_betas is false,
             but we are currently running a beta
             then we check for a full release > currently running
             and if not then the latest beta > currently running
 
-            If check_for_betas is false
+            If check_for_betas is false,
             and we are not currently running a beta
             then we check only for a full release > currently running
             """
@@ -50,7 +50,7 @@ def plugin(kernel, lifecycle):
             #            Check whether the current executable directory is writeable,
             #            then identify the executable type to download
             #            and if it exists and not already downloaded or if size is different
-            #            then download it to the executable directory
+            #            from download it to the executable directory
             #        Otherwise give the user the Release page url.
 
             def comparable_version(version):

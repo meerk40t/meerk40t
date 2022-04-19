@@ -240,8 +240,8 @@ class CameraPanel(wx.Panel, Job):
         """
         Reset the perspective settings.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.context("camera%d perspective reset\n" % self.index)
 
@@ -249,24 +249,24 @@ class CameraPanel(wx.Panel, Job):
         """
         Reset the fisheye settings.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.context("camera%d fisheye reset\n" % self.index)
 
     def on_check_perspective(self, event=None):
         """
         Perspective checked. Turns on/off
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.camera.correction_perspective = self.check_perspective.GetValue()
 
     def on_check_fisheye(self, event=None):
         """
         Fisheye checked. Turns on/off.
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.camera.correction_fisheye = self.check_fisheye.GetValue()
 
@@ -276,8 +276,8 @@ class CameraPanel(wx.Panel, Job):
 
         Sets image background to main scene.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.context("camera%d background\n" % self.index)
 
@@ -286,8 +286,8 @@ class CameraPanel(wx.Panel, Job):
         Button export.
 
         Sends an image to the scene as an exported object.
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.context.console("camera%d export\n" % self.index)
 
@@ -302,8 +302,8 @@ class CameraPanel(wx.Panel, Job):
 
         If set to 0, this will be a frame each 5 seconds.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.camera.fps = self.slider_fps.GetValue()
         self.context.signal("camera;fps", self.context.fps)
@@ -312,8 +312,8 @@ class CameraPanel(wx.Panel, Job):
         """
         Attempts to locate 6x9 checkerboard pattern for OpenCV to correct the fisheye pattern.
 
-        :param event:
-        :return:
+        @param event:
+        @return:
         """
         self.context.console("camera%d fisheye capture\n" % self.index)
 

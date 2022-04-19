@@ -1,13 +1,11 @@
 import os
 
-from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort, Length
-from meerk40t.kernel import Service
-
-from meerk40t.svgelements import Point, Path, SVGImage, Polygon, Shape, Angle, Matrix
-
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.BalorDriver import BalorDriver
+from meerk40t.core.spoolers import Spooler
+from meerk40t.core.units import Length, ViewPort
+from meerk40t.kernel import Service
+from meerk40t.svgelements import Angle, Matrix, Path, Point, Polygon, Shape, SVGImage
 
 
 class BalorDevice(Service, ViewPort):
@@ -105,9 +103,7 @@ class BalorDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Flip X"),
-                "tip": _(
-                    "Flip the X axis for the Balor device"
-                ),
+                "tip": _("Flip the X axis for the Balor device"),
             },
             {
                 "attr": "flip_y",
@@ -115,9 +111,7 @@ class BalorDevice(Service, ViewPort):
                 "default": True,
                 "type": bool,
                 "label": _("Flip Y"),
-                "tip": _(
-                    "Flip the Y axis for the Balor device"
-                ),
+                "tip": _("Flip the Y axis for the Balor device"),
             },
             {
                 "attr": "mock",
@@ -587,7 +581,9 @@ class BalorDevice(Service, ViewPort):
                 job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
             else:
                 # Travel at redlight speed
-                job = CommandList(light_speed=self.redlight_speed, goto_speed=travel_speed)
+                job = CommandList(
+                    light_speed=self.redlight_speed, goto_speed=travel_speed
+                )
             for e in paths:
                 if isinstance(e, Shape):
                     if not isinstance(e, Path):

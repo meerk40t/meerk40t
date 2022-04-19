@@ -4,8 +4,9 @@ import unittest
 from PIL import Image, ImageDraw
 
 from meerk40t.core.cutcode import CutCode, LineCut, Parameters
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
 
-from meerk40t.core.node.laserop import EngraveOpNode, RasterOpNode
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
 from meerk40t.svgelements import Circle, Path, Point, SVGImage

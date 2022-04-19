@@ -1,9 +1,9 @@
 import wx
 from wx import aui
 
+from ...kernel import signal_listener
 from ..icons import icons8_computer_support_50
 from ..mwindow import MWindow
-from ...kernel import signal_listener
 
 _ = wx.GetTranslation
 

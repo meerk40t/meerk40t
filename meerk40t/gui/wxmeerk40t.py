@@ -6,7 +6,7 @@ from datetime import datetime
 
 # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-# so we are doing it here even though we do not refer to it in this file
+# so, we are doing it here even though we do not refer to it in this file
 # richtext is used for the Console panel.
 import wx
 from wx import aui, richtext
@@ -15,32 +15,31 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .propertypanels.consoleproperty import  ConsolePropertiesPanel
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .propertypanels.groupproperties import GroupPropertiesPanel
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .propertypanels.imageproperty import ImagePropertyPanel
 from .keymap import Keymap
 from .notes import Notes
-from .propertypanels.propertywindow import PropertyWindow
+from .preferences import Preferences
+from .propertypanels.consoleproperty import ConsolePropertiesPanel
+from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.imageproperty import ImagePropertyPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
-from .preferences import Preferences
+from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.textproperty import TextPropertyPanel
 from .rasterwizard import RasterWizard
 from .simulation import Simulation
-from .propertypanels.textproperty import TextPropertyPanel
 from .wxmmain import MeerK40t
 
 """
@@ -318,9 +317,12 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
-        kernel.register("property/ElemNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/ElemNode/TextProperty", TextPropertyPanel)
-        kernel.register("property/ElemNode/ImageProperty", ImagePropertyPanel)
+        kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
@@ -710,10 +712,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
 
-    :param exc_type:
-    :param exc_value:
-    :param exc_traceback:
-    :return:
+    @param exc_type:
+    @param exc_value:
+    @param exc_traceback:
+    @return:
     """
     wxversion = "wx"
     try:

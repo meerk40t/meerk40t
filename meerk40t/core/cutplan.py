@@ -24,6 +24,7 @@ from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .elements import elem_ref_nodes
 
 
 class CutPlanningFailedError(Exception):
@@ -123,9 +124,9 @@ class CutPlan:
         blob converts User operations to CutCode objects.
 
         In order to have CutCode objects in the correct sequence for merging we need to:
-        a. Break operations into grouped sequences of LaserOperations and special operations.
+        1. Break operations into grouped sequences of LaserOperations and special operations.
            We can only merge within groups of Laser operations.
-        b. The sequence of CutObjects needs to reflect merge settings
+        2. The sequence of CutObjects needs to reflect merge settings
            Normal sequence is to iterate operations and then passes for each operation.
            With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
         """
@@ -162,7 +163,7 @@ class CutPlan:
                     if not hasattr(op, "type"):
                         blob_plan.append(op)
                         continue
-                    if not op.type.startswith("op"):
+                    if not op.type.startswith("op") or op.type == "op console":
                         blob_plan.append(op)
                         continue
                     if op.type == "op dots":
@@ -365,8 +366,8 @@ class CutPlan:
 
     def strip_rasters(self):
         """
-        Strip rasters if there is no method of converting vectors to rasters rasters must
-        be stripped at the validate stage.
+        Strip rasters if there is no method of converting vectors to rasters. Rasters must
+        be stripped at the `validate` stage.
         @return:
         """
         stripped = False
@@ -384,7 +385,7 @@ class CutPlan:
             self.plan.extend(p)
 
     def _make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "ref elem")))
+        subitems = list(op.flat(types=elem_ref_nodes))
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
@@ -487,7 +488,7 @@ class CutPlan:
             if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
                     if not isinstance(e.object, SVGText):
-                        continue  # make raster not needed since its a single real raster.
+                        continue  # make raster not needed since it's a single real raster.
                     self.commands.append(self.strip_text)
                     return True
         return False
@@ -504,7 +505,7 @@ class CutPlan:
                 if len(op.children) == 0:
                     continue
                 if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                    continue  # make raster not needed since its a single real raster.
+                    continue  # make raster not needed since it's a single real raster.
                 make_raster = self.context.lookup("render-op/make_raster")
 
                 if make_raster is None:
@@ -546,9 +547,9 @@ class CutPlan:
 def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
-    :param inner_path: inner path
-    :param outer_path: outer path
-    :return: whether path1 is wholly inside path2.
+    @param inner: inner path
+    @param outer: outer path
+    @return: whether path1 is wholly inside path2.
     """
     inner_path = inner
     outer_path = outer
@@ -788,7 +789,7 @@ def short_travel_cutcode(
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
 
-    We start at either 0,0 or the value given in context.start
+    We start at either 0,0 or the value given in `context.start`
 
     This is time-intense hyper-optimized code, so it contains several seemingly redundant
     checks.
@@ -843,7 +844,7 @@ def short_travel_cutcode(
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):
-                # last_segment is a copy so we need to get original
+                # last_segment is a copy, so we need to get original
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning
