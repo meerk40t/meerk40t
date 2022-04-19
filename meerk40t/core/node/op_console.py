@@ -46,6 +46,13 @@ class ConsoleOperation(Node):
     def __len__(self):
         return 1
 
+    def default_map(self, default_map=None):
+        default_map = super(ConsoleOperation, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Console"
+        default_map['enabled'] = "(Disabled) " if not self.output else ""
+        default_map.update(self.settings)
+        return default_map
+
     def drop(self, drag_node):
         drop_node = self
         if drag_node.type in op_nodes:
