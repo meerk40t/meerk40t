@@ -344,7 +344,6 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        node.label = None
         self.update_label(node)
         try:
             c = node.color
@@ -433,7 +432,6 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            element.node.label = None
             self.update_label(element.node)
         else:
             self.update_label(element)
