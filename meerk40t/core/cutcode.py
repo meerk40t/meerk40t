@@ -1111,7 +1111,8 @@ class PlotCut(CutObject):
             if v < length:
                 x0, y0 = self.start
                 x1, y1 = self.end
-                x = x1 * t + x0
-                y = y1 * t + y0
+                x = x1 * v + x0
+                y = y1 * v + y0
                 return x, y
+            v -= length
         raise ValueError
