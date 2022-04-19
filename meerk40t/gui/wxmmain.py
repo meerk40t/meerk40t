@@ -1471,7 +1471,9 @@ class MeerK40t(MWindow):
                 caption = window.caption
             except AttributeError:
                 caption = name[0].upper() + name[1:]
-
+            if name in ("Scene", "About"): # make no sense, so we omit these...
+                continue
+            # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             id_new = wx.NewId()
             menu_context.Append(id_new, caption, "", wx.ITEM_NORMAL)
             self.Bind(
@@ -1484,7 +1486,6 @@ class MeerK40t(MWindow):
         self.window_menu.windowreset = self.window_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
-
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
