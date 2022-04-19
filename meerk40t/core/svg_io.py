@@ -48,7 +48,7 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText,
+    SVGText, SimpleLine,
 )
 from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 
@@ -395,6 +395,15 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 context_node.add(element, type="elem rect", id=ident)
+                e_list.append(element)
+        elif isinstance(element, SimpleLine):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem line", id=ident)
                 e_list.append(element)
         elif isinstance(element, SVGImage):
             try:

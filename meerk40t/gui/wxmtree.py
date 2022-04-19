@@ -1,17 +1,10 @@
 import wx
 from wx import aui
 
-from ..core.node.node import is_dot
 from ..kernel import signal_listener
 from ..svgelements import (
     SVG_ATTR_STROKE,
     Color,
-    Group,
-    Path,
-    Shape,
-    SVGElement,
-    SVGImage,
-    SVGText,
 )
 from .icons import (
     icon_meerk40t,
@@ -253,7 +246,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
 
     def selected(self, node):
         """
@@ -266,7 +259,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("selected", node)
 
@@ -281,7 +274,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("emphasized", node)
 
@@ -296,7 +289,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("targeted", node)
 
@@ -312,7 +305,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
 
@@ -326,7 +319,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_label(node)
+        self.update_decorations(node)
         try:
             c = node.color
             self.set_color(node, c)
@@ -344,8 +337,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        node.label = None
-        self.update_label(node)
+        self.update_decorations(node)
         try:
             c = node.color
             self.set_color(node, c)
@@ -433,10 +425,9 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            element.node.label = None
-            self.update_label(element.node)
+            self.update_decorations(element.node)
         else:
-            self.update_label(element)
+            self.update_decorations(element)
 
     def on_element_update(self, *args):
         """
@@ -446,9 +437,9 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            self.update_label(element.node)
+            self.update_decorations(element.node)
         else:
-            self.update_label(element)
+            self.update_decorations(element)
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -563,7 +554,7 @@ class ShadowTree:
         else:
             node.item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node.item, node)
-        self.update_label(node)
+        self.update_decorations(node)
         try:
             stroke = node.object.values[SVG_ATTR_STROKE]
             color = wx.Colour(swizzlecolor(Color(stroke).argb))
@@ -633,31 +624,30 @@ class ShadowTree:
         data_object = node.object
         tree = root.wxtree
         if icon is None:
-            if isinstance(data_object, SVGImage):
+            if node.type == 'elem image':
                 image = self.renderer.make_thumbnail(
                     data_object.image, width=20, height=20
                 )
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            elif isinstance(data_object, (Shape, SVGText)):
-                if is_dot(data_object):
-                    if (
+            elif node.type == 'elem point':
+                if (
                         data_object.stroke is not None
                         and data_object.stroke.rgb is not None
-                    ):
-                        c = data_object.stroke
-                    else:
-                        c = Color("black")
-                    self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-                    return
+                ):
+                    c = data_object.stroke
+                else:
+                    c = Color("black")
+                self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+                return
+            elif node.type.startswith('elem') or node.type.startswith('ref'):
                 image = self.renderer.make_raster(
                     node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-
-            if node.type in ("op raster", "op image"):
+            elif node.type in ("op raster", "op image"):
                 try:
                     c = node.color
                     self.set_color(node, c)
@@ -678,7 +668,7 @@ class ShadowTree:
                 except AttributeError:
                     c = None
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-            elif node.type == "op":
+            elif node.type == "op console":
                 try:
                     c = node.color
                     self.set_color(node, c)
@@ -693,7 +683,7 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_label(self, node):
+    def update_decorations(self, node):
         """
         Updates the label if the label is currently blank or force was set to true.
         @param node:
