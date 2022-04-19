@@ -114,7 +114,7 @@ class Settings:
         """
         Updates the given dictionary with the key values at the given section.
 
-        This reads string values and provides no typing information to convert the setting values.
+        Reads string values and provides no typing information to convert the setting values.
 
         @param section: section to load into string dict
         @param dictionary: optional dictionary to update values

@@ -1,6 +1,5 @@
 from typing import Dict
 
-
 FLOAT_PARAMETERS = (
     "speed",
     "frequency",
@@ -9,7 +8,7 @@ FLOAT_PARAMETERS = (
     "delay_laser_on",
     "delay_laser_off",
     "delay_polygon",
-    "wobble_speed"
+    "wobble_speed",
 )
 
 BOOL_PARAMETERS = (
@@ -19,11 +18,7 @@ BOOL_PARAMETERS = (
 )
 
 
-STRING_PARAMETERS = (
-    "wobble_type",
-    "wobble_radius",
-    "wobble_interval"
-)
+STRING_PARAMETERS = ("wobble_type", "wobble_radius", "wobble_interval")
 
 
 class Parameters:

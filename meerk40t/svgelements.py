@@ -1906,9 +1906,9 @@ class Color(object):
 
         It's computationally simple, and empirical tests finds it to be on par with LabDE2000.
 
-        :param c1: first color
-        :param c2: second color
-        :return: square of color distance
+        @param c1: first color
+        @param c2: second color
+        @return: square of color distance
         """
         if isinstance(c1, str):
             c1 = Color(c1)
@@ -2794,7 +2794,7 @@ class Matrix:
         provide the matrix suitable for multiplying vectors. This will be the matrix with the same rotation and scale
         aspects but with no translation. This matrix is for multiplying vector elements where the position doesn't
         matter but the scaling and rotation do.
-        :return:
+        @return:
         """
         return Matrix(self.a, self.b, self.c, self.d, 0.0, 0.0)
 
@@ -3031,9 +3031,9 @@ class Matrix:
         [b d f]   %  [b d f] = [c d 0]
         [0 0 1]      [0 0 1]   [e f 1]
 
-        :param m: matrix operand
-        :param s: matrix operand
-        :return: multiplied matrix.
+        @param m: matrix operand
+        @param s: matrix operand
+        @return: multiplied matrix.
         """
         r0 = (
             s.a * m.a + s.c * m.b + s.e * 0,
@@ -3054,8 +3054,8 @@ class Viewbox:
         """
         Viewbox controls the scaling between the drawing size view that is observing that drawing.
 
-        :param viewbox: either values or viewbox attribute or a Viewbox object
-        :param preserveAspectRatio or preserve_aspect_ratio: preserveAspectRatio
+        @param viewbox: either values or viewbox attribute or a Viewbox object
+        @param preserveAspectRatio or preserve_aspect_ratio: preserveAspectRatio
         """
         self.x = None
         self.y = None
@@ -3183,16 +3183,16 @@ class Viewbox:
         Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
         or if meetOrSlice is missing from this value.
 
-        :param e_x: element_x value
-        :param e_y: element_y value
-        :param e_width: element_width value
-        :param e_height: element_height value
-        :param vb_x: viewbox_x value
-        :param vb_y: viewbox_y value
-        :param vb_width: viewbox_width value
-        :param vb_height: viewbox_height value
-        :param aspect: preserve aspect ratio value
-        :return: string of the SVG transform commands to account for the viewbox.
+        @param e_x: element_x value
+        @param e_y: element_y value
+        @param e_width: element_width value
+        @param e_height: element_height value
+        @param vb_x: viewbox_x value
+        @param vb_y: viewbox_y value
+        @param vb_width: viewbox_width value
+        @param vb_height: viewbox_height value
+        @param aspect: preserve aspect ratio value
+        @return: string of the SVG transform commands to account for the viewbox.
         """
         if (
             e_x is None
@@ -3317,8 +3317,8 @@ class SVGElement(object):
         Render changes any length/percent values or attributes into real usable limits if
         given the information required to change such parameters.
 
-        :param kwargs: various other properties to be rendered with.
-        :return:
+        @param kwargs: various other properties to be rendered with.
+        @return:
         """
         pass
 
@@ -3363,7 +3363,7 @@ class Transformable:
     def __abs__(self):
         """
         The absolute value is taken to be the actual shape transformed.
-        :return: transformed version of the given shape.
+        @return: transformed version of the given shape.
         """
         m = copy(self)
         m.reify()
@@ -3395,9 +3395,9 @@ class Transformable:
         """
         Returns the bounding box of the given object.
 
-        :param transformed: whether this is the transformed bounds or default.
-        :param with_stroke: should the stroke-width be included in the bounds.
-        :return: bounding box of the given element
+        @param transformed: whether this is the transformed bounds or default.
+        @param with_stroke: should the stroke-width be included in the bounds.
+        @return: bounding box of the given element
         """
         raise NotImplementedError
 
@@ -3604,10 +3604,10 @@ class Shape(SVGElement, GraphicObject, Transformable):
         """
         Calculate the length values for the segments of the Shape.
 
-        :param error: error permitted for length calculations.
-        :param min_depth: minimum depth for the length calculation.
-        :param segments: optional segments to use.
-        :return:
+        @param error: error permitted for length calculations.
+        @param min_depth: minimum depth for the length calculation.
+        @param segments: optional segments to use.
+        @return:
         """
         if segments is None:
             segments = self.segments(False)
@@ -3667,9 +3667,9 @@ class Shape(SVGElement, GraphicObject, Transformable):
         """
         Find a point between 0 and 1 within the Shape, going through the shape with regard to position.
 
-        :param position: value between 0 and 1 within the shape.
-        :param error: Length error permitted.
-        :return: Point at the given location.
+        @param position: value between 0 and 1 within the shape.
+        @param error: Length error permitted.
+        @return: Point at the given location.
         """
         segments = self.segments(False)
         if len(segments) == 0:
@@ -3718,9 +3718,9 @@ class Shape(SVGElement, GraphicObject, Transformable):
         """
         Returns the path_d string of the shape.
 
-        :param relative: Returns path_d in relative form.
-        :param transformed: Return path_d, with applied transform.
-        :return: path_d string
+        @param relative: Returns path_d in relative form.
+        @param transformed: Return path_d, with applied transform.
+        @return: path_d string
         """
         return Path(self.segments(transformed=transformed)).d(relative=relative)
 
@@ -3728,9 +3728,9 @@ class Shape(SVGElement, GraphicObject, Transformable):
         """
         Get the bounding box for the given shape.
 
-        :param transformed: whether this is the transformed bounds or default.
-        :param with_stroke: should the stroke-width be included in the bounds.
-        :return: bounding box of the given element
+        @param transformed: whether this is the transformed bounds or default.
+        @param with_stroke: should the stroke-width be included in the bounds.
+        @return: bounding box of the given element
         """
         bbs = [
             seg.bbox()
@@ -3900,7 +3900,7 @@ class PathSegment:
         """
         This defines an individual path segment string. Since this isn't part of a Path it appends a pseudo-Move
         command to correctly provide the starting position.
-        :return: string representation of the object.
+        @return: string representation of the object.
         """
         d = self.d()
         if self.start is not None:
@@ -3989,16 +3989,16 @@ class PathSegment:
     def point(self, position):
         """
         Returns the point at a given amount through the path segment.
-        :param position:  t value between 0 and 1
-        :return: Point instance
+        @param position:  t value between 0 and 1
+        @return: Point instance
         """
         return Point(self.npoint([position])[0])
 
     def npoint(self, positions):
         """
         Returns the points at given positions along the path segment
-        :param positions: N-sized sequence of t value between 0 and 1
-        :return: N-sized sequence of 2-sized sequence of float
+        @param positions: N-sized sequence of t value between 0 and 1
+        @return: N-sized sequence of 2-sized sequence of float
         """
         return [self.end] * len(positions)
 
@@ -4006,9 +4006,9 @@ class PathSegment:
         """
         Returns the length of this path segment.
 
-        :param error:
-        :param min_depth:
-        :return:
+        @param error:
+        @param min_depth:
+        @return:
         """
         return 0
 
@@ -5000,8 +5000,8 @@ class Arc(Curve):
     def _points_numpy(self, positions):
         """Vectorized version of `point()`.
 
-        :param positions: 1D numpy array of float in [0, 1]
-        :return: 1D numpy array of complex
+        @param positions: 1D numpy array of float in [0, 1]
+        @return: 1D numpy array of complex
         """
         import numpy as np
 
@@ -5300,13 +5300,13 @@ class Arc(Curve):
 
     def get_start_angle(self):
         """
-        :return: Angle from the center point to start point.
+        @return: Angle from the center point to start point.
         """
         return self.angle_at_point(self.start)
 
     def get_end_angle(self):
         """
-        :return: Angle from the center point to end point.
+        @return: Angle from the center point to end point.
         """
         return self.angle_at_point(self.end)
 
@@ -5314,7 +5314,7 @@ class Arc(Curve):
         """
         start t value in the ellipse.
 
-        :return: t parameter of start point.
+        @return: t parameter of start point.
         """
         return self.t_at_point(self.point_at_angle(self.get_start_angle()))
 
@@ -5322,7 +5322,7 @@ class Arc(Curve):
         """
         end t value in the ellipse.
 
-        :return: t parameter of start point.
+        @return: t parameter of start point.
         """
         return self.t_at_point(self.point_at_angle(self.get_end_angle()))
 
@@ -5331,8 +5331,8 @@ class Arc(Curve):
         find the point on the ellipse from the center at the given angle.
         Note: For non-circular arcs this is different than point(t).
 
-        :param angle: angle from center to find point
-        :return: point found
+        @param angle: angle from center to find point
+        @return: point found
         """
         angle -= self.get_rotation()
         a = self.rx
@@ -5350,8 +5350,8 @@ class Arc(Curve):
         """
         find the angle to the point.
 
-        :param p: point
-        :return: angle to given point.
+        @param p: point
+        @return: angle to given point.
         """
         return self.center.angle_to(p)
 
@@ -5359,8 +5359,8 @@ class Arc(Curve):
         """
         find the t parameter to at the point.
 
-        :param p: point
-        :return: t parameter to the given point.
+        @param p: point
+        @return: t parameter to the given point.
         """
         angle = self.angle_at_point(p)
         angle -= self.get_rotation()
@@ -5380,8 +5380,8 @@ class Arc(Curve):
 
         In the case of a circle: t = angle.
 
-        :param t:
-        :return:
+        @param t:
+        @return:
         """
         rotation = self.get_rotation()
         a = self.rx
@@ -6414,8 +6414,8 @@ class Rect(Shape):
         * perform an absolute vertical lineto parameter y+ry
         * perform an absolute elliptical arc operation with a segment-completing close path operation
 
-        :param transformed: provide the reified version.
-        :return: path_d of shape.
+        @param transformed: provide the reified version.
+        @return: path_d of shape.
         """
         scooped = False
         x = self.x
@@ -6760,7 +6760,7 @@ class _RoundShape(Shape):
         One of the valid parameterizations for ellipses is that they are all affine transforms of the unit circle.
         This provides exactly such a matrix.
 
-        :return: matrix
+        @return: matrix
         """
         m = Matrix()
         m.post_scale(self.implicit_rx, self.implicit_ry)
@@ -6773,9 +6773,9 @@ class _RoundShape(Shape):
         """
         return the arc found between the given values of t on the ellipse.
 
-        :param t0: t start
-        :param t1: t end
-        :return: arc
+        @param t0: t start
+        @param t1: t end
+        @return: arc
         """
         return Arc(
             self.point_at_t(t0),
@@ -6791,10 +6791,10 @@ class _RoundShape(Shape):
         """
         return the arc found between the given angles on the ellipse.
 
-        :param a0: start angle
-        :param a1: end angle
-        :param ccw: optional flag to force clockwise or counter-clockwise arc-angles, default is smaller angle
-        :return: arc
+        @param a0: start angle
+        @param a1: end angle
+        @param ccw: optional flag to force clockwise or counter-clockwise arc-angles, default is smaller angle
+        @return: arc
         """
         if ccw is None:
             ccw = a0 > a1
@@ -6813,8 +6813,8 @@ class _RoundShape(Shape):
         find the point on the ellipse from the center at the given angle.
         Note: For non-circular arcs this is different than point(t).
 
-        :param angle: angle from center to find point
-        :return: point found
+        @param angle: angle from center to find point
+        @return: point found
         """
         a = self.implicit_rx
         b = self.implicit_ry
@@ -6832,8 +6832,8 @@ class _RoundShape(Shape):
         """
         find the angle to the point.
 
-        :param p: point
-        :return: angle to given point.
+        @param p: point
+        @return: angle to given point.
         """
         if self.apply and not self.transform.is_identity():
             return self.implicit_center.angle_to(p)
@@ -6845,8 +6845,8 @@ class _RoundShape(Shape):
         """
         find the t parameter to at the point.
 
-        :param p: point
-        :return: t parameter to the given point.
+        @param p: point
+        @return: t parameter to the given point.
         """
         angle = self.angle_at_point(p)
         angle -= self.rotation
@@ -6866,8 +6866,8 @@ class _RoundShape(Shape):
 
         In the case of a circle: t = angle.
 
-        :param t:
-        :return:
+        @param t:
+        @return:
         """
         rotation = self.rotation
         a = self.implicit_rx
@@ -6888,9 +6888,9 @@ class _RoundShape(Shape):
         find the point that corresponds to given value [0,1].
         Where t=0 is the first point and t=1 is the final point.
 
-        :param position: position value between 0,1 where value equals the amount through the shape
-        :param error: error permitted in determining point value (unused for this shape)
-        :return: point at t
+        @param position: position value between 0,1 where value equals the amount through the shape
+        @param error: error permitted in determining point value (unused for this shape)
+        @return: point at t
         """
         return self.point_at_t(tau * position)
 
@@ -7515,7 +7515,7 @@ class Group(SVGElement, Transformable, list):
         Finds all flattened subobjects of this group for which the conditional returns
         true.
 
-        :param conditional: function taking element and returns True to include or False if exclude
+        @param conditional: function taking element and returns True to include or False if exclude
         """
         if conditional is None:
             for subitem in self:
@@ -7539,9 +7539,9 @@ class Group(SVGElement, Transformable, list):
         """
         Returns the union of the bounding boxes for the elements within the iterator.
 
-        :param transformed: Should the children of this object be properly transformed.
-        :param with_stroke: should the stroke-width be included in the bounds of the elements
-        :return: union of all bounding boxes of elements within the iterable.
+        @param transformed: Should the children of this object be properly transformed.
+        @param with_stroke: should the stroke-width be included in the bounds of the elements
+        @return: union of all bounding boxes of elements within the iterable.
         """
         boundary_points = []
         for e in elements:
@@ -7580,9 +7580,9 @@ class Group(SVGElement, Transformable, list):
         Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
         ways.
 
-        :param transformed: bounding box of the properly transformed children.
-        :param with_stroke: should the stroke-width be included in the bounds.
-        :return: bounding box of the given element
+        @param transformed: bounding box of the properly transformed children.
+        @param with_stroke: should the stroke-width be included in the bounds.
+        @return: bounding box of the given element
         """
         return Group.union_bbox(
             self.select(),
@@ -7938,9 +7938,9 @@ class Text(SVGElement, GraphicObject, Transformable):
         """
         Get the bounding box for the given text object.
 
-        :param transformed: whether this is the transformed bounds or default.
-        :param with_stroke: should the stroke-width be included in the bounds.
-        :return: bounding box of the given element
+        @param transformed: whether this is the transformed bounds or default.
+        @param with_stroke: should the stroke-width be included in the bounds.
+        @return: bounding box of the given element
         """
         if self.path is not None:
             return (self.path * self.transform).bbox(
@@ -8228,9 +8228,9 @@ class Image(SVGElement, GraphicObject, Transformable):
         """
         Get the bounding box for the given image object
 
-        :param transformed: whether this is the transformed bounds or default.
-        :param with_stroke: There is no stroke for an image so with_stroke is ignored
-        :return: bounding box of the given element
+        @param transformed: whether this is the transformed bounds or default.
+        @param with_stroke: There is no stroke for an image so with_stroke is ignored
+        @return: bounding box of the given element
         """
         if self.image_width is None or self.image_height is None:
             p = Point(0, 0)
@@ -8540,15 +8540,15 @@ class SVG(Group):
         Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
         the real size of pixels and the size of the viewport (as opposed to the viewbox).
 
-        :param source: Source svg file or stream.
-        :param reify: Should the Geometry sized or have lazy matrices.
-        :param ppi: How many physical pixels per inch are there in this view.
-        :param width: The physical width of the viewport
-        :param height: The physical height of the viewport
-        :param color: the `currentColor` value from outside the current scope.
-        :param transform: Any required transformations to be pre-applied to this document
-        :param context: Any existing document context.
-        :return:
+        @param source: Source svg file or stream.
+        @param reify: Should the Geometry sized or have lazy matrices.
+        @param ppi: How many physical pixels per inch are there in this view.
+        @param width: The physical width of the viewport
+        @param height: The physical height of the viewport
+        @param color: the `currentColor` value from outside the current scope.
+        @param transform: Any required transformations to be pre-applied to this document
+        @param context: Any existing document context.
+        @return:
         """
         clip = 0
         root = context

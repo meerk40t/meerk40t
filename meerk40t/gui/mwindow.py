@@ -75,7 +75,7 @@ class MWindow(wx.Frame, Module):
             self.window_context.x, self.window_context.y = self.GetPosition()
             self.state = 5
             self.context.close(self.name)
-            event.Skip()  # Call destroy as regular.
+            event.Skip()  # Call 'destroy' as regular.
 
     def window_open(self):
         pass

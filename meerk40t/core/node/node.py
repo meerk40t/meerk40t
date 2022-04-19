@@ -1,83 +1,23 @@
 """
-The elements modifier stores all the element types in a bootstrapped tree. Specific node types added to the tree become
+The 'elements' service stores all the element types in a bootstrapped tree. Specific node types added to the tree become
 particular class types and the interactions between these types and functions applied are registered in the kernel.
 
 Types:
-root: Root Tree element
-branch ops: Operation Branch
-branch elems: Elements Branch
-branch reg: Regmark Branch
-ref elem: Element below op branch which stores specific data.
-op: LayerOperation within Operation Branch.
-opcmd: CommandOperation within Operation Branch.
-elem: Element with Element Branch or subgroup.
-file: File Group within Elements Branch
-group: Group type within Branch Elems or refelem.
-cutcode: CutCode type within Operation Branch and Element Branch.
+* root: Root Tree element
+* branch ops: Operation Branch
+* branch elems: Elements Branch
+* branch reg: Regmark Branch
+* ref elem: Element below op branch which stores specific data.
+* op: LayerOperation within Operation Branch.
+* elem: Element with Element Branch or subgroup.
+* file: File Group within Elements Branch
+* group: Group type within Branch Elems or refelem.
+* cutcode: CutCode type within Operation Branch and Element Branch.
 
 rasternode: theoretical: would store all the refelems to be rastered. Such that we could store rasters in images.
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
-
-# Regex expressions
-import re
-
-label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
-group_simplify_re = re.compile(
-    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
-)
-subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
-# Ideally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
-# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile(
-    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
-    re.IGNORECASE,
-)
-
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
-
-from meerk40t.svgelements import (
-    SVG_STRUCT_ATTRIB,
-    Close,
-    Line,
-    Move,
-    Path,
-    Shape,
-    SVGImage,
-)
-
-
-def is_dot(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Close):
-            return True
-        if isinstance(path[1], Line) and path[1].length() == 0:
-            return True
-    return False
-
-
-def is_straight_line(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Line) and path[1].length() > 0:
-            return True
-    return False
 
 
 class Node:
@@ -107,7 +47,6 @@ class Node:
 
         self._bounds = None
         self._bounds_dirty = True
-        self.label = None
 
         self.item = None
         self.icon = None
@@ -118,175 +57,15 @@ class Node:
     def __repr__(self):
         return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
 
+    def __str__(self):
+        return self.create_label()
+
     def __eq__(self, other):
         return other is self
 
-    def is_movable(self):
-        return self.type not in ("branch elems", "branch ops", "branch reg", "root")
-
-    def drop(self, drag_node):
-        # TODO: Parse this code off to the individual nodes themselves.
-        drop_node = self
-        if drag_node.type == "elem":
-            if drop_node.type.startswith("op"):
-                # Disallow drop of non-image elems onto an Image op.
-                # Disallow drop of image elems onto a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and drop_node.type == "op image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage)
-                    and drop_node.type == "op dots"
-                ):
-                    return False
-                # Dragging element onto operation adds that element to the op.
-                drop_node.add(drag_node.object, type="ref elem", pos=0)
-                return True
-            elif drop_node.type == "ref elem":
-                op = drop_node.parent
-                # Disallow drop of non-image elems onto an refelem inside an Image op.
-                # Disallow drop of image elems onto an refelem inside a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage) and op.type == "op image"
-                ) or (isinstance(drag_node.object, SVGImage) and op.type == "op dots"):
-                    return False
-                # Dragging element onto existing refelem in operation adds that element to the op after the refelem.
-                drop_index = op.children.index(drop_node)
-                op.add(drag_node.object, type="ref elem", pos=drop_index)
-                return True
-            elif drop_node.type == "group":
-                # Dragging element onto a group moves it to the group node.
-                drop_node.append_child(drag_node)
-                return True
-            elif drop_node.type == "branch reg":
-                drop_node.append_child(drag_node)
-                return True
-        elif drag_node.type == "ref elem":
-            if drop_node.type.startswith("op"):
-                # Disallow drop of non-image refelems onto an Image op.
-                # Disallow drop of image refelems onto a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage)
-                    and drop_node.type == "op image"
-                ) or (
-                    isinstance(drag_node.object, SVGImage)
-                    and drop_node.type == "op dots"
-                ):
-                    return False
-                # Move an refelem to end of op.
-                drop_node.append_child(drag_node)
-                return True
-            if drop_node.type == "ref elem":
-                op = drop_node.parent
-                # Disallow drop of non-image refelems onto an refelem inside an Image op.
-                # Disallow drop of image refelems onto an refelem inside a Dot op.
-                if (
-                    not isinstance(drag_node.object, SVGImage) and op.type == "op image"
-                ) or (isinstance(drag_node.object, SVGImage) and op.type == "op dots"):
-                    return False
-                # Move an refelem to after another refelem.
-                drop_node.insert_sibling(drag_node)
-                return True
-        elif drag_node.type in (
-            "op cut",
-            "op raster",
-            "op image",
-            "op engrave",
-            "op dots",
-            "op hatch",
-            "cmdop",
-            "consoleop",
-        ):
-            if drop_node.type in (
-                "op cut",
-                "op raster",
-                "op image",
-                "op engrave",
-                "op dots",
-                "op hatch",
-                "cmdop",
-                "consoleop",
-            ):
-                # Move operation to a different position.
-                drop_node.insert_sibling(drag_node)
-                return True
-            elif drop_node.type == "branch ops":
-                # Dragging operation to op branch to effectively move to bottom.
-                drop_node.append_child(drag_node)
-                return True
-        elif drag_node.type in "file":
-            if drop_node.type in (
-                "op cut",
-                "op raster",
-                "op image",
-                "op engrave",
-                "op dots",
-                "op hatch",
-                "cmdop",
-                "consoleop",
-            ):
-                some_nodes = False
-                for e in drag_node.flat("elem"):
-                    # Disallow drop of non-image elems onto an Image op.
-                    # Disallow drop of image elems onto a Dot op.
-                    if (
-                        not isinstance(e.object, SVGImage)
-                        and drop_node.type == "op image"
-                    ) or (
-                        isinstance(e.object, SVGImage) and drop_node.type == "op dots"
-                    ):
-                        continue
-                    # Add element to operation
-                    drop_node.add(e.object, type="ref elem")
-                    some_nodes = True
-                return some_nodes
-        elif drag_node.type == "group":
-            if drop_node.type == "elem":
-                # Move a group
-                drop_node.insert_sibling(drag_node)
-                return True
-            elif drop_node.type in ("group", "file"):
-                # Move a group
-                drop_node.append_child(drag_node)
-                return True
-            elif drop_node.type == "branch reg":
-                # Move a group
-                drop_node.append_child(drag_node)
-                return True
-            elif drop_node.type in (
-                "op cut",
-                "op raster",
-                "op image",
-                "op engrave",
-                "op dots",
-                "op hatch",
-            ):
-                some_nodes = False
-                for e in drag_node.flat("elem"):
-                    # Disallow drop of non-image elems onto an Image op.
-                    # Disallow drop of image elems onto a Dot op.
-                    if (
-                        not isinstance(e.object, SVGImage)
-                        and drop_node.type == "op image"
-                    ) or (
-                        isinstance(e.object, SVGImage) and drop_node.type == "op dots"
-                    ):
-                        continue
-                    # Add element to operation
-                    drop_node.add(e.object, type="ref elem")
-                    some_nodes = True
-                return some_nodes
-        return False
-
-    def reverse(self):
-        self._children.reverse()
-        self.notify_reorder()
-
-    def load(self, settings, section):
-        pass
-
-    def save(self, settings, section):
-        pass
+    @property
+    def label(self):
+        return str(self)
 
     @property
     def children(self):
@@ -360,7 +139,7 @@ class Node:
                 )
         else:
             e = node.object
-            if node.type == "elem" and hasattr(e, "bbox"):
+            if node.type.startswith("elem") and hasattr(e, "bbox"):
                 node._bounds = e.bbox()
 
     @property
@@ -380,6 +159,35 @@ class Node:
             self.revalidate_points()
         self._points_dirty = False
         return self._points
+
+    def create_label(self, text="{element_type}:{id}"):
+        return text.format_map(self.default_map())
+
+    def default_map(self, default_map=None):
+        if default_map is None:
+            default_map = dict()
+        element = self.object
+        default_map["id"] = str(self.id)
+        default_map["object"] = str(self.object)
+        default_map["element_type"] = element.__class__.__name__
+        default_map["node_type"] = self.type
+        return default_map
+
+    def is_movable(self):
+        return True
+
+    def drop(self, drag_node):
+        return False
+
+    def reverse(self):
+        self._children.reverse()
+        self.notify_reorder()
+
+    def load(self, settings, section):
+        pass
+
+    def save(self, settings, section):
+        pass
 
     def revalidate_points(self):
         """
@@ -626,16 +434,16 @@ class Node:
             if pos is not None:
                 pos += 1
 
-    def add(self, data_object=None, type=None, label=None, pos=None):
+    def add(self, data_object=None, type=None, id=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
-        :param data_object:
-        :param type:
-        :param label: display name for this node
-        :param pos:
-        :return:
+        @param data_object:
+        @param type:
+        @param label: display name for this node
+        @param pos:
+        @return:
         """
         if isinstance(data_object, Node):
             node = data_object
@@ -653,16 +461,11 @@ class Node:
                     pass
                 # except AttributeError:
                 #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
-            node = node_class(data_object)
-            try:
-                node.set_label(label)
-            except TypeError:
-                node.set_label("Unknown")
-
+            node = node_class(data_object, **kwargs)
             if self._root is not None:
                 self._root.notify_created(node)
         node.type = type
-
+        node.id = id
         node._parent = self
         node._root = self._root
         if pos is None:
@@ -672,104 +475,12 @@ class Node:
         node.notify_attached(node, pos=pos)
         return node
 
-    def label_from_source_cascade(self, element) -> str:
-        """
-        Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
-        node str. If something else provides a superior name it should be added in here.
-        """
-        element_type = element.__class__.__name__
-        if element_type == "SVGImage":
-            element_type = "Image"
-        elif element_type == "SVGText":
-            element_type = "Text"
-        elif element_type == "SimpleLine":
-            element_type = "Line"
-        elif is_dot(element):
-            element_type = "Dot"
-
-        if element is not None:
-            desc = str(element)
-            if isinstance(element, Path):
-                desc = element_simplify_re.sub("", desc)
-                if len(desc) > 100:
-                    desc = desc[:100] + "…"
-                values = []
-                if element.stroke is not None:
-                    values.append("%s='%s'" % ("stroke", element.stroke))
-                if element.fill is not None:
-                    values.append("%s='%s'" % ("fill", element.fill))
-                if element.stroke_width is not None and element.stroke_width != 1.0:
-                    values.append(
-                        "%s=%s" % ("stroke-width", str(round(element.stroke_width, 2)))
-                    )
-                if not element.transform.is_identity():
-                    values.append("%s=%s" % ("transform", repr(element.transform)))
-                if element.id is not None:
-                    values.append("%s='%s'" % ("id", element.id))
-                if values:
-                    desc = "d='%s', %s" % (desc, ", ".join(values))
-                desc = element_type + "(" + desc + ")"
-            elif element_type == "Group":  # Group
-                desc = desc[1:-1]  # strip leading and trailing []
-                n = 1
-                while n:
-                    desc, n = group_simplify_re.subn("", desc)
-                n = 1
-                while n:
-                    desc, n = subgroup_simplify_re.subn("Group", desc)
-                desc = "%s(%s)" % (element_type, desc)
-            elif element_type == "Image":  # Image
-                desc = image_simplify_re.sub("", desc)
-            else:
-                desc = element_simplify_re.sub("", desc)
-        else:
-            desc = None
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["label"] + (": " + desc if desc else "")
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (
-                ": " + desc if desc else ""
-            )
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            if element.id is not None:
-                return str(element.id) + (": " + desc if desc else "")
-        except AttributeError:
-            pass
-
-        return desc if desc else str(element)
-
-    def set_label(self, name=None):
-        self.label = self.create_label(name)
-
-    def create_label(self, name=None):
-        """
-        Create a label for this node.
-        If a name is not specified either use a cascade (primarily for elements) or
-        use the string representation
-        :param name: Name to be set for this node.
-        :return: label
-        """
-        if name is not None:
-            return name
-        if self.object is not None:
-            return self.label_from_source_cascade(self.object)
-        return str(self)
-
     def _flatten(self, node):
         """
         Yield this node and all descendants in a flat generation.
 
-        :param node: starting node
-        :return:
+        @param node: starting node
+        @return:
         """
         yield node
         for c in self._flatten_children(node):
@@ -779,8 +490,8 @@ class Node:
         """
         Yield all descendants in a flat generation.
 
-        :param node: starting node
-        :return:
+        @param node: starting node
+        @return:
         """
         for child in node.children:
             yield child
@@ -802,14 +513,14 @@ class Node:
         of the given type, even if those descendants are beyond the depth limit. The sub-elements do not need to match
         the criteria with respect to either the depth or the emphases.
 
-        :param types: types of nodes permitted to be returned
-        :param cascade: cascade all subitems if a group matches the criteria.
-        :param depth: depth to search within the tree.
-        :param selected: match only selected nodes
-        :param emphasized: match only emphasized nodes.
-        :param targeted: match only targeted nodes
-        :param highlighted: match only highlighted nodes
-        :return:
+        @param types: types of nodes permitted to be returned
+        @param cascade: cascade all subitems if a group matches the criteria.
+        @param depth: depth to search within the tree.
+        @param selected: match only selected nodes
+        @param emphasized: match only emphasized nodes.
+        @param targeted: match only targeted nodes
+        @param highlighted: match only highlighted nodes
+        @return:
         """
         node = self
         if (

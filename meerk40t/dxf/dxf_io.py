@@ -108,7 +108,7 @@ class DxfLoader:
 
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
-        file_node.add_all(elements, type="elem")
+        file_node.add_elems(elements)
         file_node.focus()
         elements_modifier.classify(elements)
         return True

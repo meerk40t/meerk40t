@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import ViewPort, Length
+from meerk40t.core.units import Length, ViewPort
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 _ = wx.GetTranslation
@@ -49,8 +49,14 @@ class SnapOptionPanel(wx.Panel):
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Distance"))
         sizer_2.Add(label_1, 0, 0, 0)
 
-        self.slider_distance_points = wx.Slider(self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL)
-        self.slider_distance_points.SetToolTip(_("Set the distance inside which the cursor will snap to the next element point"))
+        self.slider_distance_points = wx.Slider(
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+        )
+        self.slider_distance_points.SetToolTip(
+            _(
+                "Set the distance inside which the cursor will snap to the next element point"
+            )
+        )
         sizer_2.Add(self.slider_distance_points, 1, wx.EXPAND, 0)
 
         sizer_snap_2 = wx.BoxSizer(wx.VERTICAL)
@@ -60,7 +66,9 @@ class SnapOptionPanel(wx.Panel):
         sizer_snap_2.Add(sizer_h1, 0, wx.EXPAND, 0)
 
         self.check_snap_points = wx.CheckBox(self, wx.ID_ANY, _("Snap to element"))
-        self.check_snap_points.SetToolTip(_("Shall the cursor snap to the next element point?"))
+        self.check_snap_points.SetToolTip(
+            _("Shall the cursor snap to the next element point?")
+        )
         sizer_h1.Add(self.check_snap_points, 0, 0, 0)
 
         sizer_h2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -69,8 +77,12 @@ class SnapOptionPanel(wx.Panel):
         label_4 = wx.StaticText(self, wx.ID_ANY, _("Distance"))
         sizer_h2.Add(label_4, 0, 0, 0)
 
-        self.slider_visibility = wx.Slider(self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL )
-        self.slider_visibility.SetToolTip(_("Defines until which distance snap points will be highlighted"))
+        self.slider_visibility = wx.Slider(
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+        )
+        self.slider_visibility.SetToolTip(
+            _("Defines until which distance snap points will be highlighted")
+        )
         sizer_h2.Add(self.slider_visibility, 1, wx.EXPAND, 0)
 
         sizer_snap_3 = wx.BoxSizer(wx.VERTICAL)
@@ -80,7 +92,9 @@ class SnapOptionPanel(wx.Panel):
         sizer_snap_3.Add(sizer_h3, 0, wx.EXPAND, 0)
 
         self.check_snap_grid = wx.CheckBox(self, wx.ID_ANY, _("Snap to Grid"))
-        self.check_snap_grid.SetToolTip(_("Shall the cursor snap to the next grid intersection?"))
+        self.check_snap_grid.SetToolTip(
+            _("Shall the cursor snap to the next grid intersection?")
+        )
         sizer_h3.Add(self.check_snap_grid, 0, 0, 0)
 
         sizer_h4 = wx.BoxSizer(wx.HORIZONTAL)
@@ -89,13 +103,18 @@ class SnapOptionPanel(wx.Panel):
         label_3 = wx.StaticText(self, wx.ID_ANY, _("Distance"))
         sizer_h4.Add(label_3, 0, 0, 0)
 
-        self.slider_distance_grid = wx.Slider(self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL )
-        self.slider_distance_grid.SetToolTip(_("Set the distance inside which the cursor will snap to the next grid intersection"))
+        self.slider_distance_grid = wx.Slider(
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+        )
+        self.slider_distance_grid.SetToolTip(
+            _(
+                "Set the distance inside which the cursor will snap to the next grid intersection"
+            )
+        )
         sizer_h4.Add(self.slider_distance_grid, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_snap)
         sizer_snap.Fit(self)
-
 
         self.position_aspect_ratio = True
         self.position_x = 0.0
@@ -146,4 +165,3 @@ class SnapOptionPanel(wx.Panel):
 
     def pane_hide(self, *args):
         pass
-

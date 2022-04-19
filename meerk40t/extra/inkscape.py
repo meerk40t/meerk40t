@@ -19,7 +19,7 @@ def plugin(kernel, lifecycle):
             inkscape_path, filename = data
             channel(_("inkscape load - loading the previous conversion..."))
             try:
-                kernel.root.elements.load(filename)
+                kernel.elements.load(filename)
             except BadFileError as e:
                 channel(
                     "\n".join(
@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle):
                     )
                 )
             else:
-                kernel.root.elements.classify(list(elements.elems()))
+                kernel.elements.classify(list(kernel.elements.elems()))
             return "inkscape", data
 
         @kernel.console_command(

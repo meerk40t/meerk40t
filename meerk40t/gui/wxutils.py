@@ -209,9 +209,9 @@ def create_menu(gui, node, elements):
     """
     Create menu items. This is used for both the scene and the tree to create menu items.
 
-    :param gui: Gui used to create menu items.
-    :param node: The Node clicked on for the generated menu.
-    :return:
+    @param gui: Gui used to create menu items.
+    @param node: The Node clicked on for the generated menu.
+    @return:
     """
     if node is None:
         return

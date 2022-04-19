@@ -19,6 +19,17 @@ class RefElemNode(Node):
             str(self._parent),
         )
 
+    def drop(self, drag_node):
+        if drag_node.type == "elem":
+            op = self.parent
+            drop_index = op.children.index(self)
+            op.add(drag_node.object, type="ref elem", pos=drop_index)
+            return True
+        elif drag_node.type == "ref elem":
+            self.insert_sibling(drag_node)
+            return True
+        return False
+
     def notify_destroyed(self, node=None, **kwargs):
         self.object.node._references.remove(self)
         super(RefElemNode, self).notify_destroyed()

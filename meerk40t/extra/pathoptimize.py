@@ -121,10 +121,10 @@ def cross(subpaths, j, k):
     """
     Reverses subpaths flipping the individual elements from position j inclusive to
     k exclusive.
-    :param subpaths:
-    :param j:
-    :param k:
-    :return:
+    @param subpaths:
+    @param j:
+    @param k:
+    @return:
     """
     for q in range(j, k):
         subpaths[q].direct_close()

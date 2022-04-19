@@ -231,7 +231,12 @@ def run():
             )
         )
         return
-    kernel = Kernel(APPLICATION_NAME, APPLICATION_VERSION, APPLICATION_NAME, ansi=not args.disable_ansi)
+    kernel = Kernel(
+        APPLICATION_NAME,
+        APPLICATION_VERSION,
+        APPLICATION_NAME,
+        ansi=not args.disable_ansi,
+    )
     kernel.args = args
     kernel.add_plugin(plugin)
     kernel()

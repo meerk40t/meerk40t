@@ -1,8 +1,7 @@
 import math
+import sys
 
 import numpy as np
-
-import sys
 
 
 class Simulation:
@@ -736,7 +735,7 @@ class CommandList(CommandSource):
     def serialize(self):
         """
         Performs final operations before creating bytearray.
-        :return:
+        @return:
         """
         # Calculate distances.
         last_xy = self._start_x, self._start_y
@@ -761,7 +760,7 @@ class CommandList(CommandSource):
     def packet_generator(self):
         """
         Performs final operations and generates packets on the fly.
-        :return:
+        @return:
         """
         last_xy = self._start_x, self._start_y
 
@@ -816,11 +815,11 @@ class CommandList(CommandSource):
         return int(round(speed / 2.0))  # units are 2mm/sec
 
     def convert_power(self, power):
-        "Power in percent of full power."
+        """Power in percent of full power."""
         return int(round(power * 40.95))
 
     def convert_frequency_to_period(self, frequency):
-        "Frequency in kHz"
+        """Frequency in kHz"""
         # q_switch_period
         return int(round(1.0 / (frequency * 1e3) / 50e-9))
 
@@ -834,7 +833,7 @@ class CommandList(CommandSource):
     def ready(self):
         """
         Flag this job with ReadyMark.
-        :return:
+        @return:
         """
         if not self._ready:
             self._ready = True
@@ -843,8 +842,8 @@ class CommandList(CommandSource):
     def laser_control(self, control):
         """
         Enable the laser control.
-        :param control:
-        :return:
+        @param control:
+        @return:
         """
         if self._laser_control == control:
             return
@@ -973,9 +972,9 @@ class CommandList(CommandSource):
     def mark(self, x, y):
         """
         Mark to a new location with the laser firing.
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self.ready()
         if self._mark_speed is not None:
@@ -995,17 +994,19 @@ class CommandList(CommandSource):
         dx = x - self._last_x
         dy = y - self._last_y
         if self._interpolations:
-            distance = math.sqrt(dx*dx + dy*dy)
+            distance = math.sqrt(dx * dx + dy * dy)
             segments = math.ceil(distance / self._interpolations)
             dx /= segments
             dy /= segments
         else:
             segments = 1
-        for segment in range(1, segments+1):
+        for segment in range(1, segments + 1):
             next_x = self._last_x + dx
             next_y = self._last_y + dy
             if self._mark_modification:
-                cut_x, cut_y = self._mark_modification(self._last_x, self._last_y, next_x, next_y)
+                cut_x, cut_y = self._mark_modification(
+                    self._last_x, self._last_y, next_x, next_y
+                )
             else:
                 cut_x = next_x
                 cut_y = next_y
@@ -1023,11 +1024,11 @@ class CommandList(CommandSource):
     def light(self, x, y, light=True, jump_delay=None):
         """
         Move to a new location with light enabled.
-        :param x:
-        :param y:
-        :param light: explicitly set light state
-        :param jump_delay:
-        :return:
+        @param x:
+        @param y:
+        @param light: explicitly set light state
+        @param jump_delay:
+        @return:
         """
         if light:
             self.light_on()
@@ -1048,10 +1049,10 @@ class CommandList(CommandSource):
     def goto(self, x, y, jump_delay=None):
         """
         Move to a new location without laser or light.
-        :param x:
-        :param y:
-        :param jump_delay:8
-        :return:
+        @param x:
+        @param y:
+        @param jump_delay:8
+        @return:
         """
         self.ready()
         if self._goto_speed is not None:
@@ -1068,9 +1069,9 @@ class CommandList(CommandSource):
         """
         Sets the initial position. This is the position we came from to get to this set of operations. It matters for
         the time calculation to the initial goto or mark commands.
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self._last_x = x
         self._last_y = y
@@ -1127,9 +1128,9 @@ class CommandList(CommandSource):
     def add_packet(self, data, tracking=None):
         """
         Parse MSBF data and add it as operations
-        :param data:
-        :param tracking:
-        :return:
+        @param data:
+        @param tracking:
+        @return:
         """
         i = 0
         while i < len(data):
@@ -1252,7 +1253,7 @@ class Wobble:
         self.speed = speed
 
     def wobble(self, x0, y0, x1, y1):
-        self._total_distance += abs(complex(x0,y0) - complex(x1,y1))
+        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
         t = self._total_distance / (math.tau * self.radius)
         dx = self.radius * math.cos(t * self.speed)
         dy = self.radius * math.sin(t * self.speed)

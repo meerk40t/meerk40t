@@ -25,7 +25,7 @@ class LaserSpeed:
     device tick at 1 kHz. To do this it must delay 1 ms between ticks. This corresponds to a value of 48296 in
     the M2 board. Which has an equation of 65536 - (5120 + 12120T) where T is the period requested in ms. This is
     equal to 25.4 mm/s. If we want a 2 ms delay, which is half the speed (0.5kHz, 0.5 inches/second, 12.7 mm/s)
-    we do 65536 - (5120 + 24240) which gives us a value of 36176. This would be encoded as a 16 bit number
+    we do 65536 - (5120 + 24240) which gives us a value of 36176. This would be encoded as a 16-bit number
     broken up into 2 ascii 3 digit strings between 0-255. 141 for the high bits and 80 for the low bits.
     So CV01410801 where the final character "1" is the acceleration factor since it's within that range.
 
@@ -128,10 +128,10 @@ class LaserSpeed:
 def get_speed_from_code(speed_code, board="M2", fix_speeds=False):
     """
     Gets the speed expected from a speedcode. Should calculate the expected speed from the data code given.
-    :param speed_code: The speedcode to check.
-    :param board: The board this speedcode was made for.
-    :param fix_speeds: Is this speedcode in a fixed_speed code?
-    :return:
+    @param speed_code: The speedcode to check.
+    @param board: The board this speedcode was made for.
+    @param fix_speeds: Is this speedcode in a fixed_speed code?
+    @return:
     """
     (
         code_value,
@@ -162,17 +162,17 @@ def get_code_from_speed(
     The d_ratio uses the default/auto ratio. The accel is optional and forces the speedcode to work
     for that particular acceleration.
 
-    :param mm_per_second: speed to convert to code.
-    :param raster_step: raster step mode to use. Use (g0,g1) tuple for unidirectional valuations.
-    :param board: Nano Board Model
-    :param d_ratio: M1, M2, B1, B2 have ratio of optional speed
-    :param acceleration: Optional force acceleration code rather than default for that speed.
-    :param suffix_c: Optional force suffix_c mode for the board. (True forces suffix_c on, False forces it off)
-    :param fix_limit: Removes max speed limit.
-    :param fix_speeds: Give corrected speed (faster by 8.9%)
-    :param fix_lows: Force low speeds into correct bounds.
-    :param raster_horizontal: is it rastering with the laser head, or the much heavier bar?
-    :return: speed code produced.
+    @param mm_per_second: speed to convert to code.
+    @param raster_step: raster step mode to use. Use (g0,g1) tuple for unidirectional valuations.
+    @param board: Nano Board Model
+    @param d_ratio: M1, M2, B1, B2 have ratio of optional speed
+    @param acceleration: Optional force acceleration code rather than default for that speed.
+    @param suffix_c: Optional force suffix_c mode for the board. (True forces suffix_c on, False forces it off)
+    @param fix_limit: Removes max speed limit.
+    @param fix_speeds: Give corrected speed (faster by 8.9%)
+    @param fix_lows: Force low speeds into correct bounds.
+    @param raster_horizontal: is it rastering with the laser head, or the much heavier bar?
+    @return: speed code produced.
     """
     if d_ratio is None:
         d_ratio = 0.261199033289
@@ -256,8 +256,8 @@ def parse_speed_code(speed_code):
     Codes with G-values are raster stepped. Two of these codes implies unidirectional rasters
     but the those are a specific (x,0) step sequence.
 
-    :param speed_code: Speedcode to parse
-    :return: code_value, accel, step_value, diagonal, raster_step, suffix_c
+    @param speed_code: Speedcode to parse
+    @return: code_value, accel, step_value, diagonal, raster_step, suffix_c
     """
 
     suffix_c = False
@@ -296,7 +296,7 @@ def parse_speed_code(speed_code):
     if speed_code[end - 4] == "G":
         raster_step = (int(speed_code[end - 3 : end]), raster_step)
         end -= 4
-        # Removes Gxxx, means this is was GxxxGxxx.
+        # Removes `Gxxx`, means this it was `GxxxGxxx`.
     step_value = 0
     diagonal = 0
     if (end + 1) - start >= 9:
@@ -368,11 +368,11 @@ def get_acceleration_for_speed(
 
     This is not fully mapped out but appeared more in line with non-rastering values.
 
-    :param mm_per_second: Speed to find acceleration value for.
-    :param raster: Whether this speed is for a rastering.
-    :param raster_horizontal: Whether this speed is for horizontal rastering (top-to-bottom, y-axis speed)
-    :param fix_speeds: is fixed speed mode on?
-    :return: 1-4: Value for the accel factor.
+    @param mm_per_second: Speed to find acceleration value for.
+    @param raster: Whether this speed is for a rastering.
+    @param raster_horizontal: Whether this speed is for horizontal rastering (top-to-bottom, y-axis speed)
+    @param fix_speeds: is fixed speed mode on?
+    @return: 1-4: Value for the accel factor.
     """
     if fix_speeds:
         # when speeds are fixed the values from the software were determined based on the flawed codes empirically

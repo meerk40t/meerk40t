@@ -908,8 +908,12 @@ class SizePanel(wx.Panel):
         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
-        self.text_width = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0")
-        self.text_height = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0")
+        self.text_width = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0"
+        )
+        self.text_height = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0"
+        )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
 
         self.__set_properties()
@@ -1085,7 +1089,7 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_width.SetValue( (new_height * self.object_ratio).preferred_length )
+            self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
         self.on_button_navigate_resize(event)
         event.Skip()
 
@@ -1380,8 +1384,8 @@ class Transform(wx.Panel):
     def select_ready(self, v):
         """
         Enables the relevant buttons when there is a selection in the elements.
-        :param v: whether selection is currently drag ready.
-        :return:
+        @param v: whether selection is currently drag ready.
+        @return:
         """
         self.button_scale_down.Enable(v)
         self.button_scale_up.Enable(v)

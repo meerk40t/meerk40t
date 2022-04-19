@@ -25,5 +25,8 @@ class CutNode(Node):
     def __len__(self):
         return 1
 
+    def drop(self, drag_node):
+        return False
+
     def as_cutobjects(self, closed_distance=15):
         yield from self.object

@@ -406,11 +406,11 @@ class RasterWizardPanel(wx.Panel):
         """
         Focus on the given viewport in the scene.
 
-        :param new_scene_viewport: Viewport to have after this process within the scene.
-        :param scene_size: Size of the scene in which this viewport is active.
-        :param buffer: Amount of buffer around the edge of the new viewport.
-        :param lock: lock the scalex, scaley.
-        :return:
+        @param new_scene_viewport: Viewport to have after this process within the scene.
+        @param scene_size: Size of the scene in which this viewport is active.
+        @param buffer: Amount of buffer around the edge of the new viewport.
+        @param lock: lock the scalex, scaley.
+        @return:
         """
         window_width, window_height = scene_size
         left = new_scene_viewport[0]

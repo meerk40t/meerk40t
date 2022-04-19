@@ -96,7 +96,10 @@ class ChoicePropertyPanel(wx.Panel):
                 def on_button_filename(param, ctrl, obj, wildcard):
                     def click(event=None):
                         with wx.FileDialog(
-                                self, label, wildcard=wildcard if wildcard else "*", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+                            self,
+                            label,
+                            wildcard=wildcard if wildcard else "*",
+                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
                         ) as fileDialog:
                             if fileDialog.ShowModal() == wx.ID_CANCEL:
                                 return  # the user changed their mind
@@ -106,14 +109,17 @@ class ChoicePropertyPanel(wx.Panel):
                             try:
                                 setattr(obj, param, pathname)
                             except ValueError:
-                                # If cannot cast to data_type, pass
+                                # cannot cast to data_type, pass
                                 pass
 
                     return click
 
                 set_file(data)
                 control_sizer.Add(control)
-                control.Bind(wx.EVT_BUTTON, on_button_filename(attr, control, obj, c.get("wildcard", "*")))
+                control.Bind(
+                    wx.EVT_BUTTON,
+                    on_button_filename(attr, control, obj, c.get("wildcard", "*")),
+                )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
@@ -130,7 +136,7 @@ class ChoicePropertyPanel(wx.Panel):
                         try:
                             setattr(obj, param, dtype(v))
                         except ValueError:
-                            # If cannot cast to data_type, pass
+                            # cannot cast to data_type, pass
                             pass
 
                     return text
@@ -161,7 +167,7 @@ class ChoicePropertyPanel(wx.Panel):
                         try:
                             setattr(obj, param, v.preferred_length)
                         except ValueError:
-                            # If cannot cast to data_type, pass
+                            # cannot cast to data_type, pass
                             pass
 
                     return text
@@ -196,7 +202,7 @@ class ChoicePropertyPanel(wx.Panel):
                             try:
                                 setattr(obj, param, data_type(data))
                             except ValueError:
-                                # If cannot cast to data_type, pass
+                                # cannot cast to data_type, pass
                                 pass
 
                     return click
@@ -225,7 +231,9 @@ class ChoicePropertyPanel(wx.Panel):
                         def listen(origin, value):
                             enabled = bool(getattr(obj, param))
                             ctrl.Enable(enabled)
+
                         return listen
+
                     listener = on_enable_listener(c_attr, control, c_obj)
                     self.listeners.append((c_attr, listener))
                     context.listen(c_attr, listener)

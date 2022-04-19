@@ -3,6 +3,7 @@ from copy import copy
 from os import path as ospath
 
 from meerk40t.kernel import CommandSyntaxError
+
 from ..core.planner import make_actual, needs_actualization
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path, SVGImage
@@ -131,7 +132,7 @@ def plugin(kernel, lifecycle=None):
             )
             p.closed()
             paths.append(p)
-            elements.elem_branch.add(p, type="elem")
+            elements.elem_branch.add(p, type="elem path")
         return "elements", paths
 
     @context.console_argument("script", help=_("script to apply"), type=str)
@@ -972,11 +973,11 @@ def plugin(kernel, lifecycle=None):
     def image_flatrotary(command, channel, _, data, args=tuple(), **kwargs):
         """
         Flat rotary stretches an image according to the rotary settings. Providing a series of points it applies a
-        bilinear mesh to stretch the image across the x axis creating an image that can be interpreted as flat on a
+        bi-linear mesh to stretch the image across the x-axis creating an image that can be interpreted as flat on a
         curved surface. Values are between 0 and 1. The number of values given mark equidistant points however if the
         values given are not themselves equidistant the resulting image is stretched accordingly.
 
-        eg flatrotary 0 .2 .7 1
+        e.g. flatrotary 0 .2 .7 1
         """
         for element in data:
             points = len(args) - 1
@@ -1023,7 +1024,7 @@ def plugin(kernel, lifecycle=None):
         data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
     ):
         """
-        Returns half-tone image for image.
+        Returns halftone image for image.
 
         The maximum output dot diameter is given by sample * scale (which is also the number of possible dot sizes).
         So sample=1 will preserve the original image resolution, but scale must be >1 to allow variation in dot size.
@@ -1186,7 +1187,7 @@ class RasterScripts:
     Please note: Lists of instructions and methods are not copyrightable. While the actual text
     itself of various descriptions of procedures can be copyrighted the actual methods and procedures
     cannot be copyrighted themselves. If particular procedures may qualify for or be registered for a
-    trademark, the name will be changed to avoid infringing. No patented procedures (eg. seam carving)
+    trademark, the name will be changed to avoid infringing. No patented procedures (e.g. seam carving)
     will be permitted.
 
     I'm happy to take anybody's recipes for raster-preprocessing, while texts of scripts may be copyrighted
@@ -1715,8 +1716,8 @@ class RasterScripts:
         Spline interpreter.
 
         Returns all integer locations between different spline interpolation values
-        :param p: points to be quad spline interpolated.
-        :return: integer y values for given spline points.
+        @param p: points to be quad spline interpolated.
+        @return: integer y values for given spline points.
         """
         try:
             N = len(p) - 1
@@ -1807,7 +1808,7 @@ class ImageLoader:
 
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
-        file_node.add(image, type="elem")
+        file_node.add(image, type="elem image")
         file_node.focus()
 
         elements_modifier.classify([image])

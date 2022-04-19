@@ -27,6 +27,7 @@ from ..svgelements import (
     SVG_ATTR_XMLNS_LINK,
     SVG_ATTR_Y,
     SVG_NAME_TAG,
+    SVG_TAG_GROUP,
     SVG_TAG_IMAGE,
     SVG_TAG_PATH,
     SVG_TAG_TEXT,
@@ -35,17 +36,21 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
+    Circle,
     Color,
+    Ellipse,
     Group,
     Matrix,
     Path,
+    Polygon,
+    Polyline,
+    Rect,
     Shape,
     SVGElement,
     SVGImage,
-    SVGText,
-    SVG_TAG_GROUP,
+    SVGText, SimpleLine,
 )
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
+from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):
@@ -134,7 +139,7 @@ class SVGWriter:
         @return:
         """
         for c in elem_tree.children:
-            if c.type == "elem":
+            if c.type.startswith("elem"):
                 # This is an element node.
                 SVGWriter._write_element(xml_tree, c)
             else:
@@ -205,7 +210,8 @@ class SVGWriter:
         contains = list()
         for c in node.children:
             contains.append(c.id)
-        subelement.set("references", " ".join(contains))
+        if contains:
+            subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
@@ -321,9 +327,8 @@ class SVGProcessor:
     def process(self, svg, pathname):
         self.pathname = pathname
         context_node = self.elements.get(type="branch elems")
-        file_node = context_node.add(type="file", label=os.path.basename(self.pathname))
+        file_node = context_node.add(type="file", filepath=pathname)
         self.regmark = self.elements.reg_branch
-        file_node.filepath = self.pathname
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
@@ -345,34 +350,71 @@ class SVGProcessor:
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
+        ident = element.id
         if isinstance(element, SVGText):
             if element.text is not None:
-                context_node.add(element, type="elem")
+                context_node.add(element, type="elem text", id=ident)
                 e_list.append(element)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem")
+                context_node.add(element, type="elem path", id=ident)
                 e_list.append(element)
-        elif isinstance(element, Shape):
+        elif isinstance(element, (Polygon, Polyline)):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem")
+                context_node.add(element, type="elem polyline", id=ident)
+                e_list.append(element)
+        elif isinstance(element, Circle):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem circle", id=ident)
+                e_list.append(element)
+        elif isinstance(element, Ellipse):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem ellipse", id=ident)
+                e_list.append(element)
+        elif isinstance(element, Rect):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem rect", id=ident)
+                e_list.append(element)
+        elif isinstance(element, SimpleLine):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                context_node.add(element, type="elem line", id=ident)
                 e_list.append(element)
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
                 if element.image is not None:
-                    context_node.add(element, type="elem")
+                    context_node.add(element, type="elem image", id=ident)
                     e_list.append(element)
             except OSError:
                 pass
         elif isinstance(element, (Group, SVG)):
-            context_node = context_node.add(element, type="group")
+            context_node = context_node.add(type="group", id=ident)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):

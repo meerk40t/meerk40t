@@ -1,9 +1,9 @@
 import wx
 
 from meerk40t.kernel import signal_listener
-from ...core.units import Length
 
-from ...svgelements import Color, Angle
+from ...core.units import Length
+from ...svgelements import Angle, Color
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
@@ -288,7 +288,9 @@ class SpeedPpiPanel(wx.Panel):
             return
         self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_text_frequency(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_frequency(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.frequency = float(self.text_frequency.GetValue())
         except ValueError:
@@ -612,7 +614,7 @@ class PanelStartPreference(wx.Panel):
         self.direction_lines = d_start, d_end
 
     def refresh_in_ui(self):
-        """Performs the redraw of the data in the UI thread."""
+        """Performs redrawing of the data in the UI thread."""
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)
@@ -832,6 +834,7 @@ class RasterSettingsPanel(wx.Panel):
 
 # end of class RasterSettingsPanel
 
+
 class HatchSettingsPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: RasterSettingsPanel.__init__
@@ -840,15 +843,21 @@ class HatchSettingsPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        raster_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch:"), wx.VERTICAL)
+        raster_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Hatch:"), wx.VERTICAL
+        )
 
-        sizer_distance = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Hatch Distance:"), wx.HORIZONTAL)
+        sizer_distance = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Hatch Distance:"), wx.HORIZONTAL
+        )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
         self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "1mm")
         sizer_distance.Add(self.text_distance, 0, 0, 0)
 
-        sizer_angle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Angle"), wx.HORIZONTAL)
+        sizer_angle = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Angle"), wx.HORIZONTAL
+        )
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
         self.text_angle = wx.TextCtrl(self, wx.ID_ANY, "0deg")
@@ -857,7 +866,9 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
 
-        sizer_pass_inc = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Pass Angle Increment"), wx.HORIZONTAL)
+        sizer_pass_inc = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Pass Angle Increment"), wx.HORIZONTAL
+        )
         raster_sizer.Add(sizer_pass_inc, 1, wx.EXPAND, 0)
 
         self.text_pass_inc = wx.TextCtrl(self, wx.ID_ANY, "0deg")
@@ -866,10 +877,14 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_pass_inc = wx.Slider(self, wx.ID_ANY, 0, -180, 180)
         sizer_pass_inc.Add(self.slider_pass_inc, 3, wx.EXPAND, 0)
 
-        sizer_fill = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL)
+        sizer_fill = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL
+        )
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
-        self.combo_fill_style = wx.ComboBox(self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN)
+        self.combo_fill_style = wx.ComboBox(
+            self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN
+        )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
         self.display_panel = wx.Panel(self, wx.ID_ANY)
@@ -912,13 +927,17 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_distance = Length(self.text_distance.GetValue()).length_mm
+            self.operation.hatch_distance = Length(
+                self.text_distance.GetValue()
+            ).length_mm
         except ValueError:
             pass
 
     def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_angle = Angle.parse(self.text_angle.GetValue()).as_degrees
+            self.operation.hatch_angle = Angle.parse(
+                self.text_angle.GetValue()
+            ).as_degrees
         except ValueError:
             return
 
@@ -928,7 +947,9 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_angle_inc = Angle.parse(self.text_pass_inc.GetValue()).as_degrees
+            self.operation.hatch_angle_inc = Angle.parse(
+                self.text_pass_inc.GetValue()
+            ).as_degrees
         except ValueError:
             return
 

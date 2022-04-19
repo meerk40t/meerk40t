@@ -37,12 +37,12 @@ class Module:
         )
 
     def restore(self, *args, **kwargs):
-        """Called with the same values of __init()__ on an attempted reopen of a module with the same name at the
+        """Called with the same values of __init()__ on an attempt to reopen of a module with the same name at the
         same context."""
         pass
 
     def module_open(self, *args, **kwargs):
-        """Initialize() is called after open() to setup the module and allow it to register various hooks into the
+        """Initialize() is called after open() to set up the module and allow it to register various hooks into the
         kernelspace."""
         pass
 

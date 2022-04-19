@@ -5,7 +5,6 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -17,16 +16,16 @@ from meerk40t.kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
+    CommandSyntaxError,
     Module,
     Service,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
-from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 from ..core.cutcode import CutCode, RawCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -44,6 +43,7 @@ from ..device.basedevice import (
     PLOT_START,
 )
 from .laserspeed import LaserSpeed
+from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -856,7 +856,7 @@ class LhystudiosDriver(Parameters):
         criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
         as soon as it does not hold the data.
 
-        :return: Whether data interpretation should hold.
+        @return: Whether data interpretation should hold.
         """
         temp_hold = False
         fail_hold = False
@@ -886,7 +886,7 @@ class LhystudiosDriver(Parameters):
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
         movements. Or updating the laser state based on the settings of the cutcode.
 
-        :return:
+        @return:
         """
         if self.plot_data is None:
             return False
@@ -1091,10 +1091,10 @@ class LhystudiosDriver(Parameters):
 
         This depends on whether is_relative is set.
 
-        :param x:
-        :param y:
-        :param cut:
-        :return:
+        @param x:
+        @param y:
+        @param cut:
+        @return:
         """
         if self.is_relative:
             self.goto_relative(x, y, cut)
@@ -1105,10 +1105,10 @@ class LhystudiosDriver(Parameters):
         """
         Goto absolute x and y. With cut set or not set.
 
-        :param x:
-        :param y:
-        :param cut:
-        :return:
+        @param x:
+        @param y:
+        @param cut:
+        @return:
         """
         self.goto_relative(x - self.native_x, y - self.native_y, cut)
 
@@ -1162,10 +1162,10 @@ class LhystudiosDriver(Parameters):
         """
         Goto relative dx, dy. With cut set or not set.
 
-        :param dx:
-        :param dy:
-        :param cut:
-        :return:
+        @param dx:
+        @param dy:
+        @param cut:
+        @return:
         """
         if abs(dx) == 0 and abs(dy) == 0:
             return
@@ -1276,7 +1276,7 @@ class LhystudiosDriver(Parameters):
 
     def mode_shift_on_the_fly(self, dx=0, dy=0):
         """
-        Mode shift on the fly changes the current modes while in programmed or raster mode
+        Mode-shift on the fly changes the current modes while in programmed or raster mode
         this exits with a @ command that resets the modes. A movement operation can be added after
         the speed code and before the return to into programmed or raster mode.
 
@@ -1309,7 +1309,7 @@ class LhystudiosDriver(Parameters):
 
     def raster_mode(self, *values):
         """
-        Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
+        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
@@ -1715,8 +1715,8 @@ class LhystudiosDriver(Parameters):
 
     def plot(self, plot):
         """
-        :param plot:
-        :return:
+        @param plot:
+        @return:
         """
         self.plot_planner.push(plot)
 
@@ -1938,15 +1938,15 @@ class LhystudiosController:
         """
         Writes data to the queue, this will be moved into the buffer by the thread in a threadsafe manner.
 
-        :param bytes_to_write: data to write to the queue.
-        :return:
+        @param bytes_to_write: data to write to the queue.
+        @return:
         """
         f = bytes_to_write.find(b"~")
         if f != -1:
             # ~ was found in bytes. We are in a realtime exception.
             self.realtime = True
 
-            # All code prior to ~ is sent to normal write.
+            # All code prior to ~ is sent to write.
             queue_bytes = bytes_to_write[:f]
             if queue_bytes:
                 self.write(queue_bytes)
@@ -1974,8 +1974,8 @@ class LhystudiosController:
         Writes data to the preempting commands, this will be moved to the front of the buffer by the thread
         in a threadsafe manner.
 
-        :param bytes_to_write: data to write to the front of the queue.
-        :return:
+        @param bytes_to_write: data to write to the front of the queue.
+        @return:
         """
         f = bytes_to_write.find(b"~")
         if f != -1:
@@ -2002,8 +2002,8 @@ class LhystudiosController:
 
     def start(self):
         """
-        Controller state change to Started.
-        :return:
+        Controller state change to `Started`.
+        @return:
         """
 
         if not self.is_shutdown and (
@@ -2021,7 +2021,7 @@ class LhystudiosController:
         """
         BUSY can be called in a paused state to packet halt the controller.
 
-        This can only be done from PAUSE..
+        This can only be done from PAUSE.
         """
         if self.state != STATE_PAUSE:
             self.pause()
@@ -2043,7 +2043,7 @@ class LhystudiosController:
         Pause simply holds the controller from sending any additional packets.
 
         If this state change is done from INITIALIZE it will start the processing.
-        Otherwise it must be done from ACTIVE or IDLE.
+        Otherwise, it must be done from ACTIVE or IDLE.
         """
         if self.state == STATE_INITIALIZE:
             self.start()
@@ -2156,7 +2156,7 @@ class LhystudiosController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
-                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
@@ -2216,7 +2216,7 @@ class LhystudiosController:
                 the write process and should not exist in the queue)
         \x18 : quit.
 
-        :return: queue process success.
+        @return: queue process success.
         """
         if len(self._queue):  # check for and append queue
             self._queue_lock.acquire(True)
@@ -2678,8 +2678,8 @@ def onewire_crc_lookup(line):
     Copyright (C) 1992-2017 Arjen Lentz
     https://lentz.com.au/blog/calculating-crc-with-a-tiny-32-entry-lookup-table
 
-    :param line: line to be CRC'd
-    :return: 8 bit crc of line.
+    @param line: line to be CRC'd
+    @return: 8 bit crc of line.
     """
     crc = 0
     for i in range(0, 30):

@@ -1,10 +1,13 @@
 import wx
 from wx import aui
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -12,7 +15,6 @@ from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
-from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
@@ -24,10 +26,8 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import signal_listener
-from meerk40t.core.units import Length
-from meerk40t.svgelements import Angle, Color, SVG_ATTR_FILL, SVG_ATTR_STROKE
+from meerk40t.kernel import CommandSyntaxError, signal_listener
+from meerk40t.svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Angle, Color
 
 _ = wx.GetTranslation
 
@@ -168,17 +168,21 @@ class MeerK40tScenePanel(wx.Panel):
                         channel(key[6:])
             else:
                 color_key = f"color_{aspect}"
-                if aspect == "unset": # reset all
+                if aspect == "unset":  # reset all
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
-                if color == "unset": # reset one
+                if color == "unset":  # reset one
                     setattr(self.context, color_key, "default")
                     self.context.signal("theme", True)
                     return "scene", data
 
                 if color is None:
-                    channel(_("No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"))
+                    channel(
+                        _(
+                            "No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"
+                        )
+                    )
                 else:
                     if hasattr(self.context, color_key):
                         setattr(self.context, color_key, color.hexa)
@@ -273,7 +277,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command("reference")
         def make_reference(**kwargs):
             # Take first emphasized element
-            for e in self.context.elements.flat(types=("elem"), emphasized=True):
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 obj = e.object
                 self.widget_scene.reference_object = obj
                 break
@@ -283,9 +287,9 @@ class MeerK40tScenePanel(wx.Panel):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if scene_name == "Scene":
             self.request_refresh()
@@ -370,11 +374,11 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("selstroke")
     def on_selstroke(self, origin, rgb, *args):
         # print (origin, rgb, args)
-        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 if color is None:
@@ -394,12 +398,12 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("selfill")
     def on_selfill(self, origin, rgb, *args):
         # print (origin, rgb, args)
-        if rgb[0]==255 and rgb[1]==255 and rgb[2]==255:
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
 
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 if color is None:
@@ -421,7 +425,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Stroke_width is a text
         # print("Signal with %s" % stroke_width)
         sw = float(Length(stroke_width))
-        for e in self.context.elements.flat(types=("elem"), emphasized=True):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e.object
             try:
                 obj.stroke_width = sw
@@ -454,7 +458,6 @@ class SceneWindow(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
-
 
     def window_open(self):
         self.panel.pane_show()

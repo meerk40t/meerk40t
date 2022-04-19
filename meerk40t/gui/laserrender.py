@@ -4,7 +4,8 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.node.node import Node, is_dot
+from ..core.elements import is_dot
+from ..core.node.node import Node
 from ..svgelements import (
     Arc,
     Close,
@@ -73,11 +74,11 @@ class LaserRender:
         """
         Render scene information.
 
-        :param nodes: Node types to render.
-        :param gc: graphics context
-        :param draw_mode: draw_mode set
-        :param zoomscale: set zoomscale at which this is drawn at
-        :return:
+        @param nodes: Node types to render.
+        @param gc: graphics context
+        @param draw_mode: draw_mode set
+        @param zoomscale: set zoomscale at which this is drawn at
+        @return:
         """
         if draw_mode is None:
             draw_mode = self.context.draw_mode
@@ -116,7 +117,7 @@ class LaserRender:
 
     def make_path(self, gc, path):
         """
-        Takes an svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
         p = gc.CreatePath()
         first_point = path.first_point
@@ -472,13 +473,13 @@ class LaserRender:
 
         This function requires both wxPython and Pillow.
 
-        :param elements: elements to render.
-        :param bounds: bounds of those elements for the viewport.
-        :param width: desired width of the resulting raster
-        :param height: desired height of the resulting raster
-        :param bitmap: bitmap to use rather than provisioning
-        :param step: raster step rate, int scale rate of the image.
-        :return:
+        @param elements: elements to render.
+        @param bounds: bounds of those elements for the viewport.
+        @param width: desired width of the resulting raster
+        @param height: desired height of the resulting raster
+        @param bitmap: bitmap to use rather than provisioning
+        @param step: raster step rate, int scale rate of the image.
+        @return:
         """
         if bounds is None:
             return None

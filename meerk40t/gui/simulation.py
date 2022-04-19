@@ -119,7 +119,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         # Don't let grid resize itself
         self.widget_scene.auto_tick = False
-        self.widget_scene.tick_distance = 10 # mm
+        self.widget_scene.tick_distance = 10  # mm
 
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene, self)
@@ -306,9 +306,9 @@ class SimulationPanel(wx.Panel, Job):
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if scene_name == "SimScene":
             self.request_refresh()

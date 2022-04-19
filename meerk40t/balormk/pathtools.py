@@ -117,7 +117,7 @@ class Graph:
     A graph is a set of nodes and their connections. The nodes are points within 2d space and any number of segments
     can connect any number of points. There is no order established by the graph. And for our uses here all graphs will
     end up not only being Eulerian but Euloopian. All nodes should have even numbers of connecting segments so that any
-    walk will always return back to the end location.
+    walk will always return to the end location.
 
     """
 
@@ -240,7 +240,7 @@ class Graph:
         Makes any graph Eulerian. Any graph that is doubled is by definition Eulerian.
 
         This is not used by the algorithm.
-        :return:
+        @return:
         """
         for i in range(len(self.links)):
             s = self.links[i]
@@ -257,7 +257,7 @@ class Graph:
         two edges this will double 1 of those edges in every instance, giving a total of 4 connections. This is makes
         the graph Eulerian.
 
-        :return:
+        @return:
         """
         for i in range(len(self.links)):
             segment = self.links[i]
@@ -346,8 +346,8 @@ class GraphWalker:
 
         It adds the first loop from the start node, then walks its looped walk adding
         any additional loops it finds to the current loop.
-        :param g:
-        :return:
+        @param g:
+        @return:
         """
         start = len(self.walk)
         self.walk.append(g)
@@ -371,9 +371,9 @@ class GraphWalker:
         Travels along unused connections until no more travel is possible. If properly Eulerian,
         this will only happen when it is looped back on itself.
 
-        :param index: index we are adding loop to.
-        :param node: Node to find alternative path through.
-        :return: new index after loop is added to the walk.
+        @param index: index we are adding loop to.
+        @param node: Node to find alternative path through.
+        @return: new index after loop is added to the walk.
         """
         index += 1
         i = index
@@ -395,8 +395,8 @@ class GraphWalker:
         """
         Finds the first unused edge segment within the graph node, or None if all connections are used.
 
-        :param node: Node to find unused edge segment within.
-        :return: index of node connection within the graphnode
+        @param node: Node to find unused edge segment within.
+        @return: index of node connection within the graphnode
         """
         value = None
         for index, c in enumerate(node.connections):
@@ -411,8 +411,8 @@ class GraphWalker:
         """
         Adds nodes within the walk to the points given to it.
 
-        :param points:
-        :return:
+        @param points:
+        @return:
         """
         for i in range(0, len(self.walk), 2):
             segment = self.walk[i - 1]
@@ -428,9 +428,9 @@ class GraphWalker:
         Removes values between the two given points.
         Since start and end are the same node, it leaves one in place.
 
-        :param from_pos:
-        :param to_pos:
-        :return:
+        @param from_pos:
+        @param to_pos:
+        @return:
         """
         if from_pos == to_pos:
             return 0
@@ -447,9 +447,9 @@ class GraphWalker:
         It iterates from the outside to the center, setting the visited value for each node.
 
         If it finds a marked node, that is the biggest loop within the given walk.
-        :param start:
-        :param end:
-        :return:
+        @param start:
+        @param end:
+        @return:
         """
         for i in range(start, end + 2, 2):
             n = self.get_node(i)
@@ -477,7 +477,7 @@ class GraphWalker:
 
         Clips unneeded scaffolding.
 
-        :return:
+        @return:
         """
         start = 0
         index = 0
@@ -606,7 +606,7 @@ class GraphWalker:
     def get_value(self):
         """
         Path values with flip.
-        :return: Flipped path value.
+        @return: Flipped path value.
         """
         if len(self.walk) == 0:
             return 0

@@ -29,6 +29,9 @@ class LaserCodeNode(Node):
     def __len__(self):
         return len(self.commands)
 
+    def drop(self, drag_node):
+        return False
+
     def generate(self):
         for cmd in self.commands:
             yield cmd

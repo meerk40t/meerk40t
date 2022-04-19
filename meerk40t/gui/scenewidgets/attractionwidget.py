@@ -1,15 +1,22 @@
+from math import sqrt
+
 import wx
 
+from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CHANGE_POSITION
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+    RESPONSE_CHANGE_POSITION,
+)
 from meerk40t.gui.scene.widget import Widget
-from math import sqrt
 
 TYPE_BOUND = 0
 TYPE_POINT = 1
 TYPE_MIDDLE = 2
 TYPE_CENTER = 3
 TYPE_GRID = 4
+
 
 class AttractionWidget(Widget):
     """
@@ -20,8 +27,8 @@ class AttractionWidget(Widget):
         Widget.__init__(self, scene, all=True)
         # Respond to Snap is not necessary, but for the sake of completeness...
 
-        self.attraction_points = None # Clear all
-        self.grid_points = None # Clear all
+        self.attraction_points = None  # Clear all
+        self.grid_points = None  # Clear all
         self.my_x = None
         self.my_y = None
         self.visible_pen = wx.Pen()
@@ -46,7 +53,6 @@ class AttractionWidget(Widget):
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
 
-
     def load_colors(self):
         self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
         self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
@@ -66,7 +72,10 @@ class AttractionWidget(Widget):
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
-            if event_type in ("leftdown", "move", "hover", "hover_start") and self.scene.tool_active:
+            if (
+                event_type in ("leftdown", "move", "hover", "hover_start")
+                and self.scene.tool_active
+            ):
                 self.show_snap_points = True
             else:
                 self.show_snap_points = False
@@ -112,7 +121,7 @@ class AttractionWidget(Widget):
                             new_y = pt[1]
                             min_delta = delta
                     # fmt:off
-                    #print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
+                    # print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
                     #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.action_attract_len, ))
                     # fmt:on
                     if not new_x is None:
@@ -126,10 +135,10 @@ class AttractionWidget(Widget):
         return response
 
     def draw_caret(self, gc, x, y, closeup):
-        if closeup==2: # closest
+        if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
-        elif closeup==1: # within snap range
+        elif closeup == 1:  # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
         else:
@@ -147,10 +156,10 @@ class AttractionWidget(Widget):
         gc.DrawPath(path)
 
     def draw_center(self, gc, x, y, closeup):
-        if closeup==2: # closest
+        if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = self.symbol_size
-        elif closeup==1: # within snap range
+        elif closeup == 1:  # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
         else:
@@ -170,10 +179,10 @@ class AttractionWidget(Widget):
         gc.DrawPath(path)
 
     def draw_gridpoint(self, gc, x, y, closeup):
-        if closeup==2: # closest
+        if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
-        elif closeup==1: # within snap range
+        elif closeup == 1:  # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
         else:
@@ -183,14 +192,19 @@ class AttractionWidget(Widget):
         brush = wx.Brush(colour=pen.GetColour(), style=wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         dsize = 1 / 8 * sym_size
-        gc.DrawRectangle(x - dsize, y - sym_size/2, 2 * dsize, sym_size)
-        gc.DrawRectangle(x - sym_size/2, y - dsize, sym_size, 2 * dsize,)
+        gc.DrawRectangle(x - dsize, y - sym_size / 2, 2 * dsize, sym_size)
+        gc.DrawRectangle(
+            x - sym_size / 2,
+            y - dsize,
+            sym_size,
+            2 * dsize,
+        )
 
     def draw_midpoint(self, gc, x, y, closeup):
-        if closeup==2: # closest
+        if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
-        elif closeup==1: # within snap range
+        elif closeup == 1:  # within snap range
             pen = self.visible_pen
             sym_size = self.symbol_size
         else:
@@ -223,7 +237,7 @@ class AttractionWidget(Widget):
             except ZeroDivisionError:
                 matrix.reset()
                 return
-            # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be diplayed
+            # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
             pixel1 = self.scene.context.show_attract_len
             pixel2 = self.scene.context.action_attract_len
             pixel3 = self.scene.context.grid_attract_len
@@ -242,7 +256,10 @@ class AttractionWidget(Widget):
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
                 ):
                     closeup = 0
-                    delta = sqrt((pts[0] - self.my_x) * (pts[0] - self.my_x) + (pts[1] - self.my_y) * (pts[1] - self.my_y))
+                    delta = sqrt(
+                        (pts[0] - self.my_x) * (pts[0] - self.my_x)
+                        + (pts[1] - self.my_y) * (pts[1] - self.my_y)
+                    )
                     dx = abs(pts[0] - self.my_x)
                     dy = abs(pts[1] - self.my_y)
 
@@ -250,7 +267,7 @@ class AttractionWidget(Widget):
                         distance = self.grid_attract_len
                     else:
                         distance = self.action_attract_len
-                    if dx<=distance and dy<=distance:
+                    if dx <= distance and dy <= distance:
                         closeup = 1
                         if delta < min_delta:
                             min_delta = delta
@@ -258,7 +275,7 @@ class AttractionWidget(Widget):
                             min_y = pts[1]
                             min_type = pts[2]
 
-                    if pts[2]in (TYPE_POINT, TYPE_BOUND):
+                    if pts[2] in (TYPE_POINT, TYPE_BOUND):
                         self.draw_caret(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_MIDDLE:
                         self.draw_midpoint(gc, pts[0], pts[1], closeup)
@@ -268,14 +285,14 @@ class AttractionWidget(Widget):
                         self.draw_gridpoint(gc, pts[0], pts[1], closeup)
             # Draw the closest point
             if not min_x is None:
-                closeup = 2 # closest
+                closeup = 2  # closest
                 if min_type in (TYPE_POINT, TYPE_BOUND):
                     self.draw_caret(gc, min_x, min_y, closeup)
-                elif min_type  == TYPE_MIDDLE:
+                elif min_type == TYPE_MIDDLE:
                     self.draw_midpoint(gc, min_x, min_y, closeup)
-                elif min_type  == TYPE_CENTER:
+                elif min_type == TYPE_CENTER:
                     self.draw_center(gc, min_x, min_y, closeup)
-                elif min_type  == TYPE_GRID:
+                elif min_type == TYPE_GRID:
                     self.draw_gridpoint(gc, min_x, min_y, closeup)
 
     def calculate_attraction_points(self):
@@ -284,12 +301,13 @@ class AttractionWidget(Widget):
         attraction points (center, corners, sides)
         """
         from time import time
+
         start_time = time()
         self.attraction_points = []  # Clear all
         translation_table = {
-            "bounds top_left" : TYPE_BOUND,
-            "bounds top_right" : TYPE_BOUND,
-            "bounds bottom_left" : TYPE_BOUND,
+            "bounds top_left": TYPE_BOUND,
+            "bounds top_right": TYPE_BOUND,
+            "bounds bottom_left": TYPE_BOUND,
             "bounds bottom_right": TYPE_BOUND,
             "bounds center_center": TYPE_CENTER,
             "bounds top_center": TYPE_MIDDLE,
@@ -299,22 +317,22 @@ class AttractionWidget(Widget):
             "endpoint": TYPE_POINT,
         }
 
-        for e in self.scene.context.elements.flat(types=("elem",)):
+        for e in self.scene.context.elements.flat(types=elem_nodes):
             emph = e.emphasized
             if hasattr(e, "points"):
                 for pt in e.points:
                     try:
                         pt_type = translation_table[pt[2]]
                     except:
-                        print ("Unknown type: %s" % pt[2])
+                        print("Unknown type: %s" % pt[2])
                         pt_type = TYPE_POINT
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
         end_time = time()
-        #print(
+        # print(
         #    "Ready, time needed: %.6f, attraction points added=%d"
         #    % (end_time - start_time, len(self.attraction_points))
-        #)
+        # )
 
     def calculate_grid_points(self):
         """
@@ -322,6 +340,7 @@ class AttractionWidget(Widget):
         attraction points (center, corners, sides)
         """
         from time import time
+
         start_time = time()
         self.grid_points = []  # Clear all
 
@@ -329,7 +348,9 @@ class AttractionWidget(Widget):
         p = self.scene.context
         tlen = float(
             Length(
-                "{value}{units}".format(value=self.scene.tick_distance, units=p.units_name)
+                "{value}{units}".format(
+                    value=self.scene.tick_distance, units=p.units_name
+                )
             )
         )
         if tlen >= 1000:
@@ -342,13 +363,14 @@ class AttractionWidget(Widget):
                 x += tlen
 
         end_time = time()
-        #print(
+        # print(
         #    "Ready, time needed: %.6f, grid points added=%d"
         #    % (end_time - start_time, len(self.grid_points))
-        #)
+        # )
 
     def calculate_display_points(self):
         from time import time
+
         start_time = time()
         self.display_points = []
         if self.attraction_points is None:
@@ -358,10 +380,14 @@ class AttractionWidget(Widget):
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
-        if self.snap_points and len(self.attraction_points) > 0 and not self.my_x is None:
+        if (
+            self.snap_points
+            and len(self.attraction_points) > 0
+            and not self.my_x is None
+        ):
             for pts in self.attraction_points:
                 # doit = not pts[3] # not emphasized
-                doit = True # Not sure why not :-)
+                doit = True  # Not sure why not :-)
                 if doit:
                     if (
                         abs(pts[0] - self.my_x) <= self.show_attract_len
@@ -378,14 +404,14 @@ class AttractionWidget(Widget):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
         end_time = time()
-        #print(
+        # print(
         #    "Ready, time needed: %.6f, points added=%d"
         #    % (end_time - start_time, len(self.display_points))
-        #)
+        # )
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         # print ("AttractionWidget receives signal: %s" % signal)
         consumed = False
@@ -402,5 +428,5 @@ class AttractionWidget(Widget):
             consumed = True
             self.load_colors()
         if not consumed:
-            # print ("Dont know what to do with signal %s" % signal)
+            # print ("Don't know what to do with signal %s" % signal)
             pass

@@ -3,13 +3,12 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import CutCode, LineCut, Parameters, QuadCut, RasterCut
-from meerk40t.core.node.laserop import (
-    CutOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
+from meerk40t.core.cutcode import CutCode, LineCut, QuadCut, RasterCut
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+
 from meerk40t.svgelements import Path, Point, SVGImage
 
 
