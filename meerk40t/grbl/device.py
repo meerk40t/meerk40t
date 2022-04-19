@@ -616,7 +616,7 @@ class GRBLDriver(Parameters):
                 interp = self.service.interpolate
                 step_size = 1.0 / interp
                 t = 0
-                for p in range(len(interp) + 1):
+                for p in range(interp + 1):
                     while self.hold_work():
                         time.sleep(0.05)
                     self.move(*q.point(t))
