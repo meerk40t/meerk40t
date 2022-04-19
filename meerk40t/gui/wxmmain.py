@@ -164,6 +164,7 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        FONT_SIZE = 7
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
@@ -184,6 +185,11 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_handle.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_rotate.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_skew.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
@@ -238,8 +244,11 @@ class CustomStatusBar(wx.StatusBar):
         self.strokewidth_label = wx.StaticText(
             self, id=wx.ID_ANY, label=_("Stroke-Width:")
         )
+        self.strokewidth_label.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
         self.spin_width.SetDigits(2)
+        self.spin_width.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
 
         self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -248,6 +257,7 @@ class CustomStatusBar(wx.StatusBar):
             choices=self.choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
+        self.combo_units.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.combo_units.SetSelection(0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
