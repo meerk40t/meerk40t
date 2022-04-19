@@ -19,65 +19,6 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
 
-# Regex expressions
-import re
-
-label_truncate_re = re.compile("(:.*)|(\([^ )]*\s.*)")
-group_simplify_re = re.compile(
-    "(\([^()]+?\))|(SVG(?=Image|Text))|(Simple(?=Line))", re.IGNORECASE
-)
-subgroup_simplify_re = re.compile("\[[^][]*\]", re.IGNORECASE)
-# Ideally we would show the positions in the same UoM as set in Settings (with variable precision depending on UoM,
-# but until then element descriptions are shown in mils and 2 decimal places (for opacity) should be sufficient for user to see
-element_simplify_re = re.compile("(^Simple(?=Line))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-# image_simplify_re = re.compile("(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\.\d{2})(\d+))", re.IGNORECASE)
-image_simplify_re = re.compile(
-    "(^SVG(?=Image))|((,\s*)?href=('|\")data:.*?('|\")(,\s?|\s|(?=\))))|((?<=\d)(\.\d*))",
-    re.IGNORECASE,
-)
-
-OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
-
-from meerk40t.svgelements import (
-    SVG_STRUCT_ATTRIB,
-    Close,
-    Line,
-    Move,
-    Path,
-    Shape,
-    SVGImage,
-)
-
-
-def is_dot(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Close):
-            return True
-        if isinstance(path[1], Line) and path[1].length() == 0:
-            return True
-    return False
-
-
-def is_straight_line(element):
-    if not isinstance(element, Shape):
-        return False
-    if isinstance(element, Path):
-        path = element
-    else:
-        path = element.segments()
-
-    if len(path) == 2 and isinstance(path[0], Move):
-        if isinstance(path[1], Line) and path[1].length() > 0:
-            return True
-    return False
-
 
 class Node:
     """
@@ -116,24 +57,11 @@ class Node:
     def __repr__(self):
         return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
 
+    def __str__(self):
+        return self.create_label()
+
     def __eq__(self, other):
         return other is self
-
-    def is_movable(self):
-        return True
-
-    def drop(self, drag_node):
-        return False
-
-    def reverse(self):
-        self._children.reverse()
-        self.notify_reorder()
-
-    def load(self, settings, section):
-        pass
-
-    def save(self, settings, section):
-        pass
 
     @property
     def label(self):
@@ -231,6 +159,35 @@ class Node:
             self.revalidate_points()
         self._points_dirty = False
         return self._points
+
+    def create_label(self, text="{element_type}:{id}"):
+        return text.format_map(self.default_map())
+
+    def default_map(self, default_map=None):
+        if default_map is None:
+            default_map = dict()
+        element = self.object
+        default_map["id"] = str(self.id)
+        default_map["object"] = str(self.object)
+        default_map["element_type"] = element.__class__.__name__
+        default_map["node_type"] = self.type
+        return default_map
+
+    def is_movable(self):
+        return True
+
+    def drop(self, drag_node):
+        return False
+
+    def reverse(self):
+        self._children.reverse()
+        self.notify_reorder()
+
+    def load(self, settings, section):
+        pass
+
+    def save(self, settings, section):
+        pass
 
     def revalidate_points(self):
         """
@@ -517,95 +474,6 @@ class Node:
             self._children.insert(pos, node)
         node.notify_attached(node, pos=pos)
         return node
-
-    def label_from_source_cascade(self, element) -> str:
-        """
-        Creates a cascade of different values that could give the node name. Label, inkscape:label, id, node-object str,
-        node str. If something else provides a superior name it should be added in here.
-        """
-        element_type = element.__class__.__name__
-        if element_type == "SVGImage":
-            element_type = "Image"
-        elif element_type == "SVGText":
-            element_type = "Text"
-        elif element_type == "SimpleLine":
-            element_type = "Line"
-        elif is_dot(element):
-            element_type = "Dot"
-
-        if element is not None:
-            desc = str(element)
-            if isinstance(element, Path):
-                desc = element_simplify_re.sub("", desc)
-                if len(desc) > 100:
-                    desc = desc[:100] + "…"
-                values = []
-                if element.stroke is not None:
-                    values.append("%s='%s'" % ("stroke", element.stroke))
-                if element.fill is not None:
-                    values.append("%s='%s'" % ("fill", element.fill))
-                if element.stroke_width is not None and element.stroke_width != 1.0:
-                    values.append(
-                        "%s=%s" % ("stroke-width", str(round(element.stroke_width, 2)))
-                    )
-                if not element.transform.is_identity():
-                    values.append("%s=%s" % ("transform", repr(element.transform)))
-                if element.id is not None:
-                    values.append("%s='%s'" % ("id", element.id))
-                if values:
-                    desc = "d='%s', %s" % (desc, ", ".join(values))
-                desc = element_type + "(" + desc + ")"
-            elif element_type == "Group":  # Group
-                desc = desc[1:-1]  # strip leading and trailing []
-                n = 1
-                while n:
-                    desc, n = group_simplify_re.subn("", desc)
-                n = 1
-                while n:
-                    desc, n = subgroup_simplify_re.subn("Group", desc)
-                desc = "%s(%s)" % (element_type, desc)
-            elif element_type == "Image":  # Image
-                desc = image_simplify_re.sub("", desc)
-            else:
-                desc = element_simplify_re.sub("", desc)
-        else:
-            desc = None
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["label"] + (": " + desc if desc else "")
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            attribs = element.values[SVG_STRUCT_ATTRIB]
-            return attribs["{http://www.inkscape.org/namespaces/inkscape}label"] + (
-                ": " + desc if desc else ""
-            )
-        except (AttributeError, KeyError):
-            pass
-
-        try:
-            if element.id is not None:
-                return str(element.id) + (": " + desc if desc else "")
-        except AttributeError:
-            pass
-
-        return desc if desc else str(element)
-
-    def create_label(self, name=None):
-        """
-        Create a label for this node.
-        If a name is not specified either use a cascade (primarily for elements) or
-        use the string representation
-        @param name: Name to be set for this node.
-        @return: label
-        """
-        if name is not None:
-            return name
-        if self.object is not None:
-            return self.label_from_source_cascade(self.object)
-        return str(self)
 
     def _flatten(self, node):
         """

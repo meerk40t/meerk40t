@@ -18,6 +18,20 @@ class PathNode(Node):
             str(self._parent),
         )
 
+    def default_map(self, default_map=None):
+        default_map = super(PathNode, self).default_map(default_map=default_map)
+        element = self.object
+        if self.object is not None:
+            default_map.update(self.object.values)
+        default_map["element_type"] = "Path"
+        default_map["stroke"] = element.stroke
+        default_map["fill"] = element.fill
+        default_map["stroke-width"] = element.stroke_width
+        default_map['transform'] = element.transform
+        if default_map.get('id'):
+            default_map['id'] = element.id
+        return default_map
+
     def drop(self, drag_node):
         drop_node = self
         # Dragging element into element.

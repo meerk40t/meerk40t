@@ -26,10 +26,12 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+    Move,
+    Close,
+    Line,
 )
 from .cutcode import CutCode
 from .element_types import *
-from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -103,6 +105,40 @@ def plugin(kernel, lifecycle=None):
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
+
+
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
+
+
+def is_dot(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Close):
+            return True
+        if isinstance(path[1], Line) and path[1].length() == 0:
+            return True
+    return False
+
+
+def is_straight_line(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Line) and path[1].length() > 0:
+            return True
+    return False
+
 
 
 class Elemental(Service):
@@ -4780,7 +4816,7 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": label_truncate_re.sub("", str(node.label)),
+                "name": str(node.label),
                 "label": str(node.label),
             }
 
