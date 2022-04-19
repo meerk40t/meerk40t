@@ -612,14 +612,16 @@ class GRBLDriver(Parameters):
                 self.move_mode = 1
                 self.move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
-                points = list(q.generator())
                 self.move_mode = 1
                 interp = self.service.interpolate
-                for p in range(interp, len(points), interp):
+                step_size = 1.0 / interp
+                t = 0
+                for p in range(len(interp) + 1):
                     while self.hold_work():
                         time.sleep(0.05)
-                    self.move(*points[p])
-                last_x, last_y = points[-1]
+                    self.move(*q.point(t))
+                    t += step_size
+                last_x, last_y = q.point(1)
                 self.move(last_x, last_y)
             else:
                 self.plot_planner.push(q)
