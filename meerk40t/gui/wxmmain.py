@@ -164,6 +164,7 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        FONT_SIZE = 7
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
@@ -184,6 +185,11 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_handle.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_rotate.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_skew.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
@@ -238,8 +244,11 @@ class CustomStatusBar(wx.StatusBar):
         self.strokewidth_label = wx.StaticText(
             self, id=wx.ID_ANY, label=_("Stroke-Width:")
         )
+        self.strokewidth_label.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
         self.spin_width.SetDigits(2)
+        self.spin_width.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
 
         self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -248,6 +257,7 @@ class CustomStatusBar(wx.StatusBar):
             choices=self.choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
+        self.combo_units.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.combo_units.SetSelection(0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
@@ -262,6 +272,9 @@ class CustomStatusBar(wx.StatusBar):
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
+        if self.cb_enabled and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke) and len(message)>0:
+            # Someone wanted to have a message while displaying some control elements
+            return
         super().SetStatusText(message, panel)
 
     @property
@@ -276,7 +289,7 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_rotate.Show()
             self.cb_skew.Show()
             if self.context.show_colorbar:
-                if self._cb_enabled == cb_enabled:
+                if self._cb_enabled != cb_enabled:
                     # Keep old values...
                     for idx, text in enumerate(self.status_text):
                         self.previous_text[idx] = text
@@ -408,6 +421,8 @@ class CustomStatusBar(wx.StatusBar):
             toosmall = wd<=100
             rect.x += 1
             rect.y += 1
+            old_y = rect.y
+            old_ht = rect.height
             rect.width = wd
             if toosmall:
                 if self.cb_enabled:
@@ -415,7 +430,14 @@ class CustomStatusBar(wx.StatusBar):
             else:
                 if self.cb_enabled:
                     self.strokewidth_label.Show()
+                # Centering in Y
+                ht = self.strokewidth_label.GetCharHeight()
+                rect.y = old_y + (old_ht - ht) / 2
+                rect.height = ht
                 self.strokewidth_label.SetRect(rect)
+                # reset to previous values
+                rect.y = old_y
+                rect.height = old_ht
                 rect.x += wd
                 # Make the next two elements smaller
                 wd = wd / 2
@@ -1461,7 +1483,9 @@ class MeerK40t(MWindow):
                 caption = window.caption
             except AttributeError:
                 caption = name[0].upper() + name[1:]
-
+            if name in ("Scene", "About"): # make no sense, so we omit these...
+                continue
+            # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             id_new = wx.NewId()
             menu_context.Append(id_new, caption, "", wx.ITEM_NORMAL)
             self.Bind(
@@ -1474,7 +1498,6 @@ class MeerK40t(MWindow):
         self.window_menu.windowreset = self.window_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
-
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
