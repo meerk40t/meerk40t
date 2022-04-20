@@ -463,7 +463,7 @@ class LaserRender:
         gc.PopState()
 
     def make_raster(
-        self, elements, bounds, width=None, height=None, bitmap=False, step=1
+        self, elements, bounds, width=None, height=None, bitmap=False, step_x=2, step_y=2
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -502,8 +502,8 @@ class LaserRender:
         if height is None:
             height = image_height
         # Scale physical image down by step amount.
-        width /= float(step)
-        height /= float(step)
+        width /= float(step_x)
+        height /= float(step_y)
         width = int(width)
         height = int(height)
         if width <= 0:

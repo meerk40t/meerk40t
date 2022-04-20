@@ -184,7 +184,7 @@ class TestActualize(unittest.TestCase):
             for step in range(1, 20):
                 transform = Matrix()
                 actual, transform = actualize(
-                    image, transform, step_level=step, crop=False
+                    image, transform, step_x=step, crop=False
                 )
                 self.assertEqual(actual.getpixel((-1, -1)), 255)
 
@@ -200,7 +200,7 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(image, transform, step_level=step, crop=False)
+            actual, transform = actualize(image, transform, step_x=step, crop=False)
             self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
@@ -216,12 +216,12 @@ class TestActualize(unittest.TestCase):
         for step in range(1, 20):
             transform = Matrix()
             actual, transform = actualize(
-                image, transform, step_level=step, crop=False, inverted=True
+                image, transform, step_x=step, crop=False, inverted=True
             )
             self.assertEqual(actual.getpixel((-1, -1)), 0)
 
         # Note: inverted flag not set. White edge pixel is correct.
-        actual, transform = actualize(image, Matrix(), step_level=3, crop=False)
+        actual, transform = actualize(image, Matrix(), step_x=3, crop=False)
         self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_largecircle(self):

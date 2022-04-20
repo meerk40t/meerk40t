@@ -1516,7 +1516,7 @@ class RasterScripts:
                     if op["enable"]:
                         step = op["step"]
                         image, matrix = actualize(
-                            image, matrix, step_level=step, inverted=invert
+                            image, matrix, step_x=step, inverted=invert
                         )
                         if invert:
                             empty_mask = image.convert("L").point(

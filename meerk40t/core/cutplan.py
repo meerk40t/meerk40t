@@ -395,14 +395,16 @@ class CutPlan:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        step = op.raster_step
-        if step == 0:
-            step = 1
-        image = make_raster(subitems, bounds, step=step)
+        step_x = op.raster_step_x
+        step_y = op.raster_step_y
+        image = make_raster(subitems, bounds, step_x=step_x, step_y=step_y)
+        # TODO: check the image values.
+
         image_element = SVGImage(image=image)
-        image_element.transform.post_scale(step, step)
+        image_element.transform.post_scale(step_x, step_y)
         image_element.transform.post_translate(xmin, ymin)
-        image_element.values["raster_step"] = step
+        image_element.values["raster_step_x"] = step_x
+        image_element.values["raster_step_y"] = step_y
         return image_element
 
     def make_image(self):
@@ -434,13 +436,13 @@ class CutPlan:
             if op.type == "op raster":
                 for elem in op.children:
                     elem = elem.object
-                    if needs_actualization(elem, op.raster_step):
-                        make_actual(elem, op.raster_step)
+                    if needs_actualization(elem, op.raster_step_x, op.raster_step_y):
+                        make_actual(elem, op.raster_step_x, op.raster_step_x)
             if op.type == "op image":
                 for elem in op.children:
                     elem = elem.object
-                    if needs_actualization(elem, None):
-                        make_actual(elem, None)
+                    if needs_actualization(elem, None, None):
+                        make_actual(elem, None, None)
 
     def scale_to_device_native(self):
         """
@@ -526,13 +528,13 @@ class CutPlan:
             if op.type == "op raster":
                 for elem in op.children:
                     elem = elem.object
-                    if needs_actualization(elem, op.raster_step):
+                    if needs_actualization(elem, op.raster_step_x, op.raster_step_y):
                         self.commands.append(self.actualize)
                         return
             if op.type == "op image":
                 for elem in op.children:
                     elem = elem.object
-                    if needs_actualization(elem, None):
+                    if needs_actualization(elem, None, None):
                         self.commands.append(self.actualize)
                         return
 
@@ -614,17 +616,17 @@ def is_inside(inner, outer):
     return True
 
 
-def needs_actualization(image_element, step_level=None):
+def needs_actualization(image_element, step_x=None, step_y=None):
     if not isinstance(image_element, SVGImage):
         return False
-    if step_level is None:
+    if step_x is None:
         if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
+            step_x = float(image_element.values["raster_step"])
         else:
-            step_level = 1.0
+            step_x = 1.0
     m = image_element.transform
     # Transformation must be uniform to permit native rastering.
-    return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
+    return m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_x
 
 
 def make_actual(image_element, step_level=None):
@@ -649,7 +651,7 @@ def make_actual(image_element, step_level=None):
         else:
             step_level = 1.0
     image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_level=step_level
+        image_element.image, image_element.transform, step_x=step_level
     )
     image_element.image_width, image_element.image_height = (
         image_element.image.width,

@@ -2,7 +2,7 @@ from copy import copy
 from math import ceil, floor
 
 
-def actualize(image, matrix, step_level, inverted=False, crop=True):
+def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
@@ -23,7 +23,8 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
 
     @param image: image to be actualized
     @param matrix: current applied matrix of the image
-    @param step_level: step level at which the actualization should occur
+    @param step_x: step_x level at which the actualization should occur
+    @param step_y: step_y level at which the actualization should occur
     @param inverted: should actualize treat black as empty rather than white
     @param crop: should actualize crop the empty edge values
     @return: actualized image, straight matrix
@@ -70,23 +71,24 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
     ys = [e[1] for e in boundary_points]
 
     # bbox here is expanded matrix size of box.
-    step_scale = 1 / float(step_level)
+    step_scale_x = 1 / float(step_x)
+    step_scale_y = 1 / float(step_y)
 
     bbox = min(xs), min(ys), max(xs), max(ys)
 
-    element_width = ceil(bbox[2] * step_scale) - floor(bbox[0] * step_scale)
-    element_height = ceil(bbox[3] * step_scale) - floor(bbox[1] * step_scale)
+    element_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
+    element_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
-    matrix.post_scale(step_scale, step_scale)
+    matrix.post_scale(step_scale_x, step_scale_y)
     try:
         matrix.inverse()
     except ZeroDivisionError:
         # Rare crash if matrix is malformed and cannot invert.
         matrix.reset()
         matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale, step_scale)
+        matrix.post_scale(step_scale_x, step_scale_y)
     image = image.transform(
         (element_width, element_height),
         Image.AFFINE,
@@ -111,6 +113,6 @@ def actualize(image, matrix, step_level, inverted=False, crop=True):
                 image = image.crop(box)
                 matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
-    matrix.post_scale(step_level, step_level)
+    matrix.post_scale(step_x, step_x)
     matrix.post_translate(tx, ty)
     return image, matrix

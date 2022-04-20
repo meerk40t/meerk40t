@@ -676,11 +676,6 @@ class RasterCut(CutObject):
         self.image = image
         self.tx = tx
         self.ty = ty
-
-        step = self.raster_step
-        self.step = step
-        assert step > 0
-
         direction = self.raster_direction
         traverse_x_axis = False
         traverse_top = False
@@ -725,8 +720,8 @@ class RasterCut(CutObject):
             overscan=self.overscan,
             offset_x=tx,
             offset_y=ty,
-            step_x=step,
-            step_y=step,
+            step_x=self.raster_step_x,
+            step_y=self.raster_step_y,
             filter=image_filter,
         )
 
@@ -760,7 +755,7 @@ class RasterCut(CutObject):
         return (
             self.width * self.height
             + (self.overscan * self.height)
-            + (self.height * self.step)
+            + (self.height * self.raster_step_y)
         )
 
     def extra(self):

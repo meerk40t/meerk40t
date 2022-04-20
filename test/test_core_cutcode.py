@@ -77,14 +77,16 @@ class TestCutcode(unittest.TestCase):
         # Add SVG Image
         svg_image = SVGImage()
         svg_image.image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
-        svg_image.values["raster_step"] = 3  # Raster should ignore this value.
+        svg_image.values["raster_step_x"] = 3  # Raster should ignore this value.
+        svg_image.values["raster_step_y"] = 3  # Raster should ignore this value.
         draw = ImageDraw.Draw(svg_image.image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
         laserop.add(svg_image, type="ref elem")
 
         # raster_step is default to 0 and not set.
-        laserop.raster_step = 2
+        laserop.raster_step_x = 2
+        laserop.raster_step_y = 2
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 1)
         rastercut = cutcode[0]
@@ -358,7 +360,8 @@ class TestCutcode(unittest.TestCase):
                 rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
             )
 
-            laserop.raster_step = i  # Raster_Step should be ignored, set for next loop
+            laserop.raster_step_x = i  # Raster_Step should be ignored, set for next loop
+            laserop.raster_step_y = i  # Raster_Step should be ignored, set for next loop
 
     def test_cutcode_direction_flags(self):
         """

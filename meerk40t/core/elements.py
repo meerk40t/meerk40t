@@ -535,8 +535,8 @@ class Elemental(Service):
                     if kind == "COLOR":
                         operand.append(Color(value))
                     elif kind == "VAL":
-                        if value == "step":
-                            operand.append(e.raster_step)
+                        if value == "dpi":
+                            operand.append(e.dpi)
                         elif value == "color":
                             operand.append(e.color)
                         elif value == "op":
@@ -604,10 +604,10 @@ class Elemental(Service):
             channel("----------")
 
         @self.console_option("color", "c", type=Color)
-        @self.console_option("default", "d", type=bool)
+        @self.console_option("default", "D", type=bool)
         @self.console_option("speed", "s", type=float)
         @self.console_option("power", "p", type=float)
-        @self.console_option("step", "S", type=int)
+        @self.console_option("dpi", "d", type=int)
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
         @self.console_option("parallel", "P", type=bool, action="store_true")
@@ -644,7 +644,7 @@ class Elemental(Service):
             default=None,
             speed=None,
             power=None,
-            step=None,
+            dpi=None,
             overscan=None,
             passes=None,
             parallel=False,
@@ -687,8 +687,8 @@ class Elemental(Service):
                     if passes is not None:
                         op.passes_custom = True
                         op.passes = passes
-                    if step is not None:
-                        op.raster_step = step
+                    if dpi is not None:
+                        op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
                     op.add(item, type="ref elem")
@@ -706,8 +706,8 @@ class Elemental(Service):
                 if passes is not None:
                     op.passes_custom = True
                     op.passes = passes
-                if step is not None:
-                    op.raster_step = step
+                if dpi is not None:
+                    op.dpi = dpi
                 if overscan is not None:
                     op.overscan = overscan
                 if data is not None:
@@ -741,24 +741,24 @@ class Elemental(Service):
                 self.add_op(op)
             return "ops", op_list
 
-        @self.console_argument("step_size", type=int, help=_("raster step size"))
+        @self.console_argument("dpi", type=int, help=_("raster dpi"))
         @self.console_command(
-            "step", help=_("step <raster-step-size>"), input_type="ops"
+            "dpi", help=_("dpi <raster-dpi>"), input_type="ops"
         )
-        def op_step(command, channel, _, data, step_size=None, **kwrgs):
-            if step_size is None:
+        def op_dpi(command, channel, _, data, dpi=None, **kwrgs):
+            if dpi is None:
                 found = False
                 for op in data:
                     if op.type in ("op raster", "op image"):
-                        step = op.raster_step
-                        channel(_("Step for %s is currently: %d") % (str(op), step))
+                        dpi = op.dpi
+                        channel(_("Step for %s is currently: %d") % (str(op), dpi))
                         found = True
                 if not found:
                     channel(_("No raster operations selected."))
                 return
             for op in data:
                 if op.type in ("op raster", "op image"):
-                    op.raster_step = step_size
+                    op.dpi = dpi
                     op.notify_update()
             return "ops", data
 
@@ -3734,19 +3734,19 @@ class Elemental(Service):
             node.power = float(power)
             self.signal("element_property_reload", node)
 
-        def radio_match(node, i=1, **kwargs):
-            return node.raster_step == i
+        def radio_match(node, i=100, **kwargs):
+            return node.dpi == i
 
-        @self.tree_submenu(_("Step"))
+        @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
+        @self.tree_values("dpi", (100, 250, 333, 500, 666, 750, 1000))
         @self.tree_operation(
-            _("Step %s") % "{i}",
-            node_type="op raster",
-            help=_("Change raster step values of operation"),
+            _("DPI %s") % "{dpi}",
+            node_type=("op raster", "elem image"),
+            help=_("Change dpi values"),
         )
-        def set_step_n(node, i=1, **kwargs):
-            node.raster_step = i
+        def set_step_n(node, dpi=1, **kwargs):
+            node.dpi = dpi
             self.signal("element_property_reload", node)
 
         def radio_match(node, passvalue=1, **kwargs):
@@ -4233,20 +4233,24 @@ class Elemental(Service):
             bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
             if bounds is None:
                 return
-            step = float(node.raster_step)
-            if step == 0:
-                step = 1
+            dpi = node.dpi
+            oneinch_x = self.device.physical_to_device_length("1in", 0)
+            oneinch_y = self.device.physical_to_device_length(0, "1in")
+            step_x = float(oneinch_x / dpi)
+            step_y = float(oneinch_y / dpi)
             xmin, ymin, xmax, ymax = bounds
 
             image = make_raster(
                 subitems,
                 bounds,
-                step=step,
+                step_x=step_x,
+                step_y=step_y,
             )
             image_element = SVGImage(image=image)
-            image_element.transform.post_scale(step, step)
+            image_element.transform.post_scale(step_x, step_y)
             image_element.transform.post_translate(xmin, ymin)
-            image_element.values["raster_step"] = step
+            image_element.values["raster_step_x"] = step_x
+            image_element.values["raster_step_y"] = step_y
             self.add_elem(image_element)
 
         def add_after_index(self, node=None):

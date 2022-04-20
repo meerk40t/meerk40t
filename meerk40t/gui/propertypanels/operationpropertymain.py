@@ -51,7 +51,7 @@ The number of Operation Passes can be changed extremely easily, but you cannot c
 Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."""
 )
 
-OPERATION_RASTERSTEP_TOOLTIP = _(
+OPERATION_DPI_TOOLTIP = _(
     """
 In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.
 
@@ -531,7 +531,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.05 + 4))
                 start = int(h * 0.9)
                 end = int(h * 0.1)
-                step = -self.operation.raster_step * factor
+                step = -1000 / self.operation.dpi * factor
             else:
                 # Top to Bottom or Crosshatch
                 if self.operation.raster_preference_top > 0:
@@ -543,7 +543,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.95 - 4))
                 start = int(h * 0.1)
                 end = int(h * 0.9)
-                step = self.operation.raster_step * factor
+                step = 1000 / self.operation.dpi * factor
             if step == 0:
                 step = 1
             for pos in range(start, end, step):
@@ -578,7 +578,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
                 start = int(w * 0.9)
                 end = int(w * 0.1)
-                step = -self.operation.raster_step * factor
+                step = -1000 / self.operation.dpi * factor
             else:
                 # Left to Right or Crosshatch
                 if self.operation.raster_preference_left > 0:
@@ -590,7 +590,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
                 start = int(w * 0.1)
                 end = int(w * 0.9)
-                step = self.operation.raster_step * factor
+                step = 1000 / self.operation.dpi * factor
             if step == 0:
                 step = 1
             for pos in range(start, end, step):
@@ -702,9 +702,9 @@ class RasterSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
 
-        self.text_raster_step = wx.TextCtrl(self, wx.ID_ANY, "1")
-        self.text_raster_step.SetToolTip(OPERATION_RASTERSTEP_TOOLTIP)
-        sizer_3.Add(self.text_raster_step, 0, 0, 0)
+        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
+        self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
+        sizer_3.Add(self.text_dpi, 0, 0, 0)
 
         sizer_6 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Overscan:"), wx.HORIZONTAL
@@ -766,8 +766,8 @@ class RasterSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
         self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
         self.Bind(
@@ -790,8 +790,8 @@ class RasterSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.raster_step is not None:
-            self.text_raster_step.SetValue(str(self.operation.raster_step))
+        if self.operation.dpi is not None:
+            self.text_dpi.SetValue(str(self.operation.dpi))
         if self.operation.overscan is not None:
             self.text_overscan.SetValue(str(self.operation.overscan))
         if self.operation.raster_direction is not None:
@@ -799,11 +799,11 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.raster_swing is not None:
             self.radio_directional_raster.SetSelection(self.operation.raster_swing)
 
-    def on_text_raster_step(
+    def on_text_dpi(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.raster_step = int(self.text_raster_step.GetValue())
+            self.operation.dpi = int(self.text_dpi.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_reload", self.operation)

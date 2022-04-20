@@ -71,11 +71,11 @@ class RasterOpNode(Node, Parameters):
             parts.append("✓")
         if self.passes_custom and self.passes != 1:
             parts.append("%dX" % self.passes)
-        parts.append("Raster{step}".format(step=self.raster_step))
+        parts.append(f"Raster{self.dpi}")
         if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
+            parts.append(f"{self.speed:g}mm/s")
         if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
+            parts.append(f"{self.frequency:g}kHz")
         if self.raster_swing:
             raster_dir = "-"
         else:
@@ -91,13 +91,13 @@ class RasterOpNode(Node, Parameters):
         elif self.raster_direction == 4:
             raster_dir += "X"
         else:
-            raster_dir += "%d" % self.raster_direction
+            raster_dir += str(self.raster_direction)
         parts.append(raster_dir)
         if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("±{overscan}".format(overscan=self.overscan))
+            parts.append(f"{self.power:g}ppi")
+        parts.append(f"±{self.overscan}")
         if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
+            parts.append(f"a:{self.acceleration}")
         return " ".join(parts)
 
     def __copy__(self):
@@ -193,8 +193,6 @@ class RasterOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        step = self.raster_step
-        assert step > 0
         direction = self.raster_direction
         for element in self.children:
             svg_image = element.object
@@ -203,12 +201,12 @@ class RasterOpNode(Node, Parameters):
 
             matrix = svg_image.transform
             pil_image = svg_image.image
-            pil_image, matrix = actualize(pil_image, matrix, step)
+            pil_image, matrix = actualize(pil_image, matrix, self.raster_step_x, self.raster_step_y)
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * step,
-                matrix.value_trans_y() + pil_image.height * step,
+                matrix.value_trans_x() + pil_image.width * self.raster_step_x,
+                matrix.value_trans_y() + pil_image.height * self.raster_step_y,
             )
             path = Path(
                 Polygon(

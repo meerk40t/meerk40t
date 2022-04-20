@@ -901,7 +901,7 @@ def make_actual(image_element, step_level=None):
         else:
             step_level = 1.0
     image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_level=step_level
+        image_element.image, image_element.transform, step_x=step_level
     )
     image_element.image_width, image_element.image_height = (
         image_element.image.width,
