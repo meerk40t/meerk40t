@@ -4234,8 +4234,8 @@ class Elemental(Service):
             if bounds is None:
                 return
             dpi = node.dpi
-            oneinch_x = self.device.physical_to_device_length("1in", 0)
-            oneinch_y = self.device.physical_to_device_length(0, "1in")
+            oneinch_x = self.device.physical_to_device_length("1in", 0)[0]
+            oneinch_y = self.device.physical_to_device_length(0, "1in")[1]
             step_x = float(oneinch_x / dpi)
             step_y = float(oneinch_y / dpi)
             xmin, ymin, xmax, ymax = bounds
