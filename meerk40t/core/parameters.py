@@ -454,18 +454,6 @@ class Parameters:
         self.settings["dwell_time"] = value
 
     @property
-    def horizontal_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 0 or self.raster_direction == 1
-        )
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 2 or self.raster_direction == 3
-        )
-
-    @property
     def raster_alt(self):
         return self.settings.get("raster_alt", False)
 

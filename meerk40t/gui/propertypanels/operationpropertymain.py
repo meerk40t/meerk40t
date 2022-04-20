@@ -544,9 +544,8 @@ class PanelStartPreference(wx.Panel):
                 start = int(h * 0.1)
                 end = int(h * 0.9)
                 step = 1000 / self.operation.dpi * factor
-            if step == 0:
-                step = 1
-            for pos in range(start, end, step):
+            pos = start
+            while min(start,end) <= pos <= max(start,end):
                 # Primary Line Horizontal Raster
                 r_start.append((w * 0.1, pos))
                 r_end.append((w * 0.9, pos))
@@ -562,6 +561,7 @@ class PanelStartPreference(wx.Panel):
                 last = r_start[-1]
                 if not unidirectional:
                     right = not right
+                pos += step
         if direction == 2 or direction == 3 or direction == 4:
             # Direction Line
             d_start.append((w * 0.05, h * 0.05))
@@ -591,9 +591,8 @@ class PanelStartPreference(wx.Panel):
                 start = int(w * 0.1)
                 end = int(w * 0.9)
                 step = 1000 / self.operation.dpi * factor
-            if step == 0:
-                step = 1
-            for pos in range(start, end, step):
+            pos = start
+            while min(start,end) <= pos <= max(start,end):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
@@ -609,6 +608,7 @@ class PanelStartPreference(wx.Panel):
                 last = r_start[-1]
                 if not unidirectional:
                     top = not top
+                pos += step
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
         self.direction_lines = d_start, d_end

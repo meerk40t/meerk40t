@@ -73,9 +73,9 @@ class RasterOpNode(Node, Parameters):
             parts.append("%dX" % self.passes)
         parts.append(f"Raster{self.dpi}")
         if self.speed is not None:
-            parts.append(f"{self.speed:g}mm/s")
+            parts.append(f"{float(self.speed):g}mm/s")
         if self.frequency is not None:
-            parts.append(f"{self.frequency:g}kHz")
+            parts.append(f"{float(self.frequency):g}kHz")
         if self.raster_swing:
             raster_dir = "-"
         else:
@@ -94,7 +94,7 @@ class RasterOpNode(Node, Parameters):
             raster_dir += str(self.raster_direction)
         parts.append(raster_dir)
         if self.power is not None:
-            parts.append(f"{self.power:g}ppi")
+            parts.append(f"{float(self.power):g}ppi")
         parts.append(f"±{self.overscan}")
         if self.acceleration_custom:
             parts.append(f"a:{self.acceleration}")
