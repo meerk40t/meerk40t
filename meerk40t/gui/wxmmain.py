@@ -272,6 +272,9 @@ class CustomStatusBar(wx.StatusBar):
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
+        if self.cb_enabled and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke) and len(message)>0:
+            # Someone wanted to have a message while displaying some control elements
+            return
         super().SetStatusText(message, panel)
 
     @property
@@ -286,7 +289,7 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_rotate.Show()
             self.cb_skew.Show()
             if self.context.show_colorbar:
-                if self._cb_enabled == cb_enabled:
+                if self._cb_enabled != cb_enabled:
                     # Keep old values...
                     for idx, text in enumerate(self.status_text):
                         self.previous_text[idx] = text
@@ -418,6 +421,8 @@ class CustomStatusBar(wx.StatusBar):
             toosmall = wd<=100
             rect.x += 1
             rect.y += 1
+            old_y = rect.y
+            old_ht = rect.height
             rect.width = wd
             if toosmall:
                 if self.cb_enabled:
@@ -425,7 +430,14 @@ class CustomStatusBar(wx.StatusBar):
             else:
                 if self.cb_enabled:
                     self.strokewidth_label.Show()
+                # Centering in Y
+                ht = self.strokewidth_label.GetCharHeight()
+                rect.y = old_y + (old_ht - ht) / 2
+                rect.height = ht
                 self.strokewidth_label.SetRect(rect)
+                # reset to previous values
+                rect.y = old_y
+                rect.height = old_ht
                 rect.x += wd
                 # Make the next two elements smaller
                 wd = wd / 2
