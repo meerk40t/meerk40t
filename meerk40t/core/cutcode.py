@@ -673,12 +673,11 @@ class CubicCut(CutObject):
 
 class RasterCut(CutObject):
     """
-    Rastercut accepts an image of type "L" or "1", and an offset in the x and y and information whether
-    this is a crosshatched cut or not.
+    Rastercut accepts an image of type "L" or "1", and an offset in the x and y.
     """
 
     def __init__(
-        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None, inverted=False,
     ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
@@ -692,48 +691,52 @@ class RasterCut(CutObject):
         assert step > 0
 
         direction = self.raster_direction
-        traverse = 0
+        traverse_x_axis = False
+        traverse_top = False
+        traverse_left = False
+        traverse_bidirectional = False
         if direction == 0 or direction == 4 and not crosshatch:
-            traverse |= X_AXIS
-            traverse |= TOP
+            traverse_x_axis = True
+            traverse_top = True
         elif direction == 1:
-            traverse |= X_AXIS
-            traverse |= BOTTOM
+            traverse_x_axis = True
+            traverse_top = False
         elif direction == 2 or direction == 4 and crosshatch:
-            traverse |= Y_AXIS
-            traverse |= RIGHT
+            traverse_x_axis = False
+            traverse_left = False
         elif direction == 3:
-            traverse |= Y_AXIS
-            traverse |= LEFT
+            traverse_x_axis = False
+            traverse_left = True
         if self.raster_swing:
-            traverse |= UNIDIRECTIONAL
+            traverse_bidirectional = True
         width, height = image.size
         self.width = width
         self.height = height
+        if inverted:
+            skip_pixel = 255
 
-        def image_filter(pixel):
-            return (255 - pixel) / 255.0
-
-        overscan = self.overscan
-        if overscan is None:
-            overscan = 20
+            def image_filter(pixel):
+                return pixel / 255.0
         else:
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                overscan = 20
-        self.overscan = overscan
+            skip_pixel = 0
+
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
         self.plot = RasterPlotter(
-            image.load(),
-            width,
-            height,
-            traverse,
-            0,
-            overscan,
-            tx,
-            ty,
-            step,
-            image_filter,
+            data=image.load(),
+            width=width,
+            height=height,
+            traverse_x_axis=traverse_x_axis,
+            traverse_top=traverse_top,
+            traverse_left=traverse_left,
+            traverse_bidirectional=traverse_bidirectional,
+            skip_pixel=skip_pixel,
+            overscan=self.overscan,
+            offset_x=tx,
+            offset_y=ty,
+            step_x=step,
+            step_y=step,
+            filter=image_filter,
         )
 
     def reversible(self):
