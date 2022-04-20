@@ -5359,7 +5359,7 @@ class Elemental(Service):
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
 
-    def set_emphasized_by_position(self, position):
+    def set_emphasized_by_position(self, position, keep_old_selection=False):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -5379,7 +5379,18 @@ class Elemental(Service):
             if bounds is None:
                 continue
             if contains(bounds, position):
-                e_list = [e]
+                e_list = []
+                if keep_old_selection:
+                    for obj in self.elems(emphasized=True):
+                        e_list.append(obj)
+                    if self._emphasized_bounds is not None:
+                        cc = self._emphasized_bounds
+                        bounds= (
+                            min(bounds[0], cc[0]),
+                            min(bounds[1], cc[1]),
+                            max(bounds[2], cc[2]),
+                            max(bounds[3], cc[3]))
+                e_list.append(e)
                 self._emphasized_bounds = bounds
                 self.set_emphasis(e_list)
                 return

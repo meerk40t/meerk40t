@@ -1913,7 +1913,7 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos, True)
             # Check if reference is still existing
             self.scene.validate_reference()
             if not elements.has_emphasis():
@@ -1924,7 +1924,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos, False)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
 
