@@ -38,7 +38,10 @@ from .icons import (
     icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
-    icons8_union_50,
+    icon_cag_subtract_50,
+    icon_cag_common_50,
+    icon_cag_union_50,
+    icon_cag_xor_50,
     icons8_vector_50,
     icons_centerize,
     icons_evenspace_horiz,
@@ -739,7 +742,7 @@ class MeerK40t(MWindow):
             "button/geometry/Union",
             {
                 "label": _("Union"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_union_50,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
                 "size": buttonsize,
@@ -749,7 +752,7 @@ class MeerK40t(MWindow):
             "button/geometry/Difference",
             {
                 "label": _("Difference"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_subtract_50,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
                 "size": buttonsize,
@@ -759,7 +762,7 @@ class MeerK40t(MWindow):
             "button/geometry/Xor",
             {
                 "label": _("Xor"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_xor_50,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
                 "size": buttonsize,
@@ -769,7 +772,7 @@ class MeerK40t(MWindow):
             "button/geometry/Intersection",
             {
                 "label": _("Intersection"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_common_50,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
                 "size": buttonsize,
