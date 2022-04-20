@@ -436,14 +436,14 @@ class GRBLDriver(Parameters):
             line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
-        line.append("X%f" % x)
-        line.append("Y%f" % y)
+        line.append("X%.3f" % x)
+        line.append("Y%.3f" % y)
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%f" % (self.power * self.on_value))
+                line.append("S%.1f" % (self.power * self.on_value))
             self.power_dirty = False
         if self.speed_dirty:
-            line.append("F%f" % self.feed_convert(self.speed))
+            line.append("F%.1f" % self.feed_convert(self.speed))
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
