@@ -2,16 +2,7 @@ from abc import ABC
 from typing import Optional
 
 from ..svgelements import Color, Path, Point
-from ..tools.rasterplotter import (
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOP,
-    UNIDIRECTIONAL,
-    X_AXIS,
-    Y_AXIS,
-    RasterPlotter,
-)
+from ..tools.rasterplotter import RasterPlotter
 from ..tools.zinglplotter import ZinglPlotter
 from .parameters import Parameters
 
