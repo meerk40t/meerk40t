@@ -3188,6 +3188,7 @@ class Elemental(Service):
                 drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
                 raise CommandSyntaxError
+            self.signal("tree_changed")
             return "tree", data
 
         @self.console_argument("node", help="Node address for menu")
@@ -3337,6 +3338,7 @@ class Elemental(Service):
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
             self.remove_nodes(data)
+            self.signal("tree_changed")
             self.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
