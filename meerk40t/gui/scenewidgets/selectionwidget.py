@@ -346,19 +346,25 @@ class RotationWidget(Widget):
         inner_ht_half = (self.master.bottom - self.master.top) / 2
         dx = abs(min(0, inner_wd_half - self.inner))
         dy = abs(min(0, inner_ht_half - self.inner))
+        if self.master.handle_outside:
+            offset_x = self.inner/2
+            offset_y = self.inner/2
+        else:
+            offset_x = 0
+            offset_y = 0
 
         if self.index == 0:
-            pos_x = self.master.left - dx
-            pos_y = self.master.top - dy
+            pos_x = self.master.left - dx - offset_x
+            pos_y = self.master.top - dy - offset_y
         elif self.index == 1:
-            pos_x = self.master.right + dx
-            pos_y = self.master.top - dy
+            pos_x = self.master.right + dx + offset_x
+            pos_y = self.master.top - dy - offset_y
         elif self.index == 2:
-            pos_x = self.master.right + dx
-            pos_y = self.master.bottom + dy
+            pos_x = self.master.right + dx + offset_x
+            pos_y = self.master.bottom + dy + offset_y
         else:
-            pos_x = self.master.left - dx
-            pos_y = self.master.bottom + dy
+            pos_x = self.master.left - dx - offset_x
+            pos_y = self.master.bottom + dy + offset_y
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
@@ -635,21 +641,27 @@ class CornerWidget(Widget):
         # Selection very small ? Relocate Handle
         inner_wd_half = (self.master.right - self.master.left) / 2
         inner_ht_half = (self.master.bottom - self.master.top) / 2
+        if self.master.handle_outside:
+            offset_x = self.half
+            offset_y = self.half
+        else:
+            offset_x = 0
+            offset_y = 0
         dx = abs(min(0, inner_wd_half - 2 * self.half))
         dy = abs(min(0, inner_ht_half - 2 * self.half))
 
         if self.index == 0:
-            pos_x = self.master.left - dx
-            pos_y = self.master.top - dy
+            pos_x = self.master.left - dx - offset_x
+            pos_y = self.master.top - dy - offset_y
         elif self.index == 1:
-            pos_x = self.master.right + dx
-            pos_y = self.master.top - dy
+            pos_x = self.master.right + dx + offset_x
+            pos_y = self.master.top - dy - offset_y
         elif self.index == 2:
-            pos_x = self.master.right + dx
-            pos_y = self.master.bottom + dy
+            pos_x = self.master.right + dx + offset_x
+            pos_y = self.master.bottom + dy + offset_y
         else:
-            pos_x = self.master.left - dx
-            pos_y = self.master.bottom + dy
+            pos_x = self.master.left - dx - offset_x
+            pos_y = self.master.bottom + dy + offset_y
         self.set_position(pos_x - self.half, pos_y - self.half)
 
     def process_draw(self, gc):
@@ -826,17 +838,24 @@ class SideWidget(Widget):
         dx = abs(min(0, inner_wd_half - 2 * self.half))
         dy = abs(min(0, inner_ht_half - 2 * self.half))
 
+        if self.master.handle_outside:
+            offset_x = self.half
+            offset_y = self.half
+        else:
+            offset_x = 0
+            offset_y = 0
+
         if self.index == 0:
             pos_x = mid_x
-            pos_y = self.master.top - dy
+            pos_y = self.master.top - dy - offset_y
         elif self.index == 1:
-            pos_x = self.master.right + dx
+            pos_x = self.master.right + dx + offset_x
             pos_y = mid_y
         elif self.index == 2:
             pos_x = mid_x
-            pos_y = self.master.bottom + dy
+            pos_y = self.master.bottom + dy + offset_y
         else:
-            pos_x = self.master.left - dx
+            pos_x = self.master.left - dx - offset_x
             pos_y = mid_y
         self.set_position(pos_x - self.half, pos_y - self.half)
 
@@ -1000,11 +1019,18 @@ class SkewWidget(Widget):
         self.update()
 
     def update(self):
+        if self.master.handle_outside:
+            offset_x = self.half
+            offset_y = self.half
+        else:
+            offset_x = 0
+            offset_y = 0
+
         if self.is_x:
             pos_x = self.master.left + 3 / 4 * (self.master.right - self.master.left)
-            pos_y = self.master.bottom
+            pos_y = self.master.bottom + offset_y
         else:
-            pos_x = self.master.right
+            pos_x = self.master.right + offset_x
             pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
 
@@ -1340,7 +1366,13 @@ class ReferenceWidget(Widget):
         self.update()
 
     def update(self):
-        pos_x = self.master.left
+        if self.master.handle_outside:
+            offset_x = self.half
+            offset_y = self.half
+        else:
+            offset_x = 0
+            offset_y = 0
+        pos_x = self.master.left - offset_x
         pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
         self.set_position(pos_x - self.half, pos_y - self.half)
 
@@ -1619,6 +1651,7 @@ class SelectionWidget(Widget):
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
+                # Option to draw selection Handle outside of box to allow for better visibility
 
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)
@@ -1652,6 +1685,10 @@ class SelectionWidget(Widget):
         self.show_border = True
         self.last_angle = None
         self.start_angle = None
+
+    @property
+    def handle_outside(self):
+        return self.scene.context.outer_handles
 
     def hit(self):
         elements = self.scene.context.elements
@@ -1944,7 +1981,7 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos, True)
             # Check if reference is still existing
             self.scene.validate_reference()
             if not elements.has_emphasis():
@@ -1955,7 +1992,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos)
+            elements.set_emphasized_by_position(space_pos, False)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
 

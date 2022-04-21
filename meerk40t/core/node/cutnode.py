@@ -25,6 +25,11 @@ class CutNode(Node):
     def __len__(self):
         return 1
 
+    def default_map(self, default_map=None):
+        default_map = super(CutNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Cutcode"
+        return default_map
+
     def drop(self, drag_node):
         return False
 

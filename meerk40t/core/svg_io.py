@@ -376,7 +376,7 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem circle", id=ident)
+                context_node.add(element, type="elem ellipse", id=ident)
                 e_list.append(element)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():

@@ -14,6 +14,7 @@ class ElementsWidget(Widget):
     def __init__(self, scene, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
+        self.key_shift_pressed = False
 
     def hit(self):
         return HITCHAIN_HIT
@@ -54,9 +55,16 @@ class ElementsWidget(Widget):
         # gc.PopState()
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == "leftclick":
+        if event_type == "kb_shift_release":
+            if self.key_shift_pressed:
+                self.key_shift_pressed = False
+        elif event_type == "kb_shift_press":
+            if not self.key_shift_pressed:
+                self.key_shift_pressed = True
+        elif event_type == "leftclick":
             elements = self.scene.context.elements
-            elements.set_emphasized_by_position(space_pos)
+            keep_old = self.key_shift_pressed
+            elements.set_emphasized_by_position(space_pos, keep_old)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP
