@@ -44,6 +44,30 @@ def register_panel_tree(window, context):
     window.on_pane_add(pane)
     context.register("pane/tree", pane)
 
+    context.register("format/op cut", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register("format/op engrave", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register("format/op hatch", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register("format/op raster", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register("format/op image", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register("format/op dots", "{enabled}{element_type} {dwell_time}ms dwell")
+    context.register("format/op console", "{enabled}{command}")
+    context.register("format/elem ellipse", "{element_type} {id}")
+    context.register("format/elem image", "{element_type} {id}")
+    context.register("format/elem line", "{element_type} {id}")
+    context.register("format/elem path", "{element_type} {id}")
+    context.register("format/elem point", "{element_type} {id}")
+    context.register("format/elem polyline", "{element_type} {id}")
+    context.register("format/elem rect", "{element_type} {id}")
+    context.register("format/elem text", "{element_type} {id}: {text}")
+    context.register("format/ref elem", "{element_type}: {ref_id}")
+    context.register("format/group", "{element_type} {id}")
+    context.register("format/file", "{element_type}: {filename}")
+    context.register("format/lasercode", "{element_type}")
+    context.register("format/cutcode", "{element_type}")
+    context.register("format/branch ops", _("Operations"))
+    context.register("format/branch elems", _("Elements"))
+    context.register("format/branch reg", _("Regmarks"))
+
 
 class TreePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -685,19 +709,20 @@ class ShadowTree:
 
     def update_decorations(self, node):
         """
-        Updates the label if the label is currently blank or force was set to true.
+        Updates the decorations for a particular node/tree item
+
         @param node:
-        @param force:
         @return:
         """
-        # node.label = node.create_label()
         self.set_icon(node)
         if node.item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
 
-        self.wxtree.SetItemText(node.item, node.label)
+        formatter = self.elements.lookup(f"format/{node.type}")
+        label = node.create_label(formatter)
+        self.wxtree.SetItemText(node.item, label)
         try:
             stroke = node.object.stroke
             wxcolor = Color(stroke).bgr
@@ -778,6 +803,7 @@ class ShadowTree:
             event.Skip()
         else:
             event.Allow()
+            self.rebuild_tree()
         self.dragging_nodes = None
 
     def on_item_right_click(self, event):

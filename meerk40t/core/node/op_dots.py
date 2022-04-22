@@ -80,6 +80,14 @@ class DotsOpNode(Node, Parameters):
     def __copy__(self):
         return DotsOpNode(self)
 
+    def default_map(self, default_map=None):
+        default_map = super(DotsOpNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Dots"
+        default_map['enabled'] = "(Disabled) " if not self.output else ""
+        default_map['dwell_time'] = "default"
+        default_map.update(self.settings)
+        return default_map
+
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
             if drag_node.type == "elem image":
