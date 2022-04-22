@@ -451,7 +451,7 @@ class Node:
         reference_node.type = "reference"
         reference_node.id = node.id
         reference_node._parent = self
-        reference_node._root = self._root
+        reference_node._root = node._root
         if pos is None:
             self._children.append(reference_node)
         else:

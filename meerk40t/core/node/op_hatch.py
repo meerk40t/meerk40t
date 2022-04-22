@@ -54,11 +54,7 @@ class HatchOpNode(Node, Parameters):
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, Node):
-                self.add_reference(obj)
-            elif isinstance(obj, SVGElement):
-                self.add_reference(obj.node)
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
