@@ -629,7 +629,7 @@ def needs_actualization(image_element, step_x=None, step_y=None):
     return m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_x
 
 
-def make_actual(image_element, step_level=None):
+def make_actual(image_element, step_x=None, step_y=None):
     """
     Makes PIL image actual in that it manipulates the pixels to actually exist
     rather than simply apply the transform on the image to give the resulting image.
@@ -644,14 +644,14 @@ def make_actual(image_element, step_level=None):
     if not isinstance(image_element, SVGImage):
         return
 
-    if step_level is None:
+    if step_x is None:
         # If we are not told the step amount either draw it from the object or set it to default.
         if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
+            step_x = float(image_element.values["raster_step"])
         else:
-            step_level = 1.0
+            step_x = 1.0
     image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_x=step_level
+        image_element.image, image_element.transform, step_x=step_x, step_y=step_y
     )
     image_element.image_width, image_element.image_height = (
         image_element.image.width,
