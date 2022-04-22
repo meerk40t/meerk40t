@@ -664,7 +664,14 @@ class ShadowTree:
                     c = Color("black")
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return
-            elif node.type.startswith('elem') or node.type.startswith('ref'):
+            elif node.type == 'reference':
+                image = self.renderer.make_raster(
+                    node.node, node.node.object.bbox(), width=20, height=20, bitmap=True
+                )
+                if image is not None:
+                    image_id = self.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+            elif node.type.startswith('elem'):
                 image = self.renderer.make_raster(
                     node, data_object.bbox(), width=20, height=20, bitmap=True
                 )
@@ -865,7 +872,7 @@ class ShadowTree:
         for i in range(len(emphasized)):
             node = emphasized[i]
             if node.type == "reference":
-                emphasized[i] = node.object.node
+                emphasized[i] = node.node
             elif node.type == "op":
                 for n in node.flat(types=("reference",), cascade=False):
                     try:
