@@ -317,9 +317,12 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
-        kernel.register("property/ElemNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/ElemNode/TextProperty", TextPropertyPanel)
-        kernel.register("property/ElemNode/ImageProperty", ImagePropertyPanel)
+        kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

@@ -26,10 +26,12 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Viewbox,
+    Move,
+    Close,
+    Line,
 )
 from .cutcode import CutCode
 from .element_types import *
-from .node.node import OP_PRIORITIES, is_dot, is_straight_line, label_truncate_re
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -103,6 +105,40 @@ def plugin(kernel, lifecycle=None):
 def reversed_enumerate(collection: list):
     for i in range(len(collection) - 1, -1, -1):
         yield i, collection[i]
+
+
+OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op hatch"]
+
+
+def is_dot(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Close):
+            return True
+        if isinstance(path[1], Line) and path[1].length() == 0:
+            return True
+    return False
+
+
+def is_straight_line(element):
+    if not isinstance(element, Shape):
+        return False
+    if isinstance(element, Path):
+        path = element
+    else:
+        path = element.segments()
+
+    if len(path) == 2 and isinstance(path[0], Move):
+        if isinstance(path[1], Line) and path[1].length() > 0:
+            return True
+    return False
+
 
 
 class Elemental(Service):
@@ -3152,6 +3188,7 @@ class Elemental(Service):
                 drop_node.drop(drag_node)
             except (IndexError, AttributeError, ValueError):
                 raise CommandSyntaxError
+            self.signal("tree_changed")
             return "tree", data
 
         @self.console_argument("node", help="Node address for menu")
@@ -3301,6 +3338,7 @@ class Elemental(Service):
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
             self.remove_nodes(data)
+            self.signal("tree_changed")
             self.signal("refresh_scene", 0)
             return "tree", [self._tree]
 
@@ -3563,6 +3601,16 @@ class Elemental(Service):
         _ = kernel.translation
         # --------------------------- TREE OPERATIONS ---------------------------
 
+        def is_regmark(node):
+            result = False
+            try:
+                if node._parent.type=="branch reg":
+                    result = True
+            except AttributeError:
+                pass
+            return result
+
+
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(
@@ -3610,6 +3658,7 @@ class Elemental(Service):
             if activate is not None:
                 activate(node)
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_operation(
             _("Ungroup elements"), node_type=("group", "file"), help=""
         )
@@ -3618,6 +3667,7 @@ class Elemental(Service):
                 node.insert_sibling(n)
             node.remove_node()  # Removing group/file node.
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
             # group_node = node.parent.add_sibling(node, type="group", name="Group")
@@ -4308,11 +4358,13 @@ class Elemental(Service):
 
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_operation(_("Make 1 copy"), node_type=elem_nodes, help="")
         def duplicate_element_1(node, **kwargs):
             duplicate_element_n(node, copies=1, **kwargs)
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
@@ -4326,6 +4378,7 @@ class Elemental(Service):
             self.classify(adding_elements)
             self.set_emphasis(None)
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional(
             lambda node: isinstance(node.object, Shape)
             and not isinstance(node.object, Path)
@@ -4337,6 +4390,7 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Horizontally"),
@@ -4353,6 +4407,7 @@ class Elemental(Service):
             center_y = (bounds[3] + bounds[1]) / 2.0
             self("scale -1 1 %f %f\n" % (center_x, center_y))
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_submenu(_("Flip"))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
@@ -4371,6 +4426,7 @@ class Elemental(Service):
             self("scale 1 -1 %f %f\n" % (center_x, center_y))
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 25, 1, -1)
@@ -4392,7 +4448,8 @@ class Elemental(Service):
             self("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
-        @self.tree_conditional_try(lambda node: not node.object.lock)
+        @self.tree_conditional(lambda node: not is_regmark(node) )
+        @self.tree_conditional_try(lambda node: not node.object.lock )
         @self.tree_submenu(_("Rotate"))
         @self.tree_values(
             "angle",
@@ -4440,6 +4497,7 @@ class Elemental(Service):
             self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
             self.signal("ext-modified")
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
             _("Reify User Changes"), node_type=elem_group_nodes, help=""
@@ -4448,12 +4506,14 @@ class Elemental(Service):
             self("reify\n")
             self.signal("ext-modified")
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional(lambda node: isinstance(node.object, Path))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(_("Break Subpaths"), node_type=elem_nodes, help="")
         def break_subpath_elem(node, **kwargs):
             self("element subpath\n")
 
+        @self.tree_conditional(lambda node: not is_regmark(node) )
         @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional_try(lambda node: not node.object.lock)
         @self.tree_operation(
@@ -4470,6 +4530,24 @@ class Elemental(Service):
         )
         def merge_elements(node, **kwargs):
             self("element merge\n")
+
+        @self.tree_conditional(lambda node: is_regmark(node) )
+        @self.tree_separator_before()
+        @self.tree_operation(_("Move back to elements"), node_type=elem_group_nodes, help="")
+        def move_back(node, copies=1, **kwargs):
+            # Drag and Drop
+            drop_node = self.elem_branch
+            drop_node.drop(node)
+            self.signal("tree_changed")
+
+        @self.tree_conditional(lambda node: not is_regmark(node) )
+        @self.tree_separator_before()
+        @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
+        def move_to_regmark(node, copies=1, **kwargs):
+            # Drag and Drop
+            drop_node = self.reg_branch
+            drop_node.drop(node)
+            self.signal("tree_changed")
 
         def radio_match(node, i=0, **kwargs):
             if "raster_step" in node.object.values:
@@ -4780,7 +4858,7 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": label_truncate_re.sub("", str(node.label)),
+                "name": str(node.label),
                 "label": str(node.label),
             }
 
@@ -4891,6 +4969,7 @@ class Elemental(Service):
             return func
 
         return decor
+
 
     @staticmethod
     def tree_reference(node):
@@ -5323,7 +5402,7 @@ class Elemental(Service):
             obj.transform.post_translate(dx, dy)
             obj.node.modified()
 
-    def set_emphasized_by_position(self, position):
+    def set_emphasized_by_position(self, position, keep_old_selection=False):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -5343,7 +5422,18 @@ class Elemental(Service):
             if bounds is None:
                 continue
             if contains(bounds, position):
-                e_list = [e]
+                e_list = []
+                if keep_old_selection:
+                    for obj in self.elems(emphasized=True):
+                        e_list.append(obj)
+                    if self._emphasized_bounds is not None:
+                        cc = self._emphasized_bounds
+                        bounds= (
+                            min(bounds[0], cc[0]),
+                            min(bounds[1], cc[1]),
+                            max(bounds[2], cc[2]),
+                            max(bounds[3], cc[3]))
+                e_list.append(e)
                 self._emphasized_bounds = bounds
                 self.set_emphasis(e_list)
                 return
@@ -5685,15 +5775,15 @@ class Elemental(Service):
                 special_ops.append(op)
         if rasters_one_pass is not False:
             rasters_one_pass = True
-
-        debug(
-            "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
-                passes="one pass" if rasters_one_pass else "two passes",
-                v=len(vector_ops),
-                r=len(raster_ops),
-                s=len(special_ops),
+        if debug:
+            debug(
+                "classify: ops: {passes}, {v} vectors, {r} rasters, {s} specials".format(
+                    passes="one pass" if rasters_one_pass else "two passes",
+                    v=len(vector_ops),
+                    r=len(raster_ops),
+                    s=len(special_ops),
+                )
             )
-        )
 
         elements_to_classify = []
         for element in elements:
@@ -5702,11 +5792,12 @@ class Elemental(Service):
                 continue
             if hasattr(element, "operation"):
                 add_op_function(element)
-                debug(
-                    "classify: added element as op: {op}".format(
-                        op=str(op),
+                if debug:
+                    debug(
+                        "classify: added element as op: {op}".format(
+                            op=str(op),
+                        )
                     )
-                )
                 continue
 
             dot = is_dot(element)
@@ -5743,12 +5834,12 @@ class Elemental(Service):
                     straight_line,
                 )
             )
-
-        debug(
-            "classify: elements: {e} elements to classify".format(
-                e=len(elements_to_classify),
+        if debug:
+            debug(
+                "classify: elements: {e} elements to classify".format(
+                    e=len(elements_to_classify),
+                )
             )
-        )
 
         # Handle edge cases
         # Convert raster elements with white fill and no raster elements behind to vector
@@ -5789,11 +5880,12 @@ class Elemental(Service):
                         break
                 else:
                     # No rasters underneath - convert to vector
-                    debug(
-                        "classify: edge-case: treating raster as vector: {label}".format(
-                            label=self.element_label_id(element),
+                    if debug:
+                        debug(
+                            "classify: edge-case: treating raster as vector: {label}".format(
+                                label=self.element_label_id(element),
+                            )
                         )
-                    )
 
                     element_vector = True
                     elements_to_classify[i] = (
@@ -5839,11 +5931,12 @@ class Elemental(Service):
                     # We have an element with a matching color
                     if self.bbox_overlap(bbox, e[0].bbox()):
                         # Rasters on top - convert to raster
-                        debug(
-                            "classify: edge-case: treating vector as raster: {label}".format(
-                                label=self.element_label_id(element),
+                        if debug:
+                            debug(
+                                "classify: edge-case: treating vector as raster: {label}".format(
+                                    label=self.element_label_id(element),
+                                )
                             )
-                        )
 
                         element_vector = False
                         elements_to_classify[i] = (
@@ -5866,11 +5959,12 @@ class Elemental(Service):
             if isinstance(element, (Shape, SVGText)) and (
                 element_color is None or element_color.rgb is None
             ):
-                debug(
-                    "classify: not classifying -  no stroke or fill color: {e}".format(
-                        e=self.element_label_id(element, short=False),
+                if debug:
+                    debug(
+                        "classify: not classifying -  no stroke or fill color: {e}".format(
+                            e=self.element_label_id(element, short=False),
+                        )
                     )
-                )
                 continue
 
             element_added = False
@@ -5910,11 +6004,12 @@ class Elemental(Service):
                     or element.stroke.rgb is None
                     or element.stroke.rgb == 0xFFFFFF
                 ):
-                    debug(
-                        "classify: not classifying - white element at back: {e}".format(
-                            e=self.element_label_id(element, short=False),
+                    if debug:
+                        debug(
+                            "classify: not classifying - white element at back: {e}".format(
+                                e=self.element_label_id(element, short=False),
+                            )
                         )
-                    )
                     continue
 
             elif rasters_one_pass:
@@ -5982,11 +6077,12 @@ class Elemental(Service):
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise refelem is not created.
                 op.add(element, type="ref elem", pos=element_pos)
-                debug(
-                    "classify: added op: {op}".format(
-                        op=str(op),
+                if debug:
+                    debug(
+                        "classify: added op: {op}".format(
+                            op=str(op),
+                        )
                     )
-                )
 
         # End loop "for element in elements"
 
@@ -5997,11 +6093,12 @@ class Elemental(Service):
         # It is ESSENTIAL that elements are added to operations in the same order as original.
         # The easiest way to ensure this is to create groups using a copy of raster_elements and
         # then ensure that groups have elements in the same order as in raster_elements.
-        debug(
-            "classify: raster pass two: {n} elements".format(
-                n=len(raster_elements),
+        if debug:
+            debug(
+                "classify: raster pass two: {n} elements".format(
+                    n=len(raster_elements),
+                )
             )
-        )
 
         # Debugging print statements have been left in as comments as this code can
         # be complex to debug and even print statements can be difficult to craft
@@ -6029,12 +6126,12 @@ class Elemental(Service):
 
                     # print("g1+g2", list(map(lambda e: e[0].id,g1)))
                     # print("reduced", list(map(lambda g: list(map(lambda e: e[0].id,g)), raster_groups)))
-
-        debug(
-            "classify: condensed to {n} raster groups".format(
-                n=len(raster_groups),
+        if debug:
+            debug(
+                "classify: condensed to {n} raster groups".format(
+                    n=len(raster_groups),
+                )
             )
-        )
 
         # Remove bbox and add element colour from groups
         # Change `list` to `groups` which are a list of tuples, each tuple being element and its classification color
@@ -6070,13 +6167,14 @@ class Elemental(Service):
                             groups_count += 1
                             break  # to next group
                 if elements_to_add:
-                    debug(
-                        "classify: adding {e} elements in {g} groups to {label}".format(
-                            e=len(elements_to_add),
-                            g=groups_count,
-                            label=str(op),
+                    if debug:
+                        debug(
+                            "classify: adding {e} elements in {g} groups to {label}".format(
+                                e=len(elements_to_add),
+                                g=groups_count,
+                                label=str(op),
+                            )
                         )
-                    )
                     # Create simple list of elements sorted by original element order
                     elements_to_add = sorted(
                         [e[0] for e in elements_to_add], key=raster_elements.index
@@ -6098,13 +6196,13 @@ class Elemental(Service):
         elements_to_add = sorted(
             [e[0] for e in elements_to_add], key=raster_elements.index
         )
-
-        debug(
-            "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
-                e=len(elements_to_add),
-                g=len(raster_groups),
+        if debug:
+            debug(
+                "classify: {e} elements in {g} raster groups to add to default raster op(s)".format(
+                    e=len(elements_to_add),
+                    g=len(raster_groups),
+                )
             )
-        )
 
         # Remaining elements are added to one of the following groups of operations:
         # 1. to default raster ops if they exist; otherwise
@@ -6129,14 +6227,16 @@ class Elemental(Service):
             op = RasterOpNode(color="Transparent", default=True)
             default_raster_ops.append(op)
             add_op_function(op)
-            debug(
-                "classify: default raster op added: {op}".format(
-                    op=str(op),
+            if debug:
+                debug(
+                    "classify: default raster op added: {op}".format(
+                        op=str(op),
+                    )
                 )
-            )
         else:
-            for op in default_raster_ops:
-                debug("classify: default raster op selected: {op}".format(op=str(op)))
+            if debug:
+                for op in default_raster_ops:
+                    debug("classify: default raster op selected: {op}".format(op=str(op)))
 
         for element in elements_to_add:
             for op in default_raster_ops:

@@ -1,26 +1,26 @@
 from meerk40t.core.node.node import Node
 
 
-class PointNode(Node):
+class LineNode(Node):
     """
-    PointNode is the bootstrapped node type for the 'elem path' type.
+    LineNode is the bootstrapped node type for the 'elem line' type.
     """
 
     def __init__(self, data_object, **kwargs):
-        super(PointNode, self).__init__(data_object)
+        super(LineNode, self).__init__(data_object)
         self.last_transform = None
         data_object.node = self
 
     def __repr__(self):
-        return "PointNode('%s', %s, %s)" % (
+        return "RectNode('%s', %s, %s)" % (
             self.type,
             str(self.object),
             str(self._parent),
         )
 
     def default_map(self, default_map=None):
-        default_map = super(PointNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Point"
+        default_map = super(LineNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Line"
         return default_map
 
     def drop(self, drag_node):

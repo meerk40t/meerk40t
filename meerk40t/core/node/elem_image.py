@@ -18,6 +18,18 @@ class ImageNode(Node):
             str(self._parent),
         )
 
+    def default_map(self, default_map=None):
+        default_map = super(ImageNode, self).default_map(default_map=default_map)
+        if self.object is not None:
+            default_map.update(self.object.values)
+        if "stroke" not in default_map:
+            default_map["stroke"] = "None"
+        if "fill" not in default_map:
+            default_map["fill"] = "None"
+        if "stroke-width" not in default_map:
+            default_map["stroke-width"] = "None"
+        return default_map
+
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
             self.insert_sibling(drag_node)

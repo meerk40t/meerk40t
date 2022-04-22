@@ -18,6 +18,11 @@ class GroupNode(Node):
             str(self._parent),
         )
 
+    def default_map(self, default_map=None):
+        default_map = super(GroupNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Group"
+        return default_map
+
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
             # Dragging element onto a group moves it to the group node.

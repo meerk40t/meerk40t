@@ -4,7 +4,8 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.node.node import Node, is_dot
+from ..core.elements import is_dot
+from ..core.node.node import Node
 from ..svgelements import (
     Arc,
     Close,

@@ -29,6 +29,11 @@ class LaserCodeNode(Node):
     def __len__(self):
         return len(self.commands)
 
+    def default_map(self, default_map=None):
+        default_map = super(LaserCodeNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "LaserCode"
+        return default_map
+
     def drop(self, drag_node):
         return False
 

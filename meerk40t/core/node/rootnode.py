@@ -4,6 +4,7 @@ from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.elem_line import LineNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.elem_point import PointNode
 from meerk40t.core.node.elem_polyline import PolylineNode
@@ -49,6 +50,7 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "group": GroupNode,
             "elem ellipse": EllipseNode,
+            "elem line": LineNode,
             "elem rect": RectNode,
             "elem path": PathNode,
             "elem point": PointNode,

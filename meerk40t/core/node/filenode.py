@@ -18,6 +18,12 @@ class FileNode(Node):
             return "File: None"
         return os.path.basename(self._filepath)
 
+    def default_map(self, default_map=None):
+        default_map = super(FileNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "File"
+        default_map['filename'] = self._filepath
+        return default_map
+
     def drop(self, drag_node):
         if drag_node.type == "group":
             self.append_child(drag_node)
