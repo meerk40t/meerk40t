@@ -38,7 +38,10 @@ from .icons import (
     icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
-    icons8_union_50,
+    icon_cag_subtract_50,
+    icon_cag_common_50,
+    icon_cag_union_50,
+    icon_cag_xor_50,
     icons8_vector_50,
     icons_centerize,
     icons_evenspace_horiz,
@@ -194,23 +197,6 @@ class CustomStatusBar(wx.StatusBar):
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
-        self.context.setting(bool, "enable_sel_move", True)
-        self.context.setting(bool, "enable_sel_size", True)
-        self.context.setting(bool, "enable_sel_rotate", True)
-        self.context.setting(bool, "enable_sel_skew", False)
-        choices = [
-            {
-                "attr": "show_colorbar",
-                "object": self.context.root,
-                "default": True,
-                "type": bool,
-                "label": _("Display colorbar in statusbar"),
-                "tip": _(
-                    "Enable the display of a colorbar at the bottom of the screen."
-                ),
-            },
-        ]
-        self.context.kernel.register_choices("preferences", choices)
 
         self.cb_move.SetValue(self.context.enable_sel_move)
         self.cb_handle.SetValue(self.context.enable_sel_size)
@@ -475,13 +461,10 @@ class MeerK40t(MWindow):
         self.context.gui = self
         self.usb_running = False
         context = self.context
-        self.context.setting(bool, "disable_tool_tips", False)
+        self.register_options_and_choices(context)
+
         if self.context.disable_tool_tips:
             wx.ToolTip.Enable(False)
-
-        self.context.register(
-            "function/open_property_window_for_node", self.open_property_window_for_node
-        )
 
         self.root_context = context.root
         self.DragAcceptFiles(True)
@@ -535,6 +518,44 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
+    def register_options_and_choices(self, context):
+        _ = context._
+        context.setting(bool, "disable_tool_tips", False)
+        context.setting(bool, "enable_sel_move", True)
+        context.setting(bool, "enable_sel_size", True)
+        context.setting(bool, "enable_sel_rotate", True)
+        context.setting(bool, "enable_sel_skew", False)
+        choices = [
+            {
+                "attr": "show_colorbar",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Display colorbar in statusbar"),
+                "tip": _(
+                    "Enable the display of a colorbar at the bottom of the screen."
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "outer_handles",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Draw selection handle outside of bounding box"),
+                "tip": _(
+                    "Active: draw handles outside of / Inactive: Draw them on the bounding box of the selection."
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        context.register(
+            "function/open_property_window_for_node", self.open_property_window_for_node
+        )
+
 
     def open_property_window_for_node(self, node):
         """
@@ -739,7 +760,7 @@ class MeerK40t(MWindow):
             "button/geometry/Union",
             {
                 "label": _("Union"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_union_50,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
                 "size": buttonsize,
@@ -749,7 +770,7 @@ class MeerK40t(MWindow):
             "button/geometry/Difference",
             {
                 "label": _("Difference"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_subtract_50,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
                 "size": buttonsize,
@@ -759,7 +780,7 @@ class MeerK40t(MWindow):
             "button/geometry/Xor",
             {
                 "label": _("Xor"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_xor_50,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
                 "size": buttonsize,
@@ -769,7 +790,7 @@ class MeerK40t(MWindow):
             "button/geometry/Intersection",
             {
                 "label": _("Intersection"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_common_50,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
                 "size": buttonsize,
