@@ -114,37 +114,36 @@ class Node:
     def root(self):
         return self._root
 
-    @staticmethod
-    def node_bbox(node):
-        for n in node._children:
-            Node.node_bbox(n)
+    def _calculate_bounds(self):
+        for n in self._children:
+            n.bounds
         # Recurse depth first. All children have been processed.
-        node._bounds_dirty = False
-        node._bounds = None
-        if node.type in ("file", "group"):
-            for c in node._children:
+        self._bounds_dirty = False
+        self._bounds = None
+        if self.type in ("file", "group"):
+            for c in self._children:
                 # Every child in n is already solved.
                 assert not c._bounds_dirty
                 if c._bounds is None:
                     continue
-                if node._bounds is None:
-                    node._bounds = c._bounds
+                if self._bounds is None:
+                    self._bounds = c._bounds
                     continue
-                node._bounds = (
-                    min(node._bounds[0], c._bounds[0]),
-                    min(node._bounds[1], c._bounds[1]),
-                    max(node._bounds[2], c._bounds[2]),
-                    max(node._bounds[3], c._bounds[3]),
+                self._bounds = (
+                    min(self._bounds[0], c._bounds[0]),
+                    min(self._bounds[1], c._bounds[1]),
+                    max(self._bounds[2], c._bounds[2]),
+                    max(self._bounds[3], c._bounds[3]),
                 )
         else:
-            e = node.object
-            if node.type.startswith("elem") and hasattr(e, "bbox"):
-                node._bounds = e.bbox()
+            e = self.object
+            if self.type.startswith("elem") and hasattr(e, "bbox"):
+                self._bounds = e.bbox()
 
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self.node_bbox(self)
+            self._calculate_bounds()
         return self._bounds
 
     @property

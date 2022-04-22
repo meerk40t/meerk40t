@@ -8,6 +8,9 @@ class ImageNode(Node):
 
     def __init__(self, data_object, **kwargs):
         super(ImageNode, self).__init__(data_object)
+        self.image = data_object.image
+        self.matrix = data_object.transform
+        self.dpi = 500
         data_object.node = self
 
     def __repr__(self):
@@ -27,6 +30,8 @@ class ImageNode(Node):
             default_map["fill"] = "None"
         if "stroke-width" not in default_map:
             default_map["stroke-width"] = "None"
+        if "dpi" not in default_map:
+            default_map["dpi"] = self.dpi
         return default_map
 
     def drop(self, drag_node):

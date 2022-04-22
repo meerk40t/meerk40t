@@ -341,7 +341,7 @@ class SVGProcessor:
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
-                            op.add(e, type="ref elem")
+                            op.add(e.node, type="ref elem")
 
         if self.requires_classification:
             self.elements.classify(self.element_list)

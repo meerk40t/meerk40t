@@ -423,7 +423,7 @@ class CutPlan:
                     #  been set, the initial bounds are wrong.
                     image_element = self._make_image_for_op(op)
                 op.children.clear()
-                op.add(image_element, type="ref elem")
+                op.add(image_element.node, type="ref elem")
 
     def actualize(self):
         """
@@ -437,7 +437,7 @@ class CutPlan:
                 for elem in op.children:
                     elem = elem.object
                     if needs_actualization(elem, op.raster_step_x, op.raster_step_y):
-                        make_actual(elem, op.raster_step_x, op.raster_step_x)
+                        make_actual(elem, op.raster_step_x, op.raster_step_y)
             if op.type == "op image":
                 for elem in op.children:
                     elem = elem.object

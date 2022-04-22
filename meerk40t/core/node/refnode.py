@@ -8,9 +8,10 @@ class RefElemNode(Node):
     RefElemNodes track referenced copies of vector element data.
     """
 
-    def __init__(self, data_object):
-        super(RefElemNode, self).__init__(data_object)
-        data_object.node._references.append(self)
+    def __init__(self, node):
+        super(RefElemNode, self).__init__()
+        node._references.append(self)
+        self.node = node
 
     def __repr__(self):
         return "RefElemNode('%s', %s, %s)" % (
@@ -30,10 +31,10 @@ class RefElemNode(Node):
         return default_map
 
     def drop(self, drag_node):
-        if drag_node.type == "elem":
+        if drag_node.type.startswith("elem"):
             op = self.parent
             drop_index = op.children.index(self)
-            op.add(drag_node.object, type="ref elem", pos=drop_index)
+            op.add(drag_node, type="ref elem", pos=drop_index)
             return True
         elif drag_node.type == "ref elem":
             self.insert_sibling(drag_node)
@@ -41,5 +42,5 @@ class RefElemNode(Node):
         return False
 
     def notify_destroyed(self, node=None, **kwargs):
-        self.object.node._references.remove(self)
+        self.node._references.remove(self)
         super(RefElemNode, self).notify_destroyed()

@@ -869,7 +869,7 @@ class ShadowTree:
             elif node.type == "op":
                 for n in node.flat(types=("ref elem",), cascade=False):
                     try:
-                        emphasized.append(n.object.node)
+                        emphasized.append(n.node)
                     except Exception:
                         pass
 

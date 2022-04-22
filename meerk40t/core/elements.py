@@ -691,7 +691,7 @@ class Elemental(Service):
                         op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
-                    op.add(item, type="ref elem")
+                    op.add(item.node, type="ref elem")
                     op_list.append(op)
             else:
                 op = make_op()
@@ -712,7 +712,7 @@ class Elemental(Service):
                     op.overscan = overscan
                 if data is not None:
                     for item in data:
-                        op.add(item, type="ref elem")
+                        op.add(item.node, type="ref elem")
                 op_list.append(op)
 
             if fill:
@@ -3948,7 +3948,7 @@ class Elemental(Service):
         def clone_element_op(node, copies=1, **kwargs):
             index = node.parent.children.index(node)
             for i in range(copies):
-                node.parent.add(node.object, type="ref elem", pos=index)
+                node.parent.add(node, type="ref elem", pos=index)
             node.modified()
             self.signal("rebuild_tree")
 
@@ -4155,7 +4155,7 @@ class Elemental(Service):
                 self.add_op(copy_op, pos=pos)
                 for child in op.children:
                     try:
-                        copy_op.add(child.object, type="ref elem")
+                        copy_op.add(child, type="ref elem")
                     except AttributeError:
                         pass
 
@@ -4179,7 +4179,7 @@ class Elemental(Service):
         )
         def add_n_passes(node, copies=1, **kwargs):
             add_elements = [
-                child.object for child in node.children if child.object is not None
+                child for child in node.children if child.object is not None
             ]
             removed = False
             for i in range(0, len(add_elements)):
@@ -4213,7 +4213,7 @@ class Elemental(Service):
         )
         def dup_n_copies(node, copies=1, **kwargs):
             add_elements = [
-                child.object for child in node.children if child.object is not None
+                child for child in node.children if child.object is not None
             ]
             add_elements *= copies
             node.add_all(add_elements, type="ref elem")
@@ -5429,16 +5429,16 @@ class Elemental(Service):
             for op in operations:
                 if op.type == "op raster" and not op.default:
                     if element.stroke is not None and op.color == abs(element.stroke):
-                        op.add(element, type="ref elem")
+                        op.add(element.node, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGImage):
-                        op.add(element, type="ref elem")
+                        op.add(element.node, type="ref elem")
                         was_classified = True
                     elif isinstance(element, SVGText):
                         op.add(element)
                         was_classified = True
                     elif element.fill is not None and element.fill.argb is not None:
-                        op.add(element, type="ref elem")
+                        op.add(element.node, type="ref elem")
                         was_classified = True
                 elif (
                     op.type in ("op engrave", "op cut", "op hatch")
@@ -5446,14 +5446,14 @@ class Elemental(Service):
                     and op.color == abs(element.stroke)
                     and not op.default
                 ):
-                    op.add(element, type="ref elem")
+                    op.add(element.node, type="ref elem")
                     was_classified = True
                 elif op.type == "op image" and isinstance(element, SVGImage):
-                    op.add(element, type="ref elem")
+                    op.add(element.node, type="ref elem")
                     was_classified = True
                     break  # May only classify in one image operation.
                 elif op.type == "op dots" and is_dot(element):
-                    op.add(element, type="ref elem")
+                    op.add(element.node, type="ref elem")
                     was_classified = True
                     break  # May only classify in Dots.
 
@@ -5479,7 +5479,7 @@ class Elemental(Service):
                 # This code is separated out to avoid duplication
                 if op is not None:
                     add_op_function(op)
-                    op.add(element, type="ref elem")
+                    op.add(element.node, type="ref elem")
                     operations.append(op)
 
                 # Seperate code for Raster ops because we might add a Raster op
@@ -5492,7 +5492,7 @@ class Elemental(Service):
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add(element, type="ref elem")
+                    op.add(element.node, type="ref elem")
                     operations.append(op)
 
     def add_classify_op(self, op):
@@ -5923,7 +5923,7 @@ class Elemental(Service):
                     if (dot and op.type == "op dots") or (
                         isinstance(element, SVGImage) and op.type == "op image"
                     ):
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
                         element_added = True
                         break  # May only classify in one Dots or Image operation and indeed in one operation
             elif element_vector:
@@ -5935,7 +5935,7 @@ class Elemental(Service):
                         and op not in default_raster_ops
                     ):
                         if not rasters_one_pass:
-                            op.add(element, type="ref elem", pos=element_pos)
+                            op.add(element.node, type="ref elem", pos=element_pos)
                         elif not element_added:
                             raster_elements.append((element, element.bbox()))
                         element_added = True
@@ -5947,7 +5947,7 @@ class Elemental(Service):
                         and op not in default_cut_ops
                         and op not in default_engrave_ops
                     ):
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
                         element_added = True
                 if (
                     element.stroke is None
@@ -5965,7 +5965,7 @@ class Elemental(Service):
             elif rasters_one_pass:
                 for op in raster_ops:
                     if op.color is not None and op.color.rgb == element_color.rgb:
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
                         element_added = True
             else:
                 raster_elements.append((element, element.bbox()))
@@ -5978,11 +5978,11 @@ class Elemental(Service):
                 is_cut = Color.distance_sq("red", element_color) <= 18825
                 if is_cut:
                     for op in default_cut_ops:
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
                         element_added = True
                 else:
                     for op in default_engrave_ops:
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
                         element_added = True
             elif (
                 rasters_one_pass
@@ -5991,7 +5991,7 @@ class Elemental(Service):
                 and raster_ops
             ):
                 for op in raster_ops:
-                    op.add(element, type="ref elem", pos=element_pos)
+                    op.add(element.node, type="ref elem", pos=element_pos)
                 element_added = True
 
             if element_added:
@@ -6026,7 +6026,7 @@ class Elemental(Service):
                 new_ops.append(op)
                 add_op_function(op)
                 # element cannot be added to op before op is added to operations - otherwise refelem is not created.
-                op.add(element, type="ref elem", pos=element_pos)
+                op.add(element.node, type="ref elem", pos=element_pos)
                 if debug:
                     debug(
                         "classify: added op: {op}".format(
@@ -6130,7 +6130,7 @@ class Elemental(Service):
                         [e[0] for e in elements_to_add], key=raster_elements.index
                     )
                     for element in elements_to_add:
-                        op.add(element, type="ref elem", pos=element_pos)
+                        op.add(element.node, type="ref elem", pos=element_pos)
 
         # Now remove groups added to at least one op
         for group in groups_added:
@@ -6190,7 +6190,7 @@ class Elemental(Service):
 
         for element in elements_to_add:
             for op in default_raster_ops:
-                op.add(element, type="ref elem", pos=element_pos)
+                op.add(element.node, type="ref elem", pos=element_pos)
 
     @staticmethod
     def element_label_id(element, short=True):
