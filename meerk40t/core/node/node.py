@@ -51,7 +51,6 @@ class Node:
         self.item = None
         self.icon = None
         self.cache = None
-        self.last_transform = None
         self.id = None
 
     def __repr__(self):

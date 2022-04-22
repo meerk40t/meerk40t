@@ -9,7 +9,6 @@ class GroupNode(Node):
 
     def __init__(self, data_object=None, **kwargs):
         super(GroupNode, self).__init__(data_object)
-        self.last_transform = None
 
     def __repr__(self):
         return "GroupNode('%s', %s, %s)" % (

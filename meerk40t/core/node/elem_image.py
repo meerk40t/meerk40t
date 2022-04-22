@@ -8,7 +8,6 @@ class ImageNode(Node):
 
     def __init__(self, data_object, **kwargs):
         super(ImageNode, self).__init__(data_object)
-        self.last_transform = None
         data_object.node = self
 
     def __repr__(self):
