@@ -7,7 +7,7 @@ Types:
 * branch ops: Operation Branch
 * branch elems: Elements Branch
 * branch reg: Regmark Branch
-* ref elem: Element below op branch which stores specific data.
+* reference: Element below op branch which stores specific data.
 * op: LayerOperation within Operation Branch.
 * elem: Element with Element Branch or subgroup.
 * file: File Group within Elements Branch
@@ -433,6 +433,31 @@ class Node:
             self.add(obj, type=type, label=name, pos=pos)
             if pos is not None:
                 pos += 1
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+
+        node_class = self._root.bootstrap["reference"]
+        reference_node = node_class(node, **kwargs)
+        if self._root is not None:
+            self._root.notify_created(reference_node)
+        reference_node.type = "reference"
+        reference_node.id = node.id
+        reference_node._parent = self
+        reference_node._root = self._root
+        if pos is None:
+            self._children.append(reference_node)
+        else:
+            self._children.insert(pos, reference_node)
+        reference_node.notify_attached(reference_node, pos=pos)
+        return reference_node
 
     def add(self, data_object=None, type=None, id=None, pos=None, **kwargs):
         """

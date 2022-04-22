@@ -341,12 +341,13 @@ class SVGProcessor:
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
-                            op.add(e.node, type="ref elem")
+                            op.add_reference(e.node)
 
         if self.requires_classification:
             self.elements.classify(self.element_list)
 
     def parse(self, element, context_node, e_list):
+        # TODO: Add in elements list of nodes
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list

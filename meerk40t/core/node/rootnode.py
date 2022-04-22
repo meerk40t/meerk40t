@@ -21,7 +21,7 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.refnode import RefElemNode
+from meerk40t.core.node.refnode import ReferenceNode
 
 
 class RootNode(Node):
@@ -57,7 +57,7 @@ class RootNode(Node):
             "elem polyline": PolylineNode,
             "elem image": ImageNode,
             "elem text": TextNode,
-            "ref elem": RefElemNode,
+            "reference": ReferenceNode,
             "cutcode": CutNode,
             "branch ops": BranchOperationsNode,
             "branch elems": BranchElementsNode,

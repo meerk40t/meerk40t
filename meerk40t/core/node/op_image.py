@@ -54,9 +54,9 @@ class ImageOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, Node):
-                self.add(obj, type="ref elem")
+                self.add_reference(obj)
             elif isinstance(obj, SVGElement):
-                self.add(obj.node, type="ref elem")
+                self.add_reference(obj.node)
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
@@ -121,9 +121,9 @@ class ImageOpNode(Node, Parameters):
             if drag_node.type == "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add(drag_node, type="ref elem", pos=0)
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
@@ -138,7 +138,7 @@ class ImageOpNode(Node, Parameters):
             some_nodes = False
             for e in drag_node.flat("elem"):
                 # Add element to operation
-                self.add(e, type="ref elem")
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -160,12 +160,11 @@ class ImageOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        # TODO: Deep Copy
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add(copy(node.node), type=node.node.type)
 
     def time_estimate(self):
         estimate = 0

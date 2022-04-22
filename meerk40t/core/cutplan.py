@@ -423,7 +423,7 @@ class CutPlan:
                     #  been set, the initial bounds are wrong.
                     image_element = self._make_image_for_op(op)
                 op.children.clear()
-                op.add(image_element.node, type="ref elem")
+                op.add_reference(image_element.node)
 
     def actualize(self):
         """

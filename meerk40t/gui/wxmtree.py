@@ -59,7 +59,7 @@ def register_panel_tree(window, context):
     context.register("format/elem polyline", "{element_type} {id}")
     context.register("format/elem rect", "{element_type} {id}")
     context.register("format/elem text", "{element_type} {id}: {text}")
-    context.register("format/ref elem", "{element_type}: {ref_id}")
+    context.register("format/reference", "{element_type}: {ref_id}")
     context.register("format/group", "{element_type} {id}")
     context.register("format/file", "{element_type}: {filename}")
     context.register("format/lasercode", "{element_type}")
@@ -864,10 +864,10 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "ref elem":
+            if node.type == "reference":
                 emphasized[i] = node.object.node
             elif node.type == "op":
-                for n in node.flat(types=("ref elem",), cascade=False):
+                for n in node.flat(types=("reference",), cascade=False):
                     try:
                         emphasized.append(n.node)
                     except Exception:

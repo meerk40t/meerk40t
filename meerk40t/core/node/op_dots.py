@@ -54,9 +54,9 @@ class DotsOpNode(Node, Parameters):
         if len(args) == 1:
             obj = args[0]
             if isinstance(obj, Node):
-                self.add(obj, type="ref elem")
+                self.add_reference(obj)
             elif isinstance(obj, SVGElement):
-                self.add(obj.node, type="ref elem")
+                self.add_reference(obj.node)
             elif hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
@@ -94,10 +94,10 @@ class DotsOpNode(Node, Parameters):
         if drag_node.type.startswith("elem"):
             if drag_node.type == "elem image":
                 return False
-            # Dragging element onto operation adds that element to the op.
-            self.add(drag_node, type="ref elem", pos=0)
+            # Dragging element onto operation adds a reference of that elem to the op.
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
@@ -111,8 +111,8 @@ class DotsOpNode(Node, Parameters):
                 # Disallow drop of image elems onto a Dot op.
                 if drag_node.type == "elem image":
                     continue
-                # Add element to operation
-                self.add(e, type="ref elem")
+                # Add reference to element to operation
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -134,11 +134,11 @@ class DotsOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add(copy(node.node), type=node.node.type)
 
     def time_estimate(self):
         estimate = 0

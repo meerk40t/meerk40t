@@ -1,15 +1,15 @@
 from meerk40t.core.node.node import Node
 
 
-class RefElemNode(Node):
+class ReferenceNode(Node):
     """
-    RefElemNode is the bootstrapped node type for the refelem type.
+    ReferenceNode is the bootstrapped node type for the reference type.
 
-    RefElemNodes track referenced copies of vector element data.
+    ReferenceNode track referenced nodes within the tree.
     """
 
     def __init__(self, node):
-        super(RefElemNode, self).__init__()
+        super(ReferenceNode, self).__init__()
         node._references.append(self)
         self.node = node
 
@@ -21,7 +21,7 @@ class RefElemNode(Node):
         )
 
     def default_map(self, default_map=None):
-        default_map = super(RefElemNode, self).default_map(default_map=default_map)
+        default_map = super(ReferenceNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Reference"
         default_map['reference'] = str(self.object)
         default_map['ref_id'] = str(self.object.id)
@@ -34,13 +34,13 @@ class RefElemNode(Node):
         if drag_node.type.startswith("elem"):
             op = self.parent
             drop_index = op.children.index(self)
-            op.add(drag_node, type="ref elem", pos=drop_index)
+            op.add_reference(drag_node, pos=drop_index)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             self.insert_sibling(drag_node)
             return True
         return False
 
     def notify_destroyed(self, node=None, **kwargs):
         self.node._references.remove(self)
-        super(RefElemNode, self).notify_destroyed()
+        super(ReferenceNode, self).notify_destroyed()
