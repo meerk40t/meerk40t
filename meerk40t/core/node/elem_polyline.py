@@ -1,5 +1,6 @@
 from meerk40t.core.node.node import Node
 
+from copy import copy
 
 class PolylineNode(Node):
     """
@@ -16,6 +17,9 @@ class PolylineNode(Node):
             str(self.object),
             str(self._parent),
         )
+
+    def __copy__(self):
+        return PolylineNode(copy(self.object))
 
     def default_map(self, default_map=None):
         default_map = super(PolylineNode, self).default_map(default_map=default_map)

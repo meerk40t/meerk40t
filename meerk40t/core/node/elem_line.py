@@ -1,4 +1,5 @@
 from meerk40t.core.node.node import Node
+from copy import copy
 
 
 class LineNode(Node):
@@ -16,6 +17,9 @@ class LineNode(Node):
             str(self.object),
             str(self._parent),
         )
+
+    def __copy__(self):
+        return LineNode(copy(self.object))
 
     def default_map(self, default_map=None):
         default_map = super(LineNode, self).default_map(default_map=default_map)

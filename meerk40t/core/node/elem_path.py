@@ -1,3 +1,5 @@
+from copy import copy
+
 from meerk40t.core.node.node import Node
 
 
@@ -16,6 +18,9 @@ class PathNode(Node):
             str(self.object),
             str(self._parent),
         )
+
+    def __copy__(self):
+        return PathNode(copy(self.object))
 
     def default_map(self, default_map=None):
         default_map = super(PathNode, self).default_map(default_map=default_map)

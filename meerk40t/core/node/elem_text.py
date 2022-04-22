@@ -1,4 +1,5 @@
 from meerk40t.core.node.node import Node
+from copy import copy
 
 
 class TextNode(Node):
@@ -16,6 +17,9 @@ class TextNode(Node):
             str(self.object),
             str(self._parent),
         )
+
+    def __copy__(self):
+        return TextNode(copy(self.object))
 
     def default_map(self, default_map=None):
         default_map = super(TextNode, self).default_map(default_map=default_map)
