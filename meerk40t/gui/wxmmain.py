@@ -498,7 +498,7 @@ class MeerK40t(MWindow):
         )
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
-        self.main_statusbar.SetStatusText(_("Status..."), 0)
+        self.main_statusbar.SetStatusText("", 0)
 
         self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
@@ -2509,11 +2509,10 @@ class MeerK40t(MWindow):
         return toggle
 
     def update_statusbar(self, text):
-        self.main_statusbar.SetStatusText(text, self.GetStatusBarPane())
+        self.main_statusbar.SetStatusText(text, 0)
 
     def status_update(self):
-        # ToDo Get spool status and make the status dynamic
-        self.update_statusbar(_("Idle..."))
+        self.update_statusbar("")
 
     # The standard wx.Frame version of DoGiveHelp is not passed the help text in Windows
     # (no idea about other platforms - wxWidgets code for each platform is different)
