@@ -7,20 +7,26 @@ class ImageNode(Node):
     ImageNode is the bootstrapped node type for the 'elem image' type.
     """
 
-    def __init__(self, data_object, **kwargs):
+    def __init__(
+        self,
+        data_object,
+        image=None,
+        matrix=None,
+        overscan=None,
+        direction=None,
+        dpi=500,
+        step_x=None,
+        step_y=None,
+        **kwargs,
+    ):
         super(ImageNode, self).__init__(data_object)
-        if data_object is not None:
-            self.image = data_object.image
-            self.matrix = data_object.transform
-            data_object.node = self
-        elif "image" in kwargs and "matrix" in kwargs:
-            self.image = kwargs["image"]
-            self.matrix = kwargs["matrix"]
-        self.overscan = kwargs.get("overscan", None)
-        self.direction = kwargs.get("direction", None)
-        self.dpi = kwargs.get("dpi", 500)
-        self.step_x = kwargs.get("step_x", None)
-        self.step_y = kwargs.get("step_y", None)
+        self.image = image
+        self.matrix = matrix
+        self.overscan = overscan
+        self.direction = direction
+        self.dpi = dpi
+        self.step_x = step_x
+        self.step_y = step_y
 
     def __repr__(self):
         return "ImageNode('%s', %s, %s)" % (
@@ -30,7 +36,21 @@ class ImageNode(Node):
         )
 
     def __copy__(self):
-        return ImageNode(copy(self.object))
+        return ImageNode(
+            image=self.image,
+            matrix=self.matrix,
+            overscan=self.overscan,
+            direction=self.direction,
+            dpi=self.dpi,
+            step_x=self.step_x,
+            step_y=self.step_y,
+        )
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._calculate_bounds()
+        return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)

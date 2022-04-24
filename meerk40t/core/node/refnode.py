@@ -20,6 +20,10 @@ class ReferenceNode(Node):
             str(self._parent),
         )
 
+    @property
+    def bounds(self):
+        return self.node.bounds
+
     def default_map(self, default_map=None):
         default_map = super(ReferenceNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Reference"

@@ -116,6 +116,7 @@ class Node:
 
     def _calculate_bounds(self):
         for n in self._children:
+            # Calculate bounds for all children.
             n.bounds
         # Recurse depth first. All children have been processed.
         self._bounds_dirty = False
