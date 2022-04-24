@@ -97,19 +97,17 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                element = node.object
-                if isinstance(element, Path):
-                    if is_dot(element):
-                        node.draw = self.draw_point_node
-                    else:
-                        node.draw = self.draw_path_node
-                elif isinstance(element, Shape):
+                if node.type == "elem path":
+                    node.draw = self.draw_path_node
+                elif node.type == "elem point":
+                    node.draw = self.draw_point_node
+                elif node.type in ("elem rect", "elem line", "elem polyline", "elem ellipse"):
                     node.draw = self.draw_shape_node
-                elif isinstance(element, SVGImage):
+                elif node.type == "elem image":
                     node.draw = self.draw_image_node
-                elif isinstance(element, SVGText):
+                elif node.type == "elem text":
                     node.draw = self.draw_text_node
-                elif isinstance(element, Group):
+                elif node.type == "group":
                     node.draw = self.draw_group_node
                 else:
                     continue
@@ -428,9 +426,8 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        image = node.object
         try:
-            matrix = image.transform
+            matrix = node.matrix
         except AttributeError:
             matrix = None
         gc.PushState()
@@ -447,17 +444,17 @@ class LaserRender:
                     max_allowed = node.max_allowed
                 except AttributeError:
                     max_allowed = 2048
-                node.c_width, node.c_height = image.image.size
+                node.c_width, node.c_height = node.image.size
                 node.cache = self.make_thumbnail(
-                    image.image,
+                    node.image,
                     maximum=max_allowed,
                     alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
                 )
             gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
-            node.c_width, node.c_height = image.image.size
+            node.c_width, node.c_height = node.image.size
             cache = self.make_thumbnail(
-                image.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                node.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
             )
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
