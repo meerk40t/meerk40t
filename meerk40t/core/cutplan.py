@@ -20,6 +20,7 @@ from time import time
 from typing import Optional
 
 from .node.elem_image import ImageNode
+from .units import UNITS_PER_PIXEL
 from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -398,7 +399,7 @@ class CutPlan:
         step_y = op.raster_step_y
         make_raster = self.context.lookup("render-op/make_raster")
         image = make_raster(subitems, bounds, step_x=step_x, step_y=step_y)
-        matrix = Matrix()
+        matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
         matrix.post_scale(step_x, step_y)
         matrix.post_translate(xmin, ymin)
         image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)

@@ -501,7 +501,7 @@ class SVGLoader:
                 height=context.device.length_height.length_mm,
                 ppi=ppi,
                 color="none",
-                transform="scale(%f)" % scale_factor,
+                transform=f"scale({scale_factor})",
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
