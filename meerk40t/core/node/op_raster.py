@@ -188,17 +188,27 @@ class RasterOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
-        """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
-        direction = self.raster_direction
-        for element in self.children:
-            svg_image = element.object
-            if not isinstance(svg_image, SVGImage):
-                continue
+    def scale_native(self, matrix):
+        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        transformed_vector = matrix.transform_vector([0, overscan])
+        self._overscan_native = abs(
+            complex(transformed_vector[0], transformed_vector[1])
+        )
 
-            matrix = svg_image.transform
-            pil_image = svg_image.image
+    def as_cutobjects(self, closed_distance=15, passes=1):
+        """
+        Generator of cutobjects for a raster operation. This takes any image node children
+        and converts them into rastercut objects. These objects should have already been converted
+        from vector shapes. However, the preference for raster shapes it to use the settings
+        set on the operation rather than on the shape."""
+        settings = self.derive()
+        settings["overscan"] = self._overscan_native
+        direction = self.raster_direction
+        for image_node in self.children:
+            if image_node.type != "elem image":
+                continue
+            matrix = image_node.matrix
+            pil_image = image_node.image
             pil_image, matrix = actualize(pil_image, matrix, self.raster_step_x, self.raster_step_y)
             box = (
                 matrix.value_trans_x(),
@@ -225,6 +235,7 @@ class RasterOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if direction == 4:
+                # Add in optional crosshatch value.
                 cut = RasterCut(
                     pil_image,
                     matrix.value_trans_x(),

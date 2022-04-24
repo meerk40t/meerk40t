@@ -9,12 +9,18 @@ class ImageNode(Node):
 
     def __init__(self, data_object, **kwargs):
         super(ImageNode, self).__init__(data_object)
-        self.image = data_object.image
-        self.matrix = data_object.transform
-        self.dpi = 500
-        self.step_x = None
-        self.step_y = None
-        data_object.node = self
+        if data_object is not None:
+            self.image = data_object.image
+            self.matrix = data_object.transform
+            data_object.node = self
+        elif "image" in kwargs and "matrix" in kwargs:
+            self.image = kwargs["image"]
+            self.matrix = kwargs["matrix"]
+        self.overscan = kwargs.get("overscan", None)
+        self.direction = kwargs.get("direction", None)
+        self.dpi = kwargs.get("dpi", 500)
+        self.step_x = kwargs.get("step_x", None)
+        self.step_y = kwargs.get("step_y", None)
 
     def __repr__(self):
         return "ImageNode('%s', %s, %s)" % (

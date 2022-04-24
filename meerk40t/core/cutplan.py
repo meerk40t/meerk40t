@@ -19,6 +19,7 @@ from os import times
 from time import time
 from typing import Optional
 
+from .node.elem_image import ImageNode
 from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
 from ..tools.pathtools import VectorMontonizer
@@ -388,7 +389,6 @@ class CutPlan:
         reverse = self.context.elements.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
-        make_raster = self.context.lookup("render-op/make_raster")
         objs = [s.object for s in subitems]
         bounds = Group.union_bbox(objs, with_stroke=True)
         if bounds is None:
@@ -396,15 +396,13 @@ class CutPlan:
         xmin, ymin, xmax, ymax = bounds
         step_x = op.raster_step_x
         step_y = op.raster_step_y
+        make_raster = self.context.lookup("render-op/make_raster")
         image = make_raster(subitems, bounds, step_x=step_x, step_y=step_y)
-        # TODO: check the image values.
-
-        image_element = SVGImage(image=image)
-        image_element.transform.post_scale(step_x, step_y)
-        image_element.transform.post_translate(xmin, ymin)
-        image_element.values["raster_step_x"] = step_x
-        image_element.values["raster_step_y"] = step_y
-        return image_element
+        matrix = Matrix()
+        matrix.post_scale(step_x, step_y)
+        matrix.post_translate(xmin, ymin)
+        image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
+        return image_node
 
     def make_image(self):
         for op in self.plan:
@@ -413,16 +411,16 @@ class CutPlan:
             if op.type == "op raster":
                 if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
                     continue
-                image_element = self._make_image_for_op(op)
-                if image_element is None:
+                image_node = self._make_image_for_op(op)
+                if image_node is None:
                     continue
-                if image_element.image_width == 1 and image_element.image_height == 1:
+                if image_node.image.width == 1 and image_node.image.height == 1:
                     # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
                     #  around because the renderer is what sets the size of the text. If the size hasn't already
                     #  been set, the initial bounds are wrong.
-                    image_element = self._make_image_for_op(op)
+                    image_node = self._make_image_for_op(op)
                 op.children.clear()
-                op.add(image_element, type="elem image")
+                op.add(image_node, type="elem image")
 
     def actualize_job_command(self):
         """

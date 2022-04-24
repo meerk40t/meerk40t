@@ -185,36 +185,45 @@ class ImageOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
+    def scale_native(self, matrix):
+        """
+        Process the scale to native resolution done with the given matrix. In the case of image ops we are scaling
+        the overscan length into usable native units.
+
+        @param matrix:
+        @return:
+        """
+        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        transformed_vector = matrix.transform_vector([0, overscan])
+        self._overscan_native = abs(
+            complex(transformed_vector[0], transformed_vector[1])
+        )
+
     def as_cutobjects(self, closed_distance=15, passes=1):
-        """Generator of cutobjects for a particular operation."""
-        for svg_image in self.children:
-            svg_image = svg_image.object
-            if not isinstance(svg_image, SVGImage):
+        """
+        Generator of cutobjects for the image operation. This takes any image node children
+        and converts them into rastercut cutobjects.
+        """
+        for image_node in self.children:
+            if image_node.type != "elem image":
                 continue
             settings = self.derive()
-            try:
-                settings["raster_step"] = int(svg_image.values["raster_step"])
-            except KeyError:
-                # This overwrites any step that may have been defined in settings.
-                settings[
-                    "raster_step"
-                ] = 1  # If raster_step is not set image defaults to 1.
-            if settings["raster_step"] <= 0:
-                settings["raster_step"] = 1
-
-            try:
-                settings["raster_direction"] = int(svg_image.values["raster_direction"])
-            except KeyError:
-                pass
-            step = settings["raster_step"]
-            matrix = svg_image.transform
-            pil_image = svg_image.image
-            pil_image, matrix = actualize(pil_image, matrix, step)
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+            settings["raster_step_x"] = step_x
+            settings["raster_step_y"] = step_y
+            settings["overscan"] = self._overscan_native
+            if image_node.direction is not None:
+                # Overrides the local setting, if direction is set.
+                settings["raster_direction"] = image_node.direction
+            matrix = image_node.matrix
+            pil_image = image_node.image
+            pil_image, matrix = actualize(pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_x)
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * step,
-                matrix.value_trans_y() + pil_image.height * step,
+                matrix.value_trans_x() + pil_image.width * step_x,
+                matrix.value_trans_y() + pil_image.height * step_y,
             )
             path = Path(
                 Polygon(
@@ -235,6 +244,7 @@ class ImageOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if settings["raster_direction"] == 4:
+                # Add in optional crosshatch value.
                 cut = RasterCut(
                     pil_image,
                     matrix.value_trans_x(),
