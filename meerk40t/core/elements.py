@@ -7,6 +7,7 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from .node.elem_image import ImageNode
 
 from ..svgelements import (
     Angle,
@@ -4239,32 +4240,35 @@ class Elemental(Service):
         )
         def make_raster_image(node, **kwargs):
             subitems = list(node.flat(types=elem_ref_nodes))
+            subobjects = [None] * len(subitems)
             reverse = self.classify_reverse
             if reverse:
                 subitems = list(reversed(subitems))
-            make_raster = self.lookup("render-op/make_raster")
-            bounds = Group.union_bbox([s.object for s in subitems], with_stroke=True)
+            for i in range(len(subitems)):
+                item = subitems[i]
+                if item.type == "reference":
+                    item = item.node
+                    subitems[i] = item
+                subobjects[i] = item.object
+            bounds = Group.union_bbox(subobjects, with_stroke=True)
             if bounds is None:
                 return
+            xmin, ymin, xmax, ymax = bounds
+            xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
+            xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
             dpi = node.dpi
             oneinch_x = self.device.physical_to_device_length("1in", 0)[0]
             oneinch_y = self.device.physical_to_device_length(0, "1in")[1]
             step_x = float(oneinch_x / dpi)
             step_y = float(oneinch_y / dpi)
-            xmin, ymin, xmax, ymax = bounds
-
-            image = make_raster(
-                subitems,
-                bounds,
-                step_x=step_x,
-                step_y=step_y,
-            )
-            image_element = SVGImage(image=image)
-            image_element.transform.post_scale(step_x, step_y)
-            image_element.transform.post_translate(xmin, ymin)
-            image_element.values["raster_step_x"] = step_x
-            image_element.values["raster_step_y"] = step_y
-            self.add_elem(image_element)
+            make_raster = self.lookup("render-op/make_raster")
+            image = make_raster(subitems, (xmin, ymin, xmax, ymax), step_x=step_x, step_y=step_y)
+            matrix = Matrix()
+            matrix.post_scale(step_x, step_y)
+            matrix.post_translate(xmin, ymin)
+            image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
+            self.elem_branch.add(image_node, type="elem image")
+            node.add_reference(image_node)
 
         def add_after_index(self, node=None):
             try:
