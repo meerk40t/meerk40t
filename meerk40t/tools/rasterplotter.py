@@ -53,7 +53,7 @@ class RasterPlotter:
         @param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
         @param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
         @param step_x: The amount units per pixel.
-        @param step_line: The amount scanline gap.
+        @param step_y: The amount scanline gap.
         @param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
                             implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
@@ -524,17 +524,21 @@ class RasterPlotter:
         """
         Plot the values yielded by following the given raster plotter in the traversal defined.
         """
+        offset_x = self.offset_x
+        offset_y = self.offset_y
+        step_x = self.step_x
+        step_y = self.step_y
         if self.initial_x is None:
             # There is no image.
             return
+        for x, y, on in self.plot_pixels():
+            yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+
+    def plot_pixels(self):
         width = self.width
         height = self.height
 
         skip_pixel = self.skip_pixel
-        offset_x = int(self.offset_x)
-        offset_y = int(self.offset_y)
-        step_x = self.step_x
-        step_y = self.step_y
 
         x, y = self.initial_position()
         dx = 1
@@ -543,14 +547,14 @@ class RasterPlotter:
             dx = -1
         if self.bottom:
             dy = -1
-        yield offset_x + x * step_x, offset_y + y * step_y, 0
+        yield x, y, 0
         if self.vertical:
             # This code is for vertical rastering.
             while 0 <= x < width:
                 lower_bound = self.topmost_not_equal(x)
                 if lower_bound is None:
                     x += dx
-                    yield offset_x + x * step_x, offset_y + y * step_y, 0
+                    yield x, y, 0
                     continue
                 upper_bound = self.bottommost_not_equal(x)
 
@@ -579,16 +583,16 @@ class RasterPlotter:
                         y = self.nextcolor_top(x, y, lower_bound)
                         y = max(y, lower_bound)
                     if pixel == skip_pixel:
-                        yield offset_x + x * step_x, offset_y + y * step_y, 0
+                        yield x, y, 0
                     else:
-                        yield offset_x + x * step_x, offset_y + y * step_y, pixel
+                        yield x, y, pixel
                     if y == bound:
                         break
                 if next_x is None:
                     # remaining image is blank, we stop right here.
                     break
                 x = next_x
-                yield offset_x + x * step_x, offset_y + y * step_y, 0
+                yield x, y, 0
                 dy = -dy
         else:
             # This code is horizontal rastering.
@@ -596,7 +600,7 @@ class RasterPlotter:
                 lower_bound = self.leftmost_not_equal(y)
                 if lower_bound is None:
                     y += dy
-                    yield offset_x + x * step_x, offset_y + y * step_y, 0
+                    yield x, y, 0
                     continue
                 upper_bound = self.rightmost_not_equal(y)
 
@@ -625,14 +629,14 @@ class RasterPlotter:
                         x = self.nextcolor_left(x, y, lower_bound)
                         x = max(x, lower_bound)
                     if pixel == skip_pixel:
-                        yield offset_x + x * step_x, offset_y + y * step_y, 0
+                        yield x, y, 0
                     else:
-                        yield offset_x + x * step_x, offset_y + y * step_y, pixel
+                        yield x, y, pixel
                     if x == bound:
                         break
                 if next_y is None:
                     # remaining image is blank, we stop right here.
                     break
                 y = next_y
-                yield offset_x + x * step_x, offset_y + y * step_y, 0
+                yield x, y, 0
                 dx = -dx
