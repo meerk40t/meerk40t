@@ -15,7 +15,6 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
-from math import ceil
 from os import times
 from time import time
 from typing import Optional
@@ -116,8 +115,8 @@ class CutPlan:
         # ==========
         self.conditional_jobadd_strip_text()
         self.conditional_jobadd_scale()
-        self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
+        self.conditional_jobadd_actualize_image()
 
     def blob(self):
         """
@@ -425,7 +424,7 @@ class CutPlan:
                 op.children.clear()
                 op.add(image_element, type="elem image")
 
-    def actualize(self):
+    def actualize_job_command(self):
         """
         Actualize the image at validate stage on operations.
         @return:
@@ -434,15 +433,39 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, op.raster_step_x, op.raster_step_y):
-                        make_actual(elem, op.raster_step_x, op.raster_step_y)
+                dpi = float(op.settings['dpi'])
+                oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                step_x = float(oneinch_x / dpi)
+                step_y = float(oneinch_y / dpi)
+                op.settings['raster_step_x'] = step_x
+                op.settings['raster_step_y'] = step_y
+                for node in op.children:
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+                        node.image, node.matrix = actualize(
+                            node.image, node.matrix, step_x=step_x, step_y=step_y
+                        )
+                        node.cache = None
             if op.type == "op image":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, None, None):
-                        make_actual(elem, None, None)
+                for node in op.children:
+                    dpi = node.dpi
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    step_x = float(oneinch_x / dpi)
+                    step_y = float(oneinch_y / dpi)
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m1 = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+                        node.image, node.matrix = actualize(
+                            node.image, node.matrix, step_x=step_x, step_y=step_y
+                        )
+                        node.cache = None
 
     def scale_to_device_native(self):
         """
@@ -525,17 +548,33 @@ class CutPlan:
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
-            if op.type == "op raster":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, op.raster_step_x, op.raster_step_y):
-                        self.commands.append(self.actualize)
-                        return
+            # if op.type == "op raster":
+            #     dpi = float(op.settings['dpi'])
+            #     oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+            #     oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+            #     step_x = float(oneinch_x / dpi)
+            #     step_y = float(oneinch_y / dpi)
+            #     op.settings['raster_step_x'] = step_x
+            #     op.settings['raster_step_y'] = step_y
+            #     for node in op.children:
+            #         m = node.object.transform
+            #         # Transformation must be uniform to permit native rastering.
+            #         if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+            #             self.commands.append(self.actualize_job_command)
+            #             return
             if op.type == "op image":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, None, None):
-                        self.commands.append(self.actualize)
+                for node in op.children:
+                    dpi = node.dpi
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    step_x = float(oneinch_x / dpi)
+                    step_y = float(oneinch_y / dpi)
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m1 = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+                        self.commands.append(self.actualize_job_command)
                         return
 
     def conditional_jobadd_scale(self):
@@ -614,54 +653,6 @@ def is_inside(inner, outer):
         if not outer.vm.is_point_inside(p.x, p.y):
             return False
     return True
-
-
-def needs_actualization(image_element, step_x=None, step_y=None):
-    if not isinstance(image_element, SVGImage):
-        return False
-    if step_x is None:
-        if "raster_step" in image_element.values:
-            step_x = float(image_element.values["raster_step"])
-        else:
-            step_x = 1.0
-    m = image_element.transform
-    # Transformation must be uniform to permit native rastering.
-    return m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_x
-
-
-def make_actual(image_element, step_x=None, step_y=None):
-    """
-    Makes PIL image actual in that it manipulates the pixels to actually exist
-    rather than simply apply the transform on the image to give the resulting image.
-    Since our goal is to raster the images real pixels this is required.
-
-    SVG matrices are defined as follows.
-    [a c e]
-    [b d f]
-
-    Pil requires a, c, e, b, d, f accordingly.
-    """
-    if not isinstance(image_element, SVGImage):
-        return
-
-    if step_x is None:
-        # If we are not told the step amount either draw it from the object or set it to default.
-        if "raster_step" in image_element.values:
-            step_x = float(image_element.values["raster_step"])
-        else:
-            step_x = 1.0
-    image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_x=step_x, step_y=step_y
-    )
-    image_element.image_width, image_element.image_height = (
-        image_element.image.width,
-        image_element.image.height,
-    )
-    image_element.width, image_element.height = (
-        image_element.image_width,
-        image_element.image_height,
-    )
-    image_element.cache = None
 
 
 def reify_matrix(self):

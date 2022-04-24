@@ -12,6 +12,8 @@ class ImageNode(Node):
         self.image = data_object.image
         self.matrix = data_object.transform
         self.dpi = 500
+        self.step_x = None
+        self.step_y = None
         data_object.node = self
 
     def __repr__(self):
