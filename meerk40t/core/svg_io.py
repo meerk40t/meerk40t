@@ -410,7 +410,7 @@ class SVGProcessor:
             try:
                 element.load(os.path.dirname(self.pathname))
                 if element.image is not None:
-                    context_node.add(element, type="elem image", id=ident)
+                    context_node.add(image=element.image, matrix=element.transform, type="elem image", id=ident)
                     e_list.append(element)
             except OSError:
                 pass

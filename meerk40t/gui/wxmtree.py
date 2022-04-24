@@ -650,7 +650,7 @@ class ShadowTree:
         if icon is None:
             if node.type == 'elem image':
                 image = self.renderer.make_thumbnail(
-                    data_object.image, width=20, height=20
+                    node.image, width=20, height=20
                 )
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
@@ -666,7 +666,7 @@ class ShadowTree:
                 return
             elif node.type == 'reference':
                 image = self.renderer.make_raster(
-                    node.node, node.node.object.bbox(), width=20, height=20, bitmap=True
+                    node.node, node.node.bounds, width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
