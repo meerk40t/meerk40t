@@ -358,7 +358,10 @@ class CutPlan:
             try:
                 if op.type in ("op cut", "op engrave", "op hatch"):
                     for i, e in enumerate(list(op.children)):
-                        if isinstance(e.object, SVGText):
+                        if e.type == "reference":
+                            if e.node.type == "elem text":
+                                e.remove_node()
+                        elif e.type == "elem text":
                             e.remove_node()
                     if len(op.children) == 0:
                         del self.plan[k]
@@ -387,11 +390,17 @@ class CutPlan:
 
     def _make_image_for_op(self, op):
         subitems = list(op.flat(types=elem_ref_nodes))
-        reverse = self.context.elements.classify_reverse
+        subobjects = [None] * len(subitems)
+        reverse = self.classify_reverse
         if reverse:
             subitems = list(reversed(subitems))
-        objs = [s.object for s in subitems]
-        bounds = Group.union_bbox(objs, with_stroke=True)
+        for i in range(len(subitems)):
+            item = subitems[i]
+            if item.type == "reference":
+                item = item.node
+                subitems[i] = item
+            subobjects[i] = item.object
+        bounds = Group.union_bbox(subobjects, with_stroke=True)
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
@@ -399,7 +408,7 @@ class CutPlan:
         step_y = op.raster_step_y
         make_raster = self.context.lookup("render-op/make_raster")
         image = make_raster(subitems, bounds, step_x=step_x, step_y=step_y)
-        matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
+        matrix = Matrix(self.device.device_to_scene_matrix())
         matrix.post_scale(step_x, step_y)
         matrix.post_translate(xmin, ymin)
         image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
@@ -486,11 +495,18 @@ class CutPlan:
                     op.scale_native(matrix)
                 for node in op.children:
                     e = node.object
-                    try:
-                        ne = e * matrix
-                        node.replace_object(ne)
-                    except AttributeError:
-                        pass
+                    if e is not None:
+                        try:
+                            ne = e * matrix
+                            node.replace_object(ne)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            e.matrix *= matrix
+                        except AttributeError:
+                            pass
+
         self.conditional_jobadd_actualize_image()
 
     def clear(self):
@@ -511,10 +527,13 @@ class CutPlan:
                 continue
             if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
-                    if not isinstance(e.object, SVGText):
-                        continue  # make raster not needed since it's a single real raster.
-                    self.commands.append(self.strip_text)
-                    return True
+                    if e.type == "reference":
+                        if e.node.type == "elem text":
+                            self.commands.append(self.strip_text)
+                            return True
+                    elif e.type == "elem text":
+                        self.commands.append(self.strip_text)
+                        return True
         return False
 
     def conditional_jobadd_make_raster(self):

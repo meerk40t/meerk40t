@@ -4263,7 +4263,7 @@ class Elemental(Service):
             step_y = float(oneinch_y / dpi)
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(subitems, (xmin, ymin, xmax, ymax), step_x=step_x, step_y=step_y)
-            matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
+            matrix = Matrix(self.device.device_to_scene_matrix())
             matrix.post_scale(step_x, step_y)
             matrix.post_translate(xmin, ymin)
             image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
