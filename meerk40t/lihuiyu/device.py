@@ -943,8 +943,9 @@ class LhystudiosDriver(Parameters):
                 continue
             dx = x - sx
             dy = y - sy
-            step = self.raster_step
-            if step == 0:
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            if step_x == 0 and step_y == 0:
                 # vector mode
                 self.program_mode()
             else:
@@ -1146,7 +1147,7 @@ class LhystudiosDriver(Parameters):
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            self.raster_step,
+            self.raster_step_x,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
@@ -1337,7 +1338,7 @@ class LhystudiosDriver(Parameters):
 
         instance_step = 0
         self.step_index = 0
-        self.step = self.raster_step
+        self.step = self.raster_step_x
         self.step_value_set = 0
         if self.raster_alt:
             pass

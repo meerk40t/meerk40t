@@ -29,6 +29,7 @@ class RasterPlotter:
         traverse_top=True,
         traverse_left=True,
         traverse_bidirectional=True,
+        use_integers=True,
         skip_pixel=0,
         overscan=0,
         offset_x=0,
@@ -49,6 +50,7 @@ class RasterPlotter:
         @param traverse_left: Flags for how the pixel traversal should be conducted.
         @param traverse_bidirectional: Flags for how the pixel traversal should be conducted.
         @param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
+        @param use_integers: return integer values rather than floating point values.
         @param overscan: The extra amount of padding to add to the end scanline.
         @param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
         @param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
@@ -70,6 +72,7 @@ class RasterPlotter:
         self.traverse_top = traverse_top
         self.traverse_left = traverse_left
         self.traverse_bidirectional = traverse_bidirectional
+        self.use_integers = use_integers
         self.skip_pixel = skip_pixel
         if traverse_x_axis:
             self.overscan = round(overscan / float(step_x))
@@ -365,7 +368,10 @@ class RasterPlotter:
         Returns raw initial position for the relevant pixel within the data.
         @return: initial position within the data.
         """
-        return self.initial_x, self.initial_y
+        if self.use_integers:
+            return int(round(self.initial_x)), int(round(self.initial_y))
+        else:
+            return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
         """
@@ -373,11 +379,20 @@ class RasterPlotter:
         @return: initial position within scene. The first plot location.
         """
         if self.initial_x is None:  # image is blank.
-            return self.offset_x, self.offset_y
-        return (
-            self.offset_x + self.initial_x * self.step_x,
-            self.offset_y + self.initial_y * self.step_y,
-        )
+            if self.use_integers:
+                return int(round(self.offset_x)), int(round(self.offset_y))
+            else:
+                return self.offset_x, self.offset_y
+        if self.use_integers:
+            return (
+                int(round(self.offset_x + self.initial_x * self.step_x)),
+                int(round(self.offset_y + self.initial_y * self.step_y)),
+            )
+        else:
+            return (
+                self.offset_x + self.initial_x * self.step_x,
+                self.offset_y + self.initial_y * self.step_y,
+            )
 
     def final_position_in_scene(self):
         """
@@ -386,11 +401,20 @@ class RasterPlotter:
         @return:
         """
         if self.final_x is None:  # image is blank.
-            return self.offset_x, self.offset_y
-        return (
-            self.offset_x + self.final_x * self.step_x,
-            self.offset_y + self.final_y * self.step_y,
-        )
+            if self.use_integers:
+                return int(round(self.offset_x)), int(round(self.offset_y))
+            else:
+                return self.offset_x, self.offset_y
+        if self.use_integers:
+            return (
+                int(round(self.offset_x + self.final_x * self.step_x)),
+                int(round(self.offset_y + self.final_y * self.step_y)),
+            )
+        else:
+            return (
+                self.offset_x + self.final_x * self.step_x,
+                self.offset_y + self.final_y * self.step_y,
+            )
 
     @property
     def top(self):
@@ -531,8 +555,12 @@ class RasterPlotter:
         if self.initial_x is None:
             # There is no image.
             return
-        for x, y, on in self.plot_pixels():
-            yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+        if self.use_integers:
+            for x, y, on in self.plot_pixels():
+                yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+        else:
+            for x, y, on in self.plot_pixels():
+                yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def plot_pixels(self):
         width = self.width
