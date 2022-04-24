@@ -1638,6 +1638,7 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
 
     def goto_octent(self, dx, dy, on):
+        old_current = self.service.current
         if dx == 0 and dy == 0:
             return
         if on:
@@ -1669,9 +1670,11 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (self.native_x - dx, self.native_y - dy, self.native_x, self.native_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def code_declare_directions(self):
