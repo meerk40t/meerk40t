@@ -996,6 +996,8 @@ class CommandList(CommandSource):
         if self._interpolations:
             distance = math.sqrt(dx * dx + dy * dy)
             segments = math.ceil(distance / self._interpolations)
+            if segments == 0:
+                segments = 1
             dx /= segments
             dy /= segments
         else:
