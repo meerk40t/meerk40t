@@ -698,7 +698,7 @@ class RasterSettingsPanel(wx.Panel):
         )
 
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Raster Step:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, "DPI:"), wx.HORIZONTAL
         )
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
 
@@ -711,18 +711,9 @@ class RasterSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)
 
-        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "20")
+        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "1mm")
         self.text_overscan.SetToolTip("Overscan amount")
         sizer_6.Add(self.text_overscan, 1, 0, 0)
-
-        self.combo_overscan_units = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["steps", "mm", "cm", "inch", "mil", "%"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-        self.combo_overscan_units.SetSelection(0)
-        sizer_6.Add(self.combo_overscan_units, 0, 0, 0)
 
         sizer_4 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Direction:"), wx.HORIZONTAL
@@ -810,14 +801,17 @@ class RasterSettingsPanel(wx.Panel):
 
     def on_text_overscan(
         self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
-        overscan = self.text_overscan.GetValue()
-        if not overscan.endswith("%"):
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                return
-        self.operation.overscan = overscan
+    ):
+        ctrl = self.text_overscan
+        try:
+            v = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
+        except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
+            return
+        self.operation.overscan = v.preferred_length
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_combo_raster_direction(self, event=None):
