@@ -1770,46 +1770,39 @@ class ImageLoader:
         yield "Webp Format", ("webp",), "image/webp"
 
     @staticmethod
-    def load(context, elements_modifier, pathname, **kwargs):
-        basename = ospath.basename(pathname)
-
-        image = SVGImage(
-            {"href": pathname, "width": "100%", "height": "100%", "id": basename}
-        )
-        image.load()
-        if image.image is None:
+    def load(context, elements_service, pathname, **kwargs):
+        if pathname is None:
             return False
-        image.image.copy()  # Throws error for .eps without ghostscript
+        try:
+            from PIL import Image as PILImage
+        except ImportError:
+            return False
+        try:
+            image = PILImage.open(pathname)
+        except IOError:
+            return False
+        image.copy()  # Throws error for .eps without ghostscript
+        matrix = Matrix()
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
-                dpi = image.image.info["dpi"]
+                dpi = image.info["dpi"]
                 if (
                     isinstance(dpi, tuple)
                     and len(dpi) >= 2
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (
-                        UNITS_PER_INCH / dpi[0],
-                        UNITS_PER_INCH / dpi[1],
-                    )
-                else:
-                    image *= "scale(%f,%f)" % (
-                        UNITS_PER_PIXEL / dpi[0],
-                        UNITS_PER_PIXEL / dpi[1],
-                    )
+                    matrix.post_scale(UNITS_PER_INCH / dpi[0], UNITS_PER_INCH / dpi[1])
         except (KeyError, IndexError):
             pass
 
-        image.stroke = Color("black")
-        element_branch = elements_modifier.get(type="branch elems")
-        basename = os.path.basename(pathname)
+        element_branch = elements_service.get(type="branch elems")
 
-        file_node = element_branch.add(type="file", label=basename)
+        file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
-        file_node.add(image, type="elem image")
+        file_node.add(image=image, matrix=Matrix(), type="elem image")
         file_node.focus()
 
-        elements_modifier.classify([image])
+        # elements_service.classify([n])
         return True
