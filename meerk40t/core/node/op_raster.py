@@ -180,7 +180,7 @@ class RasterOpNode(Node, Parameters):
     def scale_native(self, matrix):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
-        self._overscan_native = abs(
+        self.overscan = abs(
             complex(transformed_vector[0], transformed_vector[1])
         )
 
@@ -191,13 +191,17 @@ class RasterOpNode(Node, Parameters):
         from vector shapes. However, the preference for raster shapes it to use the settings
         set on the operation rather than on the shape."""
         settings = self.derive()
-        settings["overscan"] = self._overscan_native
+        overscan = self.overscan
+        if not isinstance(overscan, float):
+            overscan = float(Length(overscan))
+        settings["overscan"] = overscan
+
         direction = self.raster_direction
         for image_node in self.children:
             if image_node.type != "elem image":
                 continue
             if image_node.needs_actualization():
-                image_node.actualize()
+                image_node.make_actual()
             image = image_node.image
             matrix = image_node.matrix
             box = (

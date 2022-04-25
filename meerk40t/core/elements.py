@@ -1194,9 +1194,9 @@ class Elemental(Service):
                     super_element.fill = e.fill
                 super_element += abs(e)
             self.remove_elements(data)
-            self.elem_branch.add(path=super_element, type="elem path").emphasized = True
+            node = self.elem_branch.add(path=super_element, type="elem path").emphasized = True
             self.classify([super_element])
-            return "elements", [super_element]
+            return "elements", [node]
 
         @self.console_command(
             "subpath",
@@ -2215,8 +2215,8 @@ class Elemental(Service):
         )
         def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
             circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
-            node = self.elem_branch.add(shape=circ, type="elem ellipse")
-            node.stroke = Color("black")
+            node = self.elem_branch.add(shape=circ, type="elem ellipse", stroke=Color("black"))
+            # node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2309,7 +2309,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(rect)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("x0", type=self.length_x, help=_("start x position"))
@@ -2328,13 +2328,13 @@ class Elemental(Service):
             Draws a svg line in the scene.
             """
             simple_line = SimpleLine(x0, y0, x1, y1)
-            node = self.elem_branch.add(shape=line, type="elem line")
+            node = self.elem_branch.add(shape=simple_line, type="elem line")
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
                 data = list()
-            data.append(simple_line)
+            data.append(node)
             return "elements", data
 
         @self.console_option("size", "s", type=float, help=_("font size to for object"))
@@ -2361,7 +2361,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(svg_text)
+            data.append(node)
             return "elements", data
 
         @self.console_argument(
@@ -2389,7 +2389,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(element)
+            data.append(node)
             return "elements", data
 
         # TODO: Correct. Shape conversions to path is useful
@@ -2426,7 +2426,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(path)
+            data.append(node)
             return "elements", data
 
         @self.console_argument(
@@ -2520,13 +2520,11 @@ class Elemental(Service):
             elif color == "none":
                 for e in apply:
                     e.stroke = None
-                    if hasattr(e, "node"):
-                        e.node.altered()
+                    e.altered()
             else:
                 for e in apply:
                     e.stroke = Color(color)
-                    if hasattr(e, "node"):
-                        e.node.altered()
+                    e.altered()
             return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -2573,13 +2571,11 @@ class Elemental(Service):
             elif color == "none":
                 for e in apply:
                     e.fill = None
-                    if hasattr(e, "node"):
-                        e.node.altered()
+                    e.altered()
             else:
                 for e in apply:
                     e.fill = Color(color)
-                    if hasattr(e, "node"):
-                        e.node.altered()
+                    e.altered()
             return "elements", data
 
         @self.console_argument(

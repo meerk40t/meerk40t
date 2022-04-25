@@ -201,7 +201,7 @@ class ImageOpNode(Node, Parameters):
         """
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
-        self._overscan_native = abs(
+        self.overscan = abs(
             complex(transformed_vector[0], transformed_vector[1])
         )
 
@@ -218,7 +218,11 @@ class ImageOpNode(Node, Parameters):
             step_y = image_node.step_y
             settings["raster_step_x"] = step_x
             settings["raster_step_y"] = step_y
-            settings["overscan"] = self._overscan_native
+            overscan = self.overscan
+            if not isinstance(overscan, float):
+                overscan = float(Length(overscan))
+
+            settings["overscan"] = overscan
             if image_node.direction is not None:
                 # Overrides the local setting, if direction is set.
                 settings["raster_direction"] = image_node.direction

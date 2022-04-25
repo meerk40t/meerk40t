@@ -171,7 +171,7 @@ class Parameters:
 
     @property
     def overscan(self):
-        return self.settings.get("overscan", 20)
+        return self.settings.get("overscan", "0.5mm")
 
     @overscan.setter
     def overscan(self, value):

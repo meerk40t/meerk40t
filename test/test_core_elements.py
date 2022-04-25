@@ -23,9 +23,9 @@ class TestElements(unittest.TestCase):
                     Circle(
                         center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
                         r=1000 * UNITS_PER_MIL,
-                        stroke="black",
                     ),
                 )
+                self.assertEqual(node.stroke, "black")
         finally:
             kernel.shutdown()
 
@@ -47,8 +47,6 @@ class TestElements(unittest.TestCase):
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
-                        stroke="red",
-                        fill="blue",
                     ),
                 )
                 self.assertEqual(node.stroke, "red")
