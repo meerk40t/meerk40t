@@ -287,7 +287,7 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
+            node = elements.elem_branch.add(image=image, step_x=1, step_y=1, matrix=Matrix(), type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
