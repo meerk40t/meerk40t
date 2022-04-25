@@ -95,14 +95,6 @@ class ImageNode(Node):
         self._points[6] = [cx, bounds[3], "bounds bottom_center"]
         self._points[7] = [bounds[0], cy, "bounds center_left"]
         self._points[8] = [bounds[2], cy, "bounds center_right"]
-        obj = self.image
-        if hasattr(obj, "point"):
-            if len(self._points) <= 11:
-                self._points.extend([None] * (11 - len(self._points)))
-            start = obj.point(0)
-            end = obj.point(1)
-            self._points[9] = [start[0], start[1], "endpoint"]
-            self._points[10] = [end[0], end[1], "endpoint"]
 
     def update_point(self, index, point):
         return False

@@ -4292,7 +4292,7 @@ class Elemental(Service):
             image_node = ImageNode(
                 image=image, matrix=matrix, step_x=step_x, step_y=step_y
             )
-            self.elem_branch.add(image_node, type="elem image")
+            self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
 
         def add_after_index(self, node=None):
