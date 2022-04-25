@@ -2897,7 +2897,7 @@ class Elemental(Service):
                 return
             tx, ty = self.device.current
             try:
-                bounds = Node.union_bounds([abs(e) for e in data])
+                bounds = Node.union_bounds(data)
                 otx = bounds[0]
                 oty = bounds[1]
                 ntx = tx - otx

@@ -158,15 +158,14 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             (
                 element.image,
-                element.transform,
+                element.matrix,
                 step,
             ) = RasterScripts.wizard_image(element, script)
             if step is not None:
-                element.values["raster_step"] = step
-            element.image_width, element.image_height = element.image.size
+                element.step_x = step
+                element.step_y = step
             element.lock = True
-            if hasattr(element, "node"):
-                element.node.altered()
+            element.altered()
         return "image", data
 
     @context.console_command(
@@ -1487,9 +1486,9 @@ class RasterScripts:
         return half_tone
 
     @staticmethod
-    def wizard_image(svg_image, operations):
-        image = svg_image.image
-        matrix = Matrix(svg_image.transform)
+    def wizard_image(image_node, operations):
+        image = image_node.image
+        matrix = Matrix(image_node.matrix)
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
@@ -1522,7 +1521,7 @@ class RasterScripts:
                     if op["enable"]:
                         step = op["step"]
                         image, matrix = actualize(
-                            image, matrix, step_x=step, inverted=invert
+                            image, matrix, step_x=step, step_y=step, inverted=invert
                         )
                         if invert:
                             empty_mask = image.convert("L").point(

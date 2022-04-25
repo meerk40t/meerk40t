@@ -19,10 +19,10 @@ class TestRasterWizard(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
-            draw = ImageDraw.Draw(svg_image.image)
+            draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
@@ -49,7 +49,7 @@ class TestRasterWizard(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.step_x = 3
             node.step_y = 3
             node.emphasized = True
@@ -136,7 +136,7 @@ class TestRasterWizard(unittest.TestCase):
                 draw.rectangle((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, type="elem image")
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
@@ -180,7 +180,7 @@ class TestRasterWizard(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, type="elem image")
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
@@ -217,7 +217,7 @@ class TestRasterWizard(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
