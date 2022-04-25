@@ -88,6 +88,12 @@ class EngraveOpNode(Node, Parameters):
     def __copy__(self):
         return EngraveOpNode(self)
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Engrave"
