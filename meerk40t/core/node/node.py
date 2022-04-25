@@ -671,10 +671,10 @@ class Node:
                 continue
             if box[0] < xmin:
                 xmin = box[0]
-            if box[2] < xmax:
+            if box[2] > xmax:
                 xmax = box[2]
             if box[1] < ymin:
                 ymin = box[1]
-            if box[3] < ymax:
+            if box[3] > ymax:
                 ymax = box[3]
         return xmin, ymin, xmax, ymax

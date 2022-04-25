@@ -394,7 +394,7 @@ class CutPlan:
         step_y = op.raster_step_y
         bounds = op.bounds
         image = make_raster(op.flat(), bounds=bounds, step_x=step_x, step_y=step_y)
-        matrix = Matrix(self.device.device_to_scene_matrix())
+        matrix = Matrix(self.context.device.device_to_scene_matrix())
         matrix.post_scale(step_x, step_y)
         matrix.post_translate(bounds[0], bounds[1])
         image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
