@@ -391,6 +391,7 @@ class MeerK40tScenePanel(wx.Panel):
                 continue
         # Reclassify selection...
         self.context("declassify\nclassify\n")
+        self.context.signal("rebuild_tree")
         self.request_refresh()
 
     @signal_listener("selfill")
@@ -413,6 +414,7 @@ class MeerK40tScenePanel(wx.Panel):
                 continue
         # Reclassify selection...
         self.context("declassify\nclassify\n")
+        self.context.signal("rebuild_tree")
         self.request_refresh()
 
     @signal_listener("selstrokewidth")

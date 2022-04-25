@@ -116,10 +116,16 @@ class TreePanel(wx.Panel):
         keyvalue = get_key_name(event)
         if self.context.bind.trigger(keyvalue):
             event.Skip()
+        else:
+            # Make sure the treectl can work on standard keys...
+            event.Skip()
 
     def on_key_up(self, event):
         keyvalue = get_key_name(event)
         if self.context.bind.untrigger(keyvalue):
+            event.Skip()
+        else:
+            # Make sure the treectl can work on standard keys...
             event.Skip()
 
     def pane_show(self):
@@ -872,13 +878,12 @@ class ShadowTree:
             node = emphasized[i]
             if node.type == "reference":
                 emphasized[i] = node.node
-            elif node.type == "op":
+            elif node.type.startswith("op"):
                 for n in node.flat(types=("reference",), cascade=False):
                     try:
                         emphasized.append(n.node)
                     except Exception:
                         pass
-
         self.elements.set_emphasis(emphasized)
         self.refresh_tree()
         event.Allow()
