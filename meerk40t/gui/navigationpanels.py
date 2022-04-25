@@ -1377,7 +1377,7 @@ class Transform(wx.Panel):
         self.text_e.Enable(v)
         self.text_f.Enable(v)
         if v:
-            matrix = f.transform
+            matrix = f.matrix
             # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
@@ -1528,7 +1528,7 @@ class Transform(wx.Panel):
             tl_x = float(self.text_e.GetValue())
             tl_y = float(self.text_f.GetValue())
             f = self.context.elements.first_element(emphasized=True)
-            matrix = f.transform
+            matrix = f.matrix
             if (
                 sc_x == matrix.a
                 and sk_y == matrix.b

@@ -145,17 +145,16 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem image":
-                element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
-                element.image.save(stream, format="PNG")
+                c.image.save(stream, format="PNG")
                 png = b64encode(stream.getvalue()).decode("utf8")
                 subelement.set("xlink:href", "data:image/png;base64,%s" % png)
                 subelement.set(SVG_ATTR_X, "0")
                 subelement.set(SVG_ATTR_Y, "0")
-                subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
-                subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-                t = Matrix(element.transform)
+                subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
+                t = Matrix(c.matrix)
                 t *= scale
                 subelement.set(
                     "transform",
@@ -352,7 +351,6 @@ class SVGProcessor:
             self.elements.classify(self.element_list)
 
     def parse(self, element, context_node, e_list):
-        # TODO: Add in elements list of nodes
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list

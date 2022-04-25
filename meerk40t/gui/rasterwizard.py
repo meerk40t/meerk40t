@@ -47,10 +47,7 @@ class RasterWizardPanel(wx.Panel):
         self.previous_window_position = None
         self.previous_scene_position = None
 
-        self.svg_image = None
-        self.pil_image = None
-        self.matrix_image = None
-        self.step_image = 1
+        self.node = None
 
         self.wx_bitmap_image = None
         self.image_width, self.image_height = None, None
@@ -170,20 +167,21 @@ class RasterWizardPanel(wx.Panel):
         # end wxGlade
 
     def wiz_img(self):
-        if self.svg_image is None:
+        if self.node is None:
             with self.thread_update_lock:
                 self.wizard_thread = None
             return
         while self.needs_update:
             self.needs_update = False
             if self.ops is None:
-                self.pil_image = self.svg_image.image
+                pass
             else:
-                self.pil_image, self.matrix_image, step = RasterScripts.wizard_image(
-                    self.svg_image, self.ops
+                self.node.image, self.node.matrix, step = RasterScripts.wizard_image(
+                    self.node, self.ops
                 )
                 if step is not None:
-                    self.step_image = step
+                    self.node.step_x = step
+                    self.node.step_y = step
             self.wx_bitmap_image = None
             if self.context is None:
                 with self.thread_update_lock:
@@ -208,12 +206,7 @@ class RasterWizardPanel(wx.Panel):
     def on_emphasis_change(self, origin, *args):
         for node in self.context.elements.elems(emphasized=True):
             if node.type == "elem image":
-                self.pil_image = node.image
-                self.matrix_image = node.matrix
-                try:
-                    self.step_image = node.step_x
-                except KeyError:
-                    self.step_image = 1
+                self.node = node
                 self.context.signal("RasterWizard-Image")
                 if self.ops is not None:
                     self.panel_select_op()
@@ -257,7 +250,7 @@ class RasterWizardPanel(wx.Panel):
         if panel is None:
             return
         self.sizer_operation_panels.Add(panel, 1, wx.EXPAND, 0)
-        panel.set_operation(self.context, op, svg_image=self.svg_image)
+        panel.set_operation(self.context, op, node=self.node)
         self.Layout()
 
     def on_size(self, event=None):
@@ -295,7 +288,7 @@ class RasterWizardPanel(wx.Panel):
         gc.SetBrush(wx.WHITE_BRUSH)
         w, h = self._preview_panel_buffer.GetSize()
         gc.DrawRectangle(0, 0, w, h)
-        if self.context is None or self.svg_image is None or self.pil_image is None:
+        if self.context is None or self.node is None or self.pil_image is None:
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             if self.wizard_thread is not None and self.wizard_thread.is_alive():
@@ -486,18 +479,18 @@ class RasterWizardPanel(wx.Panel):
         # TODO: broken
         if self.wizard_thread is not None:
             return
-        if self.svg_image is not None:
-            self.svg_image.image = self.pil_image
-            self.svg_image.values["raster_step"] = self.step_image
-            self.svg_image.transform = self.matrix_image
+        if self.node is not None:
+            self.node.image = self.pil_image
+            self.node.values["raster_step"] = self.step_image
+            self.node.transform = self.matrix_image
             (
-                self.svg_image.image_width,
-                self.svg_image.image_height,
+                self.node.image_width,
+                self.node.image_height,
             ) = self.pil_image.size
-            self.svg_image.lock = True
+            self.node.lock = True
             try:
-                self.svg_image.node.object = self.svg_image
-                self.svg_image.node.altered()
+                self.node.node.object = self.node
+                self.node.node.altered()
             except AttributeError:
                 pass
         try:
@@ -565,7 +558,7 @@ class DitherPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
@@ -638,7 +631,7 @@ class CropPanel(wx.Panel):
         except RuntimeError:
             pass
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
@@ -750,7 +743,7 @@ class ResamplePanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
-        self.svg_image = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: ResamplePanel.__set_properties
@@ -807,20 +800,20 @@ class ResamplePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
-        self.svg_image = svg_image
+        self.node = node
         self.check_enable_resample.SetValue(op["enable"])
         self.combo_resample_step.SetSelection(op["step"] - 1)
         self.combo_resample_dpi.SetSelection(op["step"] - 1)
         self.combo_resample_units.SetSelection(op["units"])
         self.check_resample_maintain_aspect.SetValue(op["aspect"])
         self.refresh_dims()
-        if svg_image is not None:
+        if node is not None:
             self.text_resample_pixels.SetValue(
-                _("%d x %d pixels") % (svg_image.image_height, svg_image.image_width)
+                _("%d x %d pixels") % (node.image.width, node.image.height)
             )
 
     def refresh_dims(self):
@@ -831,10 +824,10 @@ class ResamplePanel(wx.Panel):
         The size of that value is the result matrix and the image size.
         Reduced by any amount of truncated edge.
         """
-        if self.svg_image is None:
+        if self.node is None:
             return
-        image = self.svg_image.image
-        matrix = Matrix(self.svg_image.transform)
+        image = self.node.image
+        matrix = Matrix(self.node.matrix)
         boundary_points = []
         box = None
         try:

@@ -300,7 +300,7 @@ class LaserRender:
         """Default draw routine for the shape element."""
         shape = node.shape
         try:
-            matrix = shape.transform
+            matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
@@ -325,7 +325,7 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         path = node.path
         try:
-            matrix = path.transform
+            matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
@@ -368,7 +368,7 @@ class LaserRender:
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         text = node.text
         try:
-            matrix = text.transform
+            matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
@@ -378,7 +378,7 @@ class LaserRender:
         else:
             if text.font_size < 1:
                 if text.font_size > 0:
-                    text.transform.pre_scale(
+                    node.matrix.pre_scale(
                         text.font_size, text.font_size, text.x, text.y
                     )
                 text.font_size = 1  # No zero sized fonts.

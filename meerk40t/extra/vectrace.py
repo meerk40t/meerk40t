@@ -15,17 +15,16 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.root.elements
             path = Path(fill="black", stroke="blue")
             paths = []
-            for element in data:
-                matrix = element.transform
-                image = element.image
-                width, height = element.image.size
+            for node in data:
+                matrix = node.matrix
+                image = node.image
+                width, height = node.image.size
                 if image.mode != "L":
                     image = image.convert("L")
                 image = image.point(lambda e: int(e > 127) * 255)
                 for points in _vectrace(image.load(), width, height):
                     path += Polygon(*points)
-                path.transform = Matrix(matrix)
-                paths.append(elements.elem_branch.add(path, "elem path"))
+                paths.append(elements.elem_branch.add(path=path, matrix=Matrix(matrix), type="elem path"))
             return "elements", paths
 
 
