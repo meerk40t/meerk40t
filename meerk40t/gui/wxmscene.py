@@ -25,6 +25,7 @@ from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Angle, Color
@@ -110,6 +111,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/relocate", RelocateTool)
         context.register("tool/text", TextTool)
         context.register("tool/vector", VectorTool)
+        context.register("tool/measure", MeasureTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
