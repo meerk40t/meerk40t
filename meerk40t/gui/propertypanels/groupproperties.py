@@ -13,8 +13,7 @@ class GroupPropertiesPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.element = node.object
-        self.element_node = node
+        self.node = node
 
         self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -23,8 +22,8 @@ class GroupPropertiesPanel(wx.Panel):
         self.__do_layout()
 
         try:
-            if node.object.id is not None:
-                self.text_id.SetValue(str(node.object.id))
+            if node.id is not None:
+                self.text_id.SetValue(str(node.id))
         except AttributeError:
             pass
 
@@ -62,8 +61,8 @@ class GroupPropertiesPanel(wx.Panel):
 
     def on_text_id_change(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
-            self.element.id = self.text_id.GetValue()
-            self.element.values[SVG_ATTR_ID] = self.element.id
+            self.node.id = self.text_id.GetValue()
+            self.node.values[SVG_ATTR_ID] = self.node.id
             # self.context.signal("element_property_update", self.element)
         except AttributeError:
             pass
@@ -72,15 +71,10 @@ class GroupPropertiesPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
         if len(self.text_label.GetValue()):
-            self.element_node.label = self.text_label.GetValue()
-            self.element.values["label"] = self.element_node.label
+            self.node.label = self.text_label.GetValue()
         else:
-            self.element_node.label = None
-            try:
-                del self.element.values["label"]
-            except KeyError:
-                pass
-        self.context.elements.signal("element_property_update", self.element)
+            self.node.label = None
+        self.context.elements.signal("element_property_update", self.node)
 
 
 class GroupProperty(MWindow):

@@ -170,17 +170,18 @@ class HatchOpNode(Node, Parameters):
         # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
         distance = self._hatch_distance_native
         angle = Angle.parse(settings.get("hatch_angle", "0deg"))
-        angle = 0
         efill = EulerianFill(distance)
-        for element in self.children:
-            object_path = element.object
-            if isinstance(object_path, Shape):
-                object_path = abs(Path(object_path))
-            if not isinstance(object_path, Path):
-                continue
-            object_path.approximate_arcs_with_cubics()
-            settings["line_color"] = object_path.stroke
-            for subpath in object_path.as_subpaths():
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            if node.type == "elem path":
+                path = abs(node.path)
+                path.approximate_arcs_with_cubics()
+            else:
+                path = abs(Path(node.shape))
+                path.approximate_arcs_with_cubics()
+            settings["line_color"] = path.stroke
+            for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
                     continue

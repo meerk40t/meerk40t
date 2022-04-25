@@ -14,9 +14,9 @@ class ReferenceNode(Node):
         self.node = node
 
     def __repr__(self):
-        return "RefElemNode('%s', %s, %s)" % (
+        return "ReferenceNode('%s', %s, %s)" % (
             self.type,
-            str(self.object),
+            str(self.node),
             str(self._parent),
         )
 
@@ -30,8 +30,6 @@ class ReferenceNode(Node):
         default_map['reference'] = str(self.node)
         default_map['ref_nid'] = str(self.node.id)
         default_map['ref_id'] = str(self.id)
-        if self.object is not None:
-            default_map.update(self.object.values)
         return default_map
 
     def drop(self, drag_node):

@@ -4,6 +4,7 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
+from ..core.element_types import elem_nodes
 from ..core.elements import is_dot
 from ..core.node.node import Node
 from ..svgelements import (
@@ -83,17 +84,21 @@ class LaserRender:
         if draw_mode is None:
             draw_mode = self.context.draw_mode
 
-        if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
-            types = []
-            if draw_mode & DRAW_MODE_PATH == 0:
-                types.append(Path)
-            if draw_mode & DRAW_MODE_IMAGE == 0:
-                types.append(SVGImage)
-            if draw_mode & DRAW_MODE_TEXT == 0:
-                types.append(SVGText)
-            nodes = [e for e in nodes if type(e.object) in types]
+        # if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
+        #     types = []
+        #     if draw_mode & DRAW_MODE_PATH == 0:
+        #         types.append(Path)
+        #     if draw_mode & DRAW_MODE_IMAGE == 0:
+        #         types.append(SVGImage)
+        #     if draw_mode & DRAW_MODE_TEXT == 0:
+        #         types.append(SVGText)
+        #     nodes = [e for e in nodes if type(e.object) in types]
 
         for node in nodes:
+            if node.type == "reference":
+                self.render([node.node], gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+                continue
+
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
@@ -204,7 +209,7 @@ class LaserRender:
     def draw_cutcode_node(
         self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
-        cutcode = node.object
+        cutcode = node.cutcode
         self.draw_cutcode(cutcode, gc, x, y)
 
     def draw_cutcode(
@@ -293,7 +298,7 @@ class LaserRender:
 
     def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
-        shape = node.object
+        shape = node.shape
         try:
             matrix = shape.transform
             width_scale = sqrt(abs(matrix.determinant))
@@ -318,7 +323,7 @@ class LaserRender:
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        path = node.object
+        path = node.path
         try:
             matrix = path.transform
             width_scale = sqrt(abs(matrix.determinant))
@@ -347,17 +352,13 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         if draw_mode & DRAW_MODE_POINTS:
             return
-        path = node.object
         try:
-            matrix = path.transform
+            matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = path.point(0)
-            node.cache = cache
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
-        point = node.cache
+        point = node.point
         point = matrix.point_in_matrix_space(point)
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
@@ -365,7 +366,7 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
-        text = node.object
+        text = node.text
         try:
             matrix = text.transform
             width_scale = sqrt(abs(matrix.determinant))
@@ -460,7 +461,7 @@ class LaserRender:
         gc.PopState()
 
     def make_raster(
-        self, elements, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1
+        self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -470,7 +471,7 @@ class LaserRender:
 
         This function requires both wxPython and Pillow.
 
-        @param elements: elements to render.
+        @param nodes: elements to render.
         @param bounds: bounds of those elements for the viewport.
         @param width: desired width of the resulting raster
         @param height: desired height of the resulting raster
@@ -527,11 +528,11 @@ class LaserRender:
         gc.PushState()
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(elements, (list, tuple)):
-            elements = [elements]
+        if not isinstance(nodes, (list, tuple)):
+            nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
+        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(

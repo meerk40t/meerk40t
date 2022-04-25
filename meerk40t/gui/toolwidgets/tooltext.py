@@ -46,7 +46,9 @@ class TextTool(ToolWidget):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.GetValue()
-                self.scene.context.elements.add_elem(self.text, classify=True)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(text=self.text, type="elem text")
+                elements.classify([node])
                 self.text = None
             dlg.Destroy()
             self.scene.request_refresh()

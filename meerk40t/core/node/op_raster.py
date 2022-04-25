@@ -167,19 +167,19 @@ class RasterOpNode(Node, Parameters):
     def time_estimate(self):
         # TODO: Strictly speaking this is wrong. The time estimate is raster of non-svgimage objects.
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, SVGImage):
-                try:
-                    step = e.raster_step
-                except AttributeError:
-                    try:
-                        step = int(e.values["raster_step"])
-                    except (KeyError, ValueError):
-                        step = 1
-                estimate += (e.image_width * e.image_height * step) / (
-                    MILS_IN_MM * self.speed
-                )
+        # for e in self.children:
+        #     e = e.object
+        #     if isinstance(e, SVGImage):
+        #         try:
+        #             step = e.raster_step
+        #         except AttributeError:
+        #             try:
+        #                 step = int(e.values["raster_step"])
+        #             except (KeyError, ValueError):
+        #                 step = 1
+        #         estimate += (e.image_width * e.image_height * step) / (
+        #             MILS_IN_MM * self.speed
+        #         )
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

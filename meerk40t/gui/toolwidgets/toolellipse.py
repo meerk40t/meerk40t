@@ -57,7 +57,9 @@ class EllipseTool(ToolWidget):
                     stroke_width=1000,
                 )
                 if not ellipse.is_degenerate():
-                    self.scene.context.elements.add_elem(ellipse, classify=True)
+                    elements = self.scene.context.elements
+                    node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
+                    elements.classify([node])
                 self.p1 = None
                 self.p2 = None
             except IndexError:

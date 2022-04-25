@@ -142,17 +142,17 @@ class CutOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
-                try:
-                    length = e.length(error=1e-2, min_depth=2)
-                except AttributeError:
-                    length = 0
-                try:
-                    estimate += length / (MILS_IN_MM * self.speed)
-                except ZeroDivisionError:
-                    estimate = float("inf")
+        # for e in self.children:
+        #     e = e.object
+        #     if isinstance(e, Shape):
+        #         try:
+        #             length = e.length(error=1e-2, min_depth=2)
+        #         except AttributeError:
+        #             length = 0
+        #         try:
+        #             estimate += length / (MILS_IN_MM * self.speed)
+        #         except ZeroDivisionError:
+        #             estimate = float("inf")
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -164,9 +164,11 @@ class CutOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for element in self.children:
-            object_path = element.object
-            if isinstance(object_path, SVGImage):
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            if node.type == "elem image":
+                object_path = node.image
                 box = object_path.bbox()
                 path = Path(
                     Polygon(
@@ -176,14 +178,14 @@ class CutOpNode(Node, Parameters):
                         (box[2], box[1]),
                     )
                 )
-            else:
-                # Is a shape or path.
-                if not isinstance(object_path, Path):
-                    path = abs(Path(object_path))
-                else:
-                    path = abs(object_path)
+            elif node.type == "elem path":
+                path = abs(node.path)
                 path.approximate_arcs_with_cubics()
-            settings["line_color"] = path.stroke
+            else:
+                path = abs(Path(node.shape))
+                path.approximate_arcs_with_cubics()
+
+            settings["line_color"] = node.stroke
             for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:

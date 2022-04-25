@@ -46,7 +46,9 @@ class PolygonTool(ToolWidget):
                 self.scene.request_refresh()
         elif event_type == "doubleclick":
             polyline = Polygon(*self.point_series, stroke="blue", stroke_width=1000)
-            self.scene.context.elements.add_elem(polyline, classify=True)
+            elements = self.scene.context.elements
+            node = elements.elem_branch.add(shape=polyline, type="elem polyline")
+            elements.classify([node])
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None

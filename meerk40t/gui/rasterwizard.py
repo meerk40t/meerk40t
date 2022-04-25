@@ -206,13 +206,12 @@ class RasterWizardPanel(wx.Panel):
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
-        for e in self.context.elements.elems(emphasized=True):
-            if isinstance(e, SVGImage):
-                self.svg_image = e
-                self.pil_image = None
-                self.matrix_image = e.transform
+        for node in self.context.elements.elems(emphasized=True):
+            if node.type == "elem image":
+                self.pil_image = node.image
+                self.matrix_image = node.matrix
                 try:
-                    self.step_image = e.values["raster_step"]
+                    self.step_image = node.step_x
                 except KeyError:
                     self.step_image = 1
                 self.context.signal("RasterWizard-Image")
@@ -484,6 +483,7 @@ class RasterWizardPanel(wx.Panel):
     def on_buttons_operations(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
+        # TODO: broken
         if self.wizard_thread is not None:
             return
         if self.svg_image is not None:

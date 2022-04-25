@@ -26,7 +26,7 @@ def plugin(kernel, lifecycle=None):
                     path += Polygon(*points)
                 path.transform = Matrix(matrix)
                 paths.append(elements.elem_branch.add(path, "elem path"))
-            return "elements", [p.object for p in paths]
+            return "elements", paths
 
 
 _NORTH = 3

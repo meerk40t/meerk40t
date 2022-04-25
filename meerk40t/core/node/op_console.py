@@ -12,7 +12,7 @@ class ConsoleOperation(Node):
     """
 
     def __init__(self, command=None, **kwargs):
-        super().__init__(type="op console")
+        super().__init__(type="op console", **kwargs)
         self.settings = {}
         if command is not None:
             self.settings['command'] = command

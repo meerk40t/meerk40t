@@ -284,9 +284,9 @@ class CustomStatusBar(wx.StatusBar):
                     self.SetStatusText("", self.pos_colorbar)
                 sw_default = None
                 for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e.object, "stroke_width"):
+                    if hasattr(e, "stroke_width"):
                         if sw_default is None:
-                            sw_default = e.object.stroke_width
+                            sw_default = e.stroke_width
                             break
                 if not sw_default is None:
                     # Set Values
@@ -910,8 +910,8 @@ class MeerK40t(MWindow):
                 else:
                     for element in elements.elems():
                         try:
-                            element *= mx
-                            element.node.modified()
+                            element.matrix *= mx
+                            element.modified()
                         except AttributeError:
                             pass
 
@@ -933,8 +933,8 @@ class MeerK40t(MWindow):
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
                     try:
-                        element *= mx
-                        element.node.modified()
+                        element.matrix *= mx
+                        element.modified()
                     except AttributeError:
                         pass
             dlg.Destroy()
@@ -948,8 +948,8 @@ class MeerK40t(MWindow):
                 path = Path(dlg.GetValue())
                 path.stroke = "blue"
                 p = abs(path)
-                context.elements.add_elem(p)
-                context.elements.classify([p])
+                node = context.elements.elem_branch.add(path=p, type="elem path")
+                context.elements.classify([node])
             dlg.Destroy()
 
         @context.console_command("dialog_fill", hidden=True)
@@ -970,7 +970,7 @@ class MeerK40t(MWindow):
                 color = Color(color, 1.0)
                 for elem in elements.elems(emphasized=True):
                     elem.fill = color
-                    elem.node.altered()
+                    elem.altered()
 
         @context.console_command("dialog_stroke", hidden=True)
         def stroke(**kwargs):
@@ -990,7 +990,7 @@ class MeerK40t(MWindow):
                 color = Color(color, 1.0)
                 for elem in elements.elems(emphasized=True):
                     elem.stroke = color
-                    elem.node.altered()
+                    elem.altered()
 
         @context.console_command("dialog_gear", hidden=True)
         def gear(**kwargs):
@@ -2186,11 +2186,8 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
-            obj = SVGImage()
-            obj.image = img
-            obj.image_width = image_width
-            obj.image_height = image_height
-            elements.add_elem(obj)
+            node = elements.elem_branch.add(image=img, width=image_width, height=image_height, type="elem image")
+            elements.classify([node])
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):

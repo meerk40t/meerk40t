@@ -978,20 +978,24 @@ class BalorDevice(Service, ViewPort):
             if data is None:
                 data = list(self.elements.elems(emphasized=True))
             pts = []
-            for obj in data:
-                if isinstance(obj, Shape):
-                    if not isinstance(obj, Path):
-                        obj = Path(obj)
-                    epath = abs(obj)
-                    pts += [q for q in epath.as_points()]
-                elif isinstance(obj, SVGImage):
-                    bounds = obj.bbox()
+            for e in data:
+                if e.type == "elem image":
+                    bounds = e.bounds
                     pts += [
                         (bounds[0], bounds[1]),
                         (bounds[0], bounds[3]),
                         (bounds[2], bounds[1]),
                         (bounds[2], bounds[3]),
                     ]
+                else:
+                    try:
+                        path = abs(Path(e.shape))
+                    except AttributeError:
+                        try:
+                            path = abs(e.path)
+                        except AttributeError:
+                            continue
+                    pts += [q for q in path.as_points()]
             hull = [p for p in Point.convex_hull(pts)]
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
@@ -1042,14 +1046,15 @@ class BalorDevice(Service, ViewPort):
             points_list = []
             points = list()
             for e in data:
-                if isinstance(e, Shape):
-                    if not isinstance(e, Path):
-                        e = Path(e)
-                    e = abs(e)
-                else:
-                    continue
+                try:
+                    path = abs(Path(e.shape))
+                except AttributeError:
+                    try:
+                        path = abs(e.path)
+                    except AttributeError:
+                        continue
                 for i in range(0, quantization + 1):
-                    x, y = e.point(i / float(quantization))
+                    x, y = path.point(i / float(quantization))
                     points.append((x, y))
                 points_list.append(list(ant_points(points, int(quantization / 10))))
             return "elements", [Polygon(*p) for p in points_list]

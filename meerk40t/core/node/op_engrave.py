@@ -174,9 +174,11 @@ class EngraveOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for element in self.children:
-            object_path = element.object
-            if isinstance(object_path, SVGImage):
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            if node.type == "elem image":
+                object_path = node.image
                 box = object_path.bbox()
                 path = Path(
                     Polygon(
@@ -186,12 +188,11 @@ class EngraveOpNode(Node, Parameters):
                         (box[2], box[1]),
                     )
                 )
+            elif node.type == "elem path":
+                path = abs(node.path)
+                path.approximate_arcs_with_cubics()
             else:
-                # Is a shape or path.
-                if not isinstance(object_path, Path):
-                    path = abs(Path(object_path))
-                else:
-                    path = abs(object_path)
+                path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
             settings["line_color"] = path.stroke
             for subpath in path.as_subpaths():

@@ -7,13 +7,12 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, data_object=None, **kwargs):
-        super(GroupNode, self).__init__(data_object)
+    def __init__(self, **kwargs):
+        super(GroupNode, self).__init__(**kwargs)
 
     def __repr__(self):
-        return "GroupNode('%s', %s, %s)" % (
+        return "GroupNode('%s', %s)" % (
             self.type,
-            str(self.object),
             str(self._parent),
         )
 

@@ -2595,6 +2595,14 @@ class Matrix:
             self.f,
         )
 
+    @property
+    def rotation(self):
+        prx = Point(1, 0)
+        prx *= self
+        origin = Point(0, 0)
+        origin *= self
+        return origin.angle_to(prx)
+
     def parse(self, transform_str):
         """Parses the svg transform string.
 

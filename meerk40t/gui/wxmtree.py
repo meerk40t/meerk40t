@@ -211,7 +211,6 @@ class ShadowTree:
         self.renderer = LaserRender(service.root)
         self.dragging_nodes = None
         self.tree_images = None
-        self.object = "Project"
         self.name = "Project"
 
         self.do_not_select = False
@@ -580,7 +579,7 @@ class ShadowTree:
         tree.SetItemData(node.item, node)
         self.update_decorations(node)
         try:
-            stroke = node.object.values[SVG_ATTR_STROKE]
+            stroke = node.stroke
             color = wx.Colour(swizzlecolor(Color(stroke).argb))
             tree.SetItemTextColour(node.item, color)
         except AttributeError:
@@ -645,7 +644,6 @@ class ShadowTree:
             return  # Node.item can be none if launched from ExecuteJob where the nodes are not part of the tree.
         if node.item is None:
             return
-        data_object = node.object
         tree = root.wxtree
         if icon is None:
             if node.type == 'elem image':
@@ -656,10 +654,10 @@ class ShadowTree:
                 tree.SetItemImage(item, image=image_id)
             elif node.type == 'elem point':
                 if (
-                        data_object.stroke is not None
-                        and data_object.stroke.rgb is not None
+                        node.stroke is not None
+                        and node.stroke.rgb is not None
                 ):
-                    c = data_object.stroke
+                    c = node.stroke
                 else:
                     c = Color("black")
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
@@ -671,9 +669,9 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-            elif node.type.startswith('elem'):
+            elif node.type.startswith('elem path'):
                 image = self.renderer.make_raster(
-                    node, data_object.bbox(), width=20, height=20, bitmap=True
+                    node, node.bounds, width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
@@ -731,7 +729,7 @@ class ShadowTree:
         label = node.create_label(formatter)
         self.wxtree.SetItemText(node.item, label)
         try:
-            stroke = node.object.stroke
+            stroke = node.stroke
             wxcolor = Color(stroke).bgr
             if wxcolor is not None:
                 color = wx.Colour(wxcolor)

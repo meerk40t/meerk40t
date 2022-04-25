@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     icon_corner1,
@@ -36,7 +37,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Angle, Group
+from meerk40t.svgelements import Angle, Group, Matrix
 
 _ = wx.GetTranslation
 
@@ -422,7 +423,7 @@ class Drag(wx.Panel):
             elements.validate_selected_area()
             bbox = elements.selected_area()
         else:
-            bbox = Group.union_bbox(elements.elems())
+            bbox = Node.union_bounds(elements.elems())
         return bbox
 
     def align_per_pos(self, value):
@@ -502,11 +503,18 @@ class Drag(wx.Panel):
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
-        try:
-            pos = e[0].first_point * e[0].transform
-        except (IndexError, AttributeError):
-            return
-        if pos is None:
+        first_node = e[0]
+        if first_node.type == "elem path":
+            try:
+                pos = first_node.path.first_point * first_node.matrix
+            except (IndexError, AttributeError):
+                return
+        elif first_node.type == "elem image":
+            try:
+                pos = first_node.matrix.value_trans_x(), first_node.matrix.value_trans_y()
+            except (IndexError, AttributeError):
+                return
+        else:
             return
         self.context(
             "move_absolute {x} {y}\n".format(

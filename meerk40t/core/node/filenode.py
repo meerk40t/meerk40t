@@ -9,8 +9,8 @@ class FileNode(Node):
     Bootstrapped type: 'file'
     """
 
-    def __init__(self, data_object, filepath=None, **kwargs):
-        super(FileNode, self).__init__(data_object)
+    def __init__(self, filepath=None, **kwargs):
+        super(FileNode, self).__init__(**kwargs)
         self._filepath = filepath
 
     def __str__(self):

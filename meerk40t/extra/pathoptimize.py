@@ -17,23 +17,29 @@ def plugin(kernel, lifecycle):
                 channel(_("Optimizations: cut_inner, travel, cut_travel"))
                 return
             elif args[0] == "cut_inner":
-                for element in elements.elems(emphasized=True):
-                    e = optimize_cut_inside(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
+                        continue
+                    e = optimize_cut_inside(path)
+                    path.clear()
+                    path += e
+                    node.altered()
             elif args[0] == "travel":
                 channel(
                     _("Travel Optimizing: %f")
                     % length_travel(elements.elems(emphasized=True))
                 )
-                for element in elements.elems(emphasized=True):
-                    if not isinstance(element, Path):
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
                         continue
-                    e = optimize_travel(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                    e = optimize_travel(path)
+                    path.clear()
+                    path.path += e
+                    node.altered()
                 channel(
                     _("Optimized: %f") % length_travel(elements.elems(emphasized=True))
                 )
@@ -42,11 +48,15 @@ def plugin(kernel, lifecycle):
                     _("Cut Travel Initial: %f")
                     % length_travel(elements.elems(emphasized=True))
                 )
-                for element in elements.elems(emphasized=True):
-                    e = optimize_general(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
+                        continue
+                    e = optimize_general(path)
+                    path.clear()
+                    path += e
+                    node.altered()
                 channel(
                     _("Cut Travel Optimized: %f")
                     % length_travel(elements.elems(emphasized=True))

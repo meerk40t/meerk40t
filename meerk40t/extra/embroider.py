@@ -23,10 +23,14 @@ def plugin(kernel, lifecycle):
             elements = context.elements
             channel(_("Embroidery Filling"))
             efill = EulerianFill(float(distance))
-            for element in elements.elems(emphasized=True):
-                if not isinstance(element, Shape):
-                    continue
-                e = Path(element)
+            for node in elements.elems(emphasized=True):
+                try:
+                    e = Path(node.shape)
+                except AttributeError:
+                    try:
+                        e = Path(node.path)
+                    except AttributeError:
+                        continue
                 if angle is not None:
                     e *= Matrix.rotate(angle)
                 pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
@@ -38,7 +42,8 @@ def plugin(kernel, lifecycle):
                 result = Path(Polyline(s, stroke="black"))
                 if angle is not None:
                     result *= Matrix.rotate(-angle)
-                elements.add_elem(result)
+                node = elements.elem_branch.add(path=result, type="elem path")
+                elements.classify([node])
 
 
 def split(points):
