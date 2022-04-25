@@ -4290,7 +4290,7 @@ class Elemental(Service):
             matrix.post_scale(step_x, step_y)
             matrix.post_translate(xmin, ymin)
             image_node = ImageNode(
-                None, image=image, matrix=matrix, step_x=step_x, step_y=step_y
+                image=image, matrix=matrix, step_x=step_x, step_y=step_y
             )
             self.elem_branch.add(image_node, type="elem image")
             node.add_reference(image_node)
