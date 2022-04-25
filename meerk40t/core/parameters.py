@@ -4,9 +4,7 @@ from meerk40t.svgelements import Color
 
 INT_PARAMETERS = (
     "power",
-    "raster_step",
     "raster_direction",
-    "overscan",
     "acceleration",
     "dot_length",
     "passes",
@@ -20,6 +18,9 @@ INT_PARAMETERS = (
 )
 
 FLOAT_PARAMETERS = (
+    "dpi",
+    "raster_step_x",
+    "raster_step_y",
     "speed",
     "dratio",
     "dwell_time",
@@ -40,6 +41,15 @@ BOOL_PARAMETERS = (
     "advanced",
     "raster_alt",
     "force_twitchless",
+)
+
+STRING_PARAMETERS = (
+    "overscan",
+)
+
+COLOR_PARAMETERS = (
+    "color",
+    "line_color"
 )
 
 
@@ -72,7 +82,10 @@ class Parameters:
         for v in BOOL_PARAMETERS:
             if v in settings:
                 settings[v] = str(settings[v]).lower() == "true"
-        for v in ("color", "line_color"):
+        for v in STRING_PARAMETERS:
+            if v in settings:
+                settings[v] = int(float(settings[v]))
+        for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
 
@@ -125,20 +138,40 @@ class Parameters:
         self.settings["output"] = value
 
     @property
-    def raster_step(self):
+    def raster_step_x(self):
         try:
             type = self.type
         except AttributeError:
             type = None
-        return self.settings.get("raster_step", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_x", 2 if type == "op raster" else 0)
 
-    @raster_step.setter
-    def raster_step(self, value):
-        self.settings["raster_step"] = value
+    @raster_step_x.setter
+    def raster_step_x(self, value):
+        self.settings["raster_step_x"] = value
+
+    @property
+    def raster_step_y(self):
+        try:
+            type = self.type
+        except AttributeError:
+            type = None
+        return self.settings.get("raster_step_y", 2 if type == "op raster" else 0)
+
+    @raster_step_y.setter
+    def raster_step_y(self, value):
+        self.settings["raster_step_y"] = value
+
+    @property
+    def dpi(self):
+        return self.settings.get("dpi", 500)
+
+    @dpi.setter
+    def dpi(self, value):
+        self.settings["dpi"] = value
 
     @property
     def overscan(self):
-        return self.settings.get("overscan", 20)
+        return self.settings.get("overscan", "0.5mm")
 
     @overscan.setter
     def overscan(self, value):
@@ -419,18 +452,6 @@ class Parameters:
     @dwell_time.setter
     def dwell_time(self, value):
         self.settings["dwell_time"] = value
-
-    @property
-    def horizontal_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 0 or self.raster_direction == 1
-        )
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 2 or self.raster_direction == 3
-        )
 
     @property
     def raster_alt(self):

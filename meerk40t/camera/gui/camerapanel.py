@@ -161,7 +161,7 @@ class CameraPanel(wx.Panel, Job):
 
         self.widget_scene.widget_root.set_aspect(self.camera.aspect)
 
-        self.widget_scene.background_brush = wx.WHITE_BRUSH
+        self.widget_scene.background_brush = wx.Brush(wx.WHITE)
         self.widget_scene.add_scenewidget(CamSceneWidget(self.widget_scene, self))
         self.widget_scene.add_scenewidget(CamImageWidget(self.widget_scene, self))
         self.widget_scene.add_interfacewidget(

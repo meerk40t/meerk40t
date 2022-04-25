@@ -738,11 +738,10 @@ class Scene(Module, Job):
         Check whether the reference is still valid
         """
         found = False
-        if not self._reference is None:
+        if self._reference:
             for e in self.context.elements.flat(types=elem_nodes):
                 # Here we ignore the lock-status of an element
-                obj = e.object
-                if obj is self._reference:
+                if e is self._reference:
                     found = True
                     break
         if not found:

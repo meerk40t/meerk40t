@@ -68,7 +68,8 @@ def plugin(kernel, lifecycle):
                     else:
                         solution_path += Path(r)
                 if solution_path:
-                    context.elements.add_elem(solution_path, classify=True)
-                    return "elements", [solution_path]
+                    node = context.elements.elem_branch.add(path=solution_path, type="elem path")
+                    context.elements.classify([node])
+                    return "elements", [node]
                 else:
                     return "elements", []

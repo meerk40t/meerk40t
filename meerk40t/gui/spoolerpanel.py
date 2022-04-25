@@ -185,7 +185,7 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         pass
                     try:
-                        settings.append(_("step=%d") % e.raster_step)
+                        settings.append(_("step=%d") % e.raster_step_x)
                     except AttributeError:
                         pass
                     try:

@@ -28,7 +28,7 @@ non_structural_nodes = (
     "op dots",
     "op hatch",
     "op console",
-    "ref elem",
+    "reference",
     "lasercode",
     "cutcode",
     "blob",
@@ -92,6 +92,6 @@ elem_ref_nodes = (
     "elem rect",
     "elem line",
     "elem text",
-    "ref elem",
+    "reference",
 )
 

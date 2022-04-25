@@ -1,12 +1,6 @@
 from copy import copy
 
 from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
     RasterCut,
 )
 from meerk40t.core.element_types import *
@@ -15,21 +9,10 @@ from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
-    Angle,
-    Close,
     Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
     Path,
     Polygon,
-    QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
 )
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 MILS_IN_MM = 39.3701
 
@@ -46,16 +29,14 @@ class RasterOpNode(Node, Parameters):
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, *args, type="op raster", **kwargs)
+        Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="ref elem")
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
@@ -71,11 +52,11 @@ class RasterOpNode(Node, Parameters):
             parts.append("✓")
         if self.passes_custom and self.passes != 1:
             parts.append("%dX" % self.passes)
-        parts.append("Raster{step}".format(step=self.raster_step))
+        parts.append(f"Raster{self.dpi}")
         if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
+            parts.append(f"{float(self.speed):g}mm/s")
         if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
+            parts.append(f"{float(self.frequency):g}kHz")
         if self.raster_swing:
             raster_dir = "-"
         else:
@@ -91,17 +72,23 @@ class RasterOpNode(Node, Parameters):
         elif self.raster_direction == 4:
             raster_dir += "X"
         else:
-            raster_dir += "%d" % self.raster_direction
+            raster_dir += str(self.raster_direction)
         parts.append(raster_dir)
         if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("±{overscan}".format(overscan=self.overscan))
+            parts.append(f"{float(self.power):g}ppi")
+        parts.append(f"±{self.overscan}")
         if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
+            parts.append(f"a:{self.acceleration}")
         return " ".join(parts)
 
     def __copy__(self):
         return RasterOpNode(self)
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
@@ -118,9 +105,9 @@ class RasterOpNode(Node, Parameters):
             if drag_node.type == "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add(drag_node.object, type="ref elem", pos=0)
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
@@ -138,7 +125,7 @@ class RasterOpNode(Node, Parameters):
                 if drag_node.type == "elem image":
                     continue
                 # Add element to operation
-                self.add(e.object, type="ref elem")
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -160,28 +147,28 @@ class RasterOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         # TODO: Strictly speaking this is wrong. The time estimate is raster of non-svgimage objects.
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, SVGImage):
-                try:
-                    step = e.raster_step
-                except AttributeError:
-                    try:
-                        step = int(e.values["raster_step"])
-                    except (KeyError, ValueError):
-                        step = 1
-                estimate += (e.image_width * e.image_height * step) / (
-                    MILS_IN_MM * self.speed
-                )
+        # for e in self.children:
+        #     e = e.object
+        #     if isinstance(e, SVGImage):
+        #         try:
+        #             step = e.raster_step
+        #         except AttributeError:
+        #             try:
+        #                 step = int(e.values["raster_step"])
+        #             except (KeyError, ValueError):
+        #                 step = 1
+        #         estimate += (e.image_width * e.image_height * step) / (
+        #             MILS_IN_MM * self.speed
+        #         )
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -190,25 +177,38 @@ class RasterOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
-        """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
-        step = self.raster_step
-        assert step > 0
-        direction = self.raster_direction
-        for element in self.children:
-            svg_image = element.object
-            if not isinstance(svg_image, SVGImage):
-                continue
+    def scale_native(self, matrix):
+        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        transformed_vector = matrix.transform_vector([0, overscan])
+        self.overscan = abs(
+            complex(transformed_vector[0], transformed_vector[1])
+        )
 
-            matrix = svg_image.transform
-            pil_image = svg_image.image
-            pil_image, matrix = actualize(pil_image, matrix, step)
+    def as_cutobjects(self, closed_distance=15, passes=1):
+        """
+        Generator of cutobjects for a raster operation. This takes any image node children
+        and converts them into rastercut objects. These objects should have already been converted
+        from vector shapes. However, the preference for raster shapes it to use the settings
+        set on the operation rather than on the shape."""
+        settings = self.derive()
+        overscan = self.overscan
+        if not isinstance(overscan, float):
+            overscan = float(Length(overscan))
+        settings["overscan"] = overscan
+
+        direction = self.raster_direction
+        for image_node in self.children:
+            if image_node.type != "elem image":
+                continue
+            if image_node.needs_actualization():
+                image_node.make_actual()
+            image = image_node.image
+            matrix = image_node.matrix
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * step,
-                matrix.value_trans_y() + pil_image.height * step,
+                matrix.value_trans_x() + image.width * self.raster_step_x,
+                matrix.value_trans_y() + image.height * self.raster_step_y,
             )
             path = Path(
                 Polygon(
@@ -219,7 +219,7 @@ class RasterOpNode(Node, Parameters):
                 )
             )
             cut = RasterCut(
-                pil_image,
+                image,
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
                 settings=settings,
@@ -229,8 +229,9 @@ class RasterOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if direction == 4:
+                # Add in optional crosshatch value.
                 cut = RasterCut(
-                    pil_image,
+                    image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
                     crosshatch=True,

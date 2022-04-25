@@ -39,16 +39,14 @@ class CutOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        Node.__init__(self, *args, type="op cut", **kwargs)
+        Node.__init__(self, type="op cut", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="ref elem")
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
@@ -83,6 +81,12 @@ class CutOpNode(Node, Parameters):
     def __copy__(self):
         return CutOpNode(self)
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(CutOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Cut"
@@ -98,9 +102,9 @@ class CutOpNode(Node, Parameters):
             if drag_node.type == "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add(drag_node.object, type="ref elem", pos=0)
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
@@ -113,9 +117,9 @@ class CutOpNode(Node, Parameters):
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
-            for e in drag_node.flat("elem"):
+            for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                self.add(e.object, type="ref elem")
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -135,26 +139,26 @@ class CutOpNode(Node, Parameters):
         settings.write_persistent_dict(section, self.settings)
 
     def copy_children(self, obj):
-        for element in obj.children:
-            self.add(element.object, type="ref elem")
+        for node in obj.children:
+            self.add_reference(node)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
-                try:
-                    length = e.length(error=1e-2, min_depth=2)
-                except AttributeError:
-                    length = 0
-                try:
-                    estimate += length / (MILS_IN_MM * self.speed)
-                except ZeroDivisionError:
-                    estimate = float("inf")
+        # for e in self.children:
+        #     e = e.object
+        #     if isinstance(e, Shape):
+        #         try:
+        #             length = e.length(error=1e-2, min_depth=2)
+        #         except AttributeError:
+        #             length = 0
+        #         try:
+        #             estimate += length / (MILS_IN_MM * self.speed)
+        #         except ZeroDivisionError:
+        #             estimate = float("inf")
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -166,9 +170,11 @@ class CutOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for element in self.children:
-            object_path = element.object
-            if isinstance(object_path, SVGImage):
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            if node.type == "elem image":
+                object_path = node.image
                 box = object_path.bbox()
                 path = Path(
                     Polygon(
@@ -178,14 +184,14 @@ class CutOpNode(Node, Parameters):
                         (box[2], box[1]),
                     )
                 )
-            else:
-                # Is a shape or path.
-                if not isinstance(object_path, Path):
-                    path = abs(Path(object_path))
-                else:
-                    path = abs(object_path)
+            elif node.type == "elem path":
+                path = abs(node.path)
                 path.approximate_arcs_with_cubics()
-            settings["line_color"] = path.stroke
+            else:
+                path = abs(Path(node.shape))
+                path.approximate_arcs_with_cubics()
+
+            settings["line_color"] = node.stroke
             for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:

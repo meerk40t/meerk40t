@@ -1,7 +1,6 @@
 import re
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"

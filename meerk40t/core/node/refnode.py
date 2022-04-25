@@ -1,45 +1,48 @@
 from meerk40t.core.node.node import Node
 
 
-class RefElemNode(Node):
+class ReferenceNode(Node):
     """
-    RefElemNode is the bootstrapped node type for the refelem type.
+    ReferenceNode is the bootstrapped node type for the reference type.
 
-    RefElemNodes track referenced copies of vector element data.
+    ReferenceNode track referenced nodes within the tree.
     """
 
-    def __init__(self, data_object):
-        super(RefElemNode, self).__init__(data_object)
-        data_object.node._references.append(self)
+    def __init__(self, node, **kwargs):
+        super(ReferenceNode, self).__init__(type="reference", **kwargs)
+        node._references.append(self)
+        self.node = node
 
     def __repr__(self):
-        return "RefElemNode('%s', %s, %s)" % (
+        return "ReferenceNode('%s', %s, %s)" % (
             self.type,
-            str(self.object),
+            str(self.node),
             str(self._parent),
         )
 
+    @property
+    def bounds(self):
+        return self.node.bounds
+
     def default_map(self, default_map=None):
-        default_map = super(RefElemNode, self).default_map(default_map=default_map)
+        default_map = super(ReferenceNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Reference"
-        default_map['reference'] = str(self.object)
-        default_map['ref_id'] = str(self.object.id)
-        default_map['ref_nid'] = str(self.object.node.id)
-        if self.object is not None:
-            default_map.update(self.object.values)
+        default_map['reference'] = str(self.node)
+        default_map['ref_nid'] = str(self.node.id)
+        default_map['ref_id'] = str(self.id)
         return default_map
 
     def drop(self, drag_node):
-        if drag_node.type == "elem":
+        if drag_node.type.startswith("elem"):
             op = self.parent
             drop_index = op.children.index(self)
-            op.add(drag_node.object, type="ref elem", pos=drop_index)
+            op.add_reference(drag_node, pos=drop_index)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             self.insert_sibling(drag_node)
             return True
         return False
 
     def notify_destroyed(self, node=None, **kwargs):
-        self.object.node._references.remove(self)
-        super(RefElemNode, self).notify_destroyed()
+        self.node._references.remove(self)
+        super(ReferenceNode, self).notify_destroyed()

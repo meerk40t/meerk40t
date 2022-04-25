@@ -138,13 +138,117 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
-            if c.type.startswith("elem"):
-                # This is an element node.
-                SVGWriter._write_element(xml_tree, c)
-            else:
-                # This is a structural group node of elements (group/file). Recurse call to write flat values.
+            if c.type == "elem ellipse":
+                element = abs(Path(c.shape) * scale)
+                subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+            elif c.type == "elem image":
+                subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
+                stream = BytesIO()
+                c.image.save(stream, format="PNG")
+                png = b64encode(stream.getvalue()).decode("utf8")
+                subelement.set("xlink:href", "data:image/png;base64,%s" % png)
+                subelement.set(SVG_ATTR_X, "0")
+                subelement.set(SVG_ATTR_Y, "0")
+                subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
+                t = Matrix(c.matrix)
+                t *= scale
+                subelement.set(
+                    "transform",
+                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+                )
+            elif c.type == "elem line":
+                element = abs(Path(c.shape) * scale)
+                subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+            elif c.type == "elem path":
+                element = abs(c.path * scale)
+                subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+            elif c.type == "elem point":
+                subelement = SubElement(xml_tree, "element")
+                SVGWriter._write_custom(subelement, c)
+                return
+            elif c.type == "elem polyline":
+                element = abs(c.path * scale)
+                subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+            elif c.type == "elem rect":
+                element = abs(c.path * scale)
+                subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+            elif c.type == "elem text":
+                element = c.text
+                subelement = SubElement(xml_tree, SVG_TAG_TEXT)
+                subelement.text = element.text
+                t = Matrix(element.transform)
+                t *= scale
+                subelement.set(
+                    "transform",
+                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+                )
+                for key, val in element.values.items():
+                    if key in (
+                            "font-family",
+                            "font_face",
+                            "font-size",
+                            "font-weight",
+                            "anchor",
+                            "x",
+                            "y",
+                    ):
+                        subelement.set(key, str(val))
+            elif c.type == "group":
+                # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
+                return
+            elif c.type == "file":
+                # This is a structural group node of elements. Recurse call to write flat values.
+                SVGWriter._write_elements(xml_tree, c)
+                return
+            else:
+                subelement = SubElement(xml_tree, "element")
+                SVGWriter._write_custom(subelement, c)
+                return
+            stroke = element.stroke
+            if stroke is not None:
+                stroke_opacity = stroke.opacity
+                stroke = (
+                    str(abs(stroke))
+                    if stroke is not None and stroke.value is not None
+                    else SVG_VALUE_NONE
+                )
+                subelement.set(SVG_ATTR_STROKE, stroke)
+                if stroke_opacity != 1.0 and stroke_opacity is not None:
+                    subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
+                try:
+                    stroke_width = (
+                        str(element.stroke_width)
+                        if element.stroke_width is not None
+                        else SVG_VALUE_NONE
+                    )
+                    subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+                except AttributeError:
+                    pass
+
+            fill = element.fill
+            if fill is not None:
+                fill_opacity = fill.opacity
+                fill = (
+                    str(abs(fill))
+                    if fill is not None and fill.value is not None
+                    else SVG_VALUE_NONE
+                )
+                subelement.set(SVG_ATTR_FILL, fill)
+                if fill_opacity != 1.0 and fill_opacity is not None:
+                    subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
+            else:
+                subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
+            subelement.set(SVG_ATTR_ID, str(c.id))
+
 
     @staticmethod
     def _write_operations(xml_tree, op_tree):
@@ -180,21 +284,6 @@ class SVGWriter:
         SVGWriter._write_custom(subelement, node)
 
     @staticmethod
-    def _write_element(xml_tree, element_node):
-        """
-        Write any specific svgelement to SVG.
-
-        @param xml_tree: xml tree we're writing to
-        @param element_node: ElemNode we are writing to xml
-        @return:
-        """
-        if element_node.object is not None:
-            SVGWriter._write_svg_element(xml_tree, element_node)
-            return
-        subelement = SubElement(xml_tree, "element")
-        SVGWriter._write_custom(subelement, element_node)
-
-    @staticmethod
     def _write_custom(subelement, node):
         subelement.set("type", node.type)
         try:
@@ -214,91 +303,6 @@ class SVGWriter:
             subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
 
-    @staticmethod
-    def _write_svg_element(xml_tree, element_node):
-        element = element_node.object
-        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
-        if isinstance(element, Shape):
-            if not isinstance(element, Path):
-                element = Path(element)
-            element = abs(element * scale)
-            subelement = SubElement(xml_tree, SVG_TAG_PATH)
-
-            subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-        elif isinstance(element, SVGText):
-            subelement = SubElement(xml_tree, SVG_TAG_TEXT)
-            subelement.text = element.text
-            t = Matrix(element.transform)
-            t *= scale
-            subelement.set(
-                "transform",
-                "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
-            )
-            for key, val in element.values.items():
-                if key in (
-                    "raster_step",
-                    "font-family",
-                    "font_face",
-                    "font-size",
-                    "font-weight",
-                    "anchor",
-                    "x",
-                    "y",
-                ):
-                    subelement.set(key, str(val))
-        elif isinstance(element, SVGImage):
-            subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
-            stream = BytesIO()
-            element.image.save(stream, format="PNG")
-            png = b64encode(stream.getvalue()).decode("utf8")
-            subelement.set("xlink:href", "data:image/png;base64,%s" % png)
-            subelement.set(SVG_ATTR_X, "0")
-            subelement.set(SVG_ATTR_Y, "0")
-            subelement.set(SVG_ATTR_WIDTH, str(element.image.width))
-            subelement.set(SVG_ATTR_HEIGHT, str(element.image.height))
-            t = Matrix(element.transform)
-            t *= scale
-            subelement.set(
-                "transform",
-                "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
-            )
-        else:
-            raise ValueError("Attempting to save unknown element.")
-        stroke = element.stroke
-        if stroke is not None:
-            stroke_opacity = stroke.opacity
-            stroke = (
-                str(abs(stroke))
-                if stroke is not None and stroke.value is not None
-                else SVG_VALUE_NONE
-            )
-            subelement.set(SVG_ATTR_STROKE, stroke)
-            if stroke_opacity != 1.0 and stroke_opacity is not None:
-                subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
-            try:
-                stroke_width = (
-                    str(element.stroke_width)
-                    if element.stroke_width is not None
-                    else SVG_VALUE_NONE
-                )
-                subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-            except AttributeError:
-                pass
-
-        fill = element.fill
-        if fill is not None:
-            fill_opacity = fill.opacity
-            fill = (
-                str(abs(fill))
-                if fill is not None and fill.value is not None
-                else SVG_VALUE_NONE
-            )
-            subelement.set(SVG_ATTR_FILL, fill)
-            if fill_opacity != 1.0 and fill_opacity is not None:
-                subelement.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
-        else:
-            subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
-        subelement.set(SVG_ATTR_ID, str(element_node.id))
 
     @staticmethod
     def _pretty_print(current, parent=None, index=-1, depth=0):
@@ -341,7 +345,7 @@ class SVGProcessor:
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
-                            op.add(e, type="ref elem")
+                            op.add_reference(e.node)
 
         if self.requires_classification:
             self.elements.classify(self.element_list)
@@ -353,13 +357,13 @@ class SVGProcessor:
         ident = element.id
         if isinstance(element, SVGText):
             if element.text is not None:
-                context_node.add(element, type="elem text", id=ident)
-                e_list.append(element)
+                node = context_node.add(text=element, type="elem text", id=ident)
+                e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem path", id=ident)
-                e_list.append(element)
+                node = context_node.add(path=element, type="elem path", id=ident)
+                e_list.append(node)
         elif isinstance(element, (Polygon, Polyline)):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
@@ -367,8 +371,8 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem polyline", id=ident)
-                e_list.append(element)
+                node = context_node.add(shape=element, type="elem polyline", id=ident)
+                e_list.append(node)
         elif isinstance(element, Circle):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
@@ -376,8 +380,8 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem ellipse", id=ident)
-                e_list.append(element)
+                node = context_node.add(shape=element, type="elem ellipse", id=ident)
+                e_list.append(node)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
@@ -385,8 +389,8 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem ellipse", id=ident)
-                e_list.append(element)
+                node = context_node.add(shape=element, type="elem ellipse", id=ident)
+                e_list.append(node)
         elif isinstance(element, Rect):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
@@ -394,8 +398,8 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem rect", id=ident)
-                e_list.append(element)
+                node = context_node.add(shape=element, type="elem rect", id=ident)
+                e_list.append(node)
         elif isinstance(element, SimpleLine):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
@@ -403,13 +407,13 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                context_node.add(element, type="elem line", id=ident)
-                e_list.append(element)
+                node = context_node.add(shape=element, type="elem line", id=ident)
+                e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
                 if element.image is not None:
-                    context_node.add(element, type="elem image", id=ident)
+                    context_node.add(image=element.image, matrix=element.transform, type="elem image", id=ident)
                     e_list.append(element)
             except OSError:
                 pass
@@ -500,7 +504,7 @@ class SVGLoader:
                 height=context.device.length_height.length_mm,
                 ppi=ppi,
                 color="none",
-                transform="scale(%f)" % scale_factor,
+                transform=f"scale({scale_factor})",
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e

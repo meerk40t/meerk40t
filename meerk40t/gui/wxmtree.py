@@ -59,7 +59,7 @@ def register_panel_tree(window, context):
     context.register("format/elem polyline", "{element_type} {id}")
     context.register("format/elem rect", "{element_type} {id}")
     context.register("format/elem text", "{element_type} {id}: {text}")
-    context.register("format/ref elem", "{element_type}: {ref_id}")
+    context.register("format/reference", "{element_type}: {reference}")
     context.register("format/group", "{element_type} {id}")
     context.register("format/file", "{element_type}: {filename}")
     context.register("format/lasercode", "{element_type}")
@@ -217,7 +217,6 @@ class ShadowTree:
         self.renderer = LaserRender(service.root)
         self.dragging_nodes = None
         self.tree_images = None
-        self.object = "Project"
         self.name = "Project"
 
         self.do_not_select = False
@@ -586,7 +585,7 @@ class ShadowTree:
         tree.SetItemData(node.item, node)
         self.update_decorations(node)
         try:
-            stroke = node.object.values[SVG_ATTR_STROKE]
+            stroke = node.stroke
             color = wx.Colour(swizzlecolor(Color(stroke).argb))
             tree.SetItemTextColour(node.item, color)
         except AttributeError:
@@ -651,28 +650,34 @@ class ShadowTree:
             return  # Node.item can be none if launched from ExecuteJob where the nodes are not part of the tree.
         if node.item is None:
             return
-        data_object = node.object
         tree = root.wxtree
         if icon is None:
             if node.type == 'elem image':
                 image = self.renderer.make_thumbnail(
-                    data_object.image, width=20, height=20
+                    node.image, width=20, height=20
                 )
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif node.type == 'elem point':
                 if (
-                        data_object.stroke is not None
-                        and data_object.stroke.rgb is not None
+                        node.stroke is not None
+                        and node.stroke.rgb is not None
                 ):
-                    c = data_object.stroke
+                    c = node.stroke
                 else:
                     c = Color("black")
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return
-            elif node.type.startswith('elem') or node.type.startswith('ref'):
+            elif node.type == 'reference':
                 image = self.renderer.make_raster(
-                    node, data_object.bbox(), width=20, height=20, bitmap=True
+                    node.node, node.node.bounds, width=20, height=20, bitmap=True
+                )
+                if image is not None:
+                    image_id = self.tree_images.Add(bitmap=image)
+                    tree.SetItemImage(item, image=image_id)
+            elif node.type.startswith('elem path'):
+                image = self.renderer.make_raster(
+                    node, node.bounds, width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
@@ -730,7 +735,7 @@ class ShadowTree:
         label = node.create_label(formatter)
         self.wxtree.SetItemText(node.item, label)
         try:
-            stroke = node.object.stroke
+            stroke = node.stroke
             wxcolor = Color(stroke).bgr
             if wxcolor is not None:
                 color = wx.Colour(wxcolor)
@@ -871,12 +876,12 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
-            if node.type == "ref elem":
-                emphasized[i] = node.object.node
+            if node.type == "reference":
+                emphasized[i] = node.node
             elif node.type.startswith("op"):
-                for n in node.flat(types=("ref elem",), cascade=False):
+                for n in node.flat(types=("reference",), cascade=False):
                     try:
-                        emphasized.append(n.object.node)
+                        emphasized.append(n.node)
                     except Exception:
                         pass
         self.elements.set_emphasis(emphasized)

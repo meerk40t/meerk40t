@@ -46,16 +46,14 @@ class ImageOpNode(Node, Parameters):
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, *args, type="op image", **kwargs)
+        Node.__init__(self, type="op image", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="ref elem")
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
@@ -104,6 +102,12 @@ class ImageOpNode(Node, Parameters):
     def __copy__(self):
         return ImageOpNode(self)
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Image"
@@ -119,9 +123,9 @@ class ImageOpNode(Node, Parameters):
             if drag_node.type == "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add(drag_node.object, type="ref elem", pos=0)
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
@@ -136,7 +140,7 @@ class ImageOpNode(Node, Parameters):
             some_nodes = False
             for e in drag_node.flat("elem"):
                 # Add element to operation
-                self.add(e.object, type="ref elem")
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -158,27 +162,27 @@ class ImageOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, SVGImage):
-                try:
-                    step = e.raster_step
-                except AttributeError:
-                    try:
-                        step = int(e.values["raster_step"])
-                    except (KeyError, ValueError):
-                        step = 1
-                estimate += (e.image_width * e.image_height * step) / (
-                    MILS_IN_MM * self.speed
-                )
+        # for e in self.children:
+        #     e = e.object
+        #     if isinstance(e, SVGImage):
+        #         try:
+        #             step = e.raster_step
+        #         except AttributeError:
+        #             try:
+        #                 step = int(e.values["raster_step"])
+        #             except (KeyError, ValueError):
+        #                 step = 1
+        #         estimate += (e.image_width * e.image_height * step) / (
+        #             MILS_IN_MM * self.speed
+        #         )
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -187,36 +191,49 @@ class ImageOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
+    def scale_native(self, matrix):
+        """
+        Process the scale to native resolution done with the given matrix. In the case of image ops we are scaling
+        the overscan length into usable native units.
+
+        @param matrix:
+        @return:
+        """
+        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        transformed_vector = matrix.transform_vector([0, overscan])
+        self.overscan = abs(
+            complex(transformed_vector[0], transformed_vector[1])
+        )
+
     def as_cutobjects(self, closed_distance=15, passes=1):
-        """Generator of cutobjects for a particular operation."""
-        for svg_image in self.children:
-            svg_image = svg_image.object
-            if not isinstance(svg_image, SVGImage):
+        """
+        Generator of cutobjects for the image operation. This takes any image node children
+        and converts them into rastercut cutobjects.
+        """
+        for image_node in self.children:
+            if image_node.type != "elem image":
                 continue
             settings = self.derive()
-            try:
-                settings["raster_step"] = int(svg_image.values["raster_step"])
-            except KeyError:
-                # This overwrites any step that may have been defined in settings.
-                settings[
-                    "raster_step"
-                ] = 1  # If raster_step is not set image defaults to 1.
-            if settings["raster_step"] <= 0:
-                settings["raster_step"] = 1
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+            settings["raster_step_x"] = step_x
+            settings["raster_step_y"] = step_y
+            overscan = self.overscan
+            if not isinstance(overscan, float):
+                overscan = float(Length(overscan))
 
-            try:
-                settings["raster_direction"] = int(svg_image.values["raster_direction"])
-            except KeyError:
-                pass
-            step = settings["raster_step"]
-            matrix = svg_image.transform
-            pil_image = svg_image.image
-            pil_image, matrix = actualize(pil_image, matrix, step)
+            settings["overscan"] = overscan
+            if image_node.direction is not None:
+                # Overrides the local setting, if direction is set.
+                settings["raster_direction"] = image_node.direction
+            matrix = image_node.matrix
+            pil_image = image_node.image
+            pil_image, matrix = actualize(pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_x)
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * step,
-                matrix.value_trans_y() + pil_image.height * step,
+                matrix.value_trans_x() + pil_image.width * step_x,
+                matrix.value_trans_y() + pil_image.height * step_y,
             )
             path = Path(
                 Polygon(
@@ -237,6 +254,7 @@ class ImageOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if settings["raster_direction"] == 4:
+                # Add in optional crosshatch value.
                 cut = RasterCut(
                     pil_image,
                     matrix.value_trans_x(),

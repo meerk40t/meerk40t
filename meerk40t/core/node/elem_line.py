@@ -1,4 +1,5 @@
 from meerk40t.core.node.node import Node
+from copy import copy
 
 
 class LineNode(Node):
@@ -6,28 +7,71 @@ class LineNode(Node):
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
 
-    def __init__(self, data_object, **kwargs):
-        super(LineNode, self).__init__(data_object)
-        self.last_transform = None
-        data_object.node = self
+    def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
+        super(LineNode, self).__init__(type="elem line", **kwargs)
+        self.shape = shape
+        self.settings = kwargs
+        if matrix is None:
+            self.matrix = shape.transform
+        else:
+            self.matrix = matrix
+        if fill is None:
+            self.fill = shape.fill
+        else:
+            self.fill = fill
+        if stroke is None:
+            self.stroke = shape.stroke
+        else:
+            self.stroke = stroke
+        if stroke_width is None:
+            self.stroke_width = shape.stroke_width
+        else:
+            self.stroke_width = stroke_width
+        self.lock = False
+
+    def __copy__(self):
+        return LineNode(
+            shape=copy(self.shape),
+            matrix=copy(self.matrix),
+            fill=copy(self.fill),
+            stroke=copy(self.stroke),
+            stroke_width=self.stroke_width,
+            **self.settings
+        )
 
     def __repr__(self):
-        return "RectNode('%s', %s, %s)" % (
+        return "%s('%s', %s, %s)" % (
+            self.__class__.__name__,
             self.type,
-            str(self.object),
+            str(self.shape),
             str(self._parent),
         )
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = self.shape.bbox(stroke=True)
+        return self._bounds
+
+    def scale_native(self, matrix):
+        self.matrix *= matrix
+        self.shape.transform = self.matrix
+        self._bounds_dirty = True
 
     def default_map(self, default_map=None):
         default_map = super(LineNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Line"
+        default_map.update(self.settings)
+        default_map["stroke"] = self.stroke
+        default_map["fill"] = self.fill
+        default_map["stroke-width"] = self.stroke_width
+        default_map['matrix'] = self.matrix
         return default_map
 
     def drop(self, drag_node):
-        drop_node = self
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            drop_node.insert_sibling(drag_node)
+            self.insert_sibling(drag_node)
             return True
         return False
 

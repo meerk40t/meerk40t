@@ -55,7 +55,9 @@ class DrawTool(ToolWidget):
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
-                self.scene.context.elements.add_elem(t, classify=True)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(path=t, type="elem path")
+                elements.classify([node])
             except IndexError:
                 pass
             self.series = None

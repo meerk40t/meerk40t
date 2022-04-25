@@ -15,8 +15,7 @@ class TextPropertyPanel(wx.Panel):
         self.context = context
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.element = node.object
-        self.element_node = node
+        self.node = node
         self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
         self.label_fonttest.SetFont(
             wx.Font(
@@ -90,26 +89,25 @@ class TextPropertyPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if isinstance(node.object, Text):
+        if node.type == "elem text":
             return True
         return False
 
     def pane_show(self):
-        self.set_widgets(self.element_node)
+        self.set_widgets(self.node)
 
     def pane_hide(self):
         pass
 
     def set_widgets(self, node):
         if node is not None:
-            self.element = node.object
-            self.element_node = node
+            self.node = node
         try:
-            if self.element.text is not None:
-                self.text_text.SetValue(self.element.text)
-                self.label_fonttest.SetLabelText(self.element.text)
+            if self.node.text is not None:
+                self.text_text.SetValue(self.node.text.text)
+                self.label_fonttest.SetLabelText(self.node.text.text)
                 try:
-                    self.label_fonttest.SetFont(self.element_node.wxfont)
+                    self.label_fonttest.SetFont(self.node.wxfont)
                 except AttributeError:
                     pass
         except AttributeError:
@@ -190,23 +188,21 @@ class TextPropertyPanel(wx.Panel):
         # end wxGlade
 
     def update_label(self):
-        element = self.element
-        element_node = self.element_node
         try:
-            self.label_fonttest.SetFont(element_node.wxfont)
+            self.label_fonttest.SetFont(self.node.wxfont)
         except AttributeError:
             pass
-        self.label_fonttest.SetLabelText(element.text)
-        self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(element.fill)))
+        self.label_fonttest.SetLabelText(self.node.text.text)
+        self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
 
     def refresh(self):
-        self.context.elements.signal("element_property_reload", self.element)
+        self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.element.text = self.text_text.GetValue()
-            self.element.modified()
+            self.node.text.text = self.text_text.GetValue()
+            self.node.modified()
             self.update_label()
             self.refresh()
         except AttributeError:
@@ -216,8 +212,8 @@ class TextPropertyPanel(wx.Panel):
     def on_button_choose_font(self, event):  # wxGlade: TextProperty.<event_handler>
         font_data = wx.FontData()
         try:
-            font_data.SetInitialFont(self.element_node.wxfont)
-            font_data.SetColour(wx.Colour(swizzlecolor(self.element.fill)))
+            font_data.SetInitialFont(self.node.wxfont)
+            font_data.SetColour(wx.Colour(swizzlecolor(self.node.fill)))
             dialog = wx.FontDialog(None, font_data)
         except AttributeError:
             dialog = wx.FontDialog(None, font_data)
@@ -229,11 +225,11 @@ class TextPropertyPanel(wx.Panel):
                 rgb = color.GetRGB()
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
-                self.element.fill = color
-                self.element.modified()
+                self.node.fill = color
+                self.node.modified()
             except Exception:  # rgb get failed.
                 pass
-            self.element_node.wxfont = font
+            self.node.wxfont = font
             self.update_label()
             self.refresh()
         dialog.Destroy()
@@ -249,22 +245,18 @@ class TextPropertyPanel(wx.Panel):
             color = Color(color, 1.0)
         if "stroke" in button.name:
             if color is not None:
-                self.element.stroke = color
-                self.element.values[SVG_ATTR_STROKE] = color.hex
-                self.element.node.altered()
+                self.node.stroke = color
+                self.node.altered()
             else:
-                self.element.stroke = Color("none")
-                self.element.values[SVG_ATTR_STROKE] = "none"
-                self.element.node.altered()
+                self.node.stroke = Color("none")
+                self.node.altered()
         elif "fill" in button.name:
             if color is not None:
-                self.element.fill = color
-                self.element.values[SVG_ATTR_FILL] = color.hex
-                self.element.node.altered()
+                self.node.fill = color
+                self.node.altered()
             else:
-                self.element.fill = Color("none")
-                self.element.values[SVG_ATTR_FILL] = "none"
-                self.element.node.altered()
+                self.fill = Color("none")
+                self.node.altered()
         self.update_label()
         self.refresh()
         event.Skip()

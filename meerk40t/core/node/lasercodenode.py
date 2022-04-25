@@ -8,8 +8,8 @@ class LaserCodeNode(Node):
     Node type "lasercode"
     """
 
-    def __init__(self, commands, **kwargs):
-        super().__init__(commands, type="lasercode")
+    def __init__(self, commands=None, **kwargs):
+        super().__init__(type="lasercode", **kwargs)
         if "name" in kwargs:
             self.name = kwargs["name"]
         else:
