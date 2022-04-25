@@ -4,7 +4,7 @@ from test import bootstrap
 
 from PIL import Image, ImageDraw
 
-from meerk40t.svgelements import SVGImage
+from meerk40t.svgelements import SVGImage, Matrix
 
 
 class TestRasterWizard(unittest.TestCase):
@@ -91,7 +91,7 @@ class TestRasterWizard(unittest.TestCase):
                     draw.ellipse((95, 95, 105, 105), "green")
                     image = image.convert(mode)
                     elements = kernel_root.elements
-                    node = elements.elem_branch.add(image=image, type="elem image")
+                    node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
                     node.emphasized = True
                 kernel_root("image wizard %s\n" % script)
                 # Solve for step.
@@ -244,7 +244,7 @@ class TestRasterWizard(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1,type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():

@@ -3437,10 +3437,10 @@ class Elemental(Service):
             if dx != 0 or dy != 0:
                 m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
                 for e in pasted:
-                    e *= m
+                    e.matrix *= m
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
-                group.add(p, type=get_type_from_element(p))
+                group.add_node(copy(p))
             self.set_emphasis([group])
             return "elements", pasted
 

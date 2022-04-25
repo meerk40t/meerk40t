@@ -23,7 +23,7 @@ class TestActualize(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
@@ -46,7 +46,7 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
             node.step_x = 3
             node.step_y = 3
             draw = ImageDraw.Draw(image)
@@ -96,7 +96,7 @@ class TestActualize(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, type="elem image")
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
@@ -144,7 +144,7 @@ class TestActualize(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, type="elem image")
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
@@ -154,17 +154,17 @@ class TestActualize(unittest.TestCase):
                     self.assertEqual(
                         node.image.size,
                         (
-                            ceil(101 / svg_image.values["raster_step"]),
-                            ceil(101 / svg_image.values["raster_step"]),
+                            ceil(101 / node.step_x),
+                            ceil(101 / node.step_y),
                         ),
                     )
                     self.assertEqual(
                         node.matrix.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        node.step_x,
                     )
                     self.assertEqual(
                         node.matrix.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        node.step_y,
                     )
                     self.assertEqual(node.matrix.value_trans_x(), 50)
                     self.assertEqual(node.matrix.value_trans_y(), 50)
@@ -187,7 +187,7 @@ class TestActualize(unittest.TestCase):
             for step in range(1, 20):
                 transform = Matrix()
                 actual, transform = actualize(
-                    image, transform, step_x=step, crop=False
+                    image, transform, step_x=step, step_y=step, crop=False
                 )
                 self.assertEqual(actual.getpixel((-1, -1)), 255)
 
@@ -203,7 +203,7 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(image, transform, step_x=step, crop=False)
+            actual, transform = actualize(image, transform, step_x=step, step_y=step, crop=False)
             self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
@@ -219,12 +219,12 @@ class TestActualize(unittest.TestCase):
         for step in range(1, 20):
             transform = Matrix()
             actual, transform = actualize(
-                image, transform, step_x=step, crop=False, inverted=True
+                image, transform, step_x=step, step_y=step, crop=False, inverted=True
             )
             self.assertEqual(actual.getpixel((-1, -1)), 0)
 
         # Note: inverted flag not set. White edge pixel is correct.
-        actual, transform = actualize(image, Matrix(), step_x=3, crop=False)
+        actual, transform = actualize(image, Matrix(), step_x=3, step_y=3,  crop=False)
         self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_largecircle(self):
@@ -241,7 +241,7 @@ class TestActualize(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((0, 0, 256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for node in kernel_root.elements.elems():
@@ -264,7 +264,7 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
@@ -287,7 +287,7 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
