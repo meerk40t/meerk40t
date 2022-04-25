@@ -8,7 +8,7 @@ class PointNode(Node):
     """
 
     def __init__(self, point=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
-        super(PointNode, self).__init__()
+        super(PointNode, self).__init__(type="elem path", **kwargs)
         self.point = point
         self.matrix = matrix
         self.settings = kwargs

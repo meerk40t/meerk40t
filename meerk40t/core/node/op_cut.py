@@ -39,7 +39,7 @@ class CutOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, **kwargs):
-        Node.__init__(self, *args, type="op cut", **kwargs)
+        Node.__init__(self, type="op cut", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
@@ -138,7 +138,7 @@ class CutOpNode(Node, Parameters):
 
     def deep_copy_children(self, obj):
         for node in obj.children:
-            self.add(copy(node.node), type=node.node.type)
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0

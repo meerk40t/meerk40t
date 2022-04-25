@@ -8,7 +8,7 @@ class RectNode(Node):
     """
 
     def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None,  **kwargs):
-        super(RectNode, self).__init__()
+        super(RectNode, self).__init__(type="elem rect", **kwargs)
         self.shape = shape
         self.settings = kwargs
         if matrix is None:

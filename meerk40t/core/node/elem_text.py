@@ -9,7 +9,7 @@ class TextNode(Node):
     """
 
     def __init__(self, text=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
-        super(TextNode, self).__init__()
+        super(TextNode, self).__init__(type="elem text", **kwargs)
         self.text = text
         self.settings = kwargs
         if matrix is None:

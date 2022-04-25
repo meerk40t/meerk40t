@@ -1,5 +1,6 @@
 import os
 
+from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.node.node import Node
 
 
@@ -10,7 +11,7 @@ class FileNode(Node):
     """
 
     def __init__(self, filepath=None, **kwargs):
-        super(FileNode, self).__init__(**kwargs)
+        super(FileNode, self).__init__(type="file", **kwargs)
         self._filepath = filepath
 
     def __str__(self):
@@ -32,7 +33,7 @@ class FileNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat())
+            self._bounds = Node.union_bounds(self.flat(types=elem_nodes))
         return self._bounds
 
     @property

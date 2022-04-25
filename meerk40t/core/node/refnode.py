@@ -8,8 +8,8 @@ class ReferenceNode(Node):
     ReferenceNode track referenced nodes within the tree.
     """
 
-    def __init__(self, node):
-        super(ReferenceNode, self).__init__()
+    def __init__(self, node, **kwargs):
+        super(ReferenceNode, self).__init__(type="reference", **kwargs)
         node._references.append(self)
         self.node = node
 

@@ -9,7 +9,7 @@ class PathNode(Node):
     """
 
     def __init__(self, path=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
-        super(PathNode, self).__init__()
+        super(PathNode, self).__init__(type="elem path")
         self.path = path
         self.settings = kwargs
         if matrix is None:

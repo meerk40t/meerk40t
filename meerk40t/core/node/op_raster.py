@@ -46,7 +46,7 @@ class RasterOpNode(Node, Parameters):
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, *args, type="op raster", **kwargs)
+        Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
@@ -162,7 +162,7 @@ class RasterOpNode(Node, Parameters):
 
     def deep_copy_children(self, obj):
         for node in obj.children:
-            self.add(copy(node.node), type=node.node.type)
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         # TODO: Strictly speaking this is wrong. The time estimate is raster of non-svgimage objects.

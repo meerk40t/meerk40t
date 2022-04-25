@@ -19,7 +19,7 @@ class ImageNode(Node):
         step_y=None,
         **kwargs,
     ):
-        super(ImageNode, self).__init__()
+        super(ImageNode, self).__init__(type="elem image", **kwargs)
         self.image = image
         self.matrix = matrix
         self.settings = kwargs

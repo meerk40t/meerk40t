@@ -11,7 +11,7 @@ class EllipseNode(Node):
     def __init__(
         self, shape, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs
     ):
-        super(EllipseNode, self).__init__()
+        super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
         self.shape = shape
         self.settings = kwargs
         if matrix is None:

@@ -8,7 +8,7 @@ class GroupNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(GroupNode, self).__init__(**kwargs)
+        super(GroupNode, self).__init__(type="group", **kwargs)
 
     def __repr__(self):
         return "GroupNode('%s', %s)" % (

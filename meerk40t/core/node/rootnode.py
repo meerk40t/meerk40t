@@ -31,11 +31,10 @@ class RootNode(Node):
     The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
     """
 
-    def __init__(self, context):
+    def __init__(self, context, **kwargs):
         _ = context._
-        super().__init__(None)
+        super(RootNode, self).__init__(type="reference", **kwargs)
         self._root = self
-        self.type = "root"
         self.context = context
         self.listeners = []
 
