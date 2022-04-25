@@ -5152,26 +5152,6 @@ class Elemental(Service):
             items.append(op)
         return items
 
-    def add_elem(self, element, classify=False, branch_type="branch elems"):
-        """
-        Add an element. Wraps it within a node, and appends it to the tree.
-
-        @param element:
-        @param classify: Should this element be automatically classified.
-        @param branch_type: Branch type to add this to
-        @return:
-        """
-        branch = self._tree.get(type=branch_type)
-        node_type = get_type_from_element(element)
-        if node_type:
-            node = branch.add(element, type=node_type)
-        else:
-            raise ValueError("add elem called on non svgelement")
-        self.signal("element_added", element)
-        if classify:
-            self.classify([element])
-        return node
-
     def add_elems(self, adding_elements, classify=False, branch_type="branch elems"):
         """
         Add multiple svg elements to the tree.
