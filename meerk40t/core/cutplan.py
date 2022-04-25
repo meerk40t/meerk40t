@@ -377,7 +377,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                if len(op.children) == 1 and op.children[0].type == "elem image":
                     continue
                 self.plan[k] = None
                 stripped = True
@@ -392,8 +392,8 @@ class CutPlan:
         step_y = op.raster_step_y
         bounds = op.bounds
         image = make_raster(list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y)
-        matrix = Matrix(self.context.device.device_to_scene_matrix())
-        matrix.post_scale(step_x, step_y)
+        image = image.convert("L")
+        matrix = Matrix.scale(step_x, step_y)
         matrix.post_translate(bounds[0], bounds[1])
         image_node = ImageNode(image=image, matrix=matrix, step_x=step_x, step_y=step_y)
         return image_node
@@ -403,7 +403,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                if len(op.children) == 1 and op.children.type == "elem image":
                     continue
                 image_node = self._make_image_for_op(op)
                 if image_node is None:
@@ -521,7 +521,7 @@ class CutPlan:
             if op.type == "op raster":
                 if len(op.children) == 0:
                     continue
-                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                if len(op.children) == 1 and op.children[0].type == "elem image":
                     continue  # make raster not needed since it's a single real raster.
                 make_raster = self.context.lookup("render-op/make_raster")
 

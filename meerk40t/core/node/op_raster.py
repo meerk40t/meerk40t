@@ -196,14 +196,15 @@ class RasterOpNode(Node, Parameters):
         for image_node in self.children:
             if image_node.type != "elem image":
                 continue
+            if image_node.needs_actualization():
+                image_node.actualize()
+            image = image_node.image
             matrix = image_node.matrix
-            pil_image = image_node.image
-            pil_image, matrix = actualize(pil_image, matrix, self.raster_step_x, self.raster_step_y)
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * self.raster_step_x,
-                matrix.value_trans_y() + pil_image.height * self.raster_step_y,
+                matrix.value_trans_x() + image.width * self.raster_step_x,
+                matrix.value_trans_y() + image.height * self.raster_step_y,
             )
             path = Path(
                 Polygon(
@@ -214,7 +215,7 @@ class RasterOpNode(Node, Parameters):
                 )
             )
             cut = RasterCut(
-                pil_image,
+                image,
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
                 settings=settings,
@@ -226,7 +227,7 @@ class RasterOpNode(Node, Parameters):
             if direction == 4:
                 # Add in optional crosshatch value.
                 cut = RasterCut(
-                    pil_image,
+                    image,
                     matrix.value_trans_x(),
                     matrix.value_trans_y(),
                     crosshatch=True,
