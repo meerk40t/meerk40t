@@ -29,6 +29,7 @@ class PointNode(Node):
 
     def scale_native(self, matrix):
         self.matrix *= matrix
+        self._bounds_dirty = True
 
     @property
     def bounds(self):

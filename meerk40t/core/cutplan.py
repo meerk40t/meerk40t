@@ -393,11 +393,11 @@ class CutPlan:
         step_x = op.raster_step_x
         step_y = op.raster_step_y
         bounds = op.bounds
-        image = make_raster(op.flat(), bounds=bounds, step_x=step_x, step_y=step_y)
+        image = make_raster(list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y)
         matrix = Matrix(self.context.device.device_to_scene_matrix())
         matrix.post_scale(step_x, step_y)
         matrix.post_translate(bounds[0], bounds[1])
-        image_node = ImageNode(None, image=image, matrix=matrix, step_x=step_x, step_y=step_y)
+        image_node = ImageNode(image=image, matrix=matrix, step_x=step_x, step_y=step_y)
         return image_node
 
     def make_image(self):
@@ -416,7 +416,7 @@ class CutPlan:
                     #  been set, the initial bounds are wrong.
                     image_node = self._make_image_for_op(op)
                 op.children.clear()
-                op.add(image_node, type="elem image")
+                op.add_node(image_node)
 
     def actualize_job_command(self):
         """

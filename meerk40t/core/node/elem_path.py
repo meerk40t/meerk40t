@@ -56,6 +56,8 @@ class PathNode(Node):
 
     def scale_native(self, matrix):
         self.matrix *= matrix
+        self.path.transform = self.matrix
+        self._bounds_dirty = True
 
     def default_map(self, default_map=None):
         default_map = super(PathNode, self).default_map(default_map=default_map)
