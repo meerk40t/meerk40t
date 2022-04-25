@@ -5473,7 +5473,7 @@ class Elemental(Service):
                         op.add_reference(node)
                         was_classified = True
                     elif node.fill is not None and node.fill.argb is not None:
-                        op.add_reference(node.node)
+                        op.add_reference(node)
                         was_classified = True
                 elif (
                     op.type in ("op engrave", "op cut", "op hatch")

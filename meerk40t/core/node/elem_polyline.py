@@ -11,11 +11,23 @@ class PolylineNode(Node):
     def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None,  **kwargs):
         super(PolylineNode, self).__init__()
         self.shape = shape
-        self.matrix = matrix
         self.settings = kwargs
-        self.fill = fill
-        self.stroke = stroke
-        self.stroke_width = stroke_width
+        if matrix is None:
+            self.matrix = shape.transform
+        else:
+            self.matrix = matrix
+        if fill is None:
+            self.fill = shape.fill
+        else:
+            self.fill = fill
+        if stroke is None:
+            self.stroke = shape.stroke
+        else:
+            self.stroke = stroke
+        if stroke_width is None:
+            self.stroke_width = shape.stroke_width
+        else:
+            self.stroke_width = stroke_width
         self.lock = False
 
     def __copy__(self):
@@ -35,6 +47,12 @@ class PolylineNode(Node):
             str(self.shape),
             str(self._parent),
         )
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = self.path.bbox(stroke=True)
+        return self._bounds
 
     def scale_native(self, matrix):
         self.matrix *= matrix

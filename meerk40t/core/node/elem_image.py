@@ -56,7 +56,9 @@ class ImageNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._calculate_bounds()
+            # TODO: Naive
+            image_width, image_height = self.image.size
+            return 0, 0, image_width, image_height
         return self._bounds
 
     def default_map(self, default_map=None):

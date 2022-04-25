@@ -334,7 +334,6 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("units")
     def space_changed(self, origin, *args):
-        print("units")
         self.scene.signal("grid")
         self.scene.signal("guide")
         self.request_refresh(origin)

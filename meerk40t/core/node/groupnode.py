@@ -16,6 +16,12 @@ class GroupNode(Node):
             str(self._parent),
         )
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat())
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Group"

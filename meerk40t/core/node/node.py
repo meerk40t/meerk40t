@@ -113,14 +113,9 @@ class Node:
     def root(self):
         return self._root
 
-    def _calculate_bounds(self):
-        pass
-
     @property
     def bounds(self):
-        if self._bounds_dirty:
-            self._calculate_bounds()
-        return self._bounds
+        return None
 
     @property
     def points(self):

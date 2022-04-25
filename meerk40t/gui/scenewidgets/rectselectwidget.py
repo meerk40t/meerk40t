@@ -242,17 +242,17 @@ class RectSelectWidget(Widget):
                 if self.key_shift_pressed:
                     # Add Selection
                     if cover >= self.selection_method[sector]:
-                        node.node.emphasized = True
+                        node.emphasized = True
                 elif self.key_control_pressed:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
-                        node.node.emphasized = not node.node.emphasized
+                        node.emphasized = not node.emphasized
                 else:
                     # Replace Selection
                     if cover >= self.selection_method[sector]:
-                        node.node.emphasized = True
+                        node.emphasized = True
                     else:
-                        node.node.emphasized = False
+                        node.emphasized = False
 
             self.scene.request_refresh()
             self.start_location = None

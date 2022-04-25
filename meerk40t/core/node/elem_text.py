@@ -11,11 +11,23 @@ class TextNode(Node):
     def __init__(self, text=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
         super(TextNode, self).__init__()
         self.text = text
-        self.matrix = matrix
         self.settings = kwargs
-        self.fill = fill
-        self.stroke = stroke
-        self.stroke_width = stroke_width
+        if matrix is None:
+            self.matrix = text.transform
+        else:
+            self.matrix = matrix
+        if fill is None:
+            self.fill = text.fill
+        else:
+            self.fill = fill
+        if stroke is None:
+            self.stroke = text.stroke
+        else:
+            self.stroke = stroke
+        if stroke_width is None:
+            self.stroke_width = text.stroke_width
+        else:
+            self.stroke_width = stroke_width
         self.lock = False
 
     def __copy__(self):
@@ -27,6 +39,8 @@ class TextNode(Node):
             stroke_width=self.stroke_width,
             **self.settings
         )
+
+    # TODO: TEXTNode, bounds
 
     def scale_native(self, matrix):
         self.matrix *= matrix

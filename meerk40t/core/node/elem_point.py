@@ -30,6 +30,13 @@ class PointNode(Node):
     def scale_native(self, matrix):
         self.matrix *= matrix
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            p = self.matrix.transform_point(self.point)
+            self._bounds = p[0], p[1], p[0], p[1],
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)
         default_map['element_type'] = "Point"
