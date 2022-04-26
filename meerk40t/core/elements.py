@@ -3617,6 +3617,34 @@ class Elemental(Service):
 
             spooler.job(trace_command)
 
+        @self.console_command(
+            "trace",
+            help=_("trace the given element path"),
+            input_type="shapes",
+        )
+        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
+            if not data:
+                return
+            spooler = self.device.spooler
+            pts = []
+            for path in data:
+                path = abs(Path(path))
+                pts.append(path.first_point)
+                for segment in path:
+                    pts.append(segment.end)
+            if not pts:
+                return
+
+            def trace_command():
+                yield "wait_finish"
+                yield "rapid_mode"
+                for p in pts:
+                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
+                        amount=p[1]
+                    ).length_mm
+
+            spooler.job(trace_command)
+
         # --------------------------- END COMMANDS ------------------------------
 
     def _init_tree(self, kernel):
