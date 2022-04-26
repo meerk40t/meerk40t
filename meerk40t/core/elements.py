@@ -3596,12 +3596,14 @@ class Elemental(Service):
                 return
             spooler = self.device.spooler
             pts = []
-            for path in data:
-                if isinstance(path, Shape):
-                    path = abs(Path(path))
-                    pts.append(path.first_point)
-                    for segment in path:
-                        pts.append(segment.end)
+            for node in data:
+                try:
+                    path = node.as_path()
+                except AttributeError:
+                    continue
+                pts.append(path.first_point)
+                for segment in path:
+                    pts.append(segment.end)
             if not pts:
                 return
 
