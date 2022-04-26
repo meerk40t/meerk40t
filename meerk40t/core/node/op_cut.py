@@ -140,17 +140,21 @@ class CutOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        # for e in self.children:
-        #     e = e.object
-        #     if isinstance(e, Shape):
-        #         try:
-        #             length = e.length(error=1e-2, min_depth=2)
-        #         except AttributeError:
-        #             length = 0
-        #         try:
-        #             estimate += length / (MILS_IN_MM * self.speed)
-        #         except ZeroDivisionError:
-        #             estimate = float("inf")
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            try:
+                path = node.as_path()
+            except AttributeError:
+                continue
+            try:
+                length = e.length(error=1e-2, min_depth=2)
+            except AttributeError:
+                length = 0
+            try:
+                estimate += length / (MILS_IN_MM * self.speed)
+            except ZeroDivisionError:
+                estimate = float("inf")
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

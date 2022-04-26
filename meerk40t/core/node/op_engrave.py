@@ -3,11 +3,8 @@ from copy import copy
 from meerk40t.core.cutcode import (
     CubicCut,
     CutGroup,
-    DwellCut,
     LineCut,
-    PlotCut,
     QuadCut,
-    RasterCut,
 )
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
@@ -21,7 +18,6 @@ from meerk40t.svgelements import (
     Path,
     Polygon,
     QuadraticBezier,
-    Shape,
 )
 
 MILS_IN_MM = 39.3701
@@ -152,6 +148,8 @@ class EngraveOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         for node in self.children:
+            if node.type == "reference":
+                node = node.node
             try:
                 path = node.as_path()
             except AttributeError:
