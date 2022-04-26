@@ -40,7 +40,11 @@ class TextNode(Node):
             **self.settings
         )
 
-    # TODO: TEXTNode, bounds
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = self.text.bbox(with_stroke=True)
+        return self._bounds
 
     def scale_native(self, matrix):
         self.matrix *= matrix
