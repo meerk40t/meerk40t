@@ -197,9 +197,6 @@ class LaserRender:
             sw = limit
         self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
 
-    def set_element_brush(self, gc, element, alpha=255):
-        self.set_brush(gc, element.fill, alpha=alpha)
-
     def draw_cutcode_node(
         self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
@@ -308,7 +305,7 @@ class LaserRender:
         self.set_element_pen(
             gc, shape, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
         )
-        self.set_element_brush(gc, shape, alpha=alpha)
+        self.set_brush(gc, shape.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
             gc.FillPath(node.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and shape.stroke is not None:
@@ -335,7 +332,7 @@ class LaserRender:
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, path.stroke, width=1000, alpha=alpha)
-        self.set_element_brush(gc, path, alpha=alpha)
+        self.set_brush(gc, path.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
             gc.FillPath(node.cache)
         if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
@@ -398,7 +395,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(gc, text, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, text)
+        self.set_brush(gc, text.fill, alpha=255)
 
         if text.fill is None or text.fill == "none":
             gc.SetFont(font, wx.BLACK)
