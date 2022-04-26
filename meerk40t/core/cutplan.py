@@ -425,7 +425,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                dpi = float(op.settings['dpi'])
+                dpi = float(op.settings.get('dpi', 500))
                 oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
                 oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
                 step_x = float(oneinch_x / dpi)

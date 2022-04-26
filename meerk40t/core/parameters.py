@@ -84,7 +84,7 @@ class Parameters:
                 settings[v] = str(settings[v]).lower() == "true"
         for v in STRING_PARAMETERS:
             if v in settings:
-                settings[v] = int(float(settings[v]))
+                settings[v] = settings[v]
         for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
