@@ -5,7 +5,7 @@ from meerk40t.balormk.BalorDriver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Angle, Path, Point, Polygon, Shape
+from meerk40t.svgelements import Angle, Path, Point, Polygon
 
 
 class BalorDevice(Service, ViewPort):
@@ -516,11 +516,9 @@ class BalorDevice(Service, ViewPort):
             )
             job.laser_control(True)
             for e in paths:
-                if isinstance(e, Shape):
-                    if not isinstance(e, Path):
-                        e = Path(e)
-                    e = abs(e)
-                else:
+                try:
+                    e = e.as_path()
+                except AttributeError:
                     continue
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
@@ -593,11 +591,9 @@ class BalorDevice(Service, ViewPort):
                     light_speed=self.redlight_speed, goto_speed=travel_speed
                 )
             for e in paths:
-                if isinstance(e, Shape):
-                    if not isinstance(e, Path):
-                        e = Path(e)
-                    e = abs(e)
-                else:
+                try:
+                    e = e.as_path()
+                except AttributeError:
                     continue
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
@@ -1047,12 +1043,9 @@ class BalorDevice(Service, ViewPort):
             points = list()
             for e in data:
                 try:
-                    path = abs(Path(e.shape))
+                    path = e.as_path()
                 except AttributeError:
-                    try:
-                        path = abs(e.path)
-                    except AttributeError:
-                        continue
+                    continue
                 for i in range(0, quantization + 1):
                     x, y = path.point(i / float(quantization))
                     points.append((x, y))

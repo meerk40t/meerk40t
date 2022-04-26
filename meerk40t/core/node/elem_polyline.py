@@ -2,6 +2,8 @@ from meerk40t.core.node.node import Node
 
 from copy import copy
 
+from meerk40t.svgelements import Path
+
 
 class PolylineNode(Node):
     """
@@ -107,3 +109,6 @@ class PolylineNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def as_path(self):
+        return Path(self.shape)
