@@ -51,7 +51,7 @@ class PolylineNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._bounds = self.shape.bbox(stroke=True)
+            self._bounds = self.shape.bbox(with_stroke=True)
         return self._bounds
 
     def scale_native(self, matrix):
