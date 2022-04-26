@@ -110,4 +110,5 @@ class RectNode(Node):
         return False
 
     def as_path(self):
-        return Path(self.shape)
+        self.shape.transform = self.matrix
+        return abs(Path(self.shape))

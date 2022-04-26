@@ -25,57 +25,50 @@ def plugin(kernel, lifecycle):
                 channel(_("Not enough items selected to apply constructive geometric function"))
                 return "elements", []
 
-            if len(data) >= 2:
-                node0 = data[0]
+            if command == "intersection":
+                ct = ClipType.Intersection
+            elif command == "xor":
+                ct = ClipType.Xor
+            elif command == "union":
+                ct = ClipType.Union
+            else:  # difference
+                ct = ClipType.Difference
+            solution_path = Path(stroke="blue", stroke_width=1000)
+            last_polygon = None
+            for i in range(len(data)):
+                node = data[i]
                 try:
-                    path0 = node0.as_path()
-                except AttributeError:
-                    return "elements", data
-                subject_polygons = []
-                node1 = data[1]
-                try:
-                    path1 = node1.as_path()
+                    path = node.as_path()
                 except AttributeError:
                     return "elements", data
 
-                for subpath in path0.as_subpaths():
+                current_polygon = []
+                for subpath in path.as_subpaths():
                     subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
                     subj.reshape((2, 1000))
                     s = list(map(Point, subj))
-                    subject_polygons.append(s)
+                    current_polygon.append(s)
 
-                clip_polygons = []
-                for subpath in path1.as_subpaths():
-                    clip = Path(subpath).npoint(np.linspace(0, 1, 1000))
-                    clip.reshape((2, 1000))
-                    c = list(map(Point, clip))
-                    clip_polygons.append(c)
-                pc = Clipper()
-                solution = []
-                pc.AddPolygons(subject_polygons, PolyType.Subject)
-                pc.AddPolygons(clip_polygons, PolyType.Clip)
+                if last_polygon is not None:
+                    pc = Clipper()
+                    solution = []
+                    pc.AddPolygons(last_polygon, PolyType.Subject)
+                    pc.AddPolygons(current_polygon, PolyType.Clip)
+                    result = pc.Execute(
+                        ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd
+                    )
+                    current_polygon = solution
+                last_polygon = current_polygon
 
-                if command == "intersection":
-                    ct = ClipType.Intersection
-                elif command == "xor":
-                    ct = ClipType.Xor
-                elif command == "union":
-                    ct = ClipType.Union
-                else:  # difference
-                    ct = ClipType.Difference
-                result = pc.Execute(
-                    ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd
-                )
-                solution_path = None
-                for se in solution:
-                    r = Polygon(*se, stroke="blue", stroke_width=1000)
-                    if solution_path is None:
-                        solution_path = Path(r)
-                    else:
-                        solution_path += Path(r)
-                if solution_path:
-                    node = context.elements.elem_branch.add(path=solution_path, type="elem path")
-                    context.elements.classify([node])
-                    return "elements", [node]
+            for se in last_polygon:
+                r = Polygon(*se)
+                if solution_path is None:
+                    solution_path = Path(r)
                 else:
-                    return "elements", []
+                    solution_path += Path(r)
+            if solution_path:
+                node = context.elements.elem_branch.add(path=solution_path, type="elem path")
+                context.elements.classify([node])
+                return "elements", [node]
+            else:
+                return "elements", []
