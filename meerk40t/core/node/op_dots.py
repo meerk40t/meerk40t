@@ -146,16 +146,11 @@ class DotsOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for path_node in self.children:
-            try:
-                obj = abs(path_node.object)
-                first = obj.point(0)
-            except (IndexError, AttributeError):
-                continue
-            if first is None:
+        for point_node in self.children:
+            if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (first[0], first[1]),
+                (point_node.point[0], point_node[1]),
                 settings=settings,
                 passes=passes,
             )
