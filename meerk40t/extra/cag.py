@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Point, Polygon, Shape
+from meerk40t.svgelements import Path, Point, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -23,23 +23,26 @@ def plugin(kernel, lifecycle):
             import numpy as np
 
             if len(data) >= 2:
-                e0 = data[0]
-                if isinstance(e0, Shape) and not isinstance(e0, Path):
-                    e0 = Path(e0)
-                e0 = abs(e0)
+                node0 = data[0]
+                try:
+                    path0 = node0.as_path()
+                except AttributeError:
+                    return "elements", data
                 subject_polygons = []
-                for subpath in e0.as_subpaths():
+                node1 = data[1]
+                try:
+                    path1 = node1.as_path()
+                except AttributeError:
+                    return "elements", data
+
+                for subpath in path0.as_subpaths():
                     subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
                     subj.reshape((2, 1000))
                     s = list(map(Point, subj))
                     subject_polygons.append(s)
 
-                e1 = data[1]
-                if isinstance(e1, Shape) and not isinstance(e1, Path):
-                    e1 = Path(e1)
-                e1 = abs(e1)
                 clip_polygons = []
-                for subpath in e1.as_subpaths():
+                for subpath in path1.as_subpaths():
                     clip = Path(subpath).npoint(np.linspace(0, 1, 1000))
                     clip.reshape((2, 1000))
                     c = list(map(Point, clip))

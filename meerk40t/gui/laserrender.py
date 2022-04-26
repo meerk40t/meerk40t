@@ -4,23 +4,17 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.element_types import elem_nodes
-from ..core.elements import is_dot
 from ..core.node.node import Node
 from ..svgelements import (
     Arc,
     Close,
     Color,
     CubicBezier,
-    Group,
     Line,
     Matrix,
     Move,
     Path,
     QuadraticBezier,
-    Shape,
-    SVGImage,
-    SVGText,
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -203,9 +197,6 @@ class LaserRender:
             sw = limit
         self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
 
-    def set_element_brush(self, gc, element, alpha=255):
-        self.set_brush(gc, element.fill, alpha=alpha)
-
     def draw_cutcode_node(
         self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
@@ -298,7 +289,6 @@ class LaserRender:
 
     def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
-        shape = node.shape
         try:
             matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
@@ -306,24 +296,23 @@ class LaserRender:
             matrix = None
             width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, Path(shape))
+            cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, shape, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
         )
-        self.set_element_brush(gc, shape, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and shape.stroke is not None:
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        path = node.path
         try:
             matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
@@ -331,20 +320,20 @@ class LaserRender:
             matrix = None
             width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, path)
+            cache = self.make_path(gc, node.path)
             node.cache = cache
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, path, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, path.stroke, width=1000, alpha=alpha)
-        self.set_element_brush(gc, path, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
+            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
 
@@ -403,13 +392,13 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, text, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, text)
+        self.set_element_pen(gc, node, zoomscale=zoomscale, width_scale=width_scale)
+        self.set_brush(gc, node.fill, alpha=255)
 
-        if text.fill is None or text.fill == "none":
+        if node.fill is None or node.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(text.fill)))
+            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
 
         x = text.x
         y = text.y

@@ -45,8 +45,6 @@ from ..svgelements import (
     Polygon,
     Polyline,
     Rect,
-    Shape,
-    SVGElement,
     SVGImage,
     SVGText, SimpleLine,
 )

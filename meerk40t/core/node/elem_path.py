@@ -107,3 +107,6 @@ class PathNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def as_path(self):
+        return abs(self.path)
