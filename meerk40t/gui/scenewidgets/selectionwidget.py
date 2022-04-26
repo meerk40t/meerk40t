@@ -347,8 +347,8 @@ class RotationWidget(Widget):
         dx = abs(min(0, inner_wd_half - self.inner))
         dy = abs(min(0, inner_ht_half - self.inner))
         if self.master.handle_outside:
-            offset_x = self.inner/2
-            offset_y = self.inner/2
+            offset_x = self.inner / 2
+            offset_y = self.inner / 2
         else:
             offset_x = 0
             offset_y = 0
@@ -1637,7 +1637,7 @@ class SelectionWidget(Widget):
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
-                # Option to draw selection Handle outside of box to allow for better visibility
+        # Option to draw selection Handle outside of box to allow for better visibility
 
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)

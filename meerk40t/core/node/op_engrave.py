@@ -1,35 +1,19 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-)
+from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
-    Angle,
     Close,
     Color,
     CubicBezier,
     Line,
-    Matrix,
     Move,
     Path,
     Polygon,
     QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
 )
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 MILS_IN_MM = 39.3701
 
@@ -96,11 +80,11 @@ class EngraveOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Engrave"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['speed'] = "default"
-        default_map['power'] = "default"
-        default_map['frequency'] = "default"
+        default_map["element_type"] = "Engrave"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["speed"] = "default"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -158,17 +142,18 @@ class EngraveOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
-                try:
-                    length = e.length(error=1e-2, min_depth=2)
-                except AttributeError:
-                    length = 0
-                try:
-                    estimate += length / (MILS_IN_MM * self.speed)
-                except ZeroDivisionError:
-                    estimate = float("inf")
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            try:
+                path = node.as_path()
+            except AttributeError:
+                continue
+            length = path.length(error=1e-2, min_depth=2)
+            try:
+                estimate += length / (MILS_IN_MM * self.speed)
+            except ZeroDivisionError:
+                estimate = float("inf")
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

@@ -24,7 +24,7 @@ class GroupNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Group"
+        default_map["element_type"] = "Group"
         return default_map
 
     def drop(self, drag_node):

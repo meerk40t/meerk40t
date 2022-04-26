@@ -1,35 +1,12 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-)
+from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import (
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Polygon,
-    QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
-)
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
+from meerk40t.svgelements import Color, Path, Polygon
 
 MILS_IN_MM = 39.3701
 
@@ -110,11 +87,11 @@ class ImageOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Image"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['speed'] = "default"
-        default_map['power'] = "default"
-        default_map['frequency'] = "default"
+        default_map["element_type"] = "Image"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["speed"] = "default"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -170,19 +147,17 @@ class ImageOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        # for e in self.children:
-        #     e = e.object
-        #     if isinstance(e, SVGImage):
-        #         try:
-        #             step = e.raster_step
-        #         except AttributeError:
-        #             try:
-        #                 step = int(e.values["raster_step"])
-        #             except (KeyError, ValueError):
-        #                 step = 1
-        #         estimate += (e.image_width * e.image_height * step) / (
-        #             MILS_IN_MM * self.speed
-        #         )
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            try:
+                e = node.image
+            except AttributeError:
+                continue
+            step = node.step_x
+            estimate += (e.image_width * e.image_height * step) / (
+                MILS_IN_MM * self.speed
+            )
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -201,9 +176,7 @@ class ImageOpNode(Node, Parameters):
         """
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
-        self.overscan = abs(
-            complex(transformed_vector[0], transformed_vector[1])
-        )
+        self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -228,7 +201,9 @@ class ImageOpNode(Node, Parameters):
                 settings["raster_direction"] = image_node.direction
             matrix = image_node.matrix
             pil_image = image_node.image
-            pil_image, matrix = actualize(pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_x)
+            pil_image, matrix = actualize(
+                pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_x
+            )
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),

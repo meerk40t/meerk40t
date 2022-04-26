@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.svgelements import Path
 
 
 class EllipseNode(Node):
@@ -68,7 +69,7 @@ class EllipseNode(Node):
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):
@@ -109,3 +110,7 @@ class EllipseNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def as_path(self):
+        self.shape.transform = self.matrix
+        return abs(Path(self.shape))

@@ -319,9 +319,7 @@ class RasterPlotter:
             if self.right:  # Start on Right Edge?
                 x = self.width - 1
                 dx = -1
-            x, y = self.calculate_next_vertical_pixel(
-                x, dx, self.bottom
-            )
+            x, y = self.calculate_next_vertical_pixel(x, dx, self.bottom)
             return x, y
         else:
             y = 0
@@ -329,9 +327,7 @@ class RasterPlotter:
             if self.bottom:  # Start on Bottom Edge?
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(
-                y, dy, self.right
-            )
+            x, y = self.calculate_next_horizontal_pixel(y, dy, self.right)
             return x, y
 
     def calculate_last_pixel(self):
@@ -348,9 +344,7 @@ class RasterPlotter:
             if self.left and self.height & 1:
                 x = self.width - 1
                 dx = -1
-            x, y = self.calculate_next_vertical_pixel(
-                x, dx, self.top
-            )
+            x, y = self.calculate_next_vertical_pixel(x, dx, self.top)
             return x, y
         else:
             y = 0
@@ -358,9 +352,7 @@ class RasterPlotter:
             if self.top and self.width & 1:
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(
-                y, dy, self.left
-            )
+            x, y = self.calculate_next_horizontal_pixel(y, dy, self.left)
             return x, y
 
     def initial_position(self):
@@ -557,7 +549,9 @@ class RasterPlotter:
             return
         if self.use_integers:
             for x, y, on in self.plot_pixels():
-                yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+                yield int(round(offset_x + step_x * x)), int(
+                    round(offset_y + y * step_y)
+                ), on
         else:
             for x, y, on in self.plot_pixels():
                 yield offset_x + step_x * x, offset_y + y * step_y, on
@@ -586,9 +580,7 @@ class RasterPlotter:
                     continue
                 upper_bound = self.bottommost_not_equal(x)
 
-                next_x, next_y = self.calculate_next_vertical_pixel(
-                    x + dx, dx, dy > 0
-                )
+                next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, dy > 0)
                 if next_y is not None:
                     upper_bound = max(next_y, upper_bound) + self.overscan
                     lower_bound = min(next_y, lower_bound) - self.overscan

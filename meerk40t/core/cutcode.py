@@ -593,7 +593,7 @@ class QuadCut(CutObject):
         x0, y0 = self.start
         x1, y1 = self.c()
         x2, y2 = self.end
-        e = (1 - t)
+        e = 1 - t
         x = e * e * x0 + 2 * e * t * x1 + t * t * x2
         y = e * e * y0 + 2 * e * t * y1 + t * t * y2
         return x, y
@@ -656,7 +656,7 @@ class CubicCut(CutObject):
         x1, y1 = self.c1()
         x2, y2 = self.c2()
         x3, y3 = self.end
-        e = (1 - t)
+        e = 1 - t
         x = e * e * e * x0 + 3 * e * e * t * x1 + 3 * e * t * t * x2 + t * t * t * x3
         y = e * e * e * y0 + 3 * e * e * t * y1 + 3 * e * t * t * y2 + t * t * t * y3
         return x, y
@@ -668,7 +668,15 @@ class RasterCut(CutObject):
     """
 
     def __init__(
-        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None, inverted=False,
+        self,
+        image,
+        tx,
+        ty,
+        settings=None,
+        crosshatch=False,
+        passes=1,
+        parent=None,
+        inverted=False,
     ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
@@ -703,11 +711,13 @@ class RasterCut(CutObject):
 
             def image_filter(pixel):
                 return pixel / 255.0
+
         else:
             skip_pixel = 0
 
             def image_filter(pixel):
                 return (255 - pixel) / 255.0
+
         self.plot = RasterPlotter(
             data=image.load(),
             width=width,
@@ -1083,17 +1093,17 @@ class PlotCut(CutObject):
             # Need to calculate lengths
             lengths = list()
             total_length = 0
-            for i in range(len(self.plot)-1):
+            for i in range(len(self.plot) - 1):
                 x0, y0, _ = self.plot[i]
                 x1, y1, _ = self.plot[i + 1]
-                length = abs(complex(x0,y0) - complex(x1,y1))
+                length = abs(complex(x0, y0) - complex(x1, y1))
                 lengths.append(length)
                 total_length += length
             self._calc_lengths = lengths
             self._length = total_length
         if self._length == 0:
             # Degenerate fallback. (All points are coincident)
-            v = int((len(self.plot)-1) * t)
+            v = int((len(self.plot) - 1) * t)
             return self.plot[v]
         v = t * self._length
         for length in self._calc_lengths:

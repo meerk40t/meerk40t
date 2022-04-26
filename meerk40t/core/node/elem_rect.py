@@ -1,5 +1,7 @@
-from meerk40t.core.node.node import Node
 from copy import copy
+
+from meerk40t.core.node.node import Node
+from meerk40t.svgelements import Path
 
 
 class RectNode(Node):
@@ -7,7 +9,15 @@ class RectNode(Node):
     RectNode is the bootstrapped node type for the 'elem rect' type.
     """
 
-    def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None,  **kwargs):
+    def __init__(
+        self,
+        shape=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(RectNode, self).__init__(type="elem rect", **kwargs)
         self.shape = shape
         self.settings = kwargs
@@ -44,7 +54,7 @@ class RectNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     @property
@@ -60,12 +70,12 @@ class RectNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(RectNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Rect"
+        default_map["element_type"] = "Rect"
         default_map.update(self.settings)
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):
@@ -106,3 +116,7 @@ class RectNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def as_path(self):
+        self.shape.transform = self.matrix
+        return abs(Path(self.shape))

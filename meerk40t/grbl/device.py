@@ -436,14 +436,14 @@ class GRBLDriver(Parameters):
             line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
-        line.append("X%f" % x)
-        line.append("Y%f" % y)
+        line.append("X%.3f" % x)
+        line.append("Y%.3f" % y)
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%f" % (self.power * self.on_value))
+                line.append("S%.1f" % (self.power * self.on_value))
             self.power_dirty = False
         if self.speed_dirty:
-            line.append("F%f" % self.feed_convert(self.speed))
+            line.append("F%.1f" % self.feed_convert(self.speed))
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
@@ -605,7 +605,11 @@ class GRBLDriver(Parameters):
             self.on_value = 1.0
             if q.power != self.power:
                 self.set("power", q.power)
-            if q.speed != self.speed or q.raster_step_x != self.raster_step_x or q.raster_step_y != self.raster_step_y:
+            if (
+                q.speed != self.speed
+                or q.raster_step_x != self.raster_step_x
+                or q.raster_step_y != self.raster_step_y
+            ):
                 self.set("speed", q.speed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
@@ -638,7 +642,8 @@ class GRBLDriver(Parameters):
                                 self.set("power", p_set.power)
                             if (
                                 p_set.speed != self.speed
-                                or p_set.raster_step_x != self.raster_step_x or p_set.raster_step_y != self.raster_step_y
+                                or p_set.raster_step_x != self.raster_step_x
+                                or p_set.raster_step_y != self.raster_step_y
                             ):
                                 self.set("speed", p_set.speed)
                             self.settings.update(p_set.settings)

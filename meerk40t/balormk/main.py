@@ -5,7 +5,7 @@ from meerk40t.balormk.BalorDriver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Angle, Path, Point, Polygon, Shape
+from meerk40t.svgelements import Angle, Path, Point, Polygon
 
 
 class BalorDevice(Service, ViewPort):
@@ -21,12 +21,30 @@ class BalorDevice(Service, ViewPort):
 
         _ = kernel.translation
 
-        self.register("format/op cut", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op engrave", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op hatch", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op raster", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op image", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op dots", "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz")
+        self.register(
+            "format/op cut",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op engrave",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op hatch",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op raster",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op image",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op dots",
+            "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz",
+        )
         self.register("format/op console", "{enabled}{command}")
 
         choices = [
@@ -516,12 +534,6 @@ class BalorDevice(Service, ViewPort):
             )
             job.laser_control(True)
             for e in paths:
-                if isinstance(e, Shape):
-                    if not isinstance(e, Path):
-                        e = Path(e)
-                    e = abs(e)
-                else:
-                    continue
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
                 job.goto(x, y)
@@ -556,7 +568,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             "light",
-            input_type="elements",
+            input_type="shapes",
             output_type="balor",
             help=_("runs light on events."),
         )
@@ -593,12 +605,6 @@ class BalorDevice(Service, ViewPort):
                     light_speed=self.redlight_speed, goto_speed=travel_speed
                 )
             for e in paths:
-                if isinstance(e, Shape):
-                    if not isinstance(e, Path):
-                        e = Path(e)
-                    e = abs(e)
-                else:
-                    continue
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
                 job.light(x, y, False, jump_delay=200)
@@ -944,7 +950,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
-            output_type="elements",
+            output_type="shapes",
         )
         def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
             """
@@ -963,13 +969,13 @@ class BalorDevice(Service, ViewPort):
                 (xmin, ymax),
                 (xmin, ymin),
             ]
-            return "elements", [Polygon(*points)]
+            return "shapes", [Polygon(*points)]
 
         @self.console_command(
             "hull",
             help=_("convex hull of the current selected elements"),
             input_type=(None, "elements"),
-            output_type="elements",
+            output_type="shapes",
         )
         def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
             """
@@ -1001,7 +1007,7 @@ class BalorDevice(Service, ViewPort):
                 channel(_("No elements bounds to trace."))
                 return
             hull.append(hull[0])  # loop
-            return "elements", [Polygon(*hull)]
+            return "shapes", [Polygon(*hull)]
 
         def ant_points(points, steps):
             points = list(points)
@@ -1033,11 +1039,9 @@ class BalorDevice(Service, ViewPort):
             "ants",
             help=_("Marching ants of the given element path."),
             input_type=(None, "elements"),
-            output_type="elements",
+            output_type="shapes",
         )
-        def element_ants(
-            command, channel, _, data=None, quantization=500, args=tuple(), **kwargs
-        ):
+        def element_ants(command, channel, _, data=None, quantization=500, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1047,17 +1051,14 @@ class BalorDevice(Service, ViewPort):
             points = list()
             for e in data:
                 try:
-                    path = abs(Path(e.shape))
+                    path = e.as_path()
                 except AttributeError:
-                    try:
-                        path = abs(e.path)
-                    except AttributeError:
-                        continue
+                    continue
                 for i in range(0, quantization + 1):
                     x, y = path.point(i / float(quantization))
                     points.append((x, y))
                 points_list.append(list(ant_points(points, int(quantization / 10))))
-            return "elements", [Polygon(*p) for p in points_list]
+            return "shapes", [Polygon(*p) for p in points_list]
 
         @self.console_command(
             "viewport_update",

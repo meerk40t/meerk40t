@@ -45,10 +45,9 @@ from ..svgelements import (
     Polygon,
     Polyline,
     Rect,
-    Shape,
-    SVGElement,
+    SimpleLine,
     SVGImage,
-    SVGText, SimpleLine,
+    SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 
@@ -192,13 +191,13 @@ class SVGWriter:
                 )
                 for key, val in element.values.items():
                     if key in (
-                            "font-family",
-                            "font_face",
-                            "font-size",
-                            "font-weight",
-                            "anchor",
-                            "x",
-                            "y",
+                        "font-family",
+                        "font_face",
+                        "font-size",
+                        "font-weight",
+                        "anchor",
+                        "x",
+                        "y",
                     ):
                         subelement.set(key, str(val))
             elif c.type == "group":
@@ -248,7 +247,6 @@ class SVGWriter:
             else:
                 subelement.set(SVG_ATTR_FILL, SVG_VALUE_NONE)
             subelement.set(SVG_ATTR_ID, str(c.id))
-
 
     @staticmethod
     def _write_operations(xml_tree, op_tree):
@@ -302,7 +300,6 @@ class SVGWriter:
         if contains:
             subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
-
 
     @staticmethod
     def _pretty_print(current, parent=None, index=-1, depth=0):
@@ -413,7 +410,12 @@ class SVGProcessor:
             try:
                 element.load(os.path.dirname(self.pathname))
                 if element.image is not None:
-                    context_node.add(image=element.image, matrix=element.transform, type="elem image", id=ident)
+                    context_node.add(
+                        image=element.image,
+                        matrix=element.transform,
+                        type="elem image",
+                        id=ident,
+                    )
                     e_list.append(element)
             except OSError:
                 pass

@@ -1,18 +1,11 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    RasterCut,
-)
+from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import (
-    Color,
-    Path,
-    Polygon,
-)
+from meerk40t.svgelements import Color, Path, Polygon
 
 MILS_IN_MM = 39.3701
 
@@ -92,11 +85,11 @@ class RasterOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Raster"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['speed'] = "default"
-        default_map['power'] = "default"
-        default_map['frequency'] = "default"
+        default_map["element_type"] = "Raster"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["speed"] = "default"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -180,9 +173,7 @@ class RasterOpNode(Node, Parameters):
     def scale_native(self, matrix):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
-        self.overscan = abs(
-            complex(transformed_vector[0], transformed_vector[1])
-        )
+        self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

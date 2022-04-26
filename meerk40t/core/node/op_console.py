@@ -15,22 +15,22 @@ class ConsoleOperation(Node):
         super().__init__(type="op console", **kwargs)
         self.settings = {}
         if command is not None:
-            self.settings['command'] = command
-        self.settings['output'] = True
+            self.settings["command"] = command
+        self.settings["output"] = True
 
     def set_command(self, command):
-        self.settings['command'] = command
+        self.settings["command"] = command
 
     @property
     def command(self):
-        return self.settings.get('command')
+        return self.settings.get("command")
 
     @property
     def output(self):
-        return self.settings.get('output', True)
+        return self.settings.get("output", True)
 
     def __repr__(self):
-        return "ConsoleOperation('%s', '%s')" % (self.command)
+        return f"ConsoleOperation('{self.command}')"
 
     def __str__(self):
         parts = list()
@@ -48,8 +48,8 @@ class ConsoleOperation(Node):
 
     def default_map(self, default_map=None):
         default_map = super(ConsoleOperation, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Console"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
+        default_map["element_type"] = "Console"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map.update(self.settings)
         return default_map
 

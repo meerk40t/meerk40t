@@ -545,7 +545,7 @@ class PanelStartPreference(wx.Panel):
                 end = int(h * 0.9)
                 step = 1000 / self.operation.dpi * factor
             pos = start
-            while min(start,end) <= pos <= max(start,end):
+            while min(start, end) <= pos <= max(start, end):
                 # Primary Line Horizontal Raster
                 r_start.append((w * 0.1, pos))
                 r_end.append((w * 0.9, pos))
@@ -592,7 +592,7 @@ class PanelStartPreference(wx.Panel):
                 end = int(w * 0.9)
                 step = 1000 / self.operation.dpi * factor
             pos = start
-            while min(start,end) <= pos <= max(start,end):
+            while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
@@ -790,18 +790,14 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.raster_swing is not None:
             self.radio_directional_raster.SetSelection(self.operation.raster_swing)
 
-    def on_text_dpi(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.dpi = int(self.text_dpi.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_text_overscan(
-        self, event=None
-    ):
+    def on_text_overscan(self, event=None):
         ctrl = self.text_overscan
         try:
             v = Length(ctrl.GetValue())

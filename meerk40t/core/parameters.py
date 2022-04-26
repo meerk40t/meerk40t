@@ -43,14 +43,9 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = (
-    "overscan",
-)
+STRING_PARAMETERS = ("overscan",)
 
-COLOR_PARAMETERS = (
-    "color",
-    "line_color"
-)
+COLOR_PARAMETERS = ("color", "line_color")
 
 
 class Parameters:
@@ -84,7 +79,7 @@ class Parameters:
                 settings[v] = str(settings[v]).lower() == "true"
         for v in STRING_PARAMETERS:
             if v in settings:
-                settings[v] = int(float(settings[v]))
+                settings[v] = settings[v]
         for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])

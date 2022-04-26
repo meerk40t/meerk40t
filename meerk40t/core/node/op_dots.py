@@ -1,35 +1,10 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-)
+from meerk40t.core.cutcode import DwellCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import (
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Polygon,
-    QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
-)
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
+from meerk40t.svgelements import Color
 
 MILS_IN_MM = 39.3701
 
@@ -86,9 +61,9 @@ class DotsOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Dots"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['dwell_time'] = "default"
+        default_map["element_type"] = "Dots"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["dwell_time"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -145,8 +120,9 @@ class DotsOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
+            if e.type == "reference":
+                e = e.node
+            if e.type == "elem point":
                 estimate += self.dwell_time
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -159,16 +135,11 @@ class DotsOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for path_node in self.children:
-            try:
-                obj = abs(path_node.object)
-                first = obj.point(0)
-            except (IndexError, AttributeError):
-                continue
-            if first is None:
+        for point_node in self.children:
+            if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (first[0], first[1]),
+                (point_node.point[0], point_node[1]),
                 settings=settings,
                 passes=passes,
             )

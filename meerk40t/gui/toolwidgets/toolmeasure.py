@@ -1,7 +1,13 @@
-from math import sin, cos, sqrt, atan, tau
+from math import atan, cos, sin, sqrt, tau
+
 import wx
+
 from meerk40t.core.units import Length
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME, RESPONSE_ABORT
+from meerk40t.gui.scene.sceneconst import (
+    RESPONSE_ABORT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+)
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 
@@ -25,7 +31,7 @@ class MeasureTool(ToolWidget):
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
 
     def process_draw(self, gc):
-        matrix= gc.GetTransform().Get()
+        matrix = gc.GetTransform().Get()
         if self.point_series:
             try:
                 self.font_size = 10.0 / matrix[0]
@@ -57,7 +63,7 @@ class MeasureTool(ToolWidget):
                 # print("%d, %.1f, %.1f" % (idx, pt[0],pt[1]))
                 all_cx += pt[0]
                 all_cy += pt[1]
-                if idx>0:
+                if idx > 0:
                     area_x_y += last_x * pt[1]
                     area_y_x += last_y * pt[0]
                 last_x = pt[0]
@@ -96,8 +102,8 @@ class MeasureTool(ToolWidget):
                     s_txt = str(Length(amount=dlen, digits=2, preferred_units=units))
                     (t_width, t_height) = gc.GetTextExtent(s_txt)
 
-                    tcx = cx - cos(slope_angle) * t_width/2
-                    tcy = cy + sin(slope_angle) * t_width/2
+                    tcx = cx - cos(slope_angle) * t_width / 2
+                    tcy = cy + sin(slope_angle) * t_width / 2
                     dx = tcx - cx
                     dy = tcy - dy
                     gc.DrawText(s_txt, tcx, tcy, slope_angle)
@@ -114,7 +120,13 @@ class MeasureTool(ToolWidget):
                 base_square *= base_square
                 area = area / base_square
 
-                s_txt = "Area={area:.1f}{units}²\nPerimeter: {perim}".format(area=area, units=units, perim=str(Length(amount=perimeter, digits=1, preferred_units=units)))
+                s_txt = "Area={area:.1f}{units}²\nPerimeter: {perim}".format(
+                    area=area,
+                    units=units,
+                    perim=str(
+                        Length(amount=perimeter, digits=1, preferred_units=units)
+                    ),
+                )
                 (t_width, t_height) = gc.GetTextExtent(s_txt)
                 gc.DrawText(
                     s_txt,

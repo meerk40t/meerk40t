@@ -14,6 +14,10 @@ from ..core.element_types import elem_nodes
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import Color, Matrix, Path, SVGImage
 from .icons import (
+    icon_cag_common_50,
+    icon_cag_subtract_50,
+    icon_cag_union_50,
+    icon_cag_xor_50,
     icon_meerk40t,
     icons8_align_bottom_50,
     icons8_align_left_50,
@@ -25,13 +29,13 @@ from .icons import (
     icons8_flip_vertical,
     icons8_gas_industry_50,
     icons8_home_filled_50,
+    icons8_measure_50,
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_oval_50,
     icons8_pause_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
-    icons8_measure_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
@@ -39,10 +43,6 @@ from .icons import (
     icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
-    icon_cag_subtract_50,
-    icon_cag_common_50,
-    icon_cag_union_50,
-    icon_cag_xor_50,
     icons8_vector_50,
     icons_centerize,
     icons_evenspace_horiz,
@@ -189,10 +189,38 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
-        self.cb_move.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.cb_handle.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.cb_rotate.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.cb_skew.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_move.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+        self.cb_handle.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+        self.cb_rotate.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+        self.cb_skew.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
 
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
@@ -231,11 +259,24 @@ class CustomStatusBar(wx.StatusBar):
         self.strokewidth_label = wx.StaticText(
             self, id=wx.ID_ANY, label=_("Stroke-Width:")
         )
-        self.strokewidth_label.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.strokewidth_label.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
         self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
         self.spin_width.SetDigits(2)
-        self.spin_width.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-
+        self.spin_width.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
 
         self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
@@ -244,7 +285,14 @@ class CustomStatusBar(wx.StatusBar):
             choices=self.choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
-        self.combo_units.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.combo_units.SetFont(
+            wx.Font(
+                FONT_SIZE,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
         self.combo_units.SetSelection(0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
         self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
@@ -259,7 +307,11 @@ class CustomStatusBar(wx.StatusBar):
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
-        if self.cb_enabled and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke) and len(message)>0:
+        if (
+            self.cb_enabled
+            and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke)
+            and len(message) > 0
+        ):
             # Someone wanted to have a message while displaying some control elements
             return
         super().SetStatusText(message, panel)
@@ -404,8 +456,8 @@ class CustomStatusBar(wx.StatusBar):
             rect = self.GetFieldRect(self.pos_stroke)
             ct = 2
             wd = int(round(rect.width / ct))
-            #print ("Width:", wd)
-            toosmall = wd<=100
+            # print ("Width:", wd)
+            toosmall = wd <= 100
             rect.x += 1
             rect.y += 1
             old_y = rect.y
@@ -556,7 +608,6 @@ class MeerK40t(MWindow):
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
-
 
     def open_property_window_for_node(self, node):
         """
@@ -1517,7 +1568,7 @@ class MeerK40t(MWindow):
                 caption = window.caption
             except AttributeError:
                 caption = name[0].upper() + name[1:]
-            if name in ("Scene", "About"): # make no sense, so we omit these...
+            if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             id_new = wx.NewId()
@@ -2199,7 +2250,9 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
-            node = elements.elem_branch.add(image=img, width=image_width, height=image_height, type="elem image")
+            node = elements.elem_branch.add(
+                image=img, width=image_width, height=image_height, type="elem image"
+            )
             elements.classify([node])
 
     @signal_listener("statusmsg")

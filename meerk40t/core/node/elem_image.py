@@ -39,7 +39,7 @@ class ImageNode(Node):
             dpi=self.dpi,
             step_x=self.step_x,
             step_y=self.step_y,
-            **self.settings
+            **self.settings,
         )
 
     def __repr__(self):
@@ -57,15 +57,17 @@ class ImageNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            # TODO: Naive
             image_width, image_height = self.image.size
-            return 0, 0, image_width, image_height
+            x0, y0 = self.matrix.point_in_matrix_space((0, 0))
+            x1, y1 = self.matrix.point_in_matrix_space((image_width, image_height))
+            self._bounds_dirty = False
+            self._bounds = x0, y0, x1, y1
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)
         default_map.update(self.settings)
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         default_map["dpi"] = self.dpi
         default_map["overscan"] = self.overscan
         default_map["direction"] = self.direction

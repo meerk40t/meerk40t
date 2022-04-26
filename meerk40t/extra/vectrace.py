@@ -24,7 +24,11 @@ def plugin(kernel, lifecycle=None):
                 image = image.point(lambda e: int(e > 127) * 255)
                 for points in _vectrace(image.load(), width, height):
                     path += Polygon(*points)
-                paths.append(elements.elem_branch.add(path=path, matrix=Matrix(matrix), type="elem path"))
+                paths.append(
+                    elements.elem_branch.add(
+                        path=path, matrix=Matrix(matrix), type="elem path"
+                    )
+                )
             return "elements", paths
 
 
