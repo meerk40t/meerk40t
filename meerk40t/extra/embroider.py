@@ -1,5 +1,5 @@
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Angle, Matrix, Path, Polyline, Shape
+from meerk40t.svgelements import Angle, Matrix, Path, Polyline
 from meerk40t.tools.pathtools import EulerianFill
 
 

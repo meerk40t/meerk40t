@@ -4,23 +4,17 @@ import wx
 from PIL import Image
 
 from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.element_types import elem_nodes
-from ..core.elements import is_dot
 from ..core.node.node import Node
 from ..svgelements import (
     Arc,
     Close,
     Color,
     CubicBezier,
-    Group,
     Line,
     Matrix,
     Move,
     Path,
     QuadraticBezier,
-    Shape,
-    SVGImage,
-    SVGText,
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix

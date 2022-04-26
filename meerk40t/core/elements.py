@@ -2392,18 +2392,27 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        # TODO: Correct. Shape conversions to path is useful
-        # @self.console_command(
-        #     "path", help=_("Convert any shapes to paths"), input_type="elements"
-        # )
-        # def element_path_convert(data, **kwargs):
-        #     for e in data:
-        #         try:
-        #             node = e.node
-        #             node.replace_object(abs(Path(node.object)))
-        #             node.altered()
-        #         except AttributeError:
-        #             pass
+        @self.console_command(
+            "path", help=_("Convert any shapes to paths"), input_type="shapes", output_type="shapes"
+        )
+        def element_path_convert(data, **kwargs):
+            paths = []
+            for e in data:
+                paths.append(abs(Path(e)))
+            return "shapes", paths
+
+        @self.console_command(
+            "path", help=_("Convert any element nodes to paths"), input_type="elements", output_type="shapes"
+        )
+        def element_path_convert(data, **kwargs):
+            paths = []
+            for node in data:
+                try:
+                    e = node.as_path()
+                except AttributeError:
+                    continue
+                paths.append(e)
+            return "shapes", paths
 
         @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
