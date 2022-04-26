@@ -31,6 +31,7 @@ from .icons import (
     icons8_pause_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
+    icons8_measure_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
@@ -709,6 +710,18 @@ class MeerK40t(MWindow):
                 "icon": icons8_type_50,
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool text\n"),
+                "toggle": "tool",
+                "size": buttonsize,
+            },
+        )
+
+        kernel.register(
+            "button/tools/Measure",
+            {
+                "label": _("Measure"),
+                "icon": icons8_measure_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool measure\n"),
                 "toggle": "tool",
                 "size": buttonsize,
             },

@@ -23,6 +23,8 @@ class GuiColors:
             "selection1": "#0000FF",
             "selection2": "#00FF00",
             "selection3": "#FF0000",
+            "measure_line": "#0000FF80",
+            "measure_text": "#FF000060",
             "bed": "#FFFFFF",
         }
         for key in self.default_color:
@@ -98,6 +100,14 @@ class GuiColors:
     @property
     def color_selection3(self):
         return self._get_color("selection3")
+
+    @property
+    def color_measure_line(self):
+        return self._get_color("measure_line")
+
+    @property
+    def color_measure_text(self):
+        return self._get_color("measure_text")
 
     @property
     def color_bed(self):

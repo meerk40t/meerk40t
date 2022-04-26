@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME, RESPONSE_ABORT
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Polygon
 
@@ -39,7 +39,7 @@ class PolygonTool(ToolWidget):
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            response = RESPONSE_ABORT
         elif event_type == "hover":
             self.mouse_position = space_pos[0], space_pos[1]
             if self.point_series:
