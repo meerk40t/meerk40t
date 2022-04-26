@@ -34,7 +34,7 @@ class ImagePropertyPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
 
-        self.set_widgets(None)
+        self.set_widgets()
 
     @staticmethod
     def accepts(node):
@@ -42,21 +42,22 @@ class ImagePropertyPanel(wx.Panel):
             return True
         return False
 
-    def set_widgets(self, node):
-        if node is not None:
-            self.node = node
-        self.text_dpi.SetValue(node.dpi)
+    def set_widgets(self, node=None):
+        if node is None:
+            node = self.node
+        if node is None:
+            return
+        self.text_dpi.SetValue(str(node.dpi))
         try:
-            bounds = self.node.bounds
-            self.text_x.SetValue("%f" % bounds[0])
-            self.text_y.SetValue("%f" % bounds[1])
-            self.text_width.SetValue("%f" % (bounds[2] - bounds[0]))
-            self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
+            bounds = node.bounds
+            self.text_x.SetValue(str(bounds[0]))
+            self.text_y.SetValue(str(bounds[1]))
+            self.text_width.SetValue(str((bounds[2] - bounds[0])))
+            self.text_height.SetValue(str((bounds[3] - bounds[1])))
         except AttributeError:
             pass
 
     def __set_properties(self):
-        self.text_dpi.SetSelection(0)
         self.text_x.SetToolTip(_("X property of image"))
         self.text_x.Enable(False)
         self.text_y.SetToolTip(_("Y property of image"))
@@ -101,7 +102,7 @@ class ImagePropertyPanel(wx.Panel):
         self.Centre()
         # end wxGlade
 
-    def on_combo_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
+    def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
 
