@@ -398,7 +398,7 @@ class LaserRender:
         if node.fill is None or node.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(text.fill)))
+            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
 
         x = text.x
         y = text.y
