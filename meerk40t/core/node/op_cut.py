@@ -3,29 +3,21 @@ from copy import copy
 from meerk40t.core.cutcode import (
     CubicCut,
     CutGroup,
-    DwellCut,
     LineCut,
-    PlotCut,
     QuadCut,
-    RasterCut,
 )
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import (
-    Angle,
     Close,
     Color,
     CubicBezier,
     Line,
-    Matrix,
     Move,
     Path,
     Polygon,
     QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
 )
 
 MILS_IN_MM = 39.3701

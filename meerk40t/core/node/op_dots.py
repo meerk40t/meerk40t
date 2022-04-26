@@ -12,24 +12,10 @@ from meerk40t.core.cutcode import (
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import (
-    Angle,
-    Close,
     Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Polygon,
-    QuadraticBezier,
     Shape,
-    SVGElement,
-    SVGImage,
 )
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
 
 MILS_IN_MM = 39.3701
 
@@ -145,8 +131,9 @@ class DotsOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
+            if e.type == "reference":
+                e = e.node
+            if e.type == "elem point":
                 estimate += self.dwell_time
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
