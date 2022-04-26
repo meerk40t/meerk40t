@@ -1186,13 +1186,15 @@ class Elemental(Service):
         def element_merge(data=None, **kwargs):
             super_element = Path()
             for e in data:
-                if not isinstance(e, Shape):
+                try:
+                    path = e.as_path()
+                except AttributeError:
                     continue
                 if super_element.stroke is None:
                     super_element.stroke = e.stroke
                 if super_element.fill is None:
                     super_element.fill = e.fill
-                super_element += abs(e)
+                super_element += path
             self.remove_elements(data)
             node = self.elem_branch.add(path=super_element, type="elem path").emphasized = True
             self.classify([super_element])
