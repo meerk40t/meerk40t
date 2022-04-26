@@ -7,20 +7,24 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, data_object=None, **kwargs):
-        super(GroupNode, self).__init__(data_object)
-        self.last_transform = None
+    def __init__(self, **kwargs):
+        super(GroupNode, self).__init__(type="group", **kwargs)
 
     def __repr__(self):
-        return "GroupNode('%s', %s, %s)" % (
+        return "GroupNode('%s', %s)" % (
             self.type,
-            str(self.object),
             str(self._parent),
         )
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat())
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Group"
+        default_map["element_type"] = "Group"
         return default_map
 
     def drop(self, drag_node):

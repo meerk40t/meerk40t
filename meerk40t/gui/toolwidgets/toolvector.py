@@ -81,7 +81,9 @@ class VectorTool(ToolWidget):
             self.scene.tool_active = False
             t = self.path
             if len(t) != 0:
-                self.scene.context.elements.add_elem(t, classify=True)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(path=t, type="elem path")
+                elements.classify([node])
             self.path = None
             self.mouse_position = None
             self.scene.request_refresh()

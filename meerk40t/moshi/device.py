@@ -817,7 +817,8 @@ class MoshiDriver:
                         self._set_power(p_set.power)
                     if (
                         p_set.speed != s_set.speed
-                        or p_set.raster_step != s_set.raster_step
+                        or p_set.raster_step_x != s_set.raster_step_x
+                        or p_set.raster_step_y != s_set.raster_step_y
                     ):
                         self._set_speed(p_set.speed)
                         self._set_step(p_set.raster_step)

@@ -1,35 +1,10 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-)
+from meerk40t.core.cutcode import DwellCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import (
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Polygon,
-    QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
-)
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
+from meerk40t.svgelements import Color
 
 MILS_IN_MM = 39.3701
 
@@ -46,16 +21,14 @@ class DotsOpNode(Node, Parameters):
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, *args, type="op dots", **kwargs)
+        Node.__init__(self, type="op dots", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="ref elem")
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
@@ -80,11 +53,17 @@ class DotsOpNode(Node, Parameters):
     def __copy__(self):
         return DotsOpNode(self)
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Dots"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['dwell_time'] = "default"
+        default_map["element_type"] = "Dots"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["dwell_time"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -92,10 +71,10 @@ class DotsOpNode(Node, Parameters):
         if drag_node.type.startswith("elem"):
             if drag_node.type == "elem image":
                 return False
-            # Dragging element onto operation adds that element to the op.
-            self.add(drag_node.object, type="ref elem", pos=0)
+            # Dragging element onto operation adds a reference of that elem to the op.
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
@@ -109,8 +88,8 @@ class DotsOpNode(Node, Parameters):
                 # Disallow drop of image elems onto a Dot op.
                 if drag_node.type == "elem image":
                     continue
-                # Add element to operation
-                self.add(e.object, type="ref elem")
+                # Add reference to element to operation
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -132,17 +111,18 @@ class DotsOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
         for e in self.children:
-            e = e.object
-            if isinstance(e, Shape):
+            if e.type == "reference":
+                e = e.node
+            if e.type == "elem point":
                 estimate += self.dwell_time
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -155,16 +135,11 @@ class DotsOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         settings = self.derive()
-        for path_node in self.children:
-            try:
-                obj = abs(path_node.object)
-                first = obj.point(0)
-            except (IndexError, AttributeError):
-                continue
-            if first is None:
+        for point_node in self.children:
+            if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (first[0], first[1]),
+                (point_node.point[0], point_node[1]),
                 settings=settings,
                 passes=passes,
             )

@@ -907,13 +907,14 @@ class LhystudiosDriver(Parameters):
                     if p_set.power != self.power:
                         self.set_power(p_set.power)
                     if (
-                        p_set.raster_step != self.raster_step
+                        p_set.raster_step_x != self.raster_step_x
+                        or p_set.raster_step_y != self.raster_step_y
                         or p_set.speed != self.speed
                         or self.implicit_d_ratio != p_set.implicit_d_ratio
                         or self.implicit_accel != p_set.implicit_accel
                     ):
                         self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step)
+                        self.set_step(p_set.raster_step_x, p_set.raster_step_y)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.update(p_set.settings)
@@ -942,8 +943,9 @@ class LhystudiosDriver(Parameters):
                 continue
             dx = x - sx
             dy = y - sy
-            step = self.raster_step
-            if step == 0:
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            if step_x == 0 and step_y == 0:
                 # vector mode
                 self.program_mode()
             else:
@@ -1145,7 +1147,7 @@ class LhystudiosDriver(Parameters):
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            self.raster_step,
+            self.raster_step_x,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
@@ -1217,9 +1219,10 @@ class LhystudiosDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def set_step(self, step=None):
-        if self.raster_step != step:
-            self.raster_step = step
+    def set_step(self, step_x=None, step_y=None):
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -1335,14 +1338,14 @@ class LhystudiosDriver(Parameters):
 
         instance_step = 0
         self.step_index = 0
-        self.step = self.raster_step
+        self.step = self.raster_step_x
         self.step_value_set = 0
         if self.raster_alt:
             pass
         elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
         else:
-            self.step_value_set = self.step
+            self.step_value_set = int(round(self.step))
             instance_step = self.step_value_set
 
         suffix_c = None
@@ -1635,6 +1638,7 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
 
     def goto_octent(self, dx, dy, on):
+        old_current = self.service.current
         if dx == 0 and dy == 0:
             return
         if on:
@@ -1666,9 +1670,11 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (self.native_x - dx, self.native_y - dy, self.native_x, self.native_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def code_declare_directions(self):

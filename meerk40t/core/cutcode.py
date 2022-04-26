@@ -2,16 +2,7 @@ from abc import ABC
 from typing import Optional
 
 from ..svgelements import Color, Path, Point
-from ..tools.rasterplotter import (
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOP,
-    UNIDIRECTIONAL,
-    X_AXIS,
-    Y_AXIS,
-    RasterPlotter,
-)
+from ..tools.rasterplotter import RasterPlotter
 from ..tools.zinglplotter import ZinglPlotter
 from .parameters import Parameters
 
@@ -602,7 +593,7 @@ class QuadCut(CutObject):
         x0, y0 = self.start
         x1, y1 = self.c()
         x2, y2 = self.end
-        e = (1 - t)
+        e = 1 - t
         x = e * e * x0 + 2 * e * t * x1 + t * t * x2
         y = e * e * y0 + 2 * e * t * y1 + t * t * y2
         return x, y
@@ -665,7 +656,7 @@ class CubicCut(CutObject):
         x1, y1 = self.c1()
         x2, y2 = self.c2()
         x3, y3 = self.end
-        e = (1 - t)
+        e = 1 - t
         x = e * e * e * x0 + 3 * e * e * t * x1 + 3 * e * t * t * x2 + t * t * t * x3
         y = e * e * e * y0 + 3 * e * e * t * y1 + 3 * e * t * t * y2 + t * t * t * y3
         return x, y
@@ -673,12 +664,19 @@ class CubicCut(CutObject):
 
 class RasterCut(CutObject):
     """
-    Rastercut accepts an image of type "L" or "1", and an offset in the x and y and information whether
-    this is a crosshatched cut or not.
+    Rastercut accepts an image of type "L" or "1", and an offset in the x and y.
     """
 
     def __init__(
-        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+        self,
+        image,
+        tx,
+        ty,
+        settings=None,
+        crosshatch=False,
+        passes=1,
+        parent=None,
+        inverted=False,
     ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
@@ -686,54 +684,55 @@ class RasterCut(CutObject):
         self.image = image
         self.tx = tx
         self.ty = ty
-
-        step = self.raster_step
-        self.step = step
-        assert step > 0
-
         direction = self.raster_direction
-        traverse = 0
+        traverse_x_axis = False
+        traverse_top = False
+        traverse_left = False
+        traverse_bidirectional = False
         if direction == 0 or direction == 4 and not crosshatch:
-            traverse |= X_AXIS
-            traverse |= TOP
+            traverse_x_axis = True
+            traverse_top = True
         elif direction == 1:
-            traverse |= X_AXIS
-            traverse |= BOTTOM
+            traverse_x_axis = True
+            traverse_top = False
         elif direction == 2 or direction == 4 and crosshatch:
-            traverse |= Y_AXIS
-            traverse |= RIGHT
+            traverse_x_axis = False
+            traverse_left = False
         elif direction == 3:
-            traverse |= Y_AXIS
-            traverse |= LEFT
+            traverse_x_axis = False
+            traverse_left = True
         if self.raster_swing:
-            traverse |= UNIDIRECTIONAL
+            traverse_bidirectional = True
         width, height = image.size
         self.width = width
         self.height = height
+        if inverted:
+            skip_pixel = 255
 
-        def image_filter(pixel):
-            return (255 - pixel) / 255.0
+            def image_filter(pixel):
+                return pixel / 255.0
 
-        overscan = self.overscan
-        if overscan is None:
-            overscan = 20
         else:
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                overscan = 20
-        self.overscan = overscan
+            skip_pixel = 0
+
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+
         self.plot = RasterPlotter(
-            image.load(),
-            width,
-            height,
-            traverse,
-            0,
-            overscan,
-            tx,
-            ty,
-            step,
-            image_filter,
+            data=image.load(),
+            width=width,
+            height=height,
+            traverse_x_axis=traverse_x_axis,
+            traverse_top=traverse_top,
+            traverse_left=traverse_left,
+            traverse_bidirectional=traverse_bidirectional,
+            skip_pixel=skip_pixel,
+            overscan=self.overscan,
+            offset_x=tx,
+            offset_y=ty,
+            step_x=self.raster_step_x,
+            step_y=self.raster_step_y,
+            filter=image_filter,
         )
 
     def reversible(self):
@@ -766,7 +765,7 @@ class RasterCut(CutObject):
         return (
             self.width * self.height
             + (self.overscan * self.height)
-            + (self.height * self.step)
+            + (self.height * self.raster_step_y)
         )
 
     def extra(self):
@@ -1094,17 +1093,17 @@ class PlotCut(CutObject):
             # Need to calculate lengths
             lengths = list()
             total_length = 0
-            for i in range(len(self.plot)-1):
+            for i in range(len(self.plot) - 1):
                 x0, y0, _ = self.plot[i]
                 x1, y1, _ = self.plot[i + 1]
-                length = abs(complex(x0,y0) - complex(x1,y1))
+                length = abs(complex(x0, y0) - complex(x1, y1))
                 lengths.append(length)
                 total_length += length
             self._calc_lengths = lengths
             self._length = total_length
         if self._length == 0:
             # Degenerate fallback. (All points are coincident)
-            v = int((len(self.plot)-1) * t)
+            v = int((len(self.plot) - 1) * t)
             return self.plot[v]
         v = t * self._length
         for length in self._calc_lengths:

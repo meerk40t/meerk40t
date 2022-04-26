@@ -1,6 +1,5 @@
 import wx
 
-from ...svgelements import Image, Matrix
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 
@@ -13,26 +12,8 @@ class ImagePropertyPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
-        self.element_node = node
-        self.element = node.object
-        self.spin_step_size = wx.SpinCtrl(self, wx.ID_ANY, "1", min=1, max=63)
-        self.combo_dpi = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=[
-                "1000",
-                "500",
-                "333",
-                "250",
-                "200",
-                "166",
-                "142",
-                "125",
-                "111",
-                "100",
-            ],
-            style=wx.CB_DROPDOWN,
-        )
+        self.node = node
+        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
         self.text_x = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_y = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -41,9 +22,8 @@ class ImagePropertyPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_SPINCTRL, self.on_spin_step, self.spin_step_size)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_spin_step, self.spin_step_size)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_dpi, self.combo_dpi)
+        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
         self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x, self.text_x)
         self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
@@ -53,41 +33,30 @@ class ImagePropertyPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
 
-        self.set_widgets(None)
+        self.set_widgets()
 
     @staticmethod
     def accepts(node):
-        if isinstance(node.object, Image):
+        if node.type == "elem image":
             return True
         return False
 
-    def set_widgets(self, node):
-        if node is not None:
-            self.element_node = node
-            self.element = node.object
+    def set_widgets(self, node=None):
+        if node is None:
+            node = self.node
+        if node is None:
+            return
+        self.text_dpi.SetValue(str(node.dpi))
         try:
-            self.spin_step_size.SetValue(self.element.values["raster_step"])
-            self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        except KeyError:
-            self.spin_step_size.SetValue(1)  # Default value
-            self.combo_dpi.SetSelection(self.spin_step_size.GetValue() - 1)
-        except AttributeError:
-            self.combo_dpi.Enable(False)
-            self.spin_step_size.Enable(False)
-
-        try:
-            bounds = self.element.bbox()
-            self.text_x.SetValue("%f" % bounds[0])
-            self.text_y.SetValue("%f" % bounds[1])
-            self.text_width.SetValue("%f" % (bounds[2] - bounds[0]))
-            self.text_height.SetValue("%f" % (bounds[3] - bounds[1]))
+            bounds = node.bounds
+            self.text_x.SetValue(str(bounds[0]))
+            self.text_y.SetValue(str(bounds[1]))
+            self.text_width.SetValue(str((bounds[2] - bounds[0])))
+            self.text_height.SetValue(str((bounds[3] - bounds[1])))
         except AttributeError:
             pass
 
     def __set_properties(self):
-        self.spin_step_size.SetMinSize((100, 23))
-        self.spin_step_size.SetToolTip(_("Scan gap / step size image native value."))
-        self.combo_dpi.SetSelection(0)
         self.text_x.SetToolTip(_("X property of image"))
         self.text_x.Enable(False)
         self.text_y.SetToolTip(_("Y property of image"))
@@ -106,16 +75,10 @@ class ImagePropertyPanel(wx.Panel):
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        label_7 = wx.StaticText(self, wx.ID_ANY, _("DPP"))
-        label_7.SetToolTip(_("Dots Per Pixel"))
-        sizer_1.Add(label_7, 1, 0, 0)
-        sizer_1.Add(self.spin_step_size, 5, 0, 0)
-        sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
         label_8 = wx.StaticText(self, wx.ID_ANY, _("DPI:"))
         label_8.SetToolTip(_("Dots Per Inch"))
         sizer_6.Add(label_8, 1, 0, 0)
-        sizer_6.Add(self.combo_dpi, 5, 0, 0)
+        sizer_6.Add(self.text_dpi, 5, 0, 0)
         sizer_8.Add(sizer_6, 1, wx.EXPAND, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, _("X:"))
         sizer_2.Add(label_1, 1, 0, 0)
@@ -138,49 +101,9 @@ class ImagePropertyPanel(wx.Panel):
         self.Centre()
         # end wxGlade
 
-    def on_spin_step(self, event=None):  # wxGlade: ElementProperty.<event_handler>
-        try:
-            current_step = int(self.element.values["raster_step"])
-        except KeyError:
-            current_step = 1
-        new_step = self.spin_step_size.GetValue()
-        self.combo_dpi.SetSelection(new_step - 1)
-        self.element.values["raster_step"] = new_step
-        self.conditionally_update_image(current_step)
-
-    def on_combo_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
-        try:
-            current_step = float(self.element.values["raster_step"])
-        except KeyError:
-            current_step = float(self.spin_step_size.GetValue())
-        new_step = self.combo_dpi.GetSelection() + 1
-        self.spin_step_size.SetValue(new_step)
-        self.element.values["raster_step"] = new_step
-        self.conditionally_update_image(current_step)
-
-    def conditionally_update_image(self, current_step):
-        """
-        Calls update image only if the current scale is equal to the step size
-        """
-        m = self.element.transform
-        if (
-            abs(m.value_scale_x() - current_step) < 1e-5
-            or abs(m.value_scale_y() - current_step) < 1e-5
-        ):
-            self.update_step_image()
-
-    def update_step_image(self):
-        element = self.element
-        step_value = self.element.values["raster_step"]
-
-        m = element.transform
-        tx = m.e
-        ty = m.f
-        element.transform = Matrix.scale(float(step_value), float(step_value))
-        element.transform.post_translate(tx, ty)
-        element.node.modified()
-        if self.context is not None:
-            self.context.elements.signal("element_property_reload", element)
+    def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
+        new_step = float(self.text_dpi.GetValue())
+        self.node.dpi = new_step
 
     def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()

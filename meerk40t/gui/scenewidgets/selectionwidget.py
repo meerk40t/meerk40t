@@ -347,8 +347,8 @@ class RotationWidget(Widget):
         dx = abs(min(0, inner_wd_half - self.inner))
         dy = abs(min(0, inner_ht_half - self.inner))
         if self.master.handle_outside:
-            offset_x = self.inner/2
-            offset_y = self.inner/2
+            offset_x = self.inner / 2
+            offset_y = self.inner / 2
         else:
             offset_x = 0
             offset_y = 0
@@ -430,11 +430,7 @@ class RotationWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    obj = e.object
-                    obj.node.modified()
-                except AttributeError:
-                    pass
+                e.modified()
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -500,13 +496,12 @@ class RotationWidget(Widget):
             # b = self.reference_rect.bbox()
 
             for e in elements.flat(types=elem_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    if obj.lock:
+                    if e.lock:
                         continue
                 except AttributeError:
                     pass
-                obj.transform.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+                e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -678,9 +673,8 @@ class CornerWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    obj.node.modified()
+                    e.modified()
                 except AttributeError:
                     pass
         if event == 0:
@@ -764,13 +758,13 @@ class CornerWidget(Widget):
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
 
-            for obj in elements.elems(emphasized=True):
+            for node in elements.elems(emphasized=True):
                 try:
-                    if obj.lock:
+                    if node.lock:
                         continue
                 except AttributeError:
                     pass
-                obj.transform.post_scale(scalex, scaley, orgx, orgy)
+                node.matrix.post_scale(scalex, scaley, orgx, orgy)
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -873,9 +867,8 @@ class SideWidget(Widget):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    obj.node.modified()
+                    e.modified()
                 except AttributeError:
                     pass
         if event == 0:
@@ -962,13 +955,13 @@ class SideWidget(Widget):
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
 
-            for obj in elements.elems(emphasized=True):
+            for node in elements.elems(emphasized=True):
                 try:
-                    if obj.lock:
+                    if node.lock:
                         continue
                 except AttributeError:
                     pass
-                obj.transform.post_scale(scalex, scaley, orgx, orgy)
+                node.matrix.post_scale(scalex, scaley, orgx, orgy)
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
@@ -1057,14 +1050,12 @@ class SkewWidget(Widget):
 
             self.master.rotated_angle = self.last_skew
             for e in elements.flat(types=elem_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    obj.node.modified()
+                    e.modified()
                 except AttributeError:
                     pass
 
         elif event == 0:  # move
-
             if self.is_x:
                 dd = dx
                 this_side = self.master.total_delta_x
@@ -1080,20 +1071,19 @@ class SkewWidget(Widget):
             self.master.rotated_angle = current_angle
 
             for e in elements.flat(types=elem_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    if obj.lock:
+                    if e.lock:
                         continue
                 except AttributeError:
                     pass
                 if self.is_x:
-                    obj.transform.post_skew_x(
+                    e.matrix.post_skew_x(
                         delta_angle,
                         (self.master.right + self.master.left) / 2,
                         (self.master.top + self.master.bottom) / 2,
                     )
                 else:
-                    obj.transform.post_skew_y(
+                    e.matrix.post_skew_y(
                         delta_angle,
                         (self.master.right + self.master.left) / 2,
                         (self.master.top + self.master.bottom) / 2,
@@ -1204,8 +1194,7 @@ class MoveWidget(Widget):
             dx, dy = self.scene.revised_magnet_bound(b)
             if dx != 0 or dy != 0:
                 for e in elements.flat(types=elem_nodes, emphasized=True):
-                    obj = e.object
-                    obj.transform.post_translate(dx, dy)
+                    e.matrix.post_translate(dx, dy)
 
                 self.translate(dx, dy)
 
@@ -1219,9 +1208,8 @@ class MoveWidget(Widget):
         if event == 1:  # end
             self.check_for_magnets()
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                obj = e.object
                 try:
-                    obj.node.modified()
+                    e.modified()
                 except AttributeError:
                     pass
         elif event == -1:  # start
@@ -1233,8 +1221,7 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 # Here we ignore the lock-status of an element
-                obj = e.object
-                obj.transform.post_translate(dx, dy)
+                e.matrix.post_translate(dx, dy)
 
             self.translate(dx, dy)
 
@@ -1434,8 +1421,7 @@ class ReferenceWidget(Widget):
                 for e in elements.flat(types=elem_nodes, emphasized=True):
                     try:
                         # First object
-                        obj = e.object
-                        self.scene.reference_object = obj
+                        self.scene.reference_object = e
                         break
                     except AttributeError:
                         pass
@@ -1651,7 +1637,7 @@ class SelectionWidget(Widget):
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
-                # Option to draw selection Handle outside of box to allow for better visibility
+        # Option to draw selection Handle outside of box to allow for better visibility
 
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)
@@ -1743,11 +1729,10 @@ class SelectionWidget(Widget):
 
         for e in elements.flat(types=elem_nodes, emphasized=True):
             # Here we ignore the lock-status of an element, as this is just a move...
-            obj = e.object
-            if not obj is refob:
-                obj.transform.post_translate(dx, dy)
+            if e is not refob:
+                e.matrix.post_translate(dx, dy)
                 try:
-                    obj.node.invalidated_node()
+                    e.invalidated_node()
                 except AttributeError:
                     pass
         elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
@@ -1796,7 +1781,22 @@ class SelectionWidget(Widget):
             obj.transform.post_rotate(angle, cx, cy)
             obj.node.modified()
 
-        elements.validate_selected_area()
+        ratio_ref = r_ht > r_wd
+        ratio_sel = (cc[3] - cc[1]) > (cc[2] - cc[0])
+        if ratio_ref != ratio_sel:
+            angle = math.tau / 4
+            cx = (cc[0] + cc[2]) / 2
+            cy = (cc[1] + cc[3]) / 2
+            dx = cc[2] - cc[0]
+            dy = cc[3] - cc[1]
+            for e in elements.flat(types=elem_nodes, emphasized=True):
+                e.matrix.post_rotate(angle, cx, cy)
+            # Update bbox
+            cc[0] = cx - dy / 2
+            cc[2] = cc[0] + dy
+            cc[1] = cy - dx / 2
+            cc[3] = cc[1] + dx
+            elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
 
     def scale_selection_to_ref(self, method="none", r_wd=None, r_ht=None, angle=None):
         refob = self.scene.reference_object
@@ -1840,9 +1840,8 @@ class SelectionWidget(Widget):
         dy = (scaley - 1) * dy
 
         for e in elements.flat(types=elem_nodes, emphasized=True):
-            obj = e.object
-            if not obj is refob:
-                obj.transform.post_scale(scalex, scaley, cc[0], cc[1])
+            if e is not refob:
+                e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
 
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 
@@ -1867,8 +1866,7 @@ class SelectionWidget(Widget):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
                 # First object
-                obj = e.object
-                self.scene.reference_object = obj
+                self.scene.reference_object = e
                 break
             except AttributeError:
                 pass
@@ -1888,21 +1886,21 @@ class SelectionWidget(Widget):
             node = node.node
         menu = create_menu_for_node(gui, node, elements)
         # Now check whether we have a reference object
-        obj = self.scene.reference_object
-        if not obj is None:
+        reference_object = self.scene.reference_object
+        if reference_object is not None:
             # Okay, just lets make sure we are not doing this on the refobject itself...
             for e in self.scene.context.elements.flat(
                 types=elem_nodes, emphasized=True
             ):
                 # Here we acknowledge the lock-status of an element
-                if obj == e.object:
-                    obj = None
+                if reference_object is e:
+                    reference_object = None
                     break
 
         _ = self.scene.context._
         submenu = None
         # Add Manipulation menu
-        if not obj is None:
+        if reference_object is not None:
             submenu = wx.Menu()
             if self.popupID1 is None:
                 self.popupID1 = wx.NewId()
@@ -2088,13 +2086,11 @@ class SelectionWidget(Widget):
             # Code for reference object - single object? And identical to reference?
             self.is_ref = False
             self.single_element = True
-            if not self.scene.reference_object is None:
-
+            if self.scene.reference_object is not None:
                 for idx, e in enumerate(
                     elements.flat(types=elem_nodes, emphasized=True)
                 ):
-                    obj = e.object
-                    if obj is self.scene.reference_object:
+                    if e is self.scene.reference_object:
                         self.is_ref = True
                     if idx > 0:
                         self.single_element = False
