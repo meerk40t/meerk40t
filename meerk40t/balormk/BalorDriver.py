@@ -261,6 +261,7 @@ class BalorDriver(Parameters):
         job.goto(0x8000, 0x8000)
         last_on = None
         current_power = None
+        wobble = None
         for x, y, on in self.plot_planner.gen():
             while self.hold_work():
                 time.sleep(0.05)
@@ -319,15 +320,33 @@ class BalorDriver(Parameters):
                     )
                     if wobble_enabled:
                         wobble_radius = settings.get("wobble_radius", "1.5mm")
+                        wobble_r = self.service.physical_to_device_length(
+                            wobble_radius, 0
+                        )[0]
                         wobble_interval = settings.get("wobble_interval", "0.3mm")
                         wobble_speed = settings.get("wobble_speed", 50.0)
-                        wobble = Wobble(
-                            radius=self.service.physical_to_device_length(
-                                wobble_radius, 0
-                            )[0],
-                            speed=wobble_speed,
-                        )
-                        job._mark_modification = wobble.wobble
+                        wobble_type = settings.get("wobble_type", "circle")
+                        if wobble is None:
+                            wobble = Wobble(
+                                radius=wobble_r,
+                                speed=wobble_speed,
+                            )
+                        else:
+                            # set our parameterizations
+                            wobble.radius = wobble_r
+                            wobble.speed = wobble_speed
+                        if wobble_type == "circle":
+                            job._mark_modification = wobble.wobble
+                        elif wobble_type == "sinewave":
+                            job._mark_modification = wobble.sinewave
+                        elif wobble_type == "sawtooth":
+                            job._mark_modification = wobble.sawtooth
+                        elif wobble_type == "jigsaw":
+                            job._mark_modification = wobble.jigsaw
+                        elif wobble_type == "slowtooth":
+                            job._mark_modification = wobble.slowtooth
+                        else:
+                            raise ValueError
                         job._interpolations = self.service.physical_to_device_length(
                             wobble_interval, 0
                         )[0]

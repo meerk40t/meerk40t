@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     icon_corner1,
@@ -36,7 +37,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Angle, Group
+from meerk40t.svgelements import Angle, Group, Matrix
 
 _ = wx.GetTranslation
 
@@ -422,7 +423,7 @@ class Drag(wx.Panel):
             elements.validate_selected_area()
             bbox = elements.selected_area()
         else:
-            bbox = Group.union_bbox(elements.elems())
+            bbox = Node.union_bounds(elements.elems())
         return bbox
 
     def align_per_pos(self, value):
@@ -502,11 +503,21 @@ class Drag(wx.Panel):
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
-        try:
-            pos = e[0].first_point * e[0].transform
-        except (IndexError, AttributeError):
-            return
-        if pos is None:
+        first_node = e[0]
+        if first_node.type == "elem path":
+            try:
+                pos = first_node.path.first_point * first_node.matrix
+            except (IndexError, AttributeError):
+                return
+        elif first_node.type == "elem image":
+            try:
+                pos = (
+                    first_node.matrix.value_trans_x(),
+                    first_node.matrix.value_trans_y(),
+                )
+            except (IndexError, AttributeError):
+                return
+        else:
             return
         self.context(
             "move_absolute {x} {y}\n".format(
@@ -1369,7 +1380,7 @@ class Transform(wx.Panel):
         self.text_e.Enable(v)
         self.text_f.Enable(v)
         if v:
-            matrix = f.transform
+            matrix = f.matrix
             # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
@@ -1520,7 +1531,7 @@ class Transform(wx.Panel):
             tl_x = float(self.text_e.GetValue())
             tl_y = float(self.text_f.GetValue())
             f = self.context.elements.first_element(emphasized=True)
-            matrix = f.transform
+            matrix = f.matrix
             if (
                 sc_x == matrix.a
                 and sk_y == matrix.b

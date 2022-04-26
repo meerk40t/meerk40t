@@ -19,6 +19,7 @@ from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
@@ -110,6 +111,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/relocate", RelocateTool)
         context.register("tool/text", TextTool)
         context.register("tool/vector", VectorTool)
+        context.register("tool/measure", MeasureTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
@@ -278,8 +280,7 @@ class MeerK40tScenePanel(wx.Panel):
         def make_reference(**kwargs):
             # Take first emphasized element
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                obj = e.object
-                self.widget_scene.reference_object = obj
+                self.widget_scene.reference_object = e
                 break
 
     @signal_listener("refresh_scene")
@@ -335,7 +336,6 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("units")
     def space_changed(self, origin, *args):
-        print("units")
         self.scene.signal("grid")
         self.scene.signal("guide")
         self.request_refresh(origin)
@@ -381,14 +381,12 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            obj = e.object
+            obj = e
             try:
                 if color is None:
-                    obj.stroke = Color("none")
-                    obj.values[SVG_ATTR_STROKE] = "none"
+                    e.stroke = Color("none")
                 else:
-                    obj.stroke = color
-                    obj.values[SVG_ATTR_STROKE] = color.hex
+                    e.stroke = color
                 e.altered()
             except AttributeError:
                 # Ignore and carry on...
@@ -407,14 +405,11 @@ class MeerK40tScenePanel(wx.Panel):
             color = Color(rgb[0], rgb[1], rgb[2], 1.0)
 
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            obj = e.object
             try:
                 if color is None:
-                    obj.fill = Color("none")
-                    obj.values[SVG_ATTR_FILL] = "none"
+                    e.fill = Color("none")
                 else:
-                    obj.fill = color
-                    obj.values[SVG_ATTR_FILL] = color.hex
+                    e.fill = color
                 e.altered()
             except AttributeError:
                 # Ignore and carry on...
@@ -430,9 +425,8 @@ class MeerK40tScenePanel(wx.Panel):
         # print("Signal with %s" % stroke_width)
         sw = float(Length(stroke_width))
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            obj = e.object
             try:
-                obj.stroke_width = sw
+                e.stroke_width = sw
                 e.altered()
             except AttributeError:
                 # Ignore and carry on...

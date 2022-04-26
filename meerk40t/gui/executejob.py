@@ -10,6 +10,7 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.kernel import signal_listener
 
+from ..core.node.node import Node
 from ..svgelements import Group
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_laser_beam_52
@@ -156,9 +157,8 @@ class PlannerPanel(wx.Panel):
         cutplan = self.context.planner.default_plan
         for node in cutplan.plan:
             if node.type.startswith("op"):
-                objs = [e.object for e in node.children]
-                elems.extend(objs)
-        bounds = Group.union_bbox(elems)
+                elems.extend(node.children)
+        bounds = Node.union_bounds(elems)
 
         try:
             width = math.ceil(bounds[2] - bounds[0])

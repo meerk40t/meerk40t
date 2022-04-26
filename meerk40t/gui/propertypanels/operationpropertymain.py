@@ -51,7 +51,7 @@ The number of Operation Passes can be changed extremely easily, but you cannot c
 Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."""
 )
 
-OPERATION_RASTERSTEP_TOOLTIP = _(
+OPERATION_DPI_TOOLTIP = _(
     """
 In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.
 
@@ -531,7 +531,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.05 + 4))
                 start = int(h * 0.9)
                 end = int(h * 0.1)
-                step = -self.operation.raster_step * factor
+                step = -1000 / self.operation.dpi * factor
             else:
                 # Top to Bottom or Crosshatch
                 if self.operation.raster_preference_top > 0:
@@ -543,10 +543,9 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.95 - 4))
                 start = int(h * 0.1)
                 end = int(h * 0.9)
-                step = self.operation.raster_step * factor
-            if step == 0:
-                step = 1
-            for pos in range(start, end, step):
+                step = 1000 / self.operation.dpi * factor
+            pos = start
+            while min(start, end) <= pos <= max(start, end):
                 # Primary Line Horizontal Raster
                 r_start.append((w * 0.1, pos))
                 r_end.append((w * 0.9, pos))
@@ -562,6 +561,7 @@ class PanelStartPreference(wx.Panel):
                 last = r_start[-1]
                 if not unidirectional:
                     right = not right
+                pos += step
         if direction == 2 or direction == 3 or direction == 4:
             # Direction Line
             d_start.append((w * 0.05, h * 0.05))
@@ -578,7 +578,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
                 start = int(w * 0.9)
                 end = int(w * 0.1)
-                step = -self.operation.raster_step * factor
+                step = -1000 / self.operation.dpi * factor
             else:
                 # Left to Right or Crosshatch
                 if self.operation.raster_preference_left > 0:
@@ -590,10 +590,9 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
                 start = int(w * 0.1)
                 end = int(w * 0.9)
-                step = self.operation.raster_step * factor
-            if step == 0:
-                step = 1
-            for pos in range(start, end, step):
+                step = 1000 / self.operation.dpi * factor
+            pos = start
+            while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
                 r_start.append((pos, h * 0.1))
                 r_end.append((pos, h * 0.9))
@@ -609,6 +608,7 @@ class PanelStartPreference(wx.Panel):
                 last = r_start[-1]
                 if not unidirectional:
                     top = not top
+                pos += step
         self.raster_lines = r_start, r_end
         self.travel_lines = t_start, t_end
         self.direction_lines = d_start, d_end
@@ -698,31 +698,22 @@ class RasterSettingsPanel(wx.Panel):
         )
 
         sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Raster Step:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, "DPI:"), wx.HORIZONTAL
         )
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
 
-        self.text_raster_step = wx.TextCtrl(self, wx.ID_ANY, "1")
-        self.text_raster_step.SetToolTip(OPERATION_RASTERSTEP_TOOLTIP)
-        sizer_3.Add(self.text_raster_step, 0, 0, 0)
+        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
+        self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
+        sizer_3.Add(self.text_dpi, 0, 0, 0)
 
         sizer_6 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Overscan:"), wx.HORIZONTAL
         )
         raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)
 
-        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "20")
+        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "1mm")
         self.text_overscan.SetToolTip("Overscan amount")
         sizer_6.Add(self.text_overscan, 1, 0, 0)
-
-        self.combo_overscan_units = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["steps", "mm", "cm", "inch", "mil", "%"],
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-        self.combo_overscan_units.SetSelection(0)
-        sizer_6.Add(self.combo_overscan_units, 0, 0, 0)
 
         sizer_4 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Direction:"), wx.HORIZONTAL
@@ -766,8 +757,8 @@ class RasterSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_raster_step, self.text_raster_step)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_raster_step, self.text_raster_step)
+        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
         self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
         self.Bind(
@@ -790,8 +781,8 @@ class RasterSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation.raster_step is not None:
-            self.text_raster_step.SetValue(str(self.operation.raster_step))
+        if self.operation.dpi is not None:
+            self.text_dpi.SetValue(str(self.operation.dpi))
         if self.operation.overscan is not None:
             self.text_overscan.SetValue(str(self.operation.overscan))
         if self.operation.raster_direction is not None:
@@ -799,25 +790,24 @@ class RasterSettingsPanel(wx.Panel):
         if self.operation.raster_swing is not None:
             self.radio_directional_raster.SetSelection(self.operation.raster_swing)
 
-    def on_text_raster_step(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.raster_step = int(self.text_raster_step.GetValue())
+            self.operation.dpi = int(self.text_dpi.GetValue())
         except ValueError:
             return
         self.context.signal("element_property_reload", self.operation)
 
-    def on_text_overscan(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
-        overscan = self.text_overscan.GetValue()
-        if not overscan.endswith("%"):
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                return
-        self.operation.overscan = overscan
+    def on_text_overscan(self, event=None):
+        ctrl = self.text_overscan
+        try:
+            v = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
+        except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
+            return
+        self.operation.overscan = v.preferred_length
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_combo_raster_direction(self, event=None):

@@ -4,12 +4,14 @@ import unittest
 from PIL import Image, ImageDraw
 
 from meerk40t.core.cutcode import CutCode, LineCut, Parameters
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Circle, Path, Point, SVGImage
+from meerk40t.svgelements import Circle, Path, Point, Matrix
 
 
 class TestPlotplanner(unittest.TestCase):
@@ -353,14 +355,14 @@ class TestPlotplanner(unittest.TestCase):
         """
 
         rasterop = RasterOpNode()
-        svg_image = SVGImage()
-        svg_image.image = Image.new("RGBA", (256, 256))
-        draw = ImageDraw.Draw(svg_image.image)
+        image = Image.new("RGBA", (256, 256))
+        draw = ImageDraw.Draw(image)
         draw.ellipse((0, 0, 255, 255), "black")
-        rasterop.add(svg_image, type="ref elem")
+        image = image.convert("L")
+        rasterop.add_node(ImageNode(image=image, step_x=1, step_y=1, matrix=Matrix()))
 
         vectorop = EngraveOpNode()
-        vectorop.add(Path(Circle(cx=127, cy=127, r=128, fill="black")), type="ref elem")
+        vectorop.add_node(PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black"))
         cutcode = CutCode()
         cutcode.extend(vectorop.as_cutobjects())
         cutcode.extend(rasterop.as_cutobjects())

@@ -19,18 +19,18 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            draw = ImageDraw.Draw(svg_image.image)
+            image = Image.new("RGBA", (256, 256), "white")
+            draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+                if node.type == "elem image":
                     self.assertEqual(element.image.size, (6, 6))
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(element.matrix.value_trans_x(), 100)
+                    self.assertEqual(element.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -44,33 +44,34 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            svg_image.values["raster_step"] = 3
-            draw = ImageDraw.Draw(svg_image.image)
+            image = Image.new("RGBA", (256, 256), "white")
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
+            node.step_x = 3
+            node.step_y = 3
+            draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
-            node = kernel_root.elements.add_elem(svg_image)
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+                if node.type == "elem image":
                     self.assertEqual(
                         element.image.size,
                         (
-                            6 / svg_image.values["raster_step"],
-                            6 / svg_image.values["raster_step"],
+                            6 / node.step_x,
+                            6 / node.step_y,
                         ),
                     )
                     self.assertEqual(
-                        element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        element.matrix.value_scale_x(),
+                        node.step_x,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        element.matrix.value_scale_y(),
+                        node.step_y,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(element.matrix.value_trans_x(), 100)
+                    self.assertEqual(element.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -87,37 +88,38 @@ class TestActualize(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
             for component in range(256):
-                svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new(
+                image = Image.new(
                     "RGBA", (256, 256), (component, component, component, 0)
                 )
-                svg_image.values["raster_step"] = 3
-                draw = ImageDraw.Draw(svg_image.image)
+                draw = ImageDraw.Draw(image)
                 draw.ellipse((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
-                node = kernel_root.elements.add_elem(svg_image)
+                elements = kernel_root.elements
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
+                node.step_x = 3
+                node.step_y = 3
                 node.emphasized = True
             kernel_root("image resample\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size,
+                        node.image.size,
                         (
-                            6 / svg_image.values["raster_step"],
-                            6 / svg_image.values["raster_step"],
+                            6 / node.step_x,
+                            6 / node.step_y,
                         ),
                     )
                     self.assertEqual(
-                        element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_x(),
+                        node.step_x,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_y(),
+                        node.step_y,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(node.matrix.value_trans_x(), 100)
+                    self.assertEqual(node.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -134,39 +136,40 @@ class TestActualize(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
             for component in range(256):
-                svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new(
+                image = Image.new(
                     "RGBA", (256, 256), (component, component, component, 0)
                 )
-                svg_image.values["raster_step"] = 3
-                draw = ImageDraw.Draw(svg_image.image)
+                draw = ImageDraw.Draw(image)
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
-                node = kernel_root.elements.add_elem(svg_image)
+                elements = kernel_root.elements
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
+                node.step_x = 3
+                node.step_y = 3
                 node.emphasized = True
             kernel_root("image resample\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size,
+                        node.image.size,
                         (
-                            ceil(101 / svg_image.values["raster_step"]),
-                            ceil(101 / svg_image.values["raster_step"]),
+                            ceil(101 / node.step_x),
+                            ceil(101 / node.step_y),
                         ),
                     )
                     self.assertEqual(
-                        element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_x(),
+                        node.step_x,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_y(),
+                        node.step_y,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 50)
-                    self.assertEqual(element.transform.value_trans_y(), 50)
+                    self.assertEqual(node.matrix.value_trans_x(), 50)
+                    self.assertEqual(node.matrix.value_trans_y(), 50)
                     # Test corner for whiteness.
-                    self.assertEqual(element.image.getpixel((-1, -1)), 255)
+                    self.assertEqual(node.image.getpixel((-1, -1)), 255)
         finally:
             kernel.shutdown()
 
@@ -184,7 +187,7 @@ class TestActualize(unittest.TestCase):
             for step in range(1, 20):
                 transform = Matrix()
                 actual, transform = actualize(
-                    image, transform, step_level=step, crop=False
+                    image, transform, step_x=step, step_y=step, crop=False
                 )
                 self.assertEqual(actual.getpixel((-1, -1)), 255)
 
@@ -200,7 +203,7 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(image, transform, step_level=step, crop=False)
+            actual, transform = actualize(image, transform, step_x=step, step_y=step, crop=False)
             self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
@@ -216,12 +219,12 @@ class TestActualize(unittest.TestCase):
         for step in range(1, 20):
             transform = Matrix()
             actual, transform = actualize(
-                image, transform, step_level=step, crop=False, inverted=True
+                image, transform, step_x=step, step_y=step, crop=False, inverted=True
             )
             self.assertEqual(actual.getpixel((-1, -1)), 0)
 
         # Note: inverted flag not set. White edge pixel is correct.
-        actual, transform = actualize(image, Matrix(), step_level=3, crop=False)
+        actual, transform = actualize(image, Matrix(), step_x=3, step_y=3,  crop=False)
         self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_largecircle(self):
@@ -234,18 +237,18 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            draw = ImageDraw.Draw(svg_image.image)
+            image = Image.new("RGBA", (256, 256), "white")
+            draw = ImageDraw.Draw(image)
             draw.ellipse((0, 0, 256, 256), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
-                    self.assertEqual(element.image.size, (256, 256))
-                    self.assertEqual(element.transform.value_trans_x(), 0)
-                    self.assertEqual(element.transform.value_trans_y(), 0)
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
+                    self.assertEqual(node.image.size, (256, 256))
+                    self.assertEqual(node.matrix.value_trans_x(), 0)
+                    self.assertEqual(node.matrix.value_trans_y(), 0)
         finally:
             kernel.shutdown()
 
@@ -259,16 +262,16 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            node = kernel_root.elements.add_elem(svg_image)
+            image = Image.new("RGBA", (256, 256), "white")
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+                if node.type == "elem image":
                     self.assertEqual(element.image.size, (256, 256))
-                    self.assertEqual(element.transform.value_trans_x(), 0)
-                    self.assertEqual(element.transform.value_trans_y(), 0)
+                    self.assertEqual(element.matrix.value_trans_x(), 0)
+                    self.assertEqual(element.matrix.value_trans_y(), 0)
         finally:
             kernel.shutdown()
 
@@ -282,15 +285,15 @@ class TestActualize(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            image = Image.new("RGBA", (256, 256), "black")
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, step_x=1, step_y=1, matrix=Matrix(), type="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+                if node.type == "elem image":
                     self.assertEqual(element.image.size, (256, 256))
-                    self.assertEqual(element.transform.value_trans_x(), 0)
-                    self.assertEqual(element.transform.value_trans_y(), 0)
+                    self.assertEqual(element.matrix.value_trans_x(), 0)
+                    self.assertEqual(element.matrix.value_trans_y(), 0)
         finally:
             kernel.shutdown()

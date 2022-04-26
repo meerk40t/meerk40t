@@ -7,8 +7,8 @@ class BranchRegmarkNode(Node):
     Bootstrapped type: 'branch reg'
     """
 
-    def __init__(self, data_object, **kwargs):
-        super(BranchRegmarkNode, self).__init__(data_object)
+    def __init__(self, **kwargs):
+        super(BranchRegmarkNode, self).__init__(**kwargs)
 
     def __str__(self):
         return "Regmarks"

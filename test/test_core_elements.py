@@ -16,16 +16,16 @@ class TestElements(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             kernel_root("circle 1in 1in 1in\n")
-            for element in kernel_root.elements.elems():
+            for node in kernel_root.elements.elems():
                 # print(element)
                 self.assertEqual(
-                    element,
+                    node.shape,
                     Circle(
                         center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
                         r=1000 * UNITS_PER_MIL,
-                        stroke="black",
                     ),
                 )
+                self.assertEqual(node.stroke, "black")
         finally:
             kernel.shutdown()
 
@@ -39,20 +39,18 @@ class TestElements(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
-            for element in kernel_root.elements.elems():
+            for node in kernel_root.elements.elems():
                 self.assertEqual(
-                    element,
+                    node.shape,
                     Rect(
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
-                        stroke="red",
-                        fill="blue",
                     ),
                 )
-                self.assertEqual(element.stroke, "red")
-                self.assertEqual(element.fill, "blue")
+                self.assertEqual(node.stroke, "red")
+                self.assertEqual(node.fill, "blue")
         finally:
             kernel.shutdown()
 

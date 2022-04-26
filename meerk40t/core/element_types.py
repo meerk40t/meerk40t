@@ -1,4 +1,15 @@
-from meerk40t.svgelements import Path, SVGImage, Rect, Ellipse, Circle, Polygon, Polyline, Point, SVGText, SimpleLine
+from meerk40t.svgelements import (
+    Circle,
+    Ellipse,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    Rect,
+    SimpleLine,
+    SVGImage,
+    SVGText,
+)
 
 
 def get_type_from_element(element):
@@ -28,7 +39,7 @@ non_structural_nodes = (
     "op dots",
     "op hatch",
     "op console",
-    "ref elem",
+    "reference",
     "lasercode",
     "cutcode",
     "blob",
@@ -92,6 +103,5 @@ elem_ref_nodes = (
     "elem rect",
     "elem line",
     "elem text",
-    "ref elem",
+    "reference",
 )
-

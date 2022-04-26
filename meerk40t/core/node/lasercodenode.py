@@ -8,8 +8,8 @@ class LaserCodeNode(Node):
     Node type "lasercode"
     """
 
-    def __init__(self, commands, **kwargs):
-        super().__init__(commands, type="lasercode")
+    def __init__(self, commands=None, **kwargs):
+        super().__init__(type="lasercode", **kwargs)
         if "name" in kwargs:
             self.name = kwargs["name"]
         else:
@@ -31,7 +31,7 @@ class LaserCodeNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(LaserCodeNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "LaserCode"
+        default_map["element_type"] = "LaserCode"
         return default_map
 
     def drop(self, drag_node):

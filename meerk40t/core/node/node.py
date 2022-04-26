@@ -7,7 +7,7 @@ Types:
 * branch ops: Operation Branch
 * branch elems: Elements Branch
 * branch reg: Regmark Branch
-* ref elem: Element below op branch which stores specific data.
+* reference: Element below op branch which stores specific data.
 * op: LayerOperation within Operation Branch.
 * elem: Element with Element Branch or subgroup.
 * file: File Group within Elements Branch
@@ -25,14 +25,13 @@ class Node:
     Nodes are elements within the tree which stores most of the objects in Elements.
     """
 
-    def __init__(self, data_object=None, type=None, *args, **kwargs):
+    def __init__(self, type=None, *args, **kwargs):
         super().__init__()
         self._children = list()
         self._root = None
         self._parent = None
         self._references = list()
 
-        self.object = data_object
         self.type = type
 
         self._points = list()
@@ -51,11 +50,10 @@ class Node:
         self.item = None
         self.icon = None
         self.cache = None
-        self.last_transform = None
         self.id = None
 
     def __repr__(self):
-        return "Node('%s', %s, %s)" % (self.type, str(self.object), str(self._parent))
+        return "Node('%s', %s)" % (self.type, str(self._parent))
 
     def __str__(self):
         return self.create_label()
@@ -115,38 +113,9 @@ class Node:
     def root(self):
         return self._root
 
-    @staticmethod
-    def node_bbox(node):
-        for n in node._children:
-            Node.node_bbox(n)
-        # Recurse depth first. All children have been processed.
-        node._bounds_dirty = False
-        node._bounds = None
-        if node.type in ("file", "group"):
-            for c in node._children:
-                # Every child in n is already solved.
-                assert not c._bounds_dirty
-                if c._bounds is None:
-                    continue
-                if node._bounds is None:
-                    node._bounds = c._bounds
-                    continue
-                node._bounds = (
-                    min(node._bounds[0], c._bounds[0]),
-                    min(node._bounds[1], c._bounds[1]),
-                    max(node._bounds[2], c._bounds[2]),
-                    max(node._bounds[3], c._bounds[3]),
-                )
-        else:
-            e = node.object
-            if node.type.startswith("elem") and hasattr(e, "bbox"):
-                node._bounds = e.bbox()
-
     @property
     def bounds(self):
-        if self._bounds_dirty:
-            self.node_bbox(self)
-        return self._bounds
+        return None
 
     @property
     def points(self):
@@ -168,10 +137,8 @@ class Node:
     def default_map(self, default_map=None):
         if default_map is None:
             default_map = dict()
-        element = self.object
         default_map["id"] = str(self.id)
-        default_map["object"] = str(self.object)
-        default_map["element_type"] = element.__class__.__name__
+        default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
 
@@ -436,7 +403,43 @@ class Node:
             if pos is not None:
                 pos += 1
 
-    def add(self, data_object=None, type=None, id=None, pos=None, **kwargs):
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+
+        node_class = self._root.bootstrap["reference"]
+        reference_node = node_class(node, **kwargs)
+        if self._root is not None:
+            self._root.notify_created(reference_node)
+        reference_node.type = "reference"
+        reference_node.id = node.id
+        reference_node._parent = self
+        reference_node._root = node._root
+        if pos is None:
+            self._children.append(reference_node)
+        else:
+            self._children.insert(pos, reference_node)
+        reference_node.notify_attached(reference_node, pos=pos)
+        return reference_node
+
+    def add_node(self, node, pos=None):
+        if node._parent is not None:
+            raise ValueError("Cannot reparent node on add.")
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, pos=pos)
+
+    def add(self, type=None, id=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
@@ -447,25 +450,10 @@ class Node:
         @param pos:
         @return:
         """
-        if isinstance(data_object, Node):
-            node = data_object
-            if node._parent is not None:
-                raise ValueError("Cannot reparent node on add.")
-        else:
-            node_class = Node
-            if type is not None:
-                try:
-                    node_class = self._root.bootstrap[type]
-                except (KeyError, AttributeError):
-                    # AttributeError indicates that we are adding a node with a type to an object which is NOT part of the tree.
-                    # This should be treated as an exception, however when we run Execute Job (and possibly other tasks)
-                    # it adds nodes even though the object isn't part of the tree.
-                    pass
-                # except AttributeError:
-                #    raise AttributeError('%s needs to be added to tree before adding "%s" for %s' % (self.__class__.__name__, type, data_object.__class__.__name__))
-            node = node_class(data_object, **kwargs)
-            if self._root is not None:
-                self._root.notify_created(node)
+        node_class = self._root.bootstrap.get(type, Node)
+        node = node_class(**kwargs)
+        if self._root is not None:
+            self._root.notify_created(node)
         node.type = type
         node.id = id
         node._parent = self
@@ -665,3 +653,28 @@ class Node:
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
+
+    @staticmethod
+    def union_bounds(nodes):
+        """
+        Returns the union of the node list given.
+
+        @return: union of all bounds within the iterable.
+        """
+        xmin = float("inf")
+        ymin = float("inf")
+        xmax = -xmin
+        ymax = -ymin
+        for e in nodes:
+            box = e.bounds
+            if box is None:
+                continue
+            if box[0] < xmin:
+                xmin = box[0]
+            if box[2] > xmax:
+                xmax = box[2]
+            if box[1] < ymin:
+                ymin = box[1]
+            if box[3] > ymax:
+                ymax = box[3]
+        return xmin, ymin, xmax, ymax

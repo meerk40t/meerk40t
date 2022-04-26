@@ -203,9 +203,9 @@ class RectSelectWidget(Widget):
             #    "Selection_box: (%f,%f)-(%f,%f) - Method=%f"
             #    % (sx, sy, ex, ey, self.selection_method[sector])
             # )
-            for obj in elements.elems():
+            for node in elements.elems():
                 try:
-                    q = obj.bbox(True)
+                    q = node.bounds
                 except AttributeError:
                     continue  # This element has no bounds.
                 if q is None:
@@ -242,17 +242,17 @@ class RectSelectWidget(Widget):
                 if self.key_shift_pressed:
                     # Add Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = True
+                        node.emphasized = True
                 elif self.key_control_pressed:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = not obj.node.emphasized
+                        node.emphasized = not node.emphasized
                 else:
                     # Replace Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = True
+                        node.emphasized = True
                     else:
-                        obj.node.emphasized = False
+                        node.emphasized = False
 
             self.scene.request_refresh()
             self.start_location = None

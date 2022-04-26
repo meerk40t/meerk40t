@@ -4,7 +4,6 @@ from os import path as ospath
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..core.planner import make_actual, needs_actualization
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path, SVGImage
 from .actualize import actualize
@@ -74,19 +73,19 @@ def plugin(kernel, lifecycle=None):
             channel(_("----------"))
             channel(_("Images:"))
             i = 0
-            for element in elements.elems():
-                if not isinstance(element, SVGImage):
+            for node in elements.elems():
+                if node.type != "elem image":
                     continue
-                name = str(element)
+                name = str(node)
                 if len(name) > 50:
                     name = name[:50] + "..."
                 channel(
                     "%d: (%d, %d) %s, %s"
                     % (
                         i,
-                        element.image_width,
-                        element.image_height,
-                        element.image.mode,
+                        node.image_width,
+                        node.image_height,
+                        node.image.mode,
                         name,
                     )
                 )
@@ -97,7 +96,9 @@ def plugin(kernel, lifecycle=None):
             if not elements.has_emphasis():
                 channel(_("No selected images."))
                 return
-            images = [e for e in elements.elems(emphasized=True) if type(e) == SVGImage]
+            images = [
+                e for e in elements.elems(emphasized=True) if e.type == "elem image"
+            ]
         elif data_type == "image-array":
             from PIL import Image
 
@@ -159,15 +160,14 @@ def plugin(kernel, lifecycle=None):
         for element in data:
             (
                 element.image,
-                element.transform,
+                element.matrix,
                 step,
             ) = RasterScripts.wizard_image(element, script)
             if step is not None:
-                element.values["raster_step"] = step
-            element.image_width, element.image_height = element.image.size
+                element.step_x = step
+                element.step_y = step
             element.lock = True
-            if hasattr(element, "node"):
-                element.node.altered()
+            element.altered()
         return "image", data
 
     @context.console_command(
@@ -198,12 +198,12 @@ def plugin(kernel, lifecycle=None):
         if threshold_min is None:
             raise CommandSyntaxError
         divide = (threshold_max - threshold_min) / 255.0
-        for element in data:
-            image_element = copy(element)
-            image_element.image = image_element.image.copy()
-            if needs_actualization(image_element):
-                make_actual(image_element)
-            img = image_element.image
+        for node in data:
+            image_node = copy(node)
+            image_node.image = image_node.image.copy()
+            if image_node.needs_actualization():
+                image_node.make_actual()
+            img = image_node.image
             img = img.convert("L")
 
             def thresh(g):
@@ -218,18 +218,19 @@ def plugin(kernel, lifecycle=None):
 
             lut = [thresh(g) for g in range(256)]
             img = img.point(lut)
-            image_element.image = img
-            context.elements.add_elem(image_element)
+            image_node.image = img
+
+            elements = context.elements
+            node = elements.elem_branch.add(image=image_node, type="elem image")
+            elements.classify([node])
         return "image", data
 
     @context.console_command(
         "resample", help=_("Resample image"), input_type="image", output_type="image"
     )
     def image_resample(data, **kwargs):
-        for element in data:
-            make_actual(element)
-            if hasattr(element, "node"):
-                element.node.altered()
+        for node in data:
+            node.make_actual()
         return "image", data
 
     @context.console_option("method", "m", type=str, default="Floyd-Steinberg")
@@ -834,14 +835,16 @@ def plugin(kernel, lifecycle=None):
                 element_right.image_width,
                 element_right.image_height,
             ) = element_right.image.size
-            element_right.transform.pre_translate(x)
+            element_right.matrix.pre_translate(x)
 
             if hasattr(element, "node"):
                 element.node.remove_node()
-            context.elements.add_elem(element_left, classify=True)
-            context.elements.add_elem(element_right, classify=True)
+            elements = context.elements
+            node1 = elements.elem_branch.add(image=element_left, type="elem image")
+            node2 = elements.elem_branch.add(image=element_right, type="elem image")
+            elements.classify([node1, node2])
             channel(_("Image sliced at position %d" % x))
-            return "image", [element_left, element_right]
+            return "image", [node1, node2]
 
         return "image", data
 
@@ -878,10 +881,12 @@ def plugin(kernel, lifecycle=None):
 
             if hasattr(element, "node"):
                 element.node.remove_node()
-            context.elements.add_elem(element_top, classify=True)
-            context.elements.add_elem(element_bottom, classify=True)
+            elements = context.elements
+            node1 = elements.elem_branch.add(image=element_top, type="elem image")
+            node2 = elements.elem_branch.add(image=element_bottom, type="elem image")
+            elements.classify([node1, node2])
             channel(_("Image slashed at position %d" % y))
-            return "image", [element_top, element_bottom]
+            return "image", [node1, node2]
 
         return "image", data
 
@@ -942,8 +947,10 @@ def plugin(kernel, lifecycle=None):
             if hasattr(element, "node"):
                 element.node.remove_node()
 
-            context.elements.add_elem(element_remain, classify=True)
-            context.elements.add_elem(element_pop, classify=True)
+            elements = context.elements
+            node1 = elements.elem_branch.add(image=element_remain, type="elem image")
+            node2 = elements.elem_branch.add(image=element_pop, type="elem image")
+            elements.classify([node1, node2])
 
         return "image", data
 
@@ -1481,9 +1488,9 @@ class RasterScripts:
         return half_tone
 
     @staticmethod
-    def wizard_image(svg_image, operations):
-        image = svg_image.image
-        matrix = Matrix(svg_image.transform)
+    def wizard_image(image_node, operations):
+        image = image_node.image
+        matrix = Matrix(image_node.matrix)
         step = None
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
@@ -1516,7 +1523,7 @@ class RasterScripts:
                     if op["enable"]:
                         step = op["step"]
                         image, matrix = actualize(
-                            image, matrix, step_level=step, inverted=invert
+                            image, matrix, step_x=step, step_y=step, inverted=invert
                         )
                         if invert:
                             empty_mask = image.convert("L").point(
@@ -1770,46 +1777,41 @@ class ImageLoader:
         yield "Webp Format", ("webp",), "image/webp"
 
     @staticmethod
-    def load(context, elements_modifier, pathname, **kwargs):
-        basename = ospath.basename(pathname)
-
-        image = SVGImage(
-            {"href": pathname, "width": "100%", "height": "100%", "id": basename}
-        )
-        image.load()
-        if image.image is None:
+    def load(context, elements_service, pathname, **kwargs):
+        if pathname is None:
             return False
-        image.image.copy()  # Throws error for .eps without ghostscript
+        try:
+            from PIL import Image as PILImage
+        except ImportError:
+            return False
+        try:
+            image = PILImage.open(pathname)
+        except IOError:
+            return False
+        image.copy()  # Throws error for .eps without ghostscript
+        matrix = Matrix()
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
-                dpi = image.image.info["dpi"]
+                dpi = image.info["dpi"]
                 if (
                     isinstance(dpi, tuple)
                     and len(dpi) >= 2
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    image *= "scale(%f,%f)" % (
-                        UNITS_PER_INCH / dpi[0],
-                        UNITS_PER_INCH / dpi[1],
-                    )
-                else:
-                    image *= "scale(%f,%f)" % (
-                        UNITS_PER_PIXEL / dpi[0],
-                        UNITS_PER_PIXEL / dpi[1],
-                    )
+                    matrix.post_scale(UNITS_PER_INCH / dpi[0], UNITS_PER_INCH / dpi[1])
         except (KeyError, IndexError):
             pass
 
-        image.stroke = Color("black")
-        element_branch = elements_modifier.get(type="branch elems")
-        basename = os.path.basename(pathname)
+        element_branch = elements_service.get(type="branch elems")
 
-        file_node = element_branch.add(type="file", label=basename)
+        file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
-        file_node.add(image, type="elem image")
+        file_node.add(
+            image=image, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem image"
+        )
         file_node.focus()
 
-        elements_modifier.classify([image])
+        # elements_service.classify([n])
         return True

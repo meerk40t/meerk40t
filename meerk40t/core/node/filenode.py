@@ -1,5 +1,6 @@
 import os
 
+from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.node.node import Node
 
 
@@ -9,8 +10,8 @@ class FileNode(Node):
     Bootstrapped type: 'file'
     """
 
-    def __init__(self, data_object, filepath=None, **kwargs):
-        super(FileNode, self).__init__(data_object)
+    def __init__(self, filepath=None, **kwargs):
+        super(FileNode, self).__init__(type="file", **kwargs)
         self._filepath = filepath
 
     def __str__(self):
@@ -20,14 +21,20 @@ class FileNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "File"
-        default_map['filename'] = self._filepath
+        default_map["element_type"] = "File"
+        default_map["filename"] = self._filepath
         return default_map
 
     def drop(self, drag_node):
         if drag_node.type == "group":
             self.append_child(drag_node)
         return False
+
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_nodes))
+        return self._bounds
 
     @property
     def filepath(self):

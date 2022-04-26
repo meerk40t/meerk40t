@@ -1,35 +1,12 @@
 from copy import copy
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutGroup,
-    DwellCut,
-    LineCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-)
+from meerk40t.core.cutcode import PlotCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import (
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Polygon,
-    QuadraticBezier,
-    Shape,
-    SVGElement,
-    SVGImage,
-)
-from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
+from meerk40t.svgelements import Angle, Color, Matrix, Path
+from meerk40t.tools.pathtools import EulerianFill
 
 MILS_IN_MM = 39.3701
 
@@ -46,7 +23,7 @@ class HatchOpNode(Node, Parameters):
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, *args, type="op hatch", **kwargs)
+        Node.__init__(self, type="op hatch", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._status_value = "Queued"
@@ -54,9 +31,7 @@ class HatchOpNode(Node, Parameters):
 
         if len(args) == 1:
             obj = args[0]
-            if isinstance(obj, SVGElement):
-                self.add(obj, type="ref elem")
-            elif hasattr(obj, "settings"):
+            if hasattr(obj, "settings"):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
@@ -85,13 +60,19 @@ class HatchOpNode(Node, Parameters):
     def __copy__(self):
         return HatchOpNode(self)
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        return self._bounds
+
     def default_map(self, default_map=None):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Hatch"
-        default_map['enabled'] = "(Disabled) " if not self.output else ""
-        default_map['speed'] = "default"
-        default_map['power'] = "default"
-        default_map['frequency'] = "default"
+        default_map["element_type"] = "Hatch"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["speed"] = "default"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -100,9 +81,9 @@ class HatchOpNode(Node, Parameters):
             if drag_node.type == "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add(drag_node.object, type="ref elem", pos=0)
+            self.add_reference(drag_node, pos=0)
             return True
-        elif drag_node.type == "ref elem":
+        elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if drag_node.type == "elem image":
                 return False
@@ -120,7 +101,7 @@ class HatchOpNode(Node, Parameters):
                 if drag_node.type == "elem image":
                     continue
                 # Add element to operation
-                self.add(e.object, type="ref elem")
+                self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
@@ -142,11 +123,11 @@ class HatchOpNode(Node, Parameters):
 
     def copy_children(self, obj):
         for element in obj.children:
-            self.add(element.object, type="ref elem")
+            self.add_reference(element)
 
     def deep_copy_children(self, obj):
-        for element in obj.children:
-            self.add(copy(element.object), type=element.type)
+        for node in obj.children:
+            self.add_node(copy(node.node))
 
     def time_estimate(self):
         estimate = 0
@@ -172,17 +153,18 @@ class HatchOpNode(Node, Parameters):
         # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
         distance = self._hatch_distance_native
         angle = Angle.parse(settings.get("hatch_angle", "0deg"))
-        angle = 0
         efill = EulerianFill(distance)
-        for element in self.children:
-            object_path = element.object
-            if isinstance(object_path, Shape):
-                object_path = abs(Path(object_path))
-            if not isinstance(object_path, Path):
-                continue
-            object_path.approximate_arcs_with_cubics()
-            settings["line_color"] = object_path.stroke
-            for subpath in object_path.as_subpaths():
+        for node in self.children:
+            if node.type == "reference":
+                node = node.node
+            if node.type == "elem path":
+                path = abs(node.path)
+                path.approximate_arcs_with_cubics()
+            else:
+                path = abs(Path(node.shape))
+                path.approximate_arcs_with_cubics()
+            settings["line_color"] = path.stroke
+            for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
                     continue
