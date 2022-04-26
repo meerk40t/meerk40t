@@ -148,7 +148,7 @@ class CutOpNode(Node, Parameters):
             except AttributeError:
                 continue
             try:
-                length = e.length(error=1e-2, min_depth=2)
+                length = path.length(error=1e-2, min_depth=2)
             except AttributeError:
                 length = 0
             try:

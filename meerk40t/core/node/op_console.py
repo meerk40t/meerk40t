@@ -30,7 +30,7 @@ class ConsoleOperation(Node):
         return self.settings.get('output', True)
 
     def __repr__(self):
-        return "ConsoleOperation('%s', '%s')" % (self.command)
+        return f"ConsoleOperation('{self.command}')"
 
     def __str__(self):
         parts = list()
