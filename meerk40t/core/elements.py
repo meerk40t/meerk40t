@@ -168,8 +168,13 @@ class Elemental(Service):
         return float(Length(v, relative_length=self.device.height))
 
     def area(self, v):
-        lx = self.length_x(v)
-        ly = self.length_y(v)
+        llx = Length(v, relative_length=self.device.width)
+        lx = float(llx)
+        if "%" in v:
+            lly = Length(v, relative_length=self.device.height)
+        else:
+            lly = Length("1{unit}".format(unit=llx._preferred_units))
+        ly = float(lly)
         return lx * ly
 
     def _init_commands(self, kernel):
@@ -2840,8 +2845,7 @@ class Elemental(Service):
             if new_area is None:
                 display_only = True
             else:
-                new_area_value = float(Length(new_area))
-                if new_area_value == 0:
+                if new_area == 0:
                     channel(_("You shouldn't collapse a shape to a zero-sized thing"))
                     return
                 display_only = False
@@ -2863,57 +2867,45 @@ class Elemental(Service):
             i = 0
             for elem in data:
                 this_area = 0
-                e0 = elem
-                print ("Before", e0)
                 try:
-                    if not isinstance(e0, Path):
-                        e0 = Path(e0)
-                        print ("now its a path")
-                    else:
-                        print("it already was a path")
-                except:
-                    print ("error conversion, fall back to none")
-                    e0 = None
-                print ("After", e0)
+                    path = elem.as_path()
+                except AttributeError:
+                    path = None
+
                 subject_polygons = []
                 from numpy import linspace
-                if not e0 is None:
-                    for subpath in e0.as_subpaths():
-                        print (subpath)
+                if not path is None:
+                    for subpath in path.as_subpaths():
                         subj = Path(subpath).npoint(linspace(0, 1, 1000))
                         subj.reshape((2, 1000))
                         s = list(map(Point, subj))
                         subject_polygons.append(s)
                 else:
                     try:
-                        bb = elem.bounds()
-                        print ("Using bounds")
+                        bb = elem.bounds
                     except:
-                        print ("Even bounds failed, next element please")
+                        # Even bounds failed, next element please
                         continue
-                    s = ([bb[0], bb[1]], [bb[2], bb[1]], [bb[2], bb[3]], [bb[1], bb[3]])
+                    s = [Point(bb[0], bb[1]), Point(bb[2], bb[1]), Point(bb[2], bb[3]), Point(bb[1], bb[3])]
                     subject_polygons.append(s)
 
-                print ("Polygon created, # points = %d" % len(subject_polygons))
-
                 if len(subject_polygons)>0:
-                    idx = len(subject_polygons) - 1
-                    if subject_polygons[0][0] != subject_polygons[idx][0] or subject_polygons[0][1] != subject_polygons[idx][1]:
+                    idx = len(subject_polygons[0]) - 1
+                    if subject_polygons[0][0].x != subject_polygons[0][idx].x or subject_polygons[0][0].y != subject_polygons[0][idx].y:
                         # not identical, so close the loop
-                        subject_polygons.append([subject_polygons[0][0], subject_polygons[0][1]])
+                        subject_polygons.append(Point(subject_polygons[0][0].x, subject_polygons[0][0].y))
 
                 if len(subject_polygons)>0:
                     idx = -1
                     area_x_y = 0
                     area_y_x = 0
-                    for pt in subject_polygons:
+                    for pt in subject_polygons[0]:
                         idx += 1
-                        print("%d, %.1f, %.1f" % (idx, pt[0], pt[1]))
                         if idx>0:
-                            area_x_y += last_x * pt[1]
-                            area_y_x += last_y * pt[0]
-                        last_x = pt[0]
-                        last_y = pt[1]
+                            area_x_y += last_x * pt.y
+                            area_y_x += last_y * pt.x
+                        last_x = pt.x
+                        last_y = pt.y
                     this_area = 0.5 * abs(area_x_y - area_y_x)
 
                 if display_only:
@@ -2929,12 +2921,11 @@ class Elemental(Service):
             if display_only:
                 channel("----------")
             else:
-                new_area_value = 0
                 if total_area == 0:
                     channel(_("You can't reshape a zero-sized shape"))
                     return
 
-                ratio = sqrt(new_area_value / total_area)
+                ratio = sqrt(new_area / total_area)
                 self("scale %f\n" % ratio)
 
             return "elements", data
