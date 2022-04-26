@@ -1211,18 +1211,16 @@ class Elemental(Service):
                 data = list(data)
             elements_nodes = []
             elements = []
-            for e in data:
-                node = e.node
+            for node in data:
                 group_node = node.replace_node(type="group", label=node.label)
-                if isinstance(e, Shape) and not isinstance(e, Path):
-                    e = Path(e)
-                elif isinstance(e, SVGText):
+                try:
+                    p = node.as_path()
+                except AttributeError:
                     continue
-                p = abs(e)
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
                     elements.append(subelement)
-                    group_node.add(subelement, type="elem path")
+                    group_node.add(path=subelement, type="elem path")
                 elements_nodes.append(group_node)
                 self.classify(elements)
             return "elements", elements_nodes
