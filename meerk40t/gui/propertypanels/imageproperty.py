@@ -1,6 +1,5 @@
 import wx
 
-from ...svgelements import Image, Matrix
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 

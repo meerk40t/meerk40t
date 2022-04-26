@@ -19,13 +19,13 @@ from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
-from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Angle, Color

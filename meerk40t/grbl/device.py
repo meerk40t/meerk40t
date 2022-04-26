@@ -605,7 +605,11 @@ class GRBLDriver(Parameters):
             self.on_value = 1.0
             if q.power != self.power:
                 self.set("power", q.power)
-            if q.speed != self.speed or q.raster_step_x != self.raster_step_x or q.raster_step_y != self.raster_step_y:
+            if (
+                q.speed != self.speed
+                or q.raster_step_x != self.raster_step_x
+                or q.raster_step_y != self.raster_step_y
+            ):
                 self.set("speed", q.speed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
@@ -638,7 +642,8 @@ class GRBLDriver(Parameters):
                                 self.set("power", p_set.power)
                             if (
                                 p_set.speed != self.speed
-                                or p_set.raster_step_x != self.raster_step_x or p_set.raster_step_y != self.raster_step_y
+                                or p_set.raster_step_x != self.raster_step_x
+                                or p_set.raster_step_y != self.raster_step_y
                             ):
                                 self.set("speed", p_set.speed)
                             self.settings.update(p_set.settings)

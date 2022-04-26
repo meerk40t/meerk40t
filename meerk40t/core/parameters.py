@@ -43,14 +43,9 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = (
-    "overscan",
-)
+STRING_PARAMETERS = ("overscan",)
 
-COLOR_PARAMETERS = (
-    "color",
-    "line_color"
-)
+COLOR_PARAMETERS = ("color", "line_color")
 
 
 class Parameters:

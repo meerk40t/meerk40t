@@ -69,7 +69,7 @@ class EllipseNode(Node):
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

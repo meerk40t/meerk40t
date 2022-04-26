@@ -90,7 +90,13 @@ class LaserRender:
 
         for node in nodes:
             if node.type == "reference":
-                self.render([node.node], gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+                self.render(
+                    [node.node],
+                    gc,
+                    draw_mode=draw_mode,
+                    zoomscale=zoomscale,
+                    alpha=alpha,
+                )
                 continue
 
             try:
@@ -100,7 +106,12 @@ class LaserRender:
                     node.draw = self.draw_path_node
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
-                elif node.type in ("elem rect", "elem line", "elem polyline", "elem ellipse"):
+                elif node.type in (
+                    "elem rect",
+                    "elem line",
+                    "elem polyline",
+                    "elem ellipse",
+                ):
                     node.draw = self.draw_shape_node
                 elif node.type == "elem image":
                     node.draw = self.draw_image_node

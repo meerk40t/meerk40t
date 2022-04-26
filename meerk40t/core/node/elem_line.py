@@ -1,6 +1,6 @@
-from meerk40t.core.node.node import Node
 from copy import copy
 
+from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Path
 
 
@@ -9,7 +9,15 @@ class LineNode(Node):
     LineNode is the bootstrapped node type for the 'elem line' type.
     """
 
-    def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
+    def __init__(
+        self,
+        shape=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(LineNode, self).__init__(type="elem line", **kwargs)
         self.shape = shape
         self.settings = kwargs
@@ -38,7 +46,7 @@ class LineNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     def __repr__(self):
@@ -62,12 +70,12 @@ class LineNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(LineNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Line"
+        default_map["element_type"] = "Line"
         default_map.update(self.settings)
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

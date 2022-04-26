@@ -21,12 +21,30 @@ class BalorDevice(Service, ViewPort):
 
         _ = kernel.translation
 
-        self.register("format/op cut", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op engrave", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op hatch", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op raster", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op image", "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz")
-        self.register("format/op dots", "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz")
+        self.register(
+            "format/op cut",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op engrave",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op hatch",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op raster",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op image",
+            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+        )
+        self.register(
+            "format/op dots",
+            "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz",
+        )
         self.register("format/op console", "{enabled}{command}")
 
         choices = [
@@ -1023,9 +1041,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_ants(
-            command, channel, _, data=None, quantization=500, **kwargs
-        ):
+        def element_ants(command, channel, _, data=None, quantization=500, **kwargs):
             """
             Draws an outline of the current shape.
             """

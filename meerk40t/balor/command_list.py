@@ -1264,7 +1264,7 @@ class Wobble:
         return x1 + dx, y1 + dy
 
     def sinewave(self, x0, y0, x1, y1):
-        angle = math.atan2(y1-y0, x1-x0) + math.tau/4.0
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
         self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
         d = math.sin(self._total_distance / self.speed)
         dx = self.radius * d * math.cos(angle)

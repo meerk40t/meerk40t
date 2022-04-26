@@ -1,6 +1,6 @@
-from meerk40t.core.node.node import Node
-
 from copy import copy
+
+from meerk40t.core.node.node import Node
 
 
 class TextNode(Node):
@@ -8,7 +8,15 @@ class TextNode(Node):
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
 
-    def __init__(self, text=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
+    def __init__(
+        self,
+        text=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
         self.text = text
         self.settings = kwargs
@@ -37,7 +45,7 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     @property
@@ -53,13 +61,13 @@ class TextNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(TextNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Text"
+        default_map["element_type"] = "Text"
         default_map.update(self.settings)
-        default_map['text'] = self.text.text
+        default_map["text"] = self.text.text
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

@@ -661,8 +661,8 @@ class Node:
 
         @return: union of all bounds within the iterable.
         """
-        xmin = float('inf')
-        ymin = float('inf')
+        xmin = float("inf")
+        ymin = float("inf")
         xmax = -xmin
         ymax = -ymin
         for e in nodes:

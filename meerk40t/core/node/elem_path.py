@@ -8,7 +8,15 @@ class PathNode(Node):
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
 
-    def __init__(self, path=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
+    def __init__(
+        self,
+        path=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(PathNode, self).__init__(type="elem path")
         self.path = path
         self.settings = kwargs
@@ -37,7 +45,7 @@ class PathNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     def __repr__(self):
@@ -66,7 +74,7 @@ class PathNode(Node):
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

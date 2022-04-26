@@ -1,7 +1,6 @@
-from meerk40t.core.node.node import Node
-
 from copy import copy
 
+from meerk40t.core.node.node import Node
 from meerk40t.svgelements import Path
 
 
@@ -10,7 +9,15 @@ class PolylineNode(Node):
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
 
-    def __init__(self, shape=None, matrix=None, fill=None, stroke=None, stroke_width=None,  **kwargs):
+    def __init__(
+        self,
+        shape=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
         self.shape = shape
         self.settings = kwargs
@@ -39,7 +46,7 @@ class PolylineNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     def __repr__(self):
@@ -63,12 +70,12 @@ class PolylineNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(PolylineNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Polyline"
+        default_map["element_type"] = "Polyline"
         default_map.update(self.settings)
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

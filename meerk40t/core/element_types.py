@@ -1,4 +1,15 @@
-from meerk40t.svgelements import Path, SVGImage, Rect, Ellipse, Circle, Polygon, Polyline, Point, SVGText, SimpleLine
+from meerk40t.svgelements import (
+    Circle,
+    Ellipse,
+    Path,
+    Point,
+    Polygon,
+    Polyline,
+    Rect,
+    SimpleLine,
+    SVGImage,
+    SVGText,
+)
 
 
 def get_type_from_element(element):
@@ -94,4 +105,3 @@ elem_ref_nodes = (
     "elem text",
     "reference",
 )
-

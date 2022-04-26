@@ -7,18 +7,12 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
-from .node.elem_image import ImageNode
-from .node.node import Node
 
-from ..svgelements import (
-    Angle,
-    Color,
-    Matrix,
-    SVGElement,
-    Viewbox,
-)
+from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox
 from .cutcode import CutCode
 from .element_types import *
+from .node.elem_image import ImageNode
+from .node.node import Node
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -1181,7 +1175,9 @@ class Elemental(Service):
                     super_element.fill = e.fill
                 super_element += path
             self.remove_elements(data)
-            node = self.elem_branch.add(path=super_element, type="elem path").emphasized = True
+            node = self.elem_branch.add(
+                path=super_element, type="elem path"
+            ).emphasized = True
             self.classify([super_element])
             return "elements", [node]
 
@@ -2200,7 +2196,9 @@ class Elemental(Service):
         )
         def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
             circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
-            node = self.elem_branch.add(shape=circ, type="elem ellipse", stroke=Color("black"))
+            node = self.elem_branch.add(
+                shape=circ, type="elem ellipse", stroke=Color("black")
+            )
             # node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
@@ -2340,7 +2338,9 @@ class Elemental(Service):
             if size is not None:
                 svg_text.font_size = size
             svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
-            node = self.elem_branch.add(text=svg_text, matrix=svg_text.transform, type="elem text")
+            node = self.elem_branch.add(
+                text=svg_text, matrix=svg_text.transform, type="elem text"
+            )
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
@@ -2378,7 +2378,10 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_command(
-            "path", help=_("Convert any shapes to paths"), input_type="shapes", output_type="shapes"
+            "path",
+            help=_("Convert any shapes to paths"),
+            input_type="shapes",
+            output_type="shapes",
         )
         def element_path_convert(data, **kwargs):
             paths = []
@@ -2387,7 +2390,10 @@ class Elemental(Service):
             return "shapes", paths
 
         @self.console_command(
-            "path", help=_("Convert any element nodes to paths"), input_type="elements", output_type="shapes"
+            "path",
+            help=_("Convert any element nodes to paths"),
+            input_type="elements",
+            output_type="shapes",
         )
         def element_path_convert(data, **kwargs):
             paths = []
@@ -4423,9 +4429,7 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
         )
         def duplicate_element_n(node, copies, **kwargs):
-            copy_nodes = [
-                copy(e) for e in list(self.elems(emphasized=True)) * copies
-            ]
+            copy_nodes = [copy(e) for e in list(self.elems(emphasized=True)) * copies]
             for n in copy_nodes:
                 node.parent.add_node(n)
             self.classify(copy_nodes)

@@ -511,7 +511,10 @@ class Drag(wx.Panel):
                 return
         elif first_node.type == "elem image":
             try:
-                pos = first_node.matrix.value_trans_x(), first_node.matrix.value_trans_y()
+                pos = (
+                    first_node.matrix.value_trans_x(),
+                    first_node.matrix.value_trans_y(),
+                )
             except (IndexError, AttributeError):
                 return
         else:

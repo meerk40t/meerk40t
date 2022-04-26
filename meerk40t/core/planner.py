@@ -782,7 +782,15 @@ class Planner(Service):
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
                 if isinstance(
-                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode, HatchOpNode)
+                    c,
+                    (
+                        RasterOpNode,
+                        ImageOpNode,
+                        CutOpNode,
+                        EngraveOpNode,
+                        DotsOpNode,
+                        HatchOpNode,
+                    ),
                 ):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")

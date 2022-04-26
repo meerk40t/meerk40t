@@ -1,5 +1,6 @@
-from meerk40t.core.node.node import Node
 from copy import copy
+
+from meerk40t.core.node.node import Node
 
 
 class PointNode(Node):
@@ -7,7 +8,15 @@ class PointNode(Node):
     PointNode is the bootstrapped node type for the 'elem path' type.
     """
 
-    def __init__(self, point=None, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs):
+    def __init__(
+        self,
+        point=None,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        **kwargs,
+    ):
         super(PointNode, self).__init__(type="elem path", **kwargs)
         self.point = point
         self.matrix = matrix
@@ -24,7 +33,7 @@ class PointNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings
+            **self.settings,
         )
 
     def scale_native(self, matrix):
@@ -35,19 +44,24 @@ class PointNode(Node):
     def bounds(self):
         if self._bounds_dirty:
             p = self.matrix.transform_point(self.point)
-            self._bounds = p[0], p[1], p[0], p[1],
+            self._bounds = (
+                p[0],
+                p[1],
+                p[0],
+                p[1],
+            )
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)
-        default_map['element_type'] = "Point"
-        default_map['x'] = self.point[0]
-        default_map['y'] = self.point[1]
+        default_map["element_type"] = "Point"
+        default_map["x"] = self.point[0]
+        default_map["y"] = self.point[1]
         default_map.update(self.settings)
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
-        default_map['matrix'] = self.matrix
+        default_map["matrix"] = self.matrix
         return default_map
 
     def drop(self, drag_node):

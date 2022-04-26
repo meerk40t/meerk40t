@@ -96,7 +96,9 @@ def plugin(kernel, lifecycle=None):
             if not elements.has_emphasis():
                 channel(_("No selected images."))
                 return
-            images = [e for e in elements.elems(emphasized=True) if e.type == "elem image"]
+            images = [
+                e for e in elements.elems(emphasized=True) if e.type == "elem image"
+            ]
         elif data_type == "image-array":
             from PIL import Image
 
@@ -1806,7 +1808,9 @@ class ImageLoader:
 
         file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
-        file_node.add(image=image, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem image")
+        file_node.add(
+            image=image, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem image"
+        )
         file_node.focus()
 
         # elements_service.classify([n])

@@ -19,11 +19,11 @@ from os import times
 from time import time
 from typing import Optional
 
-from .node.elem_image import ImageNode
 from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .node.elem_image import ImageNode
 
 
 class CutPlanningFailedError(Exception):
@@ -391,7 +391,9 @@ class CutPlan:
         step_x = op.raster_step_x
         step_y = op.raster_step_y
         bounds = op.bounds
-        image = make_raster(list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y)
+        image = make_raster(
+            list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+        )
         image = image.convert("L")
         matrix = Matrix.scale(step_x, step_y)
         matrix.post_translate(bounds[0], bounds[1])
@@ -425,13 +427,13 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                dpi = float(op.settings.get('dpi', 500))
+                dpi = float(op.settings.get("dpi", 500))
                 oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
                 oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
                 step_x = float(oneinch_x / dpi)
                 step_y = float(oneinch_y / dpi)
-                op.settings['raster_step_x'] = step_x
-                op.settings['raster_step_y'] = step_y
+                op.settings["raster_step_x"] = step_x
+                op.settings["raster_step_y"] = step_y
                 for node in op.children:
                     node.step_x = step_x
                     node.step_y = step_y
@@ -445,8 +447,12 @@ class CutPlan:
             if op.type == "op image":
                 for node in op.children:
                     dpi = node.dpi
-                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
-                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[
+                        0
+                    ]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[
+                        1
+                    ]
                     step_x = float(oneinch_x / dpi)
                     step_y = float(oneinch_y / dpi)
                     node.step_x = step_x
@@ -557,8 +563,12 @@ class CutPlan:
             if op.type == "op image":
                 for node in op.children:
                     dpi = node.dpi
-                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
-                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[
+                        0
+                    ]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[
+                        1
+                    ]
                     step_x = float(oneinch_x / dpi)
                     step_y = float(oneinch_y / dpi)
                     node.step_x = step_x

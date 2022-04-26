@@ -21,8 +21,13 @@ def plugin(kernel, lifecycle):
         )
         def cag(command, channel, _, data=None, **kwargs):
             import numpy as np
+
             if len(data) < 2:
-                channel(_("Not enough items selected to apply constructive geometric function"))
+                channel(
+                    _(
+                        "Not enough items selected to apply constructive geometric function"
+                    )
+                )
                 return "elements", []
 
             if command == "intersection":
@@ -67,7 +72,9 @@ def plugin(kernel, lifecycle):
                 else:
                     solution_path += Path(r)
             if solution_path:
-                node = context.elements.elem_branch.add(path=solution_path, type="elem path")
+                node = context.elements.elem_branch.add(
+                    path=solution_path, type="elem path"
+                )
                 context.elements.classify([node])
                 return "elements", [node]
             else:

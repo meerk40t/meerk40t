@@ -34,7 +34,6 @@ from meerk40t.svgelements import Arc, Circle, Ellipse, Matrix, Point, Polygon, V
 # from weakref import ref
 
 
-
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 

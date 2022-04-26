@@ -2,10 +2,7 @@ import wx
 from wx import aui
 
 from ..kernel import signal_listener
-from ..svgelements import (
-    SVG_ATTR_STROKE,
-    Color,
-)
+from ..svgelements import SVG_ATTR_STROKE, Color
 from .icons import (
     icon_meerk40t,
     icons8_direction_20,
@@ -45,7 +42,9 @@ def register_panel_tree(window, context):
     context.register("pane/tree", pane)
 
     context.register("format/op cut", "{enabled}{element_type} {speed}mm/s @{power}")
-    context.register("format/op engrave", "{enabled}{element_type} {speed}mm/s @{power}")
+    context.register(
+        "format/op engrave", "{enabled}{element_type} {speed}mm/s @{power}"
+    )
     context.register("format/op hatch", "{enabled}{element_type} {speed}mm/s @{power}")
     context.register("format/op raster", "{enabled}{element_type} {speed}mm/s @{power}")
     context.register("format/op image", "{enabled}{element_type} {speed}mm/s @{power}")
@@ -652,30 +651,25 @@ class ShadowTree:
             return
         tree = root.wxtree
         if icon is None:
-            if node.type == 'elem image':
-                image = self.renderer.make_thumbnail(
-                    node.image, width=20, height=20
-                )
+            if node.type == "elem image":
+                image = self.renderer.make_thumbnail(node.image, width=20, height=20)
                 image_id = self.tree_images.Add(bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-            elif node.type == 'elem point':
-                if (
-                        node.stroke is not None
-                        and node.stroke.rgb is not None
-                ):
+            elif node.type == "elem point":
+                if node.stroke is not None and node.stroke.rgb is not None:
                     c = node.stroke
                 else:
                     c = Color("black")
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return
-            elif node.type == 'reference':
+            elif node.type == "reference":
                 image = self.renderer.make_raster(
                     node.node, node.node.bounds, width=20, height=20, bitmap=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-            elif node.type.startswith('elem path'):
+            elif node.type.startswith("elem path"):
                 image = self.renderer.make_raster(
                     node, node.bounds, width=20, height=20, bitmap=True
                 )

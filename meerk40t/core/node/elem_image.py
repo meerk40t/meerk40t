@@ -59,9 +59,7 @@ class ImageNode(Node):
         if self._bounds_dirty:
             image_width, image_height = self.image.size
             x0, y0 = self.matrix.point_in_matrix_space((0, 0))
-            x1, y1 = self.matrix.point_in_matrix_space(
-                (image_width, image_height)
-            )
+            x1, y1 = self.matrix.point_in_matrix_space((image_width, image_height))
             self._bounds_dirty = False
             self._bounds = x0, y0, x1, y1
         return self._bounds
