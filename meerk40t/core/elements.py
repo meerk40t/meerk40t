@@ -12,25 +12,10 @@ from .node.node import Node
 
 from ..svgelements import (
     Angle,
-    Circle,
     Color,
-    Ellipse,
-    Group,
     Matrix,
-    Path,
-    Point,
-    Polygon,
-    Polyline,
-    Rect,
-    Shape,
-    SimpleLine,
     SVGElement,
-    SVGImage,
-    SVGText,
     Viewbox,
-    Move,
-    Close,
-    Line,
 )
 from .cutcode import CutCode
 from .element_types import *
@@ -4431,19 +4416,20 @@ class Elemental(Service):
         def duplicate_element_1(node, **kwargs):
             duplicate_element_n(node, copies=1, **kwargs)
 
-        # @self.tree_conditional(lambda node: not is_regmark(node))
-        # @self.tree_submenu(_("Duplicate element(s)"))
-        # @self.tree_iterate("copies", 2, 10)
-        # @self.tree_operation(
-        #     _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
-        # )
-        # def duplicate_element_n(node, copies, **kwargs):
-        #     adding_elements = [
-        #         copy(e) for e in list(self.elems(emphasized=True)) * copies
-        #     ]
-        #     self.add_elems(adding_elements)
-        #     self.classify(adding_elements)
-        #     self.set_emphasis(None)
+        @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_submenu(_("Duplicate element(s)"))
+        @self.tree_iterate("copies", 2, 10)
+        @self.tree_operation(
+            _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
+        )
+        def duplicate_element_n(node, copies, **kwargs):
+            copy_nodes = [
+                copy(e) for e in list(self.elems(emphasized=True)) * copies
+            ]
+            for n in copy_nodes:
+                node.parent.add_node(n)
+            self.classify(copy_nodes)
+            self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_operation(

@@ -3,7 +3,6 @@ from copy import copy
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.cutcode import CutCode
-from ..svgelements import SVGImage
 from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -783,7 +782,7 @@ class Planner(Service):
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
                 if isinstance(
-                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode, HatchOpNode)
                 ):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
