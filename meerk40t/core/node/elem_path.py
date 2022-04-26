@@ -109,4 +109,5 @@ class PathNode(Node):
         return False
 
     def as_path(self):
+        self.path.transform = self.matrix
         return abs(self.path)
