@@ -1,5 +1,4 @@
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Group
 
 
 class GroupNode(Node):
@@ -8,24 +7,39 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, data_object=None):
-        if data_object is None:
-            data_object = Group()
-        super(GroupNode, self).__init__(data_object)
-        self.last_transform = None
-        data_object.node = self
+    def __init__(self, **kwargs):
+        super(GroupNode, self).__init__(type="group", **kwargs)
 
     def __repr__(self):
-        return "GroupNode('%s', %s, %s)" % (
+        return "GroupNode('%s', %s)" % (
             self.type,
-            str(self.object),
             str(self._parent),
         )
 
+    @property
+    def bounds(self):
+        if self._bounds_dirty:
+            self._bounds = Node.union_bounds(self.flat())
+        return self._bounds
+
+    def default_map(self, default_map=None):
+        default_map = super(GroupNode, self).default_map(default_map=default_map)
+        default_map['element_type'] = "Group"
+        return default_map
+
     def drop(self, drag_node):
-        drop_node = self
-        # Dragging element into element.
-        if drag_node.type == "elem":
-            drop_node.insert_sibling(drag_node)
+        if drag_node.type.startswith("elem"):
+            # Dragging element onto a group moves it to the group node.
+            self.append_child(drag_node)
+            return True
+        elif drag_node.type == "group":
+            # Move a group
+            self.append_child(drag_node)
             return True
         return False
+
+    @property
+    def label(self):
+        if self.id is None:
+            return f"Group {len(self.children)}"
+        return f"Group {len(self.children)}: %s" % self.id

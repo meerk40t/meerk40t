@@ -2,7 +2,6 @@ import re
 from copy import copy
 
 from meerk40t.svgelements import Matrix
-from meerk40t.kernel import CommandSyntaxError
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -86,6 +85,8 @@ class ViewPort:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
+        show_origin_x=None,
+        show_origin_y=None,
     ):
         self._matrix = None
         self._imatrix = None
@@ -100,6 +101,12 @@ class ViewPort:
         self.flip_x = flip_x
         self.flip_y = flip_y
         self.swap_xy = swap_xy
+        if show_origin_x is None:
+            show_origin_x = origin_x
+        if show_origin_y is None:
+            show_origin_y = origin_y
+        self.show_origin_x = show_origin_x
+        self.show_origin_y = show_origin_y
 
         self._width = None
         self._height = None
@@ -183,10 +190,6 @@ class ViewPort:
 
     def scene_to_device_matrix(self):
         ops = []
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
         if self._scale_x != 1.0 or self._scale_y != 1.0:
             ops.append(
                 "scale({sx:.13f}, {sy:.13f})".format(
@@ -196,11 +199,15 @@ class ViewPort:
         if self._offset_x != 0 or self._offset_y != 0:
             ops.append(
                 "translate({dx:.13f}, {dy:.13f})".format(
-                    dx=-self._offset_x, dy=-self._offset_y
+                    dx=self._offset_x, dy=self._offset_y
                 )
             )
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
         if self.swap_xy:
-            ops.append("scale(-1.0, -1.0) rotate(180deg)")
+            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def length(
@@ -217,7 +224,7 @@ class ViewPort:
         Axis 0 is X
         Axis 1 is Y
 
-        Axis -1 is 1D in x, y space. eg. a line width.
+        Axis -1 is 1D in x, y space. e.g. a line width.
 
         Convert a length of distance {value} to new native values.
 
@@ -303,7 +310,7 @@ class ViewPort:
 
     @property
     def unit_height(self):
-        return float(Length(self.width))
+        return float(Length(self.height))
 
     @staticmethod
     def viewbox_transform(
@@ -319,20 +326,20 @@ class ViewPort:
         Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
         respectively.
 
-        Let align be the align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+        Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
         Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
         or if meetOrSlice is missing from this value.
 
-        :param e_x: element_x value
-        :param e_y: element_y value
-        :param e_width: element_width value
-        :param e_height: element_height value
-        :param vb_x: viewbox_x value
-        :param vb_y: viewbox_y value
-        :param vb_width: viewbox_width value
-        :param vb_height: viewbox_height value
-        :param aspect: preserve aspect ratio value
-        :return: string of the SVG transform commands to account for the viewbox.
+        @param e_x: element_x value
+        @param e_y: element_y value
+        @param e_width: element_width value
+        @param e_height: element_height value
+        @param vb_x: viewbox_x value
+        @param vb_y: viewbox_y value
+        @param vb_width: viewbox_width value
+        @param vb_height: viewbox_height value
+        @param aspect: preserve aspect ratio value
+        @return: string of the SVG transform commands to account for the viewbox.
         """
         if (
             e_x is None

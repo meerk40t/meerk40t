@@ -108,7 +108,7 @@ class DxfLoader:
 
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
-        file_node.add_all(elements, type="elem")
+        file_node.add_elems(elements)
         file_node.focus()
         elements_modifier.classify(elements)
         return True
@@ -304,23 +304,29 @@ class DxfLoader:
             except (AttributeError, TypeError):
                 # Fallback for rational b-splines.
                 try:
-                    for bezier in entity.construction_tool().cubic_bezier_approximation(
-                        4
-                    ):
-                        b = bezier.control_points
-                        if len(b) == 4:
-                            element.cubic(
-                                (b[1][0], b[1][1]),
-                                (b[2][0], b[2][1]),
-                                (b[3][0], b[3][1]),
-                            )
-                        elif len(b) == 3:
-                            element.quad((b[1][0], b[1][1]), (b[2][0], b[2][1]))
-                except (AttributeError, TypeError):
-                    # Fallback for versions of EZDXF prior to 0.13
-                    element.move(entity.control_points[0])
-                    for i in range(1, entity.dxf.n_control_points):
-                        element.line(entity.control_points[i])
+                    # Flattening version 0.15
+                    for q in entity.flattening(1, 15):
+                        element.line((q[0], q[1]))
+                except AttributeError:
+                    # Version before 0.15
+                    try:
+                        for (
+                            bezier
+                        ) in entity.construction_tool().cubic_bezier_approximation(4):
+                            b = bezier.control_points
+                            if len(b) == 4:
+                                element.cubic(
+                                    (b[1][0], b[1][1]),
+                                    (b[2][0], b[2][1]),
+                                    (b[3][0], b[3][1]),
+                                )
+                            elif len(b) == 3:
+                                element.quad((b[1][0], b[1][1]), (b[2][0], b[2][1]))
+                    except (AttributeError, TypeError):
+                        # Fallback for versions of EZDXF prior to 0.13
+                        element.move(entity.control_points[0])
+                        for i in range(1, entity.dxf.n_control_points):
+                            element.line(entity.control_points[i])
             if entity.closed:
                 element.closed()
         elif entity.dxftype() == "INSERT":
@@ -332,7 +338,8 @@ class DxfLoader:
         else:
             # We need a channel comment here so that this is not silently ignored.
             return  # Might be something unsupported.
-
+        if element is None:
+            return
         if entity.rgb is not None:
             if isinstance(entity.rgb, tuple):
                 element.stroke = Color(*entity.rgb)

@@ -6,9 +6,9 @@ import platform
 
 import wx
 
+from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
-from .choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 

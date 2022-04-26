@@ -1,5 +1,8 @@
 import wx
+
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+
+from ...core.units import Length
 from ..balor_params import Parameters
 
 _ = wx.GetTranslation
@@ -14,45 +17,64 @@ class BalorOperationPanel(wx.Panel):
         self.context = context
         self.operation = node
         params = Parameters(self.operation.settings)
+        params.validate()
 
         choices = [
             {
-                "attr": "travel_speed",
+                "attr": "rapid_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Custom Rapid-Speed"),
+                "tip": _("Enable custom jump speed for this operation"),
+            },
+            {
+                "attr": "rapid_speed",
                 "object": params,
                 "default": 2000.0,
                 "type": float,
+                "conditional": (params, "rapid_enabled"),
                 "label": _("Travel Speed"),
                 "tip": _("How fast do we travel when not cutting?"),
             },
+            # {
+            #     "attr": "laser_power",
+            #     "object": params,
+            #     "default": 50.0,
+            #     "type": float,
+            #     "label": _("Laser Power"),
+            #     "tip": _("How what power level do we cut at?"),
+            # },
+            # {
+            #     "attr": "cut_speed",
+            #     "object": params,
+            #     "default": 100.0,
+            #     "type": float,
+            #     "label": _("Cut Speed"),
+            #     "tip": _("How fast do we cut?"),
+            # },
+            # {
+            #     "attr": "q_switch_frequency",
+            #     "object": params,
+            #     "default": 30.0,
+            #     "type": float,
+            #     "label": _("Q Switch Frequency"),
+            #     "tip": _("QSwitch Frequency value"),
+            # },
             {
-                "attr": "laser_power",
+                "attr": "timing_enabled",
                 "object": params,
-                "default": 50.0,
-                "type": float,
-                "label": _("Laser Power"),
-                "tip": _("How what power level do we cut at?"),
-            },
-            {
-                "attr": "cut_speed",
-                "object": params,
-                "default": 100.0,
-                "type": float,
-                "label": _("Cut Speed"),
-                "tip": _("How fast do we cut?"),
-            },
-            {
-                "attr": "q_switch_frequency",
-                "object": params,
-                "default": 30.0,
-                "type": float,
-                "label": _("Q Switch Frequency"),
-                "tip": _("QSwitch Frequency value"),
+                "default": False,
+                "type": bool,
+                "label": _("Enable Custom Timings"),
+                "tip": _("Enable custom timings for this operation"),
             },
             {
                 "attr": "delay_laser_on",
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Laser On Delay"),
                 "tip": _("Delay for the start of the laser"),
             },
@@ -61,6 +83,7 @@ class BalorOperationPanel(wx.Panel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Laser Off Delay"),
                 "tip": _("Delay amount for the end of the laser"),
             },
@@ -69,8 +92,53 @@ class BalorOperationPanel(wx.Panel):
                 "object": params,
                 "default": 100.0,
                 "type": float,
+                "conditional": (params, "timing_enabled"),
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
+            },
+            {
+                "attr": "wobble_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Wobble"),
+                "tip": _("Enable wobble for this particular cut"),
+            },
+            {
+                "attr": "wobble_radius",
+                "object": params,
+                "default": "1.5mm",
+                "type": Length,
+                "conditional": (params, "wobble_enabled"),
+                "label": _("Radius of wobble"),
+                "tip": _("Radius of the wobble for this cut, if wobble is enabled."),
+            },
+            {
+                "attr": "wobble_interval",
+                "object": params,
+                "default": "1.5mm",
+                "type": Length,
+                "conditional": (params, "wobble_enabled"),
+                "label": _("Wobble Sampling Interval"),
+                "tip": _("Sample interval for the wobble of this cut"),
+            },
+            {
+                "attr": "wobble_speed",
+                "object": params,
+                "default": 50.0,
+                "type": float,
+                "conditional": (params, "wobble_enabled"),
+                "label": _("Wobble Speed Multiplier"),
+                "tip": _("Wobble rotation speed multiplier"),
+            },
+            {
+                "attr": "wobble_type",
+                "object": params,
+                "default": "circle",
+                "type": str,
+                "conditional": (params, "wobble_enabled"),
+                "label": _("Wobble Pattern Type"),
+                "tip": _("Pattern type for the given wobble."),
             },
         ]
 
@@ -85,10 +153,10 @@ class BalorOperationPanel(wx.Panel):
         self.Layout()
 
     def pane_hide(self):
-        pass
+        self.panel.pane_hide()
 
     def pane_show(self):
-        pass
+        self.panel.pane_show()
 
     def set_widgets(self, node):
         self.operation = node

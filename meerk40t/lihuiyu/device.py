@@ -5,7 +5,6 @@ import time
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import CommandSyntaxError
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -17,6 +16,7 @@ from meerk40t.kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
+    CommandSyntaxError,
     Module,
     Service,
 )
@@ -25,7 +25,7 @@ from meerk40t.tools.zinglplotter import ZinglPlotter
 from ..core.cutcode import CutCode, RawCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, ViewPort, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -43,6 +43,7 @@ from ..device.basedevice import (
     PLOT_START,
 )
 from .laserspeed import LaserSpeed
+from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -855,7 +856,7 @@ class LhystudiosDriver(Parameters):
         criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
         as soon as it does not hold the data.
 
-        :return: Whether data interpretation should hold.
+        @return: Whether data interpretation should hold.
         """
         temp_hold = False
         fail_hold = False
@@ -885,7 +886,7 @@ class LhystudiosDriver(Parameters):
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
         movements. Or updating the laser state based on the settings of the cutcode.
 
-        :return:
+        @return:
         """
         if self.plot_data is None:
             return False
@@ -906,13 +907,14 @@ class LhystudiosDriver(Parameters):
                     if p_set.power != self.power:
                         self.set_power(p_set.power)
                     if (
-                        p_set.raster_step != self.raster_step
+                        p_set.raster_step_x != self.raster_step_x
+                        or p_set.raster_step_y != self.raster_step_y
                         or p_set.speed != self.speed
                         or self.implicit_d_ratio != p_set.implicit_d_ratio
                         or self.implicit_accel != p_set.implicit_accel
                     ):
                         self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step)
+                        self.set_step(p_set.raster_step_x, p_set.raster_step_y)
                         self.set_acceleration(p_set.implicit_accel)
                         self.set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.update(p_set.settings)
@@ -941,8 +943,9 @@ class LhystudiosDriver(Parameters):
                 continue
             dx = x - sx
             dy = y - sy
-            step = self.raster_step
-            if step == 0:
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            if step_x == 0 and step_y == 0:
                 # vector mode
                 self.program_mode()
             else:
@@ -968,7 +971,7 @@ class LhystudiosDriver(Parameters):
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.h_switch_g(dy)
+                            self.v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.native_x
                 dy = y - self.native_y
@@ -1090,10 +1093,10 @@ class LhystudiosDriver(Parameters):
 
         This depends on whether is_relative is set.
 
-        :param x:
-        :param y:
-        :param cut:
-        :return:
+        @param x:
+        @param y:
+        @param cut:
+        @return:
         """
         if self.is_relative:
             self.goto_relative(x, y, cut)
@@ -1104,10 +1107,10 @@ class LhystudiosDriver(Parameters):
         """
         Goto absolute x and y. With cut set or not set.
 
-        :param x:
-        :param y:
-        :param cut:
-        :return:
+        @param x:
+        @param y:
+        @param cut:
+        @return:
         """
         self.goto_relative(x - self.native_x, y - self.native_y, cut)
 
@@ -1144,7 +1147,7 @@ class LhystudiosDriver(Parameters):
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            self.raster_step,
+            self.raster_step_x,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
@@ -1161,10 +1164,10 @@ class LhystudiosDriver(Parameters):
         """
         Goto relative dx, dy. With cut set or not set.
 
-        :param dx:
-        :param dy:
-        :param cut:
-        :return:
+        @param dx:
+        @param dy:
+        @param cut:
+        @return:
         """
         if abs(dx) == 0 and abs(dy) == 0:
             return
@@ -1216,9 +1219,10 @@ class LhystudiosDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def set_step(self, step=None):
-        if self.raster_step != step:
-            self.raster_step = step
+    def set_step(self, step_x=None, step_y=None):
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -1275,7 +1279,7 @@ class LhystudiosDriver(Parameters):
 
     def mode_shift_on_the_fly(self, dx=0, dy=0):
         """
-        Mode shift on the fly changes the current modes while in programmed or raster mode
+        Mode-shift on the fly changes the current modes while in programmed or raster mode
         this exits with a @ command that resets the modes. A movement operation can be added after
         the speed code and before the return to into programmed or raster mode.
 
@@ -1308,7 +1312,7 @@ class LhystudiosDriver(Parameters):
 
     def raster_mode(self, *values):
         """
-        Raster mode runs in either G0xx stepping mode or NSE stepping but is only intended to move horizontal or
+        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
@@ -1323,7 +1327,9 @@ class LhystudiosDriver(Parameters):
         """
         Vector Mode implies but doesn't discount rastering. Twitches are used if twitches is set to True.
 
-        @param values:
+        @param values: passed information from the driver command
+        @param dx: change in dx that should be made while switching to program mode.
+        @param dy: change in dy that should be made while switching to program mode.
         @return:
         """
         if self.state == DRIVER_STATE_PROGRAM:
@@ -1332,14 +1338,14 @@ class LhystudiosDriver(Parameters):
 
         instance_step = 0
         self.step_index = 0
-        self.step = self.raster_step
+        self.step = self.raster_step_x
         self.step_value_set = 0
         if self.raster_alt:
             pass
         elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
         else:
-            self.step_value_set = self.step
+            self.step_value_set = int(round(self.step))
             instance_step = self.step_value_set
 
         suffix_c = None
@@ -1388,9 +1394,10 @@ class LhystudiosDriver(Parameters):
         """
         NSE h_switches replace the mere reversal of direction with N<v><distance>SE
 
-        If a G-value is set we should subtract that from the step for our movement.
+        If a G-value is set we should subtract that from the step for our movement. Since triggering NSE will cause
+        that step to occur.
 
-        @param dy: The amount along the directional axis we should move.
+        @param dy: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1411,19 +1418,22 @@ class LhystudiosDriver(Parameters):
             self.data_output(self.CODE_LEFT)
         else:
             self.data_output(self.CODE_RIGHT)
-
         self.data_output(b"N")
         if delta != 0:
-            if self._topward:
+            if delta < 0:
                 self.data_output(self.CODE_TOP)
+                self._topward = True
             else:
                 self.data_output(self.CODE_BOTTOM)
+                self._topward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.native_y += delta
         self.data_output(b"SE")
         self.native_y += step_amount
 
         self._leftward = not self._leftward
+        self._x_engaged = True
+        self._y_engaged = False
         self.laser = False
         self.step_index += 1
 
@@ -1431,7 +1441,7 @@ class LhystudiosDriver(Parameters):
         """
         NSE v_switches replace the mere reversal of direction with N<h><distance>SE
 
-        @param dx: The amount along the directional axis we should move.
+        @param dx: The amount along the directional axis we should move during this step.
 
         @return:
         """
@@ -1447,21 +1457,26 @@ class LhystudiosDriver(Parameters):
         step_amount = -set_step if self._leftward else set_step
         delta = delta - step_amount
 
+        # We force reenforce directional move.
         if self._topward:
             self.data_output(self.CODE_TOP)
         else:
             self.data_output(self.CODE_BOTTOM)
         self.data_output(b"N")
         if delta != 0:
-            if self._leftward:
+            if delta < 0:
                 self.data_output(self.CODE_LEFT)
+                self._leftward = True
             else:
                 self.data_output(self.CODE_RIGHT)
+                self._leftward = False
             self.data_output(lhymicro_distance(abs(delta)))
             self.native_x += delta
         self.data_output(b"SE")
         self.native_x += step_amount
         self._topward = not self._topward
+        self._x_engaged = False
+        self._y_engaged = True
         self.laser = False
         self.step_index += 1
 
@@ -1623,6 +1638,7 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
 
     def goto_octent(self, dx, dy, on):
+        old_current = self.service.current
         if dx == 0 and dy == 0:
             return
         if on:
@@ -1654,9 +1670,11 @@ class LhystudiosDriver(Parameters):
             self.data_output(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
+
+        new_current = self.service.current
         self.service.signal(
             "driver;position",
-            (self.native_x - dx, self.native_y - dy, self.native_x, self.native_y),
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
     def code_declare_directions(self):
@@ -1703,8 +1721,8 @@ class LhystudiosDriver(Parameters):
 
     def plot(self, plot):
         """
-        :param plot:
-        :return:
+        @param plot:
+        @return:
         """
         self.plot_planner.push(plot)
 
@@ -1926,15 +1944,15 @@ class LhystudiosController:
         """
         Writes data to the queue, this will be moved into the buffer by the thread in a threadsafe manner.
 
-        :param bytes_to_write: data to write to the queue.
-        :return:
+        @param bytes_to_write: data to write to the queue.
+        @return:
         """
         f = bytes_to_write.find(b"~")
         if f != -1:
             # ~ was found in bytes. We are in a realtime exception.
             self.realtime = True
 
-            # All code prior to ~ is sent to normal write.
+            # All code prior to ~ is sent to write.
             queue_bytes = bytes_to_write[:f]
             if queue_bytes:
                 self.write(queue_bytes)
@@ -1962,8 +1980,8 @@ class LhystudiosController:
         Writes data to the preempting commands, this will be moved to the front of the buffer by the thread
         in a threadsafe manner.
 
-        :param bytes_to_write: data to write to the front of the queue.
-        :return:
+        @param bytes_to_write: data to write to the front of the queue.
+        @return:
         """
         f = bytes_to_write.find(b"~")
         if f != -1:
@@ -1990,8 +2008,8 @@ class LhystudiosController:
 
     def start(self):
         """
-        Controller state change to Started.
-        :return:
+        Controller state change to `Started`.
+        @return:
         """
 
         if not self.is_shutdown and (
@@ -2009,7 +2027,7 @@ class LhystudiosController:
         """
         BUSY can be called in a paused state to packet halt the controller.
 
-        This can only be done from PAUSE..
+        This can only be done from PAUSE.
         """
         if self.state != STATE_PAUSE:
             self.pause()
@@ -2031,7 +2049,7 @@ class LhystudiosController:
         Pause simply holds the controller from sending any additional packets.
 
         If this state change is done from INITIALIZE it will start the processing.
-        Otherwise it must be done from ACTIVE or IDLE.
+        Otherwise, it must be done from ACTIVE or IDLE.
         """
         if self.state == STATE_INITIALIZE:
             self.start()
@@ -2144,7 +2162,7 @@ class LhystudiosController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
-                time.sleep(3)  # 3 second sleep on failed connection attempt.
+                time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
                 # There was an error with the connection, close it and try again.
@@ -2204,7 +2222,7 @@ class LhystudiosController:
                 the write process and should not exist in the queue)
         \x18 : quit.
 
-        :return: queue process success.
+        @return: queue process success.
         """
         if len(self._queue):  # check for and append queue
             self._queue_lock.acquire(True)
@@ -2523,469 +2541,6 @@ class TCPOutput:
         return len(self.buffer)
 
 
-class LhystudiosEmulator(Module):
-    def __init__(self, device, path):
-        Module.__init__(self, device, path)
-        self.parser = LhystudiosParser()
-        device.setting(bool, "fix_speeds", False)
-        self.parser.fix_speeds = device.fix_speeds
-        self.parser.channel = self.context.channel("lhy")
-
-        def pos(p):
-            if p is None:
-                return
-            x0, y0, x1, y1 = p
-            self.context.signal("emulator;position", (x0, y0, x1, y1))
-
-        self.parser.position = pos
-
-    def __repr__(self):
-        return "LhystudiosEmulator(%s)" % self.name
-
-    def module_open(self, *args, **kwargs):
-        context = self.context
-        send = context.channel("%s/usb_send" % self.context.path)
-        send.watch(self.parser.write_packet)
-
-    def module_close(self, *args, **kwargs):
-        context = self.context
-        send = context.channel("%s/usb_send" % self.context.path)
-        send.unwatch(self.parser.write_packet)
-
-
-class LhystudiosParser:
-    """
-    LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
-    When the position is changed it calls a self.position() function if one exists.
-    """
-
-    def __init__(self):
-        self.channel = None
-        self.position = None
-        self.board = "M2"
-        self.header_skipped = False
-        self.count_lines = 0
-        self.count_flag = 0
-        self.settings = Parameters({"speed": 20.0, "power": 1000.0})
-
-        self.small_jump = True
-        self.speed_code = None
-
-        self.x = 0.0
-        self.y = 0.0
-        self.number_value = None
-        self.distance_x = 0
-        self.distance_y = 0
-
-        self.filename = ""
-
-        self.laser = 0
-        self.left = False
-        self.top = False
-        self.x_on = False
-        self.y_on = False
-        self.horizontal_major = False
-        self.fix_speeds = False
-        self.process = self.state_default
-
-    @property
-    def program_mode(self):
-        return self.process == self.state_compact
-
-    @property
-    def default_mode(self):
-        return self.process is self.state_default
-
-    @property
-    def raster_mode(self):
-        return self.settings.raster_step != 0
-
-    def new_file(self):
-        self.header_skipped = False
-        self.count_flag = 0
-        self.count_lines = 0
-
-    @staticmethod
-    def remove_header(data):
-        count_lines = 0
-        count_flag = 0
-        for i in range(len(data)):
-            b = data[i]
-            c = chr(b)
-            if c == "\n":
-                count_lines += 1
-            elif c == "%":
-                count_flag += 1
-            if count_lines >= 3 and count_flag >= 5:
-                return data[i:]
-
-    def header_write(self, data):
-        """
-        Write data to the emulator including the header. This is intended for saved .egv files which include a default
-        header.
-        """
-        if self.header_skipped:
-            self.write(data)
-        else:
-            data = LhystudiosParser.remove_header(data)
-            self.write(data)
-
-    def append_distance(self, amount):
-        if self.x_on:
-            self.distance_x += amount
-        if self.y_on:
-            self.distance_y += amount
-
-    def write_packet(self, packet):
-        self.write(packet[1:31])
-
-    def write(self, data):
-        for b in data:
-            c = chr(b)
-            if c == "I":
-                self.process = self.state_default
-                continue
-            self.process(b, c)
-
-    def state_finish(self, b, c):
-        if c in "NSEF":
-            return
-        if self.channel:
-            self.channel("Finish State Unknown: %s" % c)
-
-    def state_reset(self, b, c):
-        if c in "@NSE":
-            return
-        else:
-            self.process = self.state_default
-            self.process(b, c)
-
-    def state_jog(self, b, c):
-        if c in "N":
-            return
-        else:
-            self.process = self.state_default
-            self.process(b, c)
-
-    def state_pop(self, b, c):
-        if c == "P":
-            # Home sequence triggered.
-            if self.position:
-                self.position((self.x, self.y, 0, 0))
-            self.x = 0
-            self.y = 0
-            self.laser = 0
-            self.process = self.state_default
-            return
-        elif c == "F":
-            return
-        else:
-            if self.channel:
-                self.channel("Finish State Unknown: %s" % c)
-
-    def state_speed(self, b, c):
-        if c in "GCV01234567890":
-            self.speed_code += c
-            return
-        speed = LaserSpeed(
-            speed=self.speed_code, board=self.board, fix_speeds=self.fix_speeds
-        )
-        self.settings.raster_step = speed.raster_step
-        self.settings.speed = speed.speed
-        if self.channel:
-            self.channel("Setting Speed: %f" % self.settings.speed)
-        self.speed_code = None
-
-        self.process = self.state_default
-        self.process(b, c)
-
-    def state_switch(self, b, c):
-        if c in "S012":
-            if c == "1":
-                self.horizontal_major = self.x_on
-                if self.channel:
-                    self.channel("Setting Axis.")
-            return
-        self.process = self.state_default
-        self.process(b, c)
-
-    def state_pause(self, b, c):
-        if c in "NF":
-            return
-        if c == "P":
-            self.process = self.state_resume
-        else:
-            self.process = self.state_compact
-            self.process(b, c)
-
-    def state_resume(self, b, c):
-        if c in "NF":
-            return
-        self.process = self.state_compact
-        self.process(b, c)
-
-    def state_pad(self, b, c):
-        if c == "F":
-            return
-
-    def state_execute(self, b, c):
-        self.process = self.state_compact
-
-    def state_distance(self, b, c):
-        if c == "|":
-            self.append_distance(25)
-            self.small_jump = True
-            return True
-        elif ord("0") <= b <= ord("9"):
-            if self.number_value is None:
-                self.number_value = c
-            else:
-                self.number_value += c
-            if len(self.number_value) >= 3:
-                self.append_distance(int(self.number_value))
-                self.number_value = None
-            return True
-        elif ord("a") <= b <= ord("y"):
-            self.append_distance(b + 1 - ord("a"))
-        elif c == "z":
-            self.append_distance(26 if self.small_jump else 255)
-        else:
-            self.small_jump = False
-            return False
-        self.small_jump = False
-        return True
-
-    def execute_distance(self):
-        if self.distance_x != 0 or self.distance_y != 0:
-            dx = self.distance_x
-            dy = self.distance_y
-            if self.left:
-                dx = -dx
-            if self.top:
-                dy = -dy
-            self.distance_x = 0
-            self.distance_y = 0
-
-            ox = self.x
-            oy = self.y
-
-            self.x += dx
-            self.y += dy
-
-            if self.position:
-                self.position((ox, oy, self.x, self.y))
-
-            if self.channel:
-                self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
-
-    def state_compact(self, b, c):
-        if self.state_distance(b, c):
-            return
-        self.execute_distance()
-
-        if c == "F":
-            self.laser = 0
-            if self.channel:
-                self.channel("Finish")
-            self.process = self.state_finish
-            self.process(b, c)
-            return
-        elif c == "@":
-            self.laser = 0
-            if self.channel:
-                self.channel("Reset")
-            self.process = self.state_reset
-            self.process(b, c)
-            return
-        elif c == "P":
-            self.laser = 0
-            if self.channel:
-                self.channel("Pause")
-            self.process = self.state_pause
-        elif c == "N":
-            if self.channel:
-                self.channel("Jog")
-            self.process = self.state_jog
-            if self.position:
-                self.position(None)
-            self.process(b, c)
-        elif c == "S":
-            self.laser = 0
-            if self.channel:
-                self.channel("Switch")
-            self.process = self.state_switch
-            self.process(b, c)
-        elif c == "E":
-            self.laser = 0
-            if self.channel:
-                self.channel("Compact-Compact")
-            self.process = self.state_execute
-            if self.position:
-                self.position(None)
-            self.process(b, c)
-        elif c == "B":
-            self.left = False
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Right")
-        elif c == "T":
-            self.left = True
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Left")
-        elif c == "R":
-            self.top = False
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Bottom")
-        elif c == "L":
-            self.top = True
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Top")
-        elif c == "M":
-            self.x_on = True
-            self.y_on = True
-            if self.channel:
-                a = "Top" if self.top else "Bottom"
-                b = "Left" if self.left else "Right"
-                self.channel("Diagonal %s %s" % (a, b))
-        elif c == "U":
-            self.laser = 0
-        elif c == "D":
-            self.laser = 1
-
-    def state_default(self, b, c):
-        if self.state_distance(b, c):
-            return
-
-        # Execute Commands.
-        if c == "N":
-            self.execute_distance()
-        elif c == "F":
-            if self.channel:
-                self.channel("Finish")
-            self.process = self.state_finish
-            self.process(b, c)
-            return
-        elif c == "P":
-            if self.channel:
-                self.channel("Popping")
-            self.process = self.state_pop
-            return
-        elif c in "CVG":
-            if self.channel:
-                self.channel("Speedcode")
-            self.speed_code = ""
-            self.process = self.state_speed
-            self.process(b, c)
-            return
-        elif c == "S":
-            self.execute_distance()
-            if self.channel:
-                self.channel("Switch")
-            self.process = self.state_switch
-            self.process(b, c)
-        elif c == "E":
-            if self.channel:
-                self.channel("Compact")
-            self.process = self.state_execute
-            self.process(b, c)
-        elif c == "B":
-            self.left = False
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Right")
-        elif c == "T":
-            self.left = True
-            self.x_on = True
-            self.y_on = False
-            if self.channel:
-                self.channel("Left")
-        elif c == "R":
-            self.top = False
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Bottom")
-        elif c == "L":
-            self.top = True
-            self.x_on = False
-            self.y_on = True
-            if self.channel:
-                self.channel("Top")
-
-
-class EGVBlob:
-    def __init__(self, data: bytearray, name=None):
-        self.name = name
-        self.data = data
-        self._cutcode = None
-        self._cut = None
-
-    def __repr__(self):
-        return "EGV(%s, %d bytes)" % (self.name, len(self.data))
-
-    def as_cutobjects(self):
-        parser = LhystudiosParser()
-        self._cutcode = CutCode()
-        self._cut = RawCut()
-
-        def new_cut():
-            if self._cut is not None and len(self._cut):
-                self._cutcode.append(self._cut)
-            self._cut = RawCut()
-            self._cut.settings = parser.settings
-
-        def position(p):
-            if p is None or self._cut is None:
-                new_cut()
-                return
-
-            from_x, from_y, to_x, to_y = p
-
-            if parser.program_mode:
-                if len(self._cut.plot) == 0:
-                    self._cut.plot_append(int(from_x), int(from_y), parser.laser)
-                self._cut.plot_append(int(to_x), int(to_y), parser.laser)
-            else:
-                new_cut()
-
-        parser.position = position
-        parser.header_write(self.data)
-
-        cutcode = self._cutcode
-        self._cut = None
-        self._cutcode = None
-        return cutcode
-
-    def generate(self):
-        yield "blob", "egv", LhystudiosParser.remove_header(self.data)
-
-
-class EgvLoader:
-    @staticmethod
-    def load_types():
-        yield "Engrave Files", ("egv",), "application/x-egv"
-
-    @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
-        import os
-
-        basename = os.path.basename(pathname)
-        with open(pathname, "rb") as f:
-            blob = EGVBlob(bytearray(f.read()), basename)
-            op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(blob, type="blob")
-            kernel.root.close(basename)
-        return True
-
-
 def get_code_string_from_code(code):
     if code == STATUS_OK:
         return "OK"
@@ -3129,8 +2684,8 @@ def onewire_crc_lookup(line):
     Copyright (C) 1992-2017 Arjen Lentz
     https://lentz.com.au/blog/calculating-crc-with-a-tiny-32-entry-lookup-table
 
-    :param line: line to be CRC'd
-    :return: 8 bit crc of line.
+    @param line: line to be CRC'd
+    @return: 8 bit crc of line.
     """
     crc = 0
     for i in range(0, 30):

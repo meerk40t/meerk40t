@@ -1,9 +1,9 @@
 import wx
 from wx import aui
 
+from ...kernel import signal_listener
 from ..icons import icons8_computer_support_50
 from ..mwindow import MWindow
-from ...kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -60,7 +60,8 @@ class PropertyWindow(MWindow):
 
         pages_to_instance.sort(key=sort_priority)
 
-        self.panel_instances.clear()
+        self.window_close()
+        # self.panel_instances.clear()
         self.notebook_main.DeleteAllPages()
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
@@ -88,7 +89,6 @@ class PropertyWindow(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        pass
         # kernel.register("wxpane/Properties", register_panel_property)
         kernel.register(
             "button/control/Properties",

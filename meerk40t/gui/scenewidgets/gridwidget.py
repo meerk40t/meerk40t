@@ -16,7 +16,11 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
-        self.grid_line_pen.SetColour(wx.Colour(0xA0, 0xA0, 0xA0))
+        self.last_ticksize = 0
+        self.set_colors()
+
+    def set_colors(self):
+        self.grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.grid_line_pen.SetWidth(1)
 
     def hit(self):
@@ -24,7 +28,7 @@ class GridWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
-        Capture and deal with the doubleclick event.
+        Capture and deal with the double click event.
 
         Doubleclick in the grid loads a menu to remove the background.
         """
@@ -53,45 +57,120 @@ class GridWidget(Widget):
         context = self.scene.context
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
-        step = float(Length("10mm"))
+        step = 0
+        if self.scene.tick_distance > 0:
+            s = "{dist}{unit}".format(
+                dist=self.scene.tick_distance, unit=context.units_name
+            )
+            # print ("Calculate grid with %s" %s)
+            step = float(Length(s))
+            # The very first time we get absurd values, so let's do as if nothing had happened...
+            if units_width / step > 1000 or units_height / step > 1000:
+                # print ("Something strange happened: %s" %s)
+                step = 0
+        if step == 0:
+            # print ("Default kicked in")
+            step = float(Length("10mm"))
+
         starts = []
         ends = []
         if step == 0:
             self.grid = None
-            return starts, ends
+            return
+
         x = 0.0
         while x < units_width:
             starts.append((x, 0.0))
             ends.append((x, units_height))
             x += step
+
         y = 0.0
         while y < units_height:
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
+
         self.grid = starts, ends
+
+    def calculate_gridsize(self, w, h):
+        # Establish the delta for about 15 ticks
+        wpoints = w / 30.0
+        hpoints = h / 20.0
+        points = (wpoints + hpoints) / 2
+        scaled_conversion = (
+            self.scene.context.device.length(
+                str(1) + self.scene.context.units_name, as_float=True
+            )
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
+        if scaled_conversion == 0:
+            return
+        # tweak the scaled points into being useful.
+        # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
+        delta = points / scaled_conversion
+        # Let's establish a proper delta: we want to understand the log and x.yyy multiplikator
+        x = delta
+        factor = 1
+        if x >= 1:
+            while x >= 10:
+                x *= 0.1
+                factor *= 10
+        else:
+            while x < 1:
+                x *= 10
+                factor *= 0.1
+
+        l_pref = delta / factor
+        # Assign 'useful' scale
+        if l_pref < 3:
+            l_pref = 1
+        # elif l_pref < 4:
+        #    l_pref = 2.5
+        else:
+            l_pref = 5.0
+
+        delta = l_pref * factor
+        # print("New Delta={delta}".format(delta=delta))
+        # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
+
+        self.scene.tick_distance = delta
+        # print ("set scene_tick_distance to %f" % delta)
 
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
         """
+        # print ("GridWidget draw")
+
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             unit_width = context.device.unit_width
             unit_height = context.device.unit_height
             background = self.background
             if background is None:
-                gc.SetBrush(wx.WHITE_BRUSH)
+                brush = wx.Brush(
+                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
+                )
+                gc.SetBrush(brush)
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
                 gc.DrawRectangle(0, 0, unit_width, unit_height)
             else:
                 gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
+        # Get proper gridsize
+        if self.scene.auto_tick:
+            w, h = gc.Size
+            self.calculate_gridsize(w, h)
+
+        if self.last_ticksize != self.scene.tick_distance:
+            self.last_ticksize = self.scene.tick_distance
+            self.grid = None
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
+
             starts, ends = self.grid
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
@@ -107,14 +186,17 @@ class GridWidget(Widget):
                 gc.SetPen(self.grid_line_pen)
                 if starts and ends:
                     gc.StrokeLineSegments(starts, ends)
+
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed recalculate the lines
+        Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "grid":
             self.grid = None
         elif signal == "background":
             self.background = args[0]
+        elif signal == "theme":
+            self.set_colors()

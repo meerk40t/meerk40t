@@ -1,18 +1,3 @@
-X_AXIS = 0
-TOP = 0
-LEFT = 0
-BIDIRECTIONAL = 0
-Y_AXIS = 1
-BOTTOM = 2
-RIGHT = 4
-UNIDIRECTIONAL = 8
-
-NE_CORNER = TOP | RIGHT
-NW_CORNER = TOP | LEFT
-SE_CORNER = BOTTOM | RIGHT
-SW_CORNER = BOTTOM | LEFT
-
-
 """
 The RasterPlotter is a plotter that maps particular raster pixels to directional and raster
 methods. This class should be expanded to cover most raster situations.
@@ -40,54 +25,63 @@ class RasterPlotter:
         data,
         width,
         height,
-        traversal=0,
+        traverse_x_axis=True,
+        traverse_top=True,
+        traverse_left=True,
+        traverse_bidirectional=True,
+        use_integers=True,
         skip_pixel=0,
         overscan=0,
         offset_x=0,
         offset_y=0,
-        step=1,
+        step_x=1,
+        step_y=1,
         filter=None,
         alt_filter=None,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
 
-        :param data: pixel data accessed through data[x,y] parameters
-        :param width: Width of the given data.
-        :param height: Height of the given data.
-        :param traversal: Flags for how the pixel traversal should be conducted.
-        :param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
-        :param overscan: The extra amount of padding to add to the end scanline.
-        :param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
-        :param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
-        :param step: The amount units per pixel. This is both scanline gap and pixel step.
-        :param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
-                            implementation is agnostic with regards to what data is provided. The filter is expected
+        @param data: pixel data accessed through data[x,y] parameters
+        @param width: Width of the given data.
+        @param height: Height of the given data.
+        @param traverse_x_axis: Flags for how the pixel traversal should be conducted.
+        @param traverse_top: Flags for how the pixel traversal should be conducted.
+        @param traverse_left: Flags for how the pixel traversal should be conducted.
+        @param traverse_bidirectional: Flags for how the pixel traversal should be conducted.
+        @param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
+        @param use_integers: return integer values rather than floating point values.
+        @param overscan: The extra amount of padding to add to the end scanline.
+        @param offset_x: The offset in x of the rastering location. This will be added to x values returned in plot.
+        @param offset_y: The offset in y of the rastering location. This will be added to y values returned in plot.
+        @param step_x: The amount units per pixel.
+        @param step_y: The amount scanline gap.
+        @param filter: Pixel filter is called for each pixel to transform or alter it as needed. The actual
+                            implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
-        :param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
+        @param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
                             static. But, an alternative backswing filter could allow for that some plotting to occur
-                            on the backswing based on a different criteria than forward swing. By default this returns
+                            on the backswing based on a different criteria than forward swing. By default, this returns
                             skip pixels, which will not plot anything.
         """
         self.data = data
         self.width = width
         self.height = height
-        self.traversal = traversal
+        self.traverse_x_axis = traverse_x_axis
+        self.traverse_top = traverse_top
+        self.traverse_left = traverse_left
+        self.traverse_bidirectional = traverse_bidirectional
+        self.use_integers = use_integers
         self.skip_pixel = skip_pixel
-        if isinstance(overscan, str) and overscan.endswith("%"):
-            try:
-                overscan = float(overscan[:-1]) / 100.0
-                if self.traversal & Y_AXIS:
-                    overscan *= self.height
-                else:
-                    overscan *= self.width
-            except ValueError:
-                pass
-        self.overscan = round(overscan / float(step))
-        self.offset_x = int(offset_x)
-        self.offset_y = int(offset_y)
-        self.step = step
+        if traverse_x_axis:
+            self.overscan = round(overscan / float(step_x))
+        else:
+            self.overscan = round(overscan / float(step_y))
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.step_x = step_x
+        self.step_y = step_y
         self.filter = filter
         self.main_filter = filter
         self.alt_filter = alt_filter
@@ -97,7 +91,7 @@ class RasterPlotter:
     def swap(self):
         """
         Swaps the px_filter
-        :return:
+        @return:
         """
         if self.filter == self.main_filter:
             self.filter = self.alt_filter
@@ -108,9 +102,9 @@ class RasterPlotter:
         """
         Returns the filtered pixel
 
-        :param x:
-        :param y:
-        :return: Filtered Pixel
+        @param x:
+        @param y:
+        @return: Filtered Pixel
         """
         if 0 <= y < self.height and 0 <= x < self.width:
             if self.filter is None:
@@ -119,7 +113,7 @@ class RasterPlotter:
         raise IndexError
 
     def leftmost_not_equal(self, y):
-        """ "
+        """
         Determine the leftmost pixel that is not equal to the skip_pixel value.
 
         if all pixels skipped returns None
@@ -255,10 +249,10 @@ class RasterPlotter:
         Find the horizontal extreme at the given y-scanline, stepping by dy in the target image.
         This can be done on either the rightside (True) or leftside (False).
 
-        :param y: y-scanline
-        :param dy: dy-step amount (usually should be -1 or 1)
-        :param rightside: rightside / leftside.
-        :return:
+        @param y: y-scanline
+        @param dy: dy-step amount (usually should be -1 or 1)
+        @param rightside: rightside / leftside.
+        @return:
         """
         try:
             if rightside:
@@ -283,10 +277,10 @@ class RasterPlotter:
         Find the vertical extreme at the given x-scanline, stepping by dx in the target image.
         This can be done on either the bottomside (True) or topide (False).
 
-        :param x: x-scanline
-        :param dx: dx-step amount (usually should be -1 or 1)
-        :param bottomside: bottomside / topside.
-        :return:
+        @param x: x-scanline
+        @param dx: dx-step amount (usually should be -1 or 1)
+        @param bottomside: bottomside / topside.
+        @return:
         """
         try:
             if bottomside:
@@ -317,26 +311,26 @@ class RasterPlotter:
         This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
         The start edge and the start point.
 
-        :return: x,y coordinates of first pixel.
+        @return: x,y coordinates of first pixel.
         """
-        if self.traversal & Y_AXIS:
+        if self.vertical:
             x = 0
             dx = 1
-            if self.traversal & RIGHT:  # Start on Right Edge?
+            if self.right:  # Start on Right Edge?
                 x = self.width - 1
                 dx = -1
             x, y = self.calculate_next_vertical_pixel(
-                x, dx, bool(self.traversal & BOTTOM)
+                x, dx, self.bottom
             )
             return x, y
         else:
             y = 0
             dy = 1
-            if self.traversal & BOTTOM:  # Start on Bottom Edge?
+            if self.bottom:  # Start on Bottom Edge?
                 y = self.height - 1
                 dy = -1
             x, y = self.calculate_next_horizontal_pixel(
-                y, dy, bool(self.traversal & RIGHT)
+                y, dy, self.right
             )
             return x, y
 
@@ -346,98 +340,119 @@ class RasterPlotter:
 
         This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
 
-        :return: x,y coordinates of last pixel.
+        @return: x,y coordinates of last pixel.
         """
-        if self.traversal & Y_AXIS:
+        if self.vertical:
             x = 0
             dx = 1
-            if not (self.traversal & RIGHT) and self.height & 1:
+            if self.left and self.height & 1:
                 x = self.width - 1
                 dx = -1
             x, y = self.calculate_next_vertical_pixel(
-                x, dx, not bool(self.traversal & BOTTOM)
+                x, dx, self.top
             )
             return x, y
         else:
             y = 0
             dy = 1
-            if not (self.traversal & BOTTOM) and self.width & 1:
+            if self.top and self.width & 1:
                 y = self.height - 1
                 dy = -1
             x, y = self.calculate_next_horizontal_pixel(
-                y, dy, not bool(self.traversal & RIGHT)
+                y, dy, self.left
             )
             return x, y
 
     def initial_position(self):
         """
         Returns raw initial position for the relevant pixel within the data.
-        :return: initial position within the data.
+        @return: initial position within the data.
         """
-        return self.initial_x, self.initial_y
+        if self.use_integers:
+            return int(round(self.initial_x)), int(round(self.initial_y))
+        else:
+            return self.initial_x, self.initial_y
 
     def initial_position_in_scene(self):
         """
         Returns the initial position for this within the scene. Taking into account start corner, and step size.
-        :return: initial position within scene. The first plot location.
+        @return: initial position within scene. The first plot location.
         """
         if self.initial_x is None:  # image is blank.
-            return self.offset_x, self.offset_y
-        return (
-            self.offset_x + self.initial_x * self.step,
-            self.offset_y + self.initial_y * self.step,
-        )
+            if self.use_integers:
+                return int(round(self.offset_x)), int(round(self.offset_y))
+            else:
+                return self.offset_x, self.offset_y
+        if self.use_integers:
+            return (
+                int(round(self.offset_x + self.initial_x * self.step_x)),
+                int(round(self.offset_y + self.initial_y * self.step_y)),
+            )
+        else:
+            return (
+                self.offset_x + self.initial_x * self.step_x,
+                self.offset_y + self.initial_y * self.step_y,
+            )
 
     def final_position_in_scene(self):
         """
         Returns best guess of final position relative to the scene offset. Taking into account start corner, and parity
         of the width and height.
-        :return:
+        @return:
         """
         if self.final_x is None:  # image is blank.
-            return self.offset_x, self.offset_y
-        return (
-            self.offset_x + self.final_x * self.step,
-            self.offset_y + self.final_y * self.step,
-        )
+            if self.use_integers:
+                return int(round(self.offset_x)), int(round(self.offset_y))
+            else:
+                return self.offset_x, self.offset_y
+        if self.use_integers:
+            return (
+                int(round(self.offset_x + self.final_x * self.step_x)),
+                int(round(self.offset_y + self.final_y * self.step_y)),
+            )
+        else:
+            return (
+                self.offset_x + self.final_x * self.step_x,
+                self.offset_y + self.final_y * self.step_y,
+            )
 
     @property
     def top(self):
-        return not bool(self.traversal & BOTTOM)
+        return self.traverse_top
 
     @property
     def bottom(self):
-        return bool(self.traversal & BOTTOM)
+        return not self.traverse_top
 
     @property
     def right(self):
-        return bool(self.traversal & RIGHT)
+        return not self.traverse_left
 
     @property
     def left(self):
-        return not bool(self.traversal & RIGHT)
+        return self.traverse_left
 
     @property
     def horizontal(self):
         """
         Major raster axis is horizontal
-        :return:
+        @return:
         """
-        return not bool(self.traversal & Y_AXIS)
+        return self.traverse_x_axis
 
     @property
     def vertical(self):
         """
         Major raster axis is vertical
-        :return:
+        @return:
         """
-        return bool(self.traversal & Y_AXIS)
+        return not self.traverse_x_axis
 
     @property
     def rightward(self):
         """
         Raster will progress towards right
-        :return:
+        @return:
         """
         return self.left  # starting on left and moving horizontal.
 
@@ -445,7 +460,7 @@ class RasterPlotter:
     def leftward(self):
         """
         Raster will progress towards left
-        :return:
+        @return:
         """
         return self.right
 
@@ -453,7 +468,7 @@ class RasterPlotter:
     def topward(self):
         """
         Raster will progress towards top
-        :return:
+        @return:
         """
         return self.bottom
 
@@ -461,7 +476,7 @@ class RasterPlotter:
     def bottomward(self):
         """
         Raster will progress towards bottom
-        :return:
+        @return:
         """
         return self.top
 
@@ -469,7 +484,7 @@ class RasterPlotter:
     def rightward_major(self):
         """
         Raster major movements are right.
-        :return:
+        @return:
         """
         return self.left and self.horizontal  # starting on left and moving horizontal.
 
@@ -477,7 +492,7 @@ class RasterPlotter:
     def leftward_major(self):
         """
         Raster major movements are left
-        :return:
+        @return:
         """
         return self.right and self.horizontal
 
@@ -485,7 +500,7 @@ class RasterPlotter:
     def topward_major(self):
         """
         Raster major movements are top
-        :return:
+        @return:
         """
         return self.bottom and self.vertical
 
@@ -493,7 +508,7 @@ class RasterPlotter:
     def bottomward_major(self):
         """
         Raster major movements are bottom.
-        :return:
+        @return:
         """
         return self.top and self.vertical
 
@@ -501,7 +516,7 @@ class RasterPlotter:
     def rightward_minor(self):
         """
         Raster minor scanline ticks are right.
-        :return:
+        @return:
         """
         return self.left and self.vertical  # starting on left and moving horizontal.
 
@@ -509,7 +524,7 @@ class RasterPlotter:
     def leftward_minor(self):
         """
         Raster minor scanline ticks are left.
-        :return:
+        @return:
         """
         return self.right and self.vertical
 
@@ -517,7 +532,7 @@ class RasterPlotter:
     def topward_minor(self):
         """
         Raster minor scanline ticks are top.
-        :return:
+        @return:
         """
         return self.bottom and self.horizontal
 
@@ -525,60 +540,55 @@ class RasterPlotter:
     def bottomward_minor(self):
         """
         Raster minor scanline ticks are bottom.
-        :return:
+        @return:
         """
         return self.top and self.horizontal
-
-    @property
-    def corner(self):
-        if self.top:
-            if self.left:
-                return 0
-            else:
-                return 1
-        else:
-            if self.left:
-                return 2
-            else:
-                return 3
 
     def plot(self):
         """
         Plot the values yielded by following the given raster plotter in the traversal defined.
         """
+        offset_x = self.offset_x
+        offset_y = self.offset_y
+        step_x = self.step_x
+        step_y = self.step_y
         if self.initial_x is None:
             # There is no image.
             return
+        if self.use_integers:
+            for x, y, on in self.plot_pixels():
+                yield int(round(offset_x + step_x * x)), int(round(offset_y + y * step_y)), on
+        else:
+            for x, y, on in self.plot_pixels():
+                yield offset_x + step_x * x, offset_y + y * step_y, on
+
+    def plot_pixels(self):
         width = self.width
         height = self.height
 
-        traversal = self.traversal
         skip_pixel = self.skip_pixel
-        offset_x = int(self.offset_x)
-        offset_y = int(self.offset_y)
-        step = self.step
 
         x, y = self.initial_position()
         dx = 1
         dy = 1
-        if self.traversal & RIGHT:
+        if self.right:
             dx = -1
-        if self.traversal & BOTTOM:
+        if self.bottom:
             dy = -1
-        yield offset_x + x * step, offset_y + y * step, 0
-        if traversal & Y_AXIS:
-            # This code is for /\up-down\/ column rastering.
+        yield x, y, 0
+        if self.vertical:
+            # This code is for vertical rastering.
             while 0 <= x < width:
                 lower_bound = self.topmost_not_equal(x)
                 if lower_bound is None:
                     x += dx
-                    yield offset_x + x * step, offset_y + y * step, 0
+                    yield x, y, 0
                     continue
                 upper_bound = self.bottommost_not_equal(x)
 
                 next_x, next_y = self.calculate_next_vertical_pixel(
                     x + dx, dx, dy > 0
-                )  # y + dy, dy, dx > 0
+                )
                 if next_y is not None:
                     upper_bound = max(next_y, upper_bound) + self.overscan
                     lower_bound = min(next_y, lower_bound) - self.overscan
@@ -601,24 +611,24 @@ class RasterPlotter:
                         y = self.nextcolor_top(x, y, lower_bound)
                         y = max(y, lower_bound)
                     if pixel == skip_pixel:
-                        yield offset_x + x * step, offset_y + y * step, 0
+                        yield x, y, 0
                     else:
-                        yield offset_x + x * step, offset_y + y * step, pixel
+                        yield x, y, pixel
                     if y == bound:
                         break
                 if next_x is None:
                     # remaining image is blank, we stop right here.
                     break
                 x = next_x
-                yield offset_x + x * step, offset_y + y * step, 0
+                yield x, y, 0
                 dy = -dy
         else:
-            # This code is left<->right row rastering.
+            # This code is horizontal rastering.
             while 0 <= y < height:
                 lower_bound = self.leftmost_not_equal(y)
                 if lower_bound is None:
                     y += dy
-                    yield offset_x + x * step, offset_y + y * step, 0
+                    yield x, y, 0
                     continue
                 upper_bound = self.rightmost_not_equal(y)
 
@@ -647,14 +657,14 @@ class RasterPlotter:
                         x = self.nextcolor_left(x, y, lower_bound)
                         x = max(x, lower_bound)
                     if pixel == skip_pixel:
-                        yield offset_x + x * step, offset_y + y * step, 0
+                        yield x, y, 0
                     else:
-                        yield offset_x + x * step, offset_y + y * step, pixel
+                        yield x, y, pixel
                     if x == bound:
                         break
                 if next_y is None:
                     # remaining image is blank, we stop right here.
                     break
                 y = next_y
-                yield offset_x + x * step, offset_y + y * step, 0
+                yield x, y, 0
                 dx = -dx

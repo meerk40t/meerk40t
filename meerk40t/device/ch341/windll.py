@@ -76,8 +76,8 @@ class CH341Driver(CH341Connection):
         Writes a 32 byte packet to the device. This is typically \x00 + 30 bytes + CRC
         The driver will packetize the \0xA6 writes.
 
-        :param packet: 32 bytes of data to be written to the CH341.
-        :return:
+        @param packet: 32 bytes of data to be written to the CH341.
+        @return:
         """
         if self.driver_value == -1:
             raise ConnectionError
@@ -94,8 +94,8 @@ class CH341Driver(CH341Connection):
         Writes an address byte packet to the device. This is typically 1 byte
         The driver will packetize the \0xA7 writes.
 
-        :param packet: 1 byte of data to be written to the CH341.
-        :return:
+        @param packet: 1 byte of data to be written to the CH341.
+        @return:
         """
         if self.driver_value == -1:
             raise ConnectionError
@@ -125,7 +125,7 @@ class CH341Driver(CH341Connection):
         StateBitWRITE   0x00020000
         StateBitSCL     0x00400000
         StateBitSDA     0x00800000
-        :return:
+        @return:
         """
         if self.driver_value == -1:
             raise ConnectionRefusedError
@@ -136,7 +136,7 @@ class CH341Driver(CH341Connection):
     def get_chip_version(self):
         """
         Gets the version of the CH341 chip being used.
-        :return: version. Eg. 48.
+        @return: version. Eg. 48.
         """
         if self.driver_value == -1:
             raise ConnectionRefusedError

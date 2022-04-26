@@ -189,7 +189,7 @@ class Context:
         """
         Delegate to kernel to get a local string of dictionary values.
 
-        @param dictionary: optional dictionary to be update with values
+        @param dictionary: optional dictionary to be updated with values
         @param suffix:
         @return:
         """
@@ -266,7 +266,7 @@ class Context:
 
     def has_feature(self, feature: str) -> bool:
         """
-        Return whether or not this is a registered feature within the kernel.
+        Return whether this is a registered feature within the kernel.
 
         @param feature: feature to check if exists in kernel.
         @return:
@@ -328,7 +328,7 @@ class Context:
         """
         Unschedule a given job.
 
-        This is often unneeded if the job completes on it's own, it will be removed from the scheduler.
+        This is often unneeded if the job completes on its own, it will be removed from the scheduler.
         """
         self._kernel.unschedule(job)
 
@@ -343,7 +343,7 @@ class Context:
         """
         Calls a thread to be registered in the kernel.
 
-        Registered threads must complete before shutdown can be completed. These will told to stop and waited on until
+        Registered threads must complete before shutdown can be completed. These will be told to stop and waited on until
         completion.
 
         The result function will be called with any returned result func.

@@ -3,16 +3,17 @@ import threading
 import time
 from math import isinf, isnan, tau
 
-# from weakref import ref
-
 import wx
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
+from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
@@ -21,13 +22,18 @@ from meerk40t.gui.scene.sceneconst import (
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
+    RESPONSE_CHANGE_POSITION,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.kernel import Job, Module
-from meerk40t.svgelements import Matrix, Point, Viewbox
+from meerk40t.svgelements import Arc, Circle, Ellipse, Matrix, Point, Polygon, Viewbox
+
+# from weakref import ref
+
+
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
@@ -70,14 +76,145 @@ class Scene(Module, Job):
         self.distance = None
         self._cursor = None
         self._reference = None  # Reference Object
+        self.attraction_points = []  # Clear all
+        self.compute = True
+
+        self.colors = GuiColors(self.context)
 
         self.screen_refresh_is_requested = True
-        self.background_brush = wx.Brush("Grey")
+        self.background_brush = wx.Brush(self.colors.color_background)
+        self.magnet_x = []
+        self.magnet_y = []
+        self.magnet_attraction = 2
+        # 0 off, `1..x` increasing strength (quadratic behaviour)
+
+        self.magnet_attract_x = True  # Shall the X-Axis be affected
+        self.magnet_attract_y = True  # Shall the Y-Axis be affected
+        self.magnet_attract_c = True  # Shall the center be affected
+
+        self.tick_distance = 0
+        self.auto_tick = False  # by definition do not auto_tick
+        self.tool_active = False
+
+    def clear_magnets(self):
+        self.magnet_x = []
+        self.magnet_y = []
+        self.context.signal("magnets", False)
+
+    def toggle_x_magnet(self, x_value):
+        prev = self.has_magnets()
+        if x_value in self.magnet_x:
+            self.magnet_x.remove(x_value)
+            # print("Remove x magnet for %.1f" % x_value)
+            now = self.has_magnets()
+        else:
+            self.magnet_x += [x_value]
+            # print("Add x magnet for %.1f" % x_value)
+            now = True
+        if prev != now:
+            self.context.signal("magnets", now)
+
+    def toggle_y_magnet(self, y_value):
+        prev = self.has_magnets()
+        if y_value in self.magnet_y:
+            self.magnet_y.remove(y_value)
+            # print("Remove y magnet for %.1f" % y_value)
+            now = self.has_magnets()
+        else:
+            self.magnet_y += [y_value]
+            now = True
+            # print("Add y magnet for %.1f" % y_value)
+        if prev != now:
+            self.context.signal("magnets", now)
+
+    def magnet_attracted_x(self, x_value, useit):
+        delta = float("inf")
+        x_val = None
+        if useit:
+            for mag_x in self.magnet_x:
+                if abs(x_value - mag_x) < delta:
+                    delta = abs(x_value - mag_x)
+                    x_val = mag_x
+        return delta, x_val
+
+    def magnet_attracted_y(self, y_value, useit):
+        delta = float("inf")
+        y_val = None
+        if useit:
+            for mag_y in self.magnet_y:
+                if abs(y_value - mag_y) < delta:
+                    delta = abs(y_value - mag_y)
+                    y_val = mag_y
+        return delta, y_val
+
+    def revised_magnet_bound(self, bounds=None):
+
+        dx = 0
+        dy = 0
+        if self.has_magnets() and self.magnet_attraction > 0:
+            if self.tick_distance > 0:
+                s = "{amount}{units}".format(
+                    amount=self.tick_distance, units=self.context.units_name
+                )
+                len_tick = float(Length(s))
+                # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
+                # fmt: off
+                attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * len_tick
+
+                # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self.magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
+                # fmt: on
+            else:
+                attraction_len = float(Length("1mm"))
+
+            delta_x1, x1 = self.magnet_attracted_x(bounds[0], self.magnet_attract_x)
+            delta_x2, x2 = self.magnet_attracted_x(bounds[2], self.magnet_attract_x)
+            delta_x3, x3 = self.magnet_attracted_x(
+                (bounds[0] + bounds[2]) / 2, self.magnet_attract_c
+            )
+            delta_y1, y1 = self.magnet_attracted_y(bounds[1], self.magnet_attract_y)
+            delta_y2, y2 = self.magnet_attracted_y(bounds[3], self.magnet_attract_y)
+            delta_y3, y3 = self.magnet_attracted_y(
+                (bounds[1] + bounds[3]) / 2, self.magnet_attract_c
+            )
+            if delta_x3 < delta_x1 and delta_x3 < delta_x2:
+                if delta_x3 < attraction_len:
+                    if not x3 is None:
+                        dx = x3 - (bounds[0] + bounds[2]) / 2
+                        # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
+            elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
+                if delta_x1 < attraction_len:
+                    if not x1 is None:
+                        dx = x1 - bounds[0]
+                        # print("X Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
+            elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
+                if delta_x2 < attraction_len:
+                    if not x2 is None:
+                        dx = x2 - bounds[2]
+                        # print("X Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
+            if delta_y3 < delta_y1 and delta_y3 < delta_y2:
+                if delta_y3 < attraction_len:
+                    if not y3 is None:
+                        dy = y3 - (bounds[1] + bounds[3]) / 2
+                        # print("Y Take center , x=%.1f, dx=%.1f" % ((bounds[1] + bounds[3]) / 2, dy))
+            elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
+                if delta_y1 < attraction_len:
+                    if not y1 is None:
+                        dy = y1 - bounds[1]
+                        # print("Y Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
+            elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
+                if delta_y2 < attraction_len:
+                    if not y2 is None:
+                        dy = y2 - bounds[3]
+                        # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
+
+        return dx, dy
+
+    def has_magnets(self):
+        return len(self.magnet_x) + len(self.magnet_y) > 0
 
     def module_open(self, *args, **kwargs):
         context = self.context
         context.schedule(self)
-        context.listen("driver;position", self.on_update_position)
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
@@ -90,16 +227,12 @@ class Scene(Module, Job):
         self.interval = 1.0 / float(context.fps)
         self.commit()
 
-    def on_update_position(self, origin, pos):
-        self.request_refresh_for_animation()
-
     def commit(self):
         context = self.context
         self._init_widget(self.widget_root, context)
 
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
-        self.context.unlisten("driver;position", self.on_update_position)
         self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
 
@@ -164,7 +297,7 @@ class Scene(Module, Job):
                 self.screen_refresh_is_requested = False
 
     def update_buffer_ui_thread(self):
-        """Performs the redraw of the data in the UI thread."""
+        """Performs redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
         buf = self.gui._Buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
@@ -172,6 +305,7 @@ class Scene(Module, Job):
             buf = self.gui._Buffer
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
+        self.background_brush.SetColour(self.colors.color_background)
         dc.SetBackground(self.background_brush)
         dc.Clear()
         w, h = dc.Size
@@ -223,7 +357,7 @@ class Scene(Module, Job):
 
     def notify_removed_from_parent(self, parent):
         """
-        Called when a widget is removed from it's parent. Notifies scene as a whole.
+        Called when a widget is removed from its parent. Notifies scene as a whole.
         """
         pass
 
@@ -278,7 +412,7 @@ class Scene(Module, Job):
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """
         Iterates through the hit chain to find elements which respond to their hit() function that they are HITCHAIN_HIT
-        and registers this within the hittable_elements list if they are arble to be hit at the current time. Given the
+        and registers this within the hittable_elements list if they are able to hit at the current time. Given the
         dimensions of the widget and the current matrix within the widget tree.
 
         HITCHAIN_HIT means that this is a hit value and should the termination of this branch of the widget tree.
@@ -301,6 +435,8 @@ class Scene(Module, Job):
         response = current_widget.hit()
         if response == HITCHAIN_HIT:
             self.hittable_elements.append((current_widget, matrix_within_scene))
+        # elif response == HITCHAIN_HIT_WITH_PRIORITY:
+        #    self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
         elif response == HITCHAIN_DELEGATE:
             for w in current_widget:
                 self.rebuild_hit_chain(w, matrix_within_scene)
@@ -343,8 +479,10 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
+        RESPONSE_CHANGE_POSITION: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
+        need_refresh = False
         if self.log_events:
             self.log_events("%s: %s" % (event_type, str(window_pos)))
 
@@ -400,7 +538,7 @@ class Scene(Module, Job):
                         sdy,
                     )
                 try:
-                    # We ignore the consume etc. for the time being...
+                    # We ignore the 'consume' etc. for the time being...
                     response = current_widget.event(window_pos, space_pos, event_type)
                 except AttributeError:
                     pass
@@ -417,7 +555,7 @@ class Scene(Module, Job):
             self.time = time.time()
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-
+        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -438,6 +576,11 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
+            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
+            # if debug_str != old_debug:
+            #   old_debug = debug_str
+            #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
+
             if (
                 i == 0
                 and event_type == "hover"
@@ -455,21 +598,32 @@ class Scene(Module, Job):
                         "Converted %s: %s" % ("hover_start", str(window_pos))
                     )
                 previous_top_element = current_widget
-            if event_type == "leftup" and time.time() - self.time <= 0.15:
+            delta_time = time.time() - self.time
+            if (
+                event_type == "leftup" and delta_time <= 0.30
+            ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
+            elif event_type == "leftup":
+                if self.log_events:
+                    self.log_events(
+                        "Did not convert to click, event of my own right, %.2f"
+                        % delta_time
+                    )
+                response = current_widget.event(window_pos, space_pos, event_type)
+                # print ("Leftup called for widget #%d" % i )
+                # print (response)
             else:
                 response = current_widget.event(window_pos, space_pos, event_type)
 
-            # if current_widget is None:
-            #    widgetname = "undefined"
-            # else:
-            #    widgetname = type(current_widget).__name__
+            if type(response) is tuple:
+                params = response[1:]
+                response = response[0]
+            else:
+                params = None
 
             if response == RESPONSE_ABORT:
-                # f event_type == "leftdown":
-                #    print("Event was aborted by %s" % widgetname)
                 self.hit_chain.clear()
                 return
             elif response == RESPONSE_CONSUME:
@@ -480,8 +634,49 @@ class Scene(Module, Job):
                 continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
+            elif response == RESPONSE_CHANGE_POSITION:
+                # New position has been given:
+                # print("New position")
+                if not params is None:
+                    new_x_space = params[0]
+                    new_y_space = params[1]
+                # print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
+                new_x = window_pos[0]
+                new_y = window_pos[1]
+                if not new_x_space is None:
+                    sdx = new_x_space - space_pos[0]
+                    odx = sdx
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdx *= current_matrix.value_scale_x()
+                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
+                    new_x = window_pos[0] + sdx
+                    sdy = new_y_space - space_pos[1]
+                    ody = sdy
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdy *= current_matrix.value_scale_y()
+                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
+                    new_y = window_pos[1] + sdy
+
+                dx = new_x - self.last_position[0]
+                dy = new_y - self.last_position[1]
+                window_pos = (
+                    new_x,
+                    new_y,
+                    self.last_position[0],
+                    self.last_position[1],
+                    dx,
+                    dy,
+                )
+                self.last_position = window_pos
+                new_x_space = None
+                new_y_space = None
+                need_refresh = True
+                continue
             else:
                 break
+        if need_refresh:
+            self.screen_refresh_is_requested = True
+            self.refresh_scene()
 
     def cursor(self, cursor, always=False):
         """
@@ -543,11 +738,10 @@ class Scene(Module, Job):
         Check whether the reference is still valid
         """
         found = False
-        if not self._reference is None:
-            for e in self.context.elements.flat(types=("elem",)):
+        if self._reference:
+            for e in self.context.elements.flat(types=elem_nodes):
                 # Here we ignore the lock-status of an element
-                obj = e.object
-                if obj is self._reference:
+                if e is self._reference:
                     found = True
                     break
         if not found:

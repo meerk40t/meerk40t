@@ -1,11 +1,10 @@
-import sys
 import time
 
+from meerk40t.balor.command_list import CommandList, Wobble
+from meerk40t.balor.sender import BalorMachineException, Sender
+from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.parameters import Parameters
-
-from meerk40t.balor.Cal import Cal
-from meerk40t.balor.command_list import CommandList
-from meerk40t.balor.sender import Sender, BalorMachineException
+from meerk40t.core.plotplanner import PlotPlanner
 
 
 class BalorDriver(Parameters):
@@ -15,7 +14,7 @@ class BalorDriver(Parameters):
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.channel = self.service.channel("balor", buffer_size=50)
+        self.channel = self.service.channel("balor")
         self.connection = Sender(debug=self.channel)
         self.paused = False
 
@@ -26,8 +25,11 @@ class BalorDriver(Parameters):
 
         self._shutdown = False
 
-        self.queue = []
         self.redlight_preferred = False
+
+        self.plot_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -46,7 +48,7 @@ class BalorDriver(Parameters):
         """
         Connect to the Balor Sender
 
-        :return:
+        @return:
         """
         self.connected = False
         while not self.connected:
@@ -54,7 +56,9 @@ class BalorDriver(Parameters):
                 self.connected = self.connection.open(
                     mock=self.service.mock,
                     machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile,
+                    cor_file=self.service.corfile
+                    if self.service.corfile_enabled
+                    else None,
                     first_pulse_killer=self.service.first_pulse_killer,
                     pwm_pulse_width=self.service.pwm_pulse_width,
                     pwm_half_period=self.service.pwm_half_period,
@@ -101,9 +105,10 @@ class BalorDriver(Parameters):
 
         This might be a little naive compared to other methods of plotplanning but a general solution does not
         necessarily exist.
-        :return:
+        @return:
         """
         plot = list(plot)
+        last_index = 0
         for i in range(0, len(plot)):
             if len(plot[i]) == 2:
                 try:
@@ -129,6 +134,9 @@ class BalorDriver(Parameters):
                 except IndexError:
                     pass
             yield plot[i]
+            last_index = i
+        if last_index != len(plot):
+            yield plot[-1]
 
     # def cutcode_to_light_job(self, queue):
     #     """
@@ -136,8 +144,8 @@ class BalorDriver(Parameters):
     #
     #     The cutcode objects will have properties like speed. These are currently not being respected.
     #
-    #     :param queue:
-    #     :return:
+    #     @param queue:
+    #     @return:
     #     """
     #     cal = None
     #     if self.service.calibration_file is not None:
@@ -166,56 +174,6 @@ class BalorDriver(Parameters):
     #     job.light_off()
     #     return job
 
-    def cutcode_to_mark_job(self, queue):
-        """
-        Convert cutcode to a mark job.
-
-        @param queue:
-        @return:
-        """
-        cal = None
-        if self.service.calibration_file is not None:
-            try:
-                cal = Cal(self.service.calibration_file)
-            except TypeError:
-                pass
-        job = CommandList(cal=cal)
-        job.set_mark_settings(
-            travel_speed=self.service.travel_speed,
-            power=self.service.laser_power,
-            frequency=self.service.q_switch_frequency,
-            cut_speed=self.service.cut_speed,
-            laser_on_delay=100,
-            laser_off_delay=100,
-            polygon_delay=100,
-        )
-        job.set_write_port(self.connection.get_port())
-        job.goto(0x8000, 0x8000)
-        job.laser_control(True)
-        last_on = None
-        for plot in queue:
-            start = plot.start
-            job.goto(start[0], start[1])
-
-            for e in self.group(plot.generator()):
-                on = 1
-                if len(e) == 2:
-                    x, y = e
-                else:
-                    x, y, on = e
-                if on == 0:
-                    try:
-                        job.goto(x, y)
-                    except ValueError:
-                        print("Not including this stroke path:", file=sys.stderr)
-                else:
-                    if last_on is None or on != last_on:
-                        last_on = on
-                        job.set_power(self.service.laser_power * on)
-                    job.mark(x, y)
-        job.laser_control(False)
-        return job
-
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -223,7 +181,7 @@ class BalorDriver(Parameters):
         For example if we pause, we don't want it trying to call some functions. Only priority jobs will execute if
         we hold the work queue. This is so that "resume" commands can be processed.
 
-        :return:
+        @return:
         """
         return self.paused
 
@@ -231,7 +189,7 @@ class BalorDriver(Parameters):
         """
         This is checked by the spooler to see if we should abort checking if there's any idle job after the work queue
         was found to be empty.
-        :return:
+        @return:
         """
         return False
 
@@ -266,10 +224,10 @@ class BalorDriver(Parameters):
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
         bits of cutcode data with settings on them from paths etc.
 
-        :param plot:
-        :return:
+        @param plot:
+        @return:
         """
-        self.queue.append(plot)
+        self.plot_planner.push(plot)
 
     def light(self, job):
         """
@@ -294,11 +252,104 @@ class BalorDriver(Parameters):
         """
         This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
 
-        :return:
+        @return:
         """
         self.connect_if_needed()
-        job = self.cutcode_to_mark_job(self.queue)
-        self.queue = []
+        job = CommandList()
+        job.set_write_port(self.connection.get_port())
+        job.set_travel_speed(self.service.default_rapid_speed)
+        job.goto(0x8000, 0x8000)
+        last_on = None
+        current_power = None
+        for x, y, on in self.plot_planner.gen():
+            while self.hold_work():
+                time.sleep(0.05)
+            if on > 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    settings = self.plot_planner.settings
+
+                    rapid_enabled = (
+                        str(settings.get("rapid_enabled", False)).lower() == "true"
+                    )
+                    if rapid_enabled:
+                        rapid_speed = settings.get(
+                            "rapid_speed", self.service.default_rapid_speed
+                        )
+                        job.set_travel_speed(float(rapid_speed))
+                    else:
+                        job.set_travel_speed(self.service.default_rapid_speed)
+                    current_power = (
+                        float(settings.get("power", self.service.default_power)) / 10.0
+                    )
+                    job.set_power(current_power)  # Convert power, out of 1000
+                    frequency = settings.get(
+                        "frequency", self.service.default_frequency
+                    )
+                    job.set_frequency(float(frequency))
+                    cut_speed = settings.get("speed", self.service.default_speed)
+                    job.set_cut_speed(float(cut_speed))
+
+                    timing_enabled = (
+                        str(settings.get("timing_enabled", False)).lower() == "true"
+                    )
+                    if timing_enabled:
+                        delay_laser_on = settings.get(
+                            "delay_laser_on", self.service.delay_laser_on
+                        )
+                        job.set_laser_on_delay(delay_laser_on)
+                        delay_laser_off = settings.get(
+                            "delay_laser_off", self.service.delay_laser_off
+                        )
+                        job.set_laser_off_delay(delay_laser_off)
+                        delay_polygon = settings.get(
+                            "delay_laser_polygon", self.service.delay_polygon
+                        )
+                        job.set_polygon_delay(delay_polygon)
+                    else:
+                        # Use globals
+                        job.set_laser_on_delay(self.service.delay_laser_on)
+                        job.set_laser_off_delay(self.service.delay_laser_off)
+                        job.set_polygon_delay(self.service.delay_polygon)
+
+                    wobble_enabled = (
+                        str(settings.get("wobble_enabled", False)).lower() == "true"
+                    )
+                    if wobble_enabled:
+                        wobble_radius = settings.get("wobble_radius", "1.5mm")
+                        wobble_interval = settings.get("wobble_interval", "0.3mm")
+                        wobble_speed = settings.get("wobble_speed", 50.0)
+                        wobble = Wobble(
+                            radius=self.service.physical_to_device_length(
+                                wobble_radius, 0
+                            )[0],
+                            speed=wobble_speed,
+                        )
+                        job._mark_modification = wobble.wobble
+                        job._interpolations = self.service.physical_to_device_length(
+                            wobble_interval, 0
+                        )[0]
+                    else:
+                        job._mark_modification = None
+                        job._interpolations = None
+                elif on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    job.laser_control(False)
+                    job.goto(x, y)
+                continue
+            if on == 0:
+                job.laser_control(False)
+                job.goto(x, y)
+            else:
+                if last_on is None or on != last_on:
+                    last_on = on
+                    job.set_power(current_power * on)
+                job.laser_control(True)
+                job.mark(x, y)
+        job.laser_control(False)
         self.connection.execute(job, 1)
         if self.redlight_preferred:
             self.connection.light_on()
@@ -310,22 +361,12 @@ class BalorDriver(Parameters):
         This is called with the actual x and y values with units. If without units we should expect to move in native
         units.
 
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self.connect_if_needed()
-        unit_x = self.service.length(
-            x, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_y = self.service.length(
-            y, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_x *= self.service.get_native_scale_x
-        unit_y *= self.service.get_native_scale_y
-        self.native_x = unit_x
-        self.native_y = unit_y
-
+        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -342,23 +383,14 @@ class BalorDriver(Parameters):
         """
         This is called with dx and dy values to move a relative amount.
 
-        :param dx:
-        :param dy:
-        :return:
+        @param dx:
+        @param dy:
+        @return:
         """
         self.connect_if_needed()
-        unit_dx = self.service.length(
-            dx, 0, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dy = self.service.length(
-            dy, 1, relative_length=self.service.lens_size, as_float=True
-        )
-        unit_dx *= self.service.get_native_scale_x
-        unit_dy *= self.service.get_native_scale_y
+        unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
-        self.native_x = int(self.native_x)
-        self.native_y = int(self.native_y)
 
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
@@ -375,9 +407,9 @@ class BalorDriver(Parameters):
     def home(self, x=None, y=None):
         """
         This is called with x, and y, to set an adjusted home or use whatever home we have.
-        :param x:
-        :param y:
-        :return:
+        @param x:
+        @param y:
+        @return:
         """
         self.move_abs("50%", "50%")
 
@@ -385,9 +417,9 @@ class BalorDriver(Parameters):
         """
         This is called to give pure data to the backend. Data is assumed to be native data-type as loaded from a file.
 
-        :param data_type:
-        :param data:
-        :return:
+        @param data_type:
+        @param data:
+        @return:
         """
         if data_type == "balor":
             self.connect_if_needed()
@@ -399,9 +431,9 @@ class BalorDriver(Parameters):
         there is a need to set these outside that context. This can also set the default values to be used inside
         the cutcode being processed.
 
-        :param attribute:
-        :param value:
-        :return:
+        @param attribute:
+        @param value:
+        @return:
         """
         if attribute == "speed":
             pass
@@ -410,14 +442,14 @@ class BalorDriver(Parameters):
     def rapid_mode(self):
         """
         Expects to be in rapid jogging mode.
-        :return:
+        @return:
         """
         pass
 
     def program_mode(self):
         """
         Expects to run jobs at a speed in a programmed mode.
-        :return:
+        @return:
         """
         pass
 
@@ -426,7 +458,7 @@ class BalorDriver(Parameters):
         Expects to run a raster job. Raster information is set in special modes to stop the laser head from moving
         too far.
 
-        :return:
+        @return:
         """
         pass
 
@@ -434,7 +466,7 @@ class BalorDriver(Parameters):
         """
         Expects to be caught up such that the next command will happen immediately rather than get queued.
 
-        :return:
+        @return:
         """
         pass
 
@@ -451,7 +483,7 @@ class BalorDriver(Parameters):
         """
         Wants a system beep to be issued.
 
-        :return:
+        @return:
         """
         self.service("beep\n")
 
@@ -459,16 +491,16 @@ class BalorDriver(Parameters):
         """
         Wants a system signal to be sent.
 
-        :param signal:
-        :param args:
-        :return:
+        @param signal:
+        @param args:
+        @return:
         """
         self.service.signal(signal, *args)
 
     def pause(self):
         """
         Wants the driver to pause.
-        :return:
+        @return:
         """
         self.connect_if_needed()
         if self.paused:
@@ -484,7 +516,7 @@ class BalorDriver(Parameters):
         This typically issues from the realtime queue which means it will call even if we tell work_hold that we should
         hold the work.
 
-        :return:
+        @return:
         """
         self.connect_if_needed()
         self.paused = False
@@ -494,13 +526,13 @@ class BalorDriver(Parameters):
         """
         Wants the job to be aborted and action to be stopped.
 
-        :return:
+        @return:
         """
         self.connection.abort()
 
     def status(self):
         """
         Wants a status report of what the driver is doing.
-        :return:
+        @return:
         """
         pass

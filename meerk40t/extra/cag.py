@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Point, Polygon, Shape
+from meerk40t.svgelements import Path, Point, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -21,25 +21,35 @@ def plugin(kernel, lifecycle):
         )
         def cag(command, channel, _, data=None, **kwargs):
             import numpy as np
-
             if len(data) < 2:
                 channel(_("Not enough items selected to apply constructive geometric function"))
                 return "elements", []
 
-            clip_polygons = None
-            for element in data:
-                if isinstance(element, Shape) and not isinstance(element, Path):
-                    element = Path(element)
-                element = abs(element)
+            if len(data) >= 2:
+                node0 = data[0]
+                try:
+                    path0 = node0.as_path()
+                except AttributeError:
+                    return "elements", data
                 subject_polygons = []
-                for subpath in element.as_subpaths():
+                node1 = data[1]
+                try:
+                    path1 = node1.as_path()
+                except AttributeError:
+                    return "elements", data
+
+                for subpath in path0.as_subpaths():
                     subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
                     subj.reshape((2, 1000))
                     s = list(map(Point, subj))
                     subject_polygons.append(s)
-                if clip_polygons is None:
-                    clip_polygons = subject_polygons
-                    continue
+
+                clip_polygons = []
+                for subpath in path1.as_subpaths():
+                    clip = Path(subpath).npoint(np.linspace(0, 1, 1000))
+                    clip.reshape((2, 1000))
+                    c = list(map(Point, clip))
+                    clip_polygons.append(c)
                 pc = Clipper()
                 solution = []
                 pc.AddPolygons(subject_polygons, PolyType.Subject)
@@ -64,7 +74,8 @@ def plugin(kernel, lifecycle):
                     else:
                         solution_path += Path(r)
                 if solution_path:
-                    context.elements.add_elem(solution_path, classify=True)
-                    return "elements", [solution_path]
+                    node = context.elements.elem_branch.add(path=solution_path, type="elem path")
+                    context.elements.classify([node])
+                    return "elements", [node]
                 else:
                     return "elements", []

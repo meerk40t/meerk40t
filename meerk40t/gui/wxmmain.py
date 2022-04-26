@@ -10,16 +10,15 @@ from wx import aui
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-
+from ..core.element_types import elem_nodes
 from ..core.units import UNITS_PER_INCH, Length
-from ..svgelements import (
-    Color,
-    Matrix,
-    Path,
-    SVGImage,
-)
+from ..svgelements import Color, Matrix, Path, SVGImage
 from .icons import (
     icon_meerk40t,
+    icons8_align_bottom_50,
+    icons8_align_left_50,
+    icons8_align_right_50,
+    icons8_align_top_50,
     icons8_circle_50,
     icons8_cursor_50,
     icons8_emergency_stop_button_50,
@@ -32,13 +31,22 @@ from .icons import (
     icons8_pause_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
+    icons8_measure_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
+    icons8_rotate_left_50,
+    icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
-    icons8_union_50,
+    icon_cag_subtract_50,
+    icon_cag_common_50,
+    icon_cag_union_50,
+    icon_cag_xor_50,
     icons8_vector_50,
+    icons_centerize,
+    icons_evenspace_horiz,
+    icons_evenspace_vert,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -146,9 +154,13 @@ ID_IRC = wx.NewId()
 
 
 class CustomStatusBar(wx.StatusBar):
-    """Overloading of Statusbar to allow some checkboxes on it"""
+    """Overloading of Statusbar to allow some elements on it"""
 
     panelct = 5
+    # Where shall the different controls be placed?
+    pos_handle_options = 4
+    pos_colorbar = 3
+    pos_stroke = 2
     startup = True
 
     def __init__(self, parent, panelct):
@@ -156,40 +168,101 @@ class CustomStatusBar(wx.StatusBar):
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
+        FONT_SIZE = 7
+        # Make sure that the statusbar elements are visible fully
+        self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         sizes = [-2] * self.panelct
         # Make the first Panel large
         sizes[0] = -3
-        # Make the last Panel smaller
-        sizes[self.panelct - 1] = -1
+        self.status_text = [""] * self.panelct
+        self.previous_text = [""] * self.panelct
+        # The most intelligent way would be  to calculate the needed size...
+        sizes[self.pos_handle_options] = -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-
         # These will fall into the last field
         self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
         self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
         self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
         self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_handle.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_rotate.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.cb_skew.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
         self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
-        self.context.setting(bool, "enable_sel_move", True)
-        self.context.setting(bool, "enable_sel_size", True)
-        self.context.setting(bool, "enable_sel_rotate", True)
-        self.context.setting(bool, "enable_sel_skew", False)
+
         self.cb_move.SetValue(self.context.enable_sel_move)
         self.cb_handle.SetValue(self.context.enable_sel_size)
         self.cb_rotate.SetValue(self.context.enable_sel_rotate)
         self.cb_skew.SetValue(self.context.enable_sel_skew)
-        self.cb_enabled = False
+        self.cb_move.SetToolTip(_("Toggle visibility of Move-Indicator"))
+        self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
+        self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
+        self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
+        # And now 8 Buttons for Stroke / Fill:
+        colors = (
+            0xFFFFFF,
+            0x000000,
+            0xFF0000,
+            0x00FF00,
+            0x0000FF,
+            0xFFFF00,
+            0xFF00FF,
+            0x00FFFF,
+        )
+        self.button_color = []
+        for idx in range(len(colors)):
+            self.button_color.append(wx.Button(self, id=wx.ID_ANY, label=""))
+            self.button_color[idx].SetBackgroundColour(wx.Colour(colors[idx]))
+            self.button_color[idx].SetToolTip(
+                _("Set stroke-color (right click set fill color)")
+            )
+            self.Bind(wx.EVT_BUTTON, self.on_button_color_left, self.button_color[idx])
+            self.button_color[idx].Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
+        # Plus one combobox + value field for stroke width
+        self.strokewidth_label = wx.StaticText(
+            self, id=wx.ID_ANY, label=_("Stroke-Width:")
+        )
+        self.strokewidth_label.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
+        self.spin_width.SetDigits(2)
+        self.spin_width.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+
+
+        self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+        self.combo_units = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_units.SetFont(wx.Font(FONT_SIZE, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
+        self.combo_units.SetSelection(0)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
 
         # set the initial position of the checkboxes
+        self._cb_enabled = None
+        self.cb_enabled = False
         self.Reposition()
         self.startup = False
+
+    def SetStatusText(self, message="", panel=0):
+        if panel >= 0 and panel < self.panelct:
+            self.status_text[panel] = message
+        if self.cb_enabled and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke) and len(message)>0:
+            # Someone wanted to have a message while displaying some control elements
+            return
+        super().SetStatusText(message, panel)
 
     @property
     def cb_enabled(self):
@@ -202,11 +275,49 @@ class CustomStatusBar(wx.StatusBar):
             self.cb_handle.Show()
             self.cb_rotate.Show()
             self.cb_skew.Show()
+            if self.context.show_colorbar:
+                if self._cb_enabled != cb_enabled:
+                    # Keep old values...
+                    for idx, text in enumerate(self.status_text):
+                        self.previous_text[idx] = text
+                    self.SetStatusText("", self.pos_handle_options)
+                    self.SetStatusText("", self.pos_stroke)
+                    self.SetStatusText("", self.pos_colorbar)
+                sw_default = None
+                for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                    if hasattr(e, "stroke_width"):
+                        if sw_default is None:
+                            sw_default = e.stroke_width
+                            break
+                if not sw_default is None:
+                    # Set Values
+                    self.startup = True
+                    stdlen = float(Length("1mm"))
+                    value = sw_default / stdlen
+                    self.spin_width.SetValue(value)
+                    self.combo_units.SetSelection(self.choices.index("mm"))
+                    self.startup = False
+                self.spin_width.Show()
+                self.combo_units.Show()
+                self.strokewidth_label.Show()
+                for btn in self.button_color:
+                    btn.Show()
         else:
+            self.SetStatusText(
+                self.previous_text[self.pos_handle_options], self.pos_handle_options
+            )
+            self.SetStatusText(self.previous_text[self.pos_stroke], self.pos_stroke)
+            self.SetStatusText(self.previous_text[self.pos_colorbar], self.pos_colorbar)
             self.cb_move.Hide()
             self.cb_handle.Hide()
             self.cb_rotate.Hide()
             self.cb_skew.Hide()
+            if not self.button_color is None:
+                self.spin_width.Hide()
+                self.combo_units.Hide()
+                self.strokewidth_label.Hide()
+                for btn in self.button_color:
+                    btn.Hide()
         self._cb_enabled = cb_enabled
 
     # the checkbox was clicked
@@ -234,6 +345,36 @@ class CustomStatusBar(wx.StatusBar):
             self.context.enable_sel_skew = valu
             self.context.signal("refresh_scene", "Scene")
 
+    def on_button_color_left(self, event):
+        # Okay my backgroundcolor is...
+        if not self.startup:
+            button = event.EventObject
+            color = button.GetBackgroundColour()
+            rgb = [color.Red(), color.Green(), color.Blue()]
+            mysignal = "selstroke"
+            self.context.signal(mysignal, rgb)
+
+    def on_button_color_right(self, event):
+        # Okay my backgroundcolor is...
+        if not self.startup:
+            button = event.EventObject
+            color = button.GetBackgroundColour()
+            rgb = [color.Red(), color.Green(), color.Blue()]
+            mysignal = "selfill"
+            self.context.signal(mysignal, rgb)
+
+    def on_stroke_width(self, event):
+        if not self.startup:
+            chg = False
+            if self.combo_units.GetSelection() >= 0:
+                newunit = self.choices[self.combo_units.GetSelection()]
+                newval = self.spin_width.GetValue()
+                chg = True
+            if chg:
+                value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
+                mysignal = "selstrokewidth"
+                self.context.signal(mysignal, value)
+
     def OnSize(self, evt):
         evt.Skip()
         self.Reposition()  # for normal size events
@@ -245,8 +386,9 @@ class CustomStatusBar(wx.StatusBar):
 
     # reposition the checkboxes
     def Reposition(self):
-        rect = self.GetFieldRect(self.panelct - 1)
-        wd = rect.width / 4
+        rect = self.GetFieldRect(self.pos_handle_options)
+        ct = 4
+        wd = int(round(rect.width / ct))
         rect.x += 1
         rect.y += 1
         rect.width = wd
@@ -257,6 +399,50 @@ class CustomStatusBar(wx.StatusBar):
         self.cb_rotate.SetRect(rect)
         rect.x += wd
         self.cb_skew.SetRect(rect)
+
+        if self.context.show_colorbar:
+            rect = self.GetFieldRect(self.pos_stroke)
+            ct = 2
+            wd = int(round(rect.width / ct))
+            #print ("Width:", wd)
+            toosmall = wd<=100
+            rect.x += 1
+            rect.y += 1
+            old_y = rect.y
+            old_ht = rect.height
+            rect.width = wd
+            if toosmall:
+                if self.cb_enabled:
+                    self.strokewidth_label.Hide()
+            else:
+                if self.cb_enabled:
+                    self.strokewidth_label.Show()
+                # Centering in Y
+                ht = self.strokewidth_label.GetCharHeight()
+                rect.y = old_y + (old_ht - ht) / 2
+                rect.height = ht
+                self.strokewidth_label.SetRect(rect)
+                # reset to previous values
+                rect.y = old_y
+                rect.height = old_ht
+                rect.x += wd
+                # Make the next two elements smaller
+                wd = wd / 2
+            rect.width = wd
+            self.spin_width.SetRect(rect)
+            rect.x += wd
+            self.combo_units.SetRect(rect)
+
+            rect = self.GetFieldRect(self.pos_colorbar)
+            ct = len(self.button_color)
+            wd = int(round(rect.width / ct)) - 1
+            rect.x += 1
+            rect.y += 1
+            rect.width = wd
+            for btn in self.button_color:
+                btn.SetRect(rect)
+                rect.x += wd
+
         self.sizeChanged = False
 
 
@@ -276,13 +462,10 @@ class MeerK40t(MWindow):
         self.context.gui = self
         self.usb_running = False
         context = self.context
-        self.context.setting(bool, "disable_tool_tips", False)
+        self.register_options_and_choices(context)
+
         if self.context.disable_tool_tips:
             wx.ToolTip.Enable(False)
-
-        self.context.register(
-            "function/open_property_window_for_node", self.open_property_window_for_node
-        )
 
         self.root_context = context.root
         self.DragAcceptFiles(True)
@@ -316,7 +499,8 @@ class MeerK40t(MWindow):
         )
         self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
-        self.main_statusbar.SetStatusText(_("Status..."), 0)
+        self.main_statusbar.SetStatusText("", 0)
+
         self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
         self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
@@ -336,6 +520,44 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
+    def register_options_and_choices(self, context):
+        _ = context._
+        context.setting(bool, "disable_tool_tips", False)
+        context.setting(bool, "enable_sel_move", True)
+        context.setting(bool, "enable_sel_size", True)
+        context.setting(bool, "enable_sel_rotate", True)
+        context.setting(bool, "enable_sel_skew", False)
+        choices = [
+            {
+                "attr": "show_colorbar",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Display colorbar in statusbar"),
+                "tip": _(
+                    "Enable the display of a colorbar at the bottom of the screen."
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "outer_handles",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Draw selection handle outside of bounding box"),
+                "tip": _(
+                    "Active: draw handles outside of / Inactive: Draw them on the bounding box of the selection."
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        context.register(
+            "function/open_property_window_for_node", self.open_property_window_for_node
+        )
+
+
     def open_property_window_for_node(self, node):
         """
         Activate the node in question.
@@ -346,32 +568,6 @@ class MeerK40t(MWindow):
         gui = self
         root = self.context.root
         root.open("window/Properties", gui)
-        # self.context.kernel.activate_instance(node)
-        #
-        # if isinstance(
-        #     node, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
-        # ):
-        #     pass
-        #     return
-        # if isinstance(node, ConsoleOperation):
-        #     root.open("window/ConsoleProperty", gui, node=node)
-        # if node is None:
-        #     return
-        # obj = node.object
-        # if obj is None:
-        #     return
-        # elif isinstance(obj, Path):
-        #     root.open("window/PathProperty", gui, node=node)
-        # elif isinstance(obj, SVGText):
-        #     root.open("window/TextProperty", gui, node=node)
-        # elif isinstance(obj, SVGImage):
-        #     root.open("window/ImageProperty", gui, node=node)
-        # elif isinstance(obj, Group):
-        #     root.open("window/GroupProperty", gui, node=node)
-        # elif isinstance(obj, SVGElement):
-        #     root.open("window/PathProperty", gui, node=node)
-        # elif isinstance(obj, CutCode):
-        #     root.open("window/Simulation", gui, node=node)
 
     @staticmethod
     def sub_register(kernel):
@@ -395,24 +591,9 @@ class MeerK40t(MWindow):
                 "priority": -100,
             },
         )
-        kernel.register(
-            "button/modify/Flip",
-            {
-                "label": _("Flip Vertical"),
-                "icon": icons8_flip_vertical,
-                "tip": _("Flip the selected element vertically"),
-                "action": lambda v: kernel.elements("scale 1 -1\n"),
-            },
-        )
-        kernel.register(
-            "button/modify/Mirror",
-            {
-                "label": _("Mirror Horizontal"),
-                "icon": icons8_mirror_horizontal,
-                "tip": _("Mirror the selected element horizontally"),
-                "action": lambda v: kernel.elements("scale -1 1\n"),
-            },
-        )
+
+        # Default Size for tool buttons - none: use icon size
+        buttonsize = None
 
         kernel.register(
             "button/tools/Scene",
@@ -422,6 +603,7 @@ class MeerK40t(MWindow):
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -433,6 +615,7 @@ class MeerK40t(MWindow):
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -444,6 +627,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -455,6 +639,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -466,6 +651,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -477,6 +663,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -488,6 +675,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -499,6 +687,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -510,6 +699,7 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "toggle": "tool",
+                "size": buttonsize,
             },
         )
 
@@ -521,42 +711,172 @@ class MeerK40t(MWindow):
                 "tip": _(""),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "toggle": "tool",
+                "size": buttonsize,
+            },
+        )
+
+        kernel.register(
+            "button/tools/Measure",
+            {
+                "label": _("Measure"),
+                "icon": icons8_measure_50,
+                "tip": _(""),
+                "action": lambda v: kernel.elements("tool measure\n"),
+                "toggle": "tool",
+                "size": buttonsize,
+            },
+        )
+        # Default Size for smaller buttons
+        buttonsize = 25
+
+        kernel.register(
+            "button/modify/Flip",
+            {
+                "label": _("Flip Vertical"),
+                "icon": icons8_flip_vertical,
+                "tip": _("Flip the selected element vertically"),
+                "action": lambda v: kernel.elements("scale 1 -1\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/modify/Mirror",
+            {
+                "label": _("Mirror Horizontal"),
+                "icon": icons8_mirror_horizontal,
+                "tip": _("Mirror the selected element horizontally"),
+                "action": lambda v: kernel.elements("scale -1 1\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/modify/Rotate90CW",
+            {
+                "label": _("Rotate CW"),
+                "icon": icons8_rotate_right_50,
+                "tip": _("Rotate the selected element clockwise by 90 deg"),
+                "action": lambda v: kernel.elements("rotate 90deg\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/modify/Rotate90CCW",
+            {
+                "label": _("Rotate CCW"),
+                "icon": icons8_rotate_left_50,
+                "tip": _("Rotate the selected element counterclockwise by 90 deg"),
+                "action": lambda v: kernel.elements("rotate -90deg\n"),
+                "size": buttonsize,
             },
         )
         kernel.register(
             "button/geometry/Union",
             {
                 "label": _("Union"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_union_50,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
+                "size": buttonsize,
             },
         )
         kernel.register(
             "button/geometry/Difference",
             {
                 "label": _("Difference"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_subtract_50,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
+                "size": buttonsize,
             },
         )
         kernel.register(
             "button/geometry/Xor",
             {
                 "label": _("Xor"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_xor_50,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
+                "size": buttonsize,
             },
         )
         kernel.register(
             "button/geometry/Intersection",
             {
                 "label": _("Intersection"),
-                "icon": icons8_union_50,
+                "icon": icon_cag_common_50,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignLeft",
+            {
+                "label": _("Align Left"),
+                "icon": icons8_align_left_50,
+                "tip": _("Align selected elements at the leftmost position"),
+                "action": lambda v: kernel.elements("align left\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignRight",
+            {
+                "label": _("Align Right"),
+                "icon": icons8_align_right_50,
+                "tip": _("Align selected elements at the rightmost position"),
+                "action": lambda v: kernel.elements("align right\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignTop",
+            {
+                "label": _("Align Top"),
+                "icon": icons8_align_top_50,
+                "tip": _("Align selected elements at the topmost position"),
+                "action": lambda v: kernel.elements("align top\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignBottom",
+            {
+                "label": _("Align Bottom"),
+                "icon": icons8_align_bottom_50,
+                "tip": _("Align selected elements at the lowest position"),
+                "action": lambda v: kernel.elements("align bottom\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignCenter",
+            {
+                "label": _("Align Center"),
+                "icon": icons_centerize,
+                "tip": _("Align selected elements at their center"),
+                "action": lambda v: kernel.elements("align center\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignHorizontally",
+            {
+                "label": _("Distr. Hor."),
+                "icon": icons_evenspace_horiz,
+                "tip": _("Distribute Space Horizontally"),
+                "action": lambda v: kernel.elements("align spaceh\n"),
+                "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/align/AlignVertically",
+            {
+                "label": _("Distr. Vert."),
+                "icon": icons_evenspace_vert,
+                "tip": _("Distribute Space Vertically"),
+                "action": lambda v: kernel.elements("align spacev\n"),
+                "size": buttonsize,
             },
         )
 
@@ -603,8 +923,8 @@ class MeerK40t(MWindow):
                 else:
                     for element in elements.elems():
                         try:
-                            element *= mx
-                            element.node.modified()
+                            element.matrix *= mx
+                            element.modified()
                         except AttributeError:
                             pass
 
@@ -626,8 +946,8 @@ class MeerK40t(MWindow):
                 mx.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
                     try:
-                        element *= mx
-                        element.node.modified()
+                        element.matrix *= mx
+                        element.modified()
                     except AttributeError:
                         pass
             dlg.Destroy()
@@ -641,8 +961,8 @@ class MeerK40t(MWindow):
                 path = Path(dlg.GetValue())
                 path.stroke = "blue"
                 p = abs(path)
-                context.elements.add_elem(p)
-                context.elements.classify([p])
+                node = context.elements.elem_branch.add(path=p, type="elem path")
+                context.elements.classify([node])
             dlg.Destroy()
 
         @context.console_command("dialog_fill", hidden=True)
@@ -663,7 +983,7 @@ class MeerK40t(MWindow):
                 color = Color(color, 1.0)
                 for elem in elements.elems(emphasized=True):
                     elem.fill = color
-                    elem.node.altered()
+                    elem.altered()
 
         @context.console_command("dialog_stroke", hidden=True)
         def stroke(**kwargs):
@@ -683,7 +1003,7 @@ class MeerK40t(MWindow):
                 color = Color(color, 1.0)
                 for elem in elements.elems(emphasized=True):
                     elem.stroke = color
-                    elem.node.altered()
+                    elem.altered()
 
         @context.console_command("dialog_gear", hidden=True)
         def gear(**kwargs):
@@ -729,7 +1049,7 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_import", hidden=True)
         def import_dialog(**kwargs):
-            files = context.load_types()
+            files = context.elements.load_types()
             with wx.FileDialog(
                 gui,
                 _("Import"),
@@ -767,7 +1087,7 @@ class MeerK40t(MWindow):
             else:
                 gui.set_file_as_recently_used(gui.working_file)
                 gui.validate_save()
-                context.save(gui.working_file)
+                context.elements.save(gui.working_file)
 
         @context.console_command("dialog_import_egv", hidden=True)
         def egv_in_dialog(**kwargs):
@@ -942,6 +1262,11 @@ class MeerK40t(MWindow):
             self._mgr.Update()
 
     def on_pane_reset(self, event=None):
+        self.on_panes_closed()
+        self._mgr.LoadPerspective(self.default_perspective, update=True)
+        self.on_config_panes()
+
+    def on_panes_closed(self):
         for pane in self._mgr.GetAllPanes():
             if pane.IsShown():
                 window = pane.window
@@ -952,10 +1277,8 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_hide"):
                             page.pane_hide()
-        self._mgr.LoadPerspective(self.default_perspective, update=True)
-        self.on_config_panes()
 
-    def on_config_panes(self):
+    def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
             window = pane.window
             if pane.IsShown():
@@ -974,6 +1297,9 @@ class MeerK40t(MWindow):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_noshow"):
                             page.pane_noshow()
+
+    def on_config_panes(self):
+        self.on_panes_opened()
         self.on_pane_lock(lock=self.context.pane_lock)
         wx.CallAfter(self.on_pane_changed, None)
 
@@ -1191,7 +1517,9 @@ class MeerK40t(MWindow):
                 caption = window.caption
             except AttributeError:
                 caption = name[0].upper() + name[1:]
-
+            if name in ("Scene", "About"): # make no sense, so we omit these...
+                continue
+            # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             id_new = wx.NewId()
             menu_context.Append(id_new, caption, "", wx.ITEM_NORMAL)
             self.Bind(
@@ -1204,7 +1532,6 @@ class MeerK40t(MWindow):
         self.window_menu.windowreset = self.window_menu.Append(
             ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
-
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
@@ -1237,7 +1564,8 @@ class MeerK40t(MWindow):
             _("Clear existing elements and notes and open a new file"),
         )
         self.recent_file_menu = wx.Menu()
-        self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
+        if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
+            self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
         self.file_menu.Append(
             ID_MENU_IMPORT,
             _("&Import File"),
@@ -1767,10 +2095,7 @@ class MeerK40t(MWindow):
         context = self.context
 
         context.perspective = self._mgr.SavePerspective()
-        for pane in self._mgr.GetAllPanes():
-            if pane.IsShown():
-                if hasattr(pane.window, "pane_hide"):
-                    pane.window.pane_hide()
+        self.on_panes_closed()
         self._mgr.UnInit()
 
         if context.print_shutdown:
@@ -1793,6 +2118,8 @@ class MeerK40t(MWindow):
 
     @signal_listener("warning")
     def on_warning_signal(self, origin, message, caption, style):
+        if style is None:
+            style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
             None,
             message,
@@ -1872,11 +2199,8 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
-            obj = SVGImage()
-            obj.image = img
-            obj.image_width = image_width
-            obj.image_height = image_height
-            elements.add_elem(obj)
+            node = elements.elem_branch.add(image=img, width=image_width, height=image_height, type="elem image")
+            elements.classify([node])
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):
@@ -2183,8 +2507,8 @@ class MeerK40t(MWindow):
     def toggle_draw_mode(self, bits):
         """
         Toggle the draw mode.
-        :param bits: Bit to toggle.
-        :return: Toggle function.
+        @param bits: Bit to toggle.
+        @return: Toggle function.
         """
 
         def toggle(event=None):
@@ -2195,11 +2519,10 @@ class MeerK40t(MWindow):
         return toggle
 
     def update_statusbar(self, text):
-        self.main_statusbar.SetStatusText(text, self.GetStatusBarPane())
+        self.main_statusbar.SetStatusText(text, 0)
 
     def status_update(self):
-        # ToDo Get spool status and make the status dynamic
-        self.update_statusbar(_("Idle..."))
+        self.update_statusbar("")
 
     # The standard wx.Frame version of DoGiveHelp is not passed the help text in Windows
     # (no idea about other platforms - wxWidgets code for each platform is different)

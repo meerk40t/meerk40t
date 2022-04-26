@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 from ...core.units import UNITS_PER_MM
@@ -22,7 +23,11 @@ class RelocateTool(ToolWidget):
         pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
-        if event_type == "leftdown":
+        # Add snap behaviour
+        response = RESPONSE_CHAIN
+        if event_type in ("hover", "hover_start"):
+            self.scene.tool_active = True
+        elif event_type == "leftdown":
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
             x = space_pos[0]
@@ -38,3 +43,8 @@ class RelocateTool(ToolWidget):
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
             self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+            response = RESPONSE_CONSUME
+            self.scene.tool_active = False
+        elif event_type == "lost":
+            self.scene.tool_active = False
+        return response

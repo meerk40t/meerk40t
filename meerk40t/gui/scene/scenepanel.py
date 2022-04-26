@@ -1,4 +1,5 @@
 import wx
+
 from meerk40t.gui.wxutils import get_key_name
 
 
@@ -298,7 +299,7 @@ class ScenePanel(wx.Panel):
             if self._Buffer is None:
                 self.scene.update_buffer_ui_thread()
             wx.BufferedPaintDC(self.scene_panel, self._Buffer)
-        except (RuntimeError, AssertionError):
+        except (RuntimeError, AssertionError, TypeError):
             pass
 
     def on_erase(self, event):

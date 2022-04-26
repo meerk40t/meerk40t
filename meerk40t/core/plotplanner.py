@@ -39,20 +39,42 @@ of zero will remain zero.
 
 
 class PlotPlanner(Parameters):
-    def __init__(self, settings, **kwargs):
+    def __init__(
+        self,
+        settings,
+        single=True,
+        smooth=True,
+        ppi=True,
+        shift=True,
+        group=True,
+        **kwargs,
+    ):
         super().__init__(settings, **kwargs)
         self.debug = False
 
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
+        self.smooth_limit = 15
 
         self.queue = []
 
-        self.single = Single(self)
-        self.ppi = PPI(self)
-        self.shift = Shift(self)
-        self.group = Group(self)
+        self.single = None
+        self.smooth = None
+        self.ppi = None
+        self.shift = None
+        self.group = None
+
+        if single:
+            self.single = Single(self)
+        if smooth:
+            self.smooth = Smooth(self)
+        if ppi:
+            self.ppi = PPI(self)
+        if shift:
+            self.shift = Shift(self)
+        if group:
+            self.group = Group(self)
 
         self.pos_x = None
         self.pos_y = None
@@ -80,7 +102,7 @@ class PlotPlanner(Parameters):
         * Flush steps from planner if going to new location or using new settings.
              * If new position is far
                   * Send jog if too far away.
-        * Send PLOT_SETTING: None None - if settings have changed.
+        * Send PLOT_SETTING: None, None - if settings have changed.
         * Send PLOT_AXIS: major_axis, None - Major axis is horizontal vs. vertical raster
         * Send PLOT_DIRECTION: x_dir(), y_dir() - Direction X, Direction Y for initial cut.
         * Send PLOT_LEFT_UPPER: left point, upper point - Point at upper left
@@ -92,7 +114,7 @@ class PlotPlanner(Parameters):
 
         cut.settings can be the same object between different cut.
 
-        :return:
+        @return:
         """
         self.pos_x = None
         self.pos_y = None
@@ -108,7 +130,7 @@ class PlotPlanner(Parameters):
             if self.pos_x != new_start_x or self.pos_y != new_start_y:
                 # This location is disjointed. We must flush and jog.
                 # Jog is executed in current settings.
-                if self.pos_x is None or self.raster_step != 0:
+                if self.pos_x is None or self.raster_step_x != 0:
                     # First movement or raster_step exists we must rapid_jog.
                     # Request rapid move new location
                     flush = True
@@ -152,7 +174,7 @@ class PlotPlanner(Parameters):
                 self.settings = cut.settings
                 yield None, None, PLOT_SETTING
 
-            if jog or self.raster_step != 0:
+            if jog or self.raster_step_x != 0:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION
@@ -182,39 +204,39 @@ class PlotPlanner(Parameters):
         Processes can buffer data and return None. Processes are required to surrender any buffer they have if the
         given sequence ends with, or is None. This flushes out any data.
 
-        If an input sequence still lacks a on-value then the single_default value will be utilized.
+        If an input sequence still lacks an on-value then the single_default value will be utilized.
         Output sequences are iterables of x, y, on positions.
 
-        :param plot: plottable element that should be wrapped
-        :return: generator to produce plottable elements.
+        @param plot: plottable element that should be wrapped
+        @return: generator to produce plottable elements.
         """
-        # Applies single, ppi, shift, then group.
+
+        def debug(plot, manipulator):
+            for q in plot:
+                print("Manipulator: %s, %s" % (str(q), str(manipulator)))
+                yield q
+
+        if self.single is not None:
+            plot = self.single.process(plot)
         if self.debug:
-
-            def debug(plot, manipulator):
-                for q in plot:
-                    print("Manipulator: %s, %s" % (str(q), str(manipulator)))
-                    yield q
-
-            return debug(
-                self.group.process(
-                    debug(
-                        self.shift.process(
-                            debug(
-                                self.ppi.process(
-                                    debug(self.single.process(plot), self.single)
-                                ),
-                                self.ppi,
-                            )
-                        ),
-                        self.shift,
-                    )
-                ),
-                self.group,
-            )
-        return self.group.process(
-            self.shift.process(self.ppi.process(self.single.process(plot)))
-        )
+            plot = debug(plot, self.single)
+        if self.smooth is not None:
+            plot = self.smooth.process(plot)
+        if self.debug:
+            plot = debug(plot, self.smooth)
+        if self.ppi is not None:
+            plot = self.ppi.process(plot)
+        if self.debug:
+            plot = debug(plot, self.ppi)
+        if self.shift is not None:
+            plot = self.shift.process(plot)
+        if self.debug:
+            plot = debug(plot, self.shift)
+        if self.group is not None:
+            plot = self.group.process(plot)
+        if self.debug:
+            plot = debug(plot, self.group)
+        return plot
 
     def step_move(self, x0, y0, x1, y1):
         """
@@ -233,16 +255,28 @@ class PlotPlanner(Parameters):
     def warp(self, x, y):
         self.pos_x = x
         self.pos_y = y
-        self.single.warp(x, y)
-        self.ppi.warp(x, y)
-        self.shift.warp(x, y)
-        self.group.warp(x, y)
+        if self.single:
+            self.single.warp(x, y)
+        if self.smooth:
+            self.smooth.warp(x, y)
+        if self.ppi:
+            self.ppi.warp(x, y)
+        if self.shift:
+            self.shift.warp(x, y)
+        if self.group:
+            self.group.warp(x, y)
 
     def reset(self):
-        self.single.clear()
-        self.shift.clear()
-        self.ppi.clear()
-        self.group.clear()
+        if self.single:
+            self.single.clear()
+        if self.smooth:
+            self.smooth.clear()
+        if self.shift:
+            self.shift.clear()
+        if self.ppi:
+            self.ppi.clear()
+        if self.group:
+            self.group.clear()
 
 
 class PlotManipulation:
@@ -289,8 +323,8 @@ class Single(PlotManipulation):
         single_x sets the last known x position this routine has encountered.
         single_y sets the last known y position this routine has encountered.
 
-        :param plot: plot generator
-        :return:
+        @param plot: plot generator
+        @return:
         """
         if plot is None:
             # None calls for a flush routine.
@@ -341,6 +375,102 @@ class Single(PlotManipulation):
         self.single_y = None
 
 
+class Smooth(PlotManipulation):
+    def __init__(self, planner: PlotPlanner):
+        super().__init__(planner)
+        self.goal_x = None
+        self.goal_y = None
+        self.goal_on = None
+
+        self.smooth_x = None
+        self.smooth_y = None
+
+    def __str__(self):
+        return "%s(%s,%s)" % (
+            self.__class__.__name__,
+            str(self.smooth_x),
+            str(self.smooth_y),
+        )
+
+    def flushed(self):
+        return (
+            self.goal_x == self.smooth_x
+            and self.goal_y == self.smooth_y
+            and self.goal_x is not None
+            and self.goal_y is not None
+        )
+
+    def process(self, plot):
+        """
+
+        @param plot: single stepped plots to be smoothed into orth/diag sequences.
+        @return:
+        """
+        px = None
+        py = None
+        for x, y, on in plot:
+            if x is None or y is None:
+                # flush the process when if sent a None value.
+                yield from self.flush()
+                yield x, y, on
+                continue
+            if not self.planner.constant_move_x and not self.planner.constant_move_y:
+                yield x, y, on
+                continue  # We are not smoothing.
+            if px is not None and py is not None:
+                # Ensure we are single stepped values.
+                assert abs(px - x) <= 1 or abs(py - y) <= 1
+            px = x
+            py = y
+            if self.smooth_x is None:
+                self.smooth_x = x
+            if self.smooth_y is None:
+                self.smooth_y = y
+            total_dx = x - self.smooth_x
+            total_dy = y - self.smooth_y
+            self.goal_x = x
+            self.goal_y = y
+            self.goal_on = on
+            if total_dx == 0 and total_dy == 0:
+                continue
+            dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+            dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+            if self.planner.constant_move_x and dx == 0:
+                # If we are moving x and, we don't move x: skip.
+                if abs(total_dy) < self.planner.smooth_limit:
+                    continue
+            if self.planner.constant_move_y and dy == 0:
+                if abs(total_dx) < self.planner.smooth_limit:
+                    continue
+            self.smooth_x += dx
+            self.smooth_y += dy
+            yield self.smooth_x, self.smooth_y, on
+
+    def flush(self):
+        if not self.flushed():
+            if self.goal_x is None or self.goal_y is None:
+                return
+            if self.smooth_x is None or self.smooth_y is None:
+                return
+            for x, y in ZinglPlotter.plot_line(
+                self.smooth_x, self.smooth_y, self.goal_x, self.goal_y
+            ):
+                yield x, y, self.goal_on
+            self.goal_x = None
+            self.goal_y = None
+            self.goal_on = None
+
+    def warp(self, x, y):
+        self.smooth_x = x
+        self.smooth_y = y
+        self.goal_x = x
+        self.goal_y = y
+
+    def clear(self):
+        self.smooth_x = None
+        self.smooth_y = None
+
+
 class PPI(PlotManipulation):
     def __init__(self, planner: PlotPlanner):
         super().__init__(planner)
@@ -360,8 +490,8 @@ class PPI(PlotManipulation):
 
         Implements PPI power modulation.
 
-        :param plot: generator of single stepped plots, with PPI.
-        :return:
+        @param plot: generator of single stepped plots, with PPI.
+        @return:
         """
         px = None
         py = None
@@ -411,8 +541,8 @@ class Shift(PlotManipulation):
 
         This code requires a buffer of 4 path plots.
 
-        :param plot: generator of single stepped plots
-        :return:
+        @param plot: generator of single stepped plots
+        @return:
         """
         for x, y, on in plot:
             if (x is None or y is None) or (
@@ -499,8 +629,8 @@ class Group(PlotManipulation):
         group_x, group_y: is the last known inputted. This is not necessarily the current position given by the planner.
         If group_dx and group_dy are not zero, then we have buffered a move.
 
-        :param plot: single stepped plots to be grouped into orth/diag sequences.
-        :return:
+        @param plot: single stepped plots to be grouped into orth/diag sequences.
+        @return:
         """
         px = None
         py = None
@@ -587,8 +717,8 @@ def grouped(plot):
     """
     Converts a generated series of single stepped plots into grouped orthogonal/diagonal plots.
 
-    :param plot: single stepped plots to be grouped into orth/diag sequences.
-    :return:
+    @param plot: single stepped plots to be grouped into orth/diag sequences.
+    @return:
     """
     group_x = None
     group_y = None

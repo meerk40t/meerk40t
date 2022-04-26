@@ -1,15 +1,24 @@
 from typing import Dict
 
-
 FLOAT_PARAMETERS = (
-    "travel_speed",
-    "cut_speed",
-    "q_switch_frequency",
+    "speed",
+    "frequency",
     "power",
+    "rapid_speed",
     "delay_laser_on",
     "delay_laser_off",
     "delay_polygon",
+    "wobble_speed",
 )
+
+BOOL_PARAMETERS = (
+    "wobble_enabled",
+    "timing_enabled",
+    "rapid_enabled",
+)
+
+
+STRING_PARAMETERS = ("wobble_type", "wobble_radius", "wobble_interval")
 
 
 class Parameters:
@@ -30,43 +39,105 @@ class Parameters:
             derived_dict[attr] = value
         return derived_dict
 
-    @staticmethod
-    def validate(settings: Dict):
+    def validate(self):
+        settings = self.settings
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
+        for v in BOOL_PARAMETERS:
+            if v in settings:
+                settings[v] = str(settings[v]).lower() == "true"
+        for v in STRING_PARAMETERS:
+            if v in settings:
+                settings[v] = str(settings[v])
 
     @property
-    def cut_speed(self):
-        return self.settings.get("cut_speed", 100.0)
+    def rapid_enabled(self):
+        return self.settings.get("rapid_enabled", False)
 
-    @cut_speed.setter
-    def cut_speed(self, value):
-        self.settings["cut_speed"] = value
-
-    @property
-    def travel_speed(self):
-        return self.settings.get("travel_speed", 2000.0)
-
-    @travel_speed.setter
-    def travel_speed(self, value):
-        self.settings["travel_speed"] = value
+    @rapid_enabled.setter
+    def rapid_enabled(self, value):
+        self.settings["rapid_enabled"] = value
 
     @property
-    def laser_power(self):
-        return self.settings.get("laser_power", 50.0)
+    def timing_enabled(self):
+        return self.settings.get("timing_enabled", False)
 
-    @laser_power.setter
-    def laser_power(self, value):
-        self.settings["laser_power"] = value
+    @timing_enabled.setter
+    def timing_enabled(self, value):
+        self.settings["timing_enabled"] = value
 
     @property
-    def q_switch_frequency(self):
-        return self.settings.get("q_switch_frequency", 30.0)
+    def wobble_enabled(self):
+        return self.settings.get("wobble_enabled", False)
 
-    @q_switch_frequency.setter
-    def q_switch_frequency(self, value):
-        self.settings["q_switch_frequency"] = value
+    @wobble_enabled.setter
+    def wobble_enabled(self, value):
+        self.settings["wobble_enabled"] = value
+
+    @property
+    def wobble_radius(self):
+        return self.settings.get("wobble_radius", "1.5mm")
+
+    @wobble_radius.setter
+    def wobble_radius(self, value):
+        self.settings["wobble_radius"] = value
+
+    @property
+    def wobble_speed(self):
+        return self.settings.get("wobble_speed", 50.0)
+
+    @wobble_speed.setter
+    def wobble_speed(self, value):
+        self.settings["wobble_speed"] = value
+
+    @property
+    def wobble_interval(self):
+        return self.settings.get("wobble_interval", "0.3mm")
+
+    @wobble_interval.setter
+    def wobble_interval(self, value):
+        self.settings["wobble_interval"] = value
+
+    @property
+    def wobble_type(self):
+        return self.settings.get("wobble_type", "circle")
+
+    @wobble_type.setter
+    def wobble_type(self, value):
+        self.settings["wobble_type"] = value
+
+    @property
+    def speed(self):
+        return self.settings.get("speed", 100.0)
+
+    @speed.setter
+    def speed(self, value):
+        self.settings["speed"] = value
+
+    @property
+    def rapid_speed(self):
+        return self.settings.get("rapid_speed", 2000.0)
+
+    @rapid_speed.setter
+    def rapid_speed(self, value):
+        self.settings["rapid_speed"] = value
+
+    @property
+    def power(self):
+        return self.settings.get("power", 500)
+
+    @power.setter
+    def power(self, value):
+        self.settings["power"] = value
+
+    @property
+    def frequency(self):
+        return self.settings.get("frequency", 30.0)
+
+    @frequency.setter
+    def frequency(self, value):
+        self.settings["frequency"] = value
 
     @property
     def delay_laser_on(self):

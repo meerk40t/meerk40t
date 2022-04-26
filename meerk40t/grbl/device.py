@@ -9,6 +9,7 @@ from serial import SerialException
 
 from meerk40t.kernel import Service
 
+from ..core.cutcode import CubicCut, LineCut, QuadCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -29,6 +30,8 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
+
+MM_PER_MIL = UNITS_PER_MM / UNITS_PER_MIL
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -194,17 +197,37 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
             },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Distance of the curve interpolation in mils"),
+            },
+            {
+                "attr": "mock",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Run mock-usb backend"),
+                "tip": _(
+                    "This starts connects to fake software laser rather than real one for debugging."
+                ),
+            },
         ]
         self.register_choices("grbl-connection", choices)
 
         choices = [
             {
-                "attr": "number_of_unicorns",
+                "attr": "use_m3",
                 "object": self,
-                "default": 7.0,
-                "type": float,
-                "label": _("How many unicorns?"),
-                "tip": _("I didn't really have any settings for this."),
+                "default": False,
+                "type": bool,
+                "label": _("Use M3"),
+                "tip": _(
+                    "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
+                ),
             },
         ]
         self.register_choices("grbl-global", choices)
@@ -346,9 +369,13 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
-        self.plot_planner = PlotPlanner(self.settings)
+        self.plot_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
+        self.queue = []
         self.plot_data = None
 
+        self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
@@ -358,7 +385,6 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self.feed_invert = None
         self.g94_feedrate()  # G93 DEFAULT, mm mode
 
         self.unit_scale = None
@@ -410,14 +436,14 @@ class GRBLDriver(Parameters):
             line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
-        line.append("X%f" % x)
-        line.append("Y%f" % y)
+        line.append("X%.3f" % x)
+        line.append("Y%.3f" % y)
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%f" % self.power)
+                line.append("S%.1f" % (self.power * self.on_value))
             self.power_dirty = False
         if self.speed_dirty:
-            line.append("F%f" % self.feed_convert(self.speed))
+            line.append("F%.1f" % self.feed_convert(self.speed))
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
@@ -426,7 +452,7 @@ class GRBLDriver(Parameters):
         self.clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
+        # self.rapid_mode()
         self.move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -441,7 +467,7 @@ class GRBLDriver(Parameters):
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        self.rapid_mode()
+        # self.rapid_mode()
         self.move(dx, dy)
 
         new_current = self.service.current
@@ -484,26 +510,30 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.absolute_dirty = True
 
+    def _g93_mms_to_minutes_per_gunits(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return distance / millimeters_per_minute
+
     def g93_feedrate(self):
         if self.feed_mode == 93:
             return
         self.feed_mode = 93
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 * s) * self.stepper_step_size / UNITS_PER_MM
-        self.feed_invert = lambda s: (60.0 * s) * UNITS_PER_MM / self.stepper_step_size
+        self.feed_convert = self._g93_mms_to_minutes_per_gunits
         self.feedrate_dirty = True
+
+    def _g94_mms_to_gunits_per_minute(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return millimeters_per_minute / distance
 
     def g94_feedrate(self):
         if self.feed_mode == 94:
             return
         self.feed_mode = 94
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / (
-            (self.stepper_step_size / UNITS_PER_MM) / 60.0
-        )
-        self.feed_invert = lambda s: s * (
-            (self.stepper_step_size / UNITS_PER_MM) / 60.0
-        )
+        self.feed_convert = self._g94_mms_to_gunits_per_minute
         # units to mm, seconds to minutes.
         self.feedrate_dirty = True
 
@@ -546,7 +576,7 @@ class GRBLDriver(Parameters):
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        self.queue.append(plot)
 
     def plot_start(self):
         """
@@ -554,11 +584,107 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        self.g91_absolute()
+        self.g94_feedrate()
+        self.clean()
+        if self.service.use_m3:
+            self.grbl("M3\r")
+        else:
+            self.grbl("M4\r")
+        for q in self.queue:
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = q.start
+            if x != start_x or y != start_y:
+                self.on_value = 0
+                self.power_dirty = True
+                self.move_mode = 0
+                self.move(start_x, start_y)
+            if self.on_value != 1.0:
+                self.power_dirty = True
+            self.on_value = 1.0
+            if q.power != self.power:
+                self.set("power", q.power)
+            if q.speed != self.speed or q.raster_step_x != self.raster_step_x or q.raster_step_y != self.raster_step_y:
+                self.set("speed", q.speed)
+            self.settings.update(q.settings)
+            if isinstance(q, LineCut):
+                self.move_mode = 1
+                self.move(*q.end)
+            elif isinstance(q, (QuadCut, CubicCut)):
+                self.move_mode = 1
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = 0
+                for p in range(int(interp)):
+                    while self.hold_work():
+                        time.sleep(0.05)
+                    self.move(*q.point(t))
+                    t += step_size
+                last_x, last_y = q.end
+                self.move(last_x, last_y)
+            else:
+                self.plot_planner.push(q)
+                for x, y, on in self.plot_planner.gen():
+                    while self.hold_work():
+                        time.sleep(0.05)
+                    if on > 1:
+                        # Special Command.
+                        if on & PLOT_FINISH:  # Plot planner is ending.
+                            break
+                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            p_set = Parameters(self.plot_planner.settings)
+                            if p_set.power != self.power:
+                                self.set("power", p_set.power)
+                            if (
+                                p_set.speed != self.speed
+                                or p_set.raster_step_x != self.raster_step_x or p_set.raster_step_y != self.raster_step_y
+                            ):
+                                self.set("speed", p_set.speed)
+                            self.settings.update(p_set.settings)
+                        elif on & (
+                            PLOT_RAPID | PLOT_JOG
+                        ):  # Plot planner requests position change.
+                            self.move_mode = 0
+                            self.move(x, y)
+                        continue
+                    if on == 0:
+                        self.move_mode = 0
+                    else:
+                        self.move_mode = 1
+                    if self.on_value != on:
+                        self.power_dirty = True
+                    self.on_value = on
+                    self.move(x, y)
+        self.queue.clear()
+        self.grbl("G1 S0\r")
+        self.grbl("M5\r")
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+        return False
+
+    def plot_start2(self):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+
+        @return:
+        """
+        for q in self.queue:
+            self.plot_planner.push(q)
+        self.queue.clear()
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
         self.g91_absolute()
         self.g94_feedrate()
         self.clean()
+        if self.service.use_m3:
+            self.grbl("M3\r")
+        else:
+            self.grbl("M4\r")
+
         for x, y, on in self.plot_data:
             while self.hold_work():
                 time.sleep(0.05)
@@ -586,13 +712,26 @@ class GRBLDriver(Parameters):
                 self.move_mode = 0
             else:
                 self.move_mode = 1
+            if self.on_value != on:
+                self.power_dirty = True
+            self.on_value = on
             self.move(x, y)
+
         self.plot_data = None
+        self.grbl("G1 S0\r")
+        self.grbl("M5\r")
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
         return False
 
     def blob(self, data_type, data):
         """
-        @param type:
+        This is intended to send a blob of gcode to be processed and executed.
+
+        @param data_type:
         @param data:
         @return:
         """
@@ -663,7 +802,7 @@ class GRBLDriver(Parameters):
     def set_position(self, x, y):
         """
         This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently this is only
+        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
         used in step-repeat.
 
         @param x:
@@ -1161,7 +1300,10 @@ class GrblController:
         self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel("send-%s" % self.com_port.lower())
         self.recv = self.service.channel("recv-%s" % self.com_port.lower())
-        self.connection = SerialConnection(self.service)
+        if not self.service.mock:
+            self.connection = SerialConnection(self.service)
+        else:
+            self.connection = MockConnection(self.service)
         self.driver = self.service.driver
         self.sending_thread = None
 
@@ -1365,6 +1507,52 @@ class SerialConnection:
             self.laser.close()
             del self.laser
             self.laser = None
+        self.service.signal("serial;status", "disconnected")
+
+
+class MockConnection:
+    def __init__(self, service):
+        self.service = service
+        self.channel = self.service.channel("grbl_state", buffer_size=20)
+        self.laser = None
+        self.read_buffer = bytearray()
+        self.just_connected = False
+        self.write_lines = 0
+
+    @property
+    def connected(self):
+        return self.laser is not None
+
+    def read(self):
+        if self.just_connected:
+            self.just_connected = False
+            return "grbl version fake"
+        if self.write_lines:
+            self.write_lines -= 1
+            return "ok"
+        else:
+            return ""
+
+    def write(self, line):
+        self.write_lines += 1
+
+    def connect(self):
+        if self.laser:
+            self.channel("Already connected")
+            return
+        try:
+            self.channel("Attempting to Connect...")
+            self.laser = True
+            self.just_connected = True
+            self.channel("Connected")
+            self.service.signal("serial;status", "connected")
+        except ConnectionError:
+            self.channel("Connection Failed.")
+        except SerialException:
+            self.channel("Serial connection could not be established.")
+
+    def disconnect(self):
+        self.channel("Disconnected")
         self.service.signal("serial;status", "disconnected")
 
 

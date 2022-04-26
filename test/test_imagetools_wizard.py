@@ -4,7 +4,7 @@ from test import bootstrap
 
 from PIL import Image, ImageDraw
 
-from meerk40t.svgelements import SVGImage
+from meerk40t.svgelements import SVGImage, Matrix
 
 
 class TestRasterWizard(unittest.TestCase):
@@ -18,20 +18,20 @@ class TestRasterWizard(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            draw = ImageDraw.Draw(svg_image.image)
+            image = Image.new("RGBA", (256, 256), "white")
+            draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (2, 2)
+                        node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(node.matrix.value_trans_x(), 100)
+                    self.assertEqual(node.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -45,29 +45,30 @@ class TestRasterWizard(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            svg_image.values["raster_step"] = 3
-            draw = ImageDraw.Draw(svg_image.image)
+            image = Image.new("RGBA", (256, 256), "white")
+            draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node.step_x = 3
+            node.step_y = 3
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (2, 2)
+                        node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
                     self.assertEqual(
-                        element.transform.value_scale_x(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_x(),
+                        node.step_x,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
-                        svg_image.values["raster_step"],
+                        node.matrix.value_scale_y(),
+                        node.step_y,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(node.matrix.value_trans_x(), 100)
+                    self.assertEqual(node.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -83,14 +84,14 @@ class TestRasterWizard(unittest.TestCase):
             # kernel_root("channel print console\n")
             for script in kernel.match("raster_script/.*", suffix=True):
                 for mode in ("RGBA", "RGB", "L", "1", "P", "F", "LA", "HSV"):
-                    svg_image = SVGImage()
-                    svg_image.image = Image.new("RGBA", (256, 256), "white")
-                    draw = ImageDraw.Draw(svg_image.image)
+                    image = Image.new("RGBA", (256, 256), "white")
+                    draw = ImageDraw.Draw(image)
                     draw.ellipse((50, 50, 150, 150), "black")
                     draw.ellipse((75, 75, 125, 125), "blue")
                     draw.ellipse((95, 95, 105, 105), "green")
-                    svg_image.image = svg_image.image.convert(mode)
-                    node = kernel_root.elements.add_elem(svg_image)
+                    image = image.convert(mode)
+                    elements = kernel_root.elements
+                    node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
                     node.emphasized = True
                 kernel_root("image wizard %s\n" % script)
                 # Solve for step.
@@ -98,18 +99,18 @@ class TestRasterWizard(unittest.TestCase):
                 for op in kernel_root.lookup("raster_script", script):
                     if op["name"] == "resample" and op["enable"]:
                         step = op["step"]
-                for element in kernel_root.elements.elems():
-                    if isinstance(element, SVGImage):
+                for node in kernel_root.elements.elems():
+                    if node.type == "elem image":
                         self.assertEqual(
-                            element.transform.value_scale_x(),
+                            node.matrix.value_scale_x(),
                             step,
                         )
                         self.assertEqual(
-                            element.transform.value_scale_y(),
+                            node.matrix.value_scale_y(),
                             step,
                         )
-                        self.assertEqual(element.transform.value_trans_x(), 50)
-                        self.assertEqual(element.transform.value_trans_y(), 50)
+                        self.assertEqual(node.matrix.value_trans_x(), 50)
+                        self.assertEqual(node.matrix.value_trans_y(), 50)
                 kernel_root("element* delete\n")
         finally:
             kernel.shutdown()
@@ -127,33 +128,34 @@ class TestRasterWizard(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
             for component in range(256):
-                svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new(
+                image = Image.new(
                     "RGBA", (256, 256), (component, component, component, 0)
                 )
-                svg_image.values["raster_step"] = 3
-                draw = ImageDraw.Draw(svg_image.image)
+                draw = ImageDraw.Draw(image)
                 draw.rectangle((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
-                node = kernel_root.elements.add_elem(svg_image)
+                elements = kernel_root.elements
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+                node.step_x = 3
+                node.step_y = 3
                 node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (2, 2)
+                        node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
                     self.assertEqual(
-                        element.transform.value_scale_x(),
+                        node.matrix.value_scale_x(),
                         3,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
+                        node.matrix.value_scale_y(),
                         3,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 100)
-                    self.assertEqual(element.transform.value_trans_y(), 100)
+                    self.assertEqual(node.matrix.value_trans_x(), 100)
+                    self.assertEqual(node.matrix.value_trans_y(), 100)
         finally:
             kernel.shutdown()
 
@@ -170,35 +172,36 @@ class TestRasterWizard(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
             for component in range(256):
-                svg_image = SVGImage()
                 # each color is a different shade of gray, all marked fully transparent.
-                svg_image.image = Image.new(
+                image = Image.new(
                     "RGBA", (256, 256), (component, component, component, 0)
                 )
-                svg_image.values["raster_step"] = 3
-                draw = ImageDraw.Draw(svg_image.image)
+                draw = ImageDraw.Draw(image)
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
-                node = kernel_root.elements.add_elem(svg_image)
+                elements = kernel_root.elements
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+                node.step_x = 3
+                node.step_y = 3
                 node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (34, 34)
+                        node.image.size, (34, 34)
                     )  # Gravy is step=3 by default
                     self.assertEqual(
-                        element.transform.value_scale_x(),
+                        node.matrix.value_scale_x(),
                         3,
                     )
                     self.assertEqual(
-                        element.transform.value_scale_y(),
+                        node.matrix.value_scale_y(),
                         3,
                     )
-                    self.assertEqual(element.transform.value_trans_x(), 50)
-                    self.assertEqual(element.transform.value_trans_y(), 50)
+                    self.assertEqual(node.matrix.value_trans_x(), 50)
+                    self.assertEqual(node.matrix.value_trans_y(), 50)
                     #  Test corner for whiteness.
-                    self.assertEqual(element.image.getpixel((-1, -1)), 255)
+                    self.assertEqual(node.image.getpixel((-1, -1)), 255)
         finally:
             kernel.shutdown()
 
@@ -212,20 +215,20 @@ class TestRasterWizard(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "white")
-            node = kernel_root.elements.add_elem(svg_image)
+            image = Image.new("RGBA", (256, 256), "white")
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (floor(256 / 3) + 1, floor(256 / 3) + 1)
+                        node.image.size, (floor(256 / 3) + 1, floor(256 / 3) + 1)
                     )
                     # Gravy is default 3 step.
                     # Remainder line is added to edge, so + 1
-                    self.assertEqual(element.transform.value_trans_x(), 0)
-                    self.assertEqual(element.transform.value_trans_y(), 0)
+                    self.assertEqual(node.matrix.value_trans_x(), 0)
+                    self.assertEqual(node.matrix.value_trans_y(), 0)
         finally:
             kernel.shutdown()
 
@@ -239,20 +242,20 @@ class TestRasterWizard(unittest.TestCase):
         try:
             kernel_root = kernel.get_context("/")
             # kernel_root("channel print console\n")
-            svg_image = SVGImage()
-            svg_image.image = Image.new("RGBA", (256, 256), "black")
-            node = kernel_root.elements.add_elem(svg_image)
+            image = Image.new("RGBA", (256, 256), "black")
+            elements = kernel_root.elements
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1,type="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
-            for element in kernel_root.elements.elems():
-                if isinstance(element, SVGImage):
+            for node in kernel_root.elements.elems():
+                if node.type == "elem image":
                     self.assertEqual(
-                        element.image.size, (floor(256 / 3), floor(256 / 3))
+                        node.image.size, (floor(256 / 3), floor(256 / 3))
                     )
                     # Gravy is default 3 step.
                     # Default non-inverted gives white line at edge which is cropped, therefore floor()
                     # since the additional line does not count as part of the image.
-                    self.assertEqual(element.transform.value_trans_x(), 0)
-                    self.assertEqual(element.transform.value_trans_y(), 0)
+                    self.assertEqual(node.matrix.value_trans_x(), 0)
+                    self.assertEqual(node.matrix.value_trans_y(), 0)
         finally:
             kernel.shutdown()

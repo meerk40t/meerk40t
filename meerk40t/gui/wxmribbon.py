@@ -4,7 +4,7 @@ import wx
 import wx.ribbon as RB
 from wx import aui
 
-from meerk40t.kernel import Job, lookup_listener
+from meerk40t.kernel import Job, lookup_listener, signal_listener
 
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
@@ -53,7 +53,8 @@ class RibbonPanel(wx.Panel):
             | RB.RIBBON_BAR_SHOW_PAGE_LABELS
             | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
             | RB.RIBBON_BAR_SHOW_TOGGLE_BUTTON
-            | RB.RIBBON_BAR_SHOW_HELP_BUTTON,
+            | RB.RIBBON_BAR_SHOW_HELP_BUTTON
+            | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
         )
         self.__set_ribbonbar()
 
@@ -70,16 +71,30 @@ class RibbonPanel(wx.Panel):
         # Let's figure out what kind of action we need to perform
         # button["action"]
         evt_id = event.GetId()
+        # print("button_click called for %d" % evt_id)
         for button in self.button_actions:
             parent_obj = button[0]
             my_id = button[1]
             my_grp = button[2]
             my_code = button[3]
             if my_id == evt_id:
+                button[4] = not button[4]
                 if my_grp != "":
-                    for obutton in self.button_actions:
-                        if obutton[2] == my_grp and obutton[1] != my_id:
-                            obutton[0].ToggleButton(obutton[1], False)
+                    if button[4]:  # got toggled
+                        for obutton in self.button_actions:
+                            if obutton[2] == my_grp and obutton[1] != my_id:
+                                obutton[0].ToggleButton(obutton[1], False)
+                    else:  # got untoggled...
+                        # so let' activate the first button of the group (implicitly defined as default...)
+                        for obutton in self.button_actions:
+                            if obutton[2] == my_grp:
+                                obutton[0].ToggleButton(obutton[1], True)
+                                mevent = event.Clone()
+                                mevent.SetId(obutton[1])
+                                # print("Calling master...")
+                                self.button_click(mevent)
+                                # exit
+                                return
                 my_code(0)  # Needs a parameter....
                 break
 
@@ -97,11 +112,15 @@ class RibbonPanel(wx.Panel):
         for button in buttons:
             new_id = wx.NewId()
             toggle_grp = ""
+            if "size" in button:
+                resize_param = button["size"]
+            else:
+                resize_param = None
             if "alt-action" in button:
                 button_bar.AddHybridButton(
                     new_id,
                     button["label"],
-                    button["icon"].GetBitmap(),
+                    button["icon"].GetBitmap(resize=resize_param),
                     button["tip"],
                 )
 
@@ -131,18 +150,26 @@ class RibbonPanel(wx.Panel):
                 button_bar.AddButton(
                     new_id,
                     button["label"],
-                    button["icon"].GetBitmap(),
+                    button["icon"].GetBitmap(resize=resize_param),
                     button["tip"],
                     kind=bkind,
                 )
             self.button_actions.append(
-                (button_bar, new_id, toggle_grp, button["action"])
+                [
+                    button_bar,
+                    new_id,
+                    toggle_grp,
+                    button["action"],
+                    False,
+                ]  # Parent, ID, Toggle, Action, State
             )
             # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
             )
         self.ensure_realize()
+        # Disable buttons by default
+        self.on_emphasis_change(None)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
@@ -167,6 +194,23 @@ class RibbonPanel(wx.Panel):
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
+
+    @lookup_listener("button/align")
+    def set_align_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.align_button_bar)
+
+    def enable_all_buttons_on_bar(self, button_bar, active):
+        for i in range(button_bar.GetButtonCount()):
+            btn = button_bar.GetItem(i)
+            b_id = button_bar.GetItemId(btn)
+            button_bar.EnableButton(b_id, active)
+
+    @signal_listener("emphasized")
+    def on_emphasis_change(self, origin, *args):
+        active = self.context.elements.has_emphasis()
+        self.enable_all_buttons_on_bar(self.geometry_button_bar, active)
+        self.enable_all_buttons_on_bar(self.align_button_bar, active)
+        self.enable_all_buttons_on_bar(self.modify_button_bar, active)
 
     @property
     def is_dark(self):
@@ -237,16 +281,6 @@ class RibbonPanel(wx.Panel):
             icons8_opened_folder_50.GetBitmap(),
         )
 
-        self.modify_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Modification"),
-            icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
-        )
-        button_bar = RB.RibbonButtonBar(self.modify_panel)
-        self.modify_button_bar = button_bar
-
         self.tool_panel = RB.RibbonPanel(
             tool,
             wx.ID_ANY,
@@ -257,15 +291,38 @@ class RibbonPanel(wx.Panel):
         button_bar = RB.RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
 
+        self.modify_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Modification"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.modify_panel)
+        self.modify_button_bar = button_bar
+
         self.geometry_panel = RB.RibbonPanel(
             tool,
             wx.ID_ANY,
             "" if self.is_dark else _("Geometry"),
             icons8_opened_folder_50.GetBitmap(),
-            style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
         )
         button_bar = RB.RibbonButtonBar(self.geometry_panel)
         self.geometry_button_bar = button_bar
+
+        self.align_panel = RB.RibbonPanel(
+            tool,
+            wx.ID_ANY,
+            "" if self.is_dark else _("Alignment"),
+            icons8_opened_folder_50.GetBitmap(),
+            style=RB.RIBBON_PANEL_MINIMISE_BUTTON,
+            # style=RB.RIBBON_PANEL_NO_AUTO_MINIMISE,
+        )
+        button_bar = RB.RibbonButtonBar(self.align_panel)
+        self.align_button_bar = button_bar
 
         self.ensure_realize()
 

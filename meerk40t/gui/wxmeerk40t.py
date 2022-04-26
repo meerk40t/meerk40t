@@ -6,7 +6,7 @@ from datetime import datetime
 
 # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
 # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-# so we are doing it here even though we do not refer to it in this file
+# so, we are doing it here even though we do not refer to it in this file
 # richtext is used for the Console panel.
 import wx
 from wx import aui, richtext
@@ -15,32 +15,31 @@ from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import ConsoleFunction, Module, get_safe_path
+from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .bufferview import BufferView
-from .propertypanels.consoleproperty import ConsoleProperty, ConsolePropertiesPanel
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .propertypanels.groupproperties import GroupProperty, GroupPropertiesPanel
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,
     icons8_home_filled_50,
     icons8_pause_50,
 )
-from .propertypanels.imageproperty import ImageProperty, ImagePropertyPanel
 from .keymap import Keymap
 from .notes import Notes
-from .propertypanels.propertywindow import PropertyWindow
-from .propertypanels.operationpropertymain import ParameterPanel
-from .propertypanels.pathproperty import PathProperty, PathPropertyPanel
 from .preferences import Preferences
+from .propertypanels.consoleproperty import ConsolePropertiesPanel
+from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.imageproperty import ImagePropertyPanel
+from .propertypanels.operationpropertymain import ParameterPanel
+from .propertypanels.pathproperty import PathPropertyPanel
+from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.textproperty import TextPropertyPanel
 from .rasterwizard import RasterWizard
 from .simulation import Simulation
-from .propertypanels.textproperty import TextProperty, TextPropertyPanel
 from .wxmmain import MeerK40t
 
 """
@@ -241,6 +240,9 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
+        wx.ToolTip.SetAutoPop(10000)
+        wx.ToolTip.SetDelay(100)
+        wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
         try:
@@ -251,6 +253,14 @@ class wxMeerK40t(wx.App, Module):
 
     def OnInit(self):
         return True
+
+    def InitLocale(self):
+        import sys
+
+        if sys.platform.startswith("win") and sys.version_info > (3, 8):
+            import locale
+
+            locale.setlocale(locale.LC_ALL, "C")
 
     def BringWindowToFront(self):
         try:  # it's possible for this event to come when the frame is closed
@@ -303,12 +313,16 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
+        kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
-        kernel.register("property/ElemNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/ElemNode/TextProperty", TextPropertyPanel)
-        kernel.register("property/ElemNode/ImageProperty", ImagePropertyPanel)
+        kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
@@ -343,15 +357,19 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.position import register_panel_position
 
         kernel.register("wxpane/Position", register_panel_position)
+
+        from meerk40t.gui.lasertoolpanel import register_panel_lasertool
+
+        kernel.register("wxpane/Lasertool", register_panel_lasertool)
+
+        from meerk40t.gui.snapoptions import register_panel_snapoptions
+
+        kernel.register("wxpane/Snap", register_panel_snapoptions)
         #
         # if kernel.root.setting(bool, "developer_mode", False):
         from meerk40t.gui.auitoolbars import register_toolbars
 
         kernel.register("wxpane/Toolbars", register_toolbars)
-
-        from meerk40t.gui.toolbaralign import register_align_tools
-
-        kernel.register("wxpane/Tool-Align", register_align_tools)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)
@@ -694,10 +712,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     """
     Handler for errors. Save error to a file, and create dialog.
 
-    :param exc_type:
-    :param exc_value:
-    :param exc_traceback:
-    :return:
+    @param exc_type:
+    @param exc_value:
+    @param exc_traceback:
+    @return:
     """
     wxversion = "wx"
     try:

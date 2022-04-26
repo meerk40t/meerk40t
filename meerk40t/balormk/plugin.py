@@ -5,11 +5,7 @@ def plugin(kernel, lifecycle):
         return [gui.plugin]
     if lifecycle == "invalidate":
         try:
-
-            import numpy as np
-            import scipy.interpolate
             import numpy
-            import scipy
         except ImportError:
             return True
     if lifecycle == "register":

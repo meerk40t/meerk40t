@@ -19,10 +19,10 @@ class ZinglPlotter:
     @staticmethod
     def plot_arc(arc):
         """
-        Plots an arc by converting it into a series of cubic bezier curves and plotting those instead.
+        Plots an arc by converting it into a series of cubic Bézier curves and plotting those instead.
 
-        :param arc:
-        :return:
+        @param arc:
+        @return:
         """
         # TODO: Should actually plot the arc according to the pixel-perfect standard.
         # TODO: In this case we would plot a Bernstein weighted bezier curve.

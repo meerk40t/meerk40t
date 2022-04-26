@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import SVGText
 
@@ -27,6 +28,7 @@ class TextTool(ToolWidget):
             gc.DrawText(self.text.text, self.x, self.y)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.p1 = complex(space_pos[0], space_pos[1])
             _ = self.scene.context._
@@ -44,7 +46,11 @@ class TextTool(ToolWidget):
             dlg.SetValue("")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.GetValue()
-                self.scene.context.elements.add_elem(self.text, classify=True)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(text=self.text, type="elem text")
+                elements.classify([node])
                 self.text = None
             dlg.Destroy()
             self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        return response

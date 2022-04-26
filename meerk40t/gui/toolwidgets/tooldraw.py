@@ -1,9 +1,12 @@
 import wx
 
+from meerk40t.gui.scene.sceneconst import (
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
+)
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
-
-from ..scene.sceneconst import RESPONSE_DROP
 
 
 class DrawTool(ToolWidget):
@@ -30,15 +33,19 @@ class DrawTool(ToolWidget):
         self.series.append(point)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
+        # We don't set tool_active here, as this can't be properly honored...
+        response = RESPONSE_CHAIN
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
             self.add_point(space_pos[:2])
+            response = RESPONSE_CONSUME
         elif event_type == "move":
             if self.series is None:
                 return RESPONSE_DROP
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         elif event_type == "lost":
             self.series = None
             return RESPONSE_DROP
@@ -48,7 +55,12 @@ class DrawTool(ToolWidget):
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
-                self.scene.context.elements.add_elem(t, classify=True)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(path=t, type="elem path")
+                elements.classify([node])
             except IndexError:
                 pass
             self.series = None
+            self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        return response

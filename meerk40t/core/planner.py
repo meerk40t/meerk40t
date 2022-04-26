@@ -1,23 +1,16 @@
 from copy import copy
-from os import times
-from time import time
-from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import Service
-from .units import Length
+from meerk40t.kernel import CommandSyntaxError, Service
 
-from ..core.cutcode import CutCode, CutGroup, CutObject, RasterCut
-from ..svgelements import Group, Matrix, Polygon, SVGElement, SVGImage, SVGText
-from ..tools.pathtools import VectorMontonizer
+from ..core.cutcode import CutCode
 from .cutplan import CutPlan, CutPlanningFailedError
-from .node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
+from .node.op_cut import CutOpNode
+from .node.op_dots import DotsOpNode
+from .node.op_engrave import EngraveOpNode
+from .node.op_hatch import HatchOpNode
+from .node.op_image import ImageOpNode
+from .node.op_raster import RasterOpNode
+from .units import Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -366,7 +359,7 @@ class Planner(Service):
         def plan_alias(command, channel, _, alias=None, remainder=None, **kwgs):
             """
             Plan alias allows the user to define a spoolable console command.
-            eg. plan-alias export egv_export myfile.egv
+            e.g. plan-alias export egv_export myfile.egv
 
             This creates a plan command called "export" that executes "egv_export myfile.egv".
             This can then be placed into the spooler during the planning stages.
@@ -457,18 +450,6 @@ class Planner(Service):
             return data_type, data
 
         @self.console_command(
-            "classify",
-            help=_("plan<?> classify"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_classify(command, channel, _, data_type=None, data=None, **kwgs):
-            self.elements.classify(
-                list(self.elements.elems(emphasized=True)), data.plan, data.plan.append
-            )
-            return data_type, data
-
-        @self.console_command(
             "copy-selected",
             help=_("plan<?> copy-selected"),
             input_type="plan",
@@ -476,9 +457,12 @@ class Planner(Service):
         )
         def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
             for c in self.elements.ops(emphasized=True):
-                if c.type in ("cutcode", "blob"):
-                    # CutNodes and BlobNodes are denuded into normal objects.
-                    c = c.object
+                if c.type == "cutcode":
+                    # CutNodes are denuded into normal objects.
+                    c = c.cutcode
+                elif c.type == "blob":
+                    # BlobNodes are denuded into normal objects.
+                    c = c.blob
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
@@ -510,9 +494,9 @@ class Planner(Service):
                     "op image",
                     "op engrave",
                     "op dots",
+                    "op hatch",
                     "cutcode",
-                    "cmdop",
-                    "consoleop",
+                    "op console",
                     "lasercode",
                     "blob",
                 ),
@@ -528,9 +512,12 @@ class Planner(Service):
                         continue
                 except TypeError:
                     pass
-                if c.type in ("cutcode", "blob"):
-                    # CutNodes and BlobNodes are denuded into normal objects.
-                    c = c.object
+                if c.type == "cutcode":
+                    # CutNodes are denuded into normal objects.
+                    c = c.cutcode
+                if c.type == "blob":
+                    # BlobNodes are denuded into normal objects.
+                    c = c.blob
                 copy_c = copy(c)
                 try:
                     copy_c.deep_copy_children(c)
@@ -795,7 +782,7 @@ class Planner(Service):
                 if isinstance(c, CutCode):
                     operations.add(c, type="cutcode")
                 if isinstance(
-                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode)
+                    c, (RasterOpNode, ImageOpNode, CutOpNode, EngraveOpNode, DotsOpNode, HatchOpNode)
                 ):
                     copy_c = copy(c)
                     operations.add(copy_c, type="op")
@@ -869,55 +856,6 @@ class Planner(Service):
     def plan(self, **kwargs):
         for item in self._plan:
             yield item
-
-
-def needs_actualization(image_element, step_level=None):
-    if not isinstance(image_element, SVGImage):
-        return False
-    if step_level is None:
-        if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
-        else:
-            step_level = 1.0
-    m = image_element.transform
-    # Transformation must be uniform to permit native rastering.
-    return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
-
-
-def make_actual(image_element, step_level=None):
-    """
-    Makes PIL image actual in that it manipulates the pixels to actually exist
-    rather than simply apply the transform on the image to give the resulting image.
-    Since our goal is to raster the images real pixels this is required.
-
-    SVG matrices are defined as follows.
-    [a c e]
-    [b d f]
-
-    Pil requires a, c, e, b, d, f accordingly.
-    """
-    if not isinstance(image_element, SVGImage):
-        return
-    from ..image.actualize import actualize
-
-    if step_level is None:
-        # If we are not told the step amount either draw it from the object or set it to default.
-        if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
-        else:
-            step_level = 1.0
-    image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_level=step_level
-    )
-    image_element.image_width, image_element.image_height = (
-        image_element.image.width,
-        image_element.image.height,
-    )
-    image_element.width, image_element.height = (
-        image_element.image_width,
-        image_element.image_height,
-    )
-    image_element.cache = None
 
 
 def origin():

@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_ID, SVG_ATTR_STROKE, Color, Path
+from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
@@ -14,8 +14,7 @@ class PathPropertyPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.element = node.object
-        self.element_node = node
+        self.node = node
 
         self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
@@ -56,8 +55,8 @@ class PathPropertyPanel(wx.Panel):
         self.__do_layout()
 
         try:
-            if node.object.id is not None:
-                self.text_name.SetValue(str(node.object.id))
+            if node.id is not None:
+                self.text_name.SetValue(str(node.id))
         except AttributeError:
             pass
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
@@ -81,17 +80,18 @@ class PathPropertyPanel(wx.Panel):
 
     @staticmethod
     def accepts(node):
-        if isinstance(node.object, Path):
+        if node.type == "elem text":
+            return False
+        elif node.type.startswith("elem"):
             return True
         return False
 
     def set_widgets(self, node):
         if node is not None:
-            self.element = node.object
-            self.element_node = node
+            self.node = node
         try:
-            if self.element.stroke is not None and self.element.stroke != "none":
-                color = wx.Colour(swizzlecolor(self.element.stroke))
+            if self.node.stroke is not None and self.node.stroke != "none":
+                color = wx.Colour(swizzlecolor(self.node.stroke))
                 self.text_name.SetBackgroundColour(color)
         except AttributeError:
             pass
@@ -169,9 +169,8 @@ class PathPropertyPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
         try:
-            self.element.id = self.text_name.GetValue()
-            self.element.values[SVG_ATTR_ID] = self.element.id
-            self.context.elements.signal("element_property_update", self.element)
+            self.node.id = self.text_name.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
         except AttributeError:
             pass
 
@@ -185,29 +184,25 @@ class PathPropertyPanel(wx.Panel):
             color = Color(color, 1.0)
         if "stroke" in button.name:
             if color is not None:
-                self.element.stroke = color
-                self.element.values[SVG_ATTR_STROKE] = color.hex
-                self.element.node.altered()
-                color = wx.Colour(swizzlecolor(self.element.stroke))
+                self.node.stroke = color
+                self.node.altered()
+                color = wx.Colour(swizzlecolor(self.node.stroke))
                 self.text_name.SetBackgroundColour(color)
             else:
-                self.element.stroke = Color("none")
-                self.element.values[SVG_ATTR_STROKE] = "none"
-                self.element.node.altered()
+                self.node.stroke = Color("none")
+                self.node.altered()
                 self.text_name.SetBackgroundColour(wx.WHITE)
         elif "fill" in button.name:
             if color is not None:
-                self.element.fill = color
-                self.element.values[SVG_ATTR_FILL] = color.hex
-                self.element.node.altered()
+                self.node.fill = color
+                self.node.altered()
             else:
-                self.element.fill = Color("none")
-                self.element.values[SVG_ATTR_FILL] = "none"
-                self.element.node.altered()
-        self.element.node.emphasized = True
+                self.node.fill = Color("none")
+                self.node.altered()
+        self.node.emphasized = True
         self.Refresh()
         self.context("declassify\nclassify\n")
-        self.context.elements.signal("element_property_update", self.element)
+        self.context.elements.signal("element_property_update", self.node)
 
 
 class PathProperty(MWindow):

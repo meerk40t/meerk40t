@@ -30,7 +30,7 @@ def group_overlapped_rasters(
     groups = [[x] for x in group]
     # print("initial", list(map(lambda g: list(map(lambda e: e[0].id,g)), groups)))
 
-    # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
+    # We are using old-fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
     for i in range(len(groups) - 2, -1, -1):
         g1 = groups[i]
         for j in range(len(groups) - 1, i, -1):

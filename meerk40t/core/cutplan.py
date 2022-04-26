@@ -15,15 +15,13 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
-from math import ceil
 from os import times
 from time import time
-from typing import Any, List, Optional
+from typing import Optional
 
-from PIL import Image
-
+from .node.elem_image import ImageNode
 from ..image.actualize import actualize
-from ..svgelements import Group, Matrix, Path, Polygon, SVGElement, SVGImage, SVGText
+from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 
@@ -117,17 +115,17 @@ class CutPlan:
         # ==========
         self.conditional_jobadd_strip_text()
         self.conditional_jobadd_scale()
-        self.conditional_jobadd_actualize_image()
         self.conditional_jobadd_make_raster()
+        self.conditional_jobadd_actualize_image()
 
     def blob(self):
         """
         blob converts User operations to CutCode objects.
 
         In order to have CutCode objects in the correct sequence for merging we need to:
-        a. Break operations into grouped sequences of LaserOperations and special operations.
+        1. Break operations into grouped sequences of LaserOperations and special operations.
            We can only merge within groups of Laser operations.
-        b. The sequence of CutObjects needs to reflect merge settings
+        2. The sequence of CutObjects needs to reflect merge settings
            Normal sequence is to iterate operations and then passes for each operation.
            With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
         """
@@ -164,11 +162,11 @@ class CutPlan:
                     if not hasattr(op, "type"):
                         blob_plan.append(op)
                         continue
-                    if not op.type.startswith("op"):
+                    if not op.type.startswith("op") or op.type == "op console":
                         blob_plan.append(op)
                         continue
                     if op.type == "op dots":
-                        if pass_idx == 1:
+                        if pass_idx == 0:
                             blob_plan.append(op)
                         continue
                     copies = op.implicit_passes
@@ -356,9 +354,12 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             try:
-                if op.type in ("op cut", "op engrave"):
+                if op.type in ("op cut", "op engrave", "op hatch"):
                     for i, e in enumerate(list(op.children)):
-                        if isinstance(e.object, SVGText):
+                        if e.type == "reference":
+                            if e.node.type == "elem text":
+                                e.remove_node()
+                        elif e.type == "elem text":
                             e.remove_node()
                     if len(op.children) == 0:
                         del self.plan[k]
@@ -367,8 +368,8 @@ class CutPlan:
 
     def strip_rasters(self):
         """
-        Strip rasters if there is no method of converting vectors to rasters rasters must
-        be stripped at the validate stage.
+        Strip rasters if there is no method of converting vectors to rasters. Rasters must
+        be stripped at the `validate` stage.
         @return:
         """
         stripped = False
@@ -376,7 +377,7 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                if len(op.children) == 1 and isinstance(op[0], SVGImage):
+                if len(op.children) == 1 and op.children[0].type == "elem image":
                     continue
                 self.plan[k] = None
                 stripped = True
@@ -386,45 +387,36 @@ class CutPlan:
             self.plan.extend(p)
 
     def _make_image_for_op(self, op):
-        subitems = list(op.flat(types=("elem", "ref elem")))
-        reverse = self.context.elements.classify_reverse
-        if reverse:
-            subitems = list(reversed(subitems))
         make_raster = self.context.lookup("render-op/make_raster")
-        objs = [s.object for s in subitems]
-        bounds = Group.union_bbox(objs, with_stroke=True)
-        if bounds is None:
-            return None
-        xmin, ymin, xmax, ymax = bounds
-        step = op.raster_step
-        if step == 0:
-            step = 1
-        image = make_raster(subitems, bounds, step=step)
-        image_element = SVGImage(image=image)
-        image_element.transform.post_scale(step, step)
-        image_element.transform.post_translate(xmin, ymin)
-        image_element.values["raster_step"] = step
-        return image_element
+        step_x = op.raster_step_x
+        step_y = op.raster_step_y
+        bounds = op.bounds
+        image = make_raster(list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y)
+        image = image.convert("L")
+        matrix = Matrix.scale(step_x, step_y)
+        matrix.post_translate(bounds[0], bounds[1])
+        image_node = ImageNode(image=image, matrix=matrix, step_x=step_x, step_y=step_y)
+        return image_node
 
     def make_image(self):
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
+                if len(op.children) == 1 and op.children.type == "elem image":
                     continue
-                image_element = self._make_image_for_op(op)
-                if image_element is None:
+                image_node = self._make_image_for_op(op)
+                if image_node is None:
                     continue
-                if image_element.image_width == 1 and image_element.image_height == 1:
+                if image_node.image.width == 1 and image_node.image.height == 1:
                     # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
                     #  around because the renderer is what sets the size of the text. If the size hasn't already
                     #  been set, the initial bounds are wrong.
-                    image_element = self._make_image_for_op(op)
+                    image_node = self._make_image_for_op(op)
                 op.children.clear()
-                op.add(image_element, type="ref elem")
+                op.add_node(image_node)
 
-    def actualize(self):
+    def actualize_job_command(self):
         """
         Actualize the image at validate stage on operations.
         @return:
@@ -433,15 +425,39 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type == "op raster":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, op.raster_step):
-                        make_actual(elem, op.raster_step)
+                dpi = float(op.settings['dpi'])
+                oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                step_x = float(oneinch_x / dpi)
+                step_y = float(oneinch_y / dpi)
+                op.settings['raster_step_x'] = step_x
+                op.settings['raster_step_y'] = step_y
+                for node in op.children:
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+                        node.image, node.matrix = actualize(
+                            node.image, node.matrix, step_x=step_x, step_y=step_y
+                        )
+                        node.cache = None
             if op.type == "op image":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, None):
-                        make_actual(elem, None)
+                for node in op.children:
+                    dpi = node.dpi
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    step_x = float(oneinch_x / dpi)
+                    step_y = float(oneinch_y / dpi)
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m1 = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+                        node.image, node.matrix = actualize(
+                            node.image, node.matrix, step_x=step_x, step_y=step_y
+                        )
+                        node.cache = None
 
     def scale_to_device_native(self):
         """
@@ -459,13 +475,12 @@ class CutPlan:
             if not hasattr(op, "type"):
                 continue
             if op.type.startswith("op"):
-                for node in op.children:
-                    e = node.object
-                    try:
-                        ne = e * matrix
-                        node.replace_object(ne)
-                    except AttributeError:
-                        pass
+                if hasattr(op, "scale_native"):
+                    op.scale_native(matrix)
+                for node in op.flat():
+                    if hasattr(node, "scale_native"):
+                        node.scale_native(matrix)
+
         self.conditional_jobadd_actualize_image()
 
     def clear(self):
@@ -484,12 +499,15 @@ class CutPlan:
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
-            if op.type in ("op cut", "op engrave"):
+            if op.type in ("op cut", "op engrave", "op hatch"):
                 for e in op.children:
-                    if not isinstance(e.object, SVGText):
-                        continue  # make raster not needed since its a single real raster.
-                    self.commands.append(self.strip_text)
-                    return True
+                    if e.type == "reference":
+                        if e.node.type == "elem text":
+                            self.commands.append(self.strip_text)
+                            return True
+                    elif e.type == "elem text":
+                        self.commands.append(self.strip_text)
+                        return True
         return False
 
     def conditional_jobadd_make_raster(self):
@@ -503,8 +521,8 @@ class CutPlan:
             if op.type == "op raster":
                 if len(op.children) == 0:
                     continue
-                if len(op.children) == 1 and isinstance(op.children[0], SVGImage):
-                    continue  # make raster not needed since its a single real raster.
+                if len(op.children) == 1 and op.children[0].type == "elem image":
+                    continue  # make raster not needed since it's a single real raster.
                 make_raster = self.context.lookup("render-op/make_raster")
 
                 if make_raster is None:
@@ -522,17 +540,33 @@ class CutPlan:
         for op in self.plan:
             if not hasattr(op, "type"):
                 continue
-            if op.type == "op raster":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, op.raster_step):
-                        self.commands.append(self.actualize)
-                        return
+            # if op.type == "op raster":
+            #     dpi = float(op.settings['dpi'])
+            #     oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+            #     oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+            #     step_x = float(oneinch_x / dpi)
+            #     step_y = float(oneinch_y / dpi)
+            #     op.settings['raster_step_x'] = step_x
+            #     op.settings['raster_step_y'] = step_y
+            #     for node in op.children:
+            #         m = node.object.transform
+            #         # Transformation must be uniform to permit native rastering.
+            #         if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+            #             self.commands.append(self.actualize_job_command)
+            #             return
             if op.type == "op image":
-                for elem in op.children:
-                    elem = elem.object
-                    if needs_actualization(elem, None):
-                        self.commands.append(self.actualize)
+                for node in op.children:
+                    dpi = node.dpi
+                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
+                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
+                    step_x = float(oneinch_x / dpi)
+                    step_y = float(oneinch_y / dpi)
+                    node.step_x = step_x
+                    node.step_y = step_y
+                    m1 = node.matrix
+                    # Transformation must be uniform to permit native rastering.
+                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+                        self.commands.append(self.actualize_job_command)
                         return
 
     def conditional_jobadd_scale(self):
@@ -546,9 +580,9 @@ class CutPlan:
 def is_inside(inner, outer):
     """
     Test that path1 is inside path2.
-    :param inner_path: inner path
-    :param outer_path: outer path
-    :return: whether path1 is wholly inside path2.
+    @param inner: inner path
+    @param outer: outer path
+    @return: whether path1 is wholly inside path2.
     """
     inner_path = inner
     outer_path = outer
@@ -613,88 +647,40 @@ def is_inside(inner, outer):
     return True
 
 
-def needs_actualization(image_element, step_level=None):
-    if not isinstance(image_element, SVGImage):
-        return False
-    if step_level is None:
-        if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
-        else:
-            step_level = 1.0
-    m = image_element.transform
-    # Transformation must be uniform to permit native rastering.
-    return m.a != step_level or m.b != 0.0 or m.c != 0.0 or m.d != step_level
-
-
-def make_actual(image_element, step_level=None):
-    """
-    Makes PIL image actual in that it manipulates the pixels to actually exist
-    rather than simply apply the transform on the image to give the resulting image.
-    Since our goal is to raster the images real pixels this is required.
-
-    SVG matrices are defined as follows.
-    [a c e]
-    [b d f]
-
-    Pil requires a, c, e, b, d, f accordingly.
-    """
-    if not isinstance(image_element, SVGImage):
-        return
-
-    if step_level is None:
-        # If we are not told the step amount either draw it from the object or set it to default.
-        if "raster_step" in image_element.values:
-            step_level = float(image_element.values["raster_step"])
-        else:
-            step_level = 1.0
-    image_element.image, image_element.transform = actualize(
-        image_element.image, image_element.transform, step_level=step_level
-    )
-    image_element.image_width, image_element.image_height = (
-        image_element.image.width,
-        image_element.image.height,
-    )
-    image_element.width, image_element.height = (
-        image_element.image_width,
-        image_element.image_height,
-    )
-    image_element.cache = None
-
-
 def reify_matrix(self):
     """Apply the matrix to the path and reset matrix."""
     self.element = abs(self.element)
     self.scene_bounds = None
 
 
-def bounding_box(elements):
-    if isinstance(elements, SVGElement):
-        elements = [elements]
-    elif isinstance(elements, list):
-        try:
-            elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
-        except AttributeError:
-            pass
-    boundary_points = []
-    for e in elements:
-        box = e.bbox(False)
-        if box is None:
-            continue
-        top_left = e.transform.point_in_matrix_space([box[0], box[1]])
-        top_right = e.transform.point_in_matrix_space([box[2], box[1]])
-        bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
-        bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
-        boundary_points.append(top_left)
-        boundary_points.append(top_right)
-        boundary_points.append(bottom_left)
-        boundary_points.append(bottom_right)
-    if len(boundary_points) == 0:
-        return None
-    xmin = min([e[0] for e in boundary_points])
-    ymin = min([e[1] for e in boundary_points])
-    xmax = max([e[0] for e in boundary_points])
-    ymax = max([e[1] for e in boundary_points])
-    return xmin, ymin, xmax, ymax
+# def bounding_box(elements):
+#     if isinstance(elements, SVGElement):
+#         elements = [elements]
+#     elif isinstance(elements, list):
+#         try:
+#             elements = [e.object for e in elements if isinstance(e.object, SVGElement)]
+#         except AttributeError:
+#             pass
+#     boundary_points = []
+#     for e in elements:
+#         box = e.bbox(False)
+#         if box is None:
+#             continue
+#         top_left = e.transform.point_in_matrix_space([box[0], box[1]])
+#         top_right = e.transform.point_in_matrix_space([box[2], box[1]])
+#         bottom_left = e.transform.point_in_matrix_space([box[0], box[3]])
+#         bottom_right = e.transform.point_in_matrix_space([box[2], box[3]])
+#         boundary_points.append(top_left)
+#         boundary_points.append(top_right)
+#         boundary_points.append(bottom_left)
+#         boundary_points.append(bottom_right)
+#     if len(boundary_points) == 0:
+#         return None
+#     xmin = min([e[0] for e in boundary_points])
+#     ymin = min([e[1] for e in boundary_points])
+#     xmax = max([e[0] for e in boundary_points])
+#     ymax = max([e[1] for e in boundary_points])
+#     return xmin, ymin, xmax, ymax
 
 
 def correct_empty(context: CutGroup):
@@ -788,7 +774,7 @@ def short_travel_cutcode(
 
     For paths starting at exactly the same point forward paths are preferred over reverse paths
 
-    We start at either 0,0 or the value given in context.start
+    We start at either 0,0 or the value given in `context.start`
 
     This is time-intense hyper-optimized code, so it contains several seemingly redundant
     checks.
@@ -841,8 +827,9 @@ def short_travel_cutcode(
                 distance > 50
                 and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
+                and last_segment.next is not None
             ):
-                # last_segment is a copy so we need to get original
+                # last_segment is a copy, so we need to get original
                 closest = last_segment.next.previous
                 backwards = last_segment.normal
                 distance = 0  # By definition since we are reversing and reburning

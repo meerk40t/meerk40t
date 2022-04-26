@@ -1,18 +1,27 @@
-from meerk40t.core.node.commandop import CommandOperation
-from meerk40t.core.node.consoleop import ConsoleOperation
+from meerk40t.core.node.branch_elems import BranchElementsNode
+from meerk40t.core.node.branch_ops import BranchOperationsNode
+from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.cutnode import CutNode
-from meerk40t.core.node.elemnode import ElemNode
+from meerk40t.core.node.elem_ellipse import EllipseNode
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.elem_line import LineNode
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.elem_point import PointNode
+from meerk40t.core.node.elem_polyline import PolylineNode
+from meerk40t.core.node.elem_rect import RectNode
+from meerk40t.core.node.elem_text import TextNode
+from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
-from meerk40t.core.node.laserop import (
-    CutOpNode,
-    DotsOpNode,
-    EngraveOpNode,
-    ImageOpNode,
-    RasterOpNode,
-)
 from meerk40t.core.node.node import Node
-from meerk40t.core.node.refnode import RefElemNode
+from meerk40t.core.node.op_console import ConsoleOperation
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_hatch import HatchOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.refnode import ReferenceNode
 
 
 class RootNode(Node):
@@ -22,12 +31,10 @@ class RootNode(Node):
     The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
     """
 
-    def __init__(self, context):
+    def __init__(self, context, **kwargs):
         _ = context._
-        super().__init__(None)
+        super(RootNode, self).__init__(type="reference", **kwargs)
         self._root = self
-        self.set_label("Project")
-        self.type = "root"
         self.context = context
         self.listeners = []
 
@@ -37,13 +44,24 @@ class RootNode(Node):
             "op raster": RasterOpNode,
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
-            "cmdop": CommandOperation,
-            "consoleop": ConsoleOperation,
+            "op hatch": HatchOpNode,
+            "op console": ConsoleOperation,
             "lasercode": LaserCodeNode,
             "group": GroupNode,
-            "elem": ElemNode,
-            "ref elem": RefElemNode,
+            "elem ellipse": EllipseNode,
+            "elem line": LineNode,
+            "elem rect": RectNode,
+            "elem path": PathNode,
+            "elem point": PointNode,
+            "elem polyline": PolylineNode,
+            "elem image": ImageNode,
+            "elem text": TextNode,
+            "reference": ReferenceNode,
             "cutcode": CutNode,
+            "branch ops": BranchOperationsNode,
+            "branch elems": BranchElementsNode,
+            "branch reg": BranchRegmarkNode,
+            "file": FileNode,
         }
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
@@ -51,6 +69,9 @@ class RootNode(Node):
 
     def __repr__(self):
         return "RootNode(%s)" % (str(self.context))
+
+    def is_movable(self):
+        return False
 
     def listen(self, listener):
         self.listeners.append(listener)
@@ -138,7 +159,7 @@ class RootNode(Node):
 
     def notify_altered(self, node=None, **kwargs):
         """
-        Notifies any listeners that a value in the tree has had it's underlying data fundamentally changed and while
+        Notifies any listeners that a value in the tree has had its underlying data fundamentally changed and while
         this may not be reflected by the properties any assumptions about the content of this node are no longer
         valid.
 

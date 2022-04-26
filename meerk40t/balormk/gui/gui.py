@@ -4,23 +4,22 @@ def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:
             import numpy
-            import scipy
         except ImportError:
             return True
         return not service.has_feature("wx")
     if lifecycle == "added":
         import wx
-        from .balorcontroller import BalorController
-        from .balorconfig import BalorConfiguration
-        from .baloroperationproperties import BalorOperationPanel
+
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
-            icons8_emergency_stop_button_50,
             icons8_light_off_50,
             icons8_light_on_50,
-            icons8_pause_50,
         )
+
+        from .balorconfig import BalorConfiguration
+        from .balorcontroller import BalorController
+        from .baloroperationproperties import BalorOperationPanel
 
         service.register("window/Controller", BalorController)
         service.register("window/Configuration", BalorConfiguration)
@@ -70,6 +69,7 @@ def plugin(service, lifecycle):
         service.register("property/EngraveOpNode/Balor", BalorOperationPanel)
         service.register("property/ImageOpNode/Balor", BalorOperationPanel)
         service.register("property/DotsOpNode/Balor", BalorOperationPanel)
+        service.register("property/HatchOpNode/Balor", BalorOperationPanel)
         service.register(
             "button/control/Light_On",
             {

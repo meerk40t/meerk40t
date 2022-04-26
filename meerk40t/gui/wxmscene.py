@@ -1,10 +1,13 @@
 import wx
 from wx import aui
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import icon_meerk40t
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
+from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -22,10 +25,10 @@ from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.wxutils import get_key_name
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Angle
+from meerk40t.kernel import CommandSyntaxError, signal_listener
+from meerk40t.svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Angle, Color
 
 _ = wx.GetTranslation
 
@@ -70,6 +73,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene = self.scene.scene
         context = self.context
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
@@ -78,6 +82,9 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
+        # Let the grid resize itself
+        self.widget_scene.auto_tick = True
+
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
@@ -104,6 +111,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/relocate", RelocateTool)
         context.register("tool/text", TextTool)
         context.register("tool/vector", VectorTool)
+        context.register("tool/measure", MeasureTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
@@ -147,6 +155,45 @@ class MeerK40tScenePanel(wx.Panel):
         def scene(command, _, channel, **kwargs):
             channel("scene: %s" % str(self.widget_scene))
             return "scene", self.widget_scene
+
+        @self.context.console_argument(
+            "aspect", type=str, help="aspect of the scene to color"
+        )
+        @self.context.console_argument(
+            "color", type=Color, help="color to apply to scene"
+        )
+        @self.context.console_command("color", input_type="scene")
+        def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            if aspect is None:
+                for key in dir(self.context):
+                    if key.startswith("color_"):
+                        channel(key[6:])
+            else:
+                color_key = f"color_{aspect}"
+                if aspect == "unset":  # reset all
+                    self.widget_scene.colors.set_default_colors()
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if color == "unset":  # reset one
+                    setattr(self.context, color_key, "default")
+                    self.context.signal("theme", True)
+                    return "scene", data
+
+                if color is None:
+                    channel(
+                        _(
+                            "No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"
+                        )
+                    )
+                else:
+                    if hasattr(self.context, color_key):
+                        setattr(self.context, color_key, color.hexa)
+                        channel(_("Scene aspect color is set."))
+                        self.context.signal("theme", False)
+                    else:
+                        channel(_("%s is not a known scene color command") % aspect)
+
+            return "scene", data
 
         @self.context.console_argument(
             "zoom_x", type=float, help="zoom amount from current"
@@ -229,39 +276,37 @@ class MeerK40tScenePanel(wx.Panel):
             channel(str(data.matrix))
             return "scene", data
 
+        @context.console_command("reference")
+        def make_reference(**kwargs):
+            # Take first emphasized element
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                self.widget_scene.reference_object = e
+                break
+
+    @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         """
         Called by 'refresh_scene' change. To refresh tree.
 
-        :param origin: the path of the originating signal
-        :param args:
-        :return:
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
         """
         if scene_name == "Scene":
             self.request_refresh()
 
+    @signal_listener("magnet-attraction")
+    def on_magnet(self, origin, strength, *args):
+        strength = int(strength)
+        if strength < 0:
+            strength = 0
+        self.scene.scene.magnet_attraction = strength
+
     def pane_show(self, *args):
-        context = self.context
-        context.listen("driver;mode", self.on_driver_mode)
-        context.listen("refresh_scene", self.on_refresh_scene)
-        context.listen("background", self.on_background_signal)
-        context.listen("bed_size", self.bed_changed)
-        context.listen("emphasized", self.on_emphasized_elements_changed)
-        context.listen("modified", self.on_element_modified)
-        context.listen("altered", self.on_element_modified)
-        context.listen("units", self.space_changed)
-        context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def pane_hide(self, *args):
-        context = self.context
-        context.unlisten("driver;mode", self.on_driver_mode)
-        context.unlisten("refresh_scene", self.on_refresh_scene)
-        context.unlisten("background", self.on_background_signal)
-        context.unlisten("bed_size", self.bed_changed)
-        context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        context.unlisten("modified", self.on_element_modified)
-        context.unlisten("altered", self.on_element_modified)
-        context.unlisten("units", self.space_changed)
+        pass
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
@@ -275,6 +320,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("guide")
         self.request_refresh()
 
+    @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
         if state == 0:
             self.widget_scene.background_brush = wx.Brush("Grey")
@@ -282,30 +328,110 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.background_brush = wx.Brush("Red")
         self.widget_scene.request_refresh_for_animation()
 
+    @signal_listener("background")
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)
         self.scene.signal("background", background)
         self.request_refresh()
 
+    @signal_listener("units")
     def space_changed(self, origin, *args):
         self.scene.signal("grid")
         self.scene.signal("guide")
         self.request_refresh(origin)
 
+    @signal_listener("bed_size")
     def bed_changed(self, origin, *args):
         self.scene.signal("grid")
         # self.scene.signal('guide')
         self.request_refresh(origin)
 
+    @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
+        self.scene.signal("emphasized")
         self.laserpath_widget.clear_laserpath()
         self.request_refresh(origin)
 
     def request_refresh(self, *args):
         self.widget_scene.request_refresh(*args)
 
+    @signal_listener("altered")
+    @signal_listener("modified")
     def on_element_modified(self, *args):
+        self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
+
+    @signal_listener("element_added")
+    @signal_listener("tree_changed")
+    def on_elements_added(self, *args):
+        self.scene.signal("element_added")
+        # There may be a smarter way to eliminate unnecessary rebuilds, but it's doing the job...
+        self.context.signal("rebuild_tree")
+
+    @signal_listener("theme")
+    def on_theme_change(self, origin, theme=None):
+        self.scene.signal("theme", theme)
+        self.request_refresh(origin)
+
+    @signal_listener("selstroke")
+    def on_selstroke(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            obj = e
+            try:
+                if color is None:
+                    e.stroke = Color("none")
+                else:
+                    e.stroke = color
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        # Reclassify selection...
+        self.context("declassify\nclassify\n")
+        self.context.signal("rebuild_tree")
+        self.request_refresh()
+
+    @signal_listener("selfill")
+    def on_selfill(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            try:
+                if color is None:
+                    e.fill = Color("none")
+                else:
+                    e.fill = color
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        # Reclassify selection...
+        self.context("declassify\nclassify\n")
+        self.context.signal("rebuild_tree")
+        self.request_refresh()
+
+    @signal_listener("selstrokewidth")
+    def on_selstrokewidth(self, origin, stroke_width, *args):
+        # Stroke_width is a text
+        # print("Signal with %s" % stroke_width)
+        sw = float(Length(stroke_width))
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            try:
+                e.stroke_width = sw
+                e.altered()
+            except AttributeError:
+                # Ignore and carry on...
+                continue
+        self.request_refresh()
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

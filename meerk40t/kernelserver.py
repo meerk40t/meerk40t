@@ -1,6 +1,6 @@
 import socket
 
-from meerk40t.kernel import STATE_TERMINATE, Module
+from meerk40t.kernel import STATE_END, STATE_TERMINATE, Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -76,9 +76,9 @@ class UDPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module.
-        :param port: UDP listen port.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module.
+        @param port: UDP listen port.
         """
         Module.__init__(self, context, name)
         self.port = port
@@ -91,17 +91,18 @@ class UDPServer(Module):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
         self.socket.bind(("", self.port))
-        self.context.threaded(self.run_udp_listener, thread_name=name)
+        self.context.threaded(self.run_udp_listener, thread_name=name, daemon=True)
 
     def module_close(self, *args, **kwargs):
         _ = self.context._
         self.context.channel("%s/send" % self.name).unwatch(
             self.send
-        )  # We stop watching the send channel
+        )  # We stop watching the `send channel`
         self.events_channel(_("Shutting down server."))
         if self.socket is not None:
             self.socket.close()
             self.socket = None
+        self.state = STATE_TERMINATE
 
     def send(self, message):
         _ = self.context._
@@ -118,12 +119,10 @@ class UDPServer(Module):
         _ = self.context._
         try:
             self.events_channel(_("UDP Socket(%d) Listening.") % self.port)
-            while True:
+            while self.state != STATE_END and self.state != STATE_TERMINATE:
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except (socket.timeout, AttributeError):
-                    if self.state == STATE_TERMINATE:
-                        return
                     continue
                 if address is not None:
                     self.udp_address = address
@@ -141,9 +140,9 @@ class TCPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module
-        :param port: Port being used for the server.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module
+        @param port: Port being used for the server.
         """
         Module.__init__(self, context, name)
         self.port = port

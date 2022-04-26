@@ -1,8 +1,8 @@
 import wx
 
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 

@@ -25,6 +25,7 @@ class WizardPanel(wx.Panel):
         self.choices = choices
         self.choice_index = 0
         self.set_panel()
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -90,7 +91,7 @@ class WizardPanel(wx.Panel):
                         try:
                             setattr(obj, param, data_type(v))
                         except ValueError:
-                            # If cannot cast to data_type, pass
+                            # cannot cast to data_type, pass
                             pass
 
                     return text
@@ -122,7 +123,7 @@ class WizardPanel(wx.Panel):
                             try:
                                 setattr(obj, param, data_type(data))
                             except ValueError:
-                                # If cannot cast to data_type, pass
+                                # cannot cast to data_type, pass
                                 pass
 
                     return click

@@ -4,20 +4,23 @@ from meerk40t.svgelements import Color
 
 INT_PARAMETERS = (
     "power",
-    "raster_step",
     "raster_direction",
-    "overscan",
     "acceleration",
     "dot_length",
     "passes",
     "jog_distance",
+    "hatch_type",
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
+    "raster_preference_left",
     "raster_preference_bottom",
 )
 
 FLOAT_PARAMETERS = (
+    "dpi",
+    "raster_step_x",
+    "raster_step_y",
     "speed",
     "dratio",
     "dwell_time",
@@ -40,6 +43,15 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
+STRING_PARAMETERS = (
+    "overscan",
+)
+
+COLOR_PARAMETERS = (
+    "color",
+    "line_color"
+)
+
 
 class Parameters:
     def __init__(self, settings: Dict = None, **kwargs):
@@ -59,8 +71,8 @@ class Parameters:
             derived_dict[attr] = value
         return derived_dict
 
-    @staticmethod
-    def validate(settings: Dict):
+    def validate(self):
+        settings = self.settings
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
@@ -69,8 +81,11 @@ class Parameters:
                 settings[v] = int(float(settings[v]))
         for v in BOOL_PARAMETERS:
             if v in settings:
-                settings[v] = settings[v].lower() == "true"
-        for v in ("color", "line_color"):
+                settings[v] = str(settings[v]).lower() == "true"
+        for v in STRING_PARAMETERS:
+            if v in settings:
+                settings[v] = int(float(settings[v]))
+        for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
 
@@ -86,6 +101,8 @@ class Parameters:
                 return Color("red")
             elif type == "op engrave":
                 return Color("blue")
+            elif type == "op hatch":
+                return Color("green")
             elif type == "op raster":
                 return Color("black")
             elif type == "op image":
@@ -121,20 +138,40 @@ class Parameters:
         self.settings["output"] = value
 
     @property
-    def raster_step(self):
+    def raster_step_x(self):
         try:
             type = self.type
         except AttributeError:
             type = None
-        return self.settings.get("raster_step", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_x", 2 if type == "op raster" else 0)
 
-    @raster_step.setter
-    def raster_step(self, value):
-        self.settings["raster_step"] = value
+    @raster_step_x.setter
+    def raster_step_x(self, value):
+        self.settings["raster_step_x"] = value
+
+    @property
+    def raster_step_y(self):
+        try:
+            type = self.type
+        except AttributeError:
+            type = None
+        return self.settings.get("raster_step_y", 2 if type == "op raster" else 0)
+
+    @raster_step_y.setter
+    def raster_step_y(self, value):
+        self.settings["raster_step_y"] = value
+
+    @property
+    def dpi(self):
+        return self.settings.get("dpi", 500)
+
+    @dpi.setter
+    def dpi(self, value):
+        self.settings["dpi"] = value
 
     @property
     def overscan(self):
-        return self.settings.get("overscan", 20)
+        return self.settings.get("overscan", "0.5mm")
 
     @overscan.setter
     def overscan(self, value):
@@ -151,6 +188,8 @@ class Parameters:
             if type == "op cut":
                 return 10.0
             elif type == "op engrave":
+                return 35.0
+            elif type == "op hatch":
                 return 35.0
             elif type == "op raster":
                 return 150.0
@@ -173,6 +212,22 @@ class Parameters:
     @power.setter
     def power(self, value):
         self.settings["power"] = value
+
+    @property
+    def frequency(self):
+        return self.settings.get("frequency", 20.0)
+
+    @frequency.setter
+    def frequency(self, value):
+        self.settings["frequency"] = value
+
+    @property
+    def rapid_speed(self):
+        return self.settings.get("rapid_speed", 100.0)
+
+    @rapid_speed.setter
+    def rapid_speed(self, value):
+        self.settings["rapid_speed"] = value
 
     @property
     def line_color(self):
@@ -265,6 +320,38 @@ class Parameters:
     @raster_swing.setter
     def raster_swing(self, value):
         self.settings["raster_swing"] = value
+
+    @property
+    def hatch_type(self):
+        return self.settings.get("hatch_type", 0)
+
+    @hatch_type.setter
+    def hatch_type(self, value):
+        self.settings["hatch_type"] = value
+
+    @property
+    def hatch_angle(self):
+        return self.settings.get("hatch_angle", "0deg")
+
+    @hatch_angle.setter
+    def hatch_angle(self, value):
+        self.settings["hatch_angle"] = value
+
+    @property
+    def hatch_angle_inc(self):
+        return self.settings.get("hatch_angle_inc", "0deg")
+
+    @hatch_angle_inc.setter
+    def hatch_angle_inc(self, value):
+        self.settings["hatch_angle_inc"] = value
+
+    @property
+    def hatch_distance(self):
+        return self.settings.get("hatch_distance", "1mm")
+
+    @hatch_distance.setter
+    def hatch_distance(self, value):
+        self.settings["hatch_distance"] = value
 
     @property
     def acceleration(self):
@@ -367,18 +454,6 @@ class Parameters:
         self.settings["dwell_time"] = value
 
     @property
-    def horizontal_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 0 or self.raster_direction == 1
-        )
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 2 or self.raster_direction == 3
-        )
-
-    @property
     def raster_alt(self):
         return self.settings.get("raster_alt", False)
 
@@ -393,3 +468,19 @@ class Parameters:
     @force_twitchless.setter
     def force_twitchless(self, value):
         self.settings["force_twitchless"] = value
+
+    @property
+    def constant_move_x(self):
+        return self.settings.get("constant_move_x", False)
+
+    @constant_move_x.setter
+    def constant_move_x(self, value):
+        self.settings["constant_move_x"] = value
+
+    @property
+    def constant_move_y(self):
+        return self.settings.get("constant_move_y", False)
+
+    @constant_move_y.setter
+    def constant_move_y(self, value):
+        self.settings["constant_move_y"] = value

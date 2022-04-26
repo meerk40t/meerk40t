@@ -20,24 +20,6 @@ class RectSelectWidget(Widget):
     SELECTION_TOUCH = 1
     SELECTION_CROSS = 2
     SELECTION_ENCLOSE = 3
-    # Color for selection rectangle (hit, cross, enclose)
-    selection_style = [
-        (
-            wx.RED,
-            wx.PENSTYLE_DOT_DASH,
-            "Select all elements the selection rectangle touches.",
-        ),
-        (
-            wx.GREEN,
-            wx.PENSTYLE_DOT,
-            "Select all elements the selection rectangle crosses.",
-        ),
-        (
-            wx.BLUE,
-            wx.PENSTYLE_SHORT_DASH,
-            "Select all elements the selection rectangle encloses.",
-        ),
-    ]
     selection_text_shift = " Previously selected remain selected!"
     selection_text_control = " Invert selection state of elements!"
 
@@ -59,6 +41,24 @@ class RectSelectWidget(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
+        # Color for selection rectangle (hit, cross, enclose)
+        self.selection_style = [
+            [
+                self.scene.colors.color_selection1,
+                wx.PENSTYLE_DOT_DASH,
+                "Select all elements the selection rectangle touches.",
+            ],
+            [
+                self.scene.colors.color_selection2,
+                wx.PENSTYLE_DOT,
+                "Select all elements the selection rectangle crosses.",
+            ],
+            [
+                self.scene.colors.color_selection3,
+                wx.PENSTYLE_SHORT_DASH,
+                "Select all elements the selection rectangle encloses.",
+            ],
+        ]
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.selection_style[0][0])
         self.selection_pen.SetWidth(25)
@@ -112,7 +112,14 @@ class RectSelectWidget(Widget):
         elif event_type == "kb_shift_press":
             if not self.key_shift_pressed:
                 self.key_shift_pressed = True
+                ignore = False
                 if self.start_location is None:
+                    ignore = True
+                if self.key_control_pressed or self.key_alt_pressed:
+                    # Dont care about multi-keypresses
+                    ignore = True
+
+                if ignore:
                     return RESPONSE_CHAIN
                 else:
                     self.scene.request_refresh()
@@ -132,7 +139,14 @@ class RectSelectWidget(Widget):
         elif event_type == "kb_ctrl_press":
             if not self.key_control_pressed:
                 self.key_control_pressed = True
+                ignore = False
                 if self.start_location is None:
+                    ignore = True
+                if self.key_shift_pressed or self.key_alt_pressed:
+                    # Dont care about multi-keypresses
+                    ignore = True
+
+                if ignore:
                     return RESPONSE_CHAIN
                 else:
                     self.scene.request_refresh()
@@ -189,9 +203,9 @@ class RectSelectWidget(Widget):
             #    "Selection_box: (%f,%f)-(%f,%f) - Method=%f"
             #    % (sx, sy, ex, ey, self.selection_method[sector])
             # )
-            for obj in elements.elems():
+            for node in elements.elems():
                 try:
-                    q = obj.bbox(True)
+                    q = node.bounds
                 except AttributeError:
                     continue  # This element has no bounds.
                 if q is None:
@@ -228,17 +242,17 @@ class RectSelectWidget(Widget):
                 if self.key_shift_pressed:
                     # Add Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = True
+                        node.emphasized = True
                 elif self.key_control_pressed:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = not obj.node.emphasized
+                        node.emphasized = not node.emphasized
                 else:
                     # Replace Selection
                     if cover >= self.selection_method[sector]:
-                        obj.node.emphasized = True
+                        node.emphasized = True
                     else:
-                        obj.node.emphasized = False
+                        node.emphasized = False
 
             self.scene.request_refresh()
             self.start_location = None
@@ -290,7 +304,7 @@ class RectSelectWidget(Widget):
         delta_X = 15.0 / matrix.value_scale_x()
         delta_Y = 15.0 / matrix.value_scale_y()
         if abs(x1 - x0) > delta_X and abs(y1 - y0) > delta_Y:  # Don't draw if too tiny
-            # Draw tiny + in Corner in corner of pointer
+            # Draw tiny '+' in corner of pointer
             x_signum = +1 * delta_X if x0 < x1 else -1 * delta_X
             y_signum = +1 * delta_Y if y0 < y1 else -1 * delta_X
             ax1 = x1 - x_signum
@@ -326,6 +340,9 @@ class RectSelectWidget(Widget):
         Draw the selection rectangle
         """
         if self.start_location is not None and self.end_location is not None:
+            self.selection_style[0][0] = self.scene.colors.color_selection1
+            self.selection_style[1][0] = self.scene.colors.color_selection2
+            self.selection_style[2][0] = self.scene.colors.color_selection3
             x0 = self.start_location[0]
             y0 = self.start_location[1]
             x1 = self.end_location[0]

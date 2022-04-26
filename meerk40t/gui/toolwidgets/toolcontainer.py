@@ -15,7 +15,9 @@ class ToolContainer(Widget):
             self.set_tool(tool)
 
     def set_tool(self, tool):
+        self.scene.tool_active = False
         self.remove_all_widgets()
+        self.scene.cursor("arrow")
         if tool is None:
             return
         new_tool = self.scene.context.lookup("tool", tool)
