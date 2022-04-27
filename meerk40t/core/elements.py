@@ -5480,7 +5480,7 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 # Are the colors identical?
-                if node.stroke is not None and (op.color == abs(node.stroke) or op.color == node.stroke):
+                if node.stroke is not None and abs(op.color) == abs(node.stroke) :
                     same_color = True
                 else:
                     same_color = False
