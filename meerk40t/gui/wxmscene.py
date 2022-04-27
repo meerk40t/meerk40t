@@ -380,7 +380,7 @@ class MeerK40tScenePanel(wx.Panel):
         if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
-            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+            color = Color(rgb[0], rgb[1], rgb[2])
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e
             try:
@@ -403,7 +403,7 @@ class MeerK40tScenePanel(wx.Panel):
         if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
-            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+            color = Color(rgb[0], rgb[1], rgb[2])
 
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
