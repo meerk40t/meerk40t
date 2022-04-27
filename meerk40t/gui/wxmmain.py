@@ -2261,9 +2261,15 @@ class MeerK40t(MWindow):
 
     @signal_listener("emphasized")
     def on_update_selwidget(self, origin, *args):
+        # First enable/disable the controls in the statusbar
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
+        # Then sync the selected status to the emphasized status
+        if valu:
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                if not e.selected:
+                    e.selected = True
 
     def __set_titlebar(self):
         device_name = ""
