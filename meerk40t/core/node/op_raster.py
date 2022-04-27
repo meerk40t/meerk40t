@@ -174,6 +174,12 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+        dpi = self.dpi
+        oneinch_x = float(Length("1in"))
+        oneinch_y = float(Length("1in"))
+        transformed_step = matrix.transform_vector([oneinch_x, oneinch_y])
+        self.raster_step_x = transformed_step[0] / dpi
+        self.raster_step_y = transformed_step[1] / dpi
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

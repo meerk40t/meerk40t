@@ -50,6 +50,7 @@ class ConsoleOperation(Node):
         default_map = super(ConsoleOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Console"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["command"] = self.command
         default_map.update(self.settings)
         return default_map
 
