@@ -307,6 +307,7 @@ class SimulationPanel(wx.Panel, Job):
         """
         Called by 'refresh_scene' change. To refresh tree.
         @param origin: the path of the originating signal
+        @param scene_name: Scene to refresh on if matching
         @param args:
         @return:
         """

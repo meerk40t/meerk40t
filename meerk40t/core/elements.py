@@ -2,7 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
-from math import cos, gcd, pi, sin, tau
+from math import cos, gcd, pi, sin, tau, sqrt
 from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
@@ -166,6 +166,16 @@ class Elemental(Service):
 
     def length_y(self, v):
         return float(Length(v, relative_length=self.device.height))
+
+    def area(self, v):
+        llx = Length(v, relative_length=self.device.width)
+        lx = float(llx)
+        if "%" in v:
+            lly = Length(v, relative_length=self.device.height)
+        else:
+            lly = Length("1{unit}".format(unit=llx._preferred_units))
+        ly = float(lly)
+        return lx * ly
 
     def _init_commands(self, kernel):
 
@@ -1689,8 +1699,8 @@ class Elemental(Service):
                 x = "100%"
             if y is None:
                 y = "100%"
-            x = Length(x, relative_length=Length(amount=width))
-            y = Length(y, relative_length=Length(amount=height))
+            x = float(Length(x, relative_length=Length(amount=width).length_mm))
+            y = float(Length(y, relative_length=Length(amount=height).length_mm))
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -1708,8 +1718,8 @@ class Elemental(Service):
                     if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
-                            e *= Matrix.translate(x_pos, y_pos)
-                        self.add_elems(add_elem)
+                            e.matrix *= Matrix.translate(x_pos, y_pos)
+                            self.elem_branch.add_node(e)
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
@@ -2847,6 +2857,112 @@ class Elemental(Service):
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
+
+        @self.console_option(
+            "new_area", "n", type=self.area, help=_("provide a new area to cover")
+        )
+        @self.console_command(
+            "area",
+            help=_("provides information about/changes the area of a selected element"),
+            input_type=(None, "elements"),
+            output_type=("elements"),
+        )
+        def element_area(command,
+            channel,
+            _,
+            new_area=None,
+            data=None,
+            **kwargs,
+        ):
+            if new_area is None:
+                display_only = True
+            else:
+                if new_area == 0:
+                    channel(_("You shouldn't collapse a shape to a zero-sized thing"))
+                    return
+                display_only = False
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            total_area = 0
+            if display_only:
+                channel("----------")
+                channel(_("Area values:"))
+            units = ("mm", "cm", "in")
+            square_unit = [0] * len(units)
+            for idx, u in enumerate(units):
+                value = float(Length("1{unit}".format(unit=u)))
+                square_unit[idx] = value * value
+
+            i = 0
+            for elem in data:
+                this_area = 0
+                try:
+                    path = elem.as_path()
+                except AttributeError:
+                    path = None
+
+                subject_polygons = []
+                from numpy import linspace
+                if not path is None:
+                    for subpath in path.as_subpaths():
+                        subj = Path(subpath).npoint(linspace(0, 1, 1000))
+                        subj.reshape((2, 1000))
+                        s = list(map(Point, subj))
+                        subject_polygons.append(s)
+                else:
+                    try:
+                        bb = elem.bounds
+                    except:
+                        # Even bounds failed, next element please
+                        continue
+                    s = [Point(bb[0], bb[1]), Point(bb[2], bb[1]), Point(bb[2], bb[3]), Point(bb[1], bb[3])]
+                    subject_polygons.append(s)
+
+                if len(subject_polygons)>0:
+                    idx = len(subject_polygons[0]) - 1
+                    if subject_polygons[0][0].x != subject_polygons[0][idx].x or subject_polygons[0][0].y != subject_polygons[0][idx].y:
+                        # not identical, so close the loop
+                        subject_polygons.append(Point(subject_polygons[0][0].x, subject_polygons[0][0].y))
+
+                if len(subject_polygons)>0:
+                    idx = -1
+                    area_x_y = 0
+                    area_y_x = 0
+                    for pt in subject_polygons[0]:
+                        idx += 1
+                        if idx>0:
+                            area_x_y += last_x * pt.y
+                            area_y_x += last_y * pt.x
+                        last_x = pt.x
+                        last_y = pt.y
+                    this_area = 0.5 * abs(area_x_y - area_y_x)
+
+                if display_only:
+                    name = str(elem)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel( "%d: %s" % (i, name))
+                    for idx, u in enumerate(units):
+                        this_area_local = this_area / square_unit[idx]
+                        channel (_(" Area= {area:.3f} {unit}²").format(area=this_area_local, unit=u))
+                i += 1
+                total_area += this_area
+            if display_only:
+                channel("----------")
+            else:
+                if total_area == 0:
+                    channel(_("You can't reshape a zero-sized shape"))
+                    return
+
+                ratio = sqrt(new_area / total_area)
+                self("scale %f\n" % ratio)
+
+            return "elements", data
+            # Do we have a new value to set? If yes scale by sqrt(of the fraction)
+
 
         @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
         @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
@@ -5480,10 +5596,6 @@ class Elemental(Service):
         """
         if elements is None:
             return
-
-        # Use of Classify in reverse is new functionality in 0.7.1
-        # So using it is incompatible, but not using it would be inconsistent
-        # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
         reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
@@ -5500,7 +5612,7 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if node.stroke is not None and op.color == abs(node.stroke):
+                    if node.stroke is not None and (op.color == node.stroke or op.default):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -5512,14 +5624,12 @@ class Elemental(Service):
                     elif node.fill is not None and node.fill.argb is not None:
                         op.add_reference(node)
                         was_classified = True
-                elif (
-                    op.type in ("op engrave", "op cut", "op hatch")
-                    and node.stroke is not None
-                    and op.color == abs(node.stroke)
-                    and not op.default
-                ):
-                    op.add_reference(node)
-                    was_classified = True
+                elif op.type in ("op engrave", "op cut", "op hatch"):
+                    if (
+                        node.stroke is not None and op.color == node.stroke
+                    ) or op.default:
+                        op.add_reference(node)
+                        was_classified = True
                 elif op.type == "op image" and node.type == "elem image":
                     op.add_reference(node)
                     was_classified = True

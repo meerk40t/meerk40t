@@ -55,7 +55,7 @@ def register_panel_scene(window, context):
     # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_add(pane)
-    context.register("pane/console", pane)
+    context.register("pane/scene", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
@@ -289,6 +289,7 @@ class MeerK40tScenePanel(wx.Panel):
         Called by 'refresh_scene' change. To refresh tree.
 
         @param origin: the path of the originating signal
+        @param scene_name: Scene to refresh on if matching
         @param args:
         @return:
         """
@@ -379,7 +380,7 @@ class MeerK40tScenePanel(wx.Panel):
         if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
-            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+            color = Color(rgb[0], rgb[1], rgb[2])
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e
             try:
@@ -402,7 +403,7 @@ class MeerK40tScenePanel(wx.Panel):
         if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
             color = None
         else:
-            color = Color(rgb[0], rgb[1], rgb[2], 1.0)
+            color = Color(rgb[0], rgb[1], rgb[2])
 
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:

@@ -189,7 +189,7 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         pass
                     try:
-                        settings.append(_("overscan=%d") % e.overscan)
+                        settings.append(_("overscan=%s") % str(e.overscan))
                     except AttributeError:
                         pass
                     self.list_job_spool.SetItem(m, 5, " ".join(settings))
