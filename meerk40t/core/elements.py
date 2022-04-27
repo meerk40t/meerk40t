@@ -1689,8 +1689,8 @@ class Elemental(Service):
                 x = "100%"
             if y is None:
                 y = "100%"
-            x = Length(x, relative_length=Length(amount=width))
-            y = Length(y, relative_length=Length(amount=height))
+            x = float(Length(x, relative_length=Length(amount=width).length_mm))
+            y = float(Length(y, relative_length=Length(amount=height).length_mm))
             if origin is None:
                 origin = (1, 1)
             cx, cy = origin
@@ -1708,8 +1708,8 @@ class Elemental(Service):
                     if j != (cy - 1) or k != (cx - 1):
                         add_elem = list(map(copy, data))
                         for e in add_elem:
-                            e *= Matrix.translate(x_pos, y_pos)
-                        self.add_elems(add_elem)
+                            e.matrix *= Matrix.translate(x_pos, y_pos)
+                            self.elem_branch.add_node(e)
                         data_out.extend(add_elem)
                     x_pos += x
                 y_pos += y
