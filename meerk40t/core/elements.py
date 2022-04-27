@@ -5448,10 +5448,6 @@ class Elemental(Service):
         """
         if elements is None:
             return
-
-        # Use of Classify in reverse is new functionality in 0.7.1
-        # So using it is incompatible, but not using it would be inconsistent
-        # Perhaps classify_reverse should be cleared and disabled if classify_legacy is set.
         reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
@@ -5468,7 +5464,7 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if node.stroke is not None and op.color == abs(node.stroke):
+                    if node.stroke is not None and (op.color == node.stroke or op.default):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -5480,14 +5476,12 @@ class Elemental(Service):
                     elif node.fill is not None and node.fill.argb is not None:
                         op.add_reference(node)
                         was_classified = True
-                elif (
-                    op.type in ("op engrave", "op cut", "op hatch")
-                    and node.stroke is not None
-                    and op.color == abs(node.stroke)
-                    and not op.default
-                ):
-                    op.add_reference(node)
-                    was_classified = True
+                elif op.type in ("op engrave", "op cut", "op hatch"):
+                    if (
+                        node.stroke is not None and op.color == node.stroke
+                    ) or op.default:
+                        op.add_reference(node)
+                        was_classified = True
                 elif op.type == "op image" and node.type == "elem image":
                     op.add_reference(node)
                     was_classified = True
