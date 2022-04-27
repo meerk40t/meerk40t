@@ -55,7 +55,7 @@ def register_panel_scene(window, context):
     # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
     window.on_pane_add(pane)
-    context.register("pane/console", pane)
+    context.register("pane/scene", pane)
 
 
 class MeerK40tScenePanel(wx.Panel):
