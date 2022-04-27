@@ -3083,12 +3083,18 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_classify(command, channel, _, data=None, **kwargs):
+            restore = False
             if data is None:
+                restore=True
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.classify(data)
+            if restore:
+                for elem in data:
+                    elem.emphasized = True
+                    elem.selected = True
             return "elements", data
 
         @self.console_command(
@@ -3098,12 +3104,18 @@ class Elemental(Service):
             output_type="elements",
         )
         def declassify(command, channel, _, data=None, **kwargs):
+            restore = False
             if data is None:
+                restore=True
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.remove_elements_from_operations(data)
+            if restore:
+                for elem in data:
+                    elem.emphasized = True
+                    elem.selected = True
             return "elements", data
 
         # ==========
@@ -5467,8 +5479,15 @@ class Elemental(Service):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
+                # Are the colors identical?
+                if node.stroke is not None and (op.color == abs(node.stroke) or op.color == node.stroke):
+                    same_color = True
+                else:
+                    same_color = False
+                # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
+                # print ("Color identical" if same_color else "Color different")
                 if op.type == "op raster":
-                    if node.stroke is not None and op.color == abs(node.stroke):
+                    if same_color:
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -5480,12 +5499,7 @@ class Elemental(Service):
                     elif node.fill is not None and node.fill.argb is not None:
                         op.add_reference(node)
                         was_classified = True
-                elif (
-                    op.type in ("op engrave", "op cut", "op hatch")
-                    and node.stroke is not None
-                    and op.color == abs(node.stroke)
-                    and not op.default
-                ):
+                elif op.type in ("op engrave", "op cut", "op hatch") and same_color and not op.default:
                     op.add_reference(node)
                     was_classified = True
                 elif op.type == "op image" and node.type == "elem image":
