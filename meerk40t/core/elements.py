@@ -3120,11 +3120,11 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s - %s" % (i, str(e.matrix), name))
+                    channel("%d: %s - %s" % (i, str(node.matrix), name))
                     i += 1
                 channel("----------")
                 return
@@ -3145,16 +3145,15 @@ class Elemental(Service):
                     tx,
                     ty,
                 )
-                for e in data:
+                for node in data:
                     try:
-                        if e.lock:
+                        if node.lock:
                             continue
                     except AttributeError:
                         pass
 
-                    e.matrix = Matrix(m)
-                    if hasattr(e, "node"):
-                        e.modified()
+                    node.matrix = Matrix(m)
+                    node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return
