@@ -2205,8 +2205,11 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
+        def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, **kwargs):
             circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
+            if circ.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(
                 shape=circ, type="elem ellipse", stroke=Color("black")
             )
@@ -2226,8 +2229,11 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_circle_r(r_pos, data=None, **kwargs):
+        def element_circle_r(channel, _, r_pos, data=None, **kwargs):
             circ = Circle(r=float(r_pos))
+            if circ.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=circ, type="elem ellipse")
             node.stroke = Color("black")
             self.set_emphasis([node])
@@ -2248,10 +2254,13 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
+        def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
             ellip = Ellipse(
                 cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
             )
+            if ellip.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=ellip, type="elem ellipse")
             node.stroke = Color("black")
             self.set_emphasis([node])
@@ -2290,13 +2299,16 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_rect(
+        def element_rect(channel, _,
             x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
         ):
             """
             Draws a svg rectangle with optional rounded corners.
             """
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
+            if rect.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=rect, type="elem rect")
             node.stroke = Color("black")
             self.set_emphasis([node])
@@ -2370,7 +2382,7 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_poly(command, mlist, data=None, **kwargs):
+        def element_poly(command, channel, _, mlist, data=None, **kwargs):
             try:
                 pts = [float(Length(p)) for p in mlist]
                 if command == "polygon":
@@ -2381,6 +2393,9 @@ class Elemental(Service):
                 raise CommandSyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
                 )
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=shape, type="elem polyline")
             node.stroke = Color("black")
             self.set_emphasis([node])
