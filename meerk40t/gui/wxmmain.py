@@ -957,11 +957,11 @@ class MeerK40t(MWindow):
                 x, y = self.context.device.current
                 m = m.replace("$x", str(x))
                 m = m.replace("$y", str(y))
-                mx = Matrix(m)
+                matrix = Matrix(m)
                 unit_width = context.device.unit_width
                 unit_height = context.device.unit_height
-                mx.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
-                if mx.is_identity():
+                matrix.render(ppi=UNITS_PER_INCH, width=unit_width, height=unit_height)
+                if matrix.is_identity():
                     dlg.Destroy()
                     dlg = wx.MessageDialog(
                         None,
@@ -974,7 +974,7 @@ class MeerK40t(MWindow):
                 else:
                     for element in elements.elems():
                         try:
-                            element.matrix *= mx
+                            element.matrix *= matrix
                             element.modified()
                         except AttributeError:
                             pass
@@ -993,11 +993,11 @@ class MeerK40t(MWindow):
             if dlg.ShowModal() == wx.ID_OK:
                 unit_width = context.device.unit_width
                 length = float(Length(dlg.GetValue(), relative_length=unit_width))
-                mx = Matrix()
-                mx.post_scale(-1.0, 1, length / 2.0, 0)
+                matrix = Matrix()
+                matrix.post_scale(-1.0, 1, length / 2.0, 0)
                 for element in context.elements.elems(emphasized=True):
                     try:
-                        element.matrix *= mx
+                        element.matrix *= matrix
                         element.modified()
                     except AttributeError:
                         pass
@@ -2261,9 +2261,15 @@ class MeerK40t(MWindow):
 
     @signal_listener("emphasized")
     def on_update_selwidget(self, origin, *args):
+        # First enable/disable the controls in the statusbar
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
+        # Then sync the selected status to the emphasized status
+        if valu:
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                if not e.selected:
+                    e.selected = True
 
     def __set_titlebar(self):
         device_name = ""

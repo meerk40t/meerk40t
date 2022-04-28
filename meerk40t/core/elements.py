@@ -2,7 +2,7 @@ import functools
 import os.path
 import re
 from copy import copy
-from math import cos, gcd, pi, sin, tau
+from math import cos, gcd, pi, sin, tau, sqrt
 from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
@@ -166,6 +166,16 @@ class Elemental(Service):
 
     def length_y(self, v):
         return float(Length(v, relative_length=self.device.height))
+
+    def area(self, v):
+        llx = Length(v, relative_length=self.device.width)
+        lx = float(llx)
+        if "%" in v:
+            lly = Length(v, relative_length=self.device.height)
+        else:
+            lly = Length("1{unit}".format(unit=llx._preferred_units))
+        ly = float(lly)
+        return lx * ly
 
     def _init_commands(self, kernel):
 
@@ -2205,7 +2215,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("r_pos", type=Length)
@@ -2224,7 +2234,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("x_pos", type=Length)
@@ -2248,7 +2258,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(ellip)
+            data.append(node)
             return "elements", data
 
         @self.console_argument(
@@ -2665,13 +2675,13 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Rotate Values:"))
                 i = 0
-                for element in self.elems():
-                    name = str(element)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: rotate(%fturn) - %s")
-                        % (i, element.matrix.rotation.as_turns, name)
+                        % (i, node.matrix.rotation.as_turns, name)
                     )
                     i += 1
                 channel("----------")
@@ -2695,25 +2705,24 @@ class Elemental(Service):
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
                 if not absolute:
-                    for element in data:
+                    for node in data:
                         try:
-                            if element.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        element.matrix *= matrix
-                        element.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for element in data:
-                        start_angle = element.matrix.rotation
+                    for node in data:
+                        start_angle = node.matrix.rotation
                         amount = rot - start_angle
                         matrix = Matrix(
                             "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
                         )
-                        element *= matrix
-                        if hasattr(element, "node"):
-                            element.node.modified()
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2755,16 +2764,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Scale Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         "%d: scale(%f, %f) - %s"
                         % (
                             i,
-                            e.matrix.value_scale_x(),
-                            e.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
                             name,
                         )
                     )
@@ -2786,36 +2795,142 @@ class Elemental(Service):
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
+            matrix = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
             try:
                 if not absolute:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        e.matrix *= m
-                        e.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        osx = e.matrix.value_scale_x()
-                        osy = e.matrix.value_scale_y()
+                        osx = node.matrix.value_scale_x()
+                        osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
+
+        @self.console_option(
+            "new_area", "n", type=self.area, help=_("provide a new area to cover")
+        )
+        @self.console_command(
+            "area",
+            help=_("provides information about/changes the area of a selected element"),
+            input_type=(None, "elements"),
+            output_type=("elements"),
+        )
+        def element_area(command,
+            channel,
+            _,
+            new_area=None,
+            data=None,
+            **kwargs,
+        ):
+            if new_area is None:
+                display_only = True
+            else:
+                if new_area == 0:
+                    channel(_("You shouldn't collapse a shape to a zero-sized thing"))
+                    return
+                display_only = False
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            total_area = 0
+            if display_only:
+                channel("----------")
+                channel(_("Area values:"))
+            units = ("mm", "cm", "in")
+            square_unit = [0] * len(units)
+            for idx, u in enumerate(units):
+                value = float(Length("1{unit}".format(unit=u)))
+                square_unit[idx] = value * value
+
+            i = 0
+            for elem in data:
+                this_area = 0
+                try:
+                    path = elem.as_path()
+                except AttributeError:
+                    path = None
+
+                subject_polygons = []
+                from numpy import linspace
+                if not path is None:
+                    for subpath in path.as_subpaths():
+                        subj = Path(subpath).npoint(linspace(0, 1, 1000))
+                        subj.reshape((2, 1000))
+                        s = list(map(Point, subj))
+                        subject_polygons.append(s)
+                else:
+                    try:
+                        bb = elem.bounds
+                    except:
+                        # Even bounds failed, next element please
+                        continue
+                    s = [Point(bb[0], bb[1]), Point(bb[2], bb[1]), Point(bb[2], bb[3]), Point(bb[1], bb[3])]
+                    subject_polygons.append(s)
+
+                if len(subject_polygons)>0:
+                    idx = len(subject_polygons[0]) - 1
+                    if subject_polygons[0][0].x != subject_polygons[0][idx].x or subject_polygons[0][0].y != subject_polygons[0][idx].y:
+                        # not identical, so close the loop
+                        subject_polygons.append(Point(subject_polygons[0][0].x, subject_polygons[0][0].y))
+
+                if len(subject_polygons)>0:
+                    idx = -1
+                    area_x_y = 0
+                    area_y_x = 0
+                    for pt in subject_polygons[0]:
+                        idx += 1
+                        if idx>0:
+                            area_x_y += last_x * pt.y
+                            area_y_x += last_y * pt.x
+                        last_x = pt.x
+                        last_y = pt.y
+                    this_area = 0.5 * abs(area_x_y - area_y_x)
+
+                if display_only:
+                    name = str(elem)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    channel( "%d: %s" % (i, name))
+                    for idx, u in enumerate(units):
+                        this_area_local = this_area / square_unit[idx]
+                        channel (_(" Area= {area:.3f} {unit}²").format(area=this_area_local, unit=u))
+                i += 1
+                total_area += this_area
+            if display_only:
+                channel("----------")
+            else:
+                if total_area == 0:
+                    channel(_("You can't reshape a zero-sized shape"))
+                    return
+
+                ratio = sqrt(new_area / total_area)
+                self("scale %f\n" % ratio)
+
+            return "elements", data
+            # Do we have a new value to set? If yes scale by sqrt(of the fraction)
+
 
         @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
         @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
@@ -2839,16 +2954,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Translate Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: translate(%f, %f) - %s")
                         % (
                             i,
-                            e.matrix.value_trans_x(),
-                            e.matrix.value_trans_y(),
+                            node.matrix.value_trans_x(),
+                            node.matrix.value_trans_y(),
                             name,
                         )
                     )
@@ -2864,22 +2979,21 @@ class Elemental(Service):
                 tx = 0
             if ty is None:
                 ty = 0
-            m = Matrix.translate(tx, ty)
+            matrix = Matrix.translate(tx, ty)
             try:
                 if not absolute:
-                    for e in data:
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
+                    for node in data:
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
-                        otx = e.matrix.value_trans_x()
-                        oty = e.matrix.value_trans_y()
+                    for node in data:
+                        otx = node.matrix.value_trans_x()
+                        oty = node.matrix.value_trans_y()
                         ntx = tx - otx
                         nty = ty - oty
-                        m = Matrix.translate(ntx, nty)
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix.translate(ntx, nty)
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2951,22 +3065,22 @@ class Elemental(Service):
                     channel(_("resize: nothing to do - scale factors 1"))
                     return
 
-                m = Matrix(
+                matrix = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
                     % (x_pos, y_pos, sx, sy, -x, -y)
                 )
                 if data is None:
                     data = list(self.elems(emphasized=True))
-                for e in data:
+                for node in data:
                     try:
-                        if e.lock:
+                        if node.lock:
                             channel(_("resize: cannot resize a locked image"))
                             return
                     except AttributeError:
                         pass
-                for e in data:
-                    e.matrix *= m
-                    e.modified()
+                for node in data:
+                    node.matrix *= matrix
+                    node.modified()
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise CommandSyntaxError
@@ -3436,9 +3550,9 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
-                for e in pasted:
-                    e.matrix *= m
+                matrix = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
+                for node in pasted:
+                    node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
                 group.add_node(copy(p))

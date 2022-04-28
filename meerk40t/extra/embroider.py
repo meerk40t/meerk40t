@@ -25,15 +25,15 @@ def plugin(kernel, lifecycle):
             efill = EulerianFill(float(distance))
             for node in elements.elems(emphasized=True):
                 try:
-                    e = Path(node.shape)
+                    path = Path(node.shape)
                 except AttributeError:
                     try:
-                        e = Path(node.path)
+                        path = Path(node.path)
                     except AttributeError:
                         continue
                 if angle is not None:
-                    e *= Matrix.rotate(angle)
-                pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
+                    path *= Matrix.rotate(angle)
+                pts = [abs(path).point(i / 100.0, error=1e-4) for i in range(101)]
                 efill += pts
 
             points = efill.get_fill()

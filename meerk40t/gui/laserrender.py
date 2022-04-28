@@ -502,8 +502,8 @@ class LaserRender:
         # Scale physical image down by step amount.
         width /= float(step_x)
         height /= float(step_y)
-        width = int(width)
-        height = int(height)
+        width = int(ceil(abs(width)))
+        height = int(ceil(abs(height)))
         if width <= 0:
             width = 1
         if height <= 0:
@@ -520,8 +520,7 @@ class LaserRender:
         # Scale affine matrix up by step amount scaled down.
         scale_x = width / float(image_width)
         scale_y = height / float(image_height)
-        scale = min(scale_x, scale_y)
-        matrix.post_scale(scale)
+        matrix.post_scale(scale_x, scale_y)
 
         gc = wx.GraphicsContext.Create(dc)
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)

@@ -484,6 +484,8 @@ class CutPlan:
                 if hasattr(op, "scale_native"):
                     op.scale_native(matrix)
                 for node in op.flat():
+                    if node is op:
+                        continue
                     if hasattr(node, "scale_native"):
                         node.scale_native(matrix)
 

@@ -86,8 +86,8 @@ class DxfLoader:
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
                     )
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
-                    for e in elements:
-                        e *= matrix
+                    for node in elements:
+                        node.matrix *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:
                     # Is outside the bed but sized correctly, center
                     bcx = bw / 2.0
@@ -95,12 +95,12 @@ class DxfLoader:
                     cx = (bbox[0] + bbox[2]) / 2.0
                     cy = (bbox[1] + bbox[3]) / 2.0
                     matrix = Matrix.translate(bcx - cx, bcy - cy)
-                    for e in elements:
-                        e *= matrix
+                    for node in elements:
+                        node.matrix *= matrix
                 # else, is within the bed dimensions correctly, change nothing.
-        for e in elements:
+        for node in elements:
             try:
-                e.reify()
+                node.reify()
             except AttributeError:
                 pass
         element_branch = elements_modifier.get(type="branch elems")
