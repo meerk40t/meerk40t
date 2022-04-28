@@ -3791,6 +3791,16 @@ class Elemental(Service):
                 pass
             return result
 
+        def has_changes(node):
+            result = False
+            try:
+                if not node.matrix.is_identity():
+                    result = True
+            except AttributeError:
+                # There was an error druing check for matrix.is_identity
+                pass
+            return result
+
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(
@@ -4682,6 +4692,7 @@ class Elemental(Service):
             self.signal("ext-modified")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: has_changes(node))
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(
             _("Reify User Changes"), node_type=elem_group_nodes, help=""
@@ -4697,9 +4708,10 @@ class Elemental(Service):
             self("element subpath\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: has_changes(node))
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", elem_nodes), help=""
+            _("Reset user changes"), node_type=elem_group_nodes, help=""
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self("reset\n")
