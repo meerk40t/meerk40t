@@ -60,6 +60,7 @@ class PolylineNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
+            self.shape.transform = self.matrix
             self._bounds = self.shape.bbox(with_stroke=True)
         return self._bounds
 
