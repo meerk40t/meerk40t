@@ -583,19 +583,6 @@ class Node:
         new_sibling._parent = reference_sibling._parent
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
-    def replace_object(self, new_object):
-        """
-        Replace this node's object with a new object.
-        """
-        if hasattr(self.object, "node"):
-            del self.object.node
-        for ref in list(self._references):
-            ref.object = new_object
-            ref.altered()
-        new_object.node = self
-        self.unregister_object()
-        self.object = new_object
-
     def replace_node(self, *args, **kwargs):
         """
         Replace this current node with a bootstrapped replacement node.

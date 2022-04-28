@@ -4562,9 +4562,9 @@ class Elemental(Service):
             ),
             help="",
         )
-        def convert_to_path(node, copies=1, **kwargs):
-            node.replace_object(abs(Path(node.shape)))
-            node.altered()
+        def convert_to_path(node, **kwargs):
+            path = node.as_path()
+            node.replace_node(path=path, type="elem path")
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
