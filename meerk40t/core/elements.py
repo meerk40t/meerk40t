@@ -2674,13 +2674,13 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Rotate Values:"))
                 i = 0
-                for element in self.elems():
-                    name = str(element)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: rotate(%fturn) - %s")
-                        % (i, element.matrix.rotation.as_turns, name)
+                        % (i, node.matrix.rotation.as_turns, name)
                     )
                     i += 1
                 channel("----------")
@@ -2704,25 +2704,24 @@ class Elemental(Service):
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
                 if not absolute:
-                    for element in data:
+                    for node in data:
                         try:
-                            if element.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        element.matrix *= matrix
-                        element.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for element in data:
-                        start_angle = element.matrix.rotation
+                    for node in data:
+                        start_angle = node.matrix.rotation
                         amount = rot - start_angle
                         matrix = Matrix(
                             "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
                         )
-                        element *= matrix
-                        if hasattr(element, "node"):
-                            element.node.modified()
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2764,16 +2763,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Scale Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         "%d: scale(%f, %f) - %s"
                         % (
                             i,
-                            e.matrix.value_scale_x(),
-                            e.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
                             name,
                         )
                     )
@@ -2795,33 +2794,33 @@ class Elemental(Service):
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
+            matrix = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
             try:
                 if not absolute:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        e.matrix *= m
-                        e.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        osx = e.matrix.value_scale_x()
-                        osy = e.matrix.value_scale_y()
+                        osx = node.matrix.value_scale_x()
+                        osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2954,16 +2953,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Translate Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: translate(%f, %f) - %s")
                         % (
                             i,
-                            e.matrix.value_trans_x(),
-                            e.matrix.value_trans_y(),
+                            node.matrix.value_trans_x(),
+                            node.matrix.value_trans_y(),
                             name,
                         )
                     )
@@ -2979,22 +2978,21 @@ class Elemental(Service):
                 tx = 0
             if ty is None:
                 ty = 0
-            m = Matrix.translate(tx, ty)
+            matrix = Matrix.translate(tx, ty)
             try:
                 if not absolute:
-                    for e in data:
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
+                    for node in data:
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
-                        otx = e.matrix.value_trans_x()
-                        oty = e.matrix.value_trans_y()
+                    for node in data:
+                        otx = node.matrix.value_trans_x()
+                        oty = node.matrix.value_trans_y()
                         ntx = tx - otx
                         nty = ty - oty
-                        m = Matrix.translate(ntx, nty)
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix.translate(ntx, nty)
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -3066,22 +3064,22 @@ class Elemental(Service):
                     channel(_("resize: nothing to do - scale factors 1"))
                     return
 
-                m = Matrix(
+                matrix = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
                     % (x_pos, y_pos, sx, sy, -x, -y)
                 )
                 if data is None:
                     data = list(self.elems(emphasized=True))
-                for e in data:
+                for node in data:
                     try:
-                        if e.lock:
+                        if node.lock:
                             channel(_("resize: cannot resize a locked image"))
                             return
                     except AttributeError:
                         pass
-                for e in data:
-                    e.matrix *= m
-                    e.modified()
+                for node in data:
+                    node.matrix *= matrix
+                    node.modified()
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise CommandSyntaxError
@@ -3551,9 +3549,9 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
-                for e in pasted:
-                    e.matrix *= m
+                matrix = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
+                for node in pasted:
+                    node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
                 group.add_node(copy(p))
