@@ -361,7 +361,7 @@ class Node:
         The data structure was changed. Any assumptions about what this object is/was are void.
         """
         try:
-            self.cache.UnGetNativePath(self.object.cache.NativePath)
+            self.cache.UnGetNativePath(self.cache.NativePath)
         except AttributeError:
             pass
         try:
