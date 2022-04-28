@@ -2214,7 +2214,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("r_pos", type=Length)
@@ -2233,7 +2233,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("x_pos", type=Length)
@@ -2257,7 +2257,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(ellip)
+            data.append(node)
             return "elements", data
 
         @self.console_argument(
