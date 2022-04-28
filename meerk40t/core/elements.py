@@ -2367,19 +2367,21 @@ class Elemental(Service):
             ("polygon", "polyline"),
             help=_("poly(gon|line) (Length Length)*"),
             input_type=("elements", None),
+            output_type="elements",
             all_arguments_required=True,
         )
         def element_poly(command, mlist, data=None, **kwargs):
             try:
+                pts = [float(Length(p)) for p in mlist]
                 if command == "polygon":
-                    element = Polygon(list(map(float, mlist)))
+                    shape = Polygon(pts)
                 else:
-                    element = Polyline(list(map(float, mlist)))
+                    shape = Polyline(pts)
             except ValueError:
                 raise CommandSyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
                 )
-            node = self.elem_branch.add(shape=element, type="elem polyline")
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
@@ -3017,10 +3019,9 @@ class Elemental(Service):
                 oty = bounds[1]
                 ntx = tx - otx
                 nty = ty - oty
-                for e in data:
-                    e.matrix.post_translate(ntx, nty)
-                    if hasattr(e, "node"):
-                        e.modified()
+                for node in data:
+                    node.matrix.post_translate(ntx, nty)
+                    node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data

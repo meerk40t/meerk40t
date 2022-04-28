@@ -32,11 +32,12 @@ class TestElements(unittest.TestCase):
         """
         kernel = bootstrap.bootstrap()
         try:
+            kernel.console("polyline grid 3 3\n")
+            kernel.console("polyline 3cm 3cm  2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("circle 2cm 2cm 1cm grid 3 3\n")
             kernel.console("rect 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("ellipse 2cm 2cm 1cm 1cm grid 3 3\n")
             kernel.console("line 2cm 2cm 1cm 1cm grid 3 3\n")
-            kernel.console("polyline 2cm 2cm 1cm 1cm\ngrid 3 3\n")
         finally:
             kernel.shutdown()
 
