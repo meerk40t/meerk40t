@@ -12,7 +12,7 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.element_types import elem_nodes
 from ..core.units import UNITS_PER_INCH, Length
-from ..svgelements import Color, Matrix, Path, SVGImage
+from ..svgelements import Color, Matrix, Path
 from .icons import (
     icon_cag_common_50,
     icon_cag_subtract_50,

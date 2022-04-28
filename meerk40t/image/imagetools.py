@@ -5,7 +5,7 @@ from os import path as ospath
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
-from ..svgelements import Angle, Color, Matrix, Path, SVGImage
+from ..svgelements import Angle, Color, Matrix, Path
 from .actualize import actualize
 
 
@@ -54,6 +54,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
+        elements = context.elements
         if data_type == "inkscape":
             inkscape_path, filename = data
             if filename is None:
@@ -63,12 +64,9 @@ def plugin(kernel, lifecycle=None):
                 from PIL import Image
 
                 img = Image.open(filename)
+                inode = elements.elem_branch.add(image=img, type="elem image")
+                return "image", [inode]
 
-                svg_image = SVGImage()
-                svg_image.image = img
-                return "image", [svg_image]
-
-        elements = context.elements
         if len(args) == 0:
             channel(_("----------"))
             channel(_("Images:"))
