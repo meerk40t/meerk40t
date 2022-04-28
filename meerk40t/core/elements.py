@@ -1177,8 +1177,9 @@ class Elemental(Service):
             self.remove_elements(data)
             node = self.elem_branch.add(
                 path=super_element, type="elem path"
-            ).emphasized = True
-            self.classify([super_element])
+            )
+            node.emphasized = True
+            self.classify([node])
             return "elements", [node]
 
         @self.console_command(
