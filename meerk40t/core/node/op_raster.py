@@ -197,8 +197,17 @@ class RasterOpNode(Node, Parameters):
         for image_node in self.children:
             if image_node.type != "elem image":
                 continue
+
+            # Ensure actualization is done with raster values.
+            osx = image_node.step_x
+            osy = image_node.step_y
+            image_node.step_x = self.raster_step_x
+            image_node.step_y = self.raster_step_y
             if image_node.needs_actualization():
                 image_node.make_actual()
+            image_node.step_x = osx
+            image_node.step_y = osy
+
             image = image_node.image
             matrix = image_node.matrix
             box = (
