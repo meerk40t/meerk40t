@@ -83,8 +83,8 @@ def plugin(kernel, lifecycle=None):
                     "%d: (%d, %d) %s, %s"
                     % (
                         i,
-                        node.image_width,
-                        node.image_height,
+                        node.image.width,
+                        node.image.height,
                         node.image.mode,
                         name,
                     )
@@ -104,11 +104,7 @@ def plugin(kernel, lifecycle=None):
 
             width, height, frame = data
             img = Image.fromarray(frame)
-            obj = SVGImage()
-            obj.image = img
-            obj.image_width = width
-            obj.image_height = height
-            images = [obj]
+            images = [elements.elem_branch.add(image=img, type="elem image")]
         else:
             raise CommandSyntaxError
         return "image", images
@@ -371,8 +367,6 @@ def plugin(kernel, lifecycle=None):
                         _("Lower margin is higher than the upper margin.")
                     )
                 inode.image = img.crop((left, upper, right, lower))
-                inode.image_width = right - left
-                inode.image_height = lower - upper
                 inode.altered()
             except (KeyError, ValueError):
                 raise CommandSyntaxError
@@ -699,10 +693,6 @@ def plugin(kernel, lifecycle=None):
         for inode in data:
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_270)
-            inode.image_height, inode.image_width = (
-                inode.image_width,
-                inode.image_height,
-            )
             if hasattr(inode, "node"):
                 inode.node.altered()
             channel(_("Rotated image clockwise."))
@@ -800,29 +790,19 @@ def plugin(kernel, lifecycle=None):
     def image_slice(command, channel, _, data, x, **kwargs):
         for inode in data:
             img = inode.image
-            image_left = img.crop((0, 0, x, inode.image_height))
-            image_right = img.crop((x, 0, inode.image_width, inode.image_height))
+            image_left = img.crop((0, 0, x, inode.image.height))
+            image_right = img.crop((x, 0, inode.image.width, inode.image.height))
             inode_left = copy(inode)
             inode_left.image = image_left
-            (
-                inode_left.image_width,
-                inode_left.image_height,
-            ) = inode_left.image.size
-
             inode_right = copy(inode)
             inode_right.image = image_right
-            (
-                inode_right.image_width,
-                inode_right.image_height,
-            ) = inode_right.image.size
             inode_right.matrix.pre_translate(x)
 
-            if hasattr(inode, "node"):
-                inode.node.remove_node()
-            inodes = context.inodes
-            node1 = inodes.elem_branch.add(image=inode_left, type="elem image")
-            node2 = inodes.elem_branch.add(image=inode_right, type="elem image")
-            inodes.classify([node1, node2])
+            inode.remove_node()
+            elements = context.elements
+            node1 = elements.elem_branch.add_node(inode_left)
+            node2 = elements.elem_branch.add(inode_right)
+            elements.classify([node1, node2])
             channel(_("Image sliced at position %d" % x))
             return "image", [node1, node2]
 
@@ -842,28 +822,20 @@ def plugin(kernel, lifecycle=None):
     def image_slash(command, channel, _, data, y, **kwargs):
         for inode in data:
             img = inode.image
-            image_top = img.crop((0, 0, inode.image_width, y))
-            image_bottom = img.crop((0, y, inode.image_width, inode.image_height))
+            image_top = img.crop((0, 0, inode.image.width, y))
+            image_bottom = img.crop((0, y, inode.image.width, inode.image.height))
             inode_top = copy(inode)
             inode_top.image = image_top
-            (
-                inode_top.image_width,
-                inode_top.image_height,
-            ) = inode_top.image.size
 
             inode_bottom = copy(inode)
             inode_bottom.image = image_bottom
-            (
-                inode_bottom.image_width,
-                inode_bottom.image_height,
-            ) = inode_bottom.image.size
             inode_bottom.transform.pre_translate(0, y)
 
             inode.altered()
-            inodes = context.inodes
-            node1 = inodes.elem_branch.add(image=inode_top, type="elem image")
-            node2 = inodes.elem_branch.add(image=inode_bottom, type="elem image")
-            inodes.classify([node1, node2])
+            elements = context.elements
+            node1 = elements.elem_branch.add_node(inode_top)
+            node2 = elements.elem_branch.add_node(inode_bottom)
+            elements.classify([node1, node2])
             channel(_("Image slashed at position %d" % y))
             return "image", [node1, node2]
 
@@ -912,24 +884,18 @@ def plugin(kernel, lifecycle=None):
 
             inode_pop = copy(inode)
             inode_pop.image = image_pop
-            inode_pop.image_width, inode_pop.image_height = inode_pop.image.size
 
             inode_pop.transform.pre_translate(left, upper)
 
             inode_remain = copy(inode)
             inode_remain.image = image_remain
-            (
-                inode_remain.image_width,
-                inode_remain.image_height,
-            ) = inode_remain.image.size
 
-            if hasattr(inode, "node"):
-                inode.node.remove_node()
+            inode.remove_node()
 
-            inodes = context.inodes
-            node1 = inodes.elem_branch.add(image=inode_remain, type="elem image")
-            node2 = inodes.elem_branch.add(image=inode_pop, type="elem image")
-            inodes.classify([node1, node2])
+            elements = context.elements
+            node1 = elements.elem_branch.add(image=inode_remain, type="elem image")
+            node2 = elements.elem_branch.add(image=inode_pop, type="elem image")
+            elements.classify([node1, node2])
 
         return "image", data
 
