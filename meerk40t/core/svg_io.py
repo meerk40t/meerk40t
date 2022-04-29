@@ -144,6 +144,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem image":
+                element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 c.image.save(stream, format="PNG")
@@ -172,11 +173,11 @@ class SVGWriter:
                 SVGWriter._write_custom(subelement, c)
                 return
             elif c.type == "elem polyline":
-                element = abs(c.path * scale)
+                element = abs(Path(c.shape) * scale)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
-                element = abs(c.path * scale)
+                element = abs(Path(c.shape) * scale)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
@@ -212,7 +213,10 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
                 return
-            stroke = element.stroke
+            if hasattr(element, "stroke"):
+                stroke = element.stroke
+            else:
+                stroke = None
             if stroke is not None:
                 stroke_opacity = stroke.opacity
                 stroke = (
@@ -233,7 +237,10 @@ class SVGWriter:
                 except AttributeError:
                     pass
 
-            fill = element.fill
+            if hasattr(element, "fill"):
+                fill = element.fill
+            else:
+                fill = None
             if fill is not None:
                 fill_opacity = fill.opacity
                 fill = (
