@@ -198,6 +198,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
+        self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
         # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
         # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
         self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
@@ -305,7 +306,10 @@ class LaserPanel(wx.Panel):
         self.context("estop\n")
 
     def on_button_outline(self, event):  # wxGlade: LaserPanel.<event_handler>
-        self.context("element* trace_hull\n")
+        self.context("element* trace hull\n")
+
+    def on_button_outline_right(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("element* trace complex\n")
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         pass
