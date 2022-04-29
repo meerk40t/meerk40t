@@ -253,14 +253,14 @@ class Drag(wx.Panel):
             self.on_button_align_corner_br,
             self.button_align_corner_bottom_right,
         )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull
-        )
+        self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull)
+        self.button_align_trace_hull.Bind(wx.EVT_RIGHT_DOWN, self.on_button_align_trace_complex)
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_trace_quick,
             self.button_align_trace_quick,
         )
+        self.button_align_trace_quick.Bind(wx.EVT_RIGHT_DOWN, self.on_button_align_trace_circle)
         # Right Button Events
         self.button_align_corner_top_left.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_lock_tl
@@ -339,11 +339,11 @@ class Drag(wx.Panel):
             self.button_align_first_position.GetBestSize()
         )
         self.button_align_trace_hull.SetToolTip(
-            _("Perform a convex hull trace of the selection")
+            _("Perform a convex hull trace of the selection (Right different alogorithm)")
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
         self.button_align_trace_quick.SetToolTip(
-            _("Perform a simple trace of the selection")
+            _("Perform a simple trace of the selection (Right=Circle around)")
         )
         self.button_align_trace_quick.SetSize(
             self.button_align_trace_quick.GetBestSize()
@@ -527,15 +527,17 @@ class Drag(wx.Panel):
         )
         self.drag_ready(True)
 
-    def on_button_align_trace_hull(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.context("trace_hull\n")
+    def on_button_align_trace_hull(self, event=None):
+        self.context("trace hull\n")
 
-    def on_button_align_trace_quick(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.context("trace_quick\n")
+    def on_button_align_trace_complex(self, event=None):
+        self.context("trace complex\n")
+
+    def on_button_align_trace_circle(self, event=None):
+        self.context("trace circle\n")
+
+    def on_button_align_trace_quick(self, event=None):
+        self.context("trace quick\n")
         self.drag_ready(True)
 
     def pane_show(self, *args):

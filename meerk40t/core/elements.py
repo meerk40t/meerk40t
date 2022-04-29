@@ -2,8 +2,10 @@ import functools
 import os.path
 import re
 from copy import copy
+from random import shuffle, randint
 from math import cos, gcd, pi, sin, tau, sqrt
 from os.path import realpath
+from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
@@ -2890,7 +2892,6 @@ class Elemental(Service):
                     path = None
 
                 subject_polygons = []
-                from numpy import linspace
                 if not path is None:
                     for subpath in path.as_subpaths():
                         subj = Path(subpath).npoint(linspace(0, 1, 1000))
@@ -3643,137 +3644,298 @@ class Elemental(Service):
         # ==========
         # TRACE OPERATIONS
         # ==========
+
+        # Function to return the euclidean distance
+        # between two points
+        def dist(a, b):
+            return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))
+
+        # Function to check whether a point lies inside
+        # or on the boundaries of the circle
+        def is_inside(center, radius, p):
+            return dist(center, p) <= radius
+
+        # The following two functions are used
+        # To find the equation of the circle when
+        # three points are given.
+
+        # Helper method to get a circle defined by 3 points
+        def get_circle_center(bx, by, cx, cy):
+            B = bx * bx + by * by
+            C = cx * cx + cy * cy
+            D = bx * cy - by * cx
+            return [(cy * B - by * C) / (2 * D),
+                    (bx * C - cx * B) / (2 * D)]
+
+        # Function to return the smallest circle
+        # that intersects 2 points
+        def circle_from1(A, B):
+            # Set the center to be the midpoint of A and B
+            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0 ]
+
+            # Set the radius to be half the distance AB
+            return C, dist(A, B) / 2.0
+
+        # Function to return a unique circle that
+        # intersects three points
+        def circle_from2(A, B, C):
+            if A==B:
+                print ("A==B")
+                I, radius = circle_from1(A, C)
+                return I, radius
+            elif A==C:
+                print ("A==C")
+                I, radius = circle_from1(A, B)
+                return I, radius
+            elif B==C:
+                print ("B==C")
+                I, radius = circle_from1(A, B)
+                return I, radius
+            else:
+                I = get_circle_center(B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1])
+                I[0] += A[0]
+                I[1] += A[1]
+                radius = dist (I, A)
+                return I, radius
+
+        # Function to check whether a circle
+        # encloses the given points
+        def is_valid_circle(center, radius, P):
+
+            # Iterating through all the points
+            # to check  whether the points
+            # lie inside the circle or not
+            for p in P:
+                if (not is_inside(center, radius, p)):
+                    return False
+            return True
+
+        # Function to return the minimum enclosing
+        # circle for N <= 3
+        def min_circle_trivial(P):
+            assert(len(P) <= 3)
+
+            if not P :
+                return [0, 0], 0
+
+            elif (len(P) == 1) :
+                return P[0], 0
+
+            elif (len(P) == 2) :
+                center, radius = circle_from1(P[0], P[1])
+                return center, radius
+
+            # To check if MEC can be determined
+            # by 2 points only
+            for i in range(3):
+                for j in range(i + 1, 3):
+
+                    center, radius = circle_from1(P[i], P[j])
+                    if (is_valid_circle(center, radius, P)):
+                        return center, radius
+
+            center, radius = circle_from2(P[0], P[1], P[2])
+            return center, radius
+
+        # Returns the MEC using Welzl's algorithm
+        # Takes a set of input points P and a set R
+        # points on the circle boundary.
+        # n represents the number of points in P
+        # that are not yet processed.
+        def welzl_helper(P, R, n):
+            # Base case when all points processed or |R| = 3
+            if (n == 0 or len(R) == 3) :
+                center, radius = min_circle_trivial(R)
+                return center, radius
+
+            # Pick a random point randomly
+            idx = randint(0,n-1)
+            p = P[idx]
+
+            # Put the picked point at the end of P
+            # since it's more efficient than
+            # deleting from the middle of the vector
+            P[idx], P[n - 1] = P[n-1], P[idx]
+
+            # Get the MEC circle d from the
+            # set of points P - :p
+            dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
+
+            # If d contains p, return d
+            if (is_inside(dcenter, dradius, p)) :
+                return dcenter, dradius
+
+            # Otherwise, must be on the boundary of the MEC
+            R.append(p)
+
+            # Return the MEC for P - :p and R U :p
+            dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
+            return dcenter, dradius
+
+        def welzl(P):
+            P_copy = P.copy()
+            shuffle(P_copy)
+            center, radius = welzl_helper(P_copy, [], len(P_copy))
+            return center, radius
+
+        def generate_hull_shape(method, data, resolution=None):
+            if resolution is None:
+                DETAIL = 500 # How coarse / fine shall a subpath be split
+            else:
+                DETAIL = int(resolution)
+            pts = []
+            min_val = [float("inf"), float("inf")]
+            max_val = [-float("inf"), -float("inf")]
+            for node in data:
+                if method in ("hull", "segment", "circle"):
+                    try:
+                        path = node.as_path()
+                    except AttributeError:
+                        path = None
+                    if not path is None:
+                        p = path.first_point
+                        pts += [(p.x, p.y)]
+                        for segment in path:
+                            p = segment.end
+                            pts += [(p.x, p.y)]
+                    else:
+                        bounds = node.bounds
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                elif method in ("complex"):
+                    try:
+                        path = node.as_path()
+                    except AttributeError:
+                        path = None
+
+                    if not path is None:
+                        for subpath in path.as_subpaths():
+                            psp = Path(subpath)
+                            p = psp.first_point
+                            pts += [(p.x, p.y)]
+                            positions = linspace(0, 1, num=DETAIL, endpoint=True)
+                            subj = psp.npoint(positions)
+                            # Not sure why we need to do that, its already rows x 2
+                            # subj.reshape((2, DETAIL))
+                            s = list(map(Point, subj))
+                            for p in s:
+                                pts += [(p.x, p.y)]
+                    else:
+                        bounds = node.bounds
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                elif method=="quick":
+                    bounds = node.bounds
+                    min_val[0] = min(min_val[0], bounds[0])
+                    min_val[1] = min(min_val[1], bounds[1])
+                    max_val[0] = max(max_val[0], bounds[2])
+                    max_val[1] = max(max_val[1], bounds[3])
+
+            if method=="quick":
+                pts += [
+                    (min_val[0], min_val[1]),
+                    (min_val[0], max_val[1]),
+                    (max_val[0], min_val[1]),
+                    (max_val[0], max_val[1]),
+                ]
+            if method == "segment":
+                hull = [p for p in pts]
+            elif method == "circle":
+                print (pts)
+                mec_center, mec_radius = welzl(pts)
+                # So now we have a circle with (mec[0], mec[1]), and mec_radius
+                hull = []
+                RES = 100
+                for i in range(RES):
+                    hull += [(mec_center[0] + mec_radius * cos(i/RES * tau), mec_center[1] + mec_radius * sin(i/RES * tau))]
+            else:
+                hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) != 0:
+                hull.append(hull[0])  # loop
+            return hull
+
+        @self.console_argument("method", help=_("Method to use (one of segment, quick, hull, complex)"))
+        @self.console_argument("resolution")
         @self.console_command(
-            "trace_hull",
-            help=_("trace the convex hull of current elements"),
-            input_type=(None, "elements"),
+            "trace",
+            help=_("trace the given elements"),
+            input_type=("elements", "shapes", None),
         )
-        def trace_trace_hull(command, channel, _, data=None, **kwargs):
+        def trace_trace_spooler(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+            if method is None:
+                method = "quick"
+            method = method.lower()
+            if not method in ("segment", "quick", "hull", "complex"):
+                channel(_("Invalid method, please use one of segment, quick, hull, complex."))
+                return
+
             spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
-            pts = []
-            for node in data:
-                if node.type == "elem path":
-                    epath = abs(node.path)
-                    pts += [q for q in epath.as_points()]
-                elif node.type == "elem image":
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            hull = [p for p in Point.convex_hull(pts)]
+            hull = generate_hull_shape(method, data, resolution)
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
-            hull.append(hull[0])  # loop
 
-            def trace_hull():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in hull:
-                    yield (
-                        "move_abs",
-                        Length(amount=p[0]).length_mm,
-                        Length(amount=p[1]).length_mm,
-                    )
+            def run_shape(spooler, hull):
+                def trace_hull():
+                    yield "wait_finish"
+                    yield "rapid_mode"
+                    idx = 0
+                    for p in hull:
+                        idx += 1
+                        yield (
+                            "move_abs",
+                            Length(amount=p[0]).length_mm,
+                            Length(amount=p[1]).length_mm,
+                        )
 
-            spooler.job(trace_hull)
+                spooler.job(trace_hull)
 
+            run_shape(spooler, hull)
+
+        @self.console_argument("method", help=_("Method to use (one of quick, hull, complex, segment, circle)"))
+        @self.console_argument("resolution", help=_("Resolution for complex slicing, default=500"))
         @self.console_command(
-            "trace_quick", help=_("quick trace the bounding box of current elements")
+            "tracegen",
+            help=_("create the trace around the given elements"),
+            input_type=("elements", "shapes", None),
+            output_type="elements",
         )
-        def trace_trace_quick(command, channel, _, **kwargs):
+        def trace_trace_generator(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+            if method is None:
+                method = "quick"
+            method = method.lower()
+            if not method in ("segment", "quick", "hull", "complex", "circle"):
+                channel(_("Invalid method, please use one of quick, hull, complex, segment, circle."))
+                return
+
             spooler = self.device.spooler
-            bbox = self.selected_area()
-            if bbox is None:
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            hull = generate_hull_shape(method, data, resolution=resolution)
+            if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
+            shape = Polyline(hull)
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
+            node.stroke = Color("black")
+            self.set_emphasis([node])
+            node.focus()
+            data.append(node)
+            return "elements", data
 
-            def trace_quick():
-                yield "rapid_mode"
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
-                    amount=bbox[3]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[3]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-
-            spooler.job(trace_quick)
-
-        # ==========
-        # TRACE OPERATIONS
-        # ==========
-        @self.console_command(
-            "trace",
-            help=_("trace the given element path"),
-            input_type="elements",
-        )
-        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
-            if not data:
-                return
-            spooler = self.device.spooler
-            pts = []
-            for node in data:
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    continue
-                pts.append(path.first_point)
-                for segment in path:
-                    pts.append(segment.end)
-            if not pts:
-                return
-
-            def trace_command():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
-                        amount=p[1]
-                    ).length_mm
-
-            spooler.job(trace_command)
-
-        @self.console_command(
-            "trace",
-            help=_("trace the given element path"),
-            input_type="shapes",
-        )
-        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
-            if not data:
-                return
-            spooler = self.device.spooler
-            pts = []
-            for path in data:
-                path = abs(Path(path))
-                pts.append(path.first_point)
-                for segment in path:
-                    pts.append(segment.end)
-            if not pts:
-                return
-
-            def trace_command():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
-                        amount=p[1]
-                    ).length_mm
-
-            spooler.job(trace_command)
 
         # --------------------------- END COMMANDS ------------------------------
 
