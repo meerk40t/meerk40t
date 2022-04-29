@@ -5606,7 +5606,7 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if node.stroke is not None and (op.color == node.stroke or op.default):
+                    if hasattr(node, "stroke") and node.stroke is not None and (op.color == node.stroke or op.default):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -5615,12 +5615,12 @@ class Elemental(Service):
                     elif node.type == "elem text":
                         op.add_reference(node)
                         was_classified = True
-                    elif node.fill is not None and node.fill.argb is not None:
+                    elif hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
                         op.add_reference(node)
                         was_classified = True
                 elif op.type in ("op engrave", "op cut", "op hatch"):
                     if (
-                        node.stroke is not None and op.color == node.stroke
+                        hasattr(node, "stroke") and node.stroke is not None and op.color == node.stroke
                     ) or op.default:
                         op.add_reference(node)
                         was_classified = True
