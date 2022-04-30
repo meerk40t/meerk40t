@@ -52,12 +52,14 @@ class TextNode(Node):
     def bounds(self):
         if self._bounds_dirty:
             self.text.transform = self.matrix
+            self.text.stroke_width = self.stroke_width
             self._bounds = self.text.bbox(with_stroke=True)
         return self._bounds
 
     def scale_native(self, matrix):
         self.matrix *= matrix
         self.text.transform = self.matrix
+        self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
 
     def default_map(self, default_map=None):
