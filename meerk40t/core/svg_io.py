@@ -349,7 +349,7 @@ class SVGProcessor:
                 for ref in refs.split(" "):
                     for e in self.element_list:
                         if e.id == ref:
-                            op.add_reference(e.node)
+                            op.add_reference(e)
 
         if self.requires_classification:
             self.elements.classify(self.element_list)
@@ -417,13 +417,13 @@ class SVGProcessor:
             try:
                 element.load(os.path.dirname(self.pathname))
                 if element.image is not None:
-                    context_node.add(
+                    node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
                     )
-                    e_list.append(element)
+                    e_list.append(node)
             except OSError:
                 pass
         elif isinstance(element, (Group, SVG)):
