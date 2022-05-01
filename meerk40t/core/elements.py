@@ -600,7 +600,13 @@ class Elemental(Service):
         @self.console_option("dpi", "d", type=int)
         @self.console_option("overscan", "o", type=self.length)
         @self.console_option("passes", "x", type=int)
-        @self.console_option("parallel", "P", type=bool, action="store_true")
+        @self.console_option(
+            "parallel",
+            "P",
+            type=bool,
+            help=_("Creates a new operation for each element given"),
+            action="store_true",
+        )
         @self.console_option(
             "stroke",
             "K",
@@ -665,9 +671,18 @@ class Elemental(Service):
                     return "op", []
                 for item in data:
                     op = make_op()
-
                     if color is not None:
                         op.color = color
+                    elif fill:
+                        try:
+                            op.color = item.fill
+                        except AttributeError:
+                            continue
+                    elif stroke:
+                        try:
+                            op.color = item.stroke
+                        except AttributeError:
+                            continue
                     if default is not None:
                         op.default = default
                     if speed is not None:
@@ -681,12 +696,23 @@ class Elemental(Service):
                         op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
+                    self.add_op(op)
                     op.add_reference(item)
                     op_list.append(op)
             else:
                 op = make_op()
                 if color is not None:
                     op.color = color
+                elif fill:
+                    try:
+                        op.color = data[0].fill
+                    except (AttributeError, IndexError):
+                        pass
+                elif stroke:
+                    try:
+                        op.color = data[0].stroke
+                    except (AttributeError, IndexError):
+                        pass
                 if default is not None:
                     op.default = default
                 if speed is not None:
@@ -700,29 +726,11 @@ class Elemental(Service):
                     op.dpi = dpi
                 if overscan is not None:
                     op.overscan = overscan
+                self.add_op(op)
                 if data is not None:
                     for item in data:
                         op.add_reference(item)
                 op_list.append(op)
-
-            if fill:
-                for op in op_list:
-                    for c in op.children:
-                        try:
-                            obj_color = c.fill
-                        except AttributeError:
-                            continue
-                        op.color = obj_color
-            if stroke:
-                for op in op_list:
-                    for c in op.children:
-                        try:
-                            obj_color = c.stroke
-                        except AttributeError:
-                            continue
-                        op.color = obj_color
-            for op in op_list:
-                self.add_op(op)
             return "ops", op_list
 
         @self.console_argument("dpi", type=int, help=_("raster dpi"))
