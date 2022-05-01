@@ -227,7 +227,7 @@ class ImageOpNode(Node, Parameters):
             matrix = image_node.matrix
             pil_image = image_node.image
             pil_image, matrix = actualize(
-                pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_x
+                pil_image, matrix, step_x=image_node.step_x, step_y=image_node.step_y
             )
             box = (
                 matrix.value_trans_x(),
