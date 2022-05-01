@@ -68,9 +68,9 @@ class RasterPlotter:
         self.data = data
         self.width = width
         self.height = height
-        self.traverse_x_axis = traverse_x_axis
-        self.traverse_top = traverse_top
-        self.traverse_left = traverse_left
+        self.horizontal = traverse_x_axis
+        self.start_on_top = traverse_top
+        self.start_on_left = traverse_left
         self.traverse_bidirectional = traverse_bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
@@ -244,7 +244,7 @@ class RasterPlotter:
                 return iy
         return self.height - 1
 
-    def calculate_next_horizontal_pixel(self, y, dy=1, rightside=False):
+    def calculate_next_horizontal_pixel(self, y, dy=1, leftside=True):
         """
         Find the horizontal extreme at the given y-scanline, stepping by dy in the target image.
         This can be done on either the rightside (True) or leftside (False).
@@ -255,15 +255,15 @@ class RasterPlotter:
         @return:
         """
         try:
-            if rightside:
+            if leftside:
                 while True:
-                    x = self.rightmost_not_equal(y)
+                    x = self.leftmost_not_equal(y)
                     if x is not None:
                         break
                     y += dy
             else:
                 while True:
-                    x = self.leftmost_not_equal(y)
+                    x = self.rightmost_not_equal(y)
                     if x is not None:
                         break
                     y += dy
@@ -272,7 +272,7 @@ class RasterPlotter:
             return None, None
         return x, y
 
-    def calculate_next_vertical_pixel(self, x, dx=1, bottomside=False):
+    def calculate_next_vertical_pixel(self, x, dx=1, topside=True):
         """
         Find the vertical extreme at the given x-scanline, stepping by dx in the target image.
         This can be done on either the bottomside (True) or topide (False).
@@ -283,7 +283,13 @@ class RasterPlotter:
         @return:
         """
         try:
-            if bottomside:
+            if topside:
+                while True:
+                    y = self.topmost_not_equal(x)
+                    if y is not None:
+                        break
+                    x += dx
+            else:
                 while True:
                     # find that the bottommost pixel in that row.
                     y = self.bottommost_not_equal(x)
@@ -292,12 +298,6 @@ class RasterPlotter:
                         # This is a valid pixel.
                         break
                     # No pixel in that row was valid. Move to the next row.
-                    x += dx
-            else:
-                while True:
-                    y = self.topmost_not_equal(x)
-                    if y is not None:
-                        break
                     x += dx
         except IndexError:
             # Remaining image was blank, there are no more relevant pixels.
@@ -313,21 +313,15 @@ class RasterPlotter:
 
         @return: x,y coordinates of first pixel.
         """
-        if self.vertical:
-            x = 0
-            dx = 1
-            if self.right:  # Start on Right Edge?
-                x = self.width - 1
-                dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, self.bottom)
+        if self.horizontal:
+            y = 0 if self.start_on_top else self.height - 1
+            dy = 1 if self.start_on_top else -1
+            x, y = self.calculate_next_horizontal_pixel(y, dy, self.start_on_left)
             return x, y
         else:
-            y = 0
-            dy = 1
-            if self.bottom:  # Start on Bottom Edge?
-                y = self.height - 1
-                dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, self.right)
+            x = 0 if self.start_on_left else self.width - 1
+            dx = 1 if self.start_on_left else -1
+            x, y = self.calculate_next_vertical_pixel(x, dx, self.start_on_top)
             return x, y
 
     def calculate_last_pixel(self):
@@ -338,21 +332,21 @@ class RasterPlotter:
 
         @return: x,y coordinates of last pixel.
         """
-        if self.vertical:
-            x = 0
-            dx = 1
-            if self.left and self.height & 1:
-                x = self.width - 1
-                dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, self.top)
-            return x, y
-        else:
+        if self.horizontal:
             y = 0
             dy = 1
-            if self.top and self.width & 1:
+            if self.start_on_top and self.width & 1:
                 y = self.height - 1
                 dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, self.left)
+            x, y = self.calculate_next_horizontal_pixel(y, dy, not self.start_on_left)
+            return x, y
+        else:
+            x = 0
+            dx = 1
+            if self.start_on_left and self.height & 1:
+                x = self.width - 1
+                dx = -1
+            x, y = self.calculate_next_vertical_pixel(x, dx, not self.start_on_top)
             return x, y
 
     def initial_position(self):
@@ -408,134 +402,6 @@ class RasterPlotter:
                 self.offset_y + self.final_y * self.step_y,
             )
 
-    @property
-    def top(self):
-        return self.traverse_top
-
-    @property
-    def bottom(self):
-        return not self.traverse_top
-
-    @property
-    def right(self):
-        return not self.traverse_left
-
-    @property
-    def left(self):
-        return self.traverse_left
-
-    @property
-    def horizontal(self):
-        """
-        Major raster axis is horizontal
-        @return:
-        """
-        return self.traverse_x_axis
-
-    @property
-    def vertical(self):
-        """
-        Major raster axis is vertical
-        @return:
-        """
-        return not self.traverse_x_axis
-
-    @property
-    def rightward(self):
-        """
-        Raster will progress towards right
-        @return:
-        """
-        return self.left  # starting on left and moving horizontal.
-
-    @property
-    def leftward(self):
-        """
-        Raster will progress towards left
-        @return:
-        """
-        return self.right
-
-    @property
-    def topward(self):
-        """
-        Raster will progress towards top
-        @return:
-        """
-        return self.bottom
-
-    @property
-    def bottomward(self):
-        """
-        Raster will progress towards bottom
-        @return:
-        """
-        return self.top
-
-    @property
-    def rightward_major(self):
-        """
-        Raster major movements are right.
-        @return:
-        """
-        return self.left and self.horizontal  # starting on left and moving horizontal.
-
-    @property
-    def leftward_major(self):
-        """
-        Raster major movements are left
-        @return:
-        """
-        return self.right and self.horizontal
-
-    @property
-    def topward_major(self):
-        """
-        Raster major movements are top
-        @return:
-        """
-        return self.bottom and self.vertical
-
-    @property
-    def bottomward_major(self):
-        """
-        Raster major movements are bottom.
-        @return:
-        """
-        return self.top and self.vertical
-
-    @property
-    def rightward_minor(self):
-        """
-        Raster minor scanline ticks are right.
-        @return:
-        """
-        return self.left and self.vertical  # starting on left and moving horizontal.
-
-    @property
-    def leftward_minor(self):
-        """
-        Raster minor scanline ticks are left.
-        @return:
-        """
-        return self.right and self.vertical
-
-    @property
-    def topward_minor(self):
-        """
-        Raster minor scanline ticks are top.
-        @return:
-        """
-        return self.bottom and self.horizontal
-
-    @property
-    def bottomward_minor(self):
-        """
-        Raster minor scanline ticks are bottom.
-        @return:
-        """
-        return self.top and self.horizontal
-
     def plot(self):
         """
         Plot the values yielded by following the given raster plotter in the traversal defined.
@@ -557,10 +423,10 @@ class RasterPlotter:
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
     def _plot_pixels(self):
-        if self.vertical:
-            yield from self._plot_vertical
-        else:
+        if self.horizontal:
             yield from self._plot_horizontal
+        else:
+            yield from self._plot_vertical
 
     def _plot_vertical(self):
         """
@@ -573,12 +439,9 @@ class RasterPlotter:
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
-        dx = 1
-        dy = 1
-        if self.right:
-            dx = -1
-        if self.bottom:
-            dy = -1
+        dx = 1 if self.start_on_left else -1
+        dy = 1 if self.start_on_top else -1
+
         yield x, y, 0
         while 0 <= x < width:
             lower_bound = self.topmost_not_equal(x)
@@ -588,7 +451,7 @@ class RasterPlotter:
                 continue
             upper_bound = self.bottommost_not_equal(x)
 
-            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, dy > 0)
+            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, dy <= 0)
             if next_y is not None:
                 upper_bound = max(next_y, upper_bound) + self.overscan
                 lower_bound = min(next_y, lower_bound) - self.overscan
@@ -634,12 +497,8 @@ class RasterPlotter:
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
-        dx = 1
-        dy = 1
-        if self.right:
-            dx = -1
-        if self.bottom:
-            dy = -1
+        dx = 1 if self.start_on_left else -1
+        dy = 1 if self.start_on_top else -1
         yield x, y, 0
         while 0 <= y < height:
             lower_bound = self.leftmost_not_equal(y)
@@ -649,9 +508,7 @@ class RasterPlotter:
                 continue
             upper_bound = self.rightmost_not_equal(y)
 
-            next_x, next_y = self.calculate_next_horizontal_pixel(
-                y + dy, dy, dx > 0
-            )
+            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, dx <= 0)
             if next_x is not None:
                 upper_bound = max(next_x, upper_bound) + self.overscan
                 lower_bound = min(next_x, lower_bound) - self.overscan

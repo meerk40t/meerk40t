@@ -775,10 +775,10 @@ class RasterCut(CutObject):
         return 0 if self.plot.horizontal else 1
 
     def x_dir(self):
-        return 1 if self.plot.rightward else -1
+        return 1 if self.plot.start_on_left else -1
 
     def y_dir(self):
-        return 1 if self.plot.bottomward else -1
+        return 1 if self.plot.start_on_top else -1
 
     def generator(self):
         return self.plot.plot()
