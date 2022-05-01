@@ -9,20 +9,20 @@ from meerk40t.svgelements import Circle, Rect
 
 class TestElements(unittest.TestCase):
 
-    def test_elements_offset_ype(self):
+    def test_elements_type(self):
         """
-        Tests some generic elements commands and validates output as correct offset_ype
+        Tests some generic elements commands and validates output as correct type
         """
         kernel = bootstrap.bootstrap()
 
-        @kernel.console_command("validate_offset_ype", input_offset_ype="elements")
-        def validation_offset_ype(command, data=None, **kwargs):
+        @kernel.console_command("validate_type", input_type="elements")
+        def validation_type(command, data=None, **kwargs):
             for node in data:
                 self.assertTrue(isinstance(node, Node))
 
         try:
             for cmd, path, command in kernel.find("command/elements.*"):
-                kernel.console("element* " + command.split("/")[-1] + " validate_offset_ype\n")
+                kernel.console("element* " + command.split("/")[-1] + " validate_type\n")
         finally:
             kernel.shutdown()
 
