@@ -60,8 +60,15 @@ class ImageNode(Node):
             image_width, image_height = self.image.size
             x0, y0 = self.matrix.point_in_matrix_space((0, 0))
             x1, y1 = self.matrix.point_in_matrix_space((image_width, image_height))
+            x2, y2 = self.matrix.point_in_matrix_space((0, image_height))
+            x3, y3 = self.matrix.point_in_matrix_space((image_width, 0))
             self._bounds_dirty = False
-            self._bounds = x0, y0, x1, y1
+            self._bounds = (
+                min(x0, x1, x2, x3),
+                min(y0, y1, y2, y3),
+                max(x0, x1, x2, x3),
+                max(y0, y1, y2, y3),
+            )
         return self._bounds
 
     def default_map(self, default_map=None):
