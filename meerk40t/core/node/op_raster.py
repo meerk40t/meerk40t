@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
@@ -229,9 +230,12 @@ class RasterOpNode(Node, Parameters):
             step_x = self.raster_step_x
             step_y = self.raster_step_y
             bounds = self.bounds
-            image = make_raster(
-                list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
-            )
+            try:
+                image = make_raster(
+                    list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                )
+            except AssertionError:
+                raise CutPlanningFailedError("Raster too large.")
             if image.width == 1 and image.height == 1:
                 # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
                 #  around because the renderer is what sets the size of the text. If the size hasn't already

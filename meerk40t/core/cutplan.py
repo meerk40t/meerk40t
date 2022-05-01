@@ -64,11 +64,8 @@ class CutPlan:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
-            try:
-                for command in commands:
-                    command()
-            except AssertionError:
-                raise CutPlanningFailedError("Raster too large.")
+            for command in commands:
+                command()
 
     def preprocess(self):
         """ "
