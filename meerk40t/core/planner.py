@@ -406,7 +406,7 @@ class Planner(Service):
                         pass
                     copy_c = copy(c)
                     try:
-                        copy_c.deep_copy_children(c)
+                        copy_c.copy_children_as_real(c)
                     except AttributeError:
                         pass
                     cutplan.plan.append(copy_c)
@@ -465,7 +465,7 @@ class Planner(Service):
                     c = c.blob
                 copy_c = copy(c)
                 try:
-                    copy_c.deep_copy_children(c)
+                    copy_c.copy_children_as_real(c)
                 except AttributeError:
                     pass
                 try:
@@ -520,7 +520,7 @@ class Planner(Service):
                     c = c.blob
                 copy_c = copy(c)
                 try:
-                    copy_c.deep_copy_children(c)
+                    copy_c.copy_children_as_real(c)
                 except AttributeError:
                     pass
                 data.plan.append(copy_c)
