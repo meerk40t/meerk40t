@@ -548,21 +548,21 @@ class RasterPlotter:
             # There is no image.
             return
         if self.use_integers:
-            for x, y, on in self.plot_pixels():
+            for x, y, on in self._plot_pixels():
                 yield int(round(offset_x + step_x * x)), int(
                     round(offset_y + y * step_y)
                 ), on
         else:
-            for x, y, on in self.plot_pixels():
+            for x, y, on in self._plot_pixels():
                 yield offset_x + step_x * x, offset_y + y * step_y, on
 
-    def plot_pixels(self):
+    def _plot_pixels(self):
         if self.vertical:
-            yield from self.plot_vertical
+            yield from self._plot_vertical
         else:
-            yield from self.plot_horizontal
+            yield from self._plot_horizontal
 
-    def plot_vertical(self):
+    def _plot_vertical(self):
         """
         This code is for vertical rastering.
 
@@ -623,7 +623,7 @@ class RasterPlotter:
             yield x, y, 0
             dy = -dy
 
-    def plot_horizontal(self):
+    def _plot_horizontal(self):
         """
         This code is horizontal rastering.
 
