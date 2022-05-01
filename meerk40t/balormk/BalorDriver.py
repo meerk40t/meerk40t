@@ -326,7 +326,7 @@ class BalorDriver(Parameters):
                         wobble_interval = settings.get("wobble_interval", "0.3mm")
                         wobble_speed = settings.get("wobble_speed", 50.0)
                         wobble_type = settings.get("wobble_type", "circle")
-                        wobble.interval = self.service.physical_to_device_length(
+                        wobble_interval = self.service.physical_to_device_length(
                             wobble_interval, 0
                         )[0]
                         if wobble is None:
@@ -340,7 +340,7 @@ class BalorDriver(Parameters):
                             wobble.radius = wobble_r
                             wobble.speed = wobble_speed
                         if wobble_type == "circle":
-                            job._mark_modification = wobble.wobble
+                            job._mark_modification = wobble.circle
                         elif wobble_type == "sinewave":
                             job._mark_modification = wobble.sinewave
                         elif wobble_type == "sawtooth":

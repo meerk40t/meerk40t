@@ -996,6 +996,8 @@ class CommandList(CommandSource):
                 self.append(OpCut(mx, my))
         else:
             self.append(OpCut(x, y))
+        self._last_x = x
+        self._last_y = y
 
     def flush(self):
         if self._mark_modification:
@@ -1031,8 +1033,6 @@ class CommandList(CommandSource):
                 self.set_travel_speed(self._dark_speed)
         if not self._travel_speed:
             raise ValueError("Travel speed must be set before a jumping")
-        self._last_x = x
-        self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
         if self._light_modification:
@@ -1040,6 +1040,8 @@ class CommandList(CommandSource):
                 self.append(OpTravel(mx, my))
         else:
             self.append(OpTravel(x, y))
+        self._last_x = x
+        self._last_y = y
 
     def goto(self, x, y, jump_delay=None):
         """
@@ -1054,11 +1056,11 @@ class CommandList(CommandSource):
             self.set_travel_speed(self._goto_speed)
         if not self._travel_speed:
             raise ValueError("Travel speed must be set before a jumping")
-        self._last_x = x
-        self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
         self.append(OpTravel(x, y))
+        self._last_x = x
+        self._last_y = y
 
     def init(self, x, y):
         """

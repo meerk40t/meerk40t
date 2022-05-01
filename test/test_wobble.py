@@ -1,7 +1,6 @@
 import unittest
 
 from meerk40t.balor.command_list import Wobble
-from meerk40t.core.units import Length
 
 
 class TestWobble(unittest.TestCase):
@@ -21,7 +20,6 @@ class TestWobble(unittest.TestCase):
         self.assertEqual(50, len(list(wobble.circle(0, 0, 50.5, 0))))
         self.assertEqual(51, len(list(wobble.circle(0, 0, 50.5, 0))))
         self.assertEqual(201, wobble._total_distance)
-
 
     def test_wobble_circle_1(self):
         wobble = Wobble(
