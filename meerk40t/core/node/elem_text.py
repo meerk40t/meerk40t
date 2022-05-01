@@ -56,11 +56,16 @@ class TextNode(Node):
             self._bounds = self.text.bbox(with_stroke=True)
         return self._bounds
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
+        if self.parent.type != "op raster":
+            commands.append(self.remove_text)
+
+    def remove_text(self):
+        self.remove_node()
 
     def default_map(self, default_map=None):
         default_map = super(TextNode, self).default_map(default_map=default_map)

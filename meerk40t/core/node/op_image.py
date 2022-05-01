@@ -166,7 +166,7 @@ class ImageOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         """
         Process the scale to native resolution done with the given matrix. In the case of image ops we are scaling
         the overscan length into usable native units.
@@ -177,6 +177,31 @@ class ImageOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+
+        for node in self.children:
+            dpi = node.dpi
+            oneinch_x = context.device.physical_to_device_length("1in", 0)[
+                0
+            ]
+            oneinch_y = context.device.physical_to_device_length(0, "1in")[
+                1
+            ]
+            step_x = float(oneinch_x / dpi)
+            step_y = float(oneinch_y / dpi)
+            node.step_x = step_x
+            node.step_y = step_y
+            m1 = node.matrix
+            # Transformation must be uniform to permit native rastering.
+            if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+                def actual(image_node, s_x, s_y):
+                    def actualize_images():
+                        image_node.image, image_node.matrix = actualize(
+                            image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
+                        )
+                        image_node.cache = None
+                    return actualize_images
+                commands.append(actual(node, step_x, step_y))
+                break
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

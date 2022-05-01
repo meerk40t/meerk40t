@@ -65,7 +65,7 @@ class LineNode(Node):
             self._bounds = self.shape.bbox(with_stroke=True)
         return self._bounds
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width

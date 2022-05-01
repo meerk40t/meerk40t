@@ -140,7 +140,7 @@ class HatchOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
         transformed_vector = matrix.transform_vector([0, distance_y])
         self._hatch_distance_native = abs(
