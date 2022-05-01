@@ -5810,7 +5810,7 @@ class Elemental(Service):
                 if node.fill is not None and node.fill.argb is not None:
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add_reference(node.node)
+                    op.add_reference(node)
                     operations.append(op)
 
     def add_classify_op(self, op):
