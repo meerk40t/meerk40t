@@ -678,7 +678,7 @@ class CommandList(CommandSource):
         self._scale_y = 1.0
         self._units = "galvo"
         self._mark_modification = None
-        self._interpolations = None
+        self._light_modification = None
 
     @property
     def position(self):
@@ -991,30 +991,19 @@ class CommandList(CommandSource):
             raise ValueError("LaserOff Delay must be set before a mark(x,y)")
         if self._poly_delay is None:
             raise ValueError("Polygon Delay must be set before a mark(x,y)")
-        dx = x - self._last_x
-        dy = y - self._last_y
-        if self._interpolations:
-            distance = math.sqrt(dx * dx + dy * dy)
-            segments = math.ceil(distance / self._interpolations)
-            if segments == 0:
-                segments = 1
-            dx /= segments
-            dy /= segments
+        if self._mark_modification:
+            for mx, my in self._mark_modification(self._last_x, self._last_y, x, y):
+                self.append(OpCut(mx, my))
         else:
-            segments = 1
-        for segment in range(1, segments + 1):
-            next_x = self._last_x + dx
-            next_y = self._last_y + dy
-            if self._mark_modification:
-                cut_x, cut_y = self._mark_modification(
-                    self._last_x, self._last_y, next_x, next_y
-                )
-            else:
-                cut_x = next_x
-                cut_y = next_y
-            self._last_x = next_x
-            self._last_y = next_y
-            self.append(OpCut(cut_x, cut_y))
+            self.append(OpCut(x, y))
+
+    def flush(self):
+        if self._mark_modification:
+            for mx, my in self._mark_modification(self._last_x, self._last_y, None, None):
+                self.append(OpCut(mx, my))
+        if self._light_modification:
+            for mx, my in self._light_modification(self._last_x, self._last_y, None, None):
+                self.append(OpTravel(mx, my))
 
     def jump_delay(self, delay=0x0008):
         if self._jump_delay == delay:
@@ -1046,7 +1035,11 @@ class CommandList(CommandSource):
         self._last_y = y
         if jump_delay is not None:
             self.jump_delay(jump_delay)
-        self.append(OpTravel(x, y))
+        if self._light_modification:
+            for mx, my in self._light_modification(self._last_x, self._last_y, x, y):
+                self.append(OpTravel(mx, my))
+        else:
+            self.append(OpTravel(x, y))
 
     def goto(self, x, y, jump_delay=None):
         """
@@ -1249,70 +1242,103 @@ class CommandList(CommandSource):
 
 
 class Wobble:
-    def __init__(self, radius=50, speed=50):
+    def __init__(self, radius=50, speed=50, interval=10):
         self._total_count = 0
         self._total_distance = 0
+        self._remainder = 0
         self.previous_angle = None
         self.radius = radius
         self.speed = speed
+        self.interval = interval
+        self._last_x = None
+        self._last_y = None
 
     def wobble(self, x0, y0, x1, y1):
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        t = self._total_distance / (math.tau * self.radius)
-        dx = self.radius * math.cos(t * self.speed)
-        dy = self.radius * math.sin(t * self.speed)
-        return x1 + dx, y1 + dy
+        distance_change = abs(complex(x0, y0) - complex(x1, y1))
+        positions = 1 - self._remainder
+        intervals = distance_change / self.interval
+        while positions <= intervals:
+            amount = positions / intervals
+            tx = amount * (x1 - x0) + x0
+            ty = amount * (y1 - y0) + y0
+            self._total_distance += self.interval
+            self._total_count += 1
+            yield tx, ty
+            positions += 1
+        self._remainder += intervals
+        self._remainder %= 1
+
+    def circle(self, x0, y0, x1, y1):
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            t = self._total_distance / (math.tau * self.radius)
+            dx = self.radius * math.cos(t * self.speed)
+            dy = self.radius * math.sin(t * self.speed)
+            yield tx + dx, ty + dy
 
     def sinewave(self, x0, y0, x1, y1):
-        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        d = math.sin(self._total_distance / self.speed)
-        dx = self.radius * d * math.cos(angle)
-        dy = self.radius * d * math.sin(angle)
-        return x1 + dx, y1 + dy
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+            d = math.sin(self._total_distance / self.speed)
+            dx = self.radius * d * math.cos(angle)
+            dy = self.radius * d * math.sin(angle)
+            yield tx + dx, ty + dy
 
     def sawtooth(self, x0, y0, x1, y1):
-        self._total_count += 1
-        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        d = -1 if self._total_count % 2 else 1
-        dx = self.radius * d * math.cos(angle)
-        dy = self.radius * d * math.sin(angle)
-        return x1 + dx, y1 + dy
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+            d = -1 if self._total_count % 2 else 1
+            dx = self.radius * d * math.cos(angle)
+            dy = self.radius * d * math.sin(angle)
+            yield tx + dx, ty + dy
 
     def jigsaw(self, x0, y0, x1, y1):
-        self._total_count += 1
-        angle = math.atan2(y1 - y0, x1 - x0)
-        angle_perp = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        d = math.sin(self._total_distance / self.speed)
-        dx = self.radius * d * math.cos(angle_perp)
-        dy = self.radius * d * math.sin(angle_perp)
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            angle = math.atan2(y1 - y0, x1 - x0)
+            angle_perp = angle + math.tau / 4.0
+            d = math.sin(self._total_distance / self.speed)
+            dx = self.radius * d * math.cos(angle_perp)
+            dy = self.radius * d * math.sin(angle_perp)
 
-        d = -1 if self._total_count % 2 else 1
-        dx += self.radius * d * math.cos(angle)
-        dy += self.radius * d * math.sin(angle)
-        return x1 + dx, y1 + dy
+            d = -1 if self._total_count % 2 else 1
+            dx += self.radius * d * math.cos(angle)
+            dy += self.radius * d * math.sin(angle)
+            yield tx + dx, ty + dy
 
     def gear(self, x0, y0, x1, y1):
-        self._total_count += 1
-        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        d = -1 if (self._total_count // 2) % 2 else 1
-        dx = self.radius * d * math.cos(angle)
-        dy = self.radius * d * math.sin(angle)
-        return x1 + dx, y1 + dy
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+            d = -1 if (self._total_count // 2) % 2 else 1
+            dx = self.radius * d * math.cos(angle)
+            dy = self.radius * d * math.sin(angle)
+            yield tx + dx, ty + dy
 
     def slowtooth(self, x0, y0, x1, y1):
-        self._total_count += 1
-        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-        if self.previous_angle is None:
+        if x1 is None or y1 is None:
+            yield x0, y0
+            return
+        for tx, ty in self.wobble(x0, y0, x1, y1):
+            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+            if self.previous_angle is None:
+                self.previous_angle = angle
+            amount = 1.0 / self.speed
+            angle = amount * (angle - self.previous_angle) + self.previous_angle
+            d = -1 if self._total_count % 2 else 1
+            dx = self.radius * d * math.cos(angle)
+            dy = self.radius * d * math.sin(angle)
             self.previous_angle = angle
-        amount = 1.0 / self.speed
-        angle = amount * (angle - self.previous_angle) + self.previous_angle
-        self._total_distance += abs(complex(x0, y0) - complex(x1, y1))
-        d = -1 if self._total_count % 2 else 1
-        dx = self.radius * d * math.cos(angle)
-        dy = self.radius * d * math.sin(angle)
-        self.previous_angle = angle
-        return x1 + dx, y1 + dy
+            yield tx + dx, ty + dy

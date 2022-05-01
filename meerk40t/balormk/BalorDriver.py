@@ -326,10 +326,14 @@ class BalorDriver(Parameters):
                         wobble_interval = settings.get("wobble_interval", "0.3mm")
                         wobble_speed = settings.get("wobble_speed", 50.0)
                         wobble_type = settings.get("wobble_type", "circle")
+                        wobble.interval = self.service.physical_to_device_length(
+                            wobble_interval, 0
+                        )[0]
                         if wobble is None:
                             wobble = Wobble(
                                 radius=wobble_r,
                                 speed=wobble_speed,
+                                interval=wobble_interval,
                             )
                         else:
                             # set our parameterizations
@@ -343,13 +347,13 @@ class BalorDriver(Parameters):
                             job._mark_modification = wobble.sawtooth
                         elif wobble_type == "jigsaw":
                             job._mark_modification = wobble.jigsaw
+                        elif wobble_type == "gear":
+                            job._mark_modification = wobble.gear
                         elif wobble_type == "slowtooth":
                             job._mark_modification = wobble.slowtooth
                         else:
                             raise ValueError
-                        job._interpolations = self.service.physical_to_device_length(
-                            wobble_interval, 0
-                        )[0]
+
                     else:
                         job._mark_modification = None
                         job._interpolations = None
@@ -368,6 +372,7 @@ class BalorDriver(Parameters):
                     job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
+        job.flush()
         job.laser_control(False)
         self.connection.execute(job, 1)
         if self.redlight_preferred:
