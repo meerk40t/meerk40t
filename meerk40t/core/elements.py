@@ -681,7 +681,7 @@ class Elemental(Service):
                         op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
-                    op.add_reference(item.node)
+                    op.add_reference(item)
                     op_list.append(op)
             else:
                 op = make_op()
@@ -702,7 +702,7 @@ class Elemental(Service):
                     op.overscan = overscan
                 if data is not None:
                     for item in data:
-                        op.add_reference(item.node)
+                        op.add_reference(item)
                 op_list.append(op)
 
             if fill:
