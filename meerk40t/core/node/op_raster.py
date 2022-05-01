@@ -241,9 +241,12 @@ class RasterOpNode(Node, Parameters):
                 #  around because the renderer is what sets the size of the text. If the size hasn't already
                 #  been set, the initial bounds are wrong.
                 bounds = self.bounds
-                image = make_raster(
-                    list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
-                )
+                try:
+                    image = make_raster(
+                        list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                    )
+                except AssertionError:
+                    raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
             matrix = Matrix.scale(step_x, step_y)
             matrix.post_translate(bounds[0], bounds[1])
