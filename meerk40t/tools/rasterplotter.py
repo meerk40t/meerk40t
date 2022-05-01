@@ -403,9 +403,9 @@ class RasterPlotter:
 
     def _plot_pixels(self):
         if self.horizontal:
-            yield from self._plot_horizontal
+            yield from self._plot_horizontal()
         else:
-            yield from self._plot_vertical
+            yield from self._plot_vertical()
 
     def _plot_vertical(self):
         """

@@ -119,6 +119,8 @@ class ImageNode(Node):
         @param step_y:
         @return:
         """
+        if self.image.mode not in ("L", "1"):
+            return True
         m = self.matrix
         # Transformation must be uniform to permit native rastering.
         return m.a != self.step_x or m.b != 0.0 or m.c != 0.0 or m.d != self.step_y

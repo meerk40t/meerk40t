@@ -225,7 +225,10 @@ class ImageOpNode(Node, Parameters):
             step_y = image_node.step_y
 
             # Set variables by direction
-            direction = image_node.direction
+            if image_node.direction is not None:
+                direction = image_node.direction
+            else:
+                direction = self.raster_direction
             horizontal = False
             start_on_left = False
             start_on_top = False
