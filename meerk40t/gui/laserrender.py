@@ -78,15 +78,13 @@ class LaserRender:
         if draw_mode is None:
             draw_mode = self.context.draw_mode
 
-        # if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
-        #     types = []
-        #     if draw_mode & DRAW_MODE_PATH == 0:
-        #         types.append(Path)
-        #     if draw_mode & DRAW_MODE_IMAGE == 0:
-        #         types.append(SVGImage)
-        #     if draw_mode & DRAW_MODE_TEXT == 0:
-        #         types.append(SVGText)
-        #     nodes = [e for e in nodes if type(e.object) in types]
+        if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
+            if draw_mode & DRAW_MODE_PATH:  # Do not draw paths.
+                nodes = [e for e in nodes if e.type != "elem path"]
+            if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
+                nodes = [e for e in nodes if e.type != "elem image"]
+            if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
+                nodes = [e for e in nodes if e.type != "elem text"]
 
         for node in nodes:
             if node.type == "reference":
@@ -119,6 +117,8 @@ class LaserRender:
                     node.draw = self.draw_text_node
                 elif node.type == "group":
                     node.draw = self.draw_group_node
+                elif node.type == "cutcode":
+                    node.draw = self.draw_cutcode_node
                 else:
                     continue
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
@@ -209,7 +209,7 @@ class LaserRender:
         self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
 
     def draw_cutcode_node(
-        self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
+        self, node: Node, gc: wx.GraphicsContext, draw_mode, zoomscale=1.0, alpha=255, x: int = 0, y: int = 0
     ):
         cutcode = node.cutcode
         self.draw_cutcode(cutcode, gc, x, y)
