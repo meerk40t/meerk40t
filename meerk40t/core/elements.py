@@ -681,7 +681,7 @@ class Elemental(Service):
                         op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
-                    op.add_reference(item.node)
+                    op.add_reference(item)
                     op_list.append(op)
             else:
                 op = make_op()
@@ -702,7 +702,7 @@ class Elemental(Service):
                     op.overscan = overscan
                 if data is not None:
                     for item in data:
-                        op.add_reference(item.node)
+                        op.add_reference(item)
                 op_list.append(op)
 
             if fill:
@@ -4562,7 +4562,7 @@ class Elemental(Service):
                 add_nodes = [c for c in add_nodes if c is not None]
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -4587,7 +4587,7 @@ class Elemental(Service):
             add_nodes = list(node.children)
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_operation(
@@ -5810,7 +5810,7 @@ class Elemental(Service):
                 if node.fill is not None and node.fill.argb is not None:
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add_reference(node.node)
+                    op.add_reference(node)
                     operations.append(op)
 
     def add_classify_op(self, op):

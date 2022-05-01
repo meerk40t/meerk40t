@@ -60,13 +60,12 @@ class CutPlan:
 
     def execute(self):
         # Using copy of commands, so commands can add ops.
-        cmds = self.commands[:]
-        self.commands.clear()
-        try:
-            for cmd in cmds:
-                cmd()
-        except AssertionError:
-            raise CutPlanningFailedError("Raster too large.")
+        while self.commands:
+            # Executing command can add a command, complete them all.
+            commands = self.commands[:]
+            self.commands.clear()
+            for command in commands:
+                command()
 
     def preprocess(self):
         """ "
@@ -111,12 +110,26 @@ class CutPlan:
             self.plan.append(context.lookup("plan/interrupt"))
 
         # ==========
-        # Conditional Ops
+        # Preprocess Operations
         # ==========
-        self.conditional_jobadd_strip_text()
-        self.conditional_jobadd_scale()
-        self.conditional_jobadd_make_raster()
-        self.conditional_jobadd_actualize_image()
+        matrix = Matrix(self.context.device.scene_to_device_matrix())
+
+        # TODO: Correct rotary.
+        # rotary = self.context.rotary
+        # if rotary.rotary_enabled:
+        #     axis = rotary.axis
+
+        for op in self.plan:
+            if not hasattr(op, "type"):
+                continue
+            if op.type.startswith("op"):
+                if hasattr(op, "preprocess"):
+                    op.preprocess(self.context, matrix, self.commands)
+                for node in op.flat():
+                    if node is op:
+                        continue
+                    if hasattr(node, "preprocess"):
+                        node.preprocess(self.context, matrix, self.commands)
 
     def blob(self):
         """
@@ -344,249 +357,10 @@ class CutPlan:
                 )
                 last = self.plan[i].end
 
-    def strip_text(self):
-        """
-        Perform strip text on the current plan
-        @return:
-        """
-        for k in range(len(self.plan) - 1, -1, -1):
-            op = self.plan[k]
-            if not hasattr(op, "type"):
-                continue
-            try:
-                if op.type in ("op cut", "op engrave", "op hatch"):
-                    for i, e in enumerate(list(op.children)):
-                        if e.type == "reference":
-                            if e.node.type == "elem text":
-                                e.remove_node()
-                        elif e.type == "elem text":
-                            e.remove_node()
-                    if len(op.children) == 0:
-                        del self.plan[k]
-            except AttributeError:
-                pass
-
-    def strip_rasters(self):
-        """
-        Strip rasters if there is no method of converting vectors to rasters. Rasters must
-        be stripped at the `validate` stage.
-        @return:
-        """
-        stripped = False
-        for k, op in enumerate(self.plan):
-            if not hasattr(op, "type"):
-                continue
-            if op.type == "op raster":
-                if len(op.children) == 1 and op.children[0].type == "elem image":
-                    continue
-                self.plan[k] = None
-                stripped = True
-        if stripped:
-            p = [q for q in self.plan if q is not None]
-            self.plan.clear()
-            self.plan.extend(p)
-
-    def _make_image_for_op(self, op):
-        make_raster = self.context.lookup("render-op/make_raster")
-        step_x = op.raster_step_x
-        step_y = op.raster_step_y
-        bounds = op.bounds
-        image = make_raster(
-            list(op.flat()), bounds=bounds, step_x=step_x, step_y=step_y
-        )
-        image = image.convert("L")
-        matrix = Matrix.scale(step_x, step_y)
-        matrix.post_translate(bounds[0], bounds[1])
-        image_node = ImageNode(image=image, matrix=matrix, step_x=step_x, step_y=step_y)
-        return image_node
-
-    def make_image(self):
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type == "op raster":
-                if len(op.children) == 1 and op.children[0].type == "elem image":
-                    continue
-                image_node = self._make_image_for_op(op)
-                if image_node is None:
-                    continue
-                if image_node.image.width == 1 and image_node.image.height == 1:
-                    # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                    #  around because the renderer is what sets the size of the text. If the size hasn't already
-                    #  been set, the initial bounds are wrong.
-                    image_node = self._make_image_for_op(op)
-                op.children.clear()
-                op.add_node(image_node)
-
-    def actualize_job_command(self):
-        """
-        Actualize the image at validate stage on operations.
-        @return:
-        """
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type == "op raster":
-                dpi = float(op.settings.get("dpi", 500))
-                oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
-                oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
-                step_x = float(oneinch_x / dpi)
-                step_y = float(oneinch_y / dpi)
-                op.settings["raster_step_x"] = step_x
-                op.settings["raster_step_y"] = step_y
-                for node in op.children:
-                    node.step_x = step_x
-                    node.step_y = step_y
-                    m = node.matrix
-                    # Transformation must be uniform to permit native rastering.
-                    if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
-                        node.image, node.matrix = actualize(
-                            node.image, node.matrix, step_x=step_x, step_y=step_y
-                        )
-                        node.cache = None
-            if op.type == "op image":
-                for node in op.children:
-                    dpi = node.dpi
-                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[
-                        0
-                    ]
-                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[
-                        1
-                    ]
-                    step_x = float(oneinch_x / dpi)
-                    step_y = float(oneinch_y / dpi)
-                    node.step_x = step_x
-                    node.step_y = step_y
-                    m1 = node.matrix
-                    # Transformation must be uniform to permit native rastering.
-                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
-                        node.image, node.matrix = actualize(
-                            node.image, node.matrix, step_x=step_x, step_y=step_y
-                        )
-                        node.cache = None
-
-    def scale_to_device_native(self):
-        """
-        Scale to device native at validate stage on operations.
-        @return:
-        """
-        matrix = Matrix(self.context.device.scene_to_device_matrix())
-
-        # TODO: Correct rotary.
-        # rotary = self.context.rotary
-        # if rotary.rotary_enabled:
-        #     axis = rotary.axis
-
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type.startswith("op"):
-                if hasattr(op, "scale_native"):
-                    op.scale_native(matrix)
-                for node in op.flat():
-                    if node is op:
-                        continue
-                    if hasattr(node, "scale_native"):
-                        node.scale_native(matrix)
-
-        self.conditional_jobadd_actualize_image()
-
     def clear(self):
         self.plan.clear()
         self.commands.clear()
 
-    # ==========
-    # CONDITIONAL JOB ADDS
-    # ==========
-
-    def conditional_jobadd_strip_text(self):
-        """
-        Add strip_text command if conditions are met.
-        @return:
-        """
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type in ("op cut", "op engrave", "op hatch"):
-                for e in op.children:
-                    if e.type == "reference":
-                        if e.node.type == "elem text":
-                            self.commands.append(self.strip_text)
-                            return True
-                    elif e.type == "elem text":
-                        self.commands.append(self.strip_text)
-                        return True
-        return False
-
-    def conditional_jobadd_make_raster(self):
-        """
-        Add make_make raster command if conditions are met.
-        @return:
-        """
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type == "op raster":
-                if len(op.children) == 0:
-                    continue
-                if len(op.children) == 1 and op.children[0].type == "elem image":
-                    continue  # make raster not needed since it's a single real raster.
-                make_raster = self.context.lookup("render-op/make_raster")
-
-                if make_raster is None:
-                    self.commands.append(self.strip_rasters)
-                else:
-                    self.commands.append(self.make_image)
-                return True
-        return False
-
-    def conditional_jobadd_actualize_image(self):
-        """
-        Conditional actualize image if conditions are met.
-        @return:
-        """
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            # if op.type == "op raster":
-            #     dpi = float(op.settings['dpi'])
-            #     oneinch_x = self.context.device.physical_to_device_length("1in", 0)[0]
-            #     oneinch_y = self.context.device.physical_to_device_length(0, "1in")[1]
-            #     step_x = float(oneinch_x / dpi)
-            #     step_y = float(oneinch_y / dpi)
-            #     op.settings['raster_step_x'] = step_x
-            #     op.settings['raster_step_y'] = step_y
-            #     for node in op.children:
-            #         m = node.object.transform
-            #         # Transformation must be uniform to permit native rastering.
-            #         if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
-            #             self.commands.append(self.actualize_job_command)
-            #             return
-            if op.type == "op image":
-                for node in op.children:
-                    dpi = node.dpi
-                    oneinch_x = self.context.device.physical_to_device_length("1in", 0)[
-                        0
-                    ]
-                    oneinch_y = self.context.device.physical_to_device_length(0, "1in")[
-                        1
-                    ]
-                    step_x = float(oneinch_x / dpi)
-                    step_y = float(oneinch_y / dpi)
-                    node.step_x = step_x
-                    node.step_y = step_y
-                    m1 = node.matrix
-                    # Transformation must be uniform to permit native rastering.
-                    if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
-                        self.commands.append(self.actualize_job_command)
-                        return
-
-    def conditional_jobadd_scale(self):
-        """
-        Add scale to device native if conditions are met.
-        @return:
-        """
-        self.commands.append(self.scale_to_device_native)
 
 
 def is_inside(inner, outer):

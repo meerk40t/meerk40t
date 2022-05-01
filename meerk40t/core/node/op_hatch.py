@@ -125,8 +125,8 @@ class HatchOpNode(Node, Parameters):
         for element in obj.children:
             self.add_reference(element)
 
-    def deep_copy_children(self, obj):
-        for node in obj.children:
+    def copy_children_as_real(self, copy_node):
+        for node in copy_node.children:
             self.add_node(copy(node.node))
 
     def time_estimate(self):
@@ -140,7 +140,7 @@ class HatchOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
         transformed_vector = matrix.transform_vector([0, distance_y])
         self._hatch_distance_native = abs(

@@ -50,7 +50,7 @@ class ImageNode(Node):
             str(self._parent),
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
         self._bounds_dirty = True
 
