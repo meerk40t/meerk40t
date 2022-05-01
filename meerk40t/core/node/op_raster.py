@@ -262,66 +262,78 @@ class RasterOpNode(Node, Parameters):
         """
         Generator of cutobjects for a raster operation. This takes any image node children
         and converts them into rastercut objects. These objects should have already been converted
-        from vector shapes. However, the preference for raster shapes it to use the settings
-        set on the operation rather than on the shape."""
+        from vector shapes.
+
+        The preference for raster shapes it to use the settings set on this operation rather than on the image.
+        """
         settings = self.derive()
+
+        # Set overscan
         overscan = self.overscan
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
 
+        # Set steps
+        step_x = self.raster_step_x
+        step_y = self.raster_step_y
+
+        # Set variables by direction
         direction = self.raster_direction
+        horizontal = False
+        start_on_left = False
+        start_on_top = False
+        if direction == 0 or direction == 4:
+            horizontal = True
+            start_on_top = True
+        elif direction == 1:
+            horizontal = True
+            start_on_top = False
+        elif direction == 2:
+            horizontal = False
+            start_on_left = False
+        elif direction == 3:
+            horizontal = False
+            start_on_left = True
+        bidirectional = bool(self.raster_swing)
+
         for image_node in self.children:
+            # Process each child. Some core settings are the same for each child.
+
             if image_node.type != "elem image":
                 continue
 
-            # Ensure actualization is done with raster values.
+            # Perform correct actualization
             osx = image_node.step_x
             osy = image_node.step_y
-            image_node.step_x = self.raster_step_x
-            image_node.step_y = self.raster_step_y
+            image_node.step_x = step_x
+            image_node.step_y = step_y
             if image_node.needs_actualization():
                 image_node.make_actual()
             image_node.step_x = osx
             image_node.step_y = osy
 
-            pil_image = image_node.image
+            # Set variables
             matrix = image_node.matrix
-            box = (
-                matrix.value_trans_x(),
-                matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * self.raster_step_x,
-                matrix.value_trans_y() + pil_image.height * self.raster_step_y,
-            )
-            path = Path(
-                Polygon(
-                    (box[0], box[1]),
-                    (box[0], box[3]),
-                    (box[2], box[3]),
-                    (box[2], box[1]),
-                )
-            )
+            pil_image = image_node.image
             offset_x = matrix.value_trans_x()
             offset_y = matrix.value_trans_y()
-            step_x = self.raster_step_x
-            step_y = self.raster_step_y
-            direction = settings["raster_direction"]
-            horizontal = False
-            start_on_left = False
-            start_on_top = False
-            if direction == 0 or direction == 4:
-                horizontal = True
-                start_on_top = True
-            elif direction == 1:
-                horizontal = True
-                start_on_top = False
-            elif direction == 2:
-                horizontal = False
-                start_on_left = False
-            elif direction == 3:
-                horizontal = False
-                start_on_left = True
-            bidirectional = bool(self.raster_swing)
+
+            # Establish path
+            min_x = offset_x
+            min_y = offset_y
+            max_x = offset_x + pil_image.width * step_x
+            max_y = offset_y + pil_image.height * step_y
+            path = Path(
+                Polygon(
+                    (min_x, min_y),
+                    (min_x, max_y),
+                    (max_x, max_y),
+                    (max_x, min_y),
+                )
+            )
+
+            # Create Cut Object
             cut = RasterCut(
                 image=pil_image,
                 offset_x=offset_x,
@@ -341,9 +353,9 @@ class RasterOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if direction == 4:
+                # Create optional crosshatch cut
                 horizontal = False
                 start_on_left = False
-                # Add in optional crosshatch value.
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,

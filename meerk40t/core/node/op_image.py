@@ -209,42 +209,23 @@ class ImageOpNode(Node, Parameters):
         and converts them into rastercut cutobjects.
         """
         for image_node in self.children:
+            # Process each child. All settings are different for each child.
+
             if image_node.type != "elem image":
                 continue
             settings = self.derive()
-            step_x = image_node.step_x
-            step_y = image_node.step_y
-            settings["raster_step_x"] = step_x
-            settings["raster_step_y"] = step_y
+
+            # Set overscan
             overscan = self.overscan
             if not isinstance(overscan, float):
                 overscan = float(Length(overscan))
 
-            settings["overscan"] = overscan
-            if image_node.direction is not None:
-                # Overrides the local setting, if direction is set.
-                settings["raster_direction"] = image_node.direction
-            if image_node.needs_actualization():
-                image_node.make_actual()
-            matrix = image_node.matrix
-            pil_image = image_node.image
-            box = (
-                matrix.value_trans_x(),
-                matrix.value_trans_y(),
-                matrix.value_trans_x() + pil_image.width * step_x,
-                matrix.value_trans_y() + pil_image.height * step_y,
-            )
-            path = Path(
-                Polygon(
-                    (box[0], box[1]),
-                    (box[0], box[3]),
-                    (box[2], box[3]),
-                    (box[2], box[1]),
-                )
-            )
-            offset_x = matrix.value_trans_x()
-            offset_y = matrix.value_trans_y()
-            direction = settings["raster_direction"]
+            # Set steps
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+
+            # Set variables by direction
+            direction = image_node.direction
             horizontal = False
             start_on_left = False
             start_on_top = False
@@ -261,6 +242,32 @@ class ImageOpNode(Node, Parameters):
                 horizontal = False
                 start_on_left = True
             bidirectional = bool(self.raster_swing)
+
+            # Perform correct actualization
+            if image_node.needs_actualization():
+                image_node.make_actual()
+
+            # Set variables
+            matrix = image_node.matrix
+            pil_image = image_node.image
+            offset_x = matrix.value_trans_x()
+            offset_y = matrix.value_trans_y()
+
+            # Establish path
+            min_x = offset_x
+            min_y = offset_y
+            max_x = offset_x + pil_image.width * step_x
+            max_y = offset_y + pil_image.height * step_y
+            path = Path(
+                Polygon(
+                    (min_x, min_y),
+                    (min_x, max_y),
+                    (max_x, max_y),
+                    (max_x, min_y),
+                )
+            )
+
+            # Create Cut Object
             cut = RasterCut(
                 image=pil_image,
                 offset_x=offset_x,
@@ -280,9 +287,9 @@ class ImageOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if direction == 4:
+                # Create optional crosshatch cut
                 horizontal = False
                 start_on_left = False
-                # Add in optional crosshatch value.
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,
