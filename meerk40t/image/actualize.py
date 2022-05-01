@@ -76,8 +76,8 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
 
     bbox = min(xs), min(ys), max(xs), max(ys)
 
-    element_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
-    element_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+    image_width = ceil(abs(bbox[2] * step_scale_x)) - floor(abs(bbox[0] * step_scale_x))
+    image_height = ceil(abs(bbox[3] * step_scale_y)) - floor(abs(bbox[1] * step_scale_y))
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
@@ -90,7 +90,7 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale_x, step_scale_y)
     image = image.transform(
-        (element_width, element_height),
+        (image_width, image_height),
         Image.AFFINE,
         (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
         resample=Image.BICUBIC,
@@ -109,10 +109,10 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
         if box is not None:
             width = box[2] - box[0]
             height = box[3] - box[1]
-            if width != element_width or height != element_height:
+            if width != image_width or height != image_height:
                 image = image.crop(box)
                 matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
-    matrix.post_scale(step_x, step_x)
+    matrix.post_scale(step_x, step_y)
     matrix.post_translate(tx, ty)
     return image, matrix

@@ -2,8 +2,10 @@ import functools
 import os.path
 import re
 from copy import copy
+from random import shuffle, randint
 from math import cos, gcd, pi, sin, tau, sqrt
 from os.path import realpath
+from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
@@ -679,7 +681,7 @@ class Elemental(Service):
                         op.dpi = dpi
                     if overscan is not None:
                         op.overscan = overscan
-                    op.add_reference(item.node)
+                    op.add_reference(item)
                     op_list.append(op)
             else:
                 op = make_op()
@@ -700,7 +702,7 @@ class Elemental(Service):
                     op.overscan = overscan
                 if data is not None:
                     for item in data:
-                        op.add_reference(item.node)
+                        op.add_reference(item)
                 op_list.append(op)
 
             if fill:
@@ -1187,8 +1189,9 @@ class Elemental(Service):
             self.remove_elements(data)
             node = self.elem_branch.add(
                 path=super_element, type="elem path"
-            ).emphasized = True
-            self.classify([super_element])
+            )
+            node.emphasized = True
+            self.classify([node])
             return "elements", [node]
 
         @self.console_command(
@@ -2236,8 +2239,11 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_circle(x_pos, y_pos, r_pos, data=None, **kwargs):
+        def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, **kwargs):
             circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
+            if circ.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(
                 shape=circ, type="elem ellipse", stroke=Color("black")
             )
@@ -2246,7 +2252,7 @@ class Elemental(Service):
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("r_pos", type=Length)
@@ -2257,15 +2263,18 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_circle_r(r_pos, data=None, **kwargs):
+        def element_circle_r(channel, _, r_pos, data=None, **kwargs):
             circ = Circle(r=float(r_pos))
+            if circ.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=circ, type="elem ellipse")
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
                 data = list()
-            data.append(circ)
+            data.append(node)
             return "elements", data
 
         @self.console_argument("x_pos", type=Length)
@@ -2279,17 +2288,20 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_ellipse(x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
+        def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
             ellip = Ellipse(
                 cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
             )
+            if ellip.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=ellip, type="elem ellipse")
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
                 data = list()
-            data.append(ellip)
+            data.append(node)
             return "elements", data
 
         @self.console_argument(
@@ -2321,13 +2333,16 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_rect(
+        def element_rect(channel, _,
             x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
         ):
             """
             Draws a svg rectangle with optional rounded corners.
             """
             rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
+            if rect.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
             node = self.elem_branch.add(shape=rect, type="elem rect")
             node.stroke = Color("black")
             self.set_emphasis([node])
@@ -2398,19 +2413,24 @@ class Elemental(Service):
             ("polygon", "polyline"),
             help=_("poly(gon|line) (Length Length)*"),
             input_type=("elements", None),
+            output_type="elements",
             all_arguments_required=True,
         )
-        def element_poly(command, mlist, data=None, **kwargs):
+        def element_poly(command, channel, _, mlist, data=None, **kwargs):
             try:
+                pts = [float(Length(p)) for p in mlist]
                 if command == "polygon":
-                    element = Polygon(list(map(float, mlist)))
+                    shape = Polygon(pts)
                 else:
-                    element = Polyline(list(map(float, mlist)))
+                    shape = Polyline(pts)
             except ValueError:
                 raise CommandSyntaxError(
                     _("Must be a list of spaced delimited length pairs.")
                 )
-            node = self.elem_branch.add(shape=element, type="elem polyline")
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
             node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
@@ -2706,13 +2726,13 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Rotate Values:"))
                 i = 0
-                for element in self.elems():
-                    name = str(element)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: rotate(%fturn) - %s")
-                        % (i, element.matrix.rotation.as_turns, name)
+                        % (i, node.matrix.rotation.as_turns, name)
                     )
                     i += 1
                 channel("----------")
@@ -2736,25 +2756,24 @@ class Elemental(Service):
             matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
             try:
                 if not absolute:
-                    for element in data:
+                    for node in data:
                         try:
-                            if element.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        element.matrix *= matrix
-                        element.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for element in data:
-                        start_angle = element.matrix.rotation
+                    for node in data:
+                        start_angle = node.matrix.rotation
                         amount = rot - start_angle
                         matrix = Matrix(
                             "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
                         )
-                        element *= matrix
-                        if hasattr(element, "node"):
-                            element.node.modified()
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2796,16 +2815,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Scale Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         "%d: scale(%f, %f) - %s"
                         % (
                             i,
-                            e.matrix.value_scale_x(),
-                            e.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
+                            node.matrix.value_scale_x(),
                             name,
                         )
                     )
@@ -2827,33 +2846,33 @@ class Elemental(Service):
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            m = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
+            matrix = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
             try:
                 if not absolute:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        e.matrix *= m
-                        e.modified()
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
+                    for node in data:
                         try:
-                            if e.lock:
+                            if node.lock:
                                 continue
                         except AttributeError:
                             pass
 
-                        osx = e.matrix.value_scale_x()
-                        osy = e.matrix.value_scale_y()
+                        osx = node.matrix.value_scale_x()
+                        osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        m = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -2905,7 +2924,6 @@ class Elemental(Service):
                     path = None
 
                 subject_polygons = []
-                from numpy import linspace
                 if not path is None:
                     for subpath in path.as_subpaths():
                         subj = Path(subpath).npoint(linspace(0, 1, 1000))
@@ -2986,16 +3004,16 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Translate Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
                         _("%d: translate(%f, %f) - %s")
                         % (
                             i,
-                            e.matrix.value_trans_x(),
-                            e.matrix.value_trans_y(),
+                            node.matrix.value_trans_x(),
+                            node.matrix.value_trans_y(),
                             name,
                         )
                     )
@@ -3011,22 +3029,21 @@ class Elemental(Service):
                 tx = 0
             if ty is None:
                 ty = 0
-            m = Matrix.translate(tx, ty)
+            matrix = Matrix.translate(tx, ty)
             try:
                 if not absolute:
-                    for e in data:
-                        e *= m
-                        if hasattr(e, "node"):
-                            e.node.modified()
+                    for node in data:
+                        node.matrix *= matrix
+                        node.modified()
                 else:
-                    for e in data:
-                        otx = e.matrix.value_trans_x()
-                        oty = e.matrix.value_trans_y()
+                    for node in data:
+                        otx = node.matrix.value_trans_x()
+                        oty = node.matrix.value_trans_y()
                         ntx = tx - otx
                         nty = ty - oty
-                        m = Matrix.translate(ntx, nty)
-                        e.matrix *= m
-                        e.modified()
+                        matrix = Matrix.translate(ntx, nty)
+                        node.matrix *= matrix
+                        node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -3050,10 +3067,9 @@ class Elemental(Service):
                 oty = bounds[1]
                 ntx = tx - otx
                 nty = ty - oty
-                for e in data:
-                    e.matrix.post_translate(ntx, nty)
-                    if hasattr(e, "node"):
-                        e.modified()
+                for node in data:
+                    node.matrix.post_translate(ntx, nty)
+                    node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return "elements", data
@@ -3098,22 +3114,22 @@ class Elemental(Service):
                     channel(_("resize: nothing to do - scale factors 1"))
                     return
 
-                m = Matrix(
+                matrix = Matrix(
                     "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
                     % (x_pos, y_pos, sx, sy, -x, -y)
                 )
                 if data is None:
                     data = list(self.elems(emphasized=True))
-                for e in data:
+                for node in data:
                     try:
-                        if e.lock:
+                        if node.lock:
                             channel(_("resize: cannot resize a locked image"))
                             return
                     except AttributeError:
                         pass
-                for e in data:
-                    e.matrix *= m
-                    e.modified()
+                for node in data:
+                    node.matrix *= matrix
+                    node.modified()
                 return "elements", data
             except (ValueError, ZeroDivisionError, TypeError):
                 raise CommandSyntaxError
@@ -3137,11 +3153,11 @@ class Elemental(Service):
                 channel("----------")
                 channel(_("Matrix Values:"))
                 i = 0
-                for e in self.elems():
-                    name = str(e)
+                for node in self.elems():
+                    name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s - %s" % (i, str(e.matrix), name))
+                    channel("%d: %s - %s" % (i, str(node.matrix), name))
                     i += 1
                 channel("----------")
                 return
@@ -3162,16 +3178,15 @@ class Elemental(Service):
                     tx,
                     ty,
                 )
-                for e in data:
+                for node in data:
                     try:
-                        if e.lock:
+                        if node.lock:
                             continue
                     except AttributeError:
                         pass
 
-                    e.matrix = Matrix(m)
-                    if hasattr(e, "node"):
-                        e.modified()
+                    node.matrix = Matrix(m)
+                    node.modified()
             except ValueError:
                 raise CommandSyntaxError
             return
@@ -3583,9 +3598,9 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                m = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
-                for e in pasted:
-                    e.matrix *= m
+                matrix = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
+                for node in pasted:
+                    node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group")
             for p in pasted:
                 group.add_node(copy(p))
@@ -3661,137 +3676,298 @@ class Elemental(Service):
         # ==========
         # TRACE OPERATIONS
         # ==========
+
+        # Function to return the euclidean distance
+        # between two points
+        def dist(a, b):
+            return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))
+
+        # Function to check whether a point lies inside
+        # or on the boundaries of the circle
+        def is_inside(center, radius, p):
+            return dist(center, p) <= radius
+
+        # The following two functions are used
+        # To find the equation of the circle when
+        # three points are given.
+
+        # Helper method to get a circle defined by 3 points
+        def get_circle_center(bx, by, cx, cy):
+            B = bx * bx + by * by
+            C = cx * cx + cy * cy
+            D = bx * cy - by * cx
+            return [(cy * B - by * C) / (2 * D),
+                    (bx * C - cx * B) / (2 * D)]
+
+        # Function to return the smallest circle
+        # that intersects 2 points
+        def circle_from1(A, B):
+            # Set the center to be the midpoint of A and B
+            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0 ]
+
+            # Set the radius to be half the distance AB
+            return C, dist(A, B) / 2.0
+
+        # Function to return a unique circle that
+        # intersects three points
+        def circle_from2(A, B, C):
+            if A==B:
+                print ("A==B")
+                I, radius = circle_from1(A, C)
+                return I, radius
+            elif A==C:
+                print ("A==C")
+                I, radius = circle_from1(A, B)
+                return I, radius
+            elif B==C:
+                print ("B==C")
+                I, radius = circle_from1(A, B)
+                return I, radius
+            else:
+                I = get_circle_center(B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1])
+                I[0] += A[0]
+                I[1] += A[1]
+                radius = dist (I, A)
+                return I, radius
+
+        # Function to check whether a circle
+        # encloses the given points
+        def is_valid_circle(center, radius, P):
+
+            # Iterating through all the points
+            # to check  whether the points
+            # lie inside the circle or not
+            for p in P:
+                if (not is_inside(center, radius, p)):
+                    return False
+            return True
+
+        # Function to return the minimum enclosing
+        # circle for N <= 3
+        def min_circle_trivial(P):
+            assert(len(P) <= 3)
+
+            if not P :
+                return [0, 0], 0
+
+            elif (len(P) == 1) :
+                return P[0], 0
+
+            elif (len(P) == 2) :
+                center, radius = circle_from1(P[0], P[1])
+                return center, radius
+
+            # To check if MEC can be determined
+            # by 2 points only
+            for i in range(3):
+                for j in range(i + 1, 3):
+
+                    center, radius = circle_from1(P[i], P[j])
+                    if (is_valid_circle(center, radius, P)):
+                        return center, radius
+
+            center, radius = circle_from2(P[0], P[1], P[2])
+            return center, radius
+
+        # Returns the MEC using Welzl's algorithm
+        # Takes a set of input points P and a set R
+        # points on the circle boundary.
+        # n represents the number of points in P
+        # that are not yet processed.
+        def welzl_helper(P, R, n):
+            # Base case when all points processed or |R| = 3
+            if (n == 0 or len(R) == 3) :
+                center, radius = min_circle_trivial(R)
+                return center, radius
+
+            # Pick a random point randomly
+            idx = randint(0,n-1)
+            p = P[idx]
+
+            # Put the picked point at the end of P
+            # since it's more efficient than
+            # deleting from the middle of the vector
+            P[idx], P[n - 1] = P[n-1], P[idx]
+
+            # Get the MEC circle d from the
+            # set of points P - :p
+            dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
+
+            # If d contains p, return d
+            if (is_inside(dcenter, dradius, p)) :
+                return dcenter, dradius
+
+            # Otherwise, must be on the boundary of the MEC
+            R.append(p)
+
+            # Return the MEC for P - :p and R U :p
+            dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
+            return dcenter, dradius
+
+        def welzl(P):
+            P_copy = P.copy()
+            shuffle(P_copy)
+            center, radius = welzl_helper(P_copy, [], len(P_copy))
+            return center, radius
+
+        def generate_hull_shape(method, data, resolution=None):
+            if resolution is None:
+                DETAIL = 500 # How coarse / fine shall a subpath be split
+            else:
+                DETAIL = int(resolution)
+            pts = []
+            min_val = [float("inf"), float("inf")]
+            max_val = [-float("inf"), -float("inf")]
+            for node in data:
+                if method in ("hull", "segment", "circle"):
+                    try:
+                        path = node.as_path()
+                    except AttributeError:
+                        path = None
+                    if not path is None:
+                        p = path.first_point
+                        pts += [(p.x, p.y)]
+                        for segment in path:
+                            p = segment.end
+                            pts += [(p.x, p.y)]
+                    else:
+                        bounds = node.bounds
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                elif method in ("complex"):
+                    try:
+                        path = node.as_path()
+                    except AttributeError:
+                        path = None
+
+                    if not path is None:
+                        for subpath in path.as_subpaths():
+                            psp = Path(subpath)
+                            p = psp.first_point
+                            pts += [(p.x, p.y)]
+                            positions = linspace(0, 1, num=DETAIL, endpoint=True)
+                            subj = psp.npoint(positions)
+                            # Not sure why we need to do that, its already rows x 2
+                            # subj.reshape((2, DETAIL))
+                            s = list(map(Point, subj))
+                            for p in s:
+                                pts += [(p.x, p.y)]
+                    else:
+                        bounds = node.bounds
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                elif method=="quick":
+                    bounds = node.bounds
+                    min_val[0] = min(min_val[0], bounds[0])
+                    min_val[1] = min(min_val[1], bounds[1])
+                    max_val[0] = max(max_val[0], bounds[2])
+                    max_val[1] = max(max_val[1], bounds[3])
+
+            if method=="quick":
+                pts += [
+                    (min_val[0], min_val[1]),
+                    (min_val[0], max_val[1]),
+                    (max_val[0], min_val[1]),
+                    (max_val[0], max_val[1]),
+                ]
+            if method == "segment":
+                hull = [p for p in pts]
+            elif method == "circle":
+                print (pts)
+                mec_center, mec_radius = welzl(pts)
+                # So now we have a circle with (mec[0], mec[1]), and mec_radius
+                hull = []
+                RES = 100
+                for i in range(RES):
+                    hull += [(mec_center[0] + mec_radius * cos(i/RES * tau), mec_center[1] + mec_radius * sin(i/RES * tau))]
+            else:
+                hull = [p for p in Point.convex_hull(pts)]
+            if len(hull) != 0:
+                hull.append(hull[0])  # loop
+            return hull
+
+        @self.console_argument("method", help=_("Method to use (one of segment, quick, hull, complex)"))
+        @self.console_argument("resolution")
         @self.console_command(
-            "trace_hull",
-            help=_("trace the convex hull of current elements"),
-            input_type=(None, "elements"),
+            "trace",
+            help=_("trace the given elements"),
+            input_type=("elements", "shapes", None),
         )
-        def trace_trace_hull(command, channel, _, data=None, **kwargs):
+        def trace_trace_spooler(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+            if method is None:
+                method = "quick"
+            method = method.lower()
+            if not method in ("segment", "quick", "hull", "complex"):
+                channel(_("Invalid method, please use one of segment, quick, hull, complex."))
+                return
+
             spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
-            pts = []
-            for node in data:
-                if node.type == "elem path":
-                    epath = abs(node.path)
-                    pts += [q for q in epath.as_points()]
-                elif node.type == "elem image":
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            hull = [p for p in Point.convex_hull(pts)]
+            hull = generate_hull_shape(method, data, resolution)
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
-            hull.append(hull[0])  # loop
 
-            def trace_hull():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in hull:
-                    yield (
-                        "move_abs",
-                        Length(amount=p[0]).length_mm,
-                        Length(amount=p[1]).length_mm,
-                    )
+            def run_shape(spooler, hull):
+                def trace_hull():
+                    yield "wait_finish"
+                    yield "rapid_mode"
+                    idx = 0
+                    for p in hull:
+                        idx += 1
+                        yield (
+                            "move_abs",
+                            Length(amount=p[0]).length_mm,
+                            Length(amount=p[1]).length_mm,
+                        )
 
-            spooler.job(trace_hull)
+                spooler.job(trace_hull)
 
+            run_shape(spooler, hull)
+
+        @self.console_argument("method", help=_("Method to use (one of quick, hull, complex, segment, circle)"))
+        @self.console_argument("resolution", help=_("Resolution for complex slicing, default=500"))
         @self.console_command(
-            "trace_quick", help=_("quick trace the bounding box of current elements")
+            "tracegen",
+            help=_("create the trace around the given elements"),
+            input_type=("elements", "shapes", None),
+            output_type="elements",
         )
-        def trace_trace_quick(command, channel, _, **kwargs):
+        def trace_trace_generator(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+            if method is None:
+                method = "quick"
+            method = method.lower()
+            if not method in ("segment", "quick", "hull", "complex", "circle"):
+                channel(_("Invalid method, please use one of quick, hull, complex, segment, circle."))
+                return
+
             spooler = self.device.spooler
-            bbox = self.selected_area()
-            if bbox is None:
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            hull = generate_hull_shape(method, data, resolution=resolution)
+            if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return
+            shape = Polyline(hull)
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
+            node = self.elem_branch.add(shape=shape, type="elem polyline")
+            node.stroke = Color("black")
+            self.set_emphasis([node])
+            node.focus()
+            data.append(node)
+            return "elements", data
 
-            def trace_quick():
-                yield "rapid_mode"
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[2]).length_mm, Length(
-                    amount=bbox[3]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[3]
-                ).length_mm
-                yield "move_abs", Length(amount=bbox[0]).length_mm, Length(
-                    amount=bbox[1]
-                ).length_mm
-
-            spooler.job(trace_quick)
-
-        # ==========
-        # TRACE OPERATIONS
-        # ==========
-        @self.console_command(
-            "trace",
-            help=_("trace the given element path"),
-            input_type="elements",
-        )
-        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
-            if not data:
-                return
-            spooler = self.device.spooler
-            pts = []
-            for node in data:
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    continue
-                pts.append(path.first_point)
-                for segment in path:
-                    pts.append(segment.end)
-            if not pts:
-                return
-
-            def trace_command():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
-                        amount=p[1]
-                    ).length_mm
-
-            spooler.job(trace_command)
-
-        @self.console_command(
-            "trace",
-            help=_("trace the given element path"),
-            input_type="shapes",
-        )
-        def trace_trace_spooler(command, channel, _, data=None, **kwargs):
-            if not data:
-                return
-            spooler = self.device.spooler
-            pts = []
-            for path in data:
-                path = abs(Path(path))
-                pts.append(path.first_point)
-                for segment in path:
-                    pts.append(segment.end)
-            if not pts:
-                return
-
-            def trace_command():
-                yield "wait_finish"
-                yield "rapid_mode"
-                for p in pts:
-                    yield "move_abs", Length(amount=p[0]).length_mm, Length(
-                        amount=p[1]
-                    ).length_mm
-
-            spooler.job(trace_command)
 
         # --------------------------- END COMMANDS ------------------------------
 
@@ -3806,6 +3982,16 @@ class Elemental(Service):
                 if node._parent.type == "branch reg":
                     result = True
             except AttributeError:
+                pass
+            return result
+
+        def has_changes(node):
+            result = False
+            try:
+                if not node.matrix.is_identity():
+                    result = True
+            except AttributeError:
+                # There was an error druing check for matrix.is_identity
                 pass
             return result
 
@@ -4408,7 +4594,7 @@ class Elemental(Service):
                 add_nodes = [c for c in add_nodes if c is not None]
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -4433,7 +4619,7 @@ class Elemental(Service):
             add_nodes = list(node.children)
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_operation(
@@ -4595,9 +4781,9 @@ class Elemental(Service):
             ),
             help="",
         )
-        def convert_to_path(node, copies=1, **kwargs):
-            node.replace_object(abs(Path(node.shape)))
-            node.altered()
+        def convert_to_path(node, **kwargs):
+            path = node.as_path()
+            node.replace_node(path=path, type="elem path")
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
@@ -4700,6 +4886,7 @@ class Elemental(Service):
             self.signal("ext-modified")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: has_changes(node))
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(
             _("Reify User Changes"), node_type=elem_group_nodes, help=""
@@ -4715,9 +4902,10 @@ class Elemental(Service):
             self("element subpath\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: has_changes(node))
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(
-            _("Reset user changes"), node_type=("branch elem", elem_nodes), help=""
+            _("Reset user changes"), node_type=elem_group_nodes, help=""
         )
         def reset_user_changes(node, copies=1, **kwargs):
             self("reset\n")
@@ -5612,7 +5800,7 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if node.stroke is not None and (op.color == node.stroke or op.default):
+                    if hasattr(node, "stroke") and node.stroke is not None and (op.color == node.stroke or op.default):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -5621,12 +5809,12 @@ class Elemental(Service):
                     elif node.type == "elem text":
                         op.add_reference(node)
                         was_classified = True
-                    elif node.fill is not None and node.fill.argb is not None:
+                    elif hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
                         op.add_reference(node)
                         was_classified = True
                 elif op.type in ("op engrave", "op cut", "op hatch"):
                     if (
-                        node.stroke is not None and op.color == node.stroke
+                        hasattr(node, "stroke") and node.stroke is not None and op.color == node.stroke
                     ) or op.default:
                         op.add_reference(node)
                         was_classified = True
@@ -5654,7 +5842,7 @@ class Elemental(Service):
                 if node.fill is not None and node.fill.argb is not None:
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
-                    op.add_reference(node.node)
+                    op.add_reference(node)
                     operations.append(op)
 
     def add_classify_op(self, op):

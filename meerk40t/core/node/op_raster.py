@@ -1,11 +1,14 @@
 from copy import copy
 
 from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Color, Path, Polygon
+from meerk40t.image.actualize import actualize
+from meerk40t.svgelements import Color, Path, Polygon, Matrix
 
 MILS_IN_MM = 39.3701
 
@@ -142,26 +145,21 @@ class RasterOpNode(Node, Parameters):
         for element in obj.children:
             self.add_reference(element)
 
-    def deep_copy_children(self, obj):
-        for node in obj.children:
+    def copy_children_as_real(self, copy_node):
+        for node in copy_node.children:
             self.add_node(copy(node.node))
 
     def time_estimate(self):
-        # TODO: Strictly speaking this is wrong. The time estimate is raster of non-svgimage objects.
         estimate = 0
-        # for e in self.children:
-        #     e = e.object
-        #     if isinstance(e, SVGImage):
-        #         try:
-        #             step = e.raster_step
-        #         except AttributeError:
-        #             try:
-        #                 step = int(e.values["raster_step"])
-        #             except (KeyError, ValueError):
-        #                 step = 1
-        #         estimate += (e.image_width * e.image_height * step) / (
-        #             MILS_IN_MM * self.speed
-        #         )
+        for node in self.children:
+            if node.type != "elem image":
+                continue
+            step_y = node.step_x
+            step_x = node.step_y
+            estimate += (
+                node.image.width * node.image.height * step_x / MILS_IN_MM * self.speed
+            )
+            estimate += node.image.height * step_y / MILS_IN_MM * self.speed
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -170,7 +168,16 @@ class RasterOpNode(Node, Parameters):
             str(int(seconds)).zfill(2),
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
+        """
+        Preprocess is called during job planning. This should be called with
+        the native matrix.
+
+        @param context:
+        @param matrix:
+        @param commands:
+        @return:
+        """
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
@@ -180,6 +187,76 @@ class RasterOpNode(Node, Parameters):
         transformed_step = matrix.transform_vector([oneinch_x, oneinch_y])
         self.raster_step_x = transformed_step[0] / dpi
         self.raster_step_y = transformed_step[1] / dpi
+
+        if len(self.children) == 0:
+            return
+        if len(self.children) == 1 and self.children[0].type == "elem image":
+            dpi = float(self.settings.get("dpi", 500))
+            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
+            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
+            step_x = float(oneinch_x / dpi)
+            step_y = float(oneinch_y / dpi)
+            self.settings["raster_step_x"] = step_x
+            self.settings["raster_step_y"] = step_y
+            node = self.children[0]
+            node.step_x = step_x
+            node.step_y = step_y
+            m = node.matrix
+            # Transformation must be uniform to permit native rastering.
+            if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+
+                def actualize_raster_image(image_node, s_x, s_y):
+                    def actualize_raster_image_node():
+                        image_node.image, image_node.matrix = actualize(
+                            image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
+                        )
+                        image_node.cache = None
+
+                    return actualize_raster_image_node()
+
+                commands.append(actualize_raster_image(node, step_x, step_y))
+            return
+
+        make_raster = context.lookup("render-op/make_raster")
+        if make_raster is None:
+
+            def strip_rasters():
+                self.remove_node()
+
+            commands.append(strip_rasters)
+            return
+
+        def make_image():
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            bounds = self.bounds
+            try:
+                image = make_raster(
+                    list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                )
+            except AssertionError:
+                raise CutPlanningFailedError("Raster too large.")
+            if image.width == 1 and image.height == 1:
+                # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
+                #  around because the renderer is what sets the size of the text. If the size hasn't already
+                #  been set, the initial bounds are wrong.
+                bounds = self.bounds
+                try:
+                    image = make_raster(
+                        list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                    )
+                except AssertionError:
+                    raise CutPlanningFailedError("Raster too large.")
+            image = image.convert("L")
+            matrix = Matrix.scale(step_x, step_y)
+            matrix.post_translate(bounds[0], bounds[1])
+            image_node = ImageNode(
+                image=image, matrix=matrix, step_x=step_x, step_y=step_y
+            )
+            self.children.clear()
+            self.add_node(image_node)
+
+        commands.append(make_image)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -197,8 +274,17 @@ class RasterOpNode(Node, Parameters):
         for image_node in self.children:
             if image_node.type != "elem image":
                 continue
+
+            # Ensure actualization is done with raster values.
+            osx = image_node.step_x
+            osy = image_node.step_y
+            image_node.step_x = self.raster_step_x
+            image_node.step_y = self.raster_step_y
             if image_node.needs_actualization():
                 image_node.make_actual()
+            image_node.step_x = osx
+            image_node.step_y = osy
+
             image = image_node.image
             matrix = image_node.matrix
             box = (

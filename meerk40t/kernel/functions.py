@@ -3,6 +3,7 @@ import os
 import os.path
 import platform
 import re
+from math import isinf
 from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
@@ -141,29 +142,48 @@ def console_command(
             argument_index = 0
             opt_index = 0
             pos = 0
+            nargs = 0
             for kind, value, start, pos in _cmd_parser(remainder):
                 if kind == "PARAM":
                     # is a parameter-option
                     if argument_index == len(stack):
                         pos = start
                         break  # Nothing else is expected.
+                    # Set option qualities
                     k = stack[argument_index]
-                    argument_index += 1
+
+                    # Get key name.
+                    key = k["name"]
+
+                    if key not in kwargs:
+                        # Set default key for unset key.
+                        kwargs[key] = []
+
+                    # Set nargs
+                    nargs = k.get("nargs", 1)
+                    if nargs == "*":
+                        nargs = float('inf')
+
+                    # Attempt cast to type.
                     if "type" in k and value is not None:
                         try:
                             value = k["type"](value)
                         except ValueError:
+                            # Failed cast, if nargs="*" this is end of list.
+                            if isinf(nargs):
+                                pos = start
+                                break
                             raise CommandSyntaxError(
                                 "'%s' does not cast to %s"
                                 % (str(value), str(k["type"]))
                             )
-                    key = k["name"]
-                    current = kwargs.get(key, True)
-                    if current is True:
-                        kwargs[key] = [value]
-                    else:
-                        kwargs[key].append(value)
-                    opt_index = argument_index
+
+                    kwargs[key].append(value)
+
+                    if nargs == len(kwargs[key]):
+                        # We have satisfied the nargs, next values.
+                        argument_index += 1
+                        opt_index = argument_index
                 elif kind == "LONG" or kind == "OPT":
                     # is a --option or -o type option.
                     for pk in options:
@@ -172,6 +192,7 @@ def console_command(
                         if (value == pk["name"] and kind == "LONG") or (
                             value == pk["short"] and kind == "OPT"
                         ):
+                            nargs = pk.get("nargs", 1)
                             # matching option.
                             action = pk.get("action")
                             if action == "store_true":
@@ -179,13 +200,14 @@ def console_command(
                             elif action == "store_const":
                                 kwargs[name] = pk.get("const")
                             else:
-                                count = pk.get("nargs", 1)
-                                for n in range(count):
+                                for n in range(nargs):
                                     stack.insert(opt_index, pk)
                                     opt_index += 1
+                                nargs = 0
                             break
                     opt_index = argument_index
-
+            if isinf(nargs):
+                argument_index += 1
             if inner.all_arguments_required:
                 if argument_index != len(stack):
                     raise CommandSyntaxError("Required arguments were not present.")
@@ -212,10 +234,12 @@ def console_command(
                         value = pk["type"](value)
                     kwargs[key] = value
 
-            # Any singleton list arguments should become their only element.
+            # Any singleton list arguments should become their only element, unless nargs is set.
             for a in range(len(stack)):
                 k = stack[a]
                 key = k["name"]
+                if k.get("nargs") is not None:
+                    continue
                 current = kwargs.get(key)
                 if isinstance(current, list):
                     if len(current) == 1:

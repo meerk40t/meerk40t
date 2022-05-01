@@ -258,7 +258,7 @@ class LaserRender:
                 matrix.post_translate(x, y)  # Add cutcode offset.
 
                 matrix.post_scale(
-                    cut.step
+                    cut.raster_step_x, cut.raster_step_y
                 )  # Scale up the image by the step for simulation
                 matrix.post_translate(cut.tx, cut.ty)  # Adjust image xy
                 if matrix is not None and not matrix.is_identity():

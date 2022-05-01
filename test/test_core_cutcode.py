@@ -81,6 +81,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
+        image = image.convert("L")
         laserop.add_node(ImageNode(image=image, matrix=Matrix(), step_x=1, step_y=1))
 
         # raster_step is default to 0 and not set.

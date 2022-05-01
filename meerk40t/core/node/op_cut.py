@@ -129,8 +129,8 @@ class CutOpNode(Node, Parameters):
         for node in obj.children:
             self.add_reference(node)
 
-    def deep_copy_children(self, obj):
-        for node in obj.children:
+    def copy_children_as_real(self, copy_node):
+        for node in copy_node.children:
             self.add_node(copy(node.node))
 
     def time_estimate(self):

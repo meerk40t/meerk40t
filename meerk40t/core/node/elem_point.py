@@ -36,7 +36,7 @@ class PointNode(Node):
             **self.settings,
         )
 
-    def scale_native(self, matrix):
+    def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
         self._bounds_dirty = True
 

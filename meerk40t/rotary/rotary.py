@@ -78,14 +78,14 @@ class Rotary(Service):
             sx = self.scale_x
             sy = self.scale_y
             x, y = self.device.current
-            mx = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, x, y))
+            matrix = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, x, y))
             for node in self.elements.elems():
                 if hasattr(node, "rotary_scale"):
                     # This element is already scaled
                     return
                 try:
                     node.rotary_scale = sx, sy
-                    node.matrix *= mx
+                    node.matrix *= matrix
                     node.modified()
                 except AttributeError:
                     pass
