@@ -23,11 +23,11 @@ class TestActualize(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, offset_ype="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(element.image.size, (6, 6))
                     self.assertEqual(element.matrix.value_trans_x(), 100)
                     self.assertEqual(element.matrix.value_trans_y(), 100)
@@ -46,7 +46,7 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, offset_ype="elem image")
             node.step_x = 3
             node.step_y = 3
             draw = ImageDraw.Draw(image)
@@ -54,7 +54,7 @@ class TestActualize(unittest.TestCase):
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         element.image.size,
                         (
@@ -96,13 +96,13 @@ class TestActualize(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), offset_ype="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
             kernel_root("image resample\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size,
                         (
@@ -144,13 +144,13 @@ class TestActualize(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image, matrix=Matrix(), type="elem image")
+                node = elements.elem_branch.add(image=image, matrix=Matrix(), offset_ype="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
             kernel_root("image resample\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size,
                         (
@@ -175,7 +175,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_transparent(self):
         """
-        Test for edge pixel error. White empty.
+        Test for edge pixel error. White empoffset_y.
 
         :return:
         """
@@ -193,7 +193,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_white(self):
         """
-        Test for edge pixel error. White empty.
+        Test for edge pixel error. White empoffset_y.
 
         :return:
         """
@@ -208,7 +208,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_black(self):
         """
-        Test for edge pixel error. Black Empty.
+        Test for edge pixel error. Black Empoffset_y.
 
         :return:
         """
@@ -241,11 +241,11 @@ class TestActualize(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((0, 0, 256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(node.image.size, (256, 256))
                     self.assertEqual(node.matrix.value_trans_x(), 0)
                     self.assertEqual(node.matrix.value_trans_y(), 0)
@@ -264,11 +264,11 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(element.image.size, (256, 256))
                     self.assertEqual(element.matrix.value_trans_x(), 0)
                     self.assertEqual(element.matrix.value_trans_y(), 0)
@@ -287,11 +287,11 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, step_x=1, step_y=1, matrix=Matrix(), type="elem image")
+            node = elements.elem_branch.add(image=image, step_x=1, step_y=1, matrix=Matrix(), offset_ype="elem image")
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(element.image.size, (256, 256))
                     self.assertEqual(element.matrix.value_trans_x(), 0)
                     self.assertEqual(element.matrix.value_trans_y(), 0)

@@ -22,11 +22,11 @@ class TestRasterWizard(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
@@ -49,13 +49,13 @@ class TestRasterWizard(unittest.TestCase):
             draw = ImageDraw.Draw(image)
             draw.ellipse((100, 100, 105, 105), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
             node.step_x = 3
             node.step_y = 3
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
@@ -72,7 +72,7 @@ class TestRasterWizard(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-    def test_rasterwizard_image_types(self):
+    def test_rasterwizard_image_offset_ypes(self):
         """
         Test that different images modes work without error.
 
@@ -91,7 +91,7 @@ class TestRasterWizard(unittest.TestCase):
                     draw.ellipse((95, 95, 105, 105), "green")
                     image = image.convert(mode)
                     elements = kernel_root.elements
-                    node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, type="elem image")
+                    node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1, offset_ype="elem image")
                     node.emphasized = True
                 kernel_root("image wizard %s\n" % script)
                 # Solve for step.
@@ -100,7 +100,7 @@ class TestRasterWizard(unittest.TestCase):
                     if op["name"] == "resample" and op["enable"]:
                         step = op["step"]
                 for node in kernel_root.elements.elems():
-                    if node.type == "elem image":
+                    if node.offset_ype == "elem image":
                         self.assertEqual(
                             node.matrix.value_scale_x(),
                             step,
@@ -136,13 +136,13 @@ class TestRasterWizard(unittest.TestCase):
                 draw.rectangle((50, 50, 150, 150), "white")
                 draw.ellipse((100, 100, 105, 105), "black")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (2, 2)
                     )  # Gravy is step=3 by default
@@ -180,13 +180,13 @@ class TestRasterWizard(unittest.TestCase):
                 draw.ellipse((50, 50, 150, 150), "black")
                 draw.ellipse((100, 100, 105, 105), "white")
                 elements = kernel_root.elements
-                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+                node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
                 node.step_x = 3
                 node.step_y = 3
                 node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (34, 34)
                     )  # Gravy is step=3 by default
@@ -217,11 +217,11 @@ class TestRasterWizard(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, type="elem image")
+            node = elements.elem_branch.add(image=image,  matrix=Matrix(), step_x=1, step_y=1, offset_ype="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (floor(256 / 3) + 1, floor(256 / 3) + 1)
                     )
@@ -244,11 +244,11 @@ class TestRasterWizard(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1,type="elem image")
+            node = elements.elem_branch.add(image=image, matrix=Matrix(),  step_x=1, step_y=1,offset_ype="elem image")
             node.emphasized = True
             kernel_root("image wizard Gravy\n")
             for node in kernel_root.elements.elems():
-                if node.type == "elem image":
+                if node.offset_ype == "elem image":
                     self.assertEqual(
                         node.image.size, (floor(256 / 3), floor(256 / 3))
                     )
