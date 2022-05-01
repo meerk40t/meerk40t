@@ -782,8 +782,8 @@ class Elemental(Service):
         ):
             if speed is None:
                 for op in data:
-                    old_speed = op.speed
-                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
+                    old = op.speed
+                    channel(_("Speed for '%s' is currently: %f") % (str(op), old))
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -798,22 +798,22 @@ class Elemental(Service):
                 return
             delta = 0
             for op in data:
-                old_speed = op.speed
+                old = op.speed
                 if percent and difference:
-                    s = old_speed + old_speed * (new_speed / 100.0)
+                    s = old + old * (new_speed / 100.0)
                 elif difference:
-                    s = old_speed + new_speed
+                    s = old + new_speed
                 elif percent:
-                    s = old_speed * (new_speed / 100.0)
+                    s = old * (new_speed / 100.0)
                 elif progress:
-                    s = old_speed + delta
+                    s = old + delta
                     delta += new_speed
                 else:
                     s = new_speed
                 op.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f")
-                    % (str(op), old_speed, new_speed)
+                    % (str(op), old, new_speed)
                 )
                 op.notify_update()
             return "ops", data
@@ -821,20 +821,106 @@ class Elemental(Service):
         @self.console_argument(
             "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change power by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change power for each item in order"),
+        )
         @self.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
-        def op_power(command, channel, _, power=None, data=None, **kwrgs):
+        def op_power(
+                command,
+                channel,
+                _,
+                power=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if power is None:
                 for op in data:
-                    old_ppi = op.power
-                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
+                    old = op.power
+                    channel(_("Power for '%s' is currently: %d") % (str(op), old))
                 return
+            delta = 0
             for op in data:
-                old_ppi = op.power
-                op.power = power
+                old = op.power
+                if progress:
+                    s = old + delta
+                    delta += power
+                elif difference:
+                    s = old + power
+                else:
+                    s = power
+                if s > 1000:
+                    s = 1000
+                if s < 0:
+                    s = 0
+                op.power = s
                 channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
+                    _("Power for '%s' updated %d -> %d") % (str(op), old, power)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @self.console_argument(
+            "frequency", type=float, help=_("frequency set for operation")
+        )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change speed for each item in order"),
+        )
+        @self.console_command(
+            "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
+        )
+        def op_frequency(command,
+                         channel,
+                         _,
+                         frequency=None,
+                         difference=False,
+                         progress=False,
+                         data=None,
+                         **kwrgs
+                         ):
+            if frequency is None:
+                for op in data:
+                    old = op.frequency
+                    channel(_("Frequency for '%s' is currently: %f") % (str(op), old))
+                return
+            delta = 0
+            for op in data:
+                old = op.frequency
+                if progress:
+                    s = old + delta
+                    delta += frequency
+                elif difference:
+                    s = old + frequency
+                else:
+                    s = frequency
+                op.frequency = s
+                channel(
+                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, frequency)
                 )
                 op.notify_update()
             return "ops", data

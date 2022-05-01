@@ -24,6 +24,7 @@ FLOAT_PARAMETERS = (
     "speed",
     "dratio",
     "dwell_time",
+    "frequency",
 )
 
 BOOL_PARAMETERS = (
