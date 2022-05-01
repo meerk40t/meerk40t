@@ -175,7 +175,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_transparent(self):
         """
-        Test for edge pixel error. White empty.
+        Test for edge pixel error. White empoffset_y.
 
         :return:
         """
@@ -193,7 +193,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_white(self):
         """
-        Test for edge pixel error. White empty.
+        Test for edge pixel error. White empoffset_y.
 
         :return:
         """
@@ -208,7 +208,7 @@ class TestActualize(unittest.TestCase):
 
     def test_actualize_circle_step3_direct_black(self):
         """
-        Test for edge pixel error. Black Empty.
+        Test for edge pixel error. Black Empoffset_y.
 
         :return:
         """

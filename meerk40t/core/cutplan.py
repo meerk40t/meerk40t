@@ -19,11 +19,9 @@ from os import times
 from time import time
 from typing import Optional
 
-from ..image.actualize import actualize
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
-from .node.elem_image import ImageNode
 
 
 class CutPlanningFailedError(Exception):
