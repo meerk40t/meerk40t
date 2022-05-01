@@ -810,10 +810,12 @@ class Elemental(Service):
                     delta += new_speed
                 else:
                     s = new_speed
+                if s < 0:
+                    s = 0
                 op.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f")
-                    % (str(op), old, new_speed)
+                    % (str(op), old, s)
                 )
                 op.notify_update()
             return "ops", data
@@ -869,7 +871,7 @@ class Elemental(Service):
                     s = 0
                 op.power = s
                 channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old, power)
+                    _("Power for '%s' updated %d -> %d") % (str(op), old, s)
                 )
                 op.notify_update()
             return "ops", data
@@ -918,9 +920,11 @@ class Elemental(Service):
                     s = old + frequency
                 else:
                     s = frequency
+                if s < 0:
+                    s = 0
                 op.frequency = s
                 channel(
-                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, frequency)
+                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, s)
                 )
                 op.notify_update()
             return "ops", data
