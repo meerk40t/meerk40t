@@ -3680,15 +3680,12 @@ class Elemental(Service):
         # intersects three points
         def circle_from2(A, B, C):
             if A==B:
-                print ("A==B")
                 I, radius = circle_from1(A, C)
                 return I, radius
             elif A==C:
-                print ("A==C")
                 I, radius = circle_from1(A, B)
                 return I, radius
             elif B==C:
-                print ("B==C")
                 I, radius = circle_from1(A, B)
                 return I, radius
             else:
@@ -3849,7 +3846,6 @@ class Elemental(Service):
             if method == "segment":
                 hull = [p for p in pts]
             elif method == "circle":
-                print (pts)
                 mec_center, mec_radius = welzl(pts)
                 # So now we have a circle with (mec[0], mec[1]), and mec_radius
                 hull = []
@@ -3880,6 +3876,9 @@ class Elemental(Service):
             spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No elements bounds to trace"))
+                return
             hull = generate_hull_shape(method, data, resolution)
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
