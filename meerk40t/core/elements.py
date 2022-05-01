@@ -4562,7 +4562,7 @@ class Elemental(Service):
                 add_nodes = [c for c in add_nodes if c is not None]
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -4587,7 +4587,7 @@ class Elemental(Service):
             add_nodes = list(node.children)
             add_nodes *= copies
             for n in add_nodes:
-                node.add_reference(node.node)
+                node.add_reference(n.node)
             self.signal("rebuild_tree")
 
         @self.tree_operation(
