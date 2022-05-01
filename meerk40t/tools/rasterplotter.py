@@ -244,18 +244,18 @@ class RasterPlotter:
                 return iy
         return self.height - 1
 
-    def calculate_next_horizontal_pixel(self, y, dy=1, leftside=True):
+    def calculate_next_horizontal_pixel(self, y, dy=1, leftmost_pixel=True):
         """
         Find the horizontal extreme at the given y-scanline, stepping by dy in the target image.
-        This can be done on either the rightside (True) or leftside (False).
+        This can be done on either the leftmost (True) or rightmost (False).
 
         @param y: y-scanline
         @param dy: dy-step amount (usually should be -1 or 1)
-        @param rightside: rightside / leftside.
+        @param leftmost_pixel: find pixel from the left
         @return:
         """
         try:
-            if leftside:
+            if leftmost_pixel:
                 while True:
                     x = self.leftmost_not_equal(y)
                     if x is not None:
@@ -272,18 +272,18 @@ class RasterPlotter:
             return None, None
         return x, y
 
-    def calculate_next_vertical_pixel(self, x, dx=1, topside=True):
+    def calculate_next_vertical_pixel(self, x, dx=1, topmost_pixel=True):
         """
         Find the vertical extreme at the given x-scanline, stepping by dx in the target image.
-        This can be done on either the bottomside (True) or topide (False).
+        This can be done on either the topmost (True) or bottommost (False).
 
         @param x: x-scanline
         @param dx: dx-step amount (usually should be -1 or 1)
-        @param bottomside: bottomside / topside.
+        @param topmost_pixel: find the pixel from the top
         @return:
         """
         try:
-            if topside:
+            if topmost_pixel:
                 while True:
                     y = self.topmost_not_equal(x)
                     if y is not None:
@@ -328,25 +328,21 @@ class RasterPlotter:
         """
         Find the last non-skipped pixel in the rastering.
 
-        This takes into account the traversal values of X_AXIS or Y_AXIS and BOTTOM and RIGHT
+        First and last scanlines start from the same side when scanline count is odd
 
         @return: x,y coordinates of last pixel.
         """
         if self.horizontal:
-            y = 0
-            dy = 1
-            if self.start_on_top and self.width & 1:
-                y = self.height - 1
-                dy = -1
-            x, y = self.calculate_next_horizontal_pixel(y, dy, not self.start_on_left)
+            y = self.height - 1 if self.start_on_top else 0
+            dy = -1 if self.start_on_top else 1
+            start_on_left = self.start_on_left if self.width & 1 else not self.start_on_left
+            x, y = self.calculate_next_horizontal_pixel(y, dy, start_on_left)
             return x, y
         else:
-            x = 0
-            dx = 1
-            if self.start_on_left and self.height & 1:
-                x = self.width - 1
-                dx = -1
-            x, y = self.calculate_next_vertical_pixel(x, dx, not self.start_on_top)
+            x = self.width - 1 if self.start_on_left else 0
+            dx = -1 if self.start_on_left else 1
+            start_on_top = self.start_on_top if self.height & 1 else not self.start_on_top
+            x, y = self.calculate_next_vertical_pixel(x, dx, start_on_top)
             return x, y
 
     def initial_position(self):
