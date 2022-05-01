@@ -25,10 +25,10 @@ class RasterPlotter:
         data,
         width,
         height,
-        traverse_x_axis=True,
-        traverse_top=True,
-        traverse_left=True,
-        traverse_bidirectional=True,
+        horizontal=True,
+        start_on_top=True,
+        start_on_left=True,
+        bidirectional=True,
         use_integers=True,
         skip_pixel=0,
         overscan=0,
@@ -37,7 +37,6 @@ class RasterPlotter:
         step_x=1,
         step_y=1,
         filter=None,
-        alt_filter=None,
     ):
         """
         Initialization for the Raster Plotter function. This should set all the needed parameters for plotting.
@@ -45,10 +44,10 @@ class RasterPlotter:
         @param data: pixel data accessed through data[x,y] parameters
         @param width: Width of the given data.
         @param height: Height of the given data.
-        @param traverse_x_axis: Flags for how the pixel traversal should be conducted.
-        @param traverse_top: Flags for how the pixel traversal should be conducted.
-        @param traverse_left: Flags for how the pixel traversal should be conducted.
-        @param traverse_bidirectional: Flags for how the pixel traversal should be conducted.
+        @param horizontal: Flags for how the pixel traversal should be conducted.
+        @param start_on_top: Flags for how the pixel traversal should be conducted.
+        @param start_on_left: Flags for how the pixel traversal should be conducted.
+        @param bidirectional: Flags for how the pixel traversal should be conducted.
         @param skip_pixel: Skip pixel. If this value is the pixel value, we skip travel in that direction.
         @param use_integers: return integer values rather than floating point values.
         @param overscan: The extra amount of padding to add to the end scanline.
@@ -60,21 +59,17 @@ class RasterPlotter:
                             implementation is agnostic regarding what data is provided. The filter is expected
                             to convert the data[x,y] into some form which will be expressed by plot. Unless skipped as
                             part of the skip pixel.
-        @param alt_filter: Pixel filter for the backswing of a unidirectional raster. The data[x,y] values are
-                            static. But, an alternative backswing filter could allow for that some plotting to occur
-                            on the backswing based on a different criteria than forward swing. By default, this returns
-                            skip pixels, which will not plot anything.
         """
         self.data = data
         self.width = width
         self.height = height
-        self.horizontal = traverse_x_axis
-        self.start_on_top = traverse_top
-        self.start_on_left = traverse_left
-        self.traverse_bidirectional = traverse_bidirectional
+        self.horizontal = horizontal
+        self.start_on_top = start_on_top
+        self.start_on_left = start_on_left
+        self.bidirectional = bidirectional
         self.use_integers = use_integers
         self.skip_pixel = skip_pixel
-        if traverse_x_axis:
+        if horizontal:
             self.overscan = round(overscan / float(step_x))
         else:
             self.overscan = round(overscan / float(step_y))
@@ -83,20 +78,8 @@ class RasterPlotter:
         self.step_x = step_x
         self.step_y = step_y
         self.filter = filter
-        self.main_filter = filter
-        self.alt_filter = alt_filter
         self.initial_x, self.initial_y = self.calculate_first_pixel()
         self.final_x, self.final_y = self.calculate_last_pixel()
-
-    def swap(self):
-        """
-        Swaps the px_filter
-        @return:
-        """
-        if self.filter == self.main_filter:
-            self.filter = self.alt_filter
-        else:
-            self.filter = self.main_filter
 
     def px(self, x, y):
         """

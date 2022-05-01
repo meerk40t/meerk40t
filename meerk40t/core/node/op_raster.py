@@ -285,13 +285,13 @@ class RasterOpNode(Node, Parameters):
             image_node.step_x = osx
             image_node.step_y = osy
 
-            image = image_node.image
+            pil_image = image_node.image
             matrix = image_node.matrix
             box = (
                 matrix.value_trans_x(),
                 matrix.value_trans_y(),
-                matrix.value_trans_x() + image.width * self.raster_step_x,
-                matrix.value_trans_y() + image.height * self.raster_step_y,
+                matrix.value_trans_x() + pil_image.width * self.raster_step_x,
+                matrix.value_trans_y() + pil_image.height * self.raster_step_y,
             )
             path = Path(
                 Polygon(
@@ -301,10 +301,39 @@ class RasterOpNode(Node, Parameters):
                     (box[2], box[1]),
                 )
             )
+            offset_x = matrix.value_trans_x()
+            offset_y = matrix.value_trans_y()
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            direction = settings["raster_direction"]
+            horizontal = False
+            start_on_left = False
+            start_on_top = False
+            if direction == 0 or direction == 4:
+                horizontal = True
+                start_on_top = True
+            elif direction == 1:
+                horizontal = True
+                start_on_top = False
+            elif direction == 2:
+                horizontal = False
+                start_on_left = False
+            elif direction == 3:
+                horizontal = False
+                start_on_left = True
+            bidirectional = bool(self.raster_swing)
             cut = RasterCut(
-                image,
-                matrix.value_trans_x(),
-                matrix.value_trans_y(),
+                image=pil_image,
+                offset_x=offset_x,
+                offset_y=offset_y,
+                step_x=step_x,
+                step_y=step_y,
+                inverted=False,
+                bidirectional=bidirectional,
+                horizontal=horizontal,
+                start_on_top=start_on_top,
+                start_on_left=start_on_left,
+                overscan=overscan,
                 settings=settings,
                 passes=passes,
             )
@@ -312,12 +341,21 @@ class RasterOpNode(Node, Parameters):
             cut.original_op = self.type
             yield cut
             if direction == 4:
+                horizontal = False
+                start_on_left = False
                 # Add in optional crosshatch value.
                 cut = RasterCut(
-                    image,
-                    matrix.value_trans_x(),
-                    matrix.value_trans_y(),
-                    crosshatch=True,
+                    image=pil_image,
+                    offset_x=offset_x,
+                    offset_y=offset_y,
+                    step_x=step_x,
+                    step_y=step_y,
+                    inverted=False,
+                    bidirectional=bidirectional,
+                    horizontal=horizontal,
+                    start_on_top=start_on_top,
+                    start_on_left=start_on_left,
+                    overscan=overscan,
                     settings=settings,
                     passes=passes,
                 )
