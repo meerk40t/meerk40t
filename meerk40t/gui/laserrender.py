@@ -3,7 +3,7 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
-from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
+from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut, RawCut, PlotCut, DwellCut
 from ..core.node.node import Node
 from ..svgelements import (
     Arc,
@@ -217,6 +217,19 @@ class LaserRender:
     def draw_cutcode(
         self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
+        """
+        Draw cutcode object into wxPython graphics code.
+
+        This code accepts x,y offset values. The cutcode laser offset can be set with a
+        command with the rest of the cutcode remaining the same. So drawing the cutcode
+        requires knowing what, if any offset is currently being applied.
+
+        @param cutcode: flat cutcode object to draw.
+        @param gc: wx.graphics context
+        @param x: offset in x direction
+        @param y: offset in y direction
+        @return:
+        """
         p = None
         last_point = None
         color = None
@@ -237,12 +250,15 @@ class LaserRender:
             if last_point != start:
                 p.MoveToPoint(start[0] + x, start[1] + y)
             if isinstance(cut, LineCut):
+                # Standard line cut. Applies to path object.
                 p.AddLineToPoint(end[0] + x, end[1] + y)
             elif isinstance(cut, QuadCut):
+                # Standard quadratic bezier cut
                 p.AddQuadCurveToPoint(
                     cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
                 )
             elif isinstance(cut, CubicCut):
+                # Standard cubic bezier cut
                 p.AddCurveToPoint(
                     cut.c1()[0] + x,
                     cut.c1()[1] + y,
@@ -252,29 +268,25 @@ class LaserRender:
                     end[1] + y,
                 )
             elif isinstance(cut, RasterCut):
+                # Rastercut object.
                 image = cut.image
                 gc.PushState()
-                matrix = Matrix()
-                matrix.post_translate(x, y)  # Add cutcode offset.
-
-                matrix.post_scale(
-                    cut.raster_step_x, cut.raster_step_y
-                )  # Scale up the image by the step for simulation
-                matrix.post_translate(cut.tx, cut.ty)  # Adjust image xy
-                if matrix is not None and not matrix.is_identity():
-                    gc.ConcatTransform(
-                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
-                    )
-                cache = None
-                cache_id = -1
+                matrix = Matrix.scale(cut.raster_step_x, cut.raster_step_y)
+                matrix.post_translate(cut.tx + x, cut.ty + y)  # Adjust image xy
+                gc.ConcatTransform(
+                    wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
+                )
                 try:
                     cache = cut.cache
                     cache_id = cut.cache_id
                 except AttributeError:
-                    pass
+                    cache = None
+                    cache_id = -1
                 if cache_id != id(image):
+                    # Cached image is invalid.
                     cache = None
                 if cache is None:
+                    # No valid cache. Generate.
                     cut.c_width, cut.c_height = image.size
                     try:
                         cut.cache = self.make_thumbnail(image, maximum=1000)
@@ -282,14 +294,22 @@ class LaserRender:
                         cut.cache = None
                     cut.cache_id = id(image)
                 if cut.cache is not None:
+                    # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
                 else:
+                    # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
                     gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
                     gc.DrawBitmap(
                         icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height
                     )
                 gc.PopState()
+            elif isinstance(cut, RawCut):
+                pass
+            elif isinstance(cut, PlotCut):
+                pass
+            elif isinstance(cut, DwellCut):
+                pass
             last_point = end
         if p is not None:
             gc.StrokePath(p)
