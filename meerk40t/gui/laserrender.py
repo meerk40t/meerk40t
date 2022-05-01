@@ -271,8 +271,8 @@ class LaserRender:
                 # Rastercut object.
                 image = cut.image
                 gc.PushState()
-                matrix = Matrix.scale(cut.raster_step_x, cut.raster_step_y)
-                matrix.post_translate(cut.tx + x, cut.ty + y)  # Adjust image xy
+                matrix = Matrix.scale(cut.step_x, cut.step_y)
+                matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
                 gc.ConcatTransform(
                     wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
                 )
