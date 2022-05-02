@@ -4971,10 +4971,17 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
         )
         def duplicate_element_n(node, copies, **kwargs):
-            copy_nodes = [copy(e) for e in list(self.elems(emphasized=True)) * copies]
-            for n in copy_nodes:
-                node.parent.add_node(n)
+            copy_nodes = list()
+            for e in list(self.elems(emphasized=True)):
+                for n in range(copies):
+                    copy_node = copy(e)
+                    if hasattr(e, "wxfont"):
+                        copy_node.wxfont = e.wxfont
+                    node.parent.add_node(copy_node)
+                    copy_nodes.append(copy_node)
+
             self.classify(copy_nodes)
+
             self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: not is_regmark(node))

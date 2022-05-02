@@ -2,6 +2,7 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
+import wx
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
@@ -36,6 +37,10 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_FACE,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_WEIGHT,
     Circle,
     Color,
     Ellipse,
@@ -203,10 +208,11 @@ class SVGWriter:
                     "transform",
                     "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
                 )
+                # Maybe there are some inherited font-features from an import
                 for key, val in element.values.items():
                     if key in (
                         "font-family",
-                        "font_face",
+                        "font-face",
                         "font-size",
                         "font-weight",
                         "anchor",
@@ -214,6 +220,18 @@ class SVGWriter:
                         "y",
                     ):
                         subelement.set(key, str(val))
+                attribs = [
+                    ("font_family", SVG_ATTR_FONT_FAMILY),
+                    ("font_face", SVG_ATTR_FONT_FACE),
+                    ("font_size", SVG_ATTR_FONT_SIZE),
+                    ("font_weight", SVG_ATTR_FONT_WEIGHT),
+                    ("font_style", "font-style") # Not implemented yet afaics
+                    ]
+                for attrib in attribs:
+                    if hasattr(c, attrib[0]):
+                        val = getattr(c, attrib[0])
+                        if not val is None:
+                            subelement.set(attrib[1], str(val))
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
@@ -375,6 +393,9 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                fst = element.values.get("font-style")
+                if not fst is None:
+                    node.font_style = fst
                 e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
