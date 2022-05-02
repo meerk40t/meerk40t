@@ -137,10 +137,18 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+        def copy_attributes(source, target):
+            #
+            if hasattr(source, "stroke"):
+                target.stroke = source.stroke
+            if hasattr(source, "fill"):
+                target.fill = source.fill
+
         scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
             if c.type == "elem ellipse":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem image":
@@ -162,10 +170,12 @@ class SVGWriter:
                 )
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem path":
                 element = abs(c.path * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
@@ -174,14 +184,17 @@ class SVGWriter:
                 return
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 element = c.text
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
