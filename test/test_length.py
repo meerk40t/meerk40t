@@ -4,7 +4,7 @@ from meerk40t.core.units import Length
 
 
 class TestElementLength(unittest.TestCase):
-    """Tests the functionalioffset_y of the Length Element."""
+    """Tests the functionality of the Length Element."""
 
     def test_length_init(self):
         self.assertRaises(ValueError, lambda: Length("12garbage"))

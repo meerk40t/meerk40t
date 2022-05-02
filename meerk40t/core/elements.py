@@ -152,6 +152,8 @@ class Elemental(Service):
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
+        self.wordlists = {"version": [1, self.kernel.version]}
+
         self._init_commands(kernel)
         self._init_tree(kernel)
         self.load_persistent_operations("previous")
@@ -159,6 +161,31 @@ class Elemental(Service):
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
             self.load_default()
+
+    def wordlist_fetch(self, key):
+        try:
+            wordlist = self.wordlists[key]
+        except KeyError:
+            return None
+
+        try:
+            wordlist[0] += 1
+            return wordlist[wordlist[0]]
+        except IndexError:
+            wordlist[0] = 1
+            return wordlist[wordlist[0]]
+
+    def wordlist_reset(self, key=None):
+        if key is None:
+            for key in self.wordlists:
+                self.wordlists[key][0] = 1
+        else:
+            self.wordlists[key][0] = 1
+
+    def wordlist_add(self, key, value):
+        if key not in self.wordlists:
+            self.wordlists[key] = [1]
+        self.wordlists[key].append(value)
 
     def length(self, v):
         return float(Length(v))
@@ -209,9 +236,61 @@ class Elemental(Service):
             return "file", new_file
 
         # ==========
-        # MATERIALS COMMANDS
+        # WORDLISTS COMMANDS
         # ==========
 
+        @self.console_argument("key", help=_("Wordlist key"))
+        @self.console_command(
+            "wordlist",
+            help=_("Wordlist base operation"),
+            input_type=None,
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, key=None, remainder=None, **kwargs):
+            if remainder is None:
+                channel("----------")
+                if key is None:
+                    for key in self.wordlists:
+                        channel(str(key))
+                else:
+                    for value in self.wordlists[key][1:]:
+                        channel(str(value))
+                channel("----------")
+
+            return "wordlist", key
+
+        @self.console_argument("value", help=_("Wordlist value"))
+        @self.console_command(
+            "add",
+            help=_("add value to wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+            if value is not None:
+                self.wordlist_add(data, value)
+            return "wordlist", data
+
+        @self.console_command(
+            "list",
+            help=_("list wordlist values"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+            if value is not None:
+                self.wordlist_add(data, value)
+            channel("----------")
+            channel(_("Wordlist %s:") % data)
+            for value in self.wordlists[data][1:]:
+                channel(str(value))
+            channel("----------")
+            return "wordlist", data
+
+
+        # ==========
+        # MATERIALS COMMANDS
+        # ==========
         @self.console_command(
             "material",
             help=_("material base operation"),
@@ -782,8 +861,8 @@ class Elemental(Service):
         ):
             if speed is None:
                 for op in data:
-                    old_speed = op.speed
-                    channel(_("Speed for '%s' is currently: %f") % (str(op), old_speed))
+                    old = op.speed
+                    channel(_("Speed for '%s' is currently: %f") % (str(op), old))
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -798,22 +877,24 @@ class Elemental(Service):
                 return
             delta = 0
             for op in data:
-                old_speed = op.speed
+                old = op.speed
                 if percent and difference:
-                    s = old_speed + old_speed * (new_speed / 100.0)
+                    s = old + old * (new_speed / 100.0)
                 elif difference:
-                    s = old_speed + new_speed
+                    s = old + new_speed
                 elif percent:
-                    s = old_speed * (new_speed / 100.0)
+                    s = old * (new_speed / 100.0)
                 elif progress:
-                    s = old_speed + delta
+                    s = old + delta
                     delta += new_speed
                 else:
                     s = new_speed
+                if s < 0:
+                    s = 0
                 op.speed = s
                 channel(
                     _("Speed for '%s' updated %f -> %f")
-                    % (str(op), old_speed, new_speed)
+                    % (str(op), old, s)
                 )
                 op.notify_update()
             return "ops", data
@@ -821,20 +902,108 @@ class Elemental(Service):
         @self.console_argument(
             "power", type=int, help=_("power in pulses per inch (ppi, 1000=max)")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change power by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change power for each item in order"),
+        )
         @self.console_command(
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
-        def op_power(command, channel, _, power=None, data=None, **kwrgs):
+        def op_power(
+                command,
+                channel,
+                _,
+                power=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if power is None:
                 for op in data:
-                    old_ppi = op.power
-                    channel(_("Power for '%s' is currently: %d") % (str(op), old_ppi))
+                    old = op.power
+                    channel(_("Power for '%s' is currently: %d") % (str(op), old))
                 return
+            delta = 0
             for op in data:
-                old_ppi = op.power
-                op.power = power
+                old = op.power
+                if progress:
+                    s = old + delta
+                    delta += power
+                elif difference:
+                    s = old + power
+                else:
+                    s = power
+                if s > 1000:
+                    s = 1000
+                if s < 0:
+                    s = 0
+                op.power = s
                 channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old_ppi, power)
+                    _("Power for '%s' updated %d -> %d") % (str(op), old, s)
+                )
+                op.notify_update()
+            return "ops", data
+
+        @self.console_argument(
+            "frequency", type=float, help=_("frequency set for operation")
+        )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change speed for each item in order"),
+        )
+        @self.console_command(
+            "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
+        )
+        def op_frequency(command,
+                         channel,
+                         _,
+                         frequency=None,
+                         difference=False,
+                         progress=False,
+                         data=None,
+                         **kwrgs
+                         ):
+            if frequency is None:
+                for op in data:
+                    old = op.frequency
+                    channel(_("Frequency for '%s' is currently: %f") % (str(op), old))
+                return
+            delta = 0
+            for op in data:
+                old = op.frequency
+                if progress:
+                    s = old + delta
+                    delta += frequency
+                elif difference:
+                    s = old + frequency
+                else:
+                    s = frequency
+                if s < 0:
+                    s = 0
+                op.frequency = s
+                channel(
+                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, s)
                 )
                 op.notify_update()
             return "ops", data
@@ -866,27 +1035,60 @@ class Elemental(Service):
         @self.console_argument(
             "distance", type=Length, help=_("Set hatch-distance of operations")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance for each item in order"),
+        )
         @self.console_command(
             "hatch-distance",
             help=_("hatch-distance <distance>"),
             input_type="ops",
             output_type="ops",
         )
-        def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
+        def op_hatch_distance(
+                command,
+                channel,
+                _,
+                distance=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if distance is None:
                 for op in data:
-                    old_hatch_distance = op.hatch_distance
+                    old = op.hatch_distance
                     channel(
                         _("Hatch Distance for '%s' is currently: %s")
-                        % (str(op), old_hatch_distance)
+                        % (str(op), old)
                     )
                 return
+            delta = 0
             for op in data:
-                old_hatch_distance = op.hatch_distance
-                op.hatch_distance = distance.preferred_length
+                old = Length(op.hatch_distance)
+                if progress:
+                    s = float(old) + delta
+                    delta += float(distance)
+                elif difference:
+                    s = float(old) + float(distance)
+                else:
+                    s = float(distance)
+                if s < 0:
+                    s = 0
+                op.hatch_distance = Length(amount=s).length_mm
                 channel(
                     _("Hatch Distance for '%s' updated %s -> %s")
-                    % (str(op), old_hatch_distance, distance)
+                    % (str(op), old, op.hatch_distance)
                 )
                 op.notify_update()
             return "ops", data
@@ -894,36 +1096,67 @@ class Elemental(Service):
         @self.console_argument(
             "angle", type=Angle.parse, help=_("Set hatch-angle of operations")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance for each item in order"),
+        )
         @self.console_command(
             "hatch-angle",
             help=_("hatch-angle <angle>"),
             input_type="ops",
             output_type="ops",
         )
-        def op_hatch_distance(command, channel, _, angle=None, data=None, **kwrgs):
+        def op_hatch_distance(
+                command,
+                channel,
+                _,
+                angle=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if angle is None:
                 for op in data:
-                    old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                    old = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
                     old_hatch_angle_deg = (
                         f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
                     )
                     channel(
                         _("Hatch Distance for '%s' is currently: %s (%s)")
-                        % (str(op), old_hatch_angle, old_hatch_angle_deg)
+                        % (str(op), old, old_hatch_angle_deg)
                     )
                 return
+            delta = 0
             for op in data:
-                old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
-                new_hatch_angle = f"{angle.as_turns}turn"
-                new_hatch_angle_turn = f"{angle.as_turns:.4f}turn"
-                new_hatch_angle_deg = f"{angle.as_degrees:.4f}deg"
-                op.hatch_angle = new_hatch_angle
+                old = Angle.parse(op.hatch_angle)
+                if progress:
+                    s = old + delta
+                    delta += angle
+                elif difference:
+                    s = old + angle
+                else:
+                    s = angle
+                s = Angle.radians(float(s))
+                op.hatch_angle = f"{s.as_turns}turn"
+                new_hatch_angle_turn = f"{s.as_turns:.4f}turn"
+                new_hatch_angle_deg = f"{s.as_degrees:.4f}deg"
 
                 channel(
                     _("Hatch Angle for '%s' updated %s -> %s (%s)")
                     % (
                         str(op),
-                        old_hatch_angle,
+                        f"{old.as_turns:.4f}turn",
                         new_hatch_angle_turn,
                         new_hatch_angle_deg,
                     )
