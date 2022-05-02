@@ -961,14 +961,14 @@ class Elemental(Service):
             "d",
             type=bool,
             action="store_true",
-            help=_("Change speed by this amount."),
+            help=_("Change hatch-distance by this amount."),
         )
         @self.console_option(
             "progress",
             "p",
             type=bool,
             action="store_true",
-            help=_("Change speed for each item in order"),
+            help=_("Change hatch-distance for each item in order"),
         )
         @self.console_command(
             "hatch-distance",
@@ -1017,36 +1017,67 @@ class Elemental(Service):
         @self.console_argument(
             "angle", type=Angle.parse, help=_("Set hatch-angle of operations")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change hatch-distance for each item in order"),
+        )
         @self.console_command(
             "hatch-angle",
             help=_("hatch-angle <angle>"),
             input_type="ops",
             output_type="ops",
         )
-        def op_hatch_distance(command, channel, _, angle=None, data=None, **kwrgs):
+        def op_hatch_distance(
+                command,
+                channel,
+                _,
+                angle=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if angle is None:
                 for op in data:
-                    old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
+                    old = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
                     old_hatch_angle_deg = (
                         f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
                     )
                     channel(
                         _("Hatch Distance for '%s' is currently: %s (%s)")
-                        % (str(op), old_hatch_angle, old_hatch_angle_deg)
+                        % (str(op), old, old_hatch_angle_deg)
                     )
                 return
+            delta = 0
             for op in data:
-                old_hatch_angle = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
-                new_hatch_angle = f"{angle.as_turns}turn"
-                new_hatch_angle_turn = f"{angle.as_turns:.4f}turn"
-                new_hatch_angle_deg = f"{angle.as_degrees:.4f}deg"
-                op.hatch_angle = new_hatch_angle
+                old = Angle.parse(op.hatch_angle)
+                if progress:
+                    s = old + delta
+                    delta += angle
+                elif difference:
+                    s = old + angle
+                else:
+                    s = angle
+                s = Angle.radians(float(s))
+                op.hatch_angle = f"{s.as_turns}turn"
+                new_hatch_angle_turn = f"{s.as_turns:.4f}turn"
+                new_hatch_angle_deg = f"{s.as_degrees:.4f}deg"
 
                 channel(
                     _("Hatch Angle for '%s' updated %s -> %s (%s)")
                     % (
                         str(op),
-                        old_hatch_angle,
+                        f"{old.as_turns:.4f}turn",
                         new_hatch_angle_turn,
                         new_hatch_angle_deg,
                     )
