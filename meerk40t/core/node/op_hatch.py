@@ -2,6 +2,7 @@ from copy import copy
 
 from meerk40t.core.cutcode import PlotCut
 from meerk40t.core.element_types import *
+from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
@@ -73,6 +74,8 @@ class HatchOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["hatch_angle"] = "default"
+        default_map["hatch_distance"] = "default"
         default_map.update(self.settings)
         return default_map
 
@@ -147,51 +150,51 @@ class HatchOpNode(Node, Parameters):
             complex(transformed_vector[0], transformed_vector[1])
         )
 
-    def as_cutobjects(self, closed_distance=15, passes=1):
-        """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
-        # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
-        distance = self._hatch_distance_native
-        angle = Angle.parse(settings.get("hatch_angle", "0deg"))
-        efill = EulerianFill(distance)
-        for node in self.children:
-            if node.type == "reference":
-                node = node.node
-            if node.type == "elem path":
-                path = abs(node.path)
-                path.approximate_arcs_with_cubics()
-            else:
-                path = abs(Path(node.shape))
-                path.approximate_arcs_with_cubics()
-            settings["line_color"] = path.stroke
-            for subpath in path.as_subpaths():
-                sp = Path(subpath)
-                if len(sp) == 0:
-                    continue
-                if angle is not None:
-                    sp *= Matrix.rotate(angle)
-
-                pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                efill += pts
-        points = efill.get_fill()
-        counter_rotate = Matrix.rotate(-angle)
-
         def split(points):
             pos = 0
             for i, pts in enumerate(points):
                 if pts is None:
-                    yield points[pos : i - 1]
+                    yield points[pos: i - 1]
                     pos = i + 1
             if pos != len(points):
-                yield points[pos : len(points)]
+                yield points[pos: len(points)]
 
-        plot = PlotCut(settings=settings, passes=passes)
-        for s in split(points):
-            for p in s:
-                x, y = counter_rotate.point_in_matrix_space((p.x, p.y))
-                if p.value == "RUNG":
-                    plot.plot_append(int(round(x)), int(round(y)), 1)
-                if p.value == "EDGE":
-                    plot.plot_append(int(round(x)), int(round(y)), 0)
-        if len(plot):
+        def create_fill():
+            angle = Angle.parse(self.hatch_angle)
+            # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
+            efill = EulerianFill(self._hatch_distance_native)
+            for node in self.children:
+                path = node.as_path()
+                path.approximate_arcs_with_cubics()
+                self.settings["line_color"] = path.stroke
+                for subpath in path.as_subpaths():
+                    sp = Path(subpath)
+                    if len(sp) == 0:
+                        continue
+                    if angle is not None:
+                        sp *= Matrix.rotate(angle)
+
+                    pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                    efill += pts
+            points = efill.get_fill()
+            counter_rotate = Matrix.rotate(-angle)
+
+            self.remove_all_children()
+            for pts in split(points):
+                polyline = Polyline(pts, stoke=self.settings.get("line_color"))
+                polyline *= counter_rotate
+                self.add_node(PolylineNode(shape=abs(polyline)))
+        if self.children:
+            commands.append(create_fill)
+
+    def as_cutobjects(self, closed_distance=15, passes=1):
+        """Generator of cutobjects for a particular operation."""
+        settings = self.derive()
+        for node in self.children:
+            if node.type != "elem polyline":
+                continue
+            plot = PlotCut(settings=settings, passes=passes)
+            for p in node.shape:
+                x, y = p
+                plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
