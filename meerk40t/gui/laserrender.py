@@ -307,7 +307,12 @@ class LaserRender:
             elif isinstance(cut, RawCut):
                 pass
             elif isinstance(cut, PlotCut):
-                pass
+                p.MoveToPoint(start[0] + x, start[1] + y)
+                for px, py, pon in cut.plot:
+                    if pon == 0:
+                        p.MoveToPoint(px + x, py + y)
+                    else:
+                        p.AddLineToPoint(px + x, py + y)
             elif isinstance(cut, DwellCut):
                 pass
             last_point = end
