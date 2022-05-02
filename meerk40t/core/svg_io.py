@@ -228,10 +228,13 @@ class SVGWriter:
                     ("font_style", "font-style") # Not implemented yet afaics
                     ]
                 for attrib in attribs:
-                    if hasattr(c, attrib[0]):
+                    val = None
+                    if hasattr(element, attrib[0]):
+                        val = getattr(element, attrib[0])
+                    if val is None and hasattr(c, attrib[0]):
                         val = getattr(c, attrib[0])
-                        if not val is None:
-                            subelement.set(attrib[1], str(val))
+                    if not val is None:
+                        subelement.set(attrib[1], str(val))
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
