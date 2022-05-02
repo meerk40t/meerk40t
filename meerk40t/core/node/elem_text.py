@@ -1,3 +1,4 @@
+import re
 from copy import copy
 
 from meerk40t.core.node.node import Node
@@ -61,6 +62,15 @@ class TextNode(Node):
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
+        text = self.text.text
+        brackets = re.compile(r"\{.+\}")
+        for key in brackets.findall(text):
+            skey = key[1:-1]
+            if skey in context.elements.wordlists:
+                value = context.elements.wordlist_fetch(skey)
+                text = text.replace(key, value)
+                self.text.text = text
+
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
 

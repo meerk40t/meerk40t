@@ -152,6 +152,8 @@ class Elemental(Service):
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
+        self.wordlists = {"version": [1, self.kernel.version]}
+
         self._init_commands(kernel)
         self._init_tree(kernel)
         self.load_persistent_operations("previous")
@@ -159,6 +161,31 @@ class Elemental(Service):
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
             self.load_default()
+
+    def wordlist_fetch(self, key):
+        try:
+            wordlist = self.wordlists[key]
+        except KeyError:
+            return None
+
+        try:
+            wordlist[0] += 1
+            return wordlist[wordlist[0]]
+        except IndexError:
+            wordlist[0] = 1
+            return wordlist[wordlist[0]]
+
+    def wordlist_reset(self, key=None):
+        if key is None:
+            for key in self.wordlists:
+                self.wordlists[key][0] = 1
+        else:
+            self.wordlists[key][0] = 1
+
+    def wordlist_add(self, key, value):
+        if key not in self.wordlists:
+            self.wordlists[key] = [1]
+        self.wordlists[key].append(value)
 
     def length(self, v):
         return float(Length(v))
@@ -209,9 +236,61 @@ class Elemental(Service):
             return "file", new_file
 
         # ==========
-        # MATERIALS COMMANDS
+        # WORDLISTS COMMANDS
         # ==========
 
+        @self.console_argument("key", help=_("Wordlist key"))
+        @self.console_command(
+            "wordlist",
+            help=_("Wordlist base operation"),
+            input_type=None,
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, key=None, remainder=None, **kwargs):
+            if remainder is None:
+                channel("----------")
+                if key is None:
+                    for key in self.wordlists:
+                        channel(str(key))
+                else:
+                    for value in self.wordlists[key][1:]:
+                        channel(str(value))
+                channel("----------")
+
+            return "wordlist", key
+
+        @self.console_argument("value", help=_("Wordlist value"))
+        @self.console_command(
+            "add",
+            help=_("add value to wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+            if value is not None:
+                self.wordlist_add(data, value)
+            return "wordlist", data
+
+        @self.console_command(
+            "list",
+            help=_("list wordlist values"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+            if value is not None:
+                self.wordlist_add(data, value)
+            channel("----------")
+            channel(_("Wordlist %s:") % data)
+            for value in self.wordlists[data][1:]:
+                channel(str(value))
+            channel("----------")
+            return "wordlist", data
+
+
+        # ==========
+        # MATERIALS COMMANDS
+        # ==========
         @self.console_command(
             "material",
             help=_("material base operation"),
