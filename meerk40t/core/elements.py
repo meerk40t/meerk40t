@@ -152,6 +152,7 @@ class Elemental(Service):
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
+        self.penbox = {"value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]}
         self.wordlists = {"version": [1, self.kernel.version]}
 
         self._init_commands(kernel)
@@ -287,6 +288,44 @@ class Elemental(Service):
             channel("----------")
             return "wordlist", data
 
+        # ==========
+        # PENBOX COMMANDS
+        # ==========
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox",
+            help=_("Penbox base operation"),
+            input_type=None,
+            output_type="penbox",
+        )
+        def penbox(command, channel, _, key=None, remainder=None, **kwargs):
+            if remainder is None:
+                channel("----------")
+                if key is None:
+                    for key in self.penbox:
+                        channel(str(key))
+                else:
+                    for i, value in enumerate(self.penbox[key]):
+                        channel(f"{i}: {str(value)}")
+                channel("----------")
+            return "penbox", key
+
+        @self.console_argument("index", help=_("Penbox index"), type=int)
+        @self.console_argument("key", help=_("Penbox key"), type=str)
+        @self.console_argument("value", help=_("Penbox key"), type=str)
+        @self.console_command(
+            "set",
+            help=_("set value in penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_set(command, channel, _, index=0, key=None, value=None, data=None, remainder=None, **kwargs):
+            if value is None:
+                raise CommandSyntaxError
+            else:
+                self.penbox[data][index][key] = value
+            return "penbox", data
 
         # ==========
         # MATERIALS COMMANDS
