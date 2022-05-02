@@ -956,27 +956,60 @@ class Elemental(Service):
         @self.console_argument(
             "distance", type=Length, help=_("Set hatch-distance of operations")
         )
+        @self.console_option(
+            "difference",
+            "d",
+            type=bool,
+            action="store_true",
+            help=_("Change speed by this amount."),
+        )
+        @self.console_option(
+            "progress",
+            "p",
+            type=bool,
+            action="store_true",
+            help=_("Change speed for each item in order"),
+        )
         @self.console_command(
             "hatch-distance",
             help=_("hatch-distance <distance>"),
             input_type="ops",
             output_type="ops",
         )
-        def op_hatch_distance(command, channel, _, distance=None, data=None, **kwrgs):
+        def op_hatch_distance(
+                command,
+                channel,
+                _,
+                distance=None,
+                difference=False,
+                progress=False,
+                data=None,
+                **kwrgs
+        ):
             if distance is None:
                 for op in data:
-                    old_hatch_distance = op.hatch_distance
+                    old = op.hatch_distance
                     channel(
                         _("Hatch Distance for '%s' is currently: %s")
-                        % (str(op), old_hatch_distance)
+                        % (str(op), old)
                     )
                 return
+            delta = 0
             for op in data:
-                old_hatch_distance = op.hatch_distance
-                op.hatch_distance = distance.preferred_length
+                old = Length(op.hatch_distance)
+                if progress:
+                    s = float(old) + delta
+                    delta += float(distance)
+                elif difference:
+                    s = float(old) + float(distance)
+                else:
+                    s = float(distance)
+                if s < 0:
+                    s = 0
+                op.hatch_distance = Length(amount=s).length_mm
                 channel(
                     _("Hatch Distance for '%s' updated %s -> %s")
-                    % (str(op), old_hatch_distance, distance)
+                    % (str(op), old, op.hatch_distance)
                 )
                 op.notify_update()
             return "ops", data
