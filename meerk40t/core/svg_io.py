@@ -1,6 +1,6 @@
 import gzip
 import os
-from base64 import b64encode
+from base64 import encodebytes
 from io import BytesIO
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
@@ -148,8 +148,8 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 c.image.save(stream, format="PNG")
-                png = b64encode(stream.getvalue()).decode("utf8")
-                subelement.set("xlink:href", "data:image/png;base64,%s" % png)
+                png = encodebytes(stream.getvalue()).decode("utf-8")
+                subelement.set("xlink:href", f"data:image/png;base64,{png}")
                 subelement.set(SVG_ATTR_X, "0")
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
