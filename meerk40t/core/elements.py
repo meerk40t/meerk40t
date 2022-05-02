@@ -315,13 +315,14 @@ class Elemental(Service):
         @self.console_argument("index", help=_("Penbox index"), type=int)
         @self.console_argument("key", help=_("Penbox key"), type=str)
         @self.console_argument("value", help=_("Penbox key"), type=str)
+        @self.console_option("end", "e", help=_("Penbox to-index"), type=float)
         @self.console_command(
             "set",
             help=_("set value in penbox"),
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_set(command, channel, _, index=0, to=None, key=None, value=None, data=None, remainder=None, **kwargs):
+        def penbox_set(command, channel, _, index=0, to=None, key=None, value=None, end=None, data=None, remainder=None, **kwargs):
             if value is None:
                 raise CommandSyntaxError
             else:
@@ -330,8 +331,18 @@ class Elemental(Service):
                 else:
                     if to > index:
                         step = 1 if index < to else -1
-                        for i in range(index, to + step, step):
-                            self.penbox[data][i][key] = value
+                        if end is None:
+                            for i in range(index, to + step, step):
+                                self.penbox[data][i][key] = value
+                        else:
+                            value = float(value)
+                            end = float(end)
+                            r = abs(to-index)
+                            s = (end - value) / r
+                            d = 0
+                            for i in range(index, to + step, step):
+                                self.penbox[data][i][key] = value + d
+                                d += s
             return "penbox", data
 
         # ==========
