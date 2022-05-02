@@ -44,7 +44,7 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = ("overscan",)
+STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle")
 
 COLOR_PARAMETERS = ("color", "line_color")
 

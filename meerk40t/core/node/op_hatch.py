@@ -173,7 +173,7 @@ class HatchOpNode(Node, Parameters):
                         continue
                     if angle is not None:
                         sp *= Matrix.rotate(angle)
-
+                    sp = abs(sp)
                     pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
                     efill += pts
             points = efill.get_fill()

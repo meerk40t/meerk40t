@@ -901,8 +901,8 @@ class HatchSettingsPanel(wx.Panel):
     def set_widgets(self, node):
         self.operation = node
         self.combo_fill_style.SetSelection(self.operation.hatch_type)
-        self.text_pass_inc.SetValue(str(self.operation.hatch_angle_inc))
-        self.text_angle.SetValue(str(self.operation.hatch_angle))
+        self.text_pass_inc.SetValue(self.operation.hatch_angle_inc)
+        self.text_angle.SetValue(self.operation.hatch_angle)
         self.text_distance.SetValue(str(self.operation.hatch_distance))
         try:
             angle = float(Angle.parse(self.operation.hatch_angle_inc).as_degrees)
@@ -925,9 +925,7 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_angle = Angle.parse(
-                self.text_angle.GetValue()
-            ).as_degrees
+            self.operation.hatch_angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
         except ValueError:
             return
 
@@ -937,9 +935,7 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_angle_inc = Angle.parse(
-                self.text_pass_inc.GetValue()
-            ).as_degrees
+            self.operation.hatch_angle_inc = f"{Angle.parse(self.text_pass_inc.GetValue()).as_degrees}deg"
         except ValueError:
             return
 
