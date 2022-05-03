@@ -91,8 +91,8 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(len(cutcode), 1)
         rastercut = cutcode[0]
         self.assertTrue(isinstance(rastercut, RasterCut))
-        self.assertEqual(rastercut.tx, 100)
-        self.assertEqual(rastercut.ty, 100)
+        self.assertEqual(rastercut.offset_x, 100)
+        self.assertEqual(rastercut.offset_y, 100)
         image = rastercut.image
         self.assertTrue(isinstance(image, Image.Image))
         self.assertIn(image.mode, ("L", "1"))
@@ -126,8 +126,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut0 = cutcode[0]
             self.assertTrue(isinstance(rastercut0, RasterCut))
-            self.assertEqual(rastercut0.tx, 100)
-            self.assertEqual(rastercut0.ty, 100)
+            self.assertEqual(rastercut0.offset_x, 100)
+            self.assertEqual(rastercut0.offset_y, 100)
             image0 = rastercut0.image
             self.assertTrue(isinstance(image0, Image.Image))
             self.assertIn(image0.mode, ("L", "1"))
@@ -138,8 +138,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut1 = cutcode[1]
             self.assertTrue(isinstance(rastercut1, RasterCut))
-            self.assertEqual(rastercut1.tx, 100)
-            self.assertEqual(rastercut1.ty, 100)
+            self.assertEqual(rastercut1.offset_x, 100)
+            self.assertEqual(rastercut1.offset_y, 100)
             image1 = rastercut1.image
             self.assertTrue(isinstance(image1, Image.Image))
             self.assertIn(image1.mode, ("L", "1"))
@@ -183,8 +183,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut = cutcode[0]
             self.assertTrue(isinstance(rastercut, RasterCut))
-            self.assertEqual(rastercut.tx, 100)
-            self.assertEqual(rastercut.ty, 100)
+            self.assertEqual(rastercut.offset_x, 100)
+            self.assertEqual(rastercut.offset_y, 100)
             image = rastercut.image
             self.assertTrue(isinstance(image, Image.Image))
             self.assertIn(image.mode, ("L", "1"))
@@ -195,8 +195,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut1 = cutcode[1]
             self.assertTrue(isinstance(rastercut1, RasterCut))
-            self.assertEqual(rastercut1.tx, 80)
-            self.assertEqual(rastercut1.ty, 80)
+            self.assertEqual(rastercut1.offset_x, 80)
+            self.assertEqual(rastercut1.offset_y, 80)
             image1 = rastercut1.image
             self.assertTrue(isinstance(image1, Image.Image))
             self.assertIn(image1.mode, ("L", "1"))
@@ -205,8 +205,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut2 = cutcode[2]
             self.assertTrue(isinstance(rastercut2, RasterCut))
-            self.assertEqual(rastercut2.tx, 80)
-            self.assertEqual(rastercut2.ty, 80)
+            self.assertEqual(rastercut2.offset_x, 80)
+            self.assertEqual(rastercut2.offset_y, 80)
             image2 = rastercut2.image
             self.assertTrue(isinstance(image2, Image.Image))
             self.assertIn(image2.mode, ("L", "1"))
@@ -249,8 +249,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut1_0 = cutcode[0]
         self.assertTrue(isinstance(rastercut1_0, RasterCut))
-        self.assertEqual(rastercut1_0.tx, 100)
-        self.assertEqual(rastercut1_0.ty, 100)
+        self.assertEqual(rastercut1_0.offset_x, 100)
+        self.assertEqual(rastercut1_0.offset_y, 100)
         image = rastercut1_0.image
         self.assertTrue(isinstance(image, Image.Image))
         self.assertIn(image.mode, ("L", "1"))
@@ -259,8 +259,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut1_1 = cutcode[1]
         self.assertTrue(isinstance(rastercut1_1, RasterCut))
-        self.assertEqual(rastercut1_1.tx, 100)
-        self.assertEqual(rastercut1_1.ty, 100)
+        self.assertEqual(rastercut1_1.offset_x, 100)
+        self.assertEqual(rastercut1_1.offset_y, 100)
         image = rastercut1_1.image
         self.assertTrue(isinstance(image, Image.Image))
         self.assertIn(image.mode, ("L", "1"))
@@ -269,8 +269,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut2_0 = cutcode[2]
         self.assertTrue(isinstance(rastercut2_0, RasterCut))
-        self.assertEqual(rastercut2_0.tx, 80)
-        self.assertEqual(rastercut2_0.ty, 80)
+        self.assertEqual(rastercut2_0.offset_x, 80)
+        self.assertEqual(rastercut2_0.offset_y, 80)
         image1 = rastercut2_0.image
         self.assertTrue(isinstance(image1, Image.Image))
         self.assertIn(image1.mode, ("L", "1"))
@@ -279,8 +279,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut2_1 = cutcode[3]
         self.assertTrue(isinstance(rastercut2_1, RasterCut))
-        self.assertEqual(rastercut2_1.tx, 80)
-        self.assertEqual(rastercut2_1.ty, 80)
+        self.assertEqual(rastercut2_1.offset_x, 80)
+        self.assertEqual(rastercut2_1.offset_y, 80)
         image2 = rastercut2_1.image
         self.assertTrue(isinstance(image2, Image.Image))
         self.assertIn(image2.mode, ("L", "1"))
@@ -289,8 +289,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut3_0 = cutcode[4]
         self.assertTrue(isinstance(rastercut3_0, RasterCut))
-        self.assertEqual(rastercut3_0.tx, 80)
-        self.assertEqual(rastercut3_0.ty, 80)
+        self.assertEqual(rastercut3_0.offset_x, 80)
+        self.assertEqual(rastercut3_0.offset_y, 80)
         image3 = rastercut3_0.image
         self.assertTrue(isinstance(image3, Image.Image))
         self.assertIn(image3.mode, ("L", "1"))
@@ -299,8 +299,8 @@ class TestCutcode(unittest.TestCase):
 
         rastercut3_1 = cutcode[5]
         self.assertTrue(isinstance(rastercut3_1, RasterCut))
-        self.assertEqual(rastercut3_1.tx, 80)
-        self.assertEqual(rastercut3_1.ty, 80)
+        self.assertEqual(rastercut3_1.offset_x, 80)
+        self.assertEqual(rastercut3_1.offset_y, 80)
         image4 = rastercut3_1.image
         self.assertTrue(isinstance(image4, Image.Image))
         self.assertIn(image4.mode, ("L", "1"))
@@ -335,8 +335,8 @@ class TestCutcode(unittest.TestCase):
 
             rastercut = cutcode[0]
             self.assertTrue(isinstance(rastercut, RasterCut))
-            self.assertEqual(rastercut.tx, 100)
-            self.assertEqual(rastercut.ty, 100)
+            self.assertEqual(rastercut.offset_x, 100)
+            self.assertEqual(rastercut.offset_y, 100)
             image = rastercut.image
             self.assertTrue(isinstance(image, Image.Image))
             self.assertIn(image.mode, ("L", "1"))
