@@ -64,6 +64,8 @@ class TextNode(Node):
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
+        self.text.width = 0
+        self.text.height = 0
         text = self.text.text
         brackets = re.compile(r"\{.+\}")
         for key in brackets.findall(text):
