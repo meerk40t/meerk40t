@@ -669,7 +669,7 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-            elif node.type.startswith("elem path"):
+            elif node.type.startswith("elem "):
                 image = self.renderer.make_raster(
                     node, node.bounds, width=20, height=20, bitmap=True
                 )
