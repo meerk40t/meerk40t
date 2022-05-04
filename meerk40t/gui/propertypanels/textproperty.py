@@ -226,10 +226,57 @@ class TextPropertyPanel(wx.Panel):
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.node.fill = color
+                # Translate wxFont to SVG font....
+                self.node.text.font_size = font.GetPointSize()
+
+                fw = font.GetWeight()
+                if fw in (wx.FONTWEIGHT_THIN, wx.FONTWEIGHT_EXTRALIGHT, wx.FONTWEIGHT_LIGHT):
+                    fontweight = "lighter"
+                elif fw in (wx.FONTWEIGHT_NORMAL, wx.FONTWEIGHT_MEDIUM):
+                    fontweight = "normal"
+                elif fw in (wx.FONTWEIGHT_SEMIBOLD, wx.FONTWEIGHT_BOLD):
+                    fontweight = "bold"
+                elif fw in (wx.FONTWEIGHT_EXTRABOLD, wx.FONTWEIGHT_HEAVY, wx.FONTWEIGHT_EXTRAHEAVY):
+                    fontweight = "bolder"
+                else:
+                    fontweight = "normal"
+                self.node.text.font_weight = fontweight
+
+                self.node.text.font_face = font.GetFaceName()
+                ff = font.GetFamily()
+                if ff == wx.FONTFAMILY_DECORATIVE:
+                    family = "fantasy"
+                elif ff == wx.FONTFAMILY_ROMAN:
+                    family = "serif"
+                elif ff == wx.FONTFAMILY_SCRIPT:
+                    family = "cursive"
+                elif ff == wx.FONTFAMILY_SWISS:
+                    family = "sans-serif"
+                elif ff == wx.FONTFAMILY_MODERN:
+                    family = "sans-serif"
+                elif ff == wx.FONTFAMILY_TELETYPE:
+                    family = "monospace"
+                else:
+                    family = "sans-serif"
+                self.node.text.font_family = family
+
+                ff = font.GetStyle()
+                if ff == wx.FONTSTYLE_NORMAL:
+                    fontstyle = "normal"
+                elif ff ==wx.FONTSTYLE_ITALIC:
+                    fontstyle = "italic"
+                elif ff == wx.FONTSTYLE_SLANT:
+                    fontstyle = "oblique"
+                else:
+                    fontstyle = "normal"
+
+                self.node.font_style = fontstyle
                 self.node.modified()
             except Exception:  # rgb get failed.
                 pass
+
             self.node.wxfont = font
+
             self.update_label()
             self.refresh()
         dialog.Destroy()
