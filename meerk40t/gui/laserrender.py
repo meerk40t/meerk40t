@@ -419,6 +419,9 @@ class LaserRender:
                     f.append(str(text.font_face))
                 if text.font_weight is not None:
                     f.append(str(text.font_weight))
+                if node.font_style is not None:
+                    f.append(str(node.font_style))
+
                 f.append("%d" % text.font_size)
                 font.SetNativeFontInfoUserDesc(" ".join(f))
             except Exception:
