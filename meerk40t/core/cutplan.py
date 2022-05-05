@@ -936,7 +936,7 @@ class CutPlan:
             # Stay on path in same direction if gap <= 1/20" i.e. path not quite closed
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
-                closest = self.short_travel_cutcode_candidate(
+                closest, backwards = self.short_travel_cutcode_candidate(
                     context, closest, curr, distance
                 )
 
@@ -1026,7 +1026,7 @@ class CutPlan:
                         break
                     distance = d
 
-        return closest
+        return closest, backwards
 
     def short_travel_cutcode_2opt(self, context: CutCode, passes: int = 50):
         """
