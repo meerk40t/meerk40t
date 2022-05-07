@@ -1,10 +1,10 @@
+from math import sqrt, cos, sin, tau
 import wx
 
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, swizzlecolor
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
-
 
 class GridWidget(Widget):
     """
@@ -17,6 +17,11 @@ class GridWidget(Widget):
         self.background = None
         self.grid_line_pen = wx.Pen()
         self.last_ticksize = 0
+        self.draw_grid = True
+        self.sx = 0
+        self.sy = 0
+        self.step = 0
+
         self.set_colors()
 
     def set_colors(self):
@@ -89,7 +94,7 @@ class GridWidget(Widget):
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
-
+        self.step = step
         self.grid = starts, ends
 
     def calculate_gridsize(self, w, h):
@@ -134,7 +139,22 @@ class GridWidget(Widget):
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
         self.scene.tick_distance = delta
-        # print ("set scene_tick_distance to %f" % delta)
+
+        points = self.scene.tick_distance * scaled_conversion
+
+        p = self.scene.context
+        self.units = p.units_name
+
+        self.sx = p.device.unit_width * p.device.show_origin_x
+        self.sy = p.device.unit_height * p.device.show_origin_y
+
+        if points == 0:
+            return
+
+        #print ("The intended scale is in {units} with a tick every {delta} {units}".format(delta=self.scene.tick_distance, units=self.units))
+        #print("Start-location is at %.1f, %.1f" % (self.sx, self.sy))
+        #print("device, w=%.1f, h=%.1f" % (p.device.unit_width, p.device.unit_height))
+        #print("origin, x=%.1f, y=%.1f" % (p.device.show_origin_x, p.device.show_origin_y))
 
     def process_draw(self, gc):
         """
@@ -184,8 +204,46 @@ class GridWidget(Widget):
                     self.grid_line_pen.SetWidth(int(line_width))
 
                 gc.SetPen(self.grid_line_pen)
-                if starts and ends:
-                    gc.StrokeLineSegments(starts, ends)
+                brush = wx.Brush(
+                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_TRANSPARENT
+                )
+                gc.SetBrush(brush)
+
+                if self.scene.draw_grid_circular:
+                    u_width = float(context.device.unit_width)
+                    u_height = float(context.device.unit_height)
+                    gc.Clip(0, 0, u_width, u_height)
+                    siz = sqrt(u_width * u_width + u_height * u_height)
+                    #print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
+                    #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
+
+                    y = 0
+                    factor = max( 2* (1-context.device.show_origin_x), 2* (1-context.device.show_origin_y))
+                    # print ("Factor=%.2f" % factor)
+                    while (y < siz * factor ):
+                        y += 2 * self.step
+                        gc.DrawEllipse(self.sx - y/2, self.sy - y/2, y, y)
+                    mid_y = y // (3 * self.step) * self.step # (around one third of radius)
+                    # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
+                    radials_start = []
+                    radials_end = []
+                    r_angle = 0
+                    i = 0
+                    segments = 48
+                    while r_angle<tau:
+                        if i % 2 == 0:
+                            s_factor = 0
+                        else:
+                            s_factor = 1
+                        radials_start.append((self.sx + s_factor * 0.5 * mid_y * cos(r_angle), self.sy + s_factor * 0.5 * mid_y * sin(r_angle)))
+                        radials_end.append((self.sx + 0.5 * y * cos(r_angle), self.sy + 0.5 * y * sin(r_angle)))
+                        r_angle += tau / segments
+                        i += 1
+                    gc.StrokeLineSegments(radials_start, radials_end)
+                    gc.ResetClip()
+                if self.scene.draw_grid_rectangular:
+                    if starts and ends:
+                        gc.StrokeLineSegments(starts, ends)
 
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()

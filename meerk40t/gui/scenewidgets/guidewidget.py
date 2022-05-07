@@ -79,6 +79,17 @@ class GuideWidget(Widget):
         elif value == 2:
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
 
+    def toggle_circles(self):
+        self.scene.draw_grid_circular = not self.scene.draw_grid_circular
+        self.scene.context.signal("grid")
+        self.scene._signal_widget(self.scene.widget_root, "grid")
+
+
+    def toggle_rect(self):
+        self.scene.draw_grid_rectangular = not self.scene.draw_grid_rectangular
+        self.scene.context.signal("grid")
+        self.scene._signal_widget(self.scene.widget_root, "grid")
+
     def fill_magnets(self):
         # Let's set the full grid
         p = self.scene.context
@@ -309,6 +320,28 @@ class GuideWidget(Widget):
                 id=item.GetId(),
             )
 
+        def add_grid_draw_options(self, menu):
+            menu.AppendSeparator()
+            kind = wx.ITEM_CHECK if self.scene.draw_grid_rectangular else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Draw rectangular grid"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.toggle_rect(),
+                id=item.GetId(),
+            )
+            kind = wx.ITEM_CHECK if self.scene.draw_grid_circular else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Draw circular grid"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.toggle_circles(),
+                id=item.GetId(),
+            )
+
+
         if event_type == "hover":
             return RESPONSE_CHAIN
         elif event_type == "rightdown":
@@ -334,7 +367,7 @@ class GuideWidget(Widget):
                     lambda e: self.fill_magnets(),
                     id=item.GetId(),
                 )
-
+            add_grid_draw_options(self, menu)
             self.scene.context.gui.PopupMenu(menu)
             menu.Destroy()
             self.scene.request_refresh()

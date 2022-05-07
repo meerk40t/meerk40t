@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, tau, sin, cos, sqrt
 
 import wx
 
@@ -342,6 +342,8 @@ class AttractionWidget(Widget):
         from time import time
 
         start_time = time()
+        rect_ct = 0
+        circ_ct = 0
         self.grid_points = []  # Clear all
 
         # Let's add grid points - set the full grid
@@ -354,19 +356,50 @@ class AttractionWidget(Widget):
             )
         )
         if tlen >= 1000:
-            x = 0
-            while x <= p.device.unit_width:
-                y = 0
-                while y <= p.device.unit_height:
-                    self.grid_points.append([x, y])
-                    y += tlen
-                x += tlen
+            if self.scene.draw_grid_rectangular:
+                # That's easy just the rectangular stuff
+                x = 0
+                while x <= p.device.unit_width:
+                    y = 0
+                    while y <= p.device.unit_height:
+                        self.grid_points.append([x, y])
+                        y += tlen
+                    x += tlen
+            rect_ct = len(self.grid_points)
+            if self.scene.draw_grid_circular:
+                # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
+                start_x = p.device.unit_width * p.device.show_origin_x
+                start_y = p.device.unit_height * p.device.show_origin_y
+                x = start_x
+                y = start_y
+                self.grid_points.append([x, y])
+                r_angle = 0
+                segments = 48
+                i = 0
+                max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
+                r_third = max_r // (3 * tlen) * tlen
+                while (r_angle < tau):
+                    if i % 2 == 0:
+                        r = 0
+                    else:
+                        r = r_third
+                    while r < max_r:
+                        r += tlen
+                        x = start_x + r * cos(r_angle)
+                        y = start_y + r * sin(r_angle)
+
+                        if x <= p.device.unit_width and y <= p.device.unit_height:
+                            self.grid_points.append([x, y])
+
+                    i += 1
+                    r_angle += tau / segments
+                circ_ct = len(self.grid_points) - rect_ct
 
         end_time = time()
-        # print(
-        #    "Ready, time needed: %.6f, grid points added=%d"
-        #    % (end_time - start_time, len(self.grid_points))
-        # )
+        #print(
+        #   "Ready, time needed: %.6f, grid points added=%d (rect=%d, circ=%d)"
+        #   % (end_time - start_time, len(self.grid_points), rect_ct, circ_ct)
+        #)
 
     def calculate_display_points(self):
         from time import time

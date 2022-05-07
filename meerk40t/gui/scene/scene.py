@@ -92,6 +92,8 @@ class Scene(Module, Job):
 
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
+        self.draw_grid_rectangular = True
+        self.draw_grid_circular = False
         self.tool_active = False
 
     def clear_magnets(self):
