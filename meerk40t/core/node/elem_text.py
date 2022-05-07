@@ -37,6 +37,7 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
+        self.font_style = "normal"  # normal / italic / oblique
         self.lock = False
 
     def __copy__(self):
@@ -46,6 +47,7 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            font_style=self.font_style,
             **self.settings,
         )
 
@@ -62,6 +64,8 @@ class TextNode(Node):
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
+        self.text.width = 0
+        self.text.height = 0
         text = self.text.text
         brackets = re.compile(r"\{.+\}")
         for key in brackets.findall(text):

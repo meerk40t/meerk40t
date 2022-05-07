@@ -2,6 +2,7 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
+import wx
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
@@ -36,6 +37,10 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_FACE,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_WEIGHT,
     Circle,
     Color,
     Ellipse,
@@ -137,10 +142,18 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+        def copy_attributes(source, target):
+            #
+            if hasattr(source, "stroke"):
+                target.stroke = source.stroke
+            if hasattr(source, "fill"):
+                target.fill = source.fill
+
         scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
             if c.type == "elem ellipse":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem image":
@@ -162,10 +175,12 @@ class SVGWriter:
                 )
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem path":
                 element = abs(c.path * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
@@ -174,14 +189,17 @@ class SVGWriter:
                 return
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 element = c.text
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
@@ -190,10 +208,11 @@ class SVGWriter:
                     "transform",
                     "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
                 )
+                # Maybe there are some inherited font-features from an import
                 for key, val in element.values.items():
                     if key in (
                         "font-family",
-                        "font_face",
+                        "font-face",
                         "font-size",
                         "font-weight",
                         "anchor",
@@ -201,6 +220,21 @@ class SVGWriter:
                         "y",
                     ):
                         subelement.set(key, str(val))
+                attribs = [
+                    ("font_family", SVG_ATTR_FONT_FAMILY),
+                    ("font_face", SVG_ATTR_FONT_FACE),
+                    ("font_size", SVG_ATTR_FONT_SIZE),
+                    ("font_weight", SVG_ATTR_FONT_WEIGHT),
+                    ("font_style", "font-style") # Not implemented yet afaics
+                    ]
+                for attrib in attribs:
+                    val = None
+                    if hasattr(element, attrib[0]):
+                        val = getattr(element, attrib[0])
+                    if val is None and hasattr(c, attrib[0]):
+                        val = getattr(c, attrib[0])
+                    if not val is None:
+                        subelement.set(attrib[1], str(val))
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
@@ -362,6 +396,9 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                fst = element.values.get("font-style")
+                if not fst is None:
+                    node.font_style = fst
                 e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:

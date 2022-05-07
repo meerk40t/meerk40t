@@ -5028,10 +5028,17 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
         )
         def duplicate_element_n(node, copies, **kwargs):
-            copy_nodes = [copy(e) for e in list(self.elems(emphasized=True)) * copies]
-            for n in copy_nodes:
-                node.parent.add_node(n)
+            copy_nodes = list()
+            for e in list(self.elems(emphasized=True)):
+                for n in range(copies):
+                    copy_node = copy(e)
+                    if hasattr(e, "wxfont"):
+                        copy_node.wxfont = e.wxfont
+                    node.parent.add_node(copy_node)
+                    copy_nodes.append(copy_node)
+
             self.classify(copy_nodes)
+
             self.set_emphasis(None)
 
         @self.tree_conditional(lambda node: not is_regmark(node))
@@ -6098,13 +6105,13 @@ class Elemental(Service):
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif node.stroke is not None and node.stroke.value is not None:
+                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.value is not None:
                     op = EngraveOpNode(color=node.stroke, speed=35.0)
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
-                if node.fill is not None and node.fill.argb is not None:
+                if hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
                     op.add_reference(node)
