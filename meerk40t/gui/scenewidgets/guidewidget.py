@@ -21,7 +21,8 @@ class GuideWidget(Widget):
         self.edge_gap = 5
         self.line_length = 20
         self.calc_area(True, 0, 0)
-        self.scaled_conversion = 0
+        self.scaled_conversion_x = 0
+        self.scaled_conversion_y = 0
         self.units = None
         self.options = []
         self.pen_guide = wx.Pen()
@@ -127,32 +128,9 @@ class GuideWidget(Widget):
             while y <= p.device.unit_height:
                 self.scene.toggle_y_magnet(y)
                 y += tlen
-        if self.scene.draw_grid_secondary:
+        if self.scene.draw_grid_secondary and not self.scene.draw_grid_primary:
             # TODO
-            tlenx = float(
-                Length(
-                    "{value}{units}".format(
-                        value=self.scene.tick_distance * self.scene.grid_secondary_scale_x , units=p.units_name
-                    )
-                )
-            )
-            tleny = float(
-                Length(
-                    "{value}{units}".format(
-                        value=self.scene.tick_distance * self.scene.grid_secondary_scale_y , units=p.units_name
-                    )
-                )
-            )
-            # Todo: does not properly recognize shifted origin
-            x = 0
-            while x <= p.device.unit_width:
-                self.scene.toggle_x_magnet(x)
-                x += tlenx
-
-            y = 0
-            while y <= p.device.unit_height:
-                self.scene.toggle_y_magnet(y)
-                y += tleny
+            pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
@@ -415,7 +393,7 @@ class GuideWidget(Widget):
 
             value = 0
             p = self.scene.context
-            if self.scaled_conversion == 0:
+            if self.scaled_conversion_x == 0:
                 return
             p = self.scene.context
             sx = 0
@@ -437,14 +415,14 @@ class GuideWidget(Widget):
             #    "Device-origin=%.1f, %.1f \n ox, oy=%.1f, %.1f"
             #    % (p.device.origin_x, p.device.origin_y, ox, oy)
             # )
-            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion
-            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion
+            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion_x
+            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion_y
 
             # print(
             #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
             #    % (
-            #        ox / self.scaled_conversion,
-            #        oy / self.scaled_conversion,
+            #        ox / self.scaled_conversion_x,
+            #        oy / self.scaled_conversion_y,
             #        mark_point_x,
             #        mark_point_y,
             #    )
@@ -530,15 +508,20 @@ class GuideWidget(Widget):
         w, h = gc.Size
         self.calc_area(False, w, h)
         p = self.scene.context
-        self.scaled_conversion = (
+        self.scaled_conversion_x = (
             p.device.length(str(1) + p.units_name, as_float=True)
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
-        if self.scaled_conversion == 0:
+        self.scaled_conversion_y = (
+            p.device.length(str(1) + p.units_name, as_float=True)
+            * self.scene.widget_root.scene_widget.matrix.value_scale_y()
+        )
+        if self.scaled_conversion_x == 0:
             return
         # Establish the delta for about 15 ticks
         # print ("set scene_tick_distance to %f" % delta)
-        points = self.scene.tick_distance * self.scaled_conversion
+        points_x = self.scene.tick_distance * self.scaled_conversion_x
+        points_y = self.scene.tick_distance * self.scaled_conversion_y
         self.units = p.units_name
 
         sx, sy = self.scene.convert_scene_to_window(
@@ -547,13 +530,15 @@ class GuideWidget(Widget):
                 p.device.unit_height * p.device.show_origin_y,
             ]
         )
-        if points == 0:
+        show_x = p.device.show_origin_x not in (0.0, 1.0)
+        show_y = p.device.show_origin_y not in (0.0, 1.0)
+        if points_x == 0:
             return
-        offset_x = float(sx) % points
-        offset_y = float(sy) % points
+        offset_x = float(sx) % points_x
+        offset_y = float(sy) % points_y
 
         # print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
-        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f" % (offset_x, offset_y, points))
+        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f, %.1f" % (offset_x, offset_y, points_x, points_y))
         # print("Start-location is at %.1f, %.1f" % (sx, sy))
         starts = []
         ends = []
@@ -566,53 +551,54 @@ class GuideWidget(Widget):
         (t_width, t_height) = gc.GetTextExtent("0")
         while x < w:
             if x >= 45:
-                mark_point = (x - sx) / self.scaled_conversion
+                mark_point = (x - sx) / self.scaled_conversion_x
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_x:
                     mark_point *= -1
-                starts.append((x, edge_gap))
-                ends.append((x, length + edge_gap))
+                if mark_point >= 0 or p.show_negative_guide or show_x:
+                    starts.append((x, edge_gap))
+                    ends.append((x, length + edge_gap))
 
-                starts.append((x, h - edge_gap))
-                ends.append((x, h - length - edge_gap))
-                # Show half distance as well if there's enough room
-                if t_height < 0.5 * points:
-                    starts.append((x - 0.5 * points, edge_gap))
-                    ends.append((x - 0.5 * points, 0.25 * length + edge_gap))
+                    starts.append((x, h - edge_gap))
+                    ends.append((x, h - length - edge_gap))
+                    # Show half distance as well if there's enough room
+                    if t_height < 0.5 * points_x:
+                        starts.append((x - 0.5 * points_x, edge_gap))
+                        ends.append((x - 0.5 * points_x, 0.25 * length + edge_gap))
 
-                starts.append((x, h - edge_gap))
-                ends.append((x, h - length - edge_gap))
-                starts.append((x - 0.5 * points, h - edge_gap))
-                ends.append((x - 0.5 * points, h - 0.25 * length - edge_gap))
+                    starts.append((x, h - edge_gap))
+                    ends.append((x, h - length - edge_gap))
+                    starts.append((x - 0.5 * points_x, h - edge_gap))
+                    ends.append((x - 0.5 * points_x, h - 0.25 * length - edge_gap))
 
-                gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
-            x += points
+                    gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
+            x += points_x
 
         y = offset_y
         while y < h:
             if y >= 20:
-                mark_point = (y - sy) / self.scaled_conversion
+                mark_point = (y - sy) / self.scaled_conversion_y
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_y:
                     mark_point *= -1
-                if mark_point >= 0 or p.show_negative_guide:
+                if mark_point >= 0 or p.show_negative_guide or show_y:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
                     # if there is enough room for a mid-distance stroke...
-                    if t_height < 0.5 * points:
-                        starts.append((edge_gap, y - 0.5 * points))
-                        ends.append((0.25 * length + edge_gap, y - 0.5 * points))
+                    if t_height < 0.5 * points_y:
+                        starts.append((edge_gap, y - 0.5 * points_y))
+                        ends.append((0.25 * length + edge_gap, y - 0.5 * points_y))
 
                     starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))
-                    starts.append((w - edge_gap, y - 0.5 * points))
-                    ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points))
+                    starts.append((w - edge_gap, y - 0.5 * points_y))
+                    ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y))
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
-            y += points
+            y += points_y
         if len(starts) > 0:
             gc.StrokeLineSegments(starts, ends)
 
