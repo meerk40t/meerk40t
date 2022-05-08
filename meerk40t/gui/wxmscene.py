@@ -334,9 +334,10 @@ class MeerK40tScenePanel(wx.Panel):
                 target = target.lower()
                 if target[0] == "p":
                     self.widget_scene.draw_grid_primary = not self.widget_scene.draw_grid_primary
+                    channel(_("Turned primary grid on" if self.widget_scene.draw_grid_primary else "Turned primary grid off"))
                     self.scene.signal("guide")
                     self.scene.signal("grid")
-
+                    self.request_refresh()
                 elif target[0] == "s":
                     self.widget_scene.draw_grid_secondary = not self.widget_scene.draw_grid_secondary
                     if self.widget_scene.draw_grid_secondary:
@@ -349,8 +350,8 @@ class MeerK40tScenePanel(wx.Panel):
                         else:
                             if oy is None:
                                 oy = ox
-                            self.widget_scene.grid_secondary_cx = float(Length(ox, relative_length=self.device.width))
-                            self.widget_scene.grid_secondary_cy = float(Length(oy, relative_length=self.device.height))
+                            self.widget_scene.grid_secondary_cx = float(Length(ox, relative_length=self.context.device.width))
+                            self.widget_scene.grid_secondary_cy = float(Length(oy, relative_length=self.context.device.height))
                         if scalex is None:
                             rot = self.scene.context.rotary
                             if rot.rotary_enabled:
@@ -367,9 +368,10 @@ class MeerK40tScenePanel(wx.Panel):
                             scaley = float(scaley)
                         self.widget_scene.grid_secondary_scale_x = scalex
                         self.widget_scene.grid_secondary_scale_y = scaley
+                    channel(_("Turned secondary grid on" if self.widget_scene.draw_grid_secondary else "Turned secondary grid off"))
                     self.scene.signal("guide")
                     self.scene.signal("grid")
-
+                    self.request_refresh()
                 elif target[0] == "c":
                     self.widget_scene.draw_grid_circular = not self.widget_scene.draw_grid_circular
                     if self.widget_scene.draw_grid_circular:
@@ -379,11 +381,12 @@ class MeerK40tScenePanel(wx.Panel):
                         else:
                             if oy is None:
                                 oy = ox
-                            self.widget_scene.grid_circular_cx = float(Length(ox, relative_length=self.device.width))
-                            self.widget_scene.grid_circular_cy = float(Length(oy, relative_length=self.device.height))
+                            self.widget_scene.grid_circular_cx = float(Length(ox, relative_length=self.context.device.width))
+                            self.widget_scene.grid_circular_cy = float(Length(oy, relative_length=self.context.device.height))
+                    channel(_("Turned circular grid on" if self.widget_scene.draw_grid_circular else "Turbed circular grid off"))
                     self.scene.signal("guide")
                     self.scene.signal("grid")
-
+                    self.request_refresh()
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
 
@@ -415,8 +418,8 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
-        self.request_refresh()
         self.scene.signal("grid")
+        self.request_refresh()
 
     def on_size(self, event):
         if self.context is None:
