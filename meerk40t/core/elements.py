@@ -188,6 +188,28 @@ class Elemental(Service):
             self.wordlists[key] = [1]
         self.wordlists[key].append(value)
 
+    def index_range(self, index_string):
+        """
+        Parses index ranges in the form <idx>,<idx>-<idx>,<idx>
+        @param index_string:
+        @return:
+        """
+        indexes = list()
+        for s in index_string.split(','):
+            q = list(s.split('-'))
+            if len(q) == 1:
+                indexes.append(int(q[0]))
+            else:
+                start = int(q[0])
+                end = int(q[1])
+                if start > end:
+                    for q in range(end, start + 1):
+                        indexes.append(q)
+                else:
+                    for q in range(start, end + 1):
+                        indexes.append(q)
+        return indexes
+
     def length(self, v):
         return float(Length(v))
 
@@ -315,38 +337,77 @@ class Elemental(Service):
                 channel("----------")
             return "penbox", key
 
-        @self.console_option("to", "t", help=_("Penbox to-index"), type=int)
-        @self.console_argument("index", help=_("Penbox index"), type=int)
+        @self.console_argument("count", help=_("Penbox count"), type=int)
+        @self.console_command(
+            "add",
+            help=_("add pens to the chosen penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_add(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+            if count is None:
+                raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            current.extend([dict() for _ in range(count)])
+            return "penbox", data
+
+        @self.console_argument("count", help=_("Penbox count"), type=int)
+        @self.console_command(
+            "del",
+            help=_("delete pens to the chosen penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_del(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+            if count is None:
+                raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            for _ in range(count):
+                try:
+                    del current[-1]
+                except IndexError:
+                    break
+            return "penbox", data
+
+        @self.console_argument("index", help=_("Penbox index"), type=self.index_range)
         @self.console_argument("key", help=_("Penbox key"), type=str)
         @self.console_argument("value", help=_("Penbox key"), type=str)
-        @self.console_option("end", "e", help=_("Penbox to-index"), type=float)
         @self.console_command(
             "set",
             help=_("set value in penbox"),
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_set(command, channel, _, index=0, to=None, key=None, value=None, end=None, data=None, remainder=None, **kwargs):
-            if value is None:
+        def penbox_set(command, channel, _, index=None, key=None, value=None, data=None, remainder=None, **kwargs):
+            if not value:
                 raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            value = value.split(",")
+            if len(value) == 1:
+                value = float(value[0])
+                for i in index:
+                    current[i][key] = value
             else:
-                if to is None:
-                    self.penbox[data][index][key] = value
-                else:
-                    if to > index:
-                        step = 1 if index < to else -1
-                        if end is None:
-                            for i in range(index, to + step, step):
-                                self.penbox[data][i][key] = value
-                        else:
-                            value = float(value)
-                            end = float(end)
-                            r = abs(to-index)
-                            s = (end - value) / r
-                            d = 0
-                            for i in range(index, to + step, step):
-                                self.penbox[data][i][key] = value + d
-                                d += s
+                end = float(value[1])
+                value = float(value[0])
+                r = len(index)
+                try:
+                    s = (end - value) / (r - 1)
+                except ZeroDivisionError:
+                    s = 0
+                d = 0
+                for i in index:
+                    current[i][key] = value + d
+                    d += s
             return "penbox", data
 
         # ==========
