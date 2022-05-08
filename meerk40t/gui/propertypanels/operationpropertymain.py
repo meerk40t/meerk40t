@@ -856,17 +856,6 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
 
-        sizer_pass_inc = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Pass Angle Increment"), wx.HORIZONTAL
-        )
-        raster_sizer.Add(sizer_pass_inc, 1, wx.EXPAND, 0)
-
-        self.text_pass_inc = wx.TextCtrl(self, wx.ID_ANY, "0deg")
-        sizer_pass_inc.Add(self.text_pass_inc, 1, 0, 0)
-
-        self.slider_pass_inc = wx.Slider(self, wx.ID_ANY, 0, -180, 180)
-        sizer_pass_inc.Add(self.slider_pass_inc, 3, wx.EXPAND, 0)
-
         sizer_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Fill Style"), wx.VERTICAL
         )
@@ -887,8 +876,6 @@ class HatchSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.on_text_distance, self.text_distance)
         self.Bind(wx.EVT_TEXT, self.on_text_angle, self.text_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
-        self.Bind(wx.EVT_TEXT, self.on_text_pass_inc, self.text_pass_inc)
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_pass_inc, self.slider_pass_inc)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
 
@@ -901,14 +888,8 @@ class HatchSettingsPanel(wx.Panel):
     def set_widgets(self, node):
         self.operation = node
         self.combo_fill_style.SetSelection(self.operation.hatch_type)
-        self.text_pass_inc.SetValue(self.operation.hatch_angle_inc)
         self.text_angle.SetValue(self.operation.hatch_angle)
         self.text_distance.SetValue(str(self.operation.hatch_distance))
-        try:
-            angle = float(Angle.parse(self.operation.hatch_angle_inc).as_degrees)
-            self.slider_pass_inc.SetValue(int(angle))
-        except ValueError:
-            pass
         try:
             angle_inc = float(Angle.parse(self.operation.hatch_angle).as_degrees)
             self.slider_angle.SetValue(int(angle_inc))
@@ -932,16 +913,6 @@ class HatchSettingsPanel(wx.Panel):
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
-
-    def on_text_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        try:
-            self.operation.hatch_angle_inc = f"{Angle.parse(self.text_pass_inc.GetValue()).as_degrees}deg"
-        except ValueError:
-            return
-
-    def on_slider_pass_inc(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        value = self.slider_pass_inc.GetValue()
-        self.text_pass_inc.SetValue(f"{value}deg")
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
