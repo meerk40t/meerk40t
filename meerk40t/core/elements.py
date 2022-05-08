@@ -296,11 +296,15 @@ class Elemental(Service):
         @self.console_command(
             "penbox",
             help=_("Penbox base operation"),
-            input_type=None,
+            input_type=(None, "ops"),
             output_type="penbox",
         )
-        def penbox(command, channel, _, key=None, remainder=None, **kwargs):
-            if remainder is None:
+        def penbox(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                for op in data:
+                    op.settings["penbox"] = key
+                    channel(f"{str(op)} penbox changed to {key}.")
+            elif remainder is None:
                 channel("----------")
                 if key is None:
                     for key in self.penbox:
