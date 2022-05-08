@@ -20,10 +20,7 @@ class GuideWidget(Widget):
         self.scene.context.setting(bool, "show_negative_guide", True)
         self.edge_gap = 5
         self.line_length = 20
-        self.scale_x_lower = 0
-        self.scale_x_upper = self.edge_gap + self.line_length
-        self.scale_y_lower = 0
-        self.scale_y_upper = self.edge_gap + self.line_length
+        self.calc_area(True, 0, 0)
         self.scaled_conversion = 0
         self.units = None
         self.options = []
@@ -41,6 +38,25 @@ class GuideWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
+    def calc_area(self, lower, w, h):
+        if lower:
+            self.scale_x_lower = 0
+            self.scale_x_upper = self.edge_gap + self.line_length
+            self.scale_y_lower = 0
+            self.scale_y_upper = self.edge_gap + self.line_length
+            # Set secondary to primary initially
+            self.scale_x2_lower = self.scale_x_lower
+            self.scale_x2_upper = self.scale_x_upper
+            self.scale_y2_lower = self.scale_y_lower
+            self.scale_y2_upper = self.scale_y_upper
+
+        else:
+
+            self.scale_x2_lower = w - self.edge_gap - self.line_length
+            self.scale_x2_upper = w
+            self.scale_y2_lower = h - self.edge_gap - self.line_length
+            self.scale_y2_upper = h
+
     def contains(self, x, y=None):
         # Slightly more complex than usual due to left, top area
         value = False
@@ -51,6 +67,8 @@ class GuideWidget(Widget):
         if (
             self.scale_x_lower <= x <= self.scale_x_upper
             or self.scale_y_lower <= y <= self.scale_y_upper
+            or self.scale_x2_lower <= x <= self.scale_x2_upper
+            or self.scale_y2_lower <= y <= self.scale_y2_upper
         ):
             value = True
         return value
@@ -80,36 +98,60 @@ class GuideWidget(Widget):
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
 
     def toggle_circles(self):
-        self.scene.draw_grid_circular = not self.scene.draw_grid_circular
-        self.scene.context.signal("grid")
-        self.scene._signal_widget(self.scene.widget_root, "grid")
-
+        self.scene.context("showgrid circular\n")
 
     def toggle_rect(self):
-        self.scene.draw_grid_rectangular = not self.scene.draw_grid_rectangular
-        self.scene.context.signal("grid")
-        self.scene._signal_widget(self.scene.widget_root, "grid")
+        self.scene.context("showgrid primary\n")
+
+    def toggle_secondary(self):
+        self.scene.context("showgrid secondary\n")
 
     def fill_magnets(self):
         # Let's set the full grid
         p = self.scene.context
-        tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=p.units_name
+        if self.scene.draw_grid_primary:
+            tlen = float(
+                Length(
+                    "{value}{units}".format(
+                        value=self.scene.tick_distance, units=p.units_name
+                    )
                 )
             )
-        )
 
-        x = 0
-        while x <= p.device.unit_width:
-            self.scene.toggle_x_magnet(x)
-            x += tlen
+            x = 0
+            while x <= p.device.unit_width:
+                self.scene.toggle_x_magnet(x)
+                x += tlen
 
-        y = 0
-        while y <= p.device.unit_height:
-            self.scene.toggle_y_magnet(y)
-            y += tlen
+            y = 0
+            while y <= p.device.unit_height:
+                self.scene.toggle_y_magnet(y)
+                y += tlen
+        if self.scene.draw_grid_secondary:
+            tlenx = float(
+                Length(
+                    "{value}{units}".format(
+                        value=self.scene.tick_distance * self.scene.grid_secondary_scale_x , units=p.units_name
+                    )
+                )
+            )
+            tleny = float(
+                Length(
+                    "{value}{units}".format(
+                        value=self.scene.tick_distance * self.scene.grid_secondary_scale_y , units=p.units_name
+                    )
+                )
+            )
+            # Todo: does not properly recognize shifted origin
+            x = 0
+            while x <= p.device.unit_width:
+                self.scene.toggle_x_magnet(x)
+                x += tlenx
+
+            y = 0
+            while y <= p.device.unit_height:
+                self.scene.toggle_y_magnet(y)
+                y += tleny
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
@@ -322,13 +364,22 @@ class GuideWidget(Widget):
 
         def add_grid_draw_options(self, menu):
             menu.AppendSeparator()
-            kind = wx.ITEM_CHECK if self.scene.draw_grid_rectangular else wx.ITEM_NORMAL
-            item = menu.Append(wx.ID_ANY, _("Draw rectangular grid"), "", kind)
+            kind = wx.ITEM_CHECK if self.scene.draw_grid_primary else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Draw primary grid"), "", kind)
             if kind == wx.ITEM_CHECK:
                 menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
                 lambda e: self.toggle_rect(),
+                id=item.GetId(),
+            )
+            kind = wx.ITEM_CHECK if self.scene.draw_grid_secondary else wx.ITEM_NORMAL
+            item = menu.Append(wx.ID_ANY, _("Draw secondary grid"), "", kind)
+            if kind == wx.ITEM_CHECK:
+                menu.Check(item.GetId(), True)
+            self.scene.context.gui.Bind(
+                wx.EVT_MENU,
+                lambda e: self.toggle_secondary(),
                 id=item.GetId(),
             )
             kind = wx.ITEM_CHECK if self.scene.draw_grid_circular else wx.ITEM_NORMAL
@@ -340,6 +391,91 @@ class GuideWidget(Widget):
                 lambda e: self.toggle_circles(),
                 id=item.GetId(),
             )
+
+        def process_doubleclick(self):
+            # Primary Guide
+            secondary = False
+            is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
+            if not is_y:
+                if self.scene.draw_grid_secondary:
+                    is_y = self.scale_x2_lower <= space_pos[0] <= self.scale_x2_upper
+                    secondary = True
+            is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
+            if not is_x:
+                if self.scene.draw_grid_secondary:
+                    is_x = self.scale_y2_lower <= space_pos[1] <= self.scale_y2_upper
+                    secondary = True
+            print ("is_x=%s, is_y=%s, secondary=%s" % (is_x, is_y, secondary))
+            if not (is_x or is_y):
+                return
+
+            value = 0
+            p = self.scene.context
+            if self.scaled_conversion == 0:
+                return
+            p = self.scene.context
+            sx = 0
+            sy = 0
+            tick_distance_x = self.scene.tick_distance
+            tick_distance_y = self.scene.tick_distance
+            if secondary:
+                if not self.scene.grid_secondary_cx is None:
+                    sx = self.scene.grid_secondary_cx
+                if not self.scene.grid_secondary_cy is None:
+                    sy = self.scene.grid_secondary_cy
+                if not self.scene.grid_secondary_scale_x is None:
+                    tick_distance_x *= self.scene.grid_secondary_scale_x
+                if not self.scene.grid_secondary_scale_y is None:
+                    tick_distance_y *= self.scene.grid_secondary_scale_y
+            ox, oy = self.scene.convert_scene_to_window([sx, sy])
+
+            # print(
+            #    "Device-origin=%.1f, %.1f \n ox, oy=%.1f, %.1f"
+            #    % (p.device.origin_x, p.device.origin_y, ox, oy)
+            # )
+            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion
+            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion
+
+            # print(
+            #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
+            #    % (
+            #        ox / self.scaled_conversion,
+            #        oy / self.scaled_conversion,
+            #        mark_point_x,
+            #        mark_point_y,
+            #    )
+            # )
+
+            # Make positions stick on ticks (or exactly inbetween)
+            mark_point_x = (
+                round(2.0 * mark_point_x / tick_distance_x)
+                * 0.5
+                * tick_distance_x
+            )
+            mark_point_y = (
+                round(2.0 * mark_point_y / tick_distance_y)
+                * 0.5
+                * tick_distance_y
+            )
+            if is_x and is_y:
+                if self.scene.has_magnets():
+                    self.scene.clear_magnets()
+                else:
+                    self.fill_magnets()
+            elif is_x:
+                # Get the X coordinate from space_pos [0]
+                value = float(Length("%.1f%s" % (mark_point_x, self.units)))
+                self.scene.toggle_x_magnet(value)
+            elif is_x:
+                # Get the X coordinate from space_pos [0]
+                value = float(Length("%.1f%s" % (mark_point_x, self.units)))
+                self.scene.toggle_x_magnet(value)
+            elif is_y:
+                # Get the Y coordinate from space_pos [1]
+                value = float(Length("%.1f%s" % (mark_point_y, self.units)))
+                self.scene.toggle_y_magnet(value)
+
+            self.scene.request_refresh()
 
 
         if event_type == "hover":
@@ -374,59 +510,7 @@ class GuideWidget(Widget):
 
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
-
-            is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
-            is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
-            value = 0
-            p = self.scene.context
-            if self.scaled_conversion == 0:
-                return
-            p = self.scene.context
-            ox, oy = self.scene.convert_scene_to_window([0, 0])
-
-            # print(
-            #    "Device-origin=%.1f, %.1f \n ox, oy=%.1f, %.1f"
-            #    % (p.device.origin_x, p.device.origin_y, ox, oy)
-            # )
-            mark_point_x = (window_pos[0] - ox) / self.scaled_conversion
-            mark_point_y = (window_pos[1] - oy) / self.scaled_conversion
-
-            # print(
-            #    "OX=%.1f, Oy=%.1f, Mark before x=%.1f, y=%.1f"
-            #    % (
-            #        ox / self.scaled_conversion,
-            #        oy / self.scaled_conversion,
-            #        mark_point_x,
-            #        mark_point_y,
-            #    )
-            # )
-
-            # Make positions stick on ticks (or exactly inbetween)
-            mark_point_x = (
-                round(2.0 * mark_point_x / self.scene.tick_distance)
-                * 0.5
-                * self.scene.tick_distance
-            )
-            mark_point_y = (
-                round(2.0 * mark_point_y / self.scene.tick_distance)
-                * 0.5
-                * self.scene.tick_distance
-            )
-            if is_x and is_y:
-                if self.scene.has_magnets():
-                    self.scene.clear_magnets()
-                else:
-                    self.fill_magnets()
-            elif is_x:
-                # Get the X coordinate from space_pos [0]
-                value = float(Length("%.1f%s" % (mark_point_x, self.units)))
-                self.scene.toggle_x_magnet(value)
-            elif is_y:
-                # Get the Y coordinate from space_pos [1]
-                value = float(Length("%.1f%s" % (mark_point_y, self.units)))
-                self.scene.toggle_y_magnet(value)
-
-            self.scene.request_refresh()
+            process_doubleclick(self)
             return RESPONSE_CONSUME
         else:
             return RESPONSE_CHAIN
@@ -440,6 +524,7 @@ class GuideWidget(Widget):
         # print ("GuideWidget Draw")
         gc.SetPen(self.pen_guide)
         w, h = gc.Size
+        self.calc_area(False, w, h)
         p = self.scene.context
         self.scaled_conversion = (
             p.device.length(str(1) + p.units_name, as_float=True)

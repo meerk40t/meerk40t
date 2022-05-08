@@ -28,7 +28,6 @@ class AttractionWidget(Widget):
         # Respond to Snap is not necessary, but for the sake of completeness...
 
         self.attraction_points = None  # Clear all
-        self.grid_points = None  # Clear all
         self.my_x = None
         self.my_y = None
         self.visible_pen = wx.Pen()
@@ -334,73 +333,6 @@ class AttractionWidget(Widget):
         #    % (end_time - start_time, len(self.attraction_points))
         # )
 
-    def calculate_grid_points(self):
-        """
-        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
-        attraction points (center, corners, sides)
-        """
-        from time import time
-
-        start_time = time()
-        rect_ct = 0
-        circ_ct = 0
-        self.grid_points = []  # Clear all
-
-        # Let's add grid points - set the full grid
-        p = self.scene.context
-        tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=p.units_name
-                )
-            )
-        )
-        if tlen >= 1000:
-            if self.scene.draw_grid_rectangular:
-                # That's easy just the rectangular stuff
-                x = 0
-                while x <= p.device.unit_width:
-                    y = 0
-                    while y <= p.device.unit_height:
-                        self.grid_points.append([x, y])
-                        y += tlen
-                    x += tlen
-            rect_ct = len(self.grid_points)
-            if self.scene.draw_grid_circular:
-                # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
-                start_x = p.device.unit_width * p.device.show_origin_x
-                start_y = p.device.unit_height * p.device.show_origin_y
-                x = start_x
-                y = start_y
-                self.grid_points.append([x, y])
-                r_angle = 0
-                segments = 48
-                i = 0
-                max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
-                r_third = max_r // (3 * tlen) * tlen
-                while (r_angle < tau):
-                    if i % 2 == 0:
-                        r = 0
-                    else:
-                        r = r_third
-                    while r < max_r:
-                        r += tlen
-                        x = start_x + r * cos(r_angle)
-                        y = start_y + r * sin(r_angle)
-
-                        if x <= p.device.unit_width and y <= p.device.unit_height:
-                            self.grid_points.append([x, y])
-
-                    i += 1
-                    r_angle += tau / segments
-                circ_ct = len(self.grid_points) - rect_ct
-
-        end_time = time()
-        #print(
-        #   "Ready, time needed: %.6f, grid points added=%d (rect=%d, circ=%d)"
-        #   % (end_time - start_time, len(self.grid_points), rect_ct, circ_ct)
-        #)
-
     def calculate_display_points(self):
         from time import time
 
@@ -408,8 +340,8 @@ class AttractionWidget(Widget):
         self.display_points = []
         if self.attraction_points is None:
             self.calculate_attraction_points()
-        if self.grid_points is None:
-            self.calculate_grid_points()
+        if self.scene.grid_points is None:
+            return
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
@@ -428,8 +360,8 @@ class AttractionWidget(Widget):
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
-        if self.snap_grid and len(self.grid_points) > 0 and not self.my_x is None:
-            for pts in self.grid_points:
+        if self.snap_grid and len(self.scene.grid_points) > 0 and not self.my_x is None:
+            for pts in self.scene.grid_points:
                 if (
                     abs(pts[0] - self.my_x) <= self.show_attract_len
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
@@ -456,7 +388,7 @@ class AttractionWidget(Widget):
             self.attraction_points = None
         if signal in ("grid", "guide"):
             consumed = True
-            self.grid_points = None
+            self.scene.grid_points = None
         if signal == "theme":
             consumed = True
             self.load_colors()

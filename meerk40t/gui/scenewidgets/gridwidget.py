@@ -16,6 +16,8 @@ class GridWidget(Widget):
         self.grid = None
         self.background = None
         self.grid_line_pen = wx.Pen()
+        self.grid_line_pen2 = wx.Pen()
+        self.grid_line_pen3 = wx.Pen()
         self.last_ticksize = 0
         self.draw_grid = True
         self.sx = 0
@@ -27,6 +29,10 @@ class GridWidget(Widget):
     def set_colors(self):
         self.grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.grid_line_pen.SetWidth(1)
+        self.grid_line_pen2.SetColour(self.scene.colors.color_grid2)
+        self.grid_line_pen2.SetWidth(1)
+        self.grid_line_pen3.SetColour(self.scene.colors.color_grid3)
+        self.grid_line_pen3.SetWidth(1)
 
     def hit(self):
         return HITCHAIN_HIT
@@ -79,8 +85,11 @@ class GridWidget(Widget):
 
         starts = []
         ends = []
+        starts2 = []
+        ends2 = []
         if step == 0:
             self.grid = None
+            self.grid2 = None
             return
 
         x = 0.0
@@ -96,6 +105,7 @@ class GridWidget(Widget):
             y += step
         self.step = step
         self.grid = starts, ends
+        self.grid2 = starts2, ends2
 
     def calculate_gridsize(self, w, h):
         # Establish the delta for about 15 ticks
@@ -156,6 +166,73 @@ class GridWidget(Widget):
         #print("device, w=%.1f, h=%.1f" % (p.device.unit_width, p.device.unit_height))
         #print("origin, x=%.1f, y=%.1f" % (p.device.show_origin_x, p.device.show_origin_y))
 
+    def calculate_grid_points(self):
+        """
+        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
+        attraction points (center, corners, sides)
+        """
+        from time import time
+
+        start_time = time()
+        rect_ct = 0
+        circ_ct = 0
+        self.scene.grid_points = []  # Clear all
+
+        # Let's add grid points - set the full grid
+        p = self.scene.context
+        tlen = float(
+            Length(
+                "{value}{units}".format(
+                    value=self.scene.tick_distance, units=p.units_name
+                )
+            )
+        )
+        if tlen >= 1000:
+            if self.scene.draw_grid_primary:
+                # That's easy just the rectangular stuff
+                x = 0
+                while x <= p.device.unit_width:
+                    y = 0
+                    while y <= p.device.unit_height:
+                        self.scene.grid_points.append([x, y])
+                        y += tlen
+                    x += tlen
+            rect_ct = len(self.scene.grid_points)
+            if self.scene.draw_grid_circular:
+                # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
+                start_x = p.device.unit_width * p.device.show_origin_x
+                start_y = p.device.unit_height * p.device.show_origin_y
+                x = start_x
+                y = start_y
+                self.scene.grid_points.append([x, y])
+                r_angle = 0
+                segments = 48
+                i = 0
+                max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
+                r_third = max_r // (3 * tlen) * tlen
+                while (r_angle < tau):
+                    if i % 2 == 0:
+                        r = 0
+                    else:
+                        r = r_third
+                    while r < max_r:
+                        r += tlen
+                        x = start_x + r * cos(r_angle)
+                        y = start_y + r * sin(r_angle)
+
+                        if x <= p.device.unit_width and y <= p.device.unit_height:
+                            self.scene.grid_points.append([x, y])
+
+                    i += 1
+                    r_angle += tau / segments
+                circ_ct = len(self.scene.grid_points) - rect_ct
+
+        end_time = time()
+        #print(
+        #   "Ready, time needed: %.6f, grid points added=%d (rect=%d, circ=%d)"
+        #   % (end_time - start_time, len(self.scene.grid_points), rect_ct, circ_ct)
+        #)
+
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
@@ -190,8 +267,11 @@ class GridWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
                 self.calculate_grid()
+                self.calculate_grid_points()
 
             starts, ends = self.grid
+            starts2, ends2 = self.grid2
+
             matrix = self.scene.widget_root.scene_widget.matrix
             try:
                 scale_x = matrix.value_scale_x()
@@ -200,8 +280,12 @@ class GridWidget(Widget):
                     line_width = 1
                 try:
                     self.grid_line_pen.SetWidth(line_width)
+                    self.grid_line_pen2.SetWidth(line_width)
+                    self.grid_line_pen3.SetWidth(line_width)
                 except TypeError:
                     self.grid_line_pen.SetWidth(int(line_width))
+                    self.grid_line_pen2.SetWidth(int(line_width))
+                    self.grid_line_pen3.SetWidth(int(line_width))
 
                 gc.SetPen(self.grid_line_pen)
                 brush = wx.Brush(
@@ -210,6 +294,7 @@ class GridWidget(Widget):
                 gc.SetBrush(brush)
 
                 if self.scene.draw_grid_circular:
+                    gc.SetPen(self.grid_line_pen3)
                     u_width = float(context.device.unit_width)
                     u_height = float(context.device.unit_height)
                     gc.Clip(0, 0, u_width, u_height)
@@ -218,6 +303,7 @@ class GridWidget(Widget):
                     #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
 
                     y = 0
+
                     factor = max( 2* (1-context.device.show_origin_x), 2* (1-context.device.show_origin_y))
                     # print ("Factor=%.2f" % factor)
                     while (y < siz * factor ):
@@ -241,9 +327,14 @@ class GridWidget(Widget):
                         i += 1
                     gc.StrokeLineSegments(radials_start, radials_end)
                     gc.ResetClip()
-                if self.scene.draw_grid_rectangular:
+                if self.scene.draw_grid_primary:
+                    gc.SetPen(self.grid_line_pen)
                     if starts and ends:
                         gc.StrokeLineSegments(starts, ends)
+                if self.scene.draw_grid_secondary:
+                    gc.SetPen(self.grid_line_pen2)
+                    if starts2 and ends2:
+                        gc.StrokeLineSegments(starts2, ends2)
 
             except (OverflowError, ValueError, ZeroDivisionError):
                 matrix.reset()

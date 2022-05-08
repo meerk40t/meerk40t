@@ -81,6 +81,8 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
+
+        # Stuff for magnet-lines
         self.magnet_x = []
         self.magnet_y = []
         self.magnet_attraction = 2
@@ -90,11 +92,26 @@ class Scene(Module, Job):
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
 
+        # Stuff related to grids and guides
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
-        self.draw_grid_rectangular = True
-        self.draw_grid_circular = False
+        self.reset_grids()
+
         self.tool_active = False
+        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+
+    def reset_grids(self):
+        self.draw_grid_primary = True
+        # Secondary grid, perpendicular, but with definable center and scaling
+        self.draw_grid_secondary = False
+        self.grid_secondary_cx = None
+        self.grid_secondary_cy = None
+        self.grid_secondary_scale_x = 1
+        self.grid_secondary_scale_y = 1
+        # Circular grid
+        self.draw_grid_circular = False
+        self.grid_circular_cx = None
+        self.grid_circular_cy = None
 
     def clear_magnets(self):
         self.magnet_x = []
