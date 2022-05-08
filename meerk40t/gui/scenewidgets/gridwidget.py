@@ -147,14 +147,10 @@ class GridWidget(Widget):
             l_pref = 5.0
 
         delta1 = l_pref * factor
-        delta2 = delta1
-        if self.scene.draw_grid_secondary:
-            delta2 = delta1
         # print("New Delta={delta}".format(delta=delta))
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
         self.scene.tick_distance = delta1
-        self.scene.tick_distance_secondary = delta2
 
         points = self.scene.tick_distance * scaled_conversion
 
@@ -223,15 +219,10 @@ class GridWidget(Widget):
                         y += tlen
                     x += tlen
             prim_ct = len(self.scene.grid_points)
-            if self.scene.draw_grid_primary:
-                # That's easy just the rectangular stuff
-                x = 0
-                while x <= p.device.unit_width:
-                    y = 0
-                    while y <= p.device.unit_height:
-                        self.scene.grid_points.append([x, y])
-                        y += tlen
-                    x += tlen
+            if self.scene.draw_grid_secondary:
+                # TODO
+                pass
+
             second_ct = len(self.scene.grid_points) - prim_ct
             if self.scene.draw_grid_circular:
                 # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
@@ -364,13 +355,13 @@ class GridWidget(Widget):
                     gc.SetFont(font, self.scene.colors.color_guide3)
                     segments = 48
                     while r_angle<tau:
-                        # Let's see, where do we hit the boundary?
                         if i % 2 == 0:
                             degang = round(r_angle / tau * 360, 1)
                             if degang == 360:
                                 degang = 0
                             a_text = "%.0f°" % degang
                             (t_width, t_height) = gc.GetTextExtent(a_text)
+                            # Make sure text remains legible with out breaking your neck... ;-)
                             if tau * 1 / 4 < r_angle < tau * 3 / 4:
                                 myangle = (-1.0 * r_angle) + tau / 2
                                 dx = t_width

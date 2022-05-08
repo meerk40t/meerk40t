@@ -128,6 +128,7 @@ class GuideWidget(Widget):
                 self.scene.toggle_y_magnet(y)
                 y += tlen
         if self.scene.draw_grid_secondary:
+            # TODO
             tlenx = float(
                 Length(
                     "{value}{units}".format(
@@ -382,6 +383,9 @@ class GuideWidget(Widget):
                 lambda e: self.toggle_secondary(),
                 id=item.GetId(),
             )
+            # DISABLE, AS NOT YET READY
+            menu.Enable(item.GetId(), False)
+
             kind = wx.ITEM_CHECK if self.scene.draw_grid_circular else wx.ITEM_NORMAL
             item = menu.Append(wx.ID_ANY, _("Draw circular grid"), "", kind)
             if kind == wx.ITEM_CHECK:
@@ -405,7 +409,7 @@ class GuideWidget(Widget):
                 if self.scene.draw_grid_secondary:
                     is_x = self.scale_y2_lower <= space_pos[1] <= self.scale_y2_upper
                     secondary = True
-            print ("is_x=%s, is_y=%s, secondary=%s" % (is_x, is_y, secondary))
+            # print ("is_x=%s, is_y=%s, secondary=%s" % (is_x, is_y, secondary))
             if not (is_x or is_y):
                 return
 
