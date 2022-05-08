@@ -144,11 +144,14 @@ class HatchOpNode(Node, Parameters):
         )
 
     def preprocess(self, context, matrix, commands):
-        distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
-        transformed_vector = matrix.transform_vector([0, distance_y])
-        self._hatch_distance_native = abs(
-            complex(transformed_vector[0], transformed_vector[1])
-        )
+        """
+        Preprocess hatch values
+
+        @param context:
+        @param matrix:
+        @param commands:
+        @return:
+        """
 
         def split(points):
             pos = 0
@@ -160,9 +163,7 @@ class HatchOpNode(Node, Parameters):
                 yield points[pos: len(points)]
 
         def create_fill():
-            angle = Angle.parse(self.hatch_angle)
-            # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
-            efill = EulerianFill(self._hatch_distance_native)
+            c = list()
             for node in self.children:
                 path = node.as_path()
                 path.approximate_arcs_with_cubics()
@@ -171,19 +172,42 @@ class HatchOpNode(Node, Parameters):
                     sp = Path(subpath)
                     if len(sp) == 0:
                         continue
+                    c.append(sp)
+            self.remove_all_children()
+
+            penbox = self.settings.get("penbox")
+            if penbox is not None:
+                penbox = context.elements.penbox[penbox]
+
+            for p in range(self.implicit_passes):
+                settings = dict(self.settings)
+                if penbox is not None:
+                    try:
+                        settings.update(penbox[p])
+                    except IndexError:
+                        pass
+                distance_y = float(Length(settings.get("hatch_distance", "1mm")))
+                angle = Angle.parse(settings.get("hatch_angle", "0deg"))
+                transformed_vector = matrix.transform_vector([0, distance_y])
+                counter_rotate = Matrix.rotate(-angle)
+
+                # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
+                efill = EulerianFill(abs(
+                    complex(transformed_vector[0], transformed_vector[1])
+                ))
+                for sp in c:
+                    sp.transform.reset()
                     if angle is not None:
                         sp *= Matrix.rotate(angle)
                     sp = abs(sp)
-                    pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    efill += pts
-            points = efill.get_fill()
-            counter_rotate = Matrix.rotate(-angle)
+                    efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                points = efill.get_fill()
 
-            self.remove_all_children()
-            for pts in split(points):
-                polyline = Polyline(pts, stoke=self.settings.get("line_color"))
-                polyline *= counter_rotate
-                self.add_node(PolylineNode(shape=abs(polyline)))
+                for pts in split(points):
+                    polyline = Polyline(pts, stoke=settings.get("line_color"))
+                    polyline *= counter_rotate
+                    self.add_node(PolylineNode(shape=abs(polyline)))
+
         if self.children:
             commands.append(create_fill)
 
