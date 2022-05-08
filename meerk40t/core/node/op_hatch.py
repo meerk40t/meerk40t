@@ -163,6 +163,10 @@ class HatchOpNode(Node, Parameters):
                 yield points[pos: len(points)]
 
         def create_fill():
+            """
+            This currently applies Eulerian fill when it could just apply scanline fill.
+            @return:
+            """
             c = list()
             for node in self.children:
                 path = node.as_path()
@@ -179,6 +183,7 @@ class HatchOpNode(Node, Parameters):
             if penbox is not None:
                 penbox = context.elements.penbox[penbox]
 
+            polyline_lookup = dict()
             for p in range(self.implicit_passes):
                 settings = dict(self.settings)
                 if penbox is not None:
@@ -186,26 +191,34 @@ class HatchOpNode(Node, Parameters):
                         settings.update(penbox[p])
                     except IndexError:
                         pass
-                distance_y = float(Length(settings.get("hatch_distance", "1mm")))
-                angle = Angle.parse(settings.get("hatch_angle", "0deg"))
-                transformed_vector = matrix.transform_vector([0, distance_y])
-                counter_rotate = Matrix.rotate(-angle)
+                h_dist = settings.get("hatch_distance", "1mm")
+                h_angle = settings.get("hatch_angle", "0deg")
+                distance_y = float(Length(h_dist))
+                angle = Angle.parse(h_angle)
 
-                # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
-                efill = EulerianFill(abs(
-                    complex(transformed_vector[0], transformed_vector[1])
-                ))
-                for sp in c:
-                    sp.transform.reset()
-                    if angle is not None:
-                        sp *= Matrix.rotate(angle)
-                    sp = abs(sp)
-                    efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                points = efill.get_fill()
-
-                for pts in split(points):
-                    polyline = Polyline(pts, stoke=settings.get("line_color"))
-                    polyline *= counter_rotate
+                key = f"{h_angle},{h_dist}"
+                if key in polyline_lookup:
+                    polylines = polyline_lookup[key]
+                else:
+                    counter_rotate = Matrix.rotate(-angle)
+                    transformed_vector = matrix.transform_vector([0, distance_y])
+                    efill = EulerianFill(abs(
+                        complex(transformed_vector[0], transformed_vector[1])
+                    ))
+                    for sp in c:
+                        sp.transform.reset()
+                        if angle is not None:
+                            sp *= Matrix.rotate(angle)
+                        sp = abs(sp)
+                        efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                    points = efill.get_fill()
+                    polylines = list()
+                    for pts in split(points):
+                        polyline = Polyline(pts, stoke=settings.get("line_color"))
+                        polyline *= counter_rotate
+                        polylines.append(abs(polyline))
+                    polyline_lookup[key] = polylines
+                for polyline in polylines:
                     self.add_node(PolylineNode(shape=abs(polyline)))
 
         if self.children:
@@ -217,7 +230,7 @@ class HatchOpNode(Node, Parameters):
         for node in self.children:
             if node.type != "elem polyline":
                 continue
-            plot = PlotCut(settings=settings, passes=passes)
+            plot = PlotCut(settings=settings)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)
