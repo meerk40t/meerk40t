@@ -391,11 +391,14 @@ class Elemental(Service):
             if current is None:
                 current = list()
                 self.penbox[data] = current
-            value = value.split(",")
+            value = list(value.split(","))
             if len(value) == 1:
                 value = float(value[0])
                 for i in index:
-                    current[i][key] = value
+                    try:
+                        current[i][key] = value
+                    except IndexError:
+                        pass
             else:
                 end = float(value[1])
                 value = float(value[0])
@@ -406,7 +409,10 @@ class Elemental(Service):
                     s = 0
                 d = 0
                 for i in index:
-                    current[i][key] = value + d
+                    try:
+                        current[i][key] = value + d
+                    except IndexError:
+                        pass
                     d += s
             return "penbox", data
 
