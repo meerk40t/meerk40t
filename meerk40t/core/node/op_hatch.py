@@ -194,7 +194,11 @@ class HatchOpNode(Node, Parameters):
                 h_dist = settings.get("hatch_distance", "1mm")
                 h_angle = settings.get("hatch_angle", "0deg")
                 distance_y = float(Length(h_dist))
-                angle = Angle.parse(h_angle)
+                if isinstance(h_angle, float):
+                    angle = Angle.degrees(h_angle)
+                    h_angle = str(h_angle)
+                else:
+                    angle = Angle.parse(h_angle)
 
                 key = f"{h_angle},{h_dist}"
                 if key in polyline_lookup:
