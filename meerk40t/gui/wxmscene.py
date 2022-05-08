@@ -217,6 +217,8 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("zoom", input_type="scene")
         def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
+            if zoomfactor is None:
+                zoomfactor = 1.0
             matrix.post_scale(zoomfactor)
             data.request_refresh()
             channel(str(matrix))
@@ -231,6 +233,8 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("pan", input_type="scene")
         def scene_pan(command, _, channel, data, pan_x, pan_y, **kwargs):
             matrix = data.widget_root.scene_widget.matrix
+            if pan_x is None or pan_y is None:
+                return
             matrix.post_translate(pan_x, pan_y)
             data.request_refresh()
             channel(str(matrix))
