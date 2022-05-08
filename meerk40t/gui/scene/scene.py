@@ -94,6 +94,7 @@ class Scene(Module, Job):
 
         # Stuff related to grids and guides
         self.tick_distance = 0
+        self.tick_distance_secondary = 0
         self.auto_tick = False  # by definition do not auto_tick
         self.reset_grids()
 

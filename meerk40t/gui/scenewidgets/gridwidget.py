@@ -22,6 +22,8 @@ class GridWidget(Widget):
         self.draw_grid = True
         self.sx = 0
         self.sy = 0
+        self.cx = 0
+        self.cy = 0
         self.step = 0
 
         self.set_colors()
@@ -144,11 +146,15 @@ class GridWidget(Widget):
         else:
             l_pref = 5.0
 
-        delta = l_pref * factor
+        delta1 = l_pref * factor
+        delta2 = delta1
+        if self.scene.draw_grid_secondary:
+            delta2 = delta1
         # print("New Delta={delta}".format(delta=delta))
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
-        self.scene.tick_distance = delta
+        self.scene.tick_distance = delta1
+        self.scene.tick_distance_secondary = delta2
 
         points = self.scene.tick_distance * scaled_conversion
 
@@ -157,6 +163,24 @@ class GridWidget(Widget):
 
         self.sx = p.device.unit_width * p.device.show_origin_x
         self.sy = p.device.unit_height * p.device.show_origin_y
+
+        if self.scene.grid_secondary_cx is None:
+            self.sx2 = self.sx
+        else:
+            self.sx2 = self.scene.grid_secondary_cx
+        if self.scene.grid_secondary_cy is None:
+            self.sy2 = self.sy
+        else:
+            self.sy2 = self.scene.grid_secondary_cy
+
+        if self.scene.grid_circular_cx is None:
+            self.cx = self.sx
+        else:
+            self.cx = self.scene.grid_circular_cx
+        if self.scene.grid_circular_cy is None:
+            self.cy = self.sy
+        else:
+            self.cy = self.scene.grid_circular_cy
 
         if points == 0:
             return
@@ -174,7 +198,8 @@ class GridWidget(Widget):
         from time import time
 
         start_time = time()
-        rect_ct = 0
+        prim_ct = 0
+        second_ct = 0
         circ_ct = 0
         self.scene.grid_points = []  # Clear all
 
@@ -197,11 +222,21 @@ class GridWidget(Widget):
                         self.scene.grid_points.append([x, y])
                         y += tlen
                     x += tlen
-            rect_ct = len(self.scene.grid_points)
+            prim_ct = len(self.scene.grid_points)
+            if self.scene.draw_grid_primary:
+                # That's easy just the rectangular stuff
+                x = 0
+                while x <= p.device.unit_width:
+                    y = 0
+                    while y <= p.device.unit_height:
+                        self.scene.grid_points.append([x, y])
+                        y += tlen
+                    x += tlen
+            second_ct = len(self.scene.grid_points) - prim_ct
             if self.scene.draw_grid_circular:
                 # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
-                start_x = p.device.unit_width * p.device.show_origin_x
-                start_y = p.device.unit_height * p.device.show_origin_y
+                start_x = self.cx
+                start_y = self.cy
                 x = start_x
                 y = start_y
                 self.scene.grid_points.append([x, y])
@@ -209,12 +244,12 @@ class GridWidget(Widget):
                 segments = 48
                 i = 0
                 max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
-                r_third = max_r // (3 * tlen) * tlen
+                r_fourth = max_r // (4 * tlen) * tlen
                 while (r_angle < tau):
                     if i % 2 == 0:
                         r = 0
                     else:
-                        r = r_third
+                        r = r_fourth
                     while r < max_r:
                         r += tlen
                         x = start_x + r * cos(r_angle)
@@ -225,13 +260,13 @@ class GridWidget(Widget):
 
                     i += 1
                     r_angle += tau / segments
-                circ_ct = len(self.scene.grid_points) - rect_ct
+                circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
 
         end_time = time()
-        #print(
-        #   "Ready, time needed: %.6f, grid points added=%d (rect=%d, circ=%d)"
-        #   % (end_time - start_time, len(self.scene.grid_points), rect_ct, circ_ct)
-        #)
+        print(
+           "Ready, time needed: %.6f, grid points added=%d (primary=%d, secondary=%d, circ=%d)"
+           % (end_time - start_time, len(self.scene.grid_points), prim_ct, second_ct, circ_ct)
+        )
 
     def process_draw(self, gc):
         """
@@ -303,26 +338,52 @@ class GridWidget(Widget):
                     #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
 
                     y = 0
+                    sox = self.cx / float(context.device.width)
+                    soy = self.cy / float(context.device.height)
 
-                    factor = max( 2* (1-context.device.show_origin_x), 2* (1-context.device.show_origin_y))
+                    factor = max( 2* (1-sox), 2* (1-soy))
                     # print ("Factor=%.2f" % factor)
                     while (y < siz * factor ):
                         y += 2 * self.step
-                        gc.DrawEllipse(self.sx - y/2, self.sy - y/2, y, y)
-                    mid_y = y // (3 * self.step) * self.step # (around one third of radius)
+                        gc.DrawEllipse(self.cx - y/2, self.cy - y/2, y, y)
+                    mid_y = y // (4 * self.step) * self.step # (around one fourth of radius)
                     # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
                     radials_start = []
                     radials_end = []
+                    angle_text_x = []
+                    angle_text_y = []
                     r_angle = 0
                     i = 0
+                    fsize = 10 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+                    if fsize < 1.0:
+                        fsize = 1.0  # Mac does not allow values lower than 1.
+                    try:
+                        font = wx.Font(fsize, wx.SWISS, wx.NORMAL, wx.BOLD)
+                    except TypeError:
+                        font = wx.Font(int(fsize), wx.SWISS, wx.NORMAL, wx.BOLD)
+                    gc.SetFont(font, self.scene.colors.color_guide3)
                     segments = 48
                     while r_angle<tau:
+                        # Let's see, where do we hit the boundary?
                         if i % 2 == 0:
+                            degang = round(r_angle / tau * 360, 1)
+                            if degang == 360:
+                                degang = 0
+                            a_text = "%.0f°" % degang
+                            (t_width, t_height) = gc.GetTextExtent(a_text)
+                            if tau * 1 / 4 < r_angle < tau * 3 / 4:
+                                myangle = (-1.0 * r_angle) + tau / 2
+                                dx = t_width
+                            else:
+                                myangle = -1.0 * r_angle
+                                dx = 0
+                            gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
+                                        self.cy + sin(r_angle)* (mid_y + dx), myangle )
                             s_factor = 0
                         else:
                             s_factor = 1
-                        radials_start.append((self.sx + s_factor * 0.5 * mid_y * cos(r_angle), self.sy + s_factor * 0.5 * mid_y * sin(r_angle)))
-                        radials_end.append((self.sx + 0.5 * y * cos(r_angle), self.sy + 0.5 * y * sin(r_angle)))
+                        radials_start.append((self.cx + s_factor * 0.5 * mid_y * cos(r_angle), self.cy + s_factor * 0.5 * mid_y * sin(r_angle)))
+                        radials_end.append((self.cx + 0.5 * y * cos(r_angle), self.cy + 0.5 * y * sin(r_angle)))
                         r_angle += tau / segments
                         i += 1
                     gc.StrokeLineSegments(radials_start, radials_end)
