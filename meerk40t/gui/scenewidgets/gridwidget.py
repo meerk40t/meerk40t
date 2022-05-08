@@ -254,10 +254,10 @@ class GridWidget(Widget):
                 circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
 
         end_time = time()
-        print(
-           "Ready, time needed: %.6f, grid points added=%d (primary=%d, secondary=%d, circ=%d)"
-           % (end_time - start_time, len(self.scene.grid_points), prim_ct, second_ct, circ_ct)
-        )
+        #print(
+        #   "Ready, time needed: %.6f, grid points added=%d (primary=%d, secondary=%d, circ=%d)"
+        #   % (end_time - start_time, len(self.scene.grid_points), prim_ct, second_ct, circ_ct)
+        #)
 
     def process_draw(self, gc):
         """
