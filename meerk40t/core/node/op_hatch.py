@@ -144,11 +144,14 @@ class HatchOpNode(Node, Parameters):
         )
 
     def preprocess(self, context, matrix, commands):
-        distance_y = float(Length(self.settings.get("hatch_distance", "1mm")))
-        transformed_vector = matrix.transform_vector([0, distance_y])
-        self._hatch_distance_native = abs(
-            complex(transformed_vector[0], transformed_vector[1])
-        )
+        """
+        Preprocess hatch values
+
+        @param context:
+        @param matrix:
+        @param commands:
+        @return:
+        """
 
         def split(points):
             pos = 0
@@ -160,9 +163,11 @@ class HatchOpNode(Node, Parameters):
                 yield points[pos: len(points)]
 
         def create_fill():
-            angle = Angle.parse(self.hatch_angle)
-            # TODO: This currently applies Eulerian fill when it could just apply scanline fill.
-            efill = EulerianFill(self._hatch_distance_native)
+            """
+            This currently applies Eulerian fill when it could just apply scanline fill.
+            @return:
+            """
+            c = list()
             for node in self.children:
                 path = node.as_path()
                 path.approximate_arcs_with_cubics()
@@ -171,19 +176,55 @@ class HatchOpNode(Node, Parameters):
                     sp = Path(subpath)
                     if len(sp) == 0:
                         continue
-                    if angle is not None:
-                        sp *= Matrix.rotate(angle)
-                    sp = abs(sp)
-                    pts = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    efill += pts
-            points = efill.get_fill()
-            counter_rotate = Matrix.rotate(-angle)
-
+                    c.append(sp)
             self.remove_all_children()
-            for pts in split(points):
-                polyline = Polyline(pts, stoke=self.settings.get("line_color"))
-                polyline *= counter_rotate
-                self.add_node(PolylineNode(shape=abs(polyline)))
+
+            penbox = self.settings.get("penbox")
+            if penbox is not None:
+                penbox = context.elements.penbox[penbox]
+
+            polyline_lookup = dict()
+            for p in range(self.implicit_passes):
+                settings = dict(self.settings)
+                if penbox is not None:
+                    try:
+                        settings.update(penbox[p])
+                    except IndexError:
+                        pass
+                h_dist = settings.get("hatch_distance", "1mm")
+                h_angle = settings.get("hatch_angle", "0deg")
+                distance_y = float(Length(h_dist))
+                if isinstance(h_angle, float):
+                    angle = Angle.degrees(h_angle)
+                    h_angle = str(h_angle)
+                else:
+                    angle = Angle.parse(h_angle)
+
+                key = f"{h_angle},{h_dist}"
+                if key in polyline_lookup:
+                    polylines = polyline_lookup[key]
+                else:
+                    counter_rotate = Matrix.rotate(-angle)
+                    transformed_vector = matrix.transform_vector([0, distance_y])
+                    efill = EulerianFill(abs(
+                        complex(transformed_vector[0], transformed_vector[1])
+                    ))
+                    for sp in c:
+                        sp.transform.reset()
+                        if angle is not None:
+                            sp *= Matrix.rotate(angle)
+                        sp = abs(sp)
+                        efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                    points = efill.get_fill()
+                    polylines = list()
+                    for pts in split(points):
+                        polyline = Polyline(pts, stoke=settings.get("line_color"))
+                        polyline *= counter_rotate
+                        polylines.append(abs(polyline))
+                    polyline_lookup[key] = polylines
+                for polyline in polylines:
+                    self.add_node(PolylineNode(shape=abs(polyline)))
+
         if self.children:
             commands.append(create_fill)
 
@@ -193,7 +234,7 @@ class HatchOpNode(Node, Parameters):
         for node in self.children:
             if node.type != "elem polyline":
                 continue
-            plot = PlotCut(settings=settings, passes=passes)
+            plot = PlotCut(settings=settings)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)

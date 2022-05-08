@@ -152,6 +152,7 @@ class Elemental(Service):
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
+        self.penbox = {"value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]}
         self.wordlists = {"version": [1, self.kernel.version]}
 
         self._init_commands(kernel)
@@ -186,6 +187,28 @@ class Elemental(Service):
         if key not in self.wordlists:
             self.wordlists[key] = [1]
         self.wordlists[key].append(value)
+
+    def index_range(self, index_string):
+        """
+        Parses index ranges in the form <idx>,<idx>-<idx>,<idx>
+        @param index_string:
+        @return:
+        """
+        indexes = list()
+        for s in index_string.split(','):
+            q = list(s.split('-'))
+            if len(q) == 1:
+                indexes.append(int(q[0]))
+            else:
+                start = int(q[0])
+                end = int(q[1])
+                if start > end:
+                    for q in range(end, start + 1):
+                        indexes.append(q)
+                else:
+                    for q in range(start, end + 1):
+                        indexes.append(q)
+        return indexes
 
     def length(self, v):
         return float(Length(v))
@@ -287,6 +310,111 @@ class Elemental(Service):
             channel("----------")
             return "wordlist", data
 
+        # ==========
+        # PENBOX COMMANDS
+        # ==========
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox",
+            help=_("Penbox base operation"),
+            input_type=(None, "ops"),
+            output_type="penbox",
+        )
+        def penbox(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                for op in data:
+                    op.settings["penbox"] = key
+                    channel(f"{str(op)} penbox changed to {key}.")
+            elif remainder is None:
+                channel("----------")
+                if key is None:
+                    for key in self.penbox:
+                        channel(str(key))
+                else:
+                    for i, value in enumerate(self.penbox[key]):
+                        channel(f"{i}: {str(value)}")
+                channel("----------")
+            return "penbox", key
+
+        @self.console_argument("count", help=_("Penbox count"), type=int)
+        @self.console_command(
+            "add",
+            help=_("add pens to the chosen penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_add(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+            if count is None:
+                raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            current.extend([dict() for _ in range(count)])
+            return "penbox", data
+
+        @self.console_argument("count", help=_("Penbox count"), type=int)
+        @self.console_command(
+            "del",
+            help=_("delete pens to the chosen penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_del(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+            if count is None:
+                raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            for _ in range(count):
+                try:
+                    del current[-1]
+                except IndexError:
+                    break
+            return "penbox", data
+
+        @self.console_argument("index", help=_("Penbox index"), type=self.index_range)
+        @self.console_argument("key", help=_("Penbox key"), type=str)
+        @self.console_argument("value", help=_("Penbox key"), type=str)
+        @self.console_command(
+            "set",
+            help=_("set value in penbox"),
+            input_type="penbox",
+            output_type="penbox",
+        )
+        def penbox_set(command, channel, _, index=None, key=None, value=None, data=None, remainder=None, **kwargs):
+            if not value:
+                raise CommandSyntaxError
+            current = self.penbox.get(data)
+            if current is None:
+                current = list()
+                self.penbox[data] = current
+            value = list(value.split(","))
+            if len(value) == 1:
+                value = float(value[0])
+                for i in index:
+                    try:
+                        current[i][key] = value
+                    except IndexError:
+                        pass
+            else:
+                end = float(value[1])
+                value = float(value[0])
+                r = len(index)
+                try:
+                    s = (end - value) / (r - 1)
+                except ZeroDivisionError:
+                    s = 0
+                d = 0
+                for i in index:
+                    try:
+                        current[i][key] = value + d
+                    except IndexError:
+                        pass
+                    d += s
+            return "penbox", data
 
         # ==========
         # MATERIALS COMMANDS
