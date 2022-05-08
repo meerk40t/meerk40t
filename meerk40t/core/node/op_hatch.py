@@ -223,17 +223,19 @@ class HatchOpNode(Node, Parameters):
                         polylines.append(abs(polyline))
                     polyline_lookup[key] = polylines
                 for polyline in polylines:
-                    self.add_node(PolylineNode(shape=abs(polyline)))
+                    node = PolylineNode(shape=abs(polyline))
+                    node.settings.update(settings)
+                    self.add_node(node)
 
         if self.children:
             commands.append(create_fill)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
         for node in self.children:
             if node.type != "elem polyline":
                 continue
+            settings = node.settings
             plot = PlotCut(settings=settings)
             for p in node.shape:
                 x, y = p

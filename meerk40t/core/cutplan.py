@@ -194,6 +194,10 @@ class CutPlan:
                     ):
                         passes = copies
                         copies = 1
+                    if op.type == "op hatch":
+                        # hatch duplicates sub-objects.
+                        copies = 1
+                        passes = 1
                     for p in range(copies):
                         cutcode = CutCode(
                             op.as_cutobjects(
