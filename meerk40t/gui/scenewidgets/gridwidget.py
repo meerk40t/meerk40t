@@ -2,7 +2,7 @@ from math import sqrt, cos, sin, tau
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, swizzlecolor
+from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, DRAW_MODE_GUIDES, swizzlecolor
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -368,8 +368,9 @@ class GridWidget(Widget):
                             else:
                                 myangle = -1.0 * r_angle
                                 dx = 0
-                            gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
-                                        self.cy + sin(r_angle)* (mid_y + dx), myangle )
+                            if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                                gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
+                                            self.cy + sin(r_angle)* (mid_y + dx), myangle )
                             s_factor = 0
                         else:
                             s_factor = 1

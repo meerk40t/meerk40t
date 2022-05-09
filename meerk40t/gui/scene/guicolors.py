@@ -27,9 +27,9 @@ class GuiColors:
             "measure_text": "#FF000060",
             "bed": "#FFFFFF",
             "grid2": "#A0A0A080",
-            "guide2": "#0000FF80",
+            "guide2": "#000000",
             "grid3": "#A0A0A080",
-            "guide3": "#00FF0020",
+            "guide3": "#A0A0A080",
         }
         for key in self.default_color:
             self.context.setting(
