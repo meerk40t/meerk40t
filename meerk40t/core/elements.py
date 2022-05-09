@@ -154,6 +154,19 @@ class Elemental(Service):
         self.pen_data = Settings(self.kernel.name, "penbox.cfg")
 
         self.penbox = {}
+        self.load_persistent_penbox()
+
+        self.wordlists = {"version": [1, self.kernel.version]}
+
+        self._init_commands(kernel)
+        self._init_tree(kernel)
+        self.load_persistent_operations("previous")
+
+        ops = list(self.ops())
+        if not len(ops) and self.operation_default_empty:
+            self.load_default()
+
+    def load_persistent_penbox(self):
         settings = self.pen_data
         pens = settings.read_persistent_string_dict("pens", suffix=True)
         for pen in pens:
@@ -164,15 +177,14 @@ class Elemental(Service):
                 settings.read_persistent_string_dict(f'{pen} {i}', penbox, suffix=True)
                 box.append(penbox)
             self.penbox[pen] = box
-        self.wordlists = {"version": [1, self.kernel.version]}
 
-        self._init_commands(kernel)
-        self._init_tree(kernel)
-        self.load_persistent_operations("previous")
-
-        ops = list(self.ops())
-        if not len(ops) and self.operation_default_empty:
-            self.load_default()
+    def save_persistent_penbox(self):
+        for section in self.penbox:
+            sections = {section: len(self.penbox[section])}
+        self.pen_data.write_persistent_dict("pens", sections)
+        for section in self.penbox:
+            for i, p in enumerate(self.penbox[section]):
+                self.pen_data.write_persistent_dict(f'{section} {i}', p)
 
     def wordlist_fetch(self, key):
         try:
@@ -5467,12 +5479,7 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
-        for section in self.penbox:
-            sections = {section: len(self.penbox[section])}
-        self.pen_data.write_persistent_dict("pens", sections)
-        for section in self.penbox:
-            for i, p in enumerate(self.penbox[section]):
-                self.pen_data.write_persistent_dict(f'{section} {i}', p)
+        self.save_persistent_penbox()
         self.pen_data.write_configuration()
         self.op_data.write_configuration()
         for e in self.flat():
