@@ -353,7 +353,6 @@ class GridWidget(Widget):
                 scale_x = matrix.value_scale_x()
                 line_width = 1.0 / scale_x
             except (OverflowError, ValueError, ZeroDivisionError):
-                print ("error happened")
                 matrix.reset()
                 return
 
@@ -392,7 +391,7 @@ class GridWidget(Widget):
                     y += 2 * self.step
                     gc.DrawEllipse(self.cx - y/2, self.cy - y/2, y, y)
                 mid_y = y // (4 * self.step) * self.step # (around one fourth of radius)
-            # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
+                # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
                 radials_start = []
                 radials_end = []
                 r_angle = 0
@@ -413,7 +412,7 @@ class GridWidget(Widget):
                             degang = 0
                         a_text = "%.0f°" % degang
                         (t_width, t_height) = gc.GetTextExtent(a_text)
-                        # Make sure text remains legible with out breaking your neck... ;-)
+                        # Make sure text remains legible without breaking your neck... ;-)
                         if tau * 1 / 4 < r_angle < tau * 3 / 4:
                             myangle = (-1.0 * r_angle) + tau / 2
                             dx = t_width
@@ -432,14 +431,14 @@ class GridWidget(Widget):
                     i += 1
                 gc.StrokeLineSegments(radials_start, radials_end)
                 gc.ResetClip()
-            if self.scene.draw_grid_primary:
-                gc.SetPen(self.grid_line_pen)
-                if starts and ends:
-                    gc.StrokeLineSegments(starts, ends)
             if self.scene.draw_grid_secondary:
                 gc.SetPen(self.grid_line_pen2)
                 if starts2 and ends2:
                     gc.StrokeLineSegments(starts2, ends2)
+            if self.scene.draw_grid_primary:
+                gc.SetPen(self.grid_line_pen)
+                if starts and ends:
+                    gc.StrokeLineSegments(starts, ends)
 
 
     def signal(self, signal, *args, **kwargs):

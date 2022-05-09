@@ -25,14 +25,18 @@ class GuideWidget(Widget):
         self.scaled_conversion_y = 0
         self.units = None
         self.options = []
-        self.pen_guide = wx.Pen()
+        self.pen_guide1 = wx.Pen()
+        self.pen_guide2 = wx.Pen()
         self.pen_magnets = wx.Pen()
-        self.color_guide = None
+        self.color_guide1 = None
+        self.color_guide2 = None
         self.set_colors()
 
     def set_colors(self):
-        self.color_guide = self.scene.colors.color_guide
-        self.pen_guide.SetColour(self.color_guide)
+        self.color_guide1 = self.scene.colors.color_guide
+        self.color_guide2 = self.scene.colors.color_guide2
+        self.pen_guide1.SetColour(self.color_guide1)
+        self.pen_guide2.SetColour(self.color_guide2)
         self.pen_magnets.SetColour(self.scene.colors.color_magnetline)
         self.pen_magnets.SetWidth(2)
 
@@ -128,7 +132,7 @@ class GuideWidget(Widget):
             while y <= p.device.unit_height:
                 self.scene.toggle_y_magnet(y)
                 y += tlen
-        if self.scene.draw_grid_secondary and not self.scene.draw_grid_primary:
+        elif self.scene.draw_grid_secondary:
             # TODO
             pass
 
@@ -362,7 +366,7 @@ class GuideWidget(Widget):
                 id=item.GetId(),
             )
             # DISABLE, AS NOT YET READY
-            menu.Enable(item.GetId(), False)
+            # menu.Enable(item.GetId(), False)
 
             kind = wx.ITEM_CHECK if self.scene.draw_grid_circular else wx.ITEM_NORMAL
             item = menu.Append(wx.ID_ANY, _("Draw circular grid"), "", kind)
@@ -504,7 +508,6 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         # print ("GuideWidget Draw")
-        gc.SetPen(self.pen_guide)
         w, h = gc.Size
         self.calc_area(False, w, h)
         p = self.scene.context
@@ -520,86 +523,172 @@ class GuideWidget(Widget):
             return
         # Establish the delta for about 15 ticks
         # print ("set scene_tick_distance to %f" % delta)
-        points_x = self.scene.tick_distance * self.scaled_conversion_x
-        points_y = self.scene.tick_distance * self.scaled_conversion_y
-        self.units = p.units_name
+        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
+        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
+        if self.scene.grid_secondary_scale_x is None:
+            factor_x_secondary = 1.0
+        else:
+            factor_x_secondary = self.scene.grid_secondary_scale_x
+        if self.scene.grid_secondary_scale_y is None:
+            factor_y_secondary = 1.0
+        else:
+            factor_y_secondary = self.scene.grid_secondary_scale_y
 
-        sx, sy = self.scene.convert_scene_to_window(
-            [
-                p.device.unit_width * p.device.show_origin_x,
-                p.device.unit_height * p.device.show_origin_y,
-            ]
-        )
-        show_x = p.device.show_origin_x not in (0.0, 1.0)
-        show_y = p.device.show_origin_y not in (0.0, 1.0)
-        if points_x == 0:
+        points_x_secondary = factor_x_secondary * points_x_primary
+        points_y_secondary = factor_y_secondary * points_y_primary
+        self.units = p.units_name
+        # Calculate center position for primary grid
+        x = p.device.unit_width * p.device.show_origin_x
+        y = p.device.unit_height * p.device.show_origin_y
+        sx_primary, sy_primary = self.scene.convert_scene_to_window([x, y])
+        #  ... and now for secondary
+        if not self.scene.grid_secondary_cx is None:
+            x = self.scene.grid_secondary_cx
+            relative_x = self.scene.grid_secondary_cx / p.device.unit_width
+        else:
+            relative_x = p.device.show_origin_x
+        if not self.scene.grid_secondary_cy is None:
+            y = self.scene.grid_secondary_cy
+            relative_y = self.scene.grid_secondary_cy / p.device.unit_height
+        else:
+            relative_y = p.device.show_origin_y
+
+        sx_secondary, sy_secondary = self.scene.convert_scene_to_window([x, y])
+
+        # Do we need to show the guide regardless of the 'show negative guide' setting?
+        show_x_primary = p.device.show_origin_x not in (0.0, 1.0)
+        show_y_primary = p.device.show_origin_y not in (0.0, 1.0)
+
+        show_x_secondary = relative_x not in (0.0, 1.0)
+        show_y_secondary = relative_y not in (0.0, 1.0)
+        if points_x_primary == 0:
             return
-        offset_x = float(sx) % points_x
-        offset_y = float(sy) % points_y
+        offset_x_primary = float(sx_primary) % points_x_primary
+        offset_y_primary = float(sy_primary) % points_y_primary
+        offset_x_secondary = float(sx_secondary) % points_x_secondary
+        offset_y_secondary = float(sy_secondary) % points_y_secondary
 
         # print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
-        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f, %.1f" % (offset_x, offset_y, points_x, points_y))
-        # print("Start-location is at %.1f, %.1f" % (sx, sy))
-        starts = []
-        ends = []
-        x = offset_x
+        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f, %.1f" % (offset_x_primary, offset_y_primary, points_x_primary, points_y_primary))
+        # print("Start-location is at %.1f, %.1f" % (sx_primary, sy_primary))
         length = self.line_length
         edge_gap = self.edge_gap
+
+        gc.SetPen(self.pen_guide1)
         font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
-        gc.SetFont(font, self.color_guide)
+        gc.SetFont(font, self.color_guide1)
         gc.DrawText(self.units, edge_gap, edge_gap)
         (t_width, t_height) = gc.GetTextExtent("0")
+
+        starts = []
+        ends = []
+        x = offset_x_primary
         while x < w:
             if x >= 45:
-                mark_point = (x - sx) / self.scaled_conversion_x
+                mark_point = (x - sx_primary) / self.scaled_conversion_x
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_x:
                     mark_point *= -1
-                if mark_point >= 0 or p.show_negative_guide or show_x:
+                if mark_point >= 0 or p.show_negative_guide or show_x_primary:
                     starts.append((x, edge_gap))
                     ends.append((x, length + edge_gap))
 
                     starts.append((x, h - edge_gap))
                     ends.append((x, h - length - edge_gap))
                     # Show half distance as well if there's enough room
-                    if t_height < 0.5 * points_x:
-                        starts.append((x - 0.5 * points_x, edge_gap))
-                        ends.append((x - 0.5 * points_x, 0.25 * length + edge_gap))
+                    if t_height < 0.5 * points_x_primary:
+                        starts.append((x - 0.5 * points_x_primary, edge_gap))
+                        ends.append((x - 0.5 * points_x_primary, 0.25 * length + edge_gap))
 
-                    starts.append((x, h - edge_gap))
-                    ends.append((x, h - length - edge_gap))
-                    starts.append((x - 0.5 * points_x, h - edge_gap))
-                    ends.append((x - 0.5 * points_x, h - 0.25 * length - edge_gap))
+                    if not self.scene.draw_grid_secondary:
+                        starts.append((x, h - edge_gap))
+                        ends.append((x, h - length - edge_gap))
+                        starts.append((x - 0.5 * points_x_primary, h - edge_gap))
+                        ends.append((x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap))
 
                     gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
-            x += points_x
+            x += points_x_primary
 
-        y = offset_y
+        y = offset_y_primary
         while y < h:
             if y >= 20:
-                mark_point = (y - sy) / self.scaled_conversion_y
+                mark_point = (y - sy_primary) / self.scaled_conversion_y
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 if p.device.flip_y:
                     mark_point *= -1
-                if mark_point >= 0 or p.show_negative_guide or show_y:
+                if mark_point >= 0 or p.show_negative_guide or show_y_primary:
                     starts.append((edge_gap, y))
                     ends.append((length + edge_gap, y))
                     # if there is enough room for a mid-distance stroke...
-                    if t_height < 0.5 * points_y:
-                        starts.append((edge_gap, y - 0.5 * points_y))
-                        ends.append((0.25 * length + edge_gap, y - 0.5 * points_y))
+                    if t_height < 0.5 * points_y_primary:
+                        starts.append((edge_gap, y - 0.5 * points_y_primary))
+                        ends.append((0.25 * length + edge_gap, y - 0.5 * points_y_primary))
 
-                    starts.append((w - edge_gap, y))
-                    ends.append((w - length - edge_gap, y))
-                    starts.append((w - edge_gap, y - 0.5 * points_y))
-                    ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y))
+                    if not self.scene.draw_grid_secondary:
+                        starts.append((w - edge_gap, y))
+                        ends.append((w - length - edge_gap, y))
+                        starts.append((w - edge_gap, y - 0.5 * points_y_primary))
+                        ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary))
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
-            y += points_y
+            y += points_y_primary
         if len(starts) > 0:
+            gc.StrokeLineSegments(starts, ends)
+
+        # Now the guide for the secondary grid...
+        if self.scene.draw_grid_secondary:
+            gc.SetPen(self.pen_guide2)
+            gc.SetFont(font, self.color_guide2)
+
+            starts = []
+            ends = []
+            x = offset_x_secondary
+            while x < w:
+                if x >= 45:
+                    mark_point = (x - sx_secondary) / (factor_x_secondary * self.scaled_conversion_x)
+                    if round(float(mark_point) * 1000) == 0:
+                        mark_point = 0.0  # prevents -0
+                    if p.device.flip_x:
+                        mark_point *= -1
+                    if mark_point >= 0 or p.show_negative_guide or show_x_secondary:
+                        starts.append((x, edge_gap))
+                        ends.append((x, length + edge_gap))
+
+                        starts.append((x, h - edge_gap))
+                        ends.append((x, h - length - edge_gap))
+                        # Show half distance as well if there's enough room
+                        if t_height < 0.5 * points_x_secondary:
+                            starts.append((x - 0.5 * points_x_secondary, h - edge_gap))
+                            ends.append((x - 0.5 * points_x_secondary, h - 0.25 * length - edge_gap))
+                        info = "%g" % mark_point
+                        (t_w, t_h) = gc.GetTextExtent(info)
+                        gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
+                x += points_x_secondary
+
+            y = offset_y_secondary
+            while y < h:
+                if y >= 20:
+                    mark_point = (y - sy_secondary) / (factor_y_secondary * self.scaled_conversion_y)
+                    if round(float(mark_point) * 1000) == 0:
+                        mark_point = 0.0  # prevents -0
+                    if p.device.flip_y:
+                        mark_point *= -1
+                    if mark_point >= 0 or p.show_negative_guide or show_y_secondary:
+                        starts.append((w - edge_gap, y))
+                        ends.append((w - length - edge_gap, y))
+                        # if there is enough room for a mid-distance stroke...
+                        if t_height < 0.5 * points_y_secondary:
+                            starts.append((w - edge_gap, y - 0.5 * points_y_secondary))
+                            ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y_secondary))
+
+                        info = "%g" % (mark_point + 0)
+                        (t_w, t_h) = gc.GetTextExtent(info)
+                        gc.DrawText(info, w - edge_gap - t_w, y + 0)
+                y += points_y_secondary
+
             gc.StrokeLineSegments(starts, ends)
 
         starts_hi = []
