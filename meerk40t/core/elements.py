@@ -151,8 +151,19 @@ class Elemental(Service):
         self.setting(bool, "operation_default_empty", True)
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
+        self.pen_data = Settings(self.kernel.name, "penbox.cfg")
 
-        self.penbox = {"value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]}
+        self.penbox = {}
+        settings = self.pen_data
+        pens = settings.read_persistent_string_dict("pens", suffix=True)
+        for pen in pens:
+            length = int(pens[pen])
+            box = list()
+            for i in range(length):
+                penbox = dict()
+                settings.read_persistent_string_dict(f'{pen} {i}', penbox, suffix=True)
+                box.append(penbox)
+            self.penbox[pen] = box
         self.wordlists = {"version": [1, self.kernel.version]}
 
         self._init_commands(kernel)
@@ -431,8 +442,7 @@ class Elemental(Service):
             if remainder is None:
                 channel("----------")
                 channel(_("Materials:"))
-                secs = self.op_data.section_set()
-                for section in secs:
+                for section in self.op_data.section_set():
                     channel(section)
                 channel("----------")
             return "materials", data
@@ -486,10 +496,8 @@ class Elemental(Service):
         def materials_list(channel, _, data=None, name=None, **kwargs):
             channel("----------")
             channel(_("Materials Current:"))
-            secs = self.op_data.section_set()
-            for section in secs:
-                subsection = self.op_data.derivable(section)
-                for subsect in subsection:
+            for section in self.op_data.section_set():
+                for subsect in self.op_data.derivable(section):
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
                     channel(
                         "{subsection}: {label}".format(
@@ -5459,6 +5467,13 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
+        for section in self.penbox:
+            sections = {section: len(self.penbox[section])}
+        self.pen_data.write_persistent_dict("pens", sections)
+        for section in self.penbox:
+            for i, p in enumerate(self.penbox[section]):
+                self.pen_data.write_persistent_dict(f'{section} {i}', p)
+        self.pen_data.write_configuration()
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
@@ -5483,9 +5498,8 @@ class Elemental(Service):
     def load_persistent_operations(self, name):
         self.clear_operations()
         settings = self.op_data
-        subitems = list(settings.derivable(name))
         operation_branch = self._tree.get(type="branch ops")
-        for section in subitems:
+        for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             op = operation_branch.add(type=op_type)
             op.load(settings, section)
