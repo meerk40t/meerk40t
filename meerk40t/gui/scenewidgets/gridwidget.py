@@ -14,6 +14,7 @@ class GridWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.grid = None
+        self.grid2 = None
         self.background = None
         self.grid_line_pen = wx.Pen()
         self.grid_line_pen2 = wx.Pen()
@@ -22,6 +23,8 @@ class GridWidget(Widget):
         self.draw_grid = True
         self.sx = 0
         self.sy = 0
+        self.sx2 = 0
+        self.sy2 = 0
         self.cx = 0
         self.cy = 0
         self.step = 0
@@ -183,7 +186,6 @@ class GridWidget(Widget):
         points = self.scene.tick_distance * scaled_conversion
 
         p = self.scene.context
-        self.units = p.units_name
 
         self.sx = p.device.unit_width * p.device.show_origin_x
         self.sy = p.device.unit_height * p.device.show_origin_y
@@ -209,10 +211,6 @@ class GridWidget(Widget):
         if points == 0:
             return
 
-        #print ("The intended scale is in {units} with a tick every {delta} {units}".format(delta=self.scene.tick_distance, units=self.units))
-        #print("Start-location is at %.1f, %.1f" % (self.sx, self.sy))
-        #print("device, w=%.1f, h=%.1f" % (p.device.unit_width, p.device.unit_height))
-        #print("origin, x=%.1f, y=%.1f" % (p.device.show_origin_x, p.device.show_origin_y))
 
     def calculate_grid_points(self):
         """
@@ -286,7 +284,7 @@ class GridWidget(Widget):
                 i = 0
                 max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
                 r_fourth = max_r // (4 * tlen) * tlen
-                while (r_angle < tau):
+                while r_angle < tau:
                     if i % 2 == 0:
                         r = 0
                     else:

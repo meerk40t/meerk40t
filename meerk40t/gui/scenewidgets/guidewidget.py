@@ -133,7 +133,7 @@ class GuideWidget(Widget):
                 self.scene.toggle_y_magnet(y)
                 y += tlen
         elif self.scene.draw_grid_secondary:
-            # TODO
+            # Placeholder for a use case, as you can define them manually...
             pass
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
