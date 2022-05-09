@@ -102,14 +102,13 @@ class Scene(Module, Job):
 
     def reset_grids(self):
         self.draw_grid_primary = True
+        self.tick_distance = 0
         # Secondary grid, perpendicular, but with definable center and scaling
         self.draw_grid_secondary = False
         self.grid_secondary_cx = None
         self.grid_secondary_cy = None
         self.grid_secondary_scale_x = 1
         self.grid_secondary_scale_y = 1
-        self.tick_distance_secondary_x = 0
-        self.tick_distance_secondary_y = 0
         # Circular grid
         self.draw_grid_circular = False
         self.grid_circular_cx = None

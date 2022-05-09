@@ -84,7 +84,6 @@ class GridWidget(Widget):
         if step == 0:
             # print ("Default kicked in")
             step = float(Length("10mm"))
-
         starts = []
         ends = []
         starts2 = []
@@ -94,6 +93,7 @@ class GridWidget(Widget):
             self.grid2 = None
             return
 
+        # Secondary grid
         x = 0.0
         while x < units_width:
             starts.append((x, 0.0))
@@ -105,6 +105,34 @@ class GridWidget(Widget):
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += step
+
+        # Secondary grid
+        tlenx = step * self.scene.grid_secondary_scale_x
+        tleny = step * self.scene.grid_secondary_scale_y
+
+        # Establish minimal starting point
+        sxx = self.sx
+        while sxx > 0:
+            sxx -= tlenx
+        if sxx < 0:
+            sxx += tlenx
+        syy = self.sy
+        while syy > 0:
+            syy -= tleny
+        if syy < 0:
+            syy += tleny
+
+        x = sxx
+        while x <= units_width:
+            starts2.append((x, 0.0))
+            ends2.append((x, units_height))
+            x += tlenx
+        y = syy
+        while y < units_height:
+            starts2.append((0.0, y))
+            ends2.append((units_width, y))
+            y += tleny
+
         self.step = step
         self.grid = starts, ends
         self.grid2 = starts2, ends2
@@ -220,8 +248,30 @@ class GridWidget(Widget):
                     x += tlen
             prim_ct = len(self.scene.grid_points)
             if self.scene.draw_grid_secondary:
-                # TODO
-                pass
+                # is it identical to the primary?
+                if not self.scene.draw_grid_primary or self.sx != 0 or self.sy != 0 or self.scene.grid_secondary_scale_x != 1 or self.scene.grid_secondary_scale_y != 1:
+                    tlenx = tlen * self.scene.grid_secondary_scale_x
+                    tleny = tlen * self.scene.grid_secondary_scale_y
+
+                    # Establish mininmal starting point
+                    sxx = self.sx
+                    while sxx > 0:
+                        sxx -= tlenx
+                    if sxx < 0:
+                        sxx += tlenx
+                    syy = self.sy
+                    while syy > 0:
+                        syy -= tleny
+                    if syy < 0:
+                        syy += tleny
+
+                    x = sxx
+                    while x <= p.device.unit_width:
+                        y = syy
+                        while y <= p.device.unit_height:
+                            self.scene.grid_points.append([x, y])
+                            y += tleny
+                        x += tlenx
 
             second_ct = len(self.scene.grid_points) - prim_ct
             if self.scene.draw_grid_circular:
@@ -302,95 +352,95 @@ class GridWidget(Widget):
             try:
                 scale_x = matrix.value_scale_x()
                 line_width = 1.0 / scale_x
-                if line_width < 1:
-                    line_width = 1
-                try:
-                    self.grid_line_pen.SetWidth(line_width)
-                    self.grid_line_pen2.SetWidth(line_width)
-                    self.grid_line_pen3.SetWidth(line_width)
-                except TypeError:
-                    self.grid_line_pen.SetWidth(int(line_width))
-                    self.grid_line_pen2.SetWidth(int(line_width))
-                    self.grid_line_pen3.SetWidth(int(line_width))
-
-                gc.SetPen(self.grid_line_pen)
-                brush = wx.Brush(
-                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_TRANSPARENT
-                )
-                gc.SetBrush(brush)
-
-                if self.scene.draw_grid_circular:
-                    gc.SetPen(self.grid_line_pen3)
-                    u_width = float(context.device.unit_width)
-                    u_height = float(context.device.unit_height)
-                    gc.Clip(0, 0, u_width, u_height)
-                    siz = sqrt(u_width * u_width + u_height * u_height)
-                    #print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
-                    #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
-
-                    y = 0
-                    sox = self.cx / float(context.device.width)
-                    soy = self.cy / float(context.device.height)
-
-                    factor = max( 2* (1-sox), 2* (1-soy))
-                    # print ("Factor=%.2f" % factor)
-                    while (y < siz * factor ):
-                        y += 2 * self.step
-                        gc.DrawEllipse(self.cx - y/2, self.cy - y/2, y, y)
-                    mid_y = y // (4 * self.step) * self.step # (around one fourth of radius)
-                    # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
-                    radials_start = []
-                    radials_end = []
-                    angle_text_x = []
-                    angle_text_y = []
-                    r_angle = 0
-                    i = 0
-                    fsize = 10 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
-                    if fsize < 1.0:
-                        fsize = 1.0  # Mac does not allow values lower than 1.
-                    try:
-                        font = wx.Font(fsize, wx.SWISS, wx.NORMAL, wx.BOLD)
-                    except TypeError:
-                        font = wx.Font(int(fsize), wx.SWISS, wx.NORMAL, wx.BOLD)
-                    gc.SetFont(font, self.scene.colors.color_guide3)
-                    segments = 48
-                    while r_angle<tau:
-                        if i % 2 == 0:
-                            degang = round(r_angle / tau * 360, 1)
-                            if degang == 360:
-                                degang = 0
-                            a_text = "%.0f°" % degang
-                            (t_width, t_height) = gc.GetTextExtent(a_text)
-                            # Make sure text remains legible with out breaking your neck... ;-)
-                            if tau * 1 / 4 < r_angle < tau * 3 / 4:
-                                myangle = (-1.0 * r_angle) + tau / 2
-                                dx = t_width
-                            else:
-                                myangle = -1.0 * r_angle
-                                dx = 0
-                            if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
-                                gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
-                                            self.cy + sin(r_angle)* (mid_y + dx), myangle )
-                            s_factor = 0
-                        else:
-                            s_factor = 1
-                        radials_start.append((self.cx + s_factor * 0.5 * mid_y * cos(r_angle), self.cy + s_factor * 0.5 * mid_y * sin(r_angle)))
-                        radials_end.append((self.cx + 0.5 * y * cos(r_angle), self.cy + 0.5 * y * sin(r_angle)))
-                        r_angle += tau / segments
-                        i += 1
-                    gc.StrokeLineSegments(radials_start, radials_end)
-                    gc.ResetClip()
-                if self.scene.draw_grid_primary:
-                    gc.SetPen(self.grid_line_pen)
-                    if starts and ends:
-                        gc.StrokeLineSegments(starts, ends)
-                if self.scene.draw_grid_secondary:
-                    gc.SetPen(self.grid_line_pen2)
-                    if starts2 and ends2:
-                        gc.StrokeLineSegments(starts2, ends2)
-
             except (OverflowError, ValueError, ZeroDivisionError):
+                print ("error happened")
                 matrix.reset()
+                return
+
+            if line_width < 1:
+                line_width = 1
+            try:
+                self.grid_line_pen.SetWidth(line_width)
+                self.grid_line_pen2.SetWidth(line_width)
+                self.grid_line_pen3.SetWidth(line_width)
+            except TypeError:
+                self.grid_line_pen.SetWidth(int(line_width))
+                self.grid_line_pen2.SetWidth(int(line_width))
+                self.grid_line_pen3.SetWidth(int(line_width))
+
+            gc.SetPen(self.grid_line_pen)
+            brush = wx.Brush(
+                colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_TRANSPARENT
+            )
+            gc.SetBrush(brush)
+
+            if self.scene.draw_grid_circular:
+                gc.SetPen(self.grid_line_pen3)
+                u_width = float(context.device.unit_width)
+                u_height = float(context.device.unit_height)
+                gc.Clip(0, 0, u_width, u_height)
+                siz = sqrt(u_width * u_width + u_height * u_height)
+                #print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
+                #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
+                sox = self.cx / u_width
+                soy = self.cy / u_height
+                factor = max( 2* (1-sox), 2* (1-soy))
+
+                y = 0
+
+                while (y < siz * factor ):
+                    y += 2 * self.step
+                    gc.DrawEllipse(self.cx - y/2, self.cy - y/2, y, y)
+                mid_y = y // (4 * self.step) * self.step # (around one fourth of radius)
+            # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
+                radials_start = []
+                radials_end = []
+                r_angle = 0
+                i = 0
+                fsize = 10 / self.scene.widget_root.scene_widget.matrix.value_scale_x()
+                if fsize < 1.0:
+                    fsize = 1.0  # Mac does not allow values lower than 1.
+                try:
+                    font = wx.Font(fsize, wx.SWISS, wx.NORMAL, wx.BOLD)
+                except TypeError:
+                    font = wx.Font(int(fsize), wx.SWISS, wx.NORMAL, wx.BOLD)
+                gc.SetFont(font, self.scene.colors.color_guide3)
+                segments = 48
+                while r_angle<tau:
+                    if i % 2 == 0:
+                        degang = round(r_angle / tau * 360, 1)
+                        if degang == 360:
+                            degang = 0
+                        a_text = "%.0f°" % degang
+                        (t_width, t_height) = gc.GetTextExtent(a_text)
+                        # Make sure text remains legible with out breaking your neck... ;-)
+                        if tau * 1 / 4 < r_angle < tau * 3 / 4:
+                            myangle = (-1.0 * r_angle) + tau / 2
+                            dx = t_width
+                        else:
+                            myangle = -1.0 * r_angle
+                            dx = 0
+                        if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                            gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
+                                        self.cy + sin(r_angle)* (mid_y + dx), myangle )
+                        s_factor = 0
+                    else:
+                        s_factor = 1
+                    radials_start.append((self.cx + s_factor * 0.5 * mid_y * cos(r_angle), self.cy + s_factor * 0.5 * mid_y * sin(r_angle)))
+                    radials_end.append((self.cx + 0.5 * y * cos(r_angle), self.cy + 0.5 * y * sin(r_angle)))
+                    r_angle += tau / segments
+                    i += 1
+                gc.StrokeLineSegments(radials_start, radials_end)
+                gc.ResetClip()
+            if self.scene.draw_grid_primary:
+                gc.SetPen(self.grid_line_pen)
+                if starts and ends:
+                    gc.StrokeLineSegments(starts, ends)
+            if self.scene.draw_grid_secondary:
+                gc.SetPen(self.grid_line_pen2)
+                if starts2 and ends2:
+                    gc.StrokeLineSegments(starts2, ends2)
+
 
     def signal(self, signal, *args, **kwargs):
         """
