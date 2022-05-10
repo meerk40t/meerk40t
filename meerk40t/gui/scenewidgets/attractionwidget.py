@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos
+from math import sqrt
 
 import wx
 
@@ -382,14 +382,13 @@ class AttractionWidget(Widget):
         consumed = False
         if signal == "attraction":
             consumed = True
-            pass
-        if signal in ("modified", "emphasized", "element_added"):
+        elif signal in ("modified", "emphasized", "element_added"):
             consumed = True
             self.attraction_points = None
-        if signal in ("grid", "guide"):
+        elif signal in ("grid", "guide"):
             consumed = True
             self.scene.grid_points = None
-        if signal == "theme":
+        elif signal == "theme":
             consumed = True
             self.load_colors()
         if not consumed:
