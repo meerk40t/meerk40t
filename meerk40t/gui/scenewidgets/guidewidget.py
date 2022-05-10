@@ -101,14 +101,17 @@ class GuideWidget(Widget):
             self.scene.magnet_attract_y = not self.scene.magnet_attract_y
         elif value == 2:
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
-
+    
     def toggle_circles(self):
+        # toggle circular grid
         self.scene.context("scene grid circular\n")
 
     def toggle_rect(self):
+        # toggle primary grid
         self.scene.context("scene grid primary\n")
 
     def toggle_secondary(self):
+        # toggle secondary grid
         self.scene.context("scene grid secondary\n")
 
     def fill_magnets(self):
