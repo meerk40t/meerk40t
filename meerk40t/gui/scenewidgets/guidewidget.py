@@ -103,13 +103,13 @@ class GuideWidget(Widget):
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
 
     def toggle_circles(self):
-        self.scene.context("showgrid circular\n")
+        self.scene.context("scene grid circular\n")
 
     def toggle_rect(self):
-        self.scene.context("showgrid primary\n")
+        self.scene.context("scene grid primary\n")
 
     def toggle_secondary(self):
-        self.scene.context("showgrid secondary\n")
+        self.scene.context("scene grid secondary\n")
 
     def fill_magnets(self):
         # Let's set the full grid
