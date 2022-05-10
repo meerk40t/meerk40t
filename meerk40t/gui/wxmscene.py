@@ -294,9 +294,9 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_argument("scalex", type=str, help=_("Scaling of X-Axis for secondary"))
         @context.console_argument("scaley", type=str, help=_("Scaling of Y-Axis for secondary"))
         @context.console_command(
-            "showgrid",
-            help=_("showgrid <target> <rows> <x_distance> <y_distance> <origin>"),
-            input_type=(None, "elements"),
+            "grid",
+            help=_("grid <target> <rows> <x_distance> <y_distance> <origin>"),
+            input_type="scene"),
             output_type="elements",
         )
         def show_grid(
