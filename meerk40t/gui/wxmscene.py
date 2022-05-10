@@ -296,7 +296,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command(
             "grid",
             help=_("grid <target> <rows> <x_distance> <y_distance> <origin>"),
-            input_type="scene"),
+            input_type="scene",
             output_type="elements",
         )
         def show_grid(
