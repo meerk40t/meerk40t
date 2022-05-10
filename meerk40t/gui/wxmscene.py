@@ -387,7 +387,7 @@ class MeerK40tScenePanel(wx.Panel):
                                 oy = ox
                             self.widget_scene.grid_circular_cx = float(Length(ox, relative_length=self.context.device.width))
                             self.widget_scene.grid_circular_cy = float(Length(oy, relative_length=self.context.device.height))
-                    channel(_("Turned circular grid on" if self.widget_scene.draw_grid_circular else "Turbed circular grid off"))
+                    channel(_("Turned circular grid on" if self.widget_scene.draw_grid_circular else "Turned circular grid off"))
                     self.scene.signal("guide")
                     self.scene.signal("grid")
                     self.request_refresh()
