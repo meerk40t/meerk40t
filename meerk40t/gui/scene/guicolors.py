@@ -26,6 +26,10 @@ class GuiColors:
             "measure_line": "#0000FF80",
             "measure_text": "#FF000060",
             "bed": "#FFFFFF",
+            "grid2": "#A0A0A080",
+            "guide2": "#000000",
+            "grid3": "#A0A0A080",
+            "guide3": "#A0A0A080",
         }
         for key in self.default_color:
             self.context.setting(
@@ -70,8 +74,24 @@ class GuiColors:
         return self._get_color("grid")
 
     @property
+    def color_grid2(self):
+        return self._get_color("grid2")
+
+    @property
+    def color_grid3(self):
+        return self._get_color("grid3")
+
+    @property
     def color_guide(self):
         return self._get_color("guide")
+
+    @property
+    def color_guide2(self):
+        return self._get_color("guide2")
+
+    @property
+    def color_guide3(self):
+        return self._get_color("guide3")
 
     @property
     def color_background(self):
