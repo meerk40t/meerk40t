@@ -669,6 +669,7 @@ class CommandList(CommandSource):
         self._laser_off_delay = None
         self._poly_delay = None
         self._mark_end_delay = None
+        self._laser_on = False
         if self._sender:
             self._write_port = self._sender._write_port
         else:
@@ -838,6 +839,18 @@ class CommandList(CommandSource):
         if not self._ready:
             self._ready = True
             self.append(OpReadyMark())
+
+    def laser_on(self):
+        if self._laser_on:
+            return
+        self._laser_on = True
+        self.raw_mark_end_delay(0x0320)
+
+    def laser_off(self, end_tc=0x1E):
+        if not self._laser_on:
+            return
+        self._laser_on = False
+        self.raw_mark_end_delay(end_tc)
 
     def laser_control(self, control, end_tc=0x1E):
         """
