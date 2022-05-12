@@ -221,7 +221,8 @@ class BalorDriver(Parameters):
         self.connect_if_needed()
         job = CommandList()
         # job.laser_control(True)
-        job.laser_on()
+        job.ready()
+        job.raw_mark_end_delay(0x0320)
         job.set_write_port(self.connection.get_port())
         last_on = None
         current_power = None
@@ -324,23 +325,20 @@ class BalorDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-
-                    job.laser_off(int(self.service.delay_end / 10.0))
+                    job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
                     job.set_travel_speed(self.service.default_rapid_speed)
                     job.goto(x, y)
                 continue
             if on == 0:
-
-                job.laser_off(int(self.service.delay_end / 10.0))
+                job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
                 job.set_travel_speed(self.service.default_rapid_speed)
                 job.goto(x, y)
             else:
                 if last_on is None or on != last_on:
                     last_on = on
                     job.set_power(current_power * on)
-                job.laser_on()
                 job.mark(x, y)
-        job.laser_off(int(self.service.delay_end / 10.0))
+        job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
         job.flush()
         self.connection.execute(job, 1)
         if self.redlight_preferred:
