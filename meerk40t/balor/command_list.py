@@ -839,9 +839,12 @@ class CommandList(CommandSource):
             self._ready = True
             self.append(OpReadyMark())
 
-    def laser_control(self, control, end_tc=None):
+    def laser_control(self, control, end_tc=0x1E):
         """
         Enable the laser control.
+
+        If false. We are turning the laser off and should specify how long this will take to disable.
+
         @param control:
         @return:
         """
