@@ -982,8 +982,6 @@ class CommandList(CommandSource):
         self.ready()
         if self._mark_speed is not None:
             self.set_cut_speed(self._mark_speed)
-        if self._mark_end_delay is None:
-            raise ValueError("Mark End Delay must be set before a mark(x,y)")
         if self._q_switch_frequency is None:
             raise ValueError("Qswitch frequency must be set before a mark(x,y)")
         if self._power is None:
