@@ -524,7 +524,6 @@ class BalorDevice(Service, ViewPort):
             paths = data
             job = CommandList()
             job.set_mark_settings(
-                end_delay=self.delay_end,
                 travel_speed=self.default_rapid_speed
                 if travel_speed is None
                 else travel_speed,
