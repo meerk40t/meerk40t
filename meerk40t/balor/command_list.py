@@ -840,6 +840,20 @@ class CommandList(CommandSource):
             self._ready = True
             self.append(OpReadyMark())
 
+    def laser_on(self):
+        if self._laser_on:
+            return
+        self._laser_on = True
+        self.raw_laser_control(1)
+        self.raw_mark_end_delay(0x0320)
+
+    def laser_off(self, end_tc=0x1E):
+        if not self._laser_on:
+            return
+        self._laser_on = False
+        self.raw_mark_end_delay(end_tc)
+        self.raw_laser_control(0)
+
     def laser_control(self, control, end_tc=0x1E):
         """
         Enable the laser control.
