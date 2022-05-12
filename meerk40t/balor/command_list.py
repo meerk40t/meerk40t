@@ -1079,6 +1079,7 @@ class CommandList(CommandSource):
 
     def set_mark_settings(
         self,
+        end_delay,
         travel_speed,
         frequency,
         power,
@@ -1087,6 +1088,7 @@ class CommandList(CommandSource):
         laser_off_delay,
         polygon_delay,
     ):
+        self.set_mark_end_delay(end_delay)
         self.set_frequency(frequency)
         self.set_power(power)
         self.set_travel_speed(travel_speed)

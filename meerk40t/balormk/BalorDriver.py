@@ -138,42 +138,6 @@ class BalorDriver(Parameters):
         if last_index != len(plot):
             yield plot[-1]
 
-    # def cutcode_to_light_job(self, queue):
-    #     """
-    #     Converts a queue of cutcode operations into a light job.
-    #
-    #     The cutcode objects will have properties like speed. These are currently not being respected.
-    #
-    #     @param queue:
-    #     @return:
-    #     """
-    #     cal = None
-    #     if self.service.calibration_file is not None:
-    #         try:
-    #             cal = Cal(self.service.calibration_file)
-    #         except TypeError:
-    #             pass
-    #     job = CommandList(cal=cal)
-    #     job.set_travel_speed(self.service.travel_speed)
-    #     for plot in queue:
-    #         start = plot.start()
-    #         job.light(start[0], start[1], False)
-    #         for e in self.group(plot.generator()):
-    #             on = 1
-    #             if len(e) == 2:
-    #                 x, y = e
-    #             else:
-    #                 x, y, on = e
-    #             if on == 0:
-    #                 try:
-    #                     job.light(x, y, True)
-    #                 except ValueError:
-    #                     print("Not including this stroke path:", file=sys.stderr)
-    #             else:
-    #                 job.light(x, y, False)
-    #     job.light_off()
-    #     return job
-
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -256,6 +220,7 @@ class BalorDriver(Parameters):
         """
         self.connect_if_needed()
         job = CommandList()
+        job.set_mark_end_delay(0x0320)
         job.set_write_port(self.connection.get_port())
         job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
@@ -360,20 +325,18 @@ class BalorDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    job.laser_control(False)
                     job.goto(x, y)
                 continue
             if on == 0:
-                job.laser_control(False)
                 job.goto(x, y)
             else:
                 if last_on is None or on != last_on:
                     last_on = on
                     job.set_power(current_power * on)
-                job.laser_control(True)
                 job.mark(x, y)
+                end_tc = int(self.service.delay_laser_end / 10.0)
+                job.set_mark_end_delay(end_tc)
         job.flush()
-        job.laser_control(False)
         self.connection.execute(job, 1)
         if self.redlight_preferred:
             self.connection.light_on()

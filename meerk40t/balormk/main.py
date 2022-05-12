@@ -524,6 +524,7 @@ class BalorDevice(Service, ViewPort):
             paths = data
             job = CommandList()
             job.set_mark_settings(
+                end_delay=self.delay_end,
                 travel_speed=self.default_rapid_speed
                 if travel_speed is None
                 else travel_speed,
@@ -540,7 +541,6 @@ class BalorDevice(Service, ViewPort):
                 if polygon_delay is None
                 else polygon_delay,
             )
-            job.laser_control(True)
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
