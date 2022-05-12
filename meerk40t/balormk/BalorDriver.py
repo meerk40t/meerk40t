@@ -336,6 +336,7 @@ class BalorDriver(Parameters):
                     job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
+        job.laser_control(False, int(self.service.delay_end / 10.0))
         job.flush()
         self.connection.execute(job, 1)
         if self.redlight_preferred:
