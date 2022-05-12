@@ -30,6 +30,7 @@ class BalorDriver(Parameters):
         self.plot_planner = PlotPlanner(
             self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
         )
+        self.plot_planner.settings_then_jog = True
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
