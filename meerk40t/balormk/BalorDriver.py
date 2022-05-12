@@ -324,12 +324,15 @@ class BalorDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
+
                     job.laser_off(int(self.service.delay_end / 10.0))
+                    job.set_travel_speed(self.service.default_rapid_speed)
                     job.goto(x, y)
                 continue
             if on == 0:
-                job.set_travel_speed(self.service.default_rapid_speed)
+
                 job.laser_off(int(self.service.delay_end / 10.0))
+                job.set_travel_speed(self.service.default_rapid_speed)
                 job.goto(x, y)
             else:
                 if last_on is None or on != last_on:
