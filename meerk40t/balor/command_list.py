@@ -839,7 +839,7 @@ class CommandList(CommandSource):
             self._ready = True
             self.append(OpReadyMark())
 
-    def laser_control(self, control):
+    def laser_control(self, control, end_tc=None):
         """
         Enable the laser control.
         @param control:
@@ -860,11 +860,11 @@ class CommandList(CommandSource):
         # be different for different (e.g. non raycus q-switched fiber) lasers.
         # EzCAD lets you configure them.
         if control:
-            self.append(OpLaserControl(0x0001))
-            self.set_mark_end_delay(0x0320)
+            self.raw_laser_control(1)
+            self.raw_mark_end_delay(0x0320)
         else:
-            self.set_mark_end_delay(0x001E)
-            self.append(OpLaserControl(0x0000))
+            self.raw_mark_end_delay(end_tc)
+            self.raw_laser_control(0)
 
     def set_travel_speed(self, speed):
         """
@@ -1087,7 +1087,6 @@ class CommandList(CommandSource):
         laser_off_delay,
         polygon_delay,
     ):
-        self.set_mark_end_delay(0x320)
         self.set_frequency(frequency)
         self.set_power(power)
         self.set_travel_speed(travel_speed)
