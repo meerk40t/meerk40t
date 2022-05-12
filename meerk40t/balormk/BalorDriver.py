@@ -334,7 +334,7 @@ class BalorDriver(Parameters):
                     last_on = on
                     job.set_power(current_power * on)
                 job.mark(x, y)
-                end_tc = int(self.service.delay_laser_end / 10.0)
+                end_tc = int(self.service.delay_end / 10.0)
                 job.set_mark_end_delay(end_tc)
         job.flush()
         self.connection.execute(job, 1)
