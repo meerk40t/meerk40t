@@ -845,7 +845,6 @@ class CommandList(CommandSource):
             return
         self._laser_on = True
         self.raw_laser_control(1)
-        self.raw_mark_end_delay(0x0320)
 
     def laser_off(self, end_tc=0x1E):
         if not self._laser_on:

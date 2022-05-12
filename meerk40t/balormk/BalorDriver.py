@@ -223,7 +223,7 @@ class BalorDriver(Parameters):
         job = CommandList()
         job.ready()
         # marked = False
-        # job.raw_mark_end_delay(0x0320)
+        job.raw_mark_end_delay(0x0320)
         job.set_write_port(self.connection.get_port())
         last_on = None
         current_power = None
