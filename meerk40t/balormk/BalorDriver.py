@@ -221,11 +221,10 @@ class BalorDriver(Parameters):
         """
         self.connect_if_needed()
         job = CommandList()
-        # job.laser_control(True)
         job.ready()
-        marked = False
-        job.raw_mark_end_delay(0x0320)
-        # job.set_write_port(self.connection.get_port())
+        # marked = False
+        # job.raw_mark_end_delay(0x0320)
+        job.set_write_port(self.connection.get_port())
         last_on = None
         current_power = None
         wobble = None
@@ -327,24 +326,28 @@ class BalorDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    if marked:
-                        job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
+                    # if marked:
+                    #     job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
+                    job.laser_control(False, int(self.service.delay_end / 10.0))
                     job.set_travel_speed(self.service.default_rapid_speed)
                     job.goto(x, y)
                 continue
             if on == 0:
-                if marked:
-                    job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
+                # if marked:
+                #     job.raw_mark_end_delay()
+                job.laser_control(False, int(self.service.delay_end / 10.0))
                 job.set_travel_speed(self.service.default_rapid_speed)
                 job.goto(x, y)
             else:
                 if last_on is None or on != last_on:
                     last_on = on
                     job.set_power(current_power * on)
+                job.laser_control(True)
                 job.mark(x, y)
                 marked = True
-        if marked:
-            job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
+        # if marked:
+        #     # job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
+        job.laser_control(False, int(self.service.delay_end / 10.0))
         job.flush()
         self.connection.execute(job, 1)
         if self.redlight_preferred:
