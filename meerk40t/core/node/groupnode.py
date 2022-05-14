@@ -23,7 +23,7 @@ class GroupNode(Node):
                 # empty, otherwise will recurse forever...
                 self._bounds = (float("inf"), float("inf"), -float("inf"), -float("inf"))
             else:
-                self._bounds = Node.union_bounds(self.flat())
+                self._bounds = Node.union_bounds(self._flatten_children(self))
         return self._bounds
 
     def default_map(self, default_map=None):
