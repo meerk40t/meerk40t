@@ -3,7 +3,7 @@ import os.path
 import re
 from copy import copy
 from random import shuffle, randint
-from math import cos, gcd, pi, sin, tau, sqrt
+from math import cos, gcd, pi, sin, tau, sqrt, isinf
 from os.path import realpath
 from numpy import linspace
 
@@ -2569,11 +2569,14 @@ class Elemental(Service):
             if step <= 0:
                 step = 1
             xmin, ymin, xmax, ymax = bounds
-
+            if isinf(xmin):
+                channel(_("No bounds for selected elements."))
+                return
             image = make_raster(
                 [n.node for n in data],
                 bounds,
-                step=step,
+                step_x=step,
+                step_y=step,
             )
 
             matrix = Matrix()
@@ -2833,6 +2836,8 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_path(path_d, data, **kwargs):
+            if path_d is None:
+                raise CommandSyntaxError(_("Not a valid path_d string"))
             try:
                 path = Path(path_d)
                 path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
@@ -4224,14 +4229,14 @@ class Elemental(Service):
                     min_val[1] = min(min_val[1], bounds[1])
                     max_val[0] = max(max_val[0], bounds[2])
                     max_val[1] = max(max_val[1], bounds[3])
-
             if method=="quick":
-                pts += [
-                    (min_val[0], min_val[1]),
-                    (min_val[0], max_val[1]),
-                    (max_val[0], min_val[1]),
-                    (max_val[0], max_val[1]),
-                ]
+                if not isinf(min_val[0]) and not isinf(min_val[1]) and not isinf(max_val[0]) and not isinf(max_val[0]):
+                    pts += [
+                        (min_val[0], min_val[1]),
+                        (min_val[0], max_val[1]),
+                        (max_val[0], min_val[1]),
+                        (max_val[0], max_val[1]),
+                    ]
             if method == "segment":
                 hull = [p for p in pts]
             elif method == "circle":

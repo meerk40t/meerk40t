@@ -18,6 +18,7 @@ from ..svgelements import (
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
+from meerk40t.core.fonts import svgfont_to_wx
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -398,35 +399,9 @@ class LaserRender:
         except AttributeError:
             matrix = None
             width_scale = 1.0
-        if hasattr(node, "wxfont"):
-            font = node.wxfont
-        else:
-            if text.font_size < 1:
-                if text.font_size > 0:
-                    node.matrix.pre_scale(
-                        text.font_size, text.font_size, text.x, text.y
-                    )
-                text.font_size = 1  # No zero sized fonts.
-            try:
-                font = wx.Font(text.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
-            except TypeError:
-                font = wx.Font(int(text.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-            try:
-                f = []
-                if text.font_family is not None:
-                    f.append(str(text.font_family))
-                if text.font_face is not None:
-                    f.append(str(text.font_face))
-                if text.font_weight is not None:
-                    f.append(str(text.font_weight))
-                if node.font_style is not None:
-                    f.append(str(node.font_style))
 
-                f.append("%d" % text.font_size)
-                font.SetNativeFontInfoUserDesc(" ".join(f))
-            except Exception:
-                pass
-            node.wxfont = font
+        svgfont_to_wx(node)
+        font = node.wxfont
 
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
