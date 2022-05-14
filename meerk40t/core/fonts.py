@@ -75,7 +75,7 @@ def svgfont_to_wx(svgtextnode):
             fsize = 1
             svgtextnode.text.font_size = fsize  # No zero sized fonts.
     try:
-        wxfont.SetPointSize(fsize)
+        wxfont.SetFractionalPointSize(fsize)
     except AttributeError:
         wxfont.SetSize(int(fsize))
 
@@ -107,7 +107,20 @@ def svgfont_to_wx(svgtextnode):
     else:
         family = wx.FONTFAMILY_SWISS
     wxfont.SetFamily(family)
-    wxfont.SetFaceName(svgtextnode.text.font_face)
+    okay = False
+    if not svgtextnode.text.font_face is None:
+        if svgtextnode.text.font_face[0] == "'":
+            svgtextnode.text.font_face = svgtextnode.text.font_face.strip("'")
+        okay = wxfont.SetFaceName(svgtextnode.text.font_face)
+    if not okay:
+        if not svgtextnode.text.font_family is None:
+            if svgtextnode.text.font_family[0] == "'":
+                svgtextnode.text.font_family = svgtextnode.text.font_family.strip("'")
+            ff = svgtextnode.text.font_family
+            # Will try Family Name instead
+            okay = wxfont.SetFaceName(ff)
+            if okay:
+                svgtextnode.text.font_face = ff
 
     ff = svgtextnode.font_style
     if ff == "normal":
