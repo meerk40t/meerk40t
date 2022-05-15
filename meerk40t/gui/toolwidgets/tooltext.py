@@ -50,7 +50,7 @@ class TextTool(ToolWidget):
                 node = elements.elem_branch.add(text=self.text, type="elem text")
                 elements.classify([node])
                 self.text = None
+                self.notify_created()
             dlg.Destroy()
-            self.scene.request_refresh()
             response = RESPONSE_CONSUME
         return response
