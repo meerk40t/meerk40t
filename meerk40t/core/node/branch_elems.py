@@ -4,7 +4,7 @@ from meerk40t.core.node.node import Node
 class BranchElementsNode(Node):
     """
     Branch Element Node.
-    Bootstrapped type: 'branch reg'
+    Bootstrapped type: 'branch elems'
     """
 
     def __init__(self, **kwargs):

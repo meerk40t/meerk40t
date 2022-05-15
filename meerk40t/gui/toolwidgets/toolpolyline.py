@@ -52,7 +52,7 @@ class PolylineTool(ToolWidget):
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
-            self.scene.request_refresh()
+            self.notify_created()
             response = RESPONSE_CONSUME
         elif event_type == "lost":
             self.scene.tool_active = False
