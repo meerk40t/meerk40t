@@ -89,6 +89,24 @@ class ImageOpNode(Node, Parameters):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        if self.raster_swing:
+            raster_swing = "-"
+        else:
+            raster_swing = "="
+        if self.raster_direction == 0:
+            raster_dir = "T2B"
+        elif self.raster_direction == 1:
+            raster_dir = "B2T"
+        elif self.raster_direction == 2:
+            raster_dir = "R2L"
+        elif self.raster_direction == 3:
+            raster_dir = "L2R"
+        elif self.raster_direction == 4:
+            raster_dir = "X"
+        else:
+            raster_dir = str(self.raster_direction)
+        default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"

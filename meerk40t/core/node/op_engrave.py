@@ -82,6 +82,7 @@ class EngraveOpNode(Node, Parameters):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Engrave"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"

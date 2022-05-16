@@ -23,27 +23,27 @@ class BalorDevice(Service, ViewPort):
 
         self.register(
             "format/op cut",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op engrave",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op hatch",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op raster",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op image",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op dots",
-            "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz",
+            "{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
         )
         self.register("format/op console", "{enabled}{command}")
 
