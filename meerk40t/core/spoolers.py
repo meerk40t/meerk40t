@@ -268,10 +268,24 @@ def plugin(kernel, lifecycle):
 
 class Spooler:
     """
-    Stores spoolable lasercode events as a synchronous queue.
-    Stores an idle job operation for running constantly.
+    Spoolers store spoolable events in a two synchronous queue, and a single idle job that
+    will be executed in a loop, if the synchronous queues are empty. The two queues are the
+    realtime and the regular queue.
 
-    Spooler should be registered as a service_delegate of the service running the driver to process data.
+    Spooler should be registered as a service_delegate of the device service running the driver
+    to process data.
+
+    Spoolers have threads that process and run each set of commands. Ultimately all commands are
+    executed against the given driver. So if the command within the spooled element is "unicorn"
+    then driver.unicorn() is called with the given arguments. This permits arbitrary execution of
+    specifically spooled elements in the correct sequence.
+
+    The two queues are the realtime and the regular queue. The realtime queue tries to execute
+    particular events as soon as possible. And will execute even if there is a hold on the current
+    work.
+
+    When the queues are empty the idle job is repeatedly executed in a loop. If there is no idle job
+    then the spooler is inactive.
 
     * peek()
     * pop()
@@ -306,20 +320,51 @@ class Spooler:
         return len(self._queue)
 
     def added(self, *args, **kwargs):
+        """
+        Device service is added to the kernel.
+
+        @param args:
+        @param kwargs:
+        @return:
+        """
         self.restart()
 
     def service_attach(self, *args, **kwargs):
+        """
+        device service is attached to the kernel.
+
+        @param args:
+        @param kwargs:
+        @return:
+        """
         if self.foreground_only:
             self.restart()
 
     def service_detach(self):
+        """
+        device service is detached from the kernel.
+
+        @return:
+        """
         if self.foreground_only:
             self.shutdown()
 
     def shutdown(self, *args, **kwargs):
+        """
+        device service is shutdown during the shutdown of the kernel or destruction of the service
+
+        @param args:
+        @param kwargs:
+        @return:
+        """
         self._shutdown = True
 
     def restart(self):
+        """
+        Start or restart the spooler thread.
+
+        @return:
+        """
         self._shutdown = False
         if self._thread is None:
 
@@ -338,10 +383,10 @@ class Spooler:
         """
         This executes the different classes of spoolable object.
 
-        (str, attribute, ...) calls self.driver.str(*attributes)
-        str, calls self.driver.str()
-        callable, callable()
-        has_attribute(generator), recursive call to list of lines produced by
+        * (str, attribute, ...) calls self.driver.str(*attributes)
+        * str, calls self.driver.str()
+        * callable, callable()
+        * has_attribute(generator), recursive call to list of lines produced by the
         generator, recursive call to list of lines produced by generator
 
         @param program: line to be executed.
@@ -379,6 +424,17 @@ class Spooler:
         # print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):
+        """
+        Run thread for the spooler.
+
+        Process the real time queue.
+        Hold work queue if driver requires a hold
+        Process work queue.
+        Hold idle if driver requires idle to be held.
+        Process idle work
+
+        @return:
+        """
         while True:
             # Forever Looping.
             if self._shutdown:
@@ -441,6 +497,7 @@ class Spooler:
     def realtime(self, *job):
         """
         Enqueues a job into the realtime buffer. This preempts the regular work and is checked before hold_work.
+
         @param job:
         @return:
         """
