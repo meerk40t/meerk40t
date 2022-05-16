@@ -62,6 +62,7 @@ class PathNode(Node):
             self.path.transform = self.matrix
             self.path.stroke_width = self.stroke_width
             self._bounds = self.path.bbox(with_stroke=True)
+            self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
