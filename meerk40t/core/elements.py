@@ -391,17 +391,22 @@ class Elemental(Service):
             if current is None:
                 current = list()
                 self.penbox[data] = current
-            value = list(value.split(","))
-            if len(value) == 1:
-                value = float(value[0])
+            rex = re.compile(r'([+-]?[0-9]+)(?:[,-]([+-]?[0-9]+))?')
+            m = rex.match(value)
+            if not m:
+                raise CommandSyntaxError
+            value = float(m.group(1))
+            end = m.group(2)
+            if end:
+                end = float(end)
+
+            if not end:
                 for i in index:
                     try:
                         current[i][key] = value
                     except IndexError:
                         pass
             else:
-                end = float(value[1])
-                value = float(value[0])
                 r = len(index)
                 try:
                     s = (end - value) / (r - 1)
