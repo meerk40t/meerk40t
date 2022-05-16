@@ -464,6 +464,7 @@ class Spooler:
                 with self._lock:
                     # threadsafe
                     program = self._queue.pop(0)
+                self._current = program
                 self.context.signal("spooler;queue", len(self._queue))
                 if program is not None:
                     # Process all data in the program.
@@ -472,6 +473,8 @@ class Spooler:
             if self.driver.hold_idle():
                 time.sleep(0.01)
                 continue
+            if self._current is not self._idle:
+                self.context.signal("spooler;idle", True)
             self._current = self._idle
             if self._idle is not None:
                 self._execute_program(self._idle)
@@ -484,6 +487,10 @@ class Spooler:
     @property
     def current(self):
         return self._current
+
+    @property
+    def idle(self):
+        return self._idle
 
     @property
     def realtime_queue(self):
@@ -565,6 +572,8 @@ class Spooler:
         @param job:
         @return:
         """
+        if self._idle is not job:
+            self.context.signal("spooler;idle", True)
         self._idle = job
 
     def job_if_idle(self, *element):
