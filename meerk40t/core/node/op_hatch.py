@@ -182,7 +182,10 @@ class HatchOpNode(Node, Parameters):
 
             penbox = self.settings.get("penbox")
             if penbox is not None:
-                penbox = context.elements.penbox[penbox]
+                try:
+                    penbox = context.elements.penbox[penbox]
+                except KeyError:
+                    penbox = None
 
             polyline_lookup = dict()
             for p in range(self.implicit_passes):
