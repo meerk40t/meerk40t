@@ -300,11 +300,16 @@ class Spooler:
         self.context = context
         self.driver = driver
         self.foreground_only = True
+        self._current = None
+
         self._realtime_lock = Lock()
         self._realtime_queue = []
+
         self._lock = Lock()
         self._queue = []
+
         self._idle = None
+
         self._shutdown = False
         self._thread = None
 
@@ -445,6 +450,8 @@ class Spooler:
                 with self._lock:
                     # threadsafe
                     program = self._realtime_queue.pop(0)
+                self._current = program
+                self.context.signal("spooler;realtime", len(self._realtime_queue))
                 if program is not None:
                     # Process all data in the program.
                     self._execute_program(program)
@@ -457,6 +464,7 @@ class Spooler:
                 with self._lock:
                     # threadsafe
                     program = self._queue.pop(0)
+                self.context.signal("spooler;queue", len(self._queue))
                 if program is not None:
                     # Process all data in the program.
                     self._execute_program(program)
@@ -464,6 +472,7 @@ class Spooler:
             if self.driver.hold_idle():
                 time.sleep(0.01)
                 continue
+            self._current = self._idle
             if self._idle is not None:
                 self._execute_program(self._idle)
                 # Finished idle cycle.
@@ -471,6 +480,14 @@ class Spooler:
             else:
                 # There is nothing to send or do.
                 time.sleep(0.1)
+
+    @property
+    def current(self):
+        return self._current
+
+    @property
+    def realtime_queue(self):
+        return self._realtime_queue
 
     @property
     def queue(self):
@@ -506,6 +523,7 @@ class Spooler:
                 self._realtime_queue.extend(job)
             else:
                 self._realtime_queue.append(job)
+        self.context.signal("spooler;realtime", len(self._realtime_queue))
 
     def job(self, *job):
         """
