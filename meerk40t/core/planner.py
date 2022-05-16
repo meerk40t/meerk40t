@@ -885,13 +885,20 @@ def physicalhome():
     yield "home", 0, 0
 
 
-def offset(x, y):
-    def offset_value():
+class offset:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__(self):
+        return ("offset_value (%.1f, %.1f)" % (self.x, self.y))
+
+    def __call__(self, *args):
+        if len(args)>1:
+            self.x = args[0]
+            self.y = args[1]
         yield "wait_finish"
-        yield "set_position", -int(x), -int(y)
-
-    return offset_value
-
+        yield "set_position", -int(self.x), -int(self.y)
 
 def wait():
     wait_amount = 5.0
