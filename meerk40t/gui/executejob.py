@@ -172,7 +172,7 @@ class PlannerPanel(wx.Panel):
         if cols >  1 or width is None:
             dlg = wx.TextEntryDialog(
                 self,
-                _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%")
+                _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 110%")
                 + "\n\n"
                 + _("This should be the item width + any gap."),
                 _("Enter X Delta"),
@@ -206,7 +206,7 @@ class PlannerPanel(wx.Panel):
         if rows >  1:
             dlg = wx.TextEntryDialog(
                 self,
-                _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%")
+                _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 110%")
                 + "\n\n"
                 + _("This should be the item height + any gap."),
                 _("Enter Y Delta"),
