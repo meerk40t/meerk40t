@@ -4425,7 +4425,7 @@ class Elemental(Service):
             # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
-                group_node.append_child(node)
+                group_node.append_child(e)
 
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):

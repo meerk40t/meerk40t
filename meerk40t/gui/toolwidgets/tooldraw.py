@@ -58,6 +58,7 @@ class DrawTool(ToolWidget):
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(path=t, type="elem path")
                 elements.classify([node])
+                self.notify_created()
             except IndexError:
                 pass
             self.series = None

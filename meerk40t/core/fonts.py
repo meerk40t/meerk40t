@@ -1,4 +1,5 @@
 import wx
+from meerk40t.core.units import PX_PER_INCH
 # from meerk40t.core.node import node
 # from meerk40t.svgelements import Text
 
@@ -10,7 +11,9 @@ def wxfont_to_svg(svgtextnode):
         svgtextnode.wxfont = wx.Font()
 
     wxfont = svgtextnode.wxfont
-    svgtextnode.text.font_size = wxfont.GetPointSize()
+    # A point is 1/72 of an inch
+    factor = PX_PER_INCH / 72
+    svgtextnode.text.font_size = wxfont.GetPointSize() * factor
 
     fw = wxfont.GetWeight()
     if fw in (wx.FONTWEIGHT_THIN, wx.FONTWEIGHT_EXTRALIGHT, wx.FONTWEIGHT_LIGHT):
@@ -62,7 +65,9 @@ def svgfont_to_wx(svgtextnode):
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
-    fsize = svgtextnode.text.font_size
+    # A point is 1/72 of an inch
+    factor = 72 / PX_PER_INCH
+    fsize = svgtextnode.text.font_size * factor
     if fsize < 1:
         if fsize > 0:
             textx = 0

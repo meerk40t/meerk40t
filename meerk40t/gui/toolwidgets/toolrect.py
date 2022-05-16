@@ -53,6 +53,7 @@ class RectTool(ToolWidget):
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=rect, type="elem rect")
                     elements.classify([node])
+                    self.notify_created()
                 self.p1 = None
                 self.p2 = None
             except IndexError:

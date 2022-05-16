@@ -70,6 +70,7 @@ class CircleTool(ToolWidget):
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
                     elements.classify([node])
+                    self.notify_created()
                 self.p1 = None
                 self.p2 = None
             except IndexError:
