@@ -29,6 +29,7 @@ class GroupNode(Node):
                 )
             else:
                 self._bounds = Node.union_bounds(self._flatten_children(self))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):

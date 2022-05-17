@@ -63,6 +63,7 @@ class RectNode(Node):
             self.shape.transform = self.matrix
             self.shape.stroke_width = self.stroke_width
             self._bounds = self.shape.bbox(with_stroke=True)
+            self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):

@@ -115,6 +115,14 @@ class PlannerPanel(wx.Panel):
         self.context("plan%s return clear\n" % (self.plan_name))
 
     def jobchange_step_repeat(self, event=None):
+        elems = []
+        cutplan = self.context.planner.default_plan
+        for node in cutplan.plan:
+            if node.type.startswith("op"):
+                elems.extend(node.children)
+        if len(elems)==0:
+            return
+
         dlg = wx.TextEntryDialog(
             self, _("How many copies wide?"), _("Enter Columns"), ""
         )
@@ -146,11 +154,6 @@ class PlannerPanel(wx.Panel):
         if rows == 0:
             return
 
-        elems = []
-        cutplan = self.context.planner.default_plan
-        for node in cutplan.plan:
-            if node.type.startswith("op"):
-                elems.extend(node.children)
         bounds = Node.union_bounds(elems)
 
         try:
@@ -159,66 +162,72 @@ class PlannerPanel(wx.Panel):
         except TypeError:
             width = None
             height = None
+        if cols >  1 or width is None:
+            dlg = wx.TextEntryDialog(
+                self,
+                _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 110%")
+                + "\n\n"
+                + _("This should be the item width + any gap."),
+                _("Enter X Delta"),
+                "",
+            )
 
-        dlg = wx.TextEntryDialog(
-            self,
-            _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%")
-            + "\n\n"
-            + _("This should be the item width + any gap."),
-            _("Enter X Delta"),
-            "",
-        )
-
-        name = self.context.units_name
-        if width:
-            width = self.context.device.length(width, new_units=name)
-        else:
-            width = "%f%%" % (100.0 / rows)
-        dlg.SetValue(str(width))
-        if dlg.ShowModal() == wx.ID_OK:
-            try:
-                x_distance = self.context.device.length(
-                    dlg.GetValue(),
-                    0,
-                    relative_length=width,
-                    as_float=True,
-                )
-            except ValueError:
+            name = self.context.units_name
+            if width:
+                width = self.context.device.length(width, unitless=self.context.device.native_scale_x, new_units=name, digits=3)
+            else:
+                width = "%.2f%%" % (100.0 / rows)
+            dlg.SetValue(str(width))
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    x_distance = self.context.device.length(
+                        dlg.GetValue(),
+                        0,
+                        relative_length=width,
+                        as_float=True,
+                    )
+                except ValueError:
+                    dlg.Destroy()
+                    return
+            else:
                 dlg.Destroy()
                 return
-        else:
             dlg.Destroy()
-            return
-        dlg.Destroy()
-
-        dlg = wx.TextEntryDialog(
-            self,
-            _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%")
-            + "\n\n"
-            + _("This should be the item height + any gap."),
-            _("Enter Y Delta"),
-            "",
-        )
-        if height:
-            height = self.context.device.length(height, new_units=name)
         else:
-            height = "%f%%" % (100.0 / cols)
-        dlg.SetValue(str(height))
-        if dlg.ShowModal() == wx.ID_OK:
-            try:
-                y_distance = self.context.device.length(
-                    dlg.GetValue(),
-                    1,
-                    relative_length=height,
-                    as_float=True,
-                )
-            except ValueError:
+            x_distance = width
+
+        if rows >  1:
+            dlg = wx.TextEntryDialog(
+                self,
+                _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 110%")
+                + "\n\n"
+                + _("This should be the item height + any gap."),
+                _("Enter Y Delta"),
+                "",
+            )
+            if height:
+                height = self.context.device.length(height, unitless=self.context.device.native_scale_y, new_units=name, digits=3)
+            else:
+                height = "%.2f%%" % (100.0 / cols)
+            dlg.SetValue(str(height))
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    y_distance = self.context.device.length(
+                        dlg.GetValue(),
+                        1,
+                        relative_length=height,
+                        as_float=True,
+                    )
+                except ValueError:
+                    dlg.Destroy()
+                    return
+            else:
                 dlg.Destroy()
                 return
-        else:
             dlg.Destroy()
-            return
-        dlg.Destroy()
+        else:
+            y_distance = height
+
         self.context(
             "plan%s step_repeat %s %s %s %s\n"
             % (self.plan_name, cols, rows, x_distance, y_distance)

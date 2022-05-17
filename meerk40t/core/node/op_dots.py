@@ -57,6 +57,7 @@ class DotsOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
