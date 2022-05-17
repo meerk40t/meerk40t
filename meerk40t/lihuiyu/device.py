@@ -806,9 +806,6 @@ class LhystudiosDriver(Parameters):
         self.properties = 0
         self.is_relative = False
         self.laser = False
-
-        service._quit = False
-
         self._thread = None
         self._shutdown = False
         self.last_fetch = None
