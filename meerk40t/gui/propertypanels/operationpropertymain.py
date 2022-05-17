@@ -906,7 +906,9 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
-            self.operation.hatch_angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            self.operation.hatch_angle = (
+                f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            )
         except ValueError:
             return
 

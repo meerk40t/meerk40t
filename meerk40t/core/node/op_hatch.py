@@ -71,7 +71,9 @@ class HatchOpNode(Node, Parameters):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["pass"] = f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -158,10 +160,10 @@ class HatchOpNode(Node, Parameters):
             pos = 0
             for i, pts in enumerate(points):
                 if pts is None:
-                    yield points[pos: i - 1]
+                    yield points[pos : i - 1]
                     pos = i + 1
             if pos != len(points):
-                yield points[pos: len(points)]
+                yield points[pos : len(points)]
 
         def create_fill():
             """
@@ -210,9 +212,9 @@ class HatchOpNode(Node, Parameters):
                 else:
                     counter_rotate = Matrix.rotate(-angle)
                     transformed_vector = matrix.transform_vector([0, distance_y])
-                    efill = EulerianFill(abs(
-                        complex(transformed_vector[0], transformed_vector[1])
-                    ))
+                    efill = EulerianFill(
+                        abs(complex(transformed_vector[0], transformed_vector[1]))
+                    )
                     for sp in c:
                         sp.transform.reset()
                         if angle is not None:

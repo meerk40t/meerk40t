@@ -41,7 +41,9 @@ class PositionPanel(wx.Panel):
         self.text_w.SetMinSize((70, 23))
         self.text_h.SetMinSize((70, 23))
         self.chk_indivdually = wx.CheckBox(self, wx.ID_ANY, _("Apply individually"))
-        self.button_aspect_ratio = wx.BitmapButton(self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=25))
+        self.button_aspect_ratio = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=25)
+        )
         self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
         self.combo_box_units = wx.ComboBox(
             self,
@@ -91,10 +93,20 @@ class PositionPanel(wx.Panel):
         # begin wxGlade: PositionPanel.__set_properties
         self.text_h.SetToolTip(_("New height (enter to apply)"))
         self.text_w.SetToolTip(_("New width (enter to apply)"))
-        self.text_x.SetToolTip(_("New X-coordinate of left top corner (enter to apply)"))
-        self.text_y.SetToolTip(_("New Y-coordinate of left top corner (enter to apply)"))
-        self.button_aspect_ratio.SetToolTip(_("Maintain orginal aspect ratio of complete selection"))
-        self.chk_indivdually.SetToolTip(_("If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions"))
+        self.text_x.SetToolTip(
+            _("New X-coordinate of left top corner (enter to apply)")
+        )
+        self.text_y.SetToolTip(
+            _("New Y-coordinate of left top corner (enter to apply)")
+        )
+        self.button_aspect_ratio.SetToolTip(
+            _("Maintain orginal aspect ratio of complete selection")
+        )
+        self.chk_indivdually.SetToolTip(
+            _(
+                "If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions"
+            )
+        )
         self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
         self.combo_box_units.SetSelection(0)
         # end wxGlade
@@ -147,7 +159,7 @@ class PositionPanel(wx.Panel):
         ct = 0
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             ct += 1
-            if (ct>1):
+            if ct > 1:
                 more_than_one = True
                 break
 
@@ -279,31 +291,37 @@ class PositionPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                new_w = float(Length("{value}{unit}".format(value=self.position_w, unit=self.position_units)))
+                new_w = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_w, unit=self.position_units
+                        )
+                    )
+                )
 
                 try:
-                    scalex = new_w / (bb[2]-bb[0])
+                    scalex = new_w / (bb[2] - bb[0])
                     scaley = 1.0
                 except ZeroDivisionError:
                     continue
                 # print("Old=%.1f, new=%.1f, sx=%.1f" % ((bb[2]-bb[0]), new_w, scalex))
 
-                bb[2] = bb[0] + (bb[2]-bb[0]) * scalex
+                bb[2] = bb[0] + (bb[2] - bb[0]) * scalex
 
                 elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
                 elem._bounds = bb
                 elem.modified()
         else:
             cmd = "resize %f%s %f%s %f%s %f%s\n" % (
-                    self.position_x,
-                    self.position_units,
-                    self.position_y,
-                    self.position_units,
-                    self.position_w,
-                    self.position_units,
-                    self.position_h,
-                    self.position_units,
-                )
+                self.position_x,
+                self.position_units,
+                self.position_y,
+                self.position_units,
+                self.position_w,
+                self.position_units,
+                self.position_h,
+                self.position_units,
+            )
             self.context(cmd)
         self.update_position(True)
 
@@ -341,7 +359,13 @@ class PositionPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                new_h = float(Length("{value}{unit}".format(value=self.position_h, unit=self.position_units)))
+                new_h = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_h, unit=self.position_units
+                        )
+                    )
+                )
 
                 try:
                     scalex = 1.0
@@ -351,22 +375,22 @@ class PositionPanel(wx.Panel):
 
                 # print("Old=%.1f, new=%.1f, sy=%.1f" % ((bb[3]-bb[1]), new_h, scaley))
 
-                bb[3] = bb[1] + (bb[3]-bb[1]) * scaley
+                bb[3] = bb[1] + (bb[3] - bb[1]) * scaley
 
                 elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
                 elem._bounds = bb
                 elem.modified()
         else:
             cmd = "resize %f%s %f%s %f%s %f%s\n" % (
-                    self.position_x,
-                    self.position_units,
-                    self.position_y,
-                    self.position_units,
-                    self.position_w,
-                    self.position_units,
-                    self.position_h,
-                    self.position_units,
-                )
+                self.position_x,
+                self.position_units,
+                self.position_y,
+                self.position_units,
+                self.position_w,
+                self.position_units,
+                self.position_h,
+                self.position_units,
+            )
             self.context(cmd)
         self.update_position(True)
 
@@ -388,12 +412,18 @@ class PositionPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                newx = float(Length("{value}{unit}".format(value=self.position_x, unit=self.position_units)))
+                newx = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_x, unit=self.position_units
+                        )
+                    )
+                )
                 dx = newx - bb[0]
                 dy = 0
                 # print("Old=%.1f, new=%.1f, dx=%.1f" % (bb[0], newx, dx))
 
-                oldw = bb[2]-bb[0]
+                oldw = bb[2] - bb[0]
                 bb[0] = newx
                 bb[2] = newx + oldw
                 elem.matrix.post_translate(dx, dy)
@@ -433,12 +463,18 @@ class PositionPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                newy = float(Length("{value}{unit}".format(value=self.position_y, unit=self.position_units)))
+                newy = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_y, unit=self.position_units
+                        )
+                    )
+                )
                 dy = newy - bb[1]
                 dx = 0
                 # print("Old=%.1f, new=%.1f, dy=%.1f" % (bb[1], newy, dy))
 
-                oldh = bb[3]-bb[1]
+                oldh = bb[3] - bb[1]
                 bb[1] = newy
                 bb[3] = newy + oldh
 

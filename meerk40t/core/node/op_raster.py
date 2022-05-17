@@ -8,7 +8,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import Color, Path, Polygon, Matrix
+from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 MILS_IN_MM = 39.3701
 
@@ -90,7 +90,9 @@ class RasterOpNode(Node, Parameters):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["pass"] = f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
         if self.raster_swing:
             raster_swing = "-"
         else:

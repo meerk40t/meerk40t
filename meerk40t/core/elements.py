@@ -2,9 +2,10 @@ import functools
 import os.path
 import re
 from copy import copy
-from random import shuffle, randint
-from math import cos, gcd, pi, sin, tau, sqrt, isinf
+from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
+from random import randint, shuffle
+
 from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
@@ -152,7 +153,9 @@ class Elemental(Service):
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
 
-        self.penbox = {"value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]}
+        self.penbox = {
+            "value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]
+        }
         self.wordlists = {"version": [1, self.kernel.version]}
 
         self._init_commands(kernel)
@@ -195,8 +198,8 @@ class Elemental(Service):
         @return:
         """
         indexes = list()
-        for s in index_string.split(','):
-            q = list(s.split('-'))
+        for s in index_string.split(","):
+            q = list(s.split("-"))
             if len(q) == 1:
                 indexes.append(int(q[0]))
             else:
@@ -289,7 +292,9 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+        def wordlist(
+            command, channel, _, value=None, data=None, remainder=None, **kwargs
+        ):
             if value is not None:
                 self.wordlist_add(data, value)
             return "wordlist", data
@@ -300,7 +305,9 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
+        def wordlist(
+            command, channel, _, value=None, data=None, remainder=None, **kwargs
+        ):
             if value is not None:
                 self.wordlist_add(data, value)
             channel("----------")
@@ -344,7 +351,9 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_add(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+        def penbox_add(
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        ):
             if count is None:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
@@ -361,7 +370,9 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_del(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+        def penbox_del(
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        ):
             if count is None:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
@@ -384,14 +395,24 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_set(command, channel, _, index=None, key=None, value=None, data=None, remainder=None, **kwargs):
+        def penbox_set(
+            command,
+            channel,
+            _,
+            index=None,
+            key=None,
+            value=None,
+            data=None,
+            remainder=None,
+            **kwargs,
+        ):
             if not value:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
             if current is None:
                 current = list()
                 self.penbox[data] = current
-            rex = re.compile(r'([+-]?[0-9]+)(?:[,-]([+-]?[0-9]+))?')
+            rex = re.compile(r"([+-]?[0-9]+)(?:[,-]([+-]?[0-9]+))?")
             m = rex.match(value)
             if not m:
                 raise CommandSyntaxError
@@ -1025,10 +1046,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.speed = s
-                channel(
-                    _("Speed for '%s' updated %f -> %f")
-                    % (str(op), old, s)
-                )
+                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1053,14 +1071,14 @@ class Elemental(Service):
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
         def op_power(
-                command,
-                channel,
-                _,
-                power=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            power=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if power is None:
                 for op in data:
@@ -1082,9 +1100,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.power = s
-                channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old, s)
-                )
+                channel(_("Power for '%s' updated %d -> %d") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1108,15 +1124,16 @@ class Elemental(Service):
         @self.console_command(
             "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
         )
-        def op_frequency(command,
-                         channel,
-                         _,
-                         frequency=None,
-                         difference=False,
-                         progress=False,
-                         data=None,
-                         **kwrgs
-                         ):
+        def op_frequency(
+            command,
+            channel,
+            _,
+            frequency=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
+        ):
             if frequency is None:
                 for op in data:
                     old = op.frequency
@@ -1135,9 +1152,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.frequency = s
-                channel(
-                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, s)
-                )
+                channel(_("Frequency for '%s' updated %f -> %f") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1189,21 +1204,20 @@ class Elemental(Service):
             output_type="ops",
         )
         def op_hatch_distance(
-                command,
-                channel,
-                _,
-                distance=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            distance=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if distance is None:
                 for op in data:
                     old = op.hatch_distance
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s")
-                        % (str(op), old)
+                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old)
                     )
                 return
             delta = 0
@@ -1250,14 +1264,14 @@ class Elemental(Service):
             output_type="ops",
         )
         def op_hatch_distance(
-                command,
-                channel,
-                _,
-                angle=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            angle=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if angle is None:
                 for op in data:
@@ -1561,9 +1575,7 @@ class Elemental(Service):
                     super_element.fill = e.fill
                 super_element += path
             self.remove_elements(data)
-            node = self.elem_branch.add(
-                path=super_element, type="elem path"
-            )
+            node = self.elem_branch.add(path=super_element, type="elem path")
             node.emphasized = True
             self.classify([node])
             return "elements", [node]
@@ -2633,7 +2645,9 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
+        def element_ellipse(
+            channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs
+        ):
             ellip = Ellipse(
                 cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
             )
@@ -2678,8 +2692,17 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_rect(channel, _,
-            x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
+        def element_rect(
+            channel,
+            _,
+            x_pos,
+            y_pos,
+            width,
+            height,
+            rx=None,
+            ry=None,
+            data=None,
+            **kwargs,
         ):
             """
             Draws a svg rectangle with optional rounded corners.
@@ -3233,7 +3256,8 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type=("elements"),
         )
-        def element_area(command,
+        def element_area(
+            command,
             channel,
             _,
             new_area=None,
@@ -3283,22 +3307,32 @@ class Elemental(Service):
                     except:
                         # Even bounds failed, next element please
                         continue
-                    s = [Point(bb[0], bb[1]), Point(bb[2], bb[1]), Point(bb[2], bb[3]), Point(bb[1], bb[3])]
+                    s = [
+                        Point(bb[0], bb[1]),
+                        Point(bb[2], bb[1]),
+                        Point(bb[2], bb[3]),
+                        Point(bb[1], bb[3]),
+                    ]
                     subject_polygons.append(s)
 
-                if len(subject_polygons)>0:
+                if len(subject_polygons) > 0:
                     idx = len(subject_polygons[0]) - 1
-                    if subject_polygons[0][0].x != subject_polygons[0][idx].x or subject_polygons[0][0].y != subject_polygons[0][idx].y:
+                    if (
+                        subject_polygons[0][0].x != subject_polygons[0][idx].x
+                        or subject_polygons[0][0].y != subject_polygons[0][idx].y
+                    ):
                         # not identical, so close the loop
-                        subject_polygons.append(Point(subject_polygons[0][0].x, subject_polygons[0][0].y))
+                        subject_polygons.append(
+                            Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
+                        )
 
-                if len(subject_polygons)>0:
+                if len(subject_polygons) > 0:
                     idx = -1
                     area_x_y = 0
                     area_y_x = 0
                     for pt in subject_polygons[0]:
                         idx += 1
-                        if idx>0:
+                        if idx > 0:
                             area_x_y += last_x * pt.y
                             area_y_x += last_y * pt.x
                         last_x = pt.x
@@ -3309,10 +3343,14 @@ class Elemental(Service):
                     name = str(elem)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel( "%d: %s" % (i, name))
+                    channel("%d: %s" % (i, name))
                     for idx, u in enumerate(units):
                         this_area_local = this_area / square_unit[idx]
-                        channel (_(" Area= {area:.3f} {unit}²").format(area=this_area_local, unit=u))
+                        channel(
+                            _(" Area= {area:.3f} {unit}²").format(
+                                area=this_area_local, unit=u
+                            )
+                        )
                 i += 1
                 total_area += this_area
             if display_only:
@@ -3327,7 +3365,6 @@ class Elemental(Service):
 
             return "elements", data
             # Do we have a new value to set? If yes scale by sqrt(of the fraction)
-
 
         @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
         @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
@@ -3945,7 +3982,9 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                matrix = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
+                matrix = Matrix(
+                    "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
+                )
                 for node in pasted:
                     node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group")
@@ -4043,14 +4082,13 @@ class Elemental(Service):
             B = bx * bx + by * by
             C = cx * cx + cy * cy
             D = bx * cy - by * cx
-            return [(cy * B - by * C) / (2 * D),
-                    (bx * C - cx * B) / (2 * D)]
+            return [(cy * B - by * C) / (2 * D), (bx * C - cx * B) / (2 * D)]
 
         # Function to return the smallest circle
         # that intersects 2 points
         def circle_from1(A, B):
             # Set the center to be the midpoint of A and B
-            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0 ]
+            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0]
 
             # Set the radius to be half the distance AB
             return C, dist(A, B) / 2.0
@@ -4058,20 +4096,22 @@ class Elemental(Service):
         # Function to return a unique circle that
         # intersects three points
         def circle_from2(A, B, C):
-            if A==B:
+            if A == B:
                 I, radius = circle_from1(A, C)
                 return I, radius
-            elif A==C:
+            elif A == C:
                 I, radius = circle_from1(A, B)
                 return I, radius
-            elif B==C:
+            elif B == C:
                 I, radius = circle_from1(A, B)
                 return I, radius
             else:
-                I = get_circle_center(B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1])
+                I = get_circle_center(
+                    B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1]
+                )
                 I[0] += A[0]
                 I[1] += A[1]
-                radius = dist (I, A)
+                radius = dist(I, A)
                 return I, radius
 
         # Function to check whether a circle
@@ -4082,22 +4122,22 @@ class Elemental(Service):
             # to check  whether the points
             # lie inside the circle or not
             for p in P:
-                if (not is_inside(center, radius, p)):
+                if not is_inside(center, radius, p):
                     return False
             return True
 
         # Function to return the minimum enclosing
         # circle for N <= 3
         def min_circle_trivial(P):
-            assert(len(P) <= 3)
+            assert len(P) <= 3
 
-            if not P :
+            if not P:
                 return [0, 0], 0
 
-            elif (len(P) == 1) :
+            elif len(P) == 1:
                 return P[0], 0
 
-            elif (len(P) == 2) :
+            elif len(P) == 2:
                 center, radius = circle_from1(P[0], P[1])
                 return center, radius
 
@@ -4107,7 +4147,7 @@ class Elemental(Service):
                 for j in range(i + 1, 3):
 
                     center, radius = circle_from1(P[i], P[j])
-                    if (is_valid_circle(center, radius, P)):
+                    if is_valid_circle(center, radius, P):
                         return center, radius
 
             center, radius = circle_from2(P[0], P[1], P[2])
@@ -4120,25 +4160,25 @@ class Elemental(Service):
         # that are not yet processed.
         def welzl_helper(P, R, n):
             # Base case when all points processed or |R| = 3
-            if (n == 0 or len(R) == 3) :
+            if n == 0 or len(R) == 3:
                 center, radius = min_circle_trivial(R)
                 return center, radius
 
             # Pick a random point randomly
-            idx = randint(0,n-1)
+            idx = randint(0, n - 1)
             p = P[idx]
 
             # Put the picked point at the end of P
             # since it's more efficient than
             # deleting from the middle of the vector
-            P[idx], P[n - 1] = P[n-1], P[idx]
+            P[idx], P[n - 1] = P[n - 1], P[idx]
 
             # Get the MEC circle d from the
             # set of points P - :p
             dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
 
             # If d contains p, return d
-            if (is_inside(dcenter, dradius, p)) :
+            if is_inside(dcenter, dradius, p):
                 return dcenter, dradius
 
             # Otherwise, must be on the boundary of the MEC
@@ -4156,7 +4196,7 @@ class Elemental(Service):
 
         def generate_hull_shape(method, data, resolution=None):
             if resolution is None:
-                DETAIL = 500 # How coarse / fine shall a subpath be split
+                DETAIL = 500  # How coarse / fine shall a subpath be split
             else:
                 DETAIL = int(resolution)
             pts = []
@@ -4208,14 +4248,19 @@ class Elemental(Service):
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3]),
                         ]
-                elif method=="quick":
+                elif method == "quick":
                     bounds = node.bounds
                     min_val[0] = min(min_val[0], bounds[0])
                     min_val[1] = min(min_val[1], bounds[1])
                     max_val[0] = max(max_val[0], bounds[2])
                     max_val[1] = max(max_val[1], bounds[3])
-            if method=="quick":
-                if not isinf(min_val[0]) and not isinf(min_val[1]) and not isinf(max_val[0]) and not isinf(max_val[0]):
+            if method == "quick":
+                if (
+                    not isinf(min_val[0])
+                    and not isinf(min_val[1])
+                    and not isinf(max_val[0])
+                    and not isinf(max_val[0])
+                ):
                     pts += [
                         (min_val[0], min_val[1]),
                         (min_val[0], max_val[1]),
@@ -4230,26 +4275,39 @@ class Elemental(Service):
                 hull = []
                 RES = 100
                 for i in range(RES):
-                    hull += [(mec_center[0] + mec_radius * cos(i/RES * tau), mec_center[1] + mec_radius * sin(i/RES * tau))]
+                    hull += [
+                        (
+                            mec_center[0] + mec_radius * cos(i / RES * tau),
+                            mec_center[1] + mec_radius * sin(i / RES * tau),
+                        )
+                    ]
             else:
                 hull = [p for p in Point.convex_hull(pts)]
             if len(hull) != 0:
                 hull.append(hull[0])  # loop
             return hull
 
-        @self.console_argument("method", help=_("Method to use (one of segment, quick, hull, complex)"))
+        @self.console_argument(
+            "method", help=_("Method to use (one of segment, quick, hull, complex)")
+        )
         @self.console_argument("resolution")
         @self.console_command(
             "trace",
             help=_("trace the given elements"),
             input_type=("elements", "shapes", None),
         )
-        def trace_trace_spooler(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+        def trace_trace_spooler(
+            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        ):
             if method is None:
                 method = "quick"
             method = method.lower()
             if not method in ("segment", "quick", "hull", "complex"):
-                channel(_("Invalid method, please use one of segment, quick, hull, complex."))
+                channel(
+                    _(
+                        "Invalid method, please use one of segment, quick, hull, complex."
+                    )
+                )
                 return
 
             spooler = self.device.spooler
@@ -4280,20 +4338,31 @@ class Elemental(Service):
 
             run_shape(spooler, hull)
 
-        @self.console_argument("method", help=_("Method to use (one of quick, hull, complex, segment, circle)"))
-        @self.console_argument("resolution", help=_("Resolution for complex slicing, default=500"))
+        @self.console_argument(
+            "method",
+            help=_("Method to use (one of quick, hull, complex, segment, circle)"),
+        )
+        @self.console_argument(
+            "resolution", help=_("Resolution for complex slicing, default=500")
+        )
         @self.console_command(
             "tracegen",
             help=_("create the trace around the given elements"),
             input_type=("elements", "shapes", None),
             output_type="elements",
         )
-        def trace_trace_generator(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+        def trace_trace_generator(
+            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        ):
             if method is None:
                 method = "quick"
             method = method.lower()
             if not method in ("segment", "quick", "hull", "complex", "circle"):
-                channel(_("Invalid method, please use one of quick, hull, complex, segment, circle."))
+                channel(
+                    _(
+                        "Invalid method, please use one of quick, hull, complex, segment, circle."
+                    )
+                )
                 return
 
             spooler = self.device.spooler
@@ -4313,7 +4382,6 @@ class Elemental(Service):
             node.focus()
             data.append(node)
             return "elements", data
-
 
         # --------------------------- END COMMANDS ------------------------------
 
@@ -6153,7 +6221,11 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if hasattr(node, "stroke") and node.stroke is not None and (op.color == node.stroke or op.default):
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and (op.color == node.stroke or op.default)
+                    ):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -6162,12 +6234,18 @@ class Elemental(Service):
                     elif node.type == "elem text":
                         op.add_reference(node)
                         was_classified = True
-                    elif hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+                    elif (
+                        hasattr(node, "fill")
+                        and node.fill is not None
+                        and node.fill.argb is not None
+                    ):
                         op.add_reference(node)
                         was_classified = True
                 elif op.type in ("op engrave", "op cut", "op hatch"):
                     if (
-                        hasattr(node, "stroke") and node.stroke is not None and op.color == node.stroke
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and op.color == node.stroke
                     ) or op.default:
                         op.add_reference(node)
                         was_classified = True
@@ -6186,13 +6264,21 @@ class Elemental(Service):
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.value is not None:
+                elif (
+                    hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.value is not None
+                ):
                     op = EngraveOpNode(color=node.stroke, speed=35.0)
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
-                if hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+                if (
+                    hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
+                ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
                     op.add_reference(node)

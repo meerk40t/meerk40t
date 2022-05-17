@@ -1,10 +1,17 @@
-from math import sqrt, cos, sin, tau
+from math import cos, sin, sqrt, tau
+
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GRID, DRAW_MODE_GUIDES, swizzlecolor
+from meerk40t.gui.laserrender import (
+    DRAW_MODE_BACKGROUND,
+    DRAW_MODE_GRID,
+    DRAW_MODE_GUIDES,
+    swizzlecolor,
+)
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
+
 
 class GridWidget(Widget):
     """
@@ -211,7 +218,6 @@ class GridWidget(Widget):
         if points == 0:
             return
 
-
     def calculate_grid_points(self):
         """
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
@@ -247,7 +253,13 @@ class GridWidget(Widget):
             prim_ct = len(self.scene.grid_points)
             if self.scene.draw_grid_secondary:
                 # is it identical to the primary?
-                if not self.scene.draw_grid_primary or self.sx != 0 or self.sy != 0 or self.scene.grid_secondary_scale_x != 1 or self.scene.grid_secondary_scale_y != 1:
+                if (
+                    not self.scene.draw_grid_primary
+                    or self.sx != 0
+                    or self.sy != 0
+                    or self.scene.grid_secondary_scale_x != 1
+                    or self.scene.grid_secondary_scale_y != 1
+                ):
                     tlenx = tlen * self.scene.grid_secondary_scale_x
                     tleny = tlen * self.scene.grid_secondary_scale_y
 
@@ -282,7 +294,10 @@ class GridWidget(Widget):
                 r_angle = 0
                 segments = 48
                 i = 0
-                max_r = sqrt(p.device.unit_width*p.device.unit_width + p.device.unit_height*p.device.unit_height)
+                max_r = sqrt(
+                    p.device.unit_width * p.device.unit_width
+                    + p.device.unit_height * p.device.unit_height
+                )
                 r_fourth = max_r // (4 * tlen) * tlen
                 while r_angle < tau:
                     if i % 2 == 0:
@@ -302,10 +317,10 @@ class GridWidget(Widget):
                 circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
 
         end_time = time()
-        #print(
+        # print(
         #   "Ready, time needed: %.6f, grid points added=%d (primary=%d, secondary=%d, circ=%d)"
         #   % (end_time - start_time, len(self.scene.grid_points), prim_ct, second_ct, circ_ct)
-        #)
+        # )
 
     def process_draw(self, gc):
         """
@@ -377,18 +392,20 @@ class GridWidget(Widget):
                 u_height = float(context.device.unit_height)
                 gc.Clip(0, 0, u_width, u_height)
                 siz = sqrt(u_width * u_width + u_height * u_height)
-                #print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
-                #print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
+                # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
+                # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
                 sox = self.cx / u_width
                 soy = self.cy / u_height
-                factor = max( 2* (1-sox), 2* (1-soy))
+                factor = max(2 * (1 - sox), 2 * (1 - soy))
 
                 y = 0
 
-                while (y < siz * factor ):
+                while y < siz * factor:
                     y += 2 * self.step
-                    gc.DrawEllipse(self.cx - y/2, self.cy - y/2, y, y)
-                mid_y = y // (4 * self.step) * self.step # (around one fourth of radius)
+                    gc.DrawEllipse(self.cx - y / 2, self.cy - y / 2, y, y)
+                mid_y = (
+                    y // (4 * self.step) * self.step
+                )  # (around one fourth of radius)
                 # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
                 radials_start = []
                 radials_end = []
@@ -403,7 +420,7 @@ class GridWidget(Widget):
                     font = wx.Font(int(fsize), wx.SWISS, wx.NORMAL, wx.BOLD)
                 gc.SetFont(font, self.scene.colors.color_guide3)
                 segments = 48
-                while r_angle<tau:
+                while r_angle < tau:
                     if i % 2 == 0:
                         degang = round(r_angle / tau * 360, 1)
                         if degang == 360:
@@ -418,13 +435,27 @@ class GridWidget(Widget):
                             myangle = -1.0 * r_angle
                             dx = 0
                         if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
-                            gc.DrawText(a_text, self.cx + cos(r_angle) * (mid_y + dx),
-                                        self.cy + sin(r_angle)* (mid_y + dx), myangle )
+                            gc.DrawText(
+                                a_text,
+                                self.cx + cos(r_angle) * (mid_y + dx),
+                                self.cy + sin(r_angle) * (mid_y + dx),
+                                myangle,
+                            )
                         s_factor = 0
                     else:
                         s_factor = 1
-                    radials_start.append((self.cx + s_factor * 0.5 * mid_y * cos(r_angle), self.cy + s_factor * 0.5 * mid_y * sin(r_angle)))
-                    radials_end.append((self.cx + 0.5 * y * cos(r_angle), self.cy + 0.5 * y * sin(r_angle)))
+                    radials_start.append(
+                        (
+                            self.cx + s_factor * 0.5 * mid_y * cos(r_angle),
+                            self.cy + s_factor * 0.5 * mid_y * sin(r_angle),
+                        )
+                    )
+                    radials_end.append(
+                        (
+                            self.cx + 0.5 * y * cos(r_angle),
+                            self.cy + 0.5 * y * sin(r_angle),
+                        )
+                    )
                     r_angle += tau / segments
                     i += 1
                 gc.StrokeLineSegments(radials_start, radials_end)
@@ -437,7 +468,6 @@ class GridWidget(Widget):
                 gc.SetPen(self.grid_line_pen)
                 if starts and ends:
                     gc.StrokeLineSegments(starts, ends)
-
 
     def signal(self, signal, *args, **kwargs):
         """

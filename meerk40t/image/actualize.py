@@ -77,7 +77,9 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
     bbox = min(xs), min(ys), max(xs), max(ys)
 
     image_width = ceil(abs(bbox[2] * step_scale_x)) - floor(abs(bbox[0] * step_scale_x))
-    image_height = ceil(abs(bbox[3] * step_scale_y)) - floor(abs(bbox[1] * step_scale_y))
+    image_height = ceil(abs(bbox[3] * step_scale_y)) - floor(
+        abs(bbox[1] * step_scale_y)
+    )
     tx = bbox[0]
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)

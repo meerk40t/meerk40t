@@ -162,7 +162,7 @@ def console_command(
                     # Set nargs
                     nargs = k.get("nargs", 1)
                     if nargs == "*":
-                        nargs = float('inf')
+                        nargs = float("inf")
 
                     # Attempt cast to type.
                     if "type" in k and value is not None:

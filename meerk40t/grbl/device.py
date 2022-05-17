@@ -13,12 +13,7 @@ from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
-from ..device.basedevice import (
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_RAPID,
-    PLOT_SETTING,
-)
+from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
 MM_PER_MIL = UNITS_PER_MM / UNITS_PER_MIL
 

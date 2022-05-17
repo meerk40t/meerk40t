@@ -3,7 +3,18 @@ from math import ceil, floor, sqrt
 import wx
 from PIL import Image
 
-from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut, RawCut, PlotCut, DwellCut
+from meerk40t.core.fonts import svgfont_to_wx
+
+from ..core.cutcode import (
+    CubicCut,
+    CutCode,
+    DwellCut,
+    LineCut,
+    PlotCut,
+    QuadCut,
+    RasterCut,
+    RawCut,
+)
 from ..core.node.node import Node
 from ..svgelements import (
     Arc,
@@ -18,7 +29,6 @@ from ..svgelements import (
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
-from meerk40t.core.fonts import svgfont_to_wx
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -210,7 +220,14 @@ class LaserRender:
         self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
 
     def draw_cutcode_node(
-        self, node: Node, gc: wx.GraphicsContext, draw_mode, zoomscale=1.0, alpha=255, x: int = 0, y: int = 0
+        self,
+        node: Node,
+        gc: wx.GraphicsContext,
+        draw_mode,
+        zoomscale=1.0,
+        alpha=255,
+        x: int = 0,
+        y: int = 0,
     ):
         cutcode = node.cutcode
         self.draw_cutcode(cutcode, gc, x, y)
@@ -273,10 +290,10 @@ class LaserRender:
                 image = cut.image
                 gc.PushState()
                 matrix = Matrix.scale(cut.step_x, cut.step_y)
-                matrix.post_translate(cut.offset_x + x, cut.offset_y + y)  # Adjust image xy
-                gc.ConcatTransform(
-                    wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
-                )
+                matrix.post_translate(
+                    cut.offset_x + x, cut.offset_y + y
+                )  # Adjust image xy
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
                     cache = cut.cache
                     cache_id = cut.cache_id

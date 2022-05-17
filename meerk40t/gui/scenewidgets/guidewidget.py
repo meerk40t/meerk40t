@@ -101,7 +101,7 @@ class GuideWidget(Widget):
             self.scene.magnet_attract_y = not self.scene.magnet_attract_y
         elif value == 2:
             self.scene.magnet_attract_c = not self.scene.magnet_attract_c
-    
+
     def toggle_circles(self):
         # toggle circular grid
         self.scene.context("scene grid circular\n")
@@ -437,14 +437,10 @@ class GuideWidget(Widget):
 
             # Make positions stick on ticks (or exactly inbetween)
             mark_point_x = (
-                round(2.0 * mark_point_x / tick_distance_x)
-                * 0.5
-                * tick_distance_x
+                round(2.0 * mark_point_x / tick_distance_x) * 0.5 * tick_distance_x
             )
             mark_point_y = (
-                round(2.0 * mark_point_y / tick_distance_y)
-                * 0.5
-                * tick_distance_y
+                round(2.0 * mark_point_y / tick_distance_y) * 0.5 * tick_distance_y
             )
             if is_x and is_y:
                 if self.scene.has_magnets():
@@ -465,7 +461,6 @@ class GuideWidget(Widget):
                 self.scene.toggle_y_magnet(value)
 
             self.scene.request_refresh()
-
 
         if event_type == "hover":
             return RESPONSE_CHAIN
@@ -602,13 +597,17 @@ class GuideWidget(Widget):
                     # Show half distance as well if there's enough room
                     if t_height < 0.5 * points_x_primary:
                         starts.append((x - 0.5 * points_x_primary, edge_gap))
-                        ends.append((x - 0.5 * points_x_primary, 0.25 * length + edge_gap))
+                        ends.append(
+                            (x - 0.5 * points_x_primary, 0.25 * length + edge_gap)
+                        )
 
                     if not self.scene.draw_grid_secondary:
                         starts.append((x, h - edge_gap))
                         ends.append((x, h - length - edge_gap))
                         starts.append((x - 0.5 * points_x_primary, h - edge_gap))
-                        ends.append((x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap))
+                        ends.append(
+                            (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
+                        )
 
                     gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
             x += points_x_primary
@@ -627,13 +626,17 @@ class GuideWidget(Widget):
                     # if there is enough room for a mid-distance stroke...
                     if t_height < 0.5 * points_y_primary:
                         starts.append((edge_gap, y - 0.5 * points_y_primary))
-                        ends.append((0.25 * length + edge_gap, y - 0.5 * points_y_primary))
+                        ends.append(
+                            (0.25 * length + edge_gap, y - 0.5 * points_y_primary)
+                        )
 
                     if not self.scene.draw_grid_secondary:
                         starts.append((w - edge_gap, y))
                         ends.append((w - length - edge_gap, y))
                         starts.append((w - edge_gap, y - 0.5 * points_y_primary))
-                        ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary))
+                        ends.append(
+                            (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
+                        )
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
@@ -651,7 +654,9 @@ class GuideWidget(Widget):
             x = offset_x_secondary
             while x < w:
                 if x >= 45:
-                    mark_point = (x - sx_secondary) / (factor_x_secondary * self.scaled_conversion_x)
+                    mark_point = (x - sx_secondary) / (
+                        factor_x_secondary * self.scaled_conversion_x
+                    )
                     if round(float(mark_point) * 1000) == 0:
                         mark_point = 0.0  # prevents -0
                     if p.device.flip_x:
@@ -665,7 +670,12 @@ class GuideWidget(Widget):
                         # Show half distance as well if there's enough room
                         if t_height < 0.5 * points_x_secondary:
                             starts.append((x - 0.5 * points_x_secondary, h - edge_gap))
-                            ends.append((x - 0.5 * points_x_secondary, h - 0.25 * length - edge_gap))
+                            ends.append(
+                                (
+                                    x - 0.5 * points_x_secondary,
+                                    h - 0.25 * length - edge_gap,
+                                )
+                            )
                         info = "%g" % mark_point
                         (t_w, t_h) = gc.GetTextExtent(info)
                         gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
@@ -674,7 +684,9 @@ class GuideWidget(Widget):
             y = offset_y_secondary
             while y < h:
                 if y >= 20:
-                    mark_point = (y - sy_secondary) / (factor_y_secondary * self.scaled_conversion_y)
+                    mark_point = (y - sy_secondary) / (
+                        factor_y_secondary * self.scaled_conversion_y
+                    )
                     if round(float(mark_point) * 1000) == 0:
                         mark_point = 0.0  # prevents -0
                     if p.device.flip_y:
@@ -685,7 +697,12 @@ class GuideWidget(Widget):
                         # if there is enough room for a mid-distance stroke...
                         if t_height < 0.5 * points_y_secondary:
                             starts.append((w - edge_gap, y - 0.5 * points_y_secondary))
-                            ends.append((w - 0.25 * length - edge_gap, y - 0.5 * points_y_secondary))
+                            ends.append(
+                                (
+                                    w - 0.25 * length - edge_gap,
+                                    y - 0.5 * points_y_secondary,
+                                )
+                            )
 
                         info = "%g" % (mark_point + 0)
                         (t_w, t_h) = gc.GetTextExtent(info)

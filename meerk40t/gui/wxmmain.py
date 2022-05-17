@@ -9,6 +9,10 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
+
+from ..core.element_types import elem_nodes
+from ..core.units import UNITS_PER_INCH, Length
+from ..svgelements import Color, Matrix, Path
 from .icons import (
     icon_cag_common_50,
     icon_cag_subtract_50,
@@ -63,9 +67,6 @@ from .laserrender import (
     swizzlecolor,
 )
 from .mwindow import MWindow
-from ..core.element_types import elem_nodes
-from ..core.units import UNITS_PER_INCH, Length
-from ..svgelements import Color, Matrix, Path
 
 _ = wx.GetTranslation
 

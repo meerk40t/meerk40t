@@ -1,12 +1,15 @@
 import wx
+
 from meerk40t.core.units import PX_PER_INCH
+
 # from meerk40t.core.node import node
 # from meerk40t.svgelements import Text
 
+
 def wxfont_to_svg(svgtextnode):
-###
-### Translates all wxfont - properties to their svg-equivalents
-###
+    ###
+    ### Translates all wxfont - properties to their svg-equivalents
+    ###
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
 
@@ -49,7 +52,7 @@ def wxfont_to_svg(svgtextnode):
     ff = wxfont.GetStyle()
     if ff == wx.FONTSTYLE_NORMAL:
         fontstyle = "normal"
-    elif ff ==wx.FONTSTYLE_ITALIC:
+    elif ff == wx.FONTSTYLE_ITALIC:
         fontstyle = "italic"
     elif ff == wx.FONTSTYLE_SLANT:
         fontstyle = "oblique"
@@ -58,10 +61,11 @@ def wxfont_to_svg(svgtextnode):
 
     svgtextnode.font_style = fontstyle
 
+
 def svgfont_to_wx(svgtextnode):
-###
-### Translates all svg-text-properties to their wxfont-equivalents
-###
+    ###
+    ### Translates all svg-text-properties to their wxfont-equivalents
+    ###
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont

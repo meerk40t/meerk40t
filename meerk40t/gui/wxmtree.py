@@ -41,14 +41,26 @@ def register_panel_tree(window, context):
     window.on_pane_add(pane)
     context.register("pane/tree", pane)
 
-    context.register("format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}")
+    context.register(
+        "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+    )
     context.register(
         "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
     )
-    context.register("format/op hatch", "{enabled}{pass}{element_type} {speed}mm/s @{power}")
-    context.register("format/op raster", "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}")
-    context.register("format/op image", "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}")
-    context.register("format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell")
+    context.register(
+        "format/op hatch", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+    )
+    context.register(
+        "format/op raster",
+        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+    )
+    context.register(
+        "format/op image",
+        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+    )
+    context.register(
+        "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
+    )
     context.register("format/op console", "{enabled}{command}")
     context.register("format/elem ellipse", "{element_type} {id}")
     context.register("format/elem image", "{element_type} {id}")

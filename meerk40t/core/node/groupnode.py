@@ -19,9 +19,14 @@ class GroupNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            if len(self.children)==0:
+            if len(self.children) == 0:
                 # empty, otherwise will recurse forever...
-                self._bounds = (float("inf"), float("inf"), -float("inf"), -float("inf"))
+                self._bounds = (
+                    float("inf"),
+                    float("inf"),
+                    -float("inf"),
+                    -float("inf"),
+                )
             else:
                 self._bounds = Node.union_bounds(self._flatten_children(self))
         return self._bounds

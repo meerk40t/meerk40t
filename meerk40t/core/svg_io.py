@@ -12,6 +12,10 @@ from ..svgelements import (
     SVG_ATTR_DATA,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
+    SVG_ATTR_FONT_FACE,
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_STROKE,
@@ -36,10 +40,6 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
-    SVG_ATTR_FONT_FAMILY,
-    SVG_ATTR_FONT_FACE,
-    SVG_ATTR_FONT_SIZE,
-    SVG_ATTR_FONT_WEIGHT,
     Circle,
     Ellipse,
     Group,
@@ -140,6 +140,7 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+
         def copy_attributes(source, target):
             #
             if hasattr(source, "stroke"):
@@ -225,8 +226,8 @@ class SVGWriter:
                     ("font_face", SVG_ATTR_FONT_FACE),
                     ("font_size", SVG_ATTR_FONT_SIZE),
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
-                    ("font_style", "font-style") # Not implemented yet afaics
-                    ]
+                    ("font_style", "font-style"),  # Not implemented yet afaics
+                ]
                 for attrib in attribs:
                     val = None
                     if hasattr(element, attrib[0]):

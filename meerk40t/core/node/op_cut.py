@@ -81,7 +81,9 @@ class CutOpNode(Node, Parameters):
         default_map["power"] = "default"
         default_map["frequency"] = "default"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["pass"] = f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
         default_map.update(self.settings)
         return default_map
 

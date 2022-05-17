@@ -3,6 +3,9 @@ import math
 import wx
 
 from meerk40t.kernel import Job, signal_listener
+
+from ..core.cutcode import CutCode
+from ..svgelements import Matrix
 from .icons import (
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
@@ -15,8 +18,6 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
-from ..core.cutcode import CutCode
-from ..svgelements import Matrix
 
 _ = wx.GetTranslation
 

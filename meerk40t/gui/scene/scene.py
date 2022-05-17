@@ -29,7 +29,6 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
-
 # from weakref import ref
 
 
@@ -531,12 +530,12 @@ class Scene(Module, Job):
             previous_top_element = None
 
         if event_type in (
-                "kb_shift_release",
-                "kb_shift_press",
-                "kb_ctrl_release",
-                "kb_ctrl_press",
-                "kb_alt_release",
-                "kb_alt_press",
+            "kb_shift_release",
+            "kb_shift_press",
+            "kb_ctrl_release",
+            "kb_ctrl_press",
+            "kb_alt_release",
+            "kb_alt_press",
         ):
             # print("Keyboard-Event raised: %s" % event_type)
             self.rebuild_hittable_chain()
@@ -563,12 +562,12 @@ class Scene(Module, Job):
             return
 
         if event_type in (
-                "leftdown",
-                "middledown",
-                "rightdown",
-                "wheeldown",
-                "wheelup",
-                "hover",
+            "leftdown",
+            "middledown",
+            "rightdown",
+            "wheeldown",
+            "wheelup",
+            "hover",
         ):
             self.time = time.time()
             self.rebuild_hittable_chain()
@@ -600,9 +599,9 @@ class Scene(Module, Job):
             #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
 
             if (
-                    i == 0
-                    and event_type == "hover"
-                    and previous_top_element is not current_widget
+                i == 0
+                and event_type == "hover"
+                and previous_top_element is not current_widget
             ):
                 if previous_top_element is not None:
                     if self.log_events:
@@ -618,7 +617,7 @@ class Scene(Module, Job):
                 previous_top_element = current_widget
             delta_time = time.time() - self.time
             if (
-                    event_type == "leftup" and delta_time <= 0.30
+                event_type == "leftup" and delta_time <= 0.30
             ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:
