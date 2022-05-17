@@ -753,6 +753,19 @@ class Kernel(Settings):
             for plugin in self._kernel_plugins:
                 plugin(kernel, "mainloop")
 
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_POSTMAIN <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTMAIN
+                if channel:
+                    channel("kernel-postmain: {object}".format(object=str(k)))
+                if hasattr(k, "postmain"):
+                    k.postmain()
+        if start < LIFECYCLE_KERNEL_POSTMAIN <= end:
+            if channel:
+                channel("(plugin) kernel-postmain")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "postmain")
+
         if start < LIFECYCLE_KERNEL_PRESHUTDOWN <= end:
             if channel:
                 channel("(plugin) kernel-preshutdown")
