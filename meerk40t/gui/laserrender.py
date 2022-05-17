@@ -1,4 +1,5 @@
 from math import ceil, floor, sqrt
+import platform
 
 import wx
 from PIL import Image
@@ -75,6 +76,24 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
+        system = platform.system()
+        if system == "Darwin":
+            # to be verified
+            factor = 2.0
+            delta = 0.5
+        elif system == "Windows":
+            factor = 2.0
+            delta = 0.5
+        elif system == "Linux":
+            # Dont ask me why its not 2.0...
+            # Might be just my GTK...
+            factor = 1.75
+            delta = 0.45
+        else:
+            factor = 2.0
+            delta = 0.5   
+        self.fontdescent_factor = factor  
+        self.fontdescent_delta = delta 
 
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -435,19 +454,18 @@ class LaserRender:
         y = text.y
         if text.text is not None:
             f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text.text)
-
-            f_height -= 2 * f_descent
+            f_height -= self.fontdescent_factor * f_descent
             text.width = f_width
             text.height = f_height
 
             if not hasattr(text, "anchor") or text.anchor == "start":
-                y -= text.height + f_descent
+                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
             elif text.anchor == "middle":
                 x -= text.width / 2
-                y -= text.height + f_descent
+                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
             elif text.anchor == "end":
                 x -= text.width
-                y -= text.height + f_descent
+                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
             gc.DrawText(text.text, x, y)
         gc.PopState()
 
