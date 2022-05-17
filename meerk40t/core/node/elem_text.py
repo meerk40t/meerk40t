@@ -16,6 +16,7 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        font_style = None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
@@ -37,7 +38,10 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
-        self.font_style = "normal"  # normal / italic / oblique
+        if font_style is None:
+            self.font_style = font_style
+        else:
+            self.font_style = text.font_style  # normal / italic / oblique
         self.lock = False
 
     def __copy__(self):
