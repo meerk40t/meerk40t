@@ -434,15 +434,20 @@ class LaserRender:
         x = text.x
         y = text.y
         if text.text is not None:
-            text.width, text.height = gc.GetTextExtent(text.text)
+            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text.text)
+
+            f_height -= 2 * f_descent
+            text.width = f_width
+            text.height = f_height
+
             if not hasattr(text, "anchor") or text.anchor == "start":
-                y -= text.height
+                y -= text.height + f_descent
             elif text.anchor == "middle":
                 x -= text.width / 2
-                y -= text.height
+                y -= text.height + f_descent
             elif text.anchor == "end":
                 x -= text.width
-                y -= text.height
+                y -= text.height + f_descent
             gc.DrawText(text.text, x, y)
         gc.PopState()
 
