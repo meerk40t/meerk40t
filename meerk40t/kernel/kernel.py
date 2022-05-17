@@ -65,6 +65,7 @@ class Kernel(Settings):
         # Boot State
         self._booted = False
         self._shutdown = False
+        self._quit = False
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._kernel_plugins = []
@@ -1051,7 +1052,7 @@ class Kernel(Settings):
             print(*args, **kwargs)
 
     def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
+        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
 
     def precli(self):
         pass
@@ -1133,6 +1134,11 @@ class Kernel(Settings):
             loop.run_until_complete(aio_readline(loop))
             loop.close()
             self.channel("console").unwatch(self.__print_delegate)
+
+    def postmain(self):
+        if self._quit:
+            self._shutdown = True
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
     def preshutdown(self):
         channel = self.channel("shutdown")
