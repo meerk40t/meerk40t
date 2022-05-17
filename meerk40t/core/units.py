@@ -244,7 +244,9 @@ class ViewPort:
         else:
             if relative_length is None:
                 relative_length = self.height
-        length = Length(value, relative_length=relative_length, unitless=unitless, digits=digits)
+        length = Length(
+            value, relative_length=relative_length, unitless=unitless, digits=digits
+        )
         if scale is not None:
             length *= scale
 

@@ -120,7 +120,7 @@ class PlannerPanel(wx.Panel):
         for node in cutplan.plan:
             if node.type.startswith("op"):
                 elems.extend(node.children)
-        if len(elems)==0:
+        if len(elems) == 0:
             return
 
         dlg = wx.TextEntryDialog(
@@ -162,7 +162,7 @@ class PlannerPanel(wx.Panel):
         except TypeError:
             width = None
             height = None
-        if cols >  1 or width is None:
+        if cols > 1 or width is None:
             dlg = wx.TextEntryDialog(
                 self,
                 _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 110%")
@@ -174,7 +174,12 @@ class PlannerPanel(wx.Panel):
 
             name = self.context.units_name
             if width:
-                width = self.context.device.length(width, unitless=self.context.device.native_scale_x, new_units=name, digits=3)
+                width = self.context.device.length(
+                    width,
+                    unitless=self.context.device.native_scale_x,
+                    new_units=name,
+                    digits=3,
+                )
             else:
                 width = "%.2f%%" % (100.0 / rows)
             dlg.SetValue(str(width))
@@ -196,17 +201,24 @@ class PlannerPanel(wx.Panel):
         else:
             x_distance = width
 
-        if rows >  1:
+        if rows > 1:
             dlg = wx.TextEntryDialog(
                 self,
-                _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 110%")
+                _(
+                    "How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 110%"
+                )
                 + "\n\n"
                 + _("This should be the item height + any gap."),
                 _("Enter Y Delta"),
                 "",
             )
             if height:
-                height = self.context.device.length(height, unitless=self.context.device.native_scale_y, new_units=name, digits=3)
+                height = self.context.device.length(
+                    height,
+                    unitless=self.context.device.native_scale_y,
+                    new_units=name,
+                    digits=3,
+                )
             else:
                 height = "%.2f%%" % (100.0 / cols)
             dlg.SetValue(str(height))
