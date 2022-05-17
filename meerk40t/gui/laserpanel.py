@@ -1,7 +1,6 @@
 import wx
 from wx import aui
 
-from meerk40t.core.planner import CutPlanningFailedError
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     icons8_delete_50,

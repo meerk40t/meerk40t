@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color, Text
+from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow

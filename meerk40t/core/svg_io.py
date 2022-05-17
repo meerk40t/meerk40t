@@ -2,7 +2,6 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
-import wx
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
@@ -19,7 +18,6 @@ from ..svgelements import (
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
-    SVG_ATTR_TRANSFORM,
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
@@ -43,7 +41,6 @@ from ..svgelements import (
     SVG_ATTR_FONT_SIZE,
     SVG_ATTR_FONT_WEIGHT,
     Circle,
-    Color,
     Ellipse,
     Group,
     Matrix,
@@ -55,7 +52,7 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
+from .units import DEFAULT_PPI, UNITS_PER_PIXEL
 
 
 def plugin(kernel, lifecycle=None):

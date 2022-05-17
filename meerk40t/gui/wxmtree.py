@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..kernel import signal_listener
-from ..svgelements import SVG_ATTR_STROKE, Color
+from ..svgelements import Color
 from .icons import (
     icon_meerk40t,
     icons8_direction_20,

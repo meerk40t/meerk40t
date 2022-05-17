@@ -1,5 +1,3 @@
-import threading
-
 import wx
 from wx import aui, richtext
 

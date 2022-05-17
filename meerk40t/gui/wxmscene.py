@@ -28,7 +28,7 @@ from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
-from meerk40t.svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Angle, Color
+from meerk40t.svgelements import Angle, Color
 
 _ = wx.GetTranslation
 

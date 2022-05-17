@@ -2,16 +2,9 @@ import math
 
 import wx
 
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.op_dots import DotsOpNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
-from meerk40t.core.node.op_image import ImageOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.kernel import signal_listener
 
 from ..core.node.node import Node
-from ..svgelements import Group
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_laser_beam_52
 from .mwindow import MWindow

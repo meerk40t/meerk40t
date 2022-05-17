@@ -4,7 +4,7 @@ import os.path
 import platform
 import re
 from math import isinf
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Callable, Generator, List, Optional, Tuple, Union
 
 from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
 

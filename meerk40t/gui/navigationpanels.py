@@ -37,7 +37,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Angle, Group, Matrix
+from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 

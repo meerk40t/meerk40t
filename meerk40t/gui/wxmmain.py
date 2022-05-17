@@ -9,10 +9,6 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
-
-from ..core.element_types import elem_nodes
-from ..core.units import UNITS_PER_INCH, Length
-from ..svgelements import Color, Matrix, Path
 from .icons import (
     icon_cag_common_50,
     icon_cag_subtract_50,
@@ -25,15 +21,11 @@ from .icons import (
     icons8_align_top_50,
     icons8_circle_50,
     icons8_cursor_50,
-    icons8_emergency_stop_button_50,
     icons8_flip_vertical,
-    icons8_gas_industry_50,
-    icons8_home_filled_50,
     icons8_measure_50,
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_oval_50,
-    icons8_pause_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
     icons8_polygon_50,
@@ -68,10 +60,12 @@ from .laserrender import (
     DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
-    LaserRender,
     swizzlecolor,
 )
 from .mwindow import MWindow
+from ..core.element_types import elem_nodes
+from ..core.units import UNITS_PER_INCH, Length
+from ..svgelements import Color, Matrix, Path
 
 _ = wx.GetTranslation
 

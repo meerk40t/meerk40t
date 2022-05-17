@@ -18,11 +18,11 @@ from meerk40t.kernel import (
     signal_listener,
 )
 
-from ..core.cutcode import CutCode, LineCut, PlotCut
+from ..core.cutcode import CutCode, PlotCut
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
-from ..svgelements import Color, Point
+from ..svgelements import Color
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0

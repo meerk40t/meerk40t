@@ -3,7 +3,6 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
