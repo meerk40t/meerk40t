@@ -73,13 +73,20 @@ def plugin(kernel, lifecycle):
                 else:
                     solution_path += Path(r)
             if solution_path:
-                new_node = context.elements.elem_branch.add(
-                    path=solution_path, type="elem path", stroke=node.stroke, fill=node.fill
-                )
-                if node is not None:
-                    new_node.fill = node.fill
-                    new_node.stroke = node.stroke
-                    new_node.stroke_width = node.stroke_width
+                if node is None:
+                    new_node = context.elements.elem_branch.add(
+                        path=solution_path,
+                        type="elem path",
+                    )
+                else:
+                    new_node = context.elements.elem_branch.add(
+                        path=solution_path,
+                        type="elem path",
+                        stroke=node.stroke if node is not None else None,
+                        fill=node.fill if node is not None else None,
+                        stroke_width=node.stroke_width if node is not None else None,
+                    )
+                context.signal("refresh_scene", "Scene")
                 context.elements.classify([new_node])
                 return "elements", [node]
             else:
