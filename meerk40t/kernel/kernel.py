@@ -1124,8 +1124,12 @@ class Kernel(Settings):
                     print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
-                    self.console("." + line + "\n")
+                    line = line.strip()
                     if line in ("quit", "shutdown"):
+                        self._quit = True
+                        break
+                    self.console(f".{line}\n")
+                    if line == "gui":
                         break
 
             import asyncio
