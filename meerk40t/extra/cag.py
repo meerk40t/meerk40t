@@ -40,6 +40,7 @@ def plugin(kernel, lifecycle):
                 ct = ClipType.Difference
             solution_path = Path(stroke="blue", stroke_width=1000)
             last_polygon = None
+            node = None
             for i in range(len(data)):
                 node = data[i]
                 try:
@@ -72,10 +73,14 @@ def plugin(kernel, lifecycle):
                 else:
                     solution_path += Path(r)
             if solution_path:
-                node = context.elements.elem_branch.add(
-                    path=solution_path, type="elem path"
+                new_node = context.elements.elem_branch.add(
+                    path=solution_path, type="elem path", stroke=node.stroke, fill=node.fill
                 )
-                context.elements.classify([node])
+                if node is not None:
+                    new_node.fill = node.fill
+                    new_node.stroke = node.stroke
+                    new_node.stroke_width = node.stroke_width
+                context.elements.classify([new_node])
                 return "elements", [node]
             else:
                 return "elements", []
