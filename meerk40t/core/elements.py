@@ -1,6 +1,7 @@
 import functools
 import os.path
 import re
+from datetime import datetime
 from copy import copy
 from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
@@ -156,7 +157,9 @@ class Elemental(Service):
         self.penbox = {
             "value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]
         }
-        self.wordlists = {"version": [1, self.kernel.version]}
+        self.wordlists = {"version": [1, self.kernel.version],
+        "date": [1, self.wordlist_datestr()],
+        "time": [1, self.wordlist_timestr()]}
 
         self._init_commands(kernel)
         self._init_tree(kernel)
@@ -190,6 +193,14 @@ class Elemental(Service):
         if key not in self.wordlists:
             self.wordlists[key] = [1]
         self.wordlists[key].append(value)
+
+    def wordlist_datestr(self):
+        time = datetime.now()
+        return time.strftime("%x")
+
+    def wordlist_timestr(self):
+        time = datetime.now()
+        return time.strftime("%X")
 
     def index_range(self, index_string):
         """
@@ -279,8 +290,11 @@ class Elemental(Service):
                     for key in self.wordlists:
                         channel(str(key))
                 else:
-                    for value in self.wordlists[key][1:]:
-                        channel(str(value))
+                    if key in self.wordlists:
+                        for value in self.wordlists[key][1:]:
+                            channel(str(value))
+                    else:
+                        channel(_("Key not found: '%s'") % key)
                 channel("----------")
 
             return "wordlist", key
