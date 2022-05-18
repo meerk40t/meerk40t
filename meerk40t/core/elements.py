@@ -290,8 +290,11 @@ class Elemental(Service):
                     for key in self.wordlists:
                         channel(str(key))
                 else:
-                    for value in self.wordlists[key][1:]:
-                        channel(str(value))
+                    if key in self.wordlists:
+                        for value in self.wordlists[key][1:]:
+                            channel(str(value))
+                    else:
+                        channel(_("Key not found: '%s'") % key)
                 channel("----------")
 
             return "wordlist", key
