@@ -16,7 +16,7 @@ from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node
+from .node.node import Node, Linecap, Linejoin
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -2917,6 +2917,142 @@ class Elemental(Service):
                 e.stroke_width = stroke_width
                 e.altered()
             return "elements", data
+
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
+            "cap", type=str, help=_("Linecap to apply to the path (one of butt, round, square)")
+        )
+        @self.console_command(
+            "linecap",
+            help=_("linecap <cap>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_cap(
+            command, channel, _, cap=None, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if cap is None:
+                channel("----------")
+                channel(_("Linecaps:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if hasattr(e, "linecap"):
+                        if e.linecap == Linecap.CAP_SQUARE:
+                            capname = "square"
+                        elif e.linecap == Linecap.CAP_BUTT:
+                            capname = "butt"
+                        else:
+                            capname = "round"
+                        channel(_("%d: linecap = %s - %s") % (i, capname, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                capvalue = None
+                if cap.lower() == "butt":
+                    capvalue = Linecap.CAP_BUTT
+                elif cap.lower() == "round":
+                    capvalue = Linecap.CAP_ROUND
+                elif cap.lower() == "square":
+                    capvalue = Linecap.CAP_SQUARE
+                if not capvalue is None:
+                    for e in apply:
+                        if hasattr(e, "linecap"):
+                            e.linecap = capvalue
+                            e.altered()
+                return "elements", data
+
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
+            "join", type=str, help=_("jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)")
+        )
+        @self.console_command(
+            "linejoin",
+            help=_("linejoin <join>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_join(
+            command, channel, _, join=None, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if join is None:
+                channel("----------")
+                channel(_("Linejoins:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if hasattr(e, "linejoin"):
+                        if e.linejoin == Linejoin.JOIN_ARCS:
+                            joinname = "arcs"
+                        elif e.linejoin == Linejoin.JOIN_BEVEL:
+                            joinname = "bevel"
+                        elif e.linejoin == Linejoin.JOIN_MITER_CLIP:
+                            joinname = "miter-clip"
+                        elif e.linejoin == Linejoin.JOIN_MITER:
+                            joinname = "miter"
+                        elif e.linejoin == Linejoin.JOIN_ROUND:
+                            joinname = "round"
+                        channel(_("%d: linejoin = %s - %s") % (i, joinname, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                joinvalue = None
+                if join.lower() == "arcs":
+                    joinvalue = Linejoin.JOIN_ARCS
+                elif join.lower() == "bevel":
+                    joinvalue = Linejoin.JOIN_BEVEL
+                elif join.lower() == "miter":
+                    joinvalue = Linejoin.JOIN_MITER
+                elif join.lower() == "miter-clip":
+                    joinvalue = Linejoin.JOIN_MITER_CLIP
+                elif join.lower() == "round":
+                    joinvalue = Linejoin.JOIN_ROUND
+                if not joinvalue is None:
+                    for e in apply:
+                        if hasattr(e, "linejoin"):
+                            e.linejoin = joinvalue
+                            e.altered()
+                return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(

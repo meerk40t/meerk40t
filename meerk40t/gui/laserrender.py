@@ -16,7 +16,7 @@ from ..core.cutcode import (
     RasterCut,
     RawCut,
 )
-from ..core.node.node import Node
+from ..core.node.node import Node, Linecap, Linejoin
 from ..svgelements import (
     Arc,
     Close,
@@ -91,9 +91,9 @@ class LaserRender:
             delta = 0.45
         else:
             factor = 2.0
-            delta = 0.5   
-        self.fontdescent_factor = factor  
-        self.fontdescent_delta = delta 
+            delta = 0.5
+        self.fontdescent_factor = factor
+        self.fontdescent_delta = delta
 
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -191,7 +191,7 @@ class LaserRender:
                     )
         return p
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None):
+    def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -199,6 +199,10 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
+            if not capstyle is None:
+                self.pen.SetCap(capstyle)
+            if not joinstyle is None:
+                self.pen.SetJoin(joinstyle)
             try:
                 try:
                     self.pen.SetWidth(width)
@@ -222,7 +226,7 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None, alpha=255):
+    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None, alpha=255, capstyle=None, joinstyle=None):
         try:
             sw = element.stroke_width
         except AttributeError:
@@ -236,7 +240,7 @@ class LaserRender:
             pass
         if sw < limit:
             sw = limit
-        self.set_pen(gc, element.stroke, width=sw, alpha=alpha)
+        self.set_pen(gc, element.stroke, width=sw, alpha=alpha, capstyle=capstyle, joinstyle=joinstyle)
 
     def draw_cutcode_node(
         self,
@@ -368,6 +372,30 @@ class LaserRender:
         except AttributeError:
             matrix = None
             width_scale = 1.0
+        if not hasattr(node, "linecap") or node.linecap is None:
+            lc = wx.CAP_ROUND
+        else:
+            if node.linecap == Linecap.CAP_BUTT:
+                lc = wx.CAP_BUTT
+            elif node.linecap == Linecap.CAP_ROUND:
+                lc = wx.CAP_ROUND
+            elif node.linecap == Linecap.CAP_SQUARE:
+                lc = wx.CAP_PROJECTING
+            else:
+                lc = wx.CAP_ROUND
+        if not hasattr(node, "linejoin") or node.linejoin is None:
+            lj = wx.JOIN_MITER
+        else:
+            if node.linejoin == Linejoin.JOIN_ARCS:
+                lj = wx.JOIN_ROUND
+            elif node.linejoin == Linejoin.JOIN_BEVEL:
+                lj = wx.JOIN_BEVEL
+            elif node.linejoin == Linejoin.JOIN_MITER:
+                lj = wx.JOIN_MITER
+            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
+                lj = wx.JOIN_MITER
+            else:
+                lj = wx.JOIN_MITER
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
@@ -375,7 +403,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj,
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
@@ -395,11 +423,35 @@ class LaserRender:
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, node.path)
             node.cache = cache
+        if not hasattr(node, "linecap") or node.linecap is None:
+            lc = wx.CAP_ROUND
+        else:
+            if node.linecap == Linecap.CAP_BUTT:
+                lc = wx.CAP_BUTT
+            elif node.linecap == Linecap.CAP_ROUND:
+                lc = wx.CAP_ROUND
+            elif node.linecap == Linecap.CAP_SQUARE:
+                lc = wx.CAP_PROJECTING
+            else:
+                lc = wx.CAP_ROUND
+        if not hasattr(node, "linejoin") or node.linejoin is None:
+            lj = wx.JOIN_MITER
+        else:
+            if node.linejoin == Linejoin.JOIN_ARCS:
+                lj = wx.JOIN_ROUND
+            elif node.linejoin == Linejoin.JOIN_BEVEL:
+                lj = wx.JOIN_BEVEL
+            elif node.linejoin == Linejoin.JOIN_MITER:
+                lj = wx.JOIN_MITER
+            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
+                lj = wx.JOIN_MITER
+            else:
+                lj = wx.JOIN_ROUND
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha
+            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)

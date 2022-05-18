@@ -18,6 +18,24 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+from enum import Enum
+# LINEJOIN
+# Value	arcs | bevel |miter | miter-clip | round
+# Default value	miter
+class Linejoin(Enum):
+    JOIN_ARCS = 0
+    JOIN_BEVEL = 1
+    JOIN_MITER = 2
+    JOIN_MITER_CLIP = 3
+    JOIN_ROUND = 4
+
+# LINECAP
+# Value	butt | round | square
+# Default value	butt
+class Linecap(Enum):
+    CAP_BUTT = 0
+    CAP_ROUND = 1
+    CAP_SQUARE = 2
 
 
 class Node:
