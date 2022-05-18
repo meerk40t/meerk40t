@@ -69,25 +69,6 @@ def svgfont_to_wx(svgtextnode):
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    fsize = svgtextnode.text.font_size * factor
-    if fsize < 1:
-        if fsize > 0:
-            textx = 0
-            texty = 0
-            if hasattr(svgtextnode.text, "x"):
-                textx = svgtextnode.text.x
-            if hasattr(svgtextnode.text, "y"):
-                texty = svgtextnode.text.y
-            svgtextnode.matrix.pre_scale(fsize, fsize, textx, texty)
-            fsize = 1
-            svgtextnode.text.font_size = fsize  # No zero sized fonts.
-    try:
-        wxfont.SetFractionalPointSize(fsize)
-    except AttributeError:
-        wxfont.SetSize(int(fsize))
-
     fw = svgtextnode.text.font_weight
     if fw == "lighter":
         fontweight = wx.FONTWEIGHT_THIN
@@ -141,3 +122,21 @@ def svgfont_to_wx(svgtextnode):
     else:
         fontstyle = wx.FONTSTYLE_NORMAL
     wxfont.SetStyle(fontstyle)
+    # A point is 1/72 of an inch
+    factor = 72 / PX_PER_INCH
+    fsize = svgtextnode.text.font_size * factor
+    if fsize < 1:
+        if fsize > 0:
+            textx = 0
+            texty = 0
+            if hasattr(svgtextnode.text, "x"):
+                textx = svgtextnode.text.x
+            if hasattr(svgtextnode.text, "y"):
+                texty = svgtextnode.text.y
+            svgtextnode.matrix.pre_scale(fsize, fsize, textx, texty)
+            fsize = 1
+            svgtextnode.text.font_size = fsize  # No zero sized fonts.
+    try:
+        wxfont.SetFractionalPointSize(fsize)
+    except AttributeError:
+        wxfont.SetSize(int(fsize))
