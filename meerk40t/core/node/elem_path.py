@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Linejoin, Linecap
 
 
 class PathNode(Node):
@@ -15,6 +15,8 @@ class PathNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        linecap = None,
+        linejoin = None,
         **kwargs,
     ):
         super(PathNode, self).__init__(type="elem path")
@@ -36,6 +38,15 @@ class PathNode(Node):
             self.stroke_width = path.stroke_width
         else:
             self.stroke_width = stroke_width
+        if linecap is None:
+            self.linecap = Linecap.CAP_BUTT
+        else:
+            self.linecap = linecap
+        if linejoin is None:
+            self.linejoin = Linejoin.JOIN_MITER
+        else:
+            self.linejoin = linejoin
+
         self.lock = False
 
     def __copy__(self):
@@ -123,4 +134,6 @@ class PathNode(Node):
     def as_path(self):
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
+        self.path.linecap = self.linecap
+        self.path.linejoin = self.linejoin
         return abs(self.path)

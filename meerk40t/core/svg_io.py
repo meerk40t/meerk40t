@@ -53,6 +53,10 @@ from ..svgelements import (
     SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_PIXEL
+from meerk40t.core.node.node import Linecap, Linejoin
+
+SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
+SVG_ATTR_STROKE_CAP = "stroke-LINECAP"
 
 
 def plugin(kernel, lifecycle=None):
@@ -141,8 +145,31 @@ class SVGWriter:
         @return:
         """
 
+        def capstr(linecap):
+            if linecap == Linecap.CAP_BUTT:
+                s = "butt"
+            elif linecap == Linecap.CAP_SQUARE:
+                s = "square"
+            else:
+                s = "round"
+            return s
+
+        def joinstr(linejoin):
+            if linejoin == Linejoin.JOIN_ARCS:
+                s = "arcs"
+            elif linejoin == Linejoin.JOIN_BEVEL:
+                s = "bevel"
+            elif linejoin == Linejoin.JOIN_MITER_CLIP:
+                s = "miter-clip"
+            elif linejoin == Linejoin.JOIN_ROUND:
+                s = "round"
+            else:
+                s = "miter"
+            return s
+
         def copy_attributes(source, target):
             #
+
             if hasattr(source, "stroke"):
                 target.stroke = source.stroke
             if hasattr(source, "fill"):
@@ -176,11 +203,16 @@ class SVGWriter:
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement.set()
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 subelement = SubElement(xml_tree, "element")
@@ -190,11 +222,14 @@ class SVGWriter:
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 # The svg attributes should be up to date, but better safe than sorry
@@ -389,6 +424,32 @@ class SVGProcessor:
         if self.requires_classification:
             self.elements.classify(self.element_list)
 
+    def check_for_line_attributes(self, node, element):
+        lc = element.values.get(SVG_ATTR_STROKE_CAP)
+        if not lc is None:
+            nlc = Linecap.CAP_ROUND
+            if lc=="butt":
+                nlc = Linecap.CAP_BUTT
+            elif lc=="round":
+                nlc = Linecap.CAP_ROUND
+            elif lc=="square":
+                nlc = Linecap.CAP_SQUARE
+            node.linecap = nlc
+        lj = element.values.get(SVG_ATTR_STROKE_JOIN)
+        if not lj is None:
+            nlj = Linejoin.JOIN_MITER
+            if lj=="arcs":
+                nlj = Linejoin.JOIN_ARCS
+            elif lj=="bevel":
+                nlj = Linejoin.JOIN_BEVEL
+            elif lj=="miter":
+                nlj = Linejoin.JOIN_MITER
+            elif lj=="miter-clip":
+                nlj = Linejoin.JOIN_MITER_CLIP
+            elif lj=="round":
+                nlj = Linejoin.JOIN_ROUND
+            node.linejoin = nlj
+
     def parse(self, element, context_node, e_list):
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
@@ -406,6 +467,7 @@ class SVGProcessor:
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(path=element, type="elem path", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, (Polygon, Polyline)):
             if not element.is_degenerate():
@@ -415,6 +477,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem polyline", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, Circle):
             if not element.is_degenerate():
@@ -442,6 +505,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem rect", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
             if not element.is_degenerate():
@@ -451,6 +515,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem line", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
