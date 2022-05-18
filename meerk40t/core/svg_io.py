@@ -56,7 +56,7 @@ from .units import DEFAULT_PPI, UNITS_PER_PIXEL
 from meerk40t.core.node.node import Linecap, Linejoin
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
-SVG_ATTR_STROKE_CAP = "stroke-LINECAP"
+SVG_ATTR_STROKE_CAP = "stroke-linecap"
 
 
 def plugin(kernel, lifecycle=None):
