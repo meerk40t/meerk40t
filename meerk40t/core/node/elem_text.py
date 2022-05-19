@@ -70,14 +70,8 @@ class TextNode(Node):
         self._bounds_dirty = True
         self.text.width = 0
         self.text.height = 0
-        text = self.text.text
-        brackets = re.compile(r"\{.+\}")
-        for key in brackets.findall(text):
-            skey = key[1:-1]
-            if skey in context.elements.wordlists:
-                value = context.elements.wordlist_fetch(skey)
-                text = text.replace(key, value)
-                self.text.text = text
+        text = context.elements.mywordlist.translate(self.text.text)
+        self.text.text = text
 
         if self.parent.type != "op raster":
             commands.append(self.remove_text)

@@ -25,6 +25,7 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .wordlist import clsWordlist
 from .units import UNITS_PER_PIXEL, Length
 
 
@@ -157,50 +158,17 @@ class Elemental(Service):
         self.penbox = {
             "value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]
         }
-        self.wordlists = {"version": [1, self.kernel.version],
-        "date": [1, self.wordlist_datestr()],
-        "time": [1, self.wordlist_timestr()]}
 
         self._init_commands(kernel)
         self._init_tree(kernel)
+        self.mywordlist = clsWordlist(self.kernel.version)
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
         if not len(ops) and self.operation_default_empty:
             self.load_default()
 
-    def wordlist_fetch(self, key):
-        try:
-            wordlist = self.wordlists[key]
-        except KeyError:
-            return None
 
-        try:
-            wordlist[0] += 1
-            return wordlist[wordlist[0]]
-        except IndexError:
-            wordlist[0] = 1
-            return wordlist[wordlist[0]]
-
-    def wordlist_reset(self, key=None):
-        if key is None:
-            for key in self.wordlists:
-                self.wordlists[key][0] = 1
-        else:
-            self.wordlists[key][0] = 1
-
-    def wordlist_add(self, key, value):
-        if key not in self.wordlists:
-            self.wordlists[key] = [1]
-        self.wordlists[key].append(value)
-
-    def wordlist_datestr(self):
-        time = datetime.now()
-        return time.strftime("%x")
-
-    def wordlist_timestr(self):
-        time = datetime.now()
-        return time.strftime("%X")
 
     def index_range(self, index_string):
         """
@@ -287,11 +255,11 @@ class Elemental(Service):
             if remainder is None:
                 channel("----------")
                 if key is None:
-                    for key in self.wordlists:
+                    for key in self.mywordlist.content:
                         channel(str(key))
                 else:
-                    if key in self.wordlists:
-                        for value in self.wordlists[key][1:]:
+                    if key in self.mywordlist.content:
+                        for value in self.mywordlist.content[key][1:]:
                             channel(str(value))
                     else:
                         channel(_("Key not found: '%s'") % key)
@@ -306,11 +274,11 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(
+        def wordlist_add(
             command, channel, _, value=None, data=None, remainder=None, **kwargs
         ):
             if value is not None:
-                self.wordlist_add(data, value)
+                self.mywordlist.add(data, value)
             return "wordlist", data
 
         @self.console_command(
@@ -319,16 +287,42 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(
+        def wordlist_list(
             command, channel, _, value=None, data=None, remainder=None, **kwargs
         ):
             if value is not None:
-                self.wordlist_add(data, value)
+                self.mywordlist.add(data, value)
             channel("----------")
             channel(_("Wordlist %s:") % data)
-            for value in self.wordlists[data][1:]:
+            for value in self.mywordlist.content[data][1:]:
                 channel(str(value))
             channel("----------")
+            return "wordlist", data
+
+        @self.console_argument("filename", help=_("CSV file"))
+        @self.console_command(
+            "load",
+            help=_("attach a csv-file to the wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_load(
+            command, channel, _, filename=None, data=None, remainder=None, **kwargs
+        ):
+            channel("WLL: %s", command)
+            channel("WLL: %s", filename)
+            if filename is None:
+                channel(_("No file specified."))
+                return
+            new_file = os.path.join(self.kernel.current_directory, filename)
+            if not os.path.exists(new_file):
+                channel(_("No such file."))
+                return
+
+            columns, names = self.mywordlist.load_csv_file(new_file)
+            channel (_("Values added: %d") % columns)
+            for name in names:
+                channel ("  " + name)
             return "wordlist", data
 
         # ==========

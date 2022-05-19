@@ -5,7 +5,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import SVGText, Color
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.core.fonts import wxfont_to_svg
-from ...core.units import UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL
 
 _ = wx.GetTranslation
 
@@ -32,11 +32,7 @@ class TextEntry(wx.Dialog):
         self.btn_choose_font = wx.Button(self, wx.ID_ANY, _("Select Font"))
 
         # populate listbox
-        choices = []
-        for skey in self.context.elements.wordlists:
-            value = self.context.elements.wordlist_fetch(skey)
-            svalue = skey + " (" + value + ")"
-            choices.append(svalue)
+        choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
 
@@ -127,11 +123,11 @@ class TextEntry(wx.Dialog):
         self.txt_Text.Bind(wx.EVT_TEXT, self.on_text_change)
 
     def on_text_change(self, event):
-        svalue = self.txt_Text.GetValue()
+        svalue = self.context.elements.mywordlist.translate(self.txt_Text.GetValue())
         self.preview.Label = svalue
         for i in range(self.FONTHISTORY):
             self.last_font[i].Label = svalue
-        self.result_text = svalue
+        self.result_text = self.txt_Text.GetValue()
         event.Skip()
 
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
