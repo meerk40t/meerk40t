@@ -43,6 +43,7 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_curly_brackets_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -925,6 +926,15 @@ class MeerK40t(MWindow):
                 "tip": _("Distribute Space Vertically"),
                 "action": lambda v: kernel.elements("align spacev\n"),
                 "size": buttonsize,
+            },
+        )
+        kernel.register(
+            "button/config/Wordlist",
+            {
+                "label": _("Wordlist"),
+                "icon": icons8_curly_brackets_50,
+                "tip": _("Manages Wordlist-Entries"),
+                "action": lambda v: kernel.console("wordlist edit\n"),
             },
         )
 

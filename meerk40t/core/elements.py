@@ -359,6 +359,7 @@ class Elemental(Service):
                 self.mywordlist.set_index(skey=key,idx=index)
             return "wordlist", key
 
+        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
         @self.console_command(
             "restore",
             help=_("Loads a previously saved wordlist"),
@@ -366,12 +367,19 @@ class Elemental(Service):
             output_type="wordlist",
         )
         def wordlist_restore(
-            command, channel, _, remainder=None, **kwargs
+            command, channel, _, filename=None, remainder=None, **kwargs
         ):
-            filename = os.path.join(self.kernel.current_directory, "wordlist.pkl")
-            self.mywordlist.load_data(filename)
+            new_file = filename
+            if not filename is None:
+                new_file = os.path.join(self.kernel.current_directory, filename)
+                if not os.path.exists(new_file):
+                    channel(_("No such file."))
+                    return
+            self.mywordlist.load_data(new_file)
             return "wordlist", ""
 
+
+        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
         @self.console_command(
             "backup",
             help=_("Saves the current wordlist"),
@@ -379,10 +387,13 @@ class Elemental(Service):
             output_type="wordlist",
         )
         def wordlist_backup(
-            command, channel, _, remainder=None, **kwargs
+            command, channel, _, filename=None, remainder=None, **kwargs
         ):
-            filename = os.path.join(self.kernel.current_directory, "wordlist.pkl")
-            self.mywordlist.save_data(filename)
+            new_file = filename
+            if not filename is None:
+                new_file = os.path.join(self.kernel.current_directory, filename)
+
+            self.mywordlist.save_data(new_file)
             return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
