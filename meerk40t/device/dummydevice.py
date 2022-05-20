@@ -19,8 +19,8 @@ class DummyDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "Dummy Device"
-        self.current_x = 0.0
-        self.current_y = 0.0
+        self.native_x = 0.0
+        self.native_y = 0.0
         self.settings = dict()
         self.state = 0
         self.spooler = Spooler(self, "default")
@@ -104,3 +104,10 @@ class DummyDevice(Service, ViewPort):
                 channel(_("----------"))
 
             return "spooler", spooler
+
+    @property
+    def current(self):
+        """
+        @return: the location in nm for the current known x value.
+        """
+        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
