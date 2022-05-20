@@ -20,7 +20,7 @@ class TextEntry(wx.Dialog):
         self.context = context
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
-        self.SetSize((518, 380))
+        self.SetSize((518, 580))
         self.SetTitle(_("Add a Text-element"))
         self.default_font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         self.result_text = ""
@@ -38,6 +38,7 @@ class TextEntry(wx.Dialog):
 
         self.preview = wx.StaticText(self, wx.ID_ANY, _("<Preview>"), style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
         self.preview.SetFont(self.default_font)
+        self.preview.SetMinSize((-1, 90))
         self.btn_color = []
         bgcolors = (
             0xFFFFFF,
@@ -88,7 +89,7 @@ class TextEntry(wx.Dialog):
             sizer_h_color.Add(self.btn_color[i], 1, 0, 0)
 
         sizer_h_variables = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Available Variables")), wx.HORIZONTAL)
-        sizer_v_main.Add(sizer_h_variables, 1, wx.EXPAND, 0)
+        sizer_v_main.Add(sizer_h_variables, 0, wx.EXPAND, 0)
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
 
         sizer_v_main.Add(self.preview, 1, wx.EXPAND, 1)

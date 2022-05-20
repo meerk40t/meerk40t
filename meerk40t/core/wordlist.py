@@ -1,78 +1,161 @@
 from datetime import datetime
 import csv
 import re
+import pickle
 
-class clsWordlist():
+class Wordlist():
     """
-    The Wordlist class provides some logic to hold, update and maintain Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
-    the step size. The physical pixels in the image is reduced by the step size then the matrix for the element is
-    scaled up by the same amount. This makes step size work like inverse dpi and correctly sets the image scale to
-    the step scale for 1:1 sizes independent of the scale.
-
-    This function requires both wxPython and Pillow.
-
-    @param nodes: elements to render.
-    @param bounds: bounds of those elements for the viewport.
-    @param width: desired width of the resulting raster
-    @param height: desired height of the resulting raster
-    @param bitmap: bitmap to use rather than provisioning
-    @param step: raster step rate, int scale rate of the image.
-    @return:
+    The Wordlist class provides some logic to hold, update and maintain a set of
+    variables for text-fields (and later on for other stuff) to allow for
+    on-the-fly recalculation / repopulation
     """
     def __init__(self, versionstr):
         self.content = []
-        self.content = {"version": [1, versionstr],
-        "date": [1, self.wordlist_datestr()],
-        "time": [1, self.wordlist_timestr()]}
-        self.specialkeys = {
-            "date": self.wordlist_datestr,
-            "time": self.wordlist_timestr,
-        }
+        # The content-dictionary contains an array per entry
+        # index 0 indicates the type:
+        #   0 (static) text entry
+        #   1 text entry array coming from a csv file
+        #   2 is a numeric counter
+        # index 1 indicates the position of the current array (always 2 for type 0 and 2)
+        # index 2 and onwards contain the actual data
+        self.content = {"version": [0, 2, versionstr],
+        "date": [0, 2, self.wordlist_datestr()],
+        "time": [0, 2, self.wordlist_timestr()]}
 
-
-    def add(self, key, value):
-        if key not in self.content:
-            self.content[key] = [1]
-        self.content[key].append(value)
+    def add(self, key, value, type=None):
+        self.add_value(key, value, type)
 
     def fetch(self, key):
+        result = self.fetch_value(key, None)
+        return result
+
+    def fetch_value(self, skey, idx):
+        skey = skey.lower()
         try:
-            wordlist = self.content[key]
+            wordlist = self.content[skey]
         except KeyError:
             return None
+        if idx is None: # Default
+            idx = wordlist[1]
 
+        if (idx>len(wordlist)):
+            idx = len(wordlist) - 1
         try:
-            wordlist[0] += 1
-            return wordlist[wordlist[0]]
+            result = wordlist[idx]
         except IndexError:
-            wordlist[0] = 1
-            return wordlist[wordlist[0]]
+            result = None
+        return result
 
-    def reset(self, key=None):
-        if key is None:
-            for key in self.content:
-                self.content[key][0] = 1
+    def add_value(self, skey, value, type=None):
+        skey = skey.lower()
+        if skey not in self.content:
+            if type is None:
+                type = 0
+            self.content[skey] = [type, 2] # incomplete, as it will be appended right after this
+        self.content[skey].append(value)
+
+    def set_value(self, skey, value, idx = None, type = None):
+        # Special treatment:
+        # Index = None - use current
+        # Index < 0 append
+        skey = skey.lower()
+        if not skey in self.content:
+            # hasnt been there, so establish it
+            if type is None:
+                type = 0
+            self.content[skey] = [type, 2, value]
         else:
-            self.content[key][0] = 1
+            if idx is None:
+                # use current position
+                idx = self.content[skey][1]
+            elif idx<0:
+                # append
+                self.content[skey].append(value)
+            else: # Zerobased outside + 2 inside
+                idx += 2
+
+            if idx>=len(self.content[skey]):
+                idx = len(self.content[skey]) - 1
+            self.content[skey][idx] = value
+
+    def set_index(self, skey, idx, type = None):
+        skey = skey.lower()
+        if idx is None:
+            idx = 2
+        else: # Zerobased outside + 2 inside
+            idx += 2
+        print("index", skey, idx)
+        if skey=="@all": # Set it for all fields from a csv file
+            for skey in self.content:
+                maxlen = len(self.content[skey]) - 1
+                if self.content[skey][0] == 1: # csv
+                    self.content[skey][1] = min(idx, maxlen)
+        else:
+            if idx>=len(self.content[skey]):
+                idx = 2
+            self.content[skey][1] = idx
+
+    #def debug_me(self, header):
+    #    print ("Wordlist (%s):" % header)
+    #    for key in self.content:
+    #        print ("Key: %s" % key, self.content[key])
+
+    def reset(self, skey=None):
+        # Resets position
+        skey = skey.lower()
+        if skey is None:
+            for skey in self.content:
+                self.content[skey][1] = 2
+        else:
+            self.content[skey][1] = 2
 
     def translate(self, pattern):
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for vkey in brackets.findall(result):
-            skey = vkey[1:-1]
-            value = self.fetch(skey)
+            skey = vkey[1:-1].lower()
+            # Lets check whether we have a modifier at the end: #<num>
+            index= None
+            idx = skey.find("#")
+            if idx>0: # Needs to be after first character
+                idx_str = skey[idx+1:]
+                skey = skey [:idx]
+                if skey in self.content:
+                    curridx = self.content[skey][1]
+                    currval = self.content[skey][2]
+                else:
+                    continue
+                try:
+                    relative = int(idx_str)
+                except ValueError:
+                    relative = 0
+                if curridx == self.content[skey][0] == 2: # Counter
+                    if idx_str.startswith("+") or idx_str.startswith("-"):
+                        value = currval + relative
+                    else:
+                        value = relative
+                else:
+                    if idx_str.startswith("+") or idx_str.startswith("-"):
+                        index = curridx + relative
+                    else:
+                        index = relative
+                    value = self.fetch_value(skey, index)
+            else:
+                value = self.fetch_value(skey, index)
 
-            if skey in self.specialkeys:
-                value = self.specialkeys[skey]()
             # And now date and time...
-            if skey.startswith("date@"):
+            if skey== "date":
+                value = self.wordlist_datestr(None)
+            elif skey == "time":
+                value = self.wordlist_timestr(None)
+            elif skey.startswith("date@"):
                 format = skey[5:]
                 value = self.wordlist_datestr(format)
             elif skey.startswith("time@"):
                 format = skey[5:]
                 value = self.wordlist_timestr(format)
             if not value is None:
-                result = result.replace(vkey, value)
+                result = result.replace(vkey, str(value))
 
         return result
 
@@ -106,25 +189,60 @@ class clsWordlist():
             choices.append(svalue)
         return choices
 
+    def load_data(self, filename):
+        try:
+            with open(filename, 'rb') as f:
+                self.content = pickle.load(f)
+        except:
+            pass
+
+    def save_data(self, filename):
+        try:
+            with open(filename, 'wb') as f:
+                pickle.dump(self.content, f)
+        except:
+            pass
+
+    def empty_csv(self):
+        # remove all traces of the previous csv file
+        names=[]
+        for skey in self.content:
+            if self.content[skey][0] == 1: # csv
+                names.append (skey)
+        for skey in names:
+            try:
+                self.content.pop(skey)
+            except KeyError:
+                pass
+
     def load_csv_file(self, filename):
-        choices = []
-        with open(filename, newline='') as csvfile:
-            dialect = csv.Sniffer().sniff(csvfile.read(1024))
-            print ("Dialect", dialect)
+        self.empty_csv()
+        headers = []
+        with open(filename, newline='', mode='r') as csvfile:
+            buffer = csvfile.read(1024)
+            has_header = csv.Sniffer().has_header(buffer)
+            dialect = csv.Sniffer().sniff(buffer)
             csvfile.seek(0)
             reader = csv.reader(csvfile, dialect)
-            ct = 0
+            headers = next(reader)
+            if not has_header:
+                # USe Line as Data amd set some default names
+                for idx, entry in enumerate(headers):
+                    skey = "Column_{ct}".format(ct=idx + 1)
+                    self.set_value(skey=skey, value=entry, idx=-1, type=1)
+                    headers[idx] = skey
+                ct = 1
+            else:
+                ct = 0
             for row in reader:
+                for idx, entry in enumerate(row):
+                    skey = headers[idx]
+                    # Append...
+                    self.set_value(skey=skey, value=entry, idx=-1, type=1)
                 ct += 1
-                print ("Row #" % ct, row)
 
-        colcount = len(choices)
-        return colcount, choices
+        colcount = len(headers)
+        return ct, colcount, headers
 
-    def eof_csv(self):
-        return True
-
-    def advance_csv(self):
-        # Switch to the next entry in the csv-file
-        # return false if eof (will stick with the last)
-        return False
+    def edit(self):
+        return
