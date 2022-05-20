@@ -110,4 +110,4 @@ class DummyDevice(Service, ViewPort):
         """
         @return: the location in nm for the current known x value.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.device_to_scene_position(self.native_x, self.native_y)
