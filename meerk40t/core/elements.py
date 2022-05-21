@@ -161,7 +161,8 @@ class Elemental(Service):
 
         self._init_commands(kernel)
         self._init_tree(kernel)
-        self.mywordlist = Wordlist(self.kernel.version)
+        direct = os.path.dirname(self.op_data._config_file)
+        self.mywordlist = Wordlist(self.kernel.version, direct)
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
@@ -268,18 +269,6 @@ class Elemental(Service):
                     value = ""
                 self.mywordlist.add(key, value)
             return "wordlist", key
-
-        @self.console_command(
-            "edit",
-            help=_("edit wordlist"),
-            input_type="wordlist",
-            output_type="wordlist",
-        )
-        def wordlist_edit(
-            command, channel, _, **kwargs
-        ):
-            self.mywordlist.edit()
-            return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
         @self.console_argument("value", help=_("Content"))
