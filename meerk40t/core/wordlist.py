@@ -35,6 +35,7 @@ class Wordlist():
 
     def fetch_value(self, skey, idx):
         skey = skey.lower()
+        result = None
         try:
             wordlist = self.content[skey]
         except KeyError:
@@ -42,12 +43,11 @@ class Wordlist():
         if idx is None: # Default
             idx = wordlist[1]
 
-        if idx>len(wordlist):
-            idx = len(wordlist) - 1
-        try:
-            result = wordlist[idx]
-        except IndexError:
-            result = None
+        if idx<=len(wordlist):
+            try:
+                result = wordlist[idx]
+            except IndexError:
+                result = None
         return result
 
     def add_value(self, skey, value, wtype=None):
@@ -143,8 +143,16 @@ class Wordlist():
                     else:
                         index = relative
                     value = self.fetch_value(skey, index)
+                    if value is None:
+                        value = ""
             else:
-                value = self.fetch_value(skey, index)
+                if skey in self.content:
+                    value = self.fetch_value(skey, index)
+                    if value is None:
+                        value = ""
+                else:
+                    # Something unknown...
+                    continue
 
             # And now date and time...
             if skey== "date":

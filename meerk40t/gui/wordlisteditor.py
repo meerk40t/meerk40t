@@ -195,6 +195,8 @@ class WordlistPanel(wx.Panel):
                 self.cbo_Index.Append(str(i))
             self.cbo_Index.SetValue("0")
         self.cbo_Index.Enable(True)
+        # Lets refresh the scene to acknowledge new changes
+        self.context.signal("refresh_scene")
 
     def edit_message(self, text):
         self.lbl_message.Label = text
