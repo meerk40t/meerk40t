@@ -25,13 +25,9 @@ class Wordlist():
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.pkl")
-        # For Grid editing
-        self.cur_skey = None
-        self.cur_index = None
-        self.to_save = None
 
-    def add(self, key, value, type=None):
-        self.add_value(key, value, type)
+    def add(self, key, value, wtype=None):
+        self.add_value(key, value, wtype)
 
     def fetch(self, key):
         result = self.fetch_value(key, None)
@@ -46,7 +42,7 @@ class Wordlist():
         if idx is None: # Default
             idx = wordlist[1]
 
-        if (idx>len(wordlist)):
+        if idx>len(wordlist):
             idx = len(wordlist) - 1
         try:
             result = wordlist[idx]
@@ -54,24 +50,24 @@ class Wordlist():
             result = None
         return result
 
-    def add_value(self, skey, value, type=None):
+    def add_value(self, skey, value, wtype=None):
         skey = skey.lower()
         if skey not in self.content:
-            if type is None:
-                type = 0
-            self.content[skey] = [type, 2] # incomplete, as it will be appended right after this
+            if wtype is None:
+                wtype = 0
+            self.content[skey] = [wtype, 2] # incomplete, as it will be appended right after this
         self.content[skey].append(value)
 
-    def set_value(self, skey, value, idx = None, type = None):
+    def set_value(self, skey, value, idx = None, wtype = None):
         # Special treatment:
         # Index = None - use current
         # Index < 0 append
         skey = skey.lower()
         if not skey in self.content:
             # hasnt been there, so establish it
-            if type is None:
-                type = 0
-            self.content[skey] = [type, 2, value]
+            if wtype is None:
+                wtype = 0
+            self.content[skey] = [wtype, 2, value]
         else:
             if idx is None:
                 # use current position
@@ -86,17 +82,17 @@ class Wordlist():
                 idx = len(self.content[skey]) - 1
             self.content[skey][idx] = value
 
-    def set_index(self, skey, idx, type = None):
+    def set_index(self, skey, idx, wtype = None):
         skey = skey.lower()
         if idx is None:
             idx = 2
         else: # Zerobased outside + 2 inside
             idx += 2
         if skey=="@all": # Set it for all fields from a csv file
-            for skey in self.content:
-                maxlen = len(self.content[skey]) - 1
-                if self.content[skey][0] == 1: # csv
-                    self.content[skey][1] = min(idx, maxlen)
+            for mkey in self.content:
+                maxlen = len(self.content[mkey]) - 1
+                if self.content[mkey][0] == 1: # csv
+                    self.content[mkey][1] = min(idx, maxlen)
         else:
             if idx>=len(self.content[skey]):
                 idx = 2
@@ -156,11 +152,11 @@ class Wordlist():
             elif skey == "time":
                 value = self.wordlist_timestr(None)
             elif skey.startswith("date@"):
-                format = skey[5:]
-                value = self.wordlist_datestr(format)
+                sformat = skey[5:]
+                value = self.wordlist_datestr(sformat)
             elif skey.startswith("time@"):
-                format = skey[5:]
-                value = self.wordlist_timestr(format)
+                sformat = skey[5:]
+                value = self.wordlist_timestr(sformat)
             if not value is None:
                 result = result.replace(vkey, str(value))
 
@@ -243,7 +239,7 @@ class Wordlist():
                 # Use Line as Data amd set some default names
                 for idx, entry in enumerate(headers):
                     skey = "Column_{ct}".format(ct=idx + 1)
-                    self.set_value(skey=skey, value=entry, idx=-1, type=1)
+                    self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                     headers[idx] = skey
                 ct = 1
             else:
@@ -252,7 +248,7 @@ class Wordlist():
                 for idx, entry in enumerate(row):
                     skey = headers[idx]
                     # Append...
-                    self.set_value(skey=skey, value=entry, idx=-1, type=1)
+                    self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                 ct += 1
 
         colcount = len(headers)

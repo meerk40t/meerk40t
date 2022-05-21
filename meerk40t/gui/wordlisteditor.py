@@ -12,6 +12,10 @@ class WordlistPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.wlist = self.context.elements.mywordlist
+        # For Grid editing
+        self.cur_skey = None
+        self.cur_index = None
+        self.to_save = None
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -199,7 +203,7 @@ class WordlistPanel(wx.Panel):
     def on_cbo_select(self, event):
         try:
             idx = int(self.cbo_Index.GetValue())
-        except:
+        except ValueError:
             idx = 0
         self.wlist.set_index(skey="@all", idx=idx)
         selidx = self.grid_wordlist.GetFirstSelected()
