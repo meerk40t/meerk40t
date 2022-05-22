@@ -506,7 +506,7 @@ class Planner(Service):
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
-                if c.type == "blob":
+                elif c.type == "blob":
                     # BlobNodes are denuded into normal objects.
                     c = c.blob
                 copy_c = copy(c)

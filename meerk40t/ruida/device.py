@@ -19,6 +19,7 @@ from meerk40t.kernel import (
 )
 
 from ..core.cutcode import CutCode, PlotCut
+from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_uM, ViewPort
@@ -979,7 +980,8 @@ class RuidaEmulator(Module, Parameters):
                 if self.control:
                     self.spooler.append(self.cutcode)
                 if self.design and self.elements is not None:
-                    self.elements.op_branch.add(self.cutcode, type="cutcode")
+                    node = CutNode(cutcode=self.cutcode)
+                    self.elements.op_branch.add_node(node)
             self.cutcode = CutCode()
             self.plotcut = PlotCut()
             self.saving = False
