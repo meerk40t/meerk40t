@@ -6,7 +6,7 @@ from PIL import Image
 
 from meerk40t.gui.fonts import svgfont_to_wx
 
-from ..core.cutcode import (
+from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
@@ -16,8 +16,8 @@ from ..core.cutcode import (
     RasterCut,
     RawCut,
 )
-from ..core.node.node import Node, Linecap, Linejoin
-from ..svgelements import (
+from meerk40t.core.node.node import Node, Linecap, Linejoin
+from meerk40t.svgelements import (
     Arc,
     Close,
     Color,
@@ -47,6 +47,7 @@ DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
 DRAW_MODE_POINTS = 0x004000
 DRAW_MODE_REGMARKS = 0x008000
+DRAW_MODE_VARIABLES = 0x010000
 
 DRAW_MODE_ICONS = 0x0040000
 DRAW_MODE_INVERT = 0x400000
@@ -505,7 +506,11 @@ class LaserRender:
         x = text.x
         y = text.y
         if text.text is not None:
-            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text.text)
+            textstr = text.text
+            if draw_mode & DRAW_MODE_VARIABLES:
+                # Only if flag show the translated values
+                textstr = self.context.elements.mywordlist.translate(textstr)
+            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
             f_height -= self.fontdescent_factor * f_descent
             text.width = f_width
             text.height = f_height
@@ -518,7 +523,7 @@ class LaserRender:
             elif text.anchor == "end":
                 x -= text.width
                 y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            gc.DrawText(text.text, x, y)
+            gc.DrawText(textstr, x, y)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
