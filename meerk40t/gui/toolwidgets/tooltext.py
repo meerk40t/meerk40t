@@ -5,7 +5,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import SVGText, Color
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.core.fonts import wxfont_to_svg
-from ...core.units import UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL
 
 _ = wx.GetTranslation
 
@@ -20,7 +20,7 @@ class TextEntry(wx.Dialog):
         self.context = context
         kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE
         wx.Dialog.__init__(self, *args, **kwds)
-        self.SetSize((518, 380))
+        self.SetSize((518, 580))
         self.SetTitle(_("Add a Text-element"))
         self.default_font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
         self.result_text = ""
@@ -32,16 +32,13 @@ class TextEntry(wx.Dialog):
         self.btn_choose_font = wx.Button(self, wx.ID_ANY, _("Select Font"))
 
         # populate listbox
-        choices = []
-        for skey in self.context.elements.wordlists:
-            value = self.context.elements.wordlist_fetch(skey)
-            svalue = skey + " (" + value + ")"
-            choices.append(svalue)
+        choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
 
         self.preview = wx.StaticText(self, wx.ID_ANY, _("<Preview>"), style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
         self.preview.SetFont(self.default_font)
+        self.preview.SetMinSize((-1, 90))
         self.btn_color = []
         bgcolors = (
             0xFFFFFF,
@@ -92,7 +89,7 @@ class TextEntry(wx.Dialog):
             sizer_h_color.Add(self.btn_color[i], 1, 0, 0)
 
         sizer_h_variables = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Available Variables")), wx.HORIZONTAL)
-        sizer_v_main.Add(sizer_h_variables, 1, wx.EXPAND, 0)
+        sizer_v_main.Add(sizer_h_variables, 0, wx.EXPAND, 0)
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
 
         sizer_v_main.Add(self.preview, 1, wx.EXPAND, 1)
@@ -127,11 +124,11 @@ class TextEntry(wx.Dialog):
         self.txt_Text.Bind(wx.EVT_TEXT, self.on_text_change)
 
     def on_text_change(self, event):
-        svalue = self.txt_Text.GetValue()
+        svalue = self.context.elements.mywordlist.translate(self.txt_Text.GetValue())
         self.preview.Label = svalue
         for i in range(self.FONTHISTORY):
             self.last_font[i].Label = svalue
-        self.result_text = svalue
+        self.result_text = self.txt_Text.GetValue()
         event.Skip()
 
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
