@@ -5,7 +5,6 @@ from io import BytesIO
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.fonts import svgfont_to_wx, wxfont_to_svg
 
 from ..svgelements import (
     SVG,
@@ -233,7 +232,8 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 # The svg attributes should be up to date, but better safe than sorry
-                wxfont_to_svg(c)
+                if hasattr(c, "wxfont_to_svg"):
+                    c.wxfont_to_svg()
                 element = c.text
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
@@ -461,7 +461,9 @@ class SVGProcessor:
                 fst = element.values.get("font-style")
                 if not fst is None:
                     node.font_style = fst
-                svgfont_to_wx(node)
+                svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
+                if svgfont_to_wx:
+                    svgfont_to_wx(node)
                 e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:

@@ -4,7 +4,7 @@ import platform
 import wx
 from PIL import Image
 
-from meerk40t.core.fonts import svgfont_to_wx
+from meerk40t.gui.fonts import svgfont_to_wx
 
 from ..core.cutcode import (
     CubicCut,
