@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Linejoin
 from meerk40t.svgelements import Path
 
 
@@ -16,6 +16,7 @@ class RectNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        linejoin = None,
         **kwargs,
     ):
         super(RectNode, self).__init__(type="elem rect", **kwargs)
@@ -63,6 +64,7 @@ class RectNode(Node):
             self.shape.transform = self.matrix
             self.shape.stroke_width = self.stroke_width
             self._bounds = self.shape.bbox(with_stroke=True)
+            self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):

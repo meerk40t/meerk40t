@@ -1,10 +1,12 @@
 import functools
 import os.path
 import re
+from datetime import datetime
 from copy import copy
-from random import shuffle, randint
-from math import cos, gcd, pi, sin, tau, sqrt, isinf
+from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
+from random import randint, shuffle
+
 from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
@@ -14,7 +16,7 @@ from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node
+from .node.node import Node, Linecap, Linejoin
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -23,6 +25,7 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .wordlist import Wordlist
 from .units import UNITS_PER_PIXEL, Length
 
 
@@ -160,6 +163,8 @@ class Elemental(Service):
 
         self._init_commands(kernel)
         self._init_tree(kernel)
+        direct = os.path.dirname(self.op_data._config_file)
+        self.mywordlist = Wordlist(self.kernel.version, direct)
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
@@ -199,17 +204,6 @@ class Elemental(Service):
             wordlist[0] = 1
             return wordlist[wordlist[0]]
 
-    def wordlist_reset(self, key=None):
-        if key is None:
-            for key in self.wordlists:
-                self.wordlists[key][0] = 1
-        else:
-            self.wordlists[key][0] = 1
-
-    def wordlist_add(self, key, value):
-        if key not in self.wordlists:
-            self.wordlists[key] = [1]
-        self.wordlists[key].append(value)
 
     def index_range(self, index_string):
         """
@@ -218,8 +212,8 @@ class Elemental(Service):
         @return:
         """
         indexes = list()
-        for s in index_string.split(','):
-            q = list(s.split('-'))
+        for s in index_string.split(","):
+            q = list(s.split("-"))
             if len(q) == 1:
                 indexes.append(int(q[0]))
             else:
@@ -285,53 +279,195 @@ class Elemental(Service):
         # WORDLISTS COMMANDS
         # ==========
 
-        @self.console_argument("key", help=_("Wordlist key"))
         @self.console_command(
             "wordlist",
             help=_("Wordlist base operation"),
-            input_type=None,
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, key=None, remainder=None, **kwargs):
-            if remainder is None:
-                channel("----------")
-                if key is None:
-                    for key in self.wordlists:
-                        channel(str(key))
-                else:
-                    for value in self.wordlists[key][1:]:
-                        channel(str(value))
-                channel("----------")
+        def wordlist(command, channel, _, remainder = None, **kwargs):
+            return "wordlist", ""
 
-            return "wordlist", key
-
-        @self.console_argument("value", help=_("Wordlist value"))
+        @self.console_argument("key", help=_("Wordlist value"))
+        @self.console_argument("value", help=_("Content"))
         @self.console_command(
             "add",
             help=_("add value to wordlist"),
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
-            if value is not None:
-                self.wordlist_add(data, value)
-            return "wordlist", data
+        def wordlist_add(
+            command, channel, _, key=None, value=None, **kwargs
+        ):
+            if key is not None:
+                if value is None:
+                    value = ""
+                self.mywordlist.add(key, value)
+            return "wordlist", key
 
+        @self.console_argument("key", help=_("Wordlist value"))
+        @self.console_argument("value", help=_("Content"))
+        @self.console_command(
+            "addcounter",
+            help=_("add numeric counter to wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_addcounter(
+            command, channel, _, key=None, value=None, **kwargs
+        ):
+            if key is not None:
+                if value is None:
+                    value = 1
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 1
+                self.mywordlist.add(key, value, 2)
+            return "wordlist", key
+
+        @self.console_argument("key", help=_("Wordlist value"))
+        @self.console_argument("index", help=_("index to use"))
+        @self.console_command(
+            "get",
+            help=_("get current value from wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_get(
+            command, channel, _, key=None, index=None, **kwargs
+        ):
+            if key is not None:
+                result = self.mywordlist.fetch_value(skey=key, idx=index)
+                channel(str(result))
+            else:
+                channel(_("Missing key"))
+                result = ""
+            return "wordlist", result
+
+        @self.console_argument("key", help=_("Wordlist value"))
+        @self.console_argument("value", help=_("Wordlist value"))
+        @self.console_argument("index", help=_("index to use"))
+        @self.console_command(
+            "set",
+            help=_("set value to wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_set(
+            command, channel, _, key=None, value=None, index=None, **kwargs
+        ):
+            if key is not None and value is not None:
+                self.mywordlist.set_value(skey=key, value=value, idx=index)
+            else:
+                channel(_("Not enough parameters given"))
+            return "wordlist", key
+
+        @self.console_argument("key", help=_("Individual wordlist value (use @ALL for all)"))
+        @self.console_argument("index", help=_("index to use"))
+        @self.console_command(
+            "index",
+            help=_("sets index in wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_index(
+            command, channel, _, key=None, index=None, **kwargs
+        ):
+            if key is not None and index is not None:
+                try:
+                    index = int(index)
+                except ValueError:
+                    index = 0
+                self.mywordlist.set_index(skey=key,idx=index)
+            return "wordlist", key
+
+        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_command(
+            "restore",
+            help=_("Loads a previously saved wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_restore(
+            command, channel, _, filename=None, remainder=None, **kwargs
+        ):
+            new_file = filename
+            if not filename is None:
+                new_file = os.path.join(self.kernel.current_directory, filename)
+                if not os.path.exists(new_file):
+                    channel(_("No such file."))
+                    return
+            self.mywordlist.load_data(new_file)
+            return "wordlist", ""
+
+
+        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_command(
+            "backup",
+            help=_("Saves the current wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_backup(
+            command, channel, _, filename=None, remainder=None, **kwargs
+        ):
+            new_file = filename
+            if not filename is None:
+                new_file = os.path.join(self.kernel.current_directory, filename)
+
+            self.mywordlist.save_data(new_file)
+            return "wordlist", ""
+
+        @self.console_argument("key", help=_("Wordlist value"))
         @self.console_command(
             "list",
             help=_("list wordlist values"),
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, value=None, data=None, remainder=None, **kwargs):
-            if value is not None:
-                self.wordlist_add(data, value)
+        def wordlist_list(
+            command, channel, _, key=None, **kwargs
+        ):
             channel("----------")
-            channel(_("Wordlist %s:") % data)
-            for value in self.wordlists[data][1:]:
-                channel(str(value))
+            if key is None:
+                for skey in self.mywordlist.content:
+                    channel(str(skey))
+            else:
+                if key in self.mywordlist.content:
+                    wordlist = self.mywordlist.content[key]
+                    channel(_("Wordlist %s (Type=%d, Index=%d)):") % (key, wordlist[0], wordlist[1]-2))
+                    for idx, value in enumerate(wordlist[2:]):
+                        channel("#%d: %s" % (idx, str(value)))
+                else:
+                    channel(_("There is no such pattern %s") % key )
             channel("----------")
-            return "wordlist", data
+            return "wordlist", key
+
+        @self.console_argument("filename", help=_("CSV file"))
+        @self.console_command(
+            "load",
+            help=_("Attach a csv-file to the wordlist"),
+            input_type="wordlist",
+            output_type="wordlist",
+        )
+        def wordlist_load(
+            command, channel, _, filename=None, **kwargs
+        ):
+            if filename is None:
+                channel(_("No file specified."))
+                return
+            new_file = os.path.join(self.kernel.current_directory, filename)
+            if not os.path.exists(new_file):
+                channel(_("No such file."))
+                return
+
+            rows, columns, names = self.mywordlist.load_csv_file(new_file)
+            channel (_("Rows added: %d") % rows)
+            channel (_("Values added: %d") % columns)
+            for name in names:
+                channel ("  " + name)
+            return "wordlist", names
 
         # ==========
         # PENBOX COMMANDS
@@ -367,7 +503,9 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_add(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+        def penbox_add(
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        ):
             if count is None:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
@@ -384,7 +522,9 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_del(command, channel, _, count=None, data=None, remainder=None, **kwargs):
+        def penbox_del(
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        ):
             if count is None:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
@@ -407,24 +547,39 @@ class Elemental(Service):
             input_type="penbox",
             output_type="penbox",
         )
-        def penbox_set(command, channel, _, index=None, key=None, value=None, data=None, remainder=None, **kwargs):
+        def penbox_set(
+            command,
+            channel,
+            _,
+            index=None,
+            key=None,
+            value=None,
+            data=None,
+            remainder=None,
+            **kwargs,
+        ):
             if not value:
                 raise CommandSyntaxError
             current = self.penbox.get(data)
             if current is None:
                 current = list()
                 self.penbox[data] = current
-            value = list(value.split(","))
-            if len(value) == 1:
-                value = float(value[0])
+            rex = re.compile(r"([+-]?[0-9]+)(?:[,-]([+-]?[0-9]+))?")
+            m = rex.match(value)
+            if not m:
+                raise CommandSyntaxError
+            value = float(m.group(1))
+            end = m.group(2)
+            if end:
+                end = float(end)
+
+            if not end:
                 for i in index:
                     try:
                         current[i][key] = value
                     except IndexError:
                         pass
             else:
-                end = float(value[1])
-                value = float(value[0])
                 r = len(index)
                 try:
                     s = (end - value) / (r - 1)
@@ -1040,10 +1195,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.speed = s
-                channel(
-                    _("Speed for '%s' updated %f -> %f")
-                    % (str(op), old, s)
-                )
+                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1068,14 +1220,14 @@ class Elemental(Service):
             "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
         )
         def op_power(
-                command,
-                channel,
-                _,
-                power=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            power=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if power is None:
                 for op in data:
@@ -1097,9 +1249,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.power = s
-                channel(
-                    _("Power for '%s' updated %d -> %d") % (str(op), old, s)
-                )
+                channel(_("Power for '%s' updated %d -> %d") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1123,15 +1273,16 @@ class Elemental(Service):
         @self.console_command(
             "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
         )
-        def op_frequency(command,
-                         channel,
-                         _,
-                         frequency=None,
-                         difference=False,
-                         progress=False,
-                         data=None,
-                         **kwrgs
-                         ):
+        def op_frequency(
+            command,
+            channel,
+            _,
+            frequency=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
+        ):
             if frequency is None:
                 for op in data:
                     old = op.frequency
@@ -1150,9 +1301,7 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.frequency = s
-                channel(
-                    _("Frequency for '%s' updated %f -> %f") % (str(op), old, s)
-                )
+                channel(_("Frequency for '%s' updated %f -> %f") % (str(op), old, s))
                 op.notify_update()
             return "ops", data
 
@@ -1204,21 +1353,20 @@ class Elemental(Service):
             output_type="ops",
         )
         def op_hatch_distance(
-                command,
-                channel,
-                _,
-                distance=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            distance=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if distance is None:
                 for op in data:
                     old = op.hatch_distance
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s")
-                        % (str(op), old)
+                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old)
                     )
                 return
             delta = 0
@@ -1265,14 +1413,14 @@ class Elemental(Service):
             output_type="ops",
         )
         def op_hatch_distance(
-                command,
-                channel,
-                _,
-                angle=None,
-                difference=False,
-                progress=False,
-                data=None,
-                **kwrgs
+            command,
+            channel,
+            _,
+            angle=None,
+            difference=False,
+            progress=False,
+            data=None,
+            **kwrgs,
         ):
             if angle is None:
                 for op in data:
@@ -1576,9 +1724,7 @@ class Elemental(Service):
                     super_element.fill = e.fill
                 super_element += path
             self.remove_elements(data)
-            node = self.elem_branch.add(
-                path=super_element, type="elem path"
-            )
+            node = self.elem_branch.add(path=super_element, type="elem path")
             node.emphasized = True
             self.classify([node])
             return "elements", [node]
@@ -2648,7 +2794,9 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
+        def element_ellipse(
+            channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs
+        ):
             ellip = Ellipse(
                 cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
             )
@@ -2693,8 +2841,17 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def element_rect(channel, _,
-            x_pos, y_pos, width, height, rx=None, ry=None, data=None, **kwargs
+        def element_rect(
+            channel,
+            _,
+            x_pos,
+            y_pos,
+            width,
+            height,
+            rx=None,
+            ry=None,
+            data=None,
+            **kwargs,
         ):
             """
             Draws a svg rectangle with optional rounded corners.
@@ -2895,6 +3052,142 @@ class Elemental(Service):
                 e.stroke_width = stroke_width
                 e.altered()
             return "elements", data
+
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
+            "cap", type=str, help=_("Linecap to apply to the path (one of butt, round, square)")
+        )
+        @self.console_command(
+            "linecap",
+            help=_("linecap <cap>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_cap(
+            command, channel, _, cap=None, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if cap is None:
+                channel("----------")
+                channel(_("Linecaps:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if hasattr(e, "linecap"):
+                        if e.linecap == Linecap.CAP_SQUARE:
+                            capname = "square"
+                        elif e.linecap == Linecap.CAP_BUTT:
+                            capname = "butt"
+                        else:
+                            capname = "round"
+                        channel(_("%d: linecap = %s - %s") % (i, capname, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                capvalue = None
+                if cap.lower() == "butt":
+                    capvalue = Linecap.CAP_BUTT
+                elif cap.lower() == "round":
+                    capvalue = Linecap.CAP_ROUND
+                elif cap.lower() == "square":
+                    capvalue = Linecap.CAP_SQUARE
+                if not capvalue is None:
+                    for e in apply:
+                        if hasattr(e, "linecap"):
+                            e.linecap = capvalue
+                            e.altered()
+                return "elements", data
+
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
+            "join", type=str, help=_("jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)")
+        )
+        @self.console_command(
+            "linejoin",
+            help=_("linejoin <join>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_join(
+            command, channel, _, join=None, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if join is None:
+                channel("----------")
+                channel(_("Linejoins:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if hasattr(e, "linejoin"):
+                        if e.linejoin == Linejoin.JOIN_ARCS:
+                            joinname = "arcs"
+                        elif e.linejoin == Linejoin.JOIN_BEVEL:
+                            joinname = "bevel"
+                        elif e.linejoin == Linejoin.JOIN_MITER_CLIP:
+                            joinname = "miter-clip"
+                        elif e.linejoin == Linejoin.JOIN_MITER:
+                            joinname = "miter"
+                        elif e.linejoin == Linejoin.JOIN_ROUND:
+                            joinname = "round"
+                        channel(_("%d: linejoin = %s - %s") % (i, joinname, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                joinvalue = None
+                if join.lower() == "arcs":
+                    joinvalue = Linejoin.JOIN_ARCS
+                elif join.lower() == "bevel":
+                    joinvalue = Linejoin.JOIN_BEVEL
+                elif join.lower() == "miter":
+                    joinvalue = Linejoin.JOIN_MITER
+                elif join.lower() == "miter-clip":
+                    joinvalue = Linejoin.JOIN_MITER_CLIP
+                elif join.lower() == "round":
+                    joinvalue = Linejoin.JOIN_ROUND
+                if not joinvalue is None:
+                    for e in apply:
+                        if hasattr(e, "linejoin"):
+                            e.linejoin = joinvalue
+                            e.altered()
+                return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
@@ -3248,7 +3541,8 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type=("elements"),
         )
-        def element_area(command,
+        def element_area(
+            command,
             channel,
             _,
             new_area=None,
@@ -3298,22 +3592,32 @@ class Elemental(Service):
                     except:
                         # Even bounds failed, next element please
                         continue
-                    s = [Point(bb[0], bb[1]), Point(bb[2], bb[1]), Point(bb[2], bb[3]), Point(bb[1], bb[3])]
+                    s = [
+                        Point(bb[0], bb[1]),
+                        Point(bb[2], bb[1]),
+                        Point(bb[2], bb[3]),
+                        Point(bb[1], bb[3]),
+                    ]
                     subject_polygons.append(s)
 
-                if len(subject_polygons)>0:
+                if len(subject_polygons) > 0:
                     idx = len(subject_polygons[0]) - 1
-                    if subject_polygons[0][0].x != subject_polygons[0][idx].x or subject_polygons[0][0].y != subject_polygons[0][idx].y:
+                    if (
+                        subject_polygons[0][0].x != subject_polygons[0][idx].x
+                        or subject_polygons[0][0].y != subject_polygons[0][idx].y
+                    ):
                         # not identical, so close the loop
-                        subject_polygons.append(Point(subject_polygons[0][0].x, subject_polygons[0][0].y))
+                        subject_polygons.append(
+                            Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
+                        )
 
-                if len(subject_polygons)>0:
+                if len(subject_polygons) > 0:
                     idx = -1
                     area_x_y = 0
                     area_y_x = 0
                     for pt in subject_polygons[0]:
                         idx += 1
-                        if idx>0:
+                        if idx > 0:
                             area_x_y += last_x * pt.y
                             area_y_x += last_y * pt.x
                         last_x = pt.x
@@ -3324,10 +3628,14 @@ class Elemental(Service):
                     name = str(elem)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel( "%d: %s" % (i, name))
+                    channel("%d: %s" % (i, name))
                     for idx, u in enumerate(units):
                         this_area_local = this_area / square_unit[idx]
-                        channel (_(" Area= {area:.3f} {unit}²").format(area=this_area_local, unit=u))
+                        channel(
+                            _(" Area= {area:.3f} {unit}²").format(
+                                area=this_area_local, unit=u
+                            )
+                        )
                 i += 1
                 total_area += this_area
             if display_only:
@@ -3342,7 +3650,6 @@ class Elemental(Service):
 
             return "elements", data
             # Do we have a new value to set? If yes scale by sqrt(of the fraction)
-
 
         @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
         @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
@@ -3960,7 +4267,9 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                matrix = Matrix("translate({dx}, {dy})".format(dx=float(dx), dy=float(dy)))
+                matrix = Matrix(
+                    "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
+                )
                 for node in pasted:
                     node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group")
@@ -4058,14 +4367,13 @@ class Elemental(Service):
             B = bx * bx + by * by
             C = cx * cx + cy * cy
             D = bx * cy - by * cx
-            return [(cy * B - by * C) / (2 * D),
-                    (bx * C - cx * B) / (2 * D)]
+            return [(cy * B - by * C) / (2 * D), (bx * C - cx * B) / (2 * D)]
 
         # Function to return the smallest circle
         # that intersects 2 points
         def circle_from1(A, B):
             # Set the center to be the midpoint of A and B
-            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0 ]
+            C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0]
 
             # Set the radius to be half the distance AB
             return C, dist(A, B) / 2.0
@@ -4073,20 +4381,22 @@ class Elemental(Service):
         # Function to return a unique circle that
         # intersects three points
         def circle_from2(A, B, C):
-            if A==B:
+            if A == B:
                 I, radius = circle_from1(A, C)
                 return I, radius
-            elif A==C:
+            elif A == C:
                 I, radius = circle_from1(A, B)
                 return I, radius
-            elif B==C:
+            elif B == C:
                 I, radius = circle_from1(A, B)
                 return I, radius
             else:
-                I = get_circle_center(B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1])
+                I = get_circle_center(
+                    B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1]
+                )
                 I[0] += A[0]
                 I[1] += A[1]
-                radius = dist (I, A)
+                radius = dist(I, A)
                 return I, radius
 
         # Function to check whether a circle
@@ -4097,22 +4407,22 @@ class Elemental(Service):
             # to check  whether the points
             # lie inside the circle or not
             for p in P:
-                if (not is_inside(center, radius, p)):
+                if not is_inside(center, radius, p):
                     return False
             return True
 
         # Function to return the minimum enclosing
         # circle for N <= 3
         def min_circle_trivial(P):
-            assert(len(P) <= 3)
+            assert len(P) <= 3
 
-            if not P :
+            if not P:
                 return [0, 0], 0
 
-            elif (len(P) == 1) :
+            elif len(P) == 1:
                 return P[0], 0
 
-            elif (len(P) == 2) :
+            elif len(P) == 2:
                 center, radius = circle_from1(P[0], P[1])
                 return center, radius
 
@@ -4122,7 +4432,7 @@ class Elemental(Service):
                 for j in range(i + 1, 3):
 
                     center, radius = circle_from1(P[i], P[j])
-                    if (is_valid_circle(center, radius, P)):
+                    if is_valid_circle(center, radius, P):
                         return center, radius
 
             center, radius = circle_from2(P[0], P[1], P[2])
@@ -4135,25 +4445,25 @@ class Elemental(Service):
         # that are not yet processed.
         def welzl_helper(P, R, n):
             # Base case when all points processed or |R| = 3
-            if (n == 0 or len(R) == 3) :
+            if n == 0 or len(R) == 3:
                 center, radius = min_circle_trivial(R)
                 return center, radius
 
             # Pick a random point randomly
-            idx = randint(0,n-1)
+            idx = randint(0, n - 1)
             p = P[idx]
 
             # Put the picked point at the end of P
             # since it's more efficient than
             # deleting from the middle of the vector
-            P[idx], P[n - 1] = P[n-1], P[idx]
+            P[idx], P[n - 1] = P[n - 1], P[idx]
 
             # Get the MEC circle d from the
             # set of points P - :p
             dcenter, dradius = welzl_helper(P, R.copy(), n - 1)
 
             # If d contains p, return d
-            if (is_inside(dcenter, dradius, p)) :
+            if is_inside(dcenter, dradius, p):
                 return dcenter, dradius
 
             # Otherwise, must be on the boundary of the MEC
@@ -4171,7 +4481,7 @@ class Elemental(Service):
 
         def generate_hull_shape(method, data, resolution=None):
             if resolution is None:
-                DETAIL = 500 # How coarse / fine shall a subpath be split
+                DETAIL = 500  # How coarse / fine shall a subpath be split
             else:
                 DETAIL = int(resolution)
             pts = []
@@ -4223,14 +4533,19 @@ class Elemental(Service):
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3]),
                         ]
-                elif method=="quick":
+                elif method == "quick":
                     bounds = node.bounds
                     min_val[0] = min(min_val[0], bounds[0])
                     min_val[1] = min(min_val[1], bounds[1])
                     max_val[0] = max(max_val[0], bounds[2])
                     max_val[1] = max(max_val[1], bounds[3])
-            if method=="quick":
-                if not isinf(min_val[0]) and not isinf(min_val[1]) and not isinf(max_val[0]) and not isinf(max_val[0]):
+            if method == "quick":
+                if (
+                    not isinf(min_val[0])
+                    and not isinf(min_val[1])
+                    and not isinf(max_val[0])
+                    and not isinf(max_val[0])
+                ):
                     pts += [
                         (min_val[0], min_val[1]),
                         (min_val[0], max_val[1]),
@@ -4245,26 +4560,39 @@ class Elemental(Service):
                 hull = []
                 RES = 100
                 for i in range(RES):
-                    hull += [(mec_center[0] + mec_radius * cos(i/RES * tau), mec_center[1] + mec_radius * sin(i/RES * tau))]
+                    hull += [
+                        (
+                            mec_center[0] + mec_radius * cos(i / RES * tau),
+                            mec_center[1] + mec_radius * sin(i / RES * tau),
+                        )
+                    ]
             else:
                 hull = [p for p in Point.convex_hull(pts)]
             if len(hull) != 0:
                 hull.append(hull[0])  # loop
             return hull
 
-        @self.console_argument("method", help=_("Method to use (one of segment, quick, hull, complex)"))
+        @self.console_argument(
+            "method", help=_("Method to use (one of segment, quick, hull, complex)")
+        )
         @self.console_argument("resolution")
         @self.console_command(
             "trace",
             help=_("trace the given elements"),
             input_type=("elements", "shapes", None),
         )
-        def trace_trace_spooler(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+        def trace_trace_spooler(
+            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        ):
             if method is None:
                 method = "quick"
             method = method.lower()
             if not method in ("segment", "quick", "hull", "complex"):
-                channel(_("Invalid method, please use one of segment, quick, hull, complex."))
+                channel(
+                    _(
+                        "Invalid method, please use one of segment, quick, hull, complex."
+                    )
+                )
                 return
 
             spooler = self.device.spooler
@@ -4295,20 +4623,31 @@ class Elemental(Service):
 
             run_shape(spooler, hull)
 
-        @self.console_argument("method", help=_("Method to use (one of quick, hull, complex, segment, circle)"))
-        @self.console_argument("resolution", help=_("Resolution for complex slicing, default=500"))
+        @self.console_argument(
+            "method",
+            help=_("Method to use (one of quick, hull, complex, segment, circle)"),
+        )
+        @self.console_argument(
+            "resolution", help=_("Resolution for complex slicing, default=500")
+        )
         @self.console_command(
             "tracegen",
             help=_("create the trace around the given elements"),
             input_type=("elements", "shapes", None),
             output_type="elements",
         )
-        def trace_trace_generator(command, channel, _, method=None, resolution=None, data=None, **kwargs):
+        def trace_trace_generator(
+            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        ):
             if method is None:
                 method = "quick"
             method = method.lower()
             if not method in ("segment", "quick", "hull", "complex", "circle"):
-                channel(_("Invalid method, please use one of quick, hull, complex, segment, circle."))
+                channel(
+                    _(
+                        "Invalid method, please use one of quick, hull, complex, segment, circle."
+                    )
+                )
                 return
 
             spooler = self.device.spooler
@@ -4328,7 +4667,6 @@ class Elemental(Service):
             node.focus()
             data.append(node)
             return "elements", data
-
 
         # --------------------------- END COMMANDS ------------------------------
 
@@ -6169,7 +6507,11 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 if op.type == "op raster":
-                    if hasattr(node, "stroke") and node.stroke is not None and (op.color == node.stroke or op.default):
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and (op.color == node.stroke or op.default)
+                    ):
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -6178,12 +6520,18 @@ class Elemental(Service):
                     elif node.type == "elem text":
                         op.add_reference(node)
                         was_classified = True
-                    elif hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+                    elif (
+                        hasattr(node, "fill")
+                        and node.fill is not None
+                        and node.fill.argb is not None
+                    ):
                         op.add_reference(node)
                         was_classified = True
                 elif op.type in ("op engrave", "op cut", "op hatch"):
                     if (
-                        hasattr(node, "stroke") and node.stroke is not None and op.color == node.stroke
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and op.color == node.stroke
                     ) or op.default:
                         op.add_reference(node)
                         was_classified = True
@@ -6202,13 +6550,21 @@ class Elemental(Service):
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.value is not None:
+                elif (
+                    hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.value is not None
+                ):
                     op = EngraveOpNode(color=node.stroke, speed=35.0)
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
-                if hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+                if (
+                    hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
+                ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
                     op.add_reference(node)

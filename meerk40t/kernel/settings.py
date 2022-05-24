@@ -1,6 +1,6 @@
-from configparser import ConfigParser, NoSectionError
+from configparser import ConfigParser, NoSectionError, MissingSectionHeaderError
 from pathlib import Path
-from typing import Any,  Dict, Generator,  Optional, Union
+from typing import Any, Dict, Generator, Optional, Union
 
 from .functions import get_safe_path
 
@@ -46,7 +46,7 @@ class Settings:
                         config_section = dict()
                         self._config_dict[section] = config_section
                     config_section[option] = parser.get(section, option)
-        except PermissionError:
+        except (PermissionError, NoSectionError, MissingSectionHeaderError):
             return
 
     def write_configuration(self):

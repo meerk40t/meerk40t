@@ -274,23 +274,14 @@ def plugin(kernel, lifecycle=None):
         # context.setting(bool, "opt_inner_first", True)
 
     elif lifecycle == "poststart":
+        planner = kernel.planner
         if hasattr(kernel.args, "auto") and kernel.args.auto:
-            elements = kernel.elements
-            planner = kernel.planner
-            # Auto start does the planning and spooling of the data.
-            if hasattr(kernel.args, "speed") and kernel.args.speed is not None:
-                for o in elements.ops():
-                    o.speed = kernel.args.speed
             planner("plan copy preprocess validate blob preopt optimize\n")
-            if hasattr(kernel.args, "origin") and kernel.args.origin:
-                planner("plan append origin\n")
-            if hasattr(kernel.args, "quit") and kernel.args.quit:
-                planner("plan append shutdown\n")
-            planner("plan spool\n")
-        else:
-            if hasattr(kernel.args, "quit") and kernel.args.quit:
-                # Flag quitting on complete.
-                kernel.root._quit = True
+        if hasattr(kernel.args, "origin") and kernel.args.origin:
+            planner("plan append origin\n")
+        if hasattr(kernel.args, "quit") and kernel.args.quit:
+            planner("plan append shutdown\n")
+        planner("plan spool\n")
 
 
 class Planner(Service):
@@ -515,7 +506,7 @@ class Planner(Service):
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
-                if c.type == "blob":
+                elif c.type == "blob":
                     # BlobNodes are denuded into normal objects.
                     c = c.blob
                 copy_c = copy(c)
@@ -885,12 +876,20 @@ def physicalhome():
     yield "home", 0, 0
 
 
-def offset(x, y):
-    def offset_value():
-        yield "wait_finish"
-        yield "set_position", -int(x), -int(y)
+class offset:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    return offset_value
+    def __str__(self):
+        return "offset_value (%.1f, %.1f)" % (self.x, self.y)
+
+    def __call__(self, *args):
+        if len(args) > 1:
+            self.x = args[0]
+            self.y = args[1]
+        yield "wait_finish"
+        yield "set_position", -int(self.x), -int(self.y)
 
 
 def wait():

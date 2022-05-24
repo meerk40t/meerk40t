@@ -6,7 +6,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Ellipse, Path
+from meerk40t.svgelements import Ellipse
 
 
 class EllipseTool(ToolWidget):

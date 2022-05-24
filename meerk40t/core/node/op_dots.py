@@ -57,12 +57,16 @@ class DotsOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Dots"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
         default_map["dwell_time"] = "default"
         default_map.update(self.settings)
         return default_map

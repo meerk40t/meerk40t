@@ -7,7 +7,7 @@ import threading
 import time
 from datetime import datetime
 from threading import Thread
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Generator, List, Optional, Tuple, Union
 
 from .channel import Channel
 from .context import Context
@@ -65,6 +65,7 @@ class Kernel(Settings):
         # Boot State
         self._booted = False
         self._shutdown = False
+        self._quit = False
 
         # Store the plugins for the kernel. During lifecycle events all plugins will be called with the new lifecycle
         self._kernel_plugins = []
@@ -753,6 +754,19 @@ class Kernel(Settings):
             for plugin in self._kernel_plugins:
                 plugin(kernel, "mainloop")
 
+        for k in objects:
+            if klp(k) < LIFECYCLE_KERNEL_POSTMAIN <= end:
+                k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTMAIN
+                if channel:
+                    channel("kernel-postmain: {object}".format(object=str(k)))
+                if hasattr(k, "postmain"):
+                    k.postmain()
+        if start < LIFECYCLE_KERNEL_POSTMAIN <= end:
+            if channel:
+                channel("(plugin) kernel-postmain")
+            for plugin in self._kernel_plugins:
+                plugin(kernel, "postmain")
+
         if start < LIFECYCLE_KERNEL_PRESHUTDOWN <= end:
             if channel:
                 channel("(plugin) kernel-preshutdown")
@@ -1038,7 +1052,7 @@ class Kernel(Settings):
             print(*args, **kwargs)
 
     def __call__(self):
-        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_MAINLOOP)
+        self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_POSTMAIN)
 
     def precli(self):
         pass
@@ -1110,8 +1124,12 @@ class Kernel(Settings):
                     print(">>", end="", flush=True)
 
                     line = await loop.run_in_executor(None, sys.stdin.readline)
-                    self.console("." + line + "\n")
+                    line = line.strip()
                     if line in ("quit", "shutdown"):
+                        self._quit = True
+                        break
+                    self.console(f".{line}\n")
+                    if line == "gui":
                         break
 
             import asyncio
@@ -1120,6 +1138,11 @@ class Kernel(Settings):
             loop.run_until_complete(aio_readline(loop))
             loop.close()
             self.channel("console").unwatch(self.__print_delegate)
+
+    def postmain(self):
+        if self._quit:
+            self._shutdown = True
+            self.set_kernel_lifecycle(self, LIFECYCLE_KERNEL_SHUTDOWN)
 
     def preshutdown(self):
         channel = self.channel("shutdown")

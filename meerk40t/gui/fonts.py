@@ -1,12 +1,15 @@
 import wx
+
 from meerk40t.core.units import PX_PER_INCH
+
 # from meerk40t.core.node import node
 # from meerk40t.svgelements import Text
 
+
 def wxfont_to_svg(svgtextnode):
-###
-### Translates all wxfont - properties to their svg-equivalents
-###
+    ###
+    ### Translates all wxfont - properties to their svg-equivalents
+    ###
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
 
@@ -49,7 +52,7 @@ def wxfont_to_svg(svgtextnode):
     ff = wxfont.GetStyle()
     if ff == wx.FONTSTYLE_NORMAL:
         fontstyle = "normal"
-    elif ff ==wx.FONTSTYLE_ITALIC:
+    elif ff == wx.FONTSTYLE_ITALIC:
         fontstyle = "italic"
     elif ff == wx.FONTSTYLE_SLANT:
         fontstyle = "oblique"
@@ -58,32 +61,14 @@ def wxfont_to_svg(svgtextnode):
 
     svgtextnode.font_style = fontstyle
 
+
 def svgfont_to_wx(svgtextnode):
-###
-### Translates all svg-text-properties to their wxfont-equivalents
-###
+    ###
+    ### Translates all svg-text-properties to their wxfont-equivalents
+    ###
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    fsize = svgtextnode.text.font_size * factor
-    if fsize < 1:
-        if fsize > 0:
-            textx = 0
-            texty = 0
-            if hasattr(svgtextnode.text, "x"):
-                textx = svgtextnode.text.x
-            if hasattr(svgtextnode.text, "y"):
-                texty = svgtextnode.text.y
-            svgtextnode.matrix.pre_scale(fsize, fsize, textx, texty)
-            fsize = 1
-            svgtextnode.text.font_size = fsize  # No zero sized fonts.
-    try:
-        wxfont.SetFractionalPointSize(fsize)
-    except AttributeError:
-        wxfont.SetSize(int(fsize))
-
     fw = svgtextnode.text.font_weight
     if fw == "lighter":
         fontweight = wx.FONTWEIGHT_THIN
@@ -137,3 +122,21 @@ def svgfont_to_wx(svgtextnode):
     else:
         fontstyle = wx.FONTSTYLE_NORMAL
     wxfont.SetStyle(fontstyle)
+    # A point is 1/72 of an inch
+    factor = 72 / PX_PER_INCH
+    fsize = svgtextnode.text.font_size * factor
+    if fsize < 1:
+        if fsize > 0:
+            textx = 0
+            texty = 0
+            if hasattr(svgtextnode.text, "x"):
+                textx = svgtextnode.text.x
+            if hasattr(svgtextnode.text, "y"):
+                texty = svgtextnode.text.y
+            svgtextnode.matrix.pre_scale(fsize, fsize, textx, texty)
+            fsize = 1
+            svgtextnode.text.font_size = fsize  # No zero sized fonts.
+    try:
+        wxfont.SetFractionalPointSize(fsize)
+    except AttributeError:
+        wxfont.SetSize(int(fsize))

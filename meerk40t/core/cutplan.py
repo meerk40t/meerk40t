@@ -364,7 +364,6 @@ class CutPlan:
         self.commands.clear()
 
 
-
 def is_inside(inner, outer):
     """
     Test that path1 is inside path2.

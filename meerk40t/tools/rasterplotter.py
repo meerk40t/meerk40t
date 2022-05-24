@@ -318,13 +318,17 @@ class RasterPlotter:
         if self.horizontal:
             y = self.height - 1 if self.start_on_top else 0
             dy = -1 if self.start_on_top else 1
-            start_on_left = self.start_on_left if self.width & 1 else not self.start_on_left
+            start_on_left = (
+                self.start_on_left if self.width & 1 else not self.start_on_left
+            )
             x, y = self.calculate_next_horizontal_pixel(y, dy, start_on_left)
             return x, y
         else:
             x = self.width - 1 if self.start_on_left else 0
             dx = -1 if self.start_on_left else 1
-            start_on_top = self.start_on_top if self.height & 1 else not self.start_on_top
+            start_on_top = (
+                self.start_on_top if self.height & 1 else not self.start_on_top
+            )
             x, y = self.calculate_next_vertical_pixel(x, dx, start_on_top)
             return x, y
 
