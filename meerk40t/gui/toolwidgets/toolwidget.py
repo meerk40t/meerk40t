@@ -22,5 +22,8 @@ class ToolWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
+    def notify_created(self):
+        self.scene.context.signal("element_added")
+
     def process_draw(self, gc):
         self.brush.draw(gc)

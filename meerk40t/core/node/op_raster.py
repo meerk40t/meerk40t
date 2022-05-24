@@ -8,7 +8,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import Color, Path, Polygon, Matrix
+from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 MILS_IN_MM = 39.3701
 
@@ -84,12 +84,33 @@ class RasterOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
+        if self.raster_swing:
+            raster_swing = "-"
+        else:
+            raster_swing = "="
+        if self.raster_direction == 0:
+            raster_dir = "T2B"
+        elif self.raster_direction == 1:
+            raster_dir = "B2T"
+        elif self.raster_direction == 2:
+            raster_dir = "R2L"
+        elif self.raster_direction == 3:
+            raster_dir = "L2R"
+        elif self.raster_direction == 4:
+            raster_dir = "X"
+        else:
+            raster_dir = str(self.raster_direction)
+        default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"

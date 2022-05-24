@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..kernel import signal_listener
-from ..svgelements import SVG_ATTR_STROKE, Color
+from ..svgelements import Color
 from .icons import (
     icon_meerk40t,
     icons8_direction_20,
@@ -41,14 +41,26 @@ def register_panel_tree(window, context):
     window.on_pane_add(pane)
     context.register("pane/tree", pane)
 
-    context.register("format/op cut", "{enabled}{element_type} {speed}mm/s @{power}")
     context.register(
-        "format/op engrave", "{enabled}{element_type} {speed}mm/s @{power}"
+        "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
     )
-    context.register("format/op hatch", "{enabled}{element_type} {speed}mm/s @{power}")
-    context.register("format/op raster", "{enabled}{element_type} {speed}mm/s @{power}")
-    context.register("format/op image", "{enabled}{element_type} {speed}mm/s @{power}")
-    context.register("format/op dots", "{enabled}{element_type} {dwell_time}ms dwell")
+    context.register(
+        "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+    )
+    context.register(
+        "format/op hatch", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+    )
+    context.register(
+        "format/op raster",
+        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+    )
+    context.register(
+        "format/op image",
+        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+    )
+    context.register(
+        "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
+    )
     context.register("format/op console", "{enabled}{command}")
     context.register("format/elem ellipse", "{element_type} {id}")
     context.register("format/elem image", "{element_type} {id}")
@@ -669,7 +681,7 @@ class ShadowTree:
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
-            elif node.type.startswith("elem path"):
+            elif node.type.startswith("elem "):
                 image = self.renderer.make_raster(
                     node, node.bounds, width=20, height=20, bitmap=True
                 )

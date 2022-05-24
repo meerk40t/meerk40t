@@ -14,7 +14,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
-from meerk40t.svgelements import Point, Rect
+from meerk40t.svgelements import Point
 
 
 def process_event(
@@ -1703,7 +1703,7 @@ class SelectionWidget(Widget):
         elements = self.scene.context.elements
         if refob is None:
             return
-        bb = refob.bbox()
+        bb = refob.bounds
 
         cc = elements.selected_area()
 
@@ -1743,7 +1743,7 @@ class SelectionWidget(Widget):
         refob = self.scene.reference_object
         if refob is None:
             return
-        bb = refob.bbox()
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
 
@@ -1768,7 +1768,7 @@ class SelectionWidget(Widget):
         refob = self.scene.reference_object
         if refob is None:
             return
-        bb = refob.bbox()
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
 

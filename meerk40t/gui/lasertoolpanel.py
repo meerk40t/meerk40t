@@ -3,7 +3,7 @@ from math import atan, sqrt, tau
 import wx
 from wx import aui
 
-from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     instruction_circle,
     instruction_frame,

@@ -37,7 +37,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Angle, Group, Matrix
+from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 
@@ -253,14 +253,20 @@ class Drag(wx.Panel):
             self.on_button_align_corner_br,
             self.button_align_corner_bottom_right,
         )
-        self.Bind(wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull)
-        self.button_align_trace_hull.Bind(wx.EVT_RIGHT_DOWN, self.on_button_align_trace_complex)
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_align_trace_hull, self.button_align_trace_hull
+        )
+        self.button_align_trace_hull.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_align_trace_complex
+        )
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_trace_quick,
             self.button_align_trace_quick,
         )
-        self.button_align_trace_quick.Bind(wx.EVT_RIGHT_DOWN, self.on_button_align_trace_circle)
+        self.button_align_trace_quick.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_align_trace_circle
+        )
         # Right Button Events
         self.button_align_corner_top_left.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_lock_tl
@@ -339,7 +345,9 @@ class Drag(wx.Panel):
             self.button_align_first_position.GetBestSize()
         )
         self.button_align_trace_hull.SetToolTip(
-            _("Perform a convex hull trace of the selection (Right different alogorithm)")
+            _(
+                "Perform a convex hull trace of the selection (Right different alogorithm)"
+            )
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
         self.button_align_trace_quick.SetToolTip(

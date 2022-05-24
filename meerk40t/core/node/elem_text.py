@@ -16,6 +16,7 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        font_style = None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
@@ -37,6 +38,10 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
+        if font_style is None:
+            self.font_style = font_style
+        else:
+            self.font_style = text.font_style  # normal / italic / oblique
         self.lock = False
 
     def __copy__(self):
@@ -46,6 +51,7 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            font_style=self.font_style,
             **self.settings,
         )
 
@@ -62,14 +68,10 @@ class TextNode(Node):
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
         self._bounds_dirty = True
-        text = self.text.text
-        brackets = re.compile(r"\{.+\}")
-        for key in brackets.findall(text):
-            skey = key[1:-1]
-            if skey in context.elements.wordlists:
-                value = context.elements.wordlist_fetch(skey)
-                text = text.replace(key, value)
-                self.text.text = text
+        self.text.width = 0
+        self.text.height = 0
+        text = context.elements.mywordlist.translate(self.text.text)
+        self.text.text = text
 
         if self.parent.type != "op raster":
             commands.append(self.remove_text)

@@ -1,7 +1,8 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import Length, ViewPort
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 _ = wx.GetTranslation
@@ -39,8 +40,9 @@ class PositionPanel(wx.Panel):
         self.text_y.SetMinSize((70, 23))
         self.text_w.SetMinSize((70, 23))
         self.text_h.SetMinSize((70, 23))
+        self.chk_indivdually = wx.CheckBox(self, wx.ID_ANY, _("Apply individually"))
         self.button_aspect_ratio = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock_50.GetBitmap()
+            self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=25)
         )
         self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
         self.combo_box_units = wx.ComboBox(
@@ -54,14 +56,14 @@ class PositionPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter, self.text_x)
-        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_enter)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter, self.text_y)
-        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_enter)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter, self.text_w)
-        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_enter)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter, self.text_h)
-        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_enter)
+        self.text_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter)
+        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_focus)
+        self.text_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter)
+        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_focus)
+        self.text_w.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter)
+        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_focus)
+        self.text_h.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter)
+        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_focus)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
         self.Bind(wx.EVT_BUTTON, self.on_button_aspect_ratio, self.button_aspect_ratio)
         # end wxGlade
@@ -89,51 +91,78 @@ class PositionPanel(wx.Panel):
 
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties
+        self.text_h.SetToolTip(_("New height (enter to apply)"))
+        self.text_w.SetToolTip(_("New width (enter to apply)"))
+        self.text_x.SetToolTip(
+            _("New X-coordinate of left top corner (enter to apply)")
+        )
+        self.text_y.SetToolTip(
+            _("New Y-coordinate of left top corner (enter to apply)")
+        )
+        self.button_aspect_ratio.SetToolTip(
+            _("Maintain orginal aspect ratio of complete selection")
+        )
+        self.chk_indivdually.SetToolTip(
+            _(
+                "If checked then each element will get the new value of the current field, if unchecked then the new values apply to the selection-dimensions"
+            )
+        )
         self.button_aspect_ratio.SetSize(self.button_aspect_ratio.GetBestSize())
         self.combo_box_units.SetSelection(0)
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
-        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_6 = wx.BoxSizer(wx.VERTICAL)
-        sizer_7 = wx.StaticBoxSizer(
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_units = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Units")), wx.HORIZONTAL
         )
-        sizer_panel = wx.BoxSizer(wx.VERTICAL)
-        sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL
         )
         sizer_w = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL
         )
-        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
         sizer_x = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "X:"), wx.HORIZONTAL)
         sizer_x.Add(self.text_x, 1, 0, 0)
-        sizer_3.Add(sizer_x, 0, 0, 0)
         sizer_y.Add(self.text_y, 1, 0, 0)
-        sizer_3.Add(sizer_y, 0, 0, 0)
-        sizer_panel.Add(sizer_3, 0, wx.EXPAND, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_panel.Add(label_1, 0, 0, 0)
+
+        sizer_units.Add(self.combo_box_units, 0, 0, 0)
+
+        sizer_h_xyu = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_h_xyu.Add(sizer_x, 0, 0, 0)
+        sizer_h_xyu.Add(sizer_y, 0, 0, 0)
+        sizer_h_xyu.Add(sizer_units, 0, 0, 0)
+        sizer_main.Add(sizer_h_xyu, 0, wx.EXPAND, 0)
+
         sizer_w.Add(self.text_w, 1, 0, 0)
-        sizer_4.Add(sizer_w, 0, 0, 0)
         sizer_h.Add(self.text_h, 1, wx.ALL, 0)
-        sizer_4.Add(sizer_h, 0, 0, 0)
-        sizer_panel.Add(sizer_4, 0, wx.EXPAND, 0)
-        sizer_5.Add(sizer_panel, 0, 0, 0)
-        sizer_7.Add(self.combo_box_units, 0, 0, 0)
-        sizer_6.Add(sizer_7, 0, wx.EXPAND, 0)
-        sizer_6.Add(self.button_aspect_ratio, 0, 0, 0)
-        sizer_5.Add(sizer_6, 0, wx.EXPAND, 0)
-        self.SetSizer(sizer_5)
-        sizer_5.Fit(self)
+
+        sizer_h_wh.Add(sizer_w, 0, 0, 0)
+        sizer_h_wh.Add(sizer_h, 0, 0, 0)
+        sizer_h_wh.Add(self.button_aspect_ratio, 0, 0, 0)
+        sizer_main.Add(sizer_h_wh, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.chk_indivdually, 0, 0, 0)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
 
-    def _update_position(self, *args, **kwargs):
+    def _update_position(self, *args):
+        self.update_position(True)
+
+    def update_position(self, reset):
+        more_than_one = False
+        ct = 0
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            ct += 1
+            if ct > 1:
+                more_than_one = True
+                break
+
         bounds = self.context.elements.selected_area()
         if bounds is None:
             if self.text_x.IsEnabled():
@@ -142,6 +171,9 @@ class PositionPanel(wx.Panel):
                 self.text_x.Enable(False)
                 self.text_y.Enable(False)
                 self.button_aspect_ratio.Enable(False)
+                self.chk_indivdually.SetValue(False)
+                self.chk_indivdually.Enable(False)
+                self.combo_box_units.Enable(False)
             if self.position_units in self.choices:
                 self.combo_box_units.SetSelection(
                     self.choices.index(self.position_units)
@@ -152,18 +184,22 @@ class PositionPanel(wx.Panel):
             self.text_h.Enable(True)
             self.text_x.Enable(True)
             self.text_y.Enable(True)
+            self.combo_box_units.Enable(True)
             self.button_aspect_ratio.Enable(True)
+            self.chk_indivdually.SetValue(False)
+        self.chk_indivdually.Enable(more_than_one)
 
-        x0, y0, x1, y1 = bounds
-        # conversion = ViewPort.conversion(self.position_units)
-        conversion = float(
-            Length("{amount}{units}".format(units=self.position_units, amount=1))
-        )
-        # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
-        self.position_x = x0 / conversion
-        self.position_y = y0 / conversion
-        self.position_w = (x1 - x0) / conversion
-        self.position_h = (y1 - y0) / conversion
+        if reset:
+            x0, y0, x1, y1 = bounds
+            # conversion = ViewPort.conversion(self.position_units)
+            conversion = float(
+                Length("{amount}{units}".format(units=self.position_units, amount=1))
+            )
+            # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
+            self.position_x = x0 / conversion
+            self.position_y = y0 / conversion
+            self.position_w = (x1 - x0) / conversion
+            self.position_h = (y1 - y0) / conversion
 
         if self.position_units == "%":
             self.text_x.SetValue("%.2f" % 100)
@@ -179,17 +215,48 @@ class PositionPanel(wx.Panel):
 
     def space_changed(self, origin, *args):
         self.position_units = self.context.units_name
-        self._update_position()
+        self.update_position(True)
 
     def on_button_aspect_ratio(self, event):  # wxGlade: MyFrame.<event_handler>
         if self.position_aspect_ratio:
-            self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap())
+            self.button_aspect_ratio.SetBitmap(icons8_padlock_50.GetBitmap(resize=25))
         else:
-            self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap())
+            self.button_aspect_ratio.SetBitmap(icons8_lock_50.GetBitmap(resize=25))
         self.position_aspect_ratio = not self.position_aspect_ratio
 
     def on_text_w_enter(self, event):
         event.Skip()
+        self.on_text_w_action(True)
+
+    def on_text_w_focus(self, event):
+        event.Skip()
+        self.on_text_w_action(False)
+
+    def on_text_h_enter(self, event):
+        event.Skip()
+        self.on_text_h_action(True)
+
+    def on_text_h_focus(self, event):
+        event.Skip()
+        self.on_text_h_action(False)
+
+    def on_text_x_enter(self, event):
+        event.Skip()
+        self.on_text_x_action(True)
+
+    def on_text_x_focus(self, event):
+        event.Skip()
+        self.on_text_x_action(False)
+
+    def on_text_y_enter(self, event):
+        event.Skip()
+        self.on_text_y_action(True)
+
+    def on_text_y_focus(self, event):
+        event.Skip()
+        self.on_text_y_action(False)
+
+    def on_text_w_action(self, force):
         original = self.position_w
 
         if self.position_units == "%":
@@ -208,16 +275,44 @@ class PositionPanel(wx.Panel):
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
-        original = self.position_w
         self.position_w = w
+
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
-                self._update_position()
+                self.update_position(True)
                 return
             self.position_h *= self.position_w / original
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
+            self.update_position(False)
+
+        if not force:
+            return
+
+        if self.chk_indivdually.GetValue():
+            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                _bb = elem.bounds
+                bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
+                new_w = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_w, unit=self.position_units
+                        )
+                    )
+                )
+
+                try:
+                    scalex = new_w / (bb[2] - bb[0])
+                    scaley = 1.0
+                except ZeroDivisionError:
+                    continue
+                # print("Old=%.1f, new=%.1f, sx=%.1f" % ((bb[2]-bb[0]), new_w, scalex))
+
+                bb[2] = bb[0] + (bb[2] - bb[0]) * scalex
+
+                elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
+                elem._bounds = bb
+                elem.modified()
+        else:
+            cmd = "resize %f%s %f%s %f%s %f%s\n" % (
                 self.position_x,
                 self.position_units,
                 self.position_y,
@@ -227,11 +322,10 @@ class PositionPanel(wx.Panel):
                 self.position_h,
                 self.position_units,
             )
-        )
-        self._update_position()
+            self.context(cmd)
+        self.update_position(True)
 
-    def on_text_h_enter(self, event):
-        event.Skip()
+    def on_text_h_action(self, force):
         original = self.position_h
         if self.position_units == "%":
             ratio_w = float(self.text_h.GetValue()) / 100.0
@@ -249,16 +343,45 @@ class PositionPanel(wx.Panel):
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return
-        original = self.position_h
+
         self.position_h = h
         if self.position_aspect_ratio:
             if abs(original) < 1e-8:
-                self._update_position()
+                self.update_position(True)
                 return
             self.position_w *= self.position_h / original
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
+            self.update_position(False)
+
+        if not force:
+            return
+
+        if self.chk_indivdually.GetValue():
+            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                _bb = elem.bounds
+                bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
+                new_h = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_h, unit=self.position_units
+                        )
+                    )
+                )
+
+                try:
+                    scalex = 1.0
+                    scaley = new_h / (bb[3] - bb[1])
+                except ZeroDivisionError:
+                    continue
+
+                # print("Old=%.1f, new=%.1f, sy=%.1f" % ((bb[3]-bb[1]), new_h, scaley))
+
+                bb[3] = bb[1] + (bb[3] - bb[1]) * scaley
+
+                elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
+                elem._bounds = bb
+                elem.modified()
+        else:
+            cmd = "resize %f%s %f%s %f%s %f%s\n" % (
                 self.position_x,
                 self.position_units,
                 self.position_y,
@@ -268,11 +391,10 @@ class PositionPanel(wx.Panel):
                 self.position_h,
                 self.position_units,
             )
-        )
-        self._update_position()
+            self.context(cmd)
+        self.update_position(True)
 
-    def on_text_x_enter(self, event=None):
-        event.Skip()
+    def on_text_x_action(self, force):
         try:
             self.position_x = float(self.text_x.GetValue())
         except ValueError:
@@ -282,23 +404,48 @@ class PositionPanel(wx.Panel):
                 )
             except ValueError:
                 return
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.position_x,
-                self.position_units,
-                self.position_y,
-                self.position_units,
-                self.position_w,
-                self.position_units,
-                self.position_h,
-                self.position_units,
-            )
-        )
-        self._update_position()
 
-    def on_text_y_enter(self, event=None):
-        event.Skip()
+        if not force:
+            return
+
+        if self.chk_indivdually.GetValue():
+            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                _bb = elem.bounds
+                bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
+                newx = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_x, unit=self.position_units
+                        )
+                    )
+                )
+                dx = newx - bb[0]
+                dy = 0
+                # print("Old=%.1f, new=%.1f, dx=%.1f" % (bb[0], newx, dx))
+
+                oldw = bb[2] - bb[0]
+                bb[0] = newx
+                bb[2] = newx + oldw
+                elem.matrix.post_translate(dx, dy)
+                elem._bounds = bb
+                elem.modified()
+        else:
+            self.context(
+                "resize %f%s %f%s %f%s %f%s\n"
+                % (
+                    self.position_x,
+                    self.position_units,
+                    self.position_y,
+                    self.position_units,
+                    self.position_w,
+                    self.position_units,
+                    self.position_h,
+                    self.position_units,
+                )
+            )
+        self.update_position(True)
+
+    def on_text_y_action(self, force):
         try:
             self.position_y = float(self.text_y.GetValue())
         except ValueError:
@@ -308,21 +455,48 @@ class PositionPanel(wx.Panel):
                 )
             except ValueError:
                 return
-        self.context(
-            "resize %f%s %f%s %f%s %f%s\n"
-            % (
-                self.position_x,
-                self.position_units,
-                self.position_y,
-                self.position_units,
-                self.position_w,
-                self.position_units,
-                self.position_h,
-                self.position_units,
+
+        if not force:
+            return
+
+        if self.chk_indivdually.GetValue():
+            for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                _bb = elem.bounds
+                bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
+                newy = float(
+                    Length(
+                        "{value}{unit}".format(
+                            value=self.position_y, unit=self.position_units
+                        )
+                    )
+                )
+                dy = newy - bb[1]
+                dx = 0
+                # print("Old=%.1f, new=%.1f, dy=%.1f" % (bb[1], newy, dy))
+
+                oldh = bb[3] - bb[1]
+                bb[1] = newy
+                bb[3] = newy + oldh
+
+                elem.matrix.post_translate(dx, dy)
+                elem._bounds = bb
+                elem.modified()
+        else:
+            self.context(
+                "resize %f%s %f%s %f%s %f%s\n"
+                % (
+                    self.position_x,
+                    self.position_units,
+                    self.position_y,
+                    self.position_units,
+                    self.position_w,
+                    self.position_units,
+                    self.position_h,
+                    self.position_units,
+                )
             )
-        )
-        self._update_position()
+        self.update_position(True)
 
     def on_combo_box_units(self, event):
         self.position_units = self.choices[self.combo_box_units.GetSelection()]
-        self._update_position()
+        self.update_position(True)

@@ -1,4 +1,3 @@
-import os
 import re
 import socket
 import threading
@@ -14,22 +13,7 @@ from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
-from ..device.basedevice import (
-    DRIVER_STATE_FINISH,
-    DRIVER_STATE_MODECHANGE,
-    DRIVER_STATE_PROGRAM,
-    DRIVER_STATE_RAPID,
-    DRIVER_STATE_RASTER,
-    PLOT_AXIS,
-    PLOT_DIRECTION,
-    PLOT_FINISH,
-    PLOT_JOG,
-    PLOT_LEFT_UPPER,
-    PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
-    PLOT_SETTING,
-    PLOT_START,
-)
+from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
 MM_PER_MIL = UNITS_PER_MM / UNITS_PER_MIL
 

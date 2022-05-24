@@ -683,7 +683,6 @@ class RasterCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
-
     ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")

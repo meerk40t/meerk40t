@@ -1,6 +1,8 @@
 import wx
 
-from ...svgelements import SVG_ATTR_FILL, SVG_ATTR_STROKE, Color, Text
+from meerk40t.gui.fonts import wxfont_to_svg
+
+from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
@@ -226,10 +228,13 @@ class TextPropertyPanel(wx.Panel):
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.node.fill = color
+                # Translate wxFont to SVG font....
+                self.node.wxfont = font
+                wxfont_to_svg(self.node)
                 self.node.modified()
             except Exception:  # rgb get failed.
                 pass
-            self.node.wxfont = font
+
             self.update_label()
             self.refresh()
         dialog.Destroy()

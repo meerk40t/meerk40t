@@ -1018,10 +1018,14 @@ class CommandList(CommandSource):
 
     def flush(self):
         if self._mark_modification:
-            for mx, my in self._mark_modification(self._last_x, self._last_y, None, None):
+            for mx, my in self._mark_modification(
+                self._last_x, self._last_y, None, None
+            ):
                 self.append(OpCut(mx, my))
         if self._light_modification:
-            for mx, my in self._light_modification(self._last_x, self._last_y, None, None):
+            for mx, my in self._light_modification(
+                self._last_x, self._last_y, None, None
+            ):
                 self.append(OpTravel(mx, my))
 
     def jump_delay(self, delay=0x0008):

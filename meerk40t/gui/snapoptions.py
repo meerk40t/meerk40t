@@ -1,9 +1,6 @@
 import wx
 from wx import aui
 
-from meerk40t.core.units import Length, ViewPort
-from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
-
 _ = wx.GetTranslation
 
 

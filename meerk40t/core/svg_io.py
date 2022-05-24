@@ -11,13 +11,16 @@ from ..svgelements import (
     SVG_ATTR_DATA,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
+    SVG_ATTR_FONT_FACE,
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_STROKE,
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
-    SVG_ATTR_TRANSFORM,
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
@@ -37,7 +40,6 @@ from ..svgelements import (
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
     Circle,
-    Color,
     Ellipse,
     Group,
     Matrix,
@@ -49,7 +51,11 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
+from .units import DEFAULT_PPI, UNITS_PER_PIXEL
+from meerk40t.core.node.node import Linecap, Linejoin
+
+SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
+SVG_ATTR_STROKE_CAP = "stroke-linecap"
 
 
 def plugin(kernel, lifecycle=None):
@@ -137,10 +143,42 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+
+        def capstr(linecap):
+            if linecap == Linecap.CAP_BUTT:
+                s = "butt"
+            elif linecap == Linecap.CAP_SQUARE:
+                s = "square"
+            else:
+                s = "round"
+            return s
+
+        def joinstr(linejoin):
+            if linejoin == Linejoin.JOIN_ARCS:
+                s = "arcs"
+            elif linejoin == Linejoin.JOIN_BEVEL:
+                s = "bevel"
+            elif linejoin == Linejoin.JOIN_MITER_CLIP:
+                s = "miter-clip"
+            elif linejoin == Linejoin.JOIN_ROUND:
+                s = "round"
+            else:
+                s = "miter"
+            return s
+
+        def copy_attributes(source, target):
+            #
+
+            if hasattr(source, "stroke"):
+                target.stroke = source.stroke
+            if hasattr(source, "fill"):
+                target.fill = source.fill
+
         scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
             if c.type == "elem ellipse":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem image":
@@ -162,11 +200,18 @@ class SVGWriter:
                 )
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement.set()
             elif c.type == "elem path":
                 element = abs(c.path * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 subelement = SubElement(xml_tree, "element")
@@ -174,14 +219,23 @@ class SVGWriter:
                 return
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
+                # The svg attributes should be up to date, but better safe than sorry
+                if hasattr(c, "wxfont_to_svg"):
+                    c.wxfont_to_svg()
                 element = c.text
+                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = element.text
                 t = Matrix(element.transform)
@@ -190,10 +244,11 @@ class SVGWriter:
                     "transform",
                     "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
                 )
+                # Maybe there are some inherited font-features from an import
                 for key, val in element.values.items():
                     if key in (
                         "font-family",
-                        "font_face",
+                        "font-face",
                         "font-size",
                         "font-weight",
                         "anchor",
@@ -201,6 +256,21 @@ class SVGWriter:
                         "y",
                     ):
                         subelement.set(key, str(val))
+                attribs = [
+                    ("font_family", SVG_ATTR_FONT_FAMILY),
+                    ("font_face", SVG_ATTR_FONT_FACE),
+                    ("font_size", SVG_ATTR_FONT_SIZE),
+                    ("font_weight", SVG_ATTR_FONT_WEIGHT),
+                    ("font_style", "font-style"),  # Not implemented yet afaics
+                ]
+                for attrib in attribs:
+                    val = None
+                    if hasattr(element, attrib[0]):
+                        val = getattr(element, attrib[0])
+                    if val is None and hasattr(c, attrib[0]):
+                        val = getattr(c, attrib[0])
+                    if not val is None:
+                        subelement.set(attrib[1], str(val))
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
@@ -354,6 +424,32 @@ class SVGProcessor:
         if self.requires_classification:
             self.elements.classify(self.element_list)
 
+    def check_for_line_attributes(self, node, element):
+        lc = element.values.get(SVG_ATTR_STROKE_CAP)
+        if not lc is None:
+            nlc = Linecap.CAP_ROUND
+            if lc=="butt":
+                nlc = Linecap.CAP_BUTT
+            elif lc=="round":
+                nlc = Linecap.CAP_ROUND
+            elif lc=="square":
+                nlc = Linecap.CAP_SQUARE
+            node.linecap = nlc
+        lj = element.values.get(SVG_ATTR_STROKE_JOIN)
+        if not lj is None:
+            nlj = Linejoin.JOIN_MITER
+            if lj=="arcs":
+                nlj = Linejoin.JOIN_ARCS
+            elif lj=="bevel":
+                nlj = Linejoin.JOIN_BEVEL
+            elif lj=="miter":
+                nlj = Linejoin.JOIN_MITER
+            elif lj=="miter-clip":
+                nlj = Linejoin.JOIN_MITER_CLIP
+            elif lj=="round":
+                nlj = Linejoin.JOIN_ROUND
+            node.linejoin = nlj
+
     def parse(self, element, context_node, e_list):
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
@@ -362,11 +458,18 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                fst = element.values.get("font-style")
+                if not fst is None:
+                    node.font_style = fst
+                svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
+                if svgfont_to_wx:
+                    svgfont_to_wx(node)
                 e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(path=element, type="elem path", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, (Polygon, Polyline)):
             if not element.is_degenerate():
@@ -376,6 +479,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem polyline", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, Circle):
             if not element.is_degenerate():
@@ -403,6 +507,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem rect", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
             if not element.is_degenerate():
@@ -412,6 +517,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem line", id=ident)
+                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
             try:

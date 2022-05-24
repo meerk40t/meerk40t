@@ -86,7 +86,7 @@ class VectorTool(ToolWidget):
                 elements.classify([node])
             self.path = None
             self.mouse_position = None
-            self.scene.request_refresh()
+            self.notify_created()
             response = RESPONSE_CONSUME
         elif event_type == "lost":
             self.scene.tool_active = False

@@ -3,7 +3,6 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
@@ -28,7 +27,6 @@ class AttractionWidget(Widget):
         # Respond to Snap is not necessary, but for the sake of completeness...
 
         self.attraction_points = None  # Clear all
-        self.grid_points = None  # Clear all
         self.my_x = None
         self.my_y = None
         self.visible_pen = wx.Pen()
@@ -334,40 +332,6 @@ class AttractionWidget(Widget):
         #    % (end_time - start_time, len(self.attraction_points))
         # )
 
-    def calculate_grid_points(self):
-        """
-        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
-        attraction points (center, corners, sides)
-        """
-        from time import time
-
-        start_time = time()
-        self.grid_points = []  # Clear all
-
-        # Let's add grid points - set the full grid
-        p = self.scene.context
-        tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=p.units_name
-                )
-            )
-        )
-        if tlen >= 1000:
-            x = 0
-            while x <= p.device.unit_width:
-                y = 0
-                while y <= p.device.unit_height:
-                    self.grid_points.append([x, y])
-                    y += tlen
-                x += tlen
-
-        end_time = time()
-        # print(
-        #    "Ready, time needed: %.6f, grid points added=%d"
-        #    % (end_time - start_time, len(self.grid_points))
-        # )
-
     def calculate_display_points(self):
         from time import time
 
@@ -375,8 +339,8 @@ class AttractionWidget(Widget):
         self.display_points = []
         if self.attraction_points is None:
             self.calculate_attraction_points()
-        if self.grid_points is None:
-            self.calculate_grid_points()
+        if self.scene.grid_points is None:
+            return
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
@@ -395,8 +359,8 @@ class AttractionWidget(Widget):
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
-        if self.snap_grid and len(self.grid_points) > 0 and not self.my_x is None:
-            for pts in self.grid_points:
+        if self.snap_grid and len(self.scene.grid_points) > 0 and not self.my_x is None:
+            for pts in self.scene.grid_points:
                 if (
                     abs(pts[0] - self.my_x) <= self.show_attract_len
                     and abs(pts[1] - self.my_y) <= self.show_attract_len
@@ -417,14 +381,13 @@ class AttractionWidget(Widget):
         consumed = False
         if signal == "attraction":
             consumed = True
-            pass
-        if signal in ("modified", "emphasized", "element_added"):
+        elif signal in ("modified", "emphasized", "element_added"):
             consumed = True
             self.attraction_points = None
-        if signal in ("grid", "guide"):
+        elif signal in ("grid", "guide"):
             consumed = True
-            self.grid_points = None
-        if signal == "theme":
+            self.scene.grid_points = None
+        elif signal == "theme":
             consumed = True
             self.load_colors()
         if not consumed:

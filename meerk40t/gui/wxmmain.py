@@ -25,15 +25,11 @@ from .icons import (
     icons8_align_top_50,
     icons8_circle_50,
     icons8_cursor_50,
-    icons8_emergency_stop_button_50,
     icons8_flip_vertical,
-    icons8_gas_industry_50,
-    icons8_home_filled_50,
     icons8_measure_50,
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_oval_50,
-    icons8_pause_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
     icons8_polygon_50,
@@ -68,7 +64,7 @@ from .laserrender import (
     DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
-    LaserRender,
+    DRAW_MODE_VARIABLES,
     swizzlecolor,
 )
 from .mwindow import MWindow
@@ -102,6 +98,7 @@ ID_MENU_PREVENT_ALPHABLACK = wx.NewId()
 ID_MENU_HIDE_IMAGE = wx.NewId()
 ID_MENU_HIDE_PATH = wx.NewId()
 ID_MENU_HIDE_TEXT = wx.NewId()
+ID_MENU_SHOW_VARIABLES = wx.NewId()
 
 ID_MENU_FILE0 = wx.NewId()
 ID_MENU_FILE1 = wx.NewId()
@@ -1765,6 +1762,14 @@ class MeerK40t(MWindow):
             wx.ITEM_CHECK,
         )
 
+        self.view_menu.AppendSeparator()
+        self.view_menu.Append(
+            ID_MENU_SHOW_VARIABLES,
+            _("Show Variables"),
+            _("Replace variables in textboxes by their 'real' content"),
+            wx.ITEM_CHECK,
+        )
+
         self.main_menubar.Append(self.view_menu, _("View"))
 
     def __set_pane_menu(self):
@@ -1995,6 +2000,12 @@ class MeerK40t(MWindow):
             self.toggle_draw_mode(DRAW_MODE_FLIPXY),
             id=ID_MENU_SCREEN_FLIPXY,
         )
+        self.Bind(
+            wx.EVT_MENU,
+            self.toggle_draw_mode(DRAW_MODE_VARIABLES),
+            id=ID_MENU_SHOW_VARIABLES
+        )
+
 
     def __set_panes_menu_binds(self):
         self.Bind(

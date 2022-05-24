@@ -21,7 +21,7 @@ from ..core.units import (
     UNITS_PERCENT,
 )
 from ..image.imagetools import RasterScripts
-from ..svgelements import Matrix, SVGImage
+from ..svgelements import Matrix
 from .icons import icons8_fantasy_50
 from .laserrender import LaserRender
 from .mwindow import MWindow

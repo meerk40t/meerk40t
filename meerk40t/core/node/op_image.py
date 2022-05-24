@@ -83,12 +83,33 @@ class ImageOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
+        if self.raster_swing:
+            raster_swing = "-"
+        else:
+            raster_swing = "="
+        if self.raster_direction == 0:
+            raster_dir = "T2B"
+        elif self.raster_direction == 1:
+            raster_dir = "B2T"
+        elif self.raster_direction == 2:
+            raster_dir = "R2L"
+        elif self.raster_direction == 3:
+            raster_dir = "L2R"
+        elif self.raster_direction == 4:
+            raster_dir = "X"
+        else:
+            raster_dir = str(self.raster_direction)
+        default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -180,12 +201,8 @@ class ImageOpNode(Node, Parameters):
 
         for node in self.children:
             dpi = node.dpi
-            oneinch_x = context.device.physical_to_device_length("1in", 0)[
-                0
-            ]
-            oneinch_y = context.device.physical_to_device_length(0, "1in")[
-                1
-            ]
+            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
+            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
             step_x = float(oneinch_x / dpi)
             step_y = float(oneinch_y / dpi)
             node.step_x = step_x
@@ -193,13 +210,16 @@ class ImageOpNode(Node, Parameters):
             m1 = node.matrix
             # Transformation must be uniform to permit native rastering.
             if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+
                 def actual(image_node, s_x, s_y):
                     def actualize_images():
                         image_node.image, image_node.matrix = actualize(
                             image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
                         )
                         image_node.cache = None
+
                     return actualize_images
+
                 commands.append(actual(node, step_x, step_y))
                 break
 
