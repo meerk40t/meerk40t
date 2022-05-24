@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.bindalias import keymap_execute
-from ..svgelements import Angle, Length
+from ..svgelements import Angle, Length, Color
 from .icons import icon_meerk40t
 from .laserrender import LaserRender
 from .mwindow import MWindow
@@ -127,6 +127,34 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", self.widget_scene
 
         @self.context.console_argument(
+            "aspect", type=str, help="aspect of the scene to color"
+        )
+        @self.context.console_argument(
+            "color", type=Color, help="color to apply to scene"
+        )
+        @self.context.console_command("color", input_type="scene")
+        def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            if aspect is None:
+                for key in dir(self.context):
+                    if key.startswith("color_"):
+                        channel(key[6:])
+            else:
+                if aspect == "unset":
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if color is None:
+                    raise SyntaxError(_("No color given."))
+                color_key = f"color_{aspect}"
+                if hasattr(self.context, color_key):
+                    setattr(self.context, color_key, color.hexa)
+                    channel(_("Scene aspect color is set."))
+                    self.context.signal("theme", False)
+                else:
+                    channel(_("%s is not a known scene color command") % aspect)
+
+            return "scene", data
+
+        @self.context.console_argument(
             "zoom_x", type=float, help="zoom amount from current"
         )
         @self.context.console_argument(
@@ -220,6 +248,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.listen("driver;mode", self.on_driver_mode)
         context.listen("refresh_scene", self.on_refresh_scene)
         context.listen("background", self.on_background_signal)
+        context.listen("theme", self.on_theme_change)
         context.listen("bed_size", self.bed_changed)
         context.listen("emphasized", self.on_emphasized_elements_changed)
         context.listen("modified", self.on_element_modified)
@@ -232,6 +261,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.unlisten("driver;mode", self.on_driver_mode)
         context.unlisten("refresh_scene", self.on_refresh_scene)
         context.unlisten("background", self.on_background_signal)
+        context.unlisten("theme", self.on_theme_change)
         context.unlisten("bed_size", self.bed_changed)
         context.unlisten("emphasized", self.on_emphasized_elements_changed)
         context.unlisten("modified", self.on_element_modified)
@@ -251,6 +281,10 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             self.widget_scene.background_brush = wx.Brush("Red")
         self.widget_scene.request_refresh_for_animation()
+
+    def on_theme_change(self, origin, theme=None):
+        self.scene.signal("theme", theme)
+        self.request_refresh(origin)
 
     def on_background_signal(self, origin, background):
         background = wx.Bitmap.FromBuffer(*background)

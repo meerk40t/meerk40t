@@ -782,7 +782,10 @@ class Planner(Modifier):
                     y_last = y_pos
                     x_pos += x_distance
                 y_pos += y_distance
+            y_pos -= y_distance
+            x_pos -= x_distance
             if x_pos != 0 or y_pos != 0:
+                data.plan.append(origin)
                 data.plan.append(offset(-x_pos, -y_pos))
             data.plan.extend(post_plan)
             self.context.signal("plan", data.name, None)
