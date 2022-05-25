@@ -682,9 +682,26 @@ class Elemental(Service):
         )
         def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
             if data is not None:
-                for op in data:
-                    op.settings["penbox_pass"] = key
-                    channel(f"{str(op)} penbox changed to {key}.")
+                if key is not None:
+                    for op in data:
+                        try:
+                            op.settings["penbox_pass"] = key
+                            channel(f"{str(op)} penbox_pass changed to {key}.")
+                        except AttributeError:
+                            pass
+                else:
+                    if key is None:
+                        channel("----------")
+                        for op in data:
+                            try:
+                                key = op.settings.get("penbox_pass")
+                                if key is None:
+                                    channel(f"{str(op)} penbox_pass is not set.")
+                                else:
+                                    channel(f"{str(op)} penbox_pass is set to {key}.")
+                            except AttributeError:
+                                pass # No op.settings.
+                        channel("----------")
             return "ops", data
 
         @self.console_argument("key", help=_("Penbox key"))
@@ -696,9 +713,26 @@ class Elemental(Service):
         )
         def penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs):
             if data is not None:
-                for op in data:
-                    op.settings["penbox_value"] = key
-                    channel(f"{str(op)} penbox changed to {key}.")
+                if key is not None:
+                    for op in data:
+                        try:
+                            op.settings["penbox_value"] = key
+                            channel(f"{str(op)} penbox_value changed to {key}.")
+                        except AttributeError:
+                            pass
+                else:
+                    if key is None:
+                        channel("----------")
+                        for op in data:
+                            try:
+                                key = op.settings.get("penbox_value")
+                                if key is None:
+                                    channel(f"{str(op)} penbox_value is not set.")
+                                else:
+                                    channel(f"{str(op)} penbox_value is set to {key}.")
+                            except AttributeError:
+                                pass # No op.settings.
+                        channel("----------")
             return "ops", data
 
 
