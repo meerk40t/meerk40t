@@ -477,15 +477,11 @@ class Elemental(Service):
         @self.console_command(
             "penbox",
             help=_("Penbox base operation"),
-            input_type=(None, "ops"),
+            input_type=None,
             output_type="penbox",
         )
-        def penbox(command, channel, _, key=None, remainder=None, data=None, **kwargs):
-            if data is not None:
-                for op in data:
-                    op.settings["penbox"] = key
-                    channel(f"{str(op)} penbox changed to {key}.")
-            elif remainder is None:
+        def penbox(command, channel, _, key=None, remainder=None, **kwargs):
+            if remainder is None or key is None:
                 channel("----------")
                 if key is None:
                     for key in self.penbox:
@@ -672,6 +668,39 @@ class Elemental(Service):
                         )
                     )
             channel("----------")
+
+        # ==========
+        # PENBOX OPERATION COMMANDS
+        # ==========
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox_pass",
+            help=_("Set the penbox_pass for the given operation"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                for op in data:
+                    op.settings["penbox_pass"] = key
+                    channel(f"{str(op)} penbox changed to {key}.")
+            return "ops", data
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox_value",
+            help=_("Set the penbox_value for the given operation"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                for op in data:
+                    op.settings["penbox_value"] = key
+                    channel(f"{str(op)} penbox changed to {key}.")
+            return "ops", data
+
 
         # ==========
         # OPERATION BASE
