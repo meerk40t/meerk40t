@@ -487,8 +487,11 @@ class Elemental(Service):
                     for key in self.penbox:
                         channel(str(key))
                 else:
-                    for i, value in enumerate(self.penbox[key]):
-                        channel(f"{i}: {str(value)}")
+                    try:
+                        for i, value in enumerate(self.penbox[key]):
+                            channel(f"{i}: {str(value)}")
+                    except KeyError:
+                        channel(_("penbox does not exist"))
                 channel("----------")
             return "penbox", key
 
