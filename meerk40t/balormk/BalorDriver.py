@@ -349,7 +349,7 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-                    penbox = self.settings.get("value_penbox")
+                    penbox = self.settings.get("penbox_value")
                     if penbox is not None:
                         try:
                             self.value_penbox = self.service.elements.penbox[penbox]
