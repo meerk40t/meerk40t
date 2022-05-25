@@ -285,7 +285,7 @@ class RasterOpNode(Node, Parameters):
         and converts them into rastercut objects. These objects should have already been converted
         from vector shapes.
 
-        The preference for raster shapes it to use the settings set on this operation rather than on the image.
+        The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
         settings = self.derive()
 
