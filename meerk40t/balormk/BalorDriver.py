@@ -127,10 +127,10 @@ class BalorDriver(Parameters):
                     x1, y1, on1 = plot[i]
                     x2, y2, on2 = plot[i + 1]
                     if (
-                        x2 - x1 == x1 - x0
-                        and y2 - y1 == y1 - y0
-                        and on0 == on1
-                        and on1 == on2
+                            x2 - x1 == x1 - x0
+                            and y2 - y1 == y1 - y0
+                            and on0 == on1
+                            and on1 == on2
                     ):
                         continue
                 except IndexError:
@@ -357,7 +357,7 @@ class BalorDriver(Parameters):
                             self.value_penbox = None
                     self._set_settings(job, settings)
                 elif on & (
-                    PLOT_RAPID | PLOT_JOG
+                        PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
                     job.laser_control(False)
                     job.goto(x, y)
@@ -366,6 +366,8 @@ class BalorDriver(Parameters):
                 job.laser_control(False)
                 job.goto(x, y)
             else:
+                # on is in range 0 exclusive and 1 inclusive.
+                # This is a regular cut position
                 if last_on is None or on != last_on:
                     last_on = on
                     if self.value_penbox:
