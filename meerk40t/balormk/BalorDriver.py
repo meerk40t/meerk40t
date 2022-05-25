@@ -371,6 +371,8 @@ class BalorDriver(Parameters):
                 if last_on is None or on != last_on:
                     last_on = on
                     if self.value_penbox:
+                        # There is an active value_penbox
+                        # Power scaling is exclusive to this penbox.
                         settings = dict(self.settings)
                         limit = len(self.value_penbox)
                         m = int(round(on * limit))
@@ -378,10 +380,12 @@ class BalorDriver(Parameters):
                         settings.update(pen)
                         self._set_settings(job, settings)
                     else:
-                        current_power = (
-                                float(self.settings.get("power", self.service.default_power)) / 10.0
-                        )
-                        job.set_power(current_power * on)
+                        # We are using traditional power-scaling
+                        settings = self.plot_planner.settings
+                    current_power = (
+                            float(settings.get("power", self.service.default_power)) / 10.0
+                    )
+                    job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
         job.flush()
