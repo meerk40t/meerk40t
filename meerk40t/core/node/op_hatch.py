@@ -75,6 +75,12 @@ class HatchOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -183,19 +189,19 @@ class HatchOpNode(Node, Parameters):
                     c.append(sp)
             self.remove_all_children()
 
-            penbox = self.settings.get("penbox")
-            if penbox is not None:
+            penbox_pass = self.settings.get("penbox_pass")
+            if penbox_pass is not None:
                 try:
-                    penbox = context.elements.penbox[penbox]
+                    penbox_pass = context.elements.penbox[penbox_pass]
                 except KeyError:
-                    penbox = None
+                    penbox_pass = None
 
             polyline_lookup = dict()
             for p in range(self.implicit_passes):
                 settings = dict(self.settings)
-                if penbox is not None:
+                if penbox_pass is not None:
                     try:
-                        settings.update(penbox[p])
+                        settings.update(penbox_pass[p])
                     except IndexError:
                         pass
                 h_dist = settings.get("hatch_distance", "1mm")

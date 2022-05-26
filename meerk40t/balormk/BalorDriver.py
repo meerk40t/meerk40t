@@ -3,13 +3,11 @@ import time
 from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import BalorMachineException, Sender
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
-from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 
 
-class BalorDriver(Parameters):
+class BalorDriver:
     def __init__(self, service):
-        Parameters.__init__(self)
         self.service = service
         self.native_x = 0x8000
         self.native_y = 0x8000
@@ -28,8 +26,10 @@ class BalorDriver(Parameters):
         self.redlight_preferred = False
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
         )
+        self.wobble = None
+        self.value_penbox = None
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -98,81 +98,6 @@ class BalorDriver(Parameters):
         self.connection.close()
         self.connected = False
         self.service.signal("pipe;usb_status", "Disconnected")
-
-    def group(self, plot):
-        """
-        avoids yielding any place where 0, 1, 2 are in a straight line or equal power.
-
-        This might be a little naive compared to other methods of plotplanning but a general solution does not
-        necessarily exist.
-        @return:
-        """
-        plot = list(plot)
-        last_index = 0
-        for i in range(0, len(plot)):
-            if len(plot[i]) == 2:
-                try:
-                    x0, y0 = plot[i - 1]
-                    x1, y1 = plot[i]
-                    x2, y2 = plot[i + 1]
-                    if x2 - x1 == x1 - x0 and y2 - y1 == y1 - y0:
-                        continue
-                except IndexError:
-                    pass
-            else:
-                try:
-                    x0, y0, on0 = plot[i - 1]
-                    x1, y1, on1 = plot[i]
-                    x2, y2, on2 = plot[i + 1]
-                    if (
-                        x2 - x1 == x1 - x0
-                        and y2 - y1 == y1 - y0
-                        and on0 == on1
-                        and on1 == on2
-                    ):
-                        continue
-                except IndexError:
-                    pass
-            yield plot[i]
-            last_index = i
-        if last_index != len(plot):
-            yield plot[-1]
-
-    # def cutcode_to_light_job(self, queue):
-    #     """
-    #     Converts a queue of cutcode operations into a light job.
-    #
-    #     The cutcode objects will have properties like speed. These are currently not being respected.
-    #
-    #     @param queue:
-    #     @return:
-    #     """
-    #     cal = None
-    #     if self.service.calibration_file is not None:
-    #         try:
-    #             cal = Cal(self.service.calibration_file)
-    #         except TypeError:
-    #             pass
-    #     job = CommandList(cal=cal)
-    #     job.set_travel_speed(self.service.travel_speed)
-    #     for plot in queue:
-    #         start = plot.start()
-    #         job.light(start[0], start[1], False)
-    #         for e in self.group(plot.generator()):
-    #             on = 1
-    #             if len(e) == 2:
-    #                 x, y = e
-    #             else:
-    #                 x, y, on = e
-    #             if on == 0:
-    #                 try:
-    #                     job.light(x, y, True)
-    #                 except ValueError:
-    #                     print("Not including this stroke path:", file=sys.stderr)
-    #             else:
-    #                 job.light(x, y, False)
-    #     job.light_off()
-    #     return job
 
     def hold_work(self):
         """
@@ -248,6 +173,98 @@ class BalorDriver(Parameters):
         else:
             self.connection.light_off()
 
+    def _set_settings(self, job, settings):
+        """
+        Sets the primary settings. Rapid, frequency, speed, and timings.
+
+        @param job: The job to set these settings on
+        @param settings: The current settings dictionary
+        @return:
+        """
+        if (
+                str(settings.get("rapid_enabled", False)).lower() == "true"
+        ):
+            job.set_travel_speed(float(settings.get(
+                "rapid_speed", self.service.default_rapid_speed
+            )))
+        else:
+            job.set_travel_speed(self.service.default_rapid_speed)
+        job.set_power((
+                float(settings.get("power", self.service.default_power)) / 10.0
+        ))  # Convert power, out of 1000
+        job.set_frequency(float(settings.get(
+            "frequency", self.service.default_frequency
+        )))
+        job.set_cut_speed(float(settings.get("speed", self.service.default_speed)))
+
+        if (
+                str(settings.get("timing_enabled", False)).lower() == "true"
+        ):
+            job.set_laser_on_delay(settings.get(
+                "delay_laser_on", self.service.delay_laser_on
+            ))
+            job.set_laser_off_delay(settings.get(
+                "delay_laser_off", self.service.delay_laser_off
+            ))
+            job.set_polygon_delay(settings.get(
+                "delay_laser_polygon", self.service.delay_polygon
+            ))
+        else:
+            # Use globals
+            job.set_laser_on_delay(self.service.delay_laser_on)
+            job.set_laser_off_delay(self.service.delay_laser_off)
+            job.set_polygon_delay(self.service.delay_polygon)
+
+    def _set_wobble(self, job, settings):
+        """
+        Set the wobble parameters and mark modifications routines.
+
+        @param job: The job to set these wobble parameters on.
+        @param settings: The dict setting to extract parameters from.
+        @return:
+        """
+        wobble_enabled = (
+                str(settings.get("wobble_enabled", False)).lower() == "true"
+        )
+        if wobble_enabled:
+            wobble_radius = settings.get("wobble_radius", "1.5mm")
+            wobble_r = self.service.physical_to_device_length(
+                wobble_radius, 0
+            )[0]
+            wobble_interval = settings.get("wobble_interval", "0.3mm")
+            wobble_speed = settings.get("wobble_speed", 50.0)
+            wobble_type = settings.get("wobble_type", "circle")
+            wobble_interval = self.service.physical_to_device_length(
+                wobble_interval, 0
+            )[0]
+            if self.wobble is None:
+                self.wobble = Wobble(
+                    radius=wobble_r,
+                    speed=wobble_speed,
+                    interval=wobble_interval,
+                )
+            else:
+                # set our parameterizations
+                self.wobble.radius = wobble_r
+                self.wobble.speed = wobble_speed
+            if wobble_type == "circle":
+                job._mark_modification = self.wobble.circle
+            elif wobble_type == "sinewave":
+                job._mark_modification = self.wobble.sinewave
+            elif wobble_type == "sawtooth":
+                job._mark_modification = self.wobble.sawtooth
+            elif wobble_type == "jigsaw":
+                job._mark_modification = self.wobble.jigsaw
+            elif wobble_type == "gear":
+                job._mark_modification = self.wobble.gear
+            elif wobble_type == "slowtooth":
+                job._mark_modification = self.wobble.slowtooth
+            else:
+                raise ValueError
+        else:
+            job._mark_modification = None
+            job._interpolations = None
+
     def plot_start(self):
         """
         This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
@@ -260,8 +277,7 @@ class BalorDriver(Parameters):
         job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
         last_on = None
-        current_power = None
-        wobble = None
+        self.wobble = None
         for x, y, on in self.plot_planner.gen():
             while self.hold_work():
                 time.sleep(0.05)
@@ -271,94 +287,16 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-
-                    rapid_enabled = (
-                        str(settings.get("rapid_enabled", False)).lower() == "true"
-                    )
-                    if rapid_enabled:
-                        rapid_speed = settings.get(
-                            "rapid_speed", self.service.default_rapid_speed
-                        )
-                        job.set_travel_speed(float(rapid_speed))
-                    else:
-                        job.set_travel_speed(self.service.default_rapid_speed)
-                    current_power = (
-                        float(settings.get("power", self.service.default_power)) / 10.0
-                    )
-                    job.set_power(current_power)  # Convert power, out of 1000
-                    frequency = settings.get(
-                        "frequency", self.service.default_frequency
-                    )
-                    job.set_frequency(float(frequency))
-                    cut_speed = settings.get("speed", self.service.default_speed)
-                    job.set_cut_speed(float(cut_speed))
-
-                    timing_enabled = (
-                        str(settings.get("timing_enabled", False)).lower() == "true"
-                    )
-                    if timing_enabled:
-                        delay_laser_on = settings.get(
-                            "delay_laser_on", self.service.delay_laser_on
-                        )
-                        job.set_laser_on_delay(delay_laser_on)
-                        delay_laser_off = settings.get(
-                            "delay_laser_off", self.service.delay_laser_off
-                        )
-                        job.set_laser_off_delay(delay_laser_off)
-                        delay_polygon = settings.get(
-                            "delay_laser_polygon", self.service.delay_polygon
-                        )
-                        job.set_polygon_delay(delay_polygon)
-                    else:
-                        # Use globals
-                        job.set_laser_on_delay(self.service.delay_laser_on)
-                        job.set_laser_off_delay(self.service.delay_laser_off)
-                        job.set_polygon_delay(self.service.delay_polygon)
-
-                    wobble_enabled = (
-                        str(settings.get("wobble_enabled", False)).lower() == "true"
-                    )
-                    if wobble_enabled:
-                        wobble_radius = settings.get("wobble_radius", "1.5mm")
-                        wobble_r = self.service.physical_to_device_length(
-                            wobble_radius, 0
-                        )[0]
-                        wobble_interval = settings.get("wobble_interval", "0.3mm")
-                        wobble_speed = settings.get("wobble_speed", 50.0)
-                        wobble_type = settings.get("wobble_type", "circle")
-                        wobble_interval = self.service.physical_to_device_length(
-                            wobble_interval, 0
-                        )[0]
-                        if wobble is None:
-                            wobble = Wobble(
-                                radius=wobble_r,
-                                speed=wobble_speed,
-                                interval=wobble_interval,
-                            )
-                        else:
-                            # set our parameterizations
-                            wobble.radius = wobble_r
-                            wobble.speed = wobble_speed
-                        if wobble_type == "circle":
-                            job._mark_modification = wobble.circle
-                        elif wobble_type == "sinewave":
-                            job._mark_modification = wobble.sinewave
-                        elif wobble_type == "sawtooth":
-                            job._mark_modification = wobble.sawtooth
-                        elif wobble_type == "jigsaw":
-                            job._mark_modification = wobble.jigsaw
-                        elif wobble_type == "gear":
-                            job._mark_modification = wobble.gear
-                        elif wobble_type == "slowtooth":
-                            job._mark_modification = wobble.slowtooth
-                        else:
-                            raise ValueError
-
-                    else:
-                        job._mark_modification = None
-                        job._interpolations = None
+                    penbox = settings.get("penbox_value")
+                    if penbox is not None:
+                        try:
+                            self.value_penbox = self.service.elements.penbox[penbox]
+                        except KeyError:
+                            self.value_penbox = None
+                    self._set_settings(job, settings)
+                    self._set_wobble(job, settings)
                 elif on & (
-                    PLOT_RAPID | PLOT_JOG
+                        PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
                     job.laser_control(False)
                     job.goto(x, y)
@@ -367,9 +305,26 @@ class BalorDriver(Parameters):
                 job.laser_control(False)
                 job.goto(x, y)
             else:
+                # on is in range 0 exclusive and 1 inclusive.
+                # This is a regular cut position
                 if last_on is None or on != last_on:
                     last_on = on
-                    job.set_power(current_power * on)
+                    if self.value_penbox:
+                        # There is an active value_penbox
+                        settings = dict(self.plot_planner.settings)
+                        limit = len(self.value_penbox)
+                        m = int(round(on * limit))
+                        pen = self.value_penbox[m]
+                        settings.update(pen)
+                        # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
+                        self._set_settings(job, settings)
+                    else:
+                        # We are using traditional power-scaling
+                        settings = self.plot_planner.settings
+                        current_power = (
+                                float(settings.get("power", self.service.default_power)) / 10.0
+                        )
+                        job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
         job.flush()

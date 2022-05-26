@@ -154,10 +154,12 @@ class Elemental(Service):
         self.setting(bool, "operation_default_empty", True)
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
+        self.pen_data = Settings(self.kernel.name, "penbox.cfg")
 
-        self.penbox = {
-            "value": [{"power": str(1000.0 * i / 255.0)} for i in range(256)]
-        }
+        self.penbox = {}
+        self.load_persistent_penbox()
+
+        self.wordlists = {"version": [1, self.kernel.version]}
 
         self._init_commands(kernel)
         self._init_tree(kernel)
@@ -169,6 +171,38 @@ class Elemental(Service):
         if not len(ops) and self.operation_default_empty:
             self.load_default()
 
+    def load_persistent_penbox(self):
+        settings = self.pen_data
+        pens = settings.read_persistent_string_dict("pens", suffix=True)
+        for pen in pens:
+            length = int(pens[pen])
+            box = list()
+            for i in range(length):
+                penbox = dict()
+                settings.read_persistent_string_dict(f'{pen} {i}', penbox, suffix=True)
+                box.append(penbox)
+            self.penbox[pen] = box
+
+    def save_persistent_penbox(self):
+        for section in self.penbox:
+            sections = {section: len(self.penbox[section])}
+        self.pen_data.write_persistent_dict("pens", sections)
+        for section in self.penbox:
+            for i, p in enumerate(self.penbox[section]):
+                self.pen_data.write_persistent_dict(f'{section} {i}', p)
+
+    def wordlist_fetch(self, key):
+        try:
+            wordlist = self.wordlists[key]
+        except KeyError:
+            return None
+
+        try:
+            wordlist[0] += 1
+            return wordlist[wordlist[0]]
+        except IndexError:
+            wordlist[0] = 1
+            return wordlist[wordlist[0]]
 
 
     def index_range(self, index_string):
@@ -443,22 +477,21 @@ class Elemental(Service):
         @self.console_command(
             "penbox",
             help=_("Penbox base operation"),
-            input_type=(None, "ops"),
+            input_type=None,
             output_type="penbox",
         )
-        def penbox(command, channel, _, key=None, remainder=None, data=None, **kwargs):
-            if data is not None:
-                for op in data:
-                    op.settings["penbox"] = key
-                    channel(f"{str(op)} penbox changed to {key}.")
-            elif remainder is None:
+        def penbox(command, channel, _, key=None, remainder=None, **kwargs):
+            if remainder is None or key is None:
                 channel("----------")
                 if key is None:
                     for key in self.penbox:
                         channel(str(key))
                 else:
-                    for i, value in enumerate(self.penbox[key]):
-                        channel(f"{i}: {str(value)}")
+                    try:
+                        for i, value in enumerate(self.penbox[key]):
+                            channel(f"{i}: {str(value)}")
+                    except KeyError:
+                        channel(_("penbox does not exist"))
                 channel("----------")
             return "penbox", key
 
@@ -575,8 +608,7 @@ class Elemental(Service):
             if remainder is None:
                 channel("----------")
                 channel(_("Materials:"))
-                secs = self.op_data.section_set()
-                for section in secs:
+                for section in self.op_data.section_set():
                     channel(section)
                 channel("----------")
             return "materials", data
@@ -630,10 +662,8 @@ class Elemental(Service):
         def materials_list(channel, _, data=None, name=None, **kwargs):
             channel("----------")
             channel(_("Materials Current:"))
-            secs = self.op_data.section_set()
-            for section in secs:
-                subsection = self.op_data.derivable(section)
-                for subsect in subsection:
+            for section in self.op_data.section_set():
+                for subsect in self.op_data.derivable(section):
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
                     channel(
                         "{subsection}: {label}".format(
@@ -641,6 +671,73 @@ class Elemental(Service):
                         )
                     )
             channel("----------")
+
+        # ==========
+        # PENBOX OPERATION COMMANDS
+        # ==========
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox_pass",
+            help=_("Set the penbox_pass for the given operation"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                if key is not None:
+                    for op in data:
+                        try:
+                            op.settings["penbox_pass"] = key
+                            channel(f"{str(op)} penbox_pass changed to {key}.")
+                        except AttributeError:
+                            pass
+                else:
+                    if key is None:
+                        channel("----------")
+                        for op in data:
+                            try:
+                                key = op.settings.get("penbox_pass")
+                                if key is None:
+                                    channel(f"{str(op)} penbox_pass is not set.")
+                                else:
+                                    channel(f"{str(op)} penbox_pass is set to {key}.")
+                            except AttributeError:
+                                pass # No op.settings.
+                        channel("----------")
+            return "ops", data
+
+        @self.console_argument("key", help=_("Penbox key"))
+        @self.console_command(
+            "penbox_value",
+            help=_("Set the penbox_value for the given operation"),
+            input_type="ops",
+            output_type="ops",
+        )
+        def penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+            if data is not None:
+                if key is not None:
+                    for op in data:
+                        try:
+                            op.settings["penbox_value"] = key
+                            channel(f"{str(op)} penbox_value changed to {key}.")
+                        except AttributeError:
+                            pass
+                else:
+                    if key is None:
+                        channel("----------")
+                        for op in data:
+                            try:
+                                key = op.settings.get("penbox_value")
+                                if key is None:
+                                    channel(f"{str(op)} penbox_value is not set.")
+                                else:
+                                    channel(f"{str(op)} penbox_value is set to {key}.")
+                            except AttributeError:
+                                pass # No op.settings.
+                        channel("----------")
+            return "ops", data
+
 
         # ==========
         # OPERATION BASE
@@ -5791,6 +5888,8 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
+        self.save_persistent_penbox()
+        self.pen_data.write_configuration()
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
@@ -5815,9 +5914,8 @@ class Elemental(Service):
     def load_persistent_operations(self, name):
         self.clear_operations()
         settings = self.op_data
-        subitems = list(settings.derivable(name))
         operation_branch = self._tree.get(type="branch ops")
-        for section in subitems:
+        for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
             op = operation_branch.add(type=op_type)
             op.load(settings, section)
