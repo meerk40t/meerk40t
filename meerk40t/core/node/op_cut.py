@@ -85,6 +85,12 @@ class CutOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         default_map.update(self.settings)
         return default_map
 

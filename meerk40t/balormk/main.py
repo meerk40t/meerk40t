@@ -31,7 +31,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op hatch",
-            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op raster",
@@ -39,7 +39,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op image",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op dots",
