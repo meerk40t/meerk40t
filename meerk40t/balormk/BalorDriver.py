@@ -3,13 +3,11 @@ import time
 from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import BalorMachineException, Sender
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
-from meerk40t.core.parameters import Parameters
 from meerk40t.core.plotplanner import PlotPlanner
 
 
-class BalorDriver(Parameters):
+class BalorDriver:
     def __init__(self, service):
-        Parameters.__init__(self)
         self.service = service
         self.native_x = 0x8000
         self.native_y = 0x8000
@@ -28,7 +26,7 @@ class BalorDriver(Parameters):
         self.redlight_preferred = False
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
         )
         self.wobble = None
         self.value_penbox = None
