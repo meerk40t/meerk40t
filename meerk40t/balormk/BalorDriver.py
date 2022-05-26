@@ -214,7 +214,14 @@ class BalorDriver(Parameters):
         else:
             self.connection.light_off()
 
-    def _set_settings(self, job, settings, power_scale=1.0):
+    def _set_settings(self, job, settings):
+        """
+        Sets the primary settings. Rapid, frequency, speed, and timings.
+
+        @param job: The job to set these settings on
+        @param settings: The current settings dictionary
+        @return:
+        """
         if (
                 str(settings.get("rapid_enabled", False)).lower() == "true"
         ):
@@ -224,7 +231,7 @@ class BalorDriver(Parameters):
         else:
             job.set_travel_speed(self.service.default_rapid_speed)
         job.set_power((
-                power_scale * float(settings.get("power", self.service.default_power)) / 10.0
+                float(settings.get("power", self.service.default_power)) / 10.0
         ))  # Convert power, out of 1000
         job.set_frequency(float(settings.get(
             "frequency", self.service.default_frequency
@@ -250,6 +257,13 @@ class BalorDriver(Parameters):
             job.set_polygon_delay(self.service.delay_polygon)
 
     def _set_wobble(self, job, settings):
+        """
+        Set the wobble parameters and mark modifications routines.
+
+        @param job: The job to set these wobble parameters on.
+        @param settings: The dict setting to extract parameters from.
+        @return:
+        """
         wobble_enabled = (
                 str(settings.get("wobble_enabled", False)).lower() == "true"
         )
@@ -338,13 +352,13 @@ class BalorDriver(Parameters):
                     last_on = on
                     if self.value_penbox:
                         # There is an active value_penbox
-                        # Power scaling is exclusive to this penbox.
                         settings = dict(self.plot_planner.settings)
                         limit = len(self.value_penbox)
                         m = int(round(on * limit))
                         pen = self.value_penbox[m]
                         settings.update(pen)
-                        self._set_settings(job, settings, on)
+                        # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
+                        self._set_settings(job, settings)
                     else:
                         # We are using traditional power-scaling
                         settings = self.plot_planner.settings
