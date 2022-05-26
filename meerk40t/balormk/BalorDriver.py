@@ -140,42 +140,6 @@ class BalorDriver(Parameters):
         if last_index != len(plot):
             yield plot[-1]
 
-    # def cutcode_to_light_job(self, queue):
-    #     """
-    #     Converts a queue of cutcode operations into a light job.
-    #
-    #     The cutcode objects will have properties like speed. These are currently not being respected.
-    #
-    #     @param queue:
-    #     @return:
-    #     """
-    #     cal = None
-    #     if self.service.calibration_file is not None:
-    #         try:
-    #             cal = Cal(self.service.calibration_file)
-    #         except TypeError:
-    #             pass
-    #     job = CommandList(cal=cal)
-    #     job.set_travel_speed(self.service.travel_speed)
-    #     for plot in queue:
-    #         start = plot.start()
-    #         job.light(start[0], start[1], False)
-    #         for e in self.group(plot.generator()):
-    #             on = 1
-    #             if len(e) == 2:
-    #                 x, y = e
-    #             else:
-    #                 x, y, on = e
-    #             if on == 0:
-    #                 try:
-    #                     job.light(x, y, True)
-    #                 except ValueError:
-    #                     print("Not including this stroke path:", file=sys.stderr)
-    #             else:
-    #                 job.light(x, y, False)
-    #     job.light_off()
-    #     return job
-
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
