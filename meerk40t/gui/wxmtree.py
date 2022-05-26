@@ -48,7 +48,7 @@ def register_panel_tree(window, context):
         "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
     )
     context.register(
-        "format/op hatch", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+        "format/op hatch", "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}"
     )
     context.register(
         "format/op raster",
