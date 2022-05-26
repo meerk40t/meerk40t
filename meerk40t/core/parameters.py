@@ -44,7 +44,7 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle")
+STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle", "penbox_value", "penbox_pass")
 
 COLOR_PARAMETERS = ("color", "line_color")
 
@@ -317,6 +317,10 @@ class Parameters:
     def raster_swing(self, value):
         self.settings["raster_swing"] = value
 
+    #####################
+    # HATCH PROPERTIES
+    #####################
+
     @property
     def hatch_type(self):
         return self.settings.get("hatch_type", 0)
@@ -348,6 +352,26 @@ class Parameters:
     @hatch_distance.setter
     def hatch_distance(self, value):
         self.settings["hatch_distance"] = value
+
+    #####################
+    # PENBOX PROPERTIES
+    #####################
+
+    @property
+    def penbox_pass(self):
+        return self.settings.get("penbox_pass")
+
+    @penbox_pass.setter
+    def penbox_pass(self, value):
+        self.settings["penbox_pass"] = value
+
+    @property
+    def penbox_value(self):
+        return self.settings.get("penbox_value")
+
+    @penbox_value.setter
+    def penbox_value(self, value):
+        self.settings["penbox_value"] = value
 
     @property
     def acceleration(self):
