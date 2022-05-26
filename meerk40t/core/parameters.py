@@ -50,6 +50,15 @@ COLOR_PARAMETERS = ("color", "line_color")
 
 
 class Parameters:
+    """
+    Parameters is a helper class which seeks to normalize, validate, and extract values from an underlying
+    dictionary. This class isn't required and in many cases it's better and more consistent to extract the
+    values of various settings directly as keys in the dictionary. This class is provided to simplify those set
+    and get operations as well as to normalize the keys used to store and extract the information. Since different
+    drivers can have completely different and alien settings the dictionary is the primary storage for these
+    settings. Settings outside the scope of this class are still legal and will be passed to the drivers which
+    may or may not implement or respect them.
+    """
     def __init__(self, settings: Dict = None, **kwargs):
         self.settings = settings
         if self.settings is None:
