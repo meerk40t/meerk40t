@@ -84,6 +84,10 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
     ty = bbox[1]
     matrix.post_translate(-tx, -ty)
     matrix.post_scale(step_scale_x, step_scale_y)
+    if step_y < 0:
+        matrix.post_translate(0, image_height)
+    if step_x < 0:
+        matrix.post_translate(image_width, 0)
     try:
         matrix.inverse()
     except ZeroDivisionError:
@@ -115,6 +119,10 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
                 image = image.crop(box)
                 matrix.post_translate(box[0], box[1])
     # step level requires the new actualized matrix be scaled up.
+    if step_y < 0:
+        matrix.post_translate(0, -image_height)
+    if step_x < 0:
+        matrix.post_translate(-image_width, 0)
     matrix.post_scale(step_x, step_y)
     matrix.post_translate(tx, ty)
     return image, matrix

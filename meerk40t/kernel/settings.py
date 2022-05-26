@@ -6,12 +6,26 @@ from .functions import get_safe_path
 
 
 class Settings:
+    """
+    Settings are thin interface with the configparser within python. Conceptually it's a
+    dictionary of dictionaries. The first dictionary key are called sections, and the sub-
+    section are attributes. To save a list of related settings we add a space within the
+    section name. E.g. `operation 0001` or `operation 0002` etc. The first element can be
+    divided up with various layers of `/` to make derivable sub-directories of settings.
+
+    Reading/writing and deleting are performed on the config_dict which stores a set of values
+    these are loaded during the `read_configuration` step and are committed to disk when
+    `write_configuration` is called.
+    """
     def __init__(self, directory, filename):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )
         self._config_dict = {}
         self.read_configuration()
+
+    def __contains__(self, item):
+        return item in self._config_dict
 
     def read_configuration(self):
         """
