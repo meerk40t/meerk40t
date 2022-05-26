@@ -250,7 +250,7 @@ class BalorDriver(Parameters):
         else:
             self.connection.light_off()
 
-    def _set_settings(self, job, settings):
+    def _set_settings(self, job, settings, power_scale=1.0):
         if (
                 str(settings.get("rapid_enabled", False)).lower() == "true"
         ):
@@ -260,7 +260,7 @@ class BalorDriver(Parameters):
         else:
             job.set_travel_speed(self.service.default_rapid_speed)
         job.set_power((
-                float(settings.get("power", self.service.default_power)) / 10.0
+                power_scale * float(settings.get("power", self.service.default_power)) / 10.0
         ))  # Convert power, out of 1000
         job.set_frequency(float(settings.get(
             "frequency", self.service.default_frequency
@@ -285,6 +285,7 @@ class BalorDriver(Parameters):
             job.set_laser_off_delay(self.service.delay_laser_off)
             job.set_polygon_delay(self.service.delay_polygon)
 
+    def _set_wobble(self, job, settings):
         wobble_enabled = (
                 str(settings.get("wobble_enabled", False)).lower() == "true"
         )
@@ -349,13 +350,14 @@ class BalorDriver(Parameters):
                     break
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     settings = self.plot_planner.settings
-                    penbox = self.settings.get("penbox_value")
+                    penbox = settings.get("penbox_value")
                     if penbox is not None:
                         try:
                             self.value_penbox = self.service.elements.penbox[penbox]
                         except KeyError:
                             self.value_penbox = None
                     self._set_settings(job, settings)
+                    self._set_wobble(job, settings)
                 elif on & (
                         PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
@@ -373,19 +375,19 @@ class BalorDriver(Parameters):
                     if self.value_penbox:
                         # There is an active value_penbox
                         # Power scaling is exclusive to this penbox.
-                        settings = dict(self.settings)
+                        settings = dict(self.plot_planner.settings)
                         limit = len(self.value_penbox)
                         m = int(round(on * limit))
                         pen = self.value_penbox[m]
                         settings.update(pen)
-                        self._set_settings(job, settings)
+                        self._set_settings(job, settings, on)
                     else:
                         # We are using traditional power-scaling
                         settings = self.plot_planner.settings
-                    current_power = (
-                            float(settings.get("power", self.service.default_power)) / 10.0
-                    )
-                    job.set_power(current_power * on)
+                        current_power = (
+                                float(settings.get("power", self.service.default_power)) / 10.0
+                        )
+                        job.set_power(current_power * on)
                 job.laser_control(True)
                 job.mark(x, y)
         job.flush()
