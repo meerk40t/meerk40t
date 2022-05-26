@@ -101,45 +101,6 @@ class BalorDriver(Parameters):
         self.connected = False
         self.service.signal("pipe;usb_status", "Disconnected")
 
-    def group(self, plot):
-        """
-        avoids yielding any place where 0, 1, 2 are in a straight line or equal power.
-
-        This might be a little naive compared to other methods of plotplanning but a general solution does not
-        necessarily exist.
-        @return:
-        """
-        plot = list(plot)
-        last_index = 0
-        for i in range(0, len(plot)):
-            if len(plot[i]) == 2:
-                try:
-                    x0, y0 = plot[i - 1]
-                    x1, y1 = plot[i]
-                    x2, y2 = plot[i + 1]
-                    if x2 - x1 == x1 - x0 and y2 - y1 == y1 - y0:
-                        continue
-                except IndexError:
-                    pass
-            else:
-                try:
-                    x0, y0, on0 = plot[i - 1]
-                    x1, y1, on1 = plot[i]
-                    x2, y2, on2 = plot[i + 1]
-                    if (
-                            x2 - x1 == x1 - x0
-                            and y2 - y1 == y1 - y0
-                            and on0 == on1
-                            and on1 == on2
-                    ):
-                        continue
-                except IndexError:
-                    pass
-            yield plot[i]
-            last_index = i
-        if last_index != len(plot):
-            yield plot[-1]
-
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
