@@ -2,6 +2,7 @@ import time
 
 from meerk40t.balor.command_list import CommandList, Wobble
 from meerk40t.balor.sender import BalorMachineException, Sender
+from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 
@@ -25,6 +26,7 @@ class BalorDriver:
 
         self.redlight_preferred = False
 
+        self.queue = list()
         self.plot_planner = PlotPlanner(
             dict(), single=True, smooth=False, ppi=False, shift=False, group=True
         )
@@ -153,7 +155,7 @@ class BalorDriver:
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        self.queue.append(plot)
 
     def light(self, job):
         """
@@ -282,61 +284,123 @@ class BalorDriver:
         job.goto(0x8000, 0x8000)
         last_on = None
         self.wobble = None
-        for x, y, on in self.plot_planner.gen():
-            while self.hold_work():
-                time.sleep(0.05)
-            if on > 1:
-                # Special Command.
-                if on & PLOT_FINISH:  # Plot planner is ending.
-                    break
-                elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    settings = self.plot_planner.settings
-                    penbox = settings.get("penbox_value")
-                    if penbox is not None:
-                        try:
-                            self.value_penbox = self.service.elements.penbox[penbox]
-                        except KeyError:
-                            self.value_penbox = None
-                    self._set_settings(job, settings)
-                    self._set_wobble(job, settings)
-                elif on & (
-                        PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    # job.laser_off(int(self.service.delay_end / 10.0))
-                    job.set_travel_speed(self.service.default_rapid_speed)
+        for q in self.queue:
+            settings = q.settings
+            penbox = settings.get("penbox_value")
+            if penbox is not None:
+                try:
+                    self.value_penbox = self.service.elements.penbox[penbox]
+                except KeyError:
+                    self.value_penbox = None
+            self._set_settings(job, settings)
+            self._set_wobble(job, settings)
+
+            if isinstance(q, LineCut):
+                last_x, last_y = job.get_last_xy()
+                x, y = q.start
+                if last_x != x and last_y != y:
                     job.goto(x, y)
-                continue
-            if on == 0:
-                # job.laser_off(int(self.service.delay_end / 10.0))
-                job.set_travel_speed(self.service.default_rapid_speed)
-                job.goto(x, y)
+                job.mark(*q.end)
+            elif isinstance(q, (QuadCut, CubicCut)):
+                last_x, last_y = job.get_last_xy()
+                x, y = q.start
+                if last_x != x and last_y != y:
+                    job.goto(x, y)
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = 0
+                for p in range(int(interp)):
+                    while self.hold_work():
+                        time.sleep(0.05)
+                    p = q.point(t)
+                    job.mark(*p)
+                    t += step_size
+            elif isinstance(q, PlotCut):
+                last_x, last_y = job.get_last_xy()
+                x, y = q.start
+                if last_x != x and last_y != y:
+                    job.goto(x, y)
+                for x, y, on in q.plot:
+                    # q.plot can have different on values, these are parsed
+                    if last_on is None or on != last_on:
+                        last_on = on
+                        if self.value_penbox:
+                            # There is an active value_penbox
+                            settings = dict(q.settings)
+                            limit = len(self.value_penbox) - 1
+                            m = int(round(on * limit))
+                            try:
+                                pen = self.value_penbox[m]
+                                settings.update(pen)
+                            except IndexError:
+                                pass
+                            # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
+                            self._set_settings(job, settings)
+                        else:
+                            # We are using traditional power-scaling
+                            settings = self.plot_planner.settings
+                            current_power = (
+                                    float(settings.get("power", self.service.default_power)) / 10.0
+                            )
+                            job.set_power(current_power * on)
+                    job.mark(x, y)
             else:
-                # on is in range 0 exclusive and 1 inclusive.
-                # This is a regular cut position
-                if last_on is None or on != last_on:
-                    last_on = on
-                    if self.value_penbox:
-                        # There is an active value_penbox
-                        settings = dict(self.plot_planner.settings)
-                        limit = len(self.value_penbox)
-                        m = int(round(on * limit))
-                        try:
-                            pen = self.value_penbox[m]
-                            settings.update(pen)
-                        except IndexError:
-                            pass
-                        # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
-                        self._set_settings(job, settings)
+                self.plot_planner.push(q)
+                for x, y, on in self.plot_planner.gen():
+                    while self.hold_work():
+                        time.sleep(0.05)
+                    if on > 1:
+                        # Special Command.
+                        if on & PLOT_FINISH:  # Plot planner is ending.
+                            break
+                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            settings = self.plot_planner.settings
+                            penbox = settings.get("penbox_value")
+                            if penbox is not None:
+                                try:
+                                    self.value_penbox = self.service.elements.penbox[penbox]
+                                except KeyError:
+                                    self.value_penbox = None
+                            self._set_settings(job, settings)
+                            self._set_wobble(job, settings)
+                        elif on & (
+                                PLOT_RAPID | PLOT_JOG
+                        ):  # Plot planner requests position change.
+                            # job.laser_off(int(self.service.delay_end / 10.0))
+                            job.set_travel_speed(self.service.default_rapid_speed)
+                            job.goto(x, y)
+                        continue
+                    if on == 0:
+                        # job.laser_off(int(self.service.delay_end / 10.0))
+                        job.set_travel_speed(self.service.default_rapid_speed)
+                        job.goto(x, y)
                     else:
-                        # We are using traditional power-scaling
-                        settings = self.plot_planner.settings
-                        current_power = (
-                                float(settings.get("power", self.service.default_power)) / 10.0
-                        )
-                        job.set_power(current_power * on)
-                # job.laser_on()
-                job.mark(x, y)
-                marked = True
+                        # on is in range 0 exclusive and 1 inclusive.
+                        # This is a regular cut position
+                        if last_on is None or on != last_on:
+                            last_on = on
+                            if self.value_penbox:
+                                # There is an active value_penbox
+                                settings = dict(self.plot_planner.settings)
+                                limit = len(self.value_penbox) - 1
+                                m = int(round(on * limit))
+                                try:
+                                    pen = self.value_penbox[m]
+                                    settings.update(pen)
+                                except IndexError:
+                                    pass
+                                # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
+                                self._set_settings(job, settings)
+                            else:
+                                # We are using traditional power-scaling
+                                settings = self.plot_planner.settings
+                                current_power = (
+                                        float(settings.get("power", self.service.default_power)) / 10.0
+                                )
+                                job.set_power(current_power * on)
+                        # job.laser_on()
+                        job.mark(x, y)
+                        marked = True
         # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
         self.connection.execute(job, 1)

@@ -140,6 +140,14 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the Y axis for the Balor device"),
             },
             {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Number of curve interpolation points"),
+            },
+            {
                 "attr": "mock",
                 "object": self,
                 "default": False,

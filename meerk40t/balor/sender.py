@@ -315,8 +315,8 @@ class Sender:
                     return False
 
             self.port_on(bit=0)
-            if command_list.movement:
-                self.raw_fiber_open_mo(1, 0)
+            # if command_list.movement:
+            #     self.raw_fiber_open_mo(1, 0)
 
             loop_index = 0
             while loop_index < loop_count:
@@ -325,6 +325,9 @@ class Sender:
                 self.raw_reset_list()
 
                 for packet in command_list.packet_generator():
+                    # added tp check
+                    if command_list.movement:
+                        self.raw_fiber_open_mo(1, 0)
                     while not self.is_ready():
                         if self._terminate_execution:
                             return False
