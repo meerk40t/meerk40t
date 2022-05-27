@@ -1,7 +1,6 @@
 from datetime import datetime
 import csv
 import re
-import pickle
 import os
 
 class Wordlist():
@@ -201,11 +200,25 @@ class Wordlist():
         return choices
 
     def load_data(self, filename):
+        # Copied from micropython...
+        def loads(s):
+            d = {}
+            s = s.decode()
+            if "(" in s:
+                qualname = s.split("(", 1)[0]
+                if "." in qualname:
+                    pkg = qualname.rsplit(".", 1)[0]
+                    mod = __import__(pkg)
+                    d[pkg] = mod
+            return eval(s, d)
+
         if filename is None:
             filename = self.default_filename
         try:
             with open(filename, 'rb') as f:
-                self.content = pickle.load(f)
+                s = f.read()
+                self.content = loads(s)
+                # self.content = pickle.load(f)
         except:
             pass
 
@@ -214,7 +227,8 @@ class Wordlist():
             filename = self.default_filename
         try:
             with open(filename, 'wb') as f:
-                pickle.dump(self.content, f)
+                f.write(repr(self.content))
+                # pickle.dump(self.content, f)
         except:
             pass
 
