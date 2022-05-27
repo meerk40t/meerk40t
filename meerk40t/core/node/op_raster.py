@@ -239,7 +239,7 @@ class RasterOpNode(Node, Parameters):
                         )
                         image_node.cache = None
 
-                    return actualize_raster_image_node()
+                    return actualize_raster_image_node
 
                 commands.append(actualize_raster_image(node, step_x, step_y))
             return

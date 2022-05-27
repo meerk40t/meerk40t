@@ -315,6 +315,8 @@ class Sender:
                     return False
 
             self.port_on(bit=0)
+            if command_list.movement:
+                self.raw_fiber_open_mo(1, 0)
 
             loop_index = 0
             while loop_index < loop_count:
@@ -339,8 +341,12 @@ class Sender:
 
                 while self.is_busy():
                     if self._terminate_execution:
+                        if command_list.movement:
+                            self.raw_fiber_open_mo(0, 0)
                         return False
                 loop_index += 1
+        if command_list.movement:
+            self.raw_fiber_open_mo(0, 0)
         if callback_finished is not None:
             callback_finished()
         return True

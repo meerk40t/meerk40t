@@ -251,6 +251,14 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
             },
+            {
+                "attr": "delay_end",
+                "object": self,
+                "default": 300.0,
+                "type": float,
+                "label": _("End Delay"),
+                "tip": _("Delay amount for the end TC"),
+            },
         ]
         self.register_choices("balor-global-timing", choices)
 
@@ -532,7 +540,6 @@ class BalorDevice(Service, ViewPort):
                 if polygon_delay is None
                 else polygon_delay,
             )
-            job.laser_control(True)
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)

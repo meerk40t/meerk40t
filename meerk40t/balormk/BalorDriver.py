@@ -30,6 +30,7 @@ class BalorDriver:
         )
         self.wobble = None
         self.value_penbox = None
+        self.plot_planner.settings_then_jog = True
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -273,6 +274,9 @@ class BalorDriver:
         """
         self.connect_if_needed()
         job = CommandList()
+        job.ready()
+        # marked = False
+        job.raw_mark_end_delay(0x0320)
         job.set_write_port(self.connection.get_port())
         job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
@@ -298,11 +302,13 @@ class BalorDriver:
                 elif on & (
                         PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    job.laser_control(False)
+                    # job.laser_off(int(self.service.delay_end / 10.0))
+                    job.set_travel_speed(self.service.default_rapid_speed)
                     job.goto(x, y)
                 continue
             if on == 0:
-                job.laser_control(False)
+                # job.laser_off(int(self.service.delay_end / 10.0))
+                job.set_travel_speed(self.service.default_rapid_speed)
                 job.goto(x, y)
             else:
                 # on is in range 0 exclusive and 1 inclusive.
@@ -314,8 +320,11 @@ class BalorDriver:
                         settings = dict(self.plot_planner.settings)
                         limit = len(self.value_penbox)
                         m = int(round(on * limit))
-                        pen = self.value_penbox[m]
-                        settings.update(pen)
+                        try:
+                            pen = self.value_penbox[m]
+                            settings.update(pen)
+                        except IndexError:
+                            pass
                         # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
                         self._set_settings(job, settings)
                     else:
@@ -325,10 +334,11 @@ class BalorDriver:
                                 float(settings.get("power", self.service.default_power)) / 10.0
                         )
                         job.set_power(current_power * on)
-                job.laser_control(True)
+                # job.laser_on()
                 job.mark(x, y)
+                marked = True
+        # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
-        job.laser_control(False)
         self.connection.execute(job, 1)
         if self.redlight_preferred:
             self.connection.light_on()

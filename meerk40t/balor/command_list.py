@@ -601,6 +601,7 @@ def OperationFactory(code, tracking=None, position=0):
 
 class CommandSource:
     tick = None
+    movement = True
 
     def packet_generator(self):
         assert False, "Override this abstract method!"
@@ -669,6 +670,7 @@ class CommandList(CommandSource):
         self._laser_off_delay = None
         self._poly_delay = None
         self._mark_end_delay = None
+        self._laser_on = False
         if self._sender:
             self._write_port = self._sender._write_port
         else:
@@ -839,9 +841,25 @@ class CommandList(CommandSource):
             self._ready = True
             self.append(OpReadyMark())
 
-    def laser_control(self, control):
+    def laser_on(self):
+        if self._laser_on:
+            return
+        self._laser_on = True
+        self.raw_laser_control(1)
+
+    def laser_off(self, end_tc=0x1E):
+        if not self._laser_on:
+            return
+        self._laser_on = False
+        self.raw_mark_end_delay(end_tc)
+        self.raw_laser_control(0)
+
+    def laser_control(self, control, end_tc=0x1E):
         """
         Enable the laser control.
+
+        If false. We are turning the laser off and should specify how long this will take to disable.
+
         @param control:
         @return:
         """
@@ -860,11 +878,11 @@ class CommandList(CommandSource):
         # be different for different (e.g. non raycus q-switched fiber) lasers.
         # EzCAD lets you configure them.
         if control:
-            self.append(OpLaserControl(0x0001))
-            self.set_mark_end_delay(0x0320)
+            self.raw_laser_control(1)
+            self.raw_mark_end_delay(0x0320)
         else:
-            self.set_mark_end_delay(0x001E)
-            self.append(OpLaserControl(0x0000))
+            self.raw_mark_end_delay(end_tc)
+            self.raw_laser_control(0)
 
     def set_travel_speed(self, speed):
         """
