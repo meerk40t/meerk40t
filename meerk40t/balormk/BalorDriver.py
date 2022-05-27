@@ -302,16 +302,12 @@ class BalorDriver:
                 elif on & (
                         PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    # if marked:
-                    #     job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
-                    job.laser_off(int(self.service.delay_end / 10.0))
+                    # job.laser_off(int(self.service.delay_end / 10.0))
                     job.set_travel_speed(self.service.default_rapid_speed)
                     job.goto(x, y)
                 continue
             if on == 0:
-                # if marked:
-                #     job.raw_mark_end_delay()
-                job.laser_off(int(self.service.delay_end / 10.0))
+                # job.laser_off(int(self.service.delay_end / 10.0))
                 job.set_travel_speed(self.service.default_rapid_speed)
                 job.goto(x, y)
             else:
@@ -335,12 +331,10 @@ class BalorDriver:
                                 float(settings.get("power", self.service.default_power)) / 10.0
                         )
                         job.set_power(current_power * on)
-                job.laser_on()
+                # job.laser_on()
                 job.mark(x, y)
                 marked = True
-        # if marked:
-        #     # job.raw_mark_end_delay(int(self.service.delay_end / 10.0))
-        job.laser_off(int(self.service.delay_end / 10.0))
+        # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
         self.connection.execute(job, 1)
         if self.redlight_preferred:
