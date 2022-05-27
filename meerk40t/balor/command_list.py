@@ -601,6 +601,7 @@ def OperationFactory(code, tracking=None, position=0):
 
 class CommandSource:
     tick = None
+    movement = True
 
     def packet_generator(self):
         assert False, "Override this abstract method!"
