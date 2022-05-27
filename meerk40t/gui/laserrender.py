@@ -400,7 +400,7 @@ class LaserRender:
         if not hasattr(node, "fillrule") or node.fillrule is None:
             fr = wx.WINDING_RULE
         else:
-            if node.linejoin == Fillrule.FILLRULE_EVENODD:
+            if node.fillrule == Fillrule.FILLRULE_EVENODD:
                 fr = wx.ODDEVEN_RULE
             else:
                 fr = wx.WINDING_RULE
@@ -416,7 +416,7 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fr)
+            gc.FillPath(node.cache, fillStyle=fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -459,7 +459,7 @@ class LaserRender:
         if not hasattr(node, "fillrule") or node.fillrule is None:
             fr = wx.WINDING_RULE
         else:
-            if node.linejoin == Fillrule.FILLRULE_EVENODD:
+            if node.fillrule == Fillrule.FILLRULE_EVENODD:
                 fr = wx.ODDEVEN_RULE
             else:
                 fr = wx.WINDING_RULE
@@ -473,7 +473,7 @@ class LaserRender:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fr)
+            gc.FillPath(node.cache, fillStyle=fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
