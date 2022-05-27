@@ -75,9 +75,6 @@ class WordlistPanel(wx.Panel):
         self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
         self.btn_delete.SetToolTip(_("Delete the current wordlist entry"))
         sizer_buttons.Add(self.btn_delete, 0, 0, 0)
-        self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_buttons.Add(self.lbl_message, 1, 0, 0)
-
 
         sizer_exit = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1.Add(sizer_exit, 0, wx.ALL, 4)
@@ -89,6 +86,9 @@ class WordlistPanel(wx.Panel):
         self.btn_restore = wx.Button(self, wx.ID_ANY, _("Restore Wordlist"))
         self.btn_restore.SetToolTip(_("Load wordlist from disk"))
         sizer_exit.Add(self.btn_restore, 0, 0, 0)
+
+        self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
+        sizer_exit.Add(self.lbl_message, 1, 0, 0)
 
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
