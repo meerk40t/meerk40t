@@ -191,7 +191,7 @@ class WordlistPanel(wx.Panel):
                 if i>maxidx:
                     maxidx = i
         if maxidx>=0:
-            for i in range(maxidx + 1):
+            for i in range(maxidx):
                 self.cbo_Index.Append(str(i))
             self.cbo_Index.SetValue("0")
         self.cbo_Index.Enable(True)
