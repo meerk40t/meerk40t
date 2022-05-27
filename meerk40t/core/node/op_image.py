@@ -124,7 +124,7 @@ class ImageOpNode(Node, Parameters):
 
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
-            if drag_node.type == "elem image":
+            if drag_node.type != "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
             self.add_reference(drag_node, pos=0)
