@@ -39,6 +39,8 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
+    SVG_RULE_NONZERO,
+    SVG_RULE_EVENODD,
     Circle,
     Ellipse,
     Group,
@@ -52,10 +54,11 @@ from ..svgelements import (
     SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_PIXEL
-from meerk40t.core.node.node import Linecap, Linejoin
+from meerk40t.core.node.node import Linecap, Linejoin, Fillrule
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
+SVG_ATTR_FILL_RULE = "fill-rule"
 
 
 def plugin(kernel, lifecycle=None):
@@ -204,6 +207,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 subelement.set()
             elif c.type == "elem path":
@@ -212,6 +216,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 subelement = SubElement(xml_tree, "element")
@@ -223,6 +228,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
@@ -424,6 +430,17 @@ class SVGProcessor:
         if self.requires_classification:
             self.elements.classify(self.element_list)
 
+    def check_for_fill_attributes(self, node, element):
+        lc = element.values.get(SVG_ATTR_FILL_RULE)
+        if not lc is None:
+            nlc = Fillrule.FILLRULE_NONZERO
+            lc = lc.lower()
+            if lc==SVG_RULE_EVENODD:
+                nlc = Fillrule.FILLRULE_EVENODD
+            elif lc==SVG_RULE_NONZERO:
+                nlc = Fillrule.FILLRULE_NONZERO
+            node.fillrule = nlc
+
     def check_for_line_attributes(self, node, element):
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
         if not lc is None:
@@ -470,6 +487,7 @@ class SVGProcessor:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(path=element, type="elem path", id=ident)
                 self.check_for_line_attributes(node, element)
+                self.check_for_fill_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, (Polygon, Polyline)):
             if not element.is_degenerate():
@@ -480,6 +498,7 @@ class SVGProcessor:
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem polyline", id=ident)
                 self.check_for_line_attributes(node, element)
+                self.check_for_fill_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, Circle):
             if not element.is_degenerate():

@@ -16,7 +16,7 @@ from meerk40t.core.cutcode import (
     RasterCut,
     RawCut,
 )
-from meerk40t.core.node.node import Node, Linecap, Linejoin
+from meerk40t.core.node.node import Node, Linecap, Linejoin, Fillrule
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -397,6 +397,14 @@ class LaserRender:
                 lj = wx.JOIN_MITER
             else:
                 lj = wx.JOIN_MITER
+        if not hasattr(node, "fillrule") or node.fillrule is None:
+            fr = wx.WINDING_RULE
+        else:
+            if node.linejoin == Fillrule.FILLRULE_EVENODD:
+                fr = wx.ODDEVEN_RULE
+            else:
+                fr = wx.WINDING_RULE
+
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
@@ -408,7 +416,7 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache)
+            gc.FillPath(node.cache, fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -448,6 +456,13 @@ class LaserRender:
                 lj = wx.JOIN_MITER
             else:
                 lj = wx.JOIN_ROUND
+        if not hasattr(node, "fillrule") or node.fillrule is None:
+            fr = wx.WINDING_RULE
+        else:
+            if node.linejoin == Fillrule.FILLRULE_EVENODD:
+                fr = wx.ODDEVEN_RULE
+            else:
+                fr = wx.WINDING_RULE
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
@@ -458,7 +473,7 @@ class LaserRender:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache)
+            gc.FillPath(node.cache, fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()

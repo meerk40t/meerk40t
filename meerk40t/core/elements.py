@@ -12,11 +12,11 @@ from numpy import linspace
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
-from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox
+from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox, SVG_RULE_EVENODD, SVG_RULE_NONZERO
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node, Linecap, Linejoin
+from .node.node import Node, Linecap, Linejoin, Fillrule
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -3252,6 +3252,66 @@ class Elemental(Service):
                     for e in apply:
                         if hasattr(e, "linejoin"):
                             e.linejoin = joinvalue
+                            e.altered()
+                return "elements", data
+
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument(
+            "rule", type=str, help=_("rule to apply to fill the path (one of %s, %s)") % (SVG_RULE_NONZERO, SVG_RULE_EVENODD)
+        )
+        @self.console_command(
+            "fillrule",
+            help=_("fillrule <rule>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_rule(
+            command, channel, _, rule=None, data=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index %d out of range") % value)
+            if rule is None:
+                channel("----------")
+                channel(_("fillrules:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if hasattr(e, "fillrule"):
+                        if e.fillrule == Fillrule.FILLRULE_EVENODD:
+                            rulename = SVG_RULE_EVENODD
+                        elif e.fillrule == Fillrule.FILLRULE_NONZERO:
+                            rulename = SVG_RULE_NONZERO
+                        channel(_("%d: fillrule = %s - %s") % (i, rulename, name))
+                    i += 1
+                channel("----------")
+                return
+            else:
+                rulevalue = None
+                if rule.lower() == SVG_RULE_EVENODD:
+                    rulevalue = Fillrule.FILLRULE_EVENODD
+                elif rule.lower() == SVG_RULE_NONZERO:
+                    rulevalue = Fillrule.FILLRULE_NONZERO
+                if not rulevalue is None:
+                    for e in apply:
+                        if hasattr(e, "fillrule"):
+                            e.fillrule = rulevalue
                             e.altered()
                 return "elements", data
 
