@@ -320,8 +320,11 @@ class BalorDriver:
                         settings = dict(self.plot_planner.settings)
                         limit = len(self.value_penbox)
                         m = int(round(on * limit))
-                        pen = self.value_penbox[m]
-                        settings.update(pen)
+                        try:
+                            pen = self.value_penbox[m]
+                            settings.update(pen)
+                        except IndexError:
+                            pass
                         # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
                         self._set_settings(job, settings)
                     else:
