@@ -476,7 +476,7 @@ class CutPlan:
 
             def adjust_bbox(bbox):
                 x1, y1, x2, y2 = bbox
-                return x1 - dx, y1 - dy, x2 + dx, y2 + dy
+                return x1 - dx - 50, y1 - dy - 50, x2 + dx + 50, y2 + dy + 50
 
             groups = group_overlapped_rasters(
                 [
