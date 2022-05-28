@@ -323,20 +323,26 @@ class Sender:
                 if command_list.tick is not None:
                     command_list.tick(command_list, loop_index)
                 self.raw_reset_list()
-
+                execute_list = False
+                packet_count = 0
                 for packet in command_list.packet_generator():
-                    # added tp check
-                    # if command_list.movement:
-                    #     self.raw_fiber_open_mo(1, 0)
-                    while not self.is_ready():
-                        if self._terminate_execution:
-                            return False
-                        time.sleep(self.sleep_time)
+                    self._send_command(GET_REGISTER, 0x0001 if not execute_list else 0x0000)  # 0x0007
+                    # while not self.is_ready():
+                    #     if self._terminate_execution:
+                    #         return False
+                    #     time.sleep(self.sleep_time)
                     self._usb_connection.send_list_chunk(packet)
-                    self.raw_set_end_of_list(0x8001, 0x8001)
-                    self.raw_execute_list()
+
+                    self.raw_set_end_of_list(0x0001 if not execute_list else 0x0000)  # 0x00019
+                    # self.raw_set_end_of_list(0x8001, 0x8001)
+                    if packet_count == 1:
+                        self.raw_execute_list()  # 0x0005
+                        execute_list = True
+                    packet_count += 1
                     # SET_END_OF_LIST(1), EXECUTE_LIST, 7
 
+                if not execute_list:
+                    self.raw_execute_list()
                 # when done, SET_END_OF_LIST(0), SET_CONTROL_MODE(1), 7(1)
                 self.raw_set_end_of_list(0, 0)
                 # self.raw_execute_list()
