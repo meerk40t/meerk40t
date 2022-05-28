@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin
+from meerk40t.core.node.node import Node, Linejoin, Fillrule
 from meerk40t.svgelements import Path
 
 
@@ -17,6 +17,7 @@ class RectNode(Node):
         stroke=None,
         stroke_width=None,
         linejoin = None,
+        fillrule = None,
         **kwargs,
     ):
         super(RectNode, self).__init__(type="elem rect", **kwargs)
@@ -38,6 +39,15 @@ class RectNode(Node):
             self.stroke_width = shape.stroke_width
         else:
             self.stroke_width = stroke_width
+        if linejoin is None:
+            self.linejoin = Linejoin.JOIN_MITER
+        else:
+            self.linejoin = linejoin
+        if fillrule is None:
+            self.fillrule = Fillrule.FILLRULE_NONZERO
+        else:
+            self.fillrule = fillrule
+
         self.lock = False
 
     def __repr__(self):
@@ -55,6 +65,8 @@ class RectNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            linejoin=self.linejoin,
+            fillrule=self.fillrule,
             **self.settings,
         )
 
@@ -125,4 +137,6 @@ class RectNode(Node):
     def as_path(self):
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self.shape.linejoin = self.linejoin
+        self.shape.fillrule = self.fillrule
         return abs(Path(self.shape))

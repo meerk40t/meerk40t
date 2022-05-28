@@ -1,4 +1,5 @@
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
@@ -8,7 +9,7 @@ from meerk40t.svgelements import Color
 _ = wx.GetTranslation
 
 
-class ChoicePropertyPanel(wx.Panel):
+class ChoicePropertyPanel(ScrolledPanel):
     """
     ChoicePropertyPanel is a generic panel that simply presents a simple list of properties to be viewed and edited.
     In most cases it can be initialized by passing a choices value which will read the registered choice values
@@ -17,7 +18,7 @@ class ChoicePropertyPanel(wx.Panel):
 
     def __init__(self, *args, context: Context = None, choices=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.listeners = list()
         if choices is None:

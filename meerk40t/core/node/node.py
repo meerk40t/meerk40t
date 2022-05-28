@@ -37,6 +37,12 @@ class Linecap(Enum):
     CAP_ROUND = 1
     CAP_SQUARE = 2
 
+# FILL-RULE
+# Value	nonzero | evenodd
+# Default value	nonzero
+class Fillrule(Enum):
+    FILLRULE_NONZERO = 0
+    FILLRULE_EVENODD = 1
 
 class Node:
     """
