@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin, Linecap
+from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
 from meerk40t.svgelements import Path
 
 
@@ -18,6 +18,7 @@ class PolylineNode(Node):
         stroke_width=None,
         linecap = None,
         linejoin = None,
+        fillrule=None,
         **kwargs,
     ):
         super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
@@ -47,6 +48,10 @@ class PolylineNode(Node):
             self.linejoin = Linejoin.JOIN_MITER
         else:
             self.linejoin = linejoin
+        if fillrule is None:
+            self.fillrule = Fillrule.FILLRULE_NONZERO
+        else:
+            self.fillrule = fillrule
 
         self.lock = False
 
@@ -57,6 +62,9 @@ class PolylineNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            linecap=self.linecap,
+            linejoin=self.linejoin,
+            fillrule=self.fillrule,
             **self.settings,
         )
 
@@ -136,4 +144,5 @@ class PolylineNode(Node):
         self.shape.stroke_width = self.stroke_width
         self.shape.linecap = self.linecap
         self.shape.linejoin = self.linejoin
+        self.shape.fillrule = self.fillrule
         return abs(Path(self.shape))
