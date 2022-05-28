@@ -2558,15 +2558,11 @@ class MeerK40t(MWindow):
         else:
             x_delta = (bbox[2] - bbox[0]) * 0.04
             y_delta = (bbox[3] - bbox[1]) * 0.04
-            self.context(
-                "scene focus %f %f %f %f\n"
-                % (
-                    bbox[0] - x_delta,
-                    bbox[1] - y_delta,
-                    bbox[2] + x_delta,
-                    bbox[3] + y_delta,
-                )
-            )
+            x0 = Length(amount=bbox[0] - x_delta, relative_length=self.context.device.width).length_mm
+            y0 = Length(amount=bbox[1] - y_delta, relative_length=self.context.device.height).length_mm
+            x1 = Length(amount=bbox[2] + x_delta, relative_length=self.context.device.width).length_mm
+            y1 = Length(amount=bbox[3] + y_delta, relative_length=self.context.device.height).length_mm
+            self.context(f"scene focus {x0} {y0} {x1} {y1}\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
