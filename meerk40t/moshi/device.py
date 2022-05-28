@@ -13,6 +13,7 @@ from meerk40t.kernel import (
     STATE_WAIT,
     Service,
 )
+from ..core.parameters import Parameters
 
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -161,7 +162,6 @@ class MoshiDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
         )
 
-        self.settings = dict()
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -296,7 +296,7 @@ class MoshiDevice(Service, ViewPort):
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
 
-class MoshiDriver:
+class MoshiDriver(Parameters):
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. The Moshiboard Driver overloads the Driver class to take spoolable values from
@@ -305,11 +305,10 @@ class MoshiDriver:
     """
 
     def __init__(self, service, channel=None, *args, **kwargs):
+        super().__init__()
         self.service = service
         self.name = str(self.service)
         self.state = 0
-
-        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -390,21 +389,12 @@ class MoshiDriver:
         self.plotplanner_process()
 
     def move_abs(self, x, y):
-        # TODO: mimic lihuiyu code for device_in_physical space
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x / UNITS_PER_MIL))
-        y = int(round(self.service.scale_y * y / UNITS_PER_MIL))
+        x, y = self.service.physical_to_device_position(x, y, 1)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
-        self.rapid_mode()
 
     def move_rel(self, dx, dy):
-        # TODO: mimic lihuiyu code for device_in_physical space
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = int(round(self.service.scale_x * dx / UNITS_PER_MIL))
-        dy = int(round(self.service.scale_y * dy / UNITS_PER_MIL))
+        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
         self.rapid_mode()
         x = self.native_x + dx
         y = self.native_y + dy
@@ -426,7 +416,7 @@ class MoshiDriver:
         except (ValueError, IndexError):
             pass
         self.rapid_mode()
-        self.settings.speed = 40
+        self.speed = 40
         self.program_mode(x, y, x, y)
         self.rapid_mode()
         self.native_x = x
@@ -530,8 +520,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
         if speed is None:
             speed = 20
         if normal_speed is None:
@@ -585,8 +575,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
         if speed is None:
             speed = 160
         self.program.raster_speed(speed)
@@ -620,30 +610,31 @@ class MoshiDriver:
             self._set_step(value)
 
     def _set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def _set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
+        self.overscan = overscan
 
     def _set_speed(self, speed=None):
         """
         Set the speed for the driver.
         """
-        if self.settings.speed != speed:
-            self.settings.speed = speed
+        if self.speed != speed:
+            self.speed = speed
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def _set_step(self, step=None):
+    def _set_step(self, step_x=None, step_y=None):
         """
         Set the raster step for the driver.
         """
-        if self.settings.raster_step != step:
-            self.settings.raster_step = step
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -748,10 +739,10 @@ class MoshiDriver:
         @return:
         """
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.speed}")
+        parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -814,9 +805,9 @@ class MoshiDriver:
                         or p_set.raster_step_y != s_set.raster_step_y
                     ):
                         self._set_speed(p_set.speed)
-                        self._set_step(p_set.raster_step)
+                        self._set_step(p_set.raster_step_x, p_set.raster_step_y)
                         self.rapid_mode()
-                    self.settings.set_values(p_set)
+                    self.settings.update(p_set.settings)
                 continue
             self._goto_absolute(x, y, on & 1)
         self.plot_data = None
@@ -833,7 +824,7 @@ class MoshiDriver:
             x1 = x
         if y1 is None:
             y1 = y
-        if self.settings.raster_step == 0:
+        if self.raster_step_x == 0 and self.raster_step_y == 0:
             self.program_mode(x, y, x1, y1)
         else:
             if self.service.enable_raster:
@@ -907,10 +898,10 @@ class MoshiDriver:
         return x, y
 
     def laser_disable(self, *values):
-        self.settings.laser_enabled = False
+        self.laser_enabled = False
 
     def laser_enable(self, *values):
-        self.settings.laser_enabled = True
+        self.laser_enabled = True
 
 
 class MoshiController:
