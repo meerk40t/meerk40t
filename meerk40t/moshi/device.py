@@ -289,18 +289,11 @@ class MoshiDevice(Service, ViewPort):
         return self.controller.viewbuffer()
 
     @property
-    def current_x(self):
+    def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return float(self.driver.native_x * UNITS_PER_MIL) / self.scale_x
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return float(self.driver.native_y * UNITS_PER_MIL) / self.scale_y
+        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
 
 class MoshiDriver:
