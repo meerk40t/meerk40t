@@ -42,9 +42,9 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Default Operation Other/Red/Blue"),
+                "label": _("Default Operation Empty"),
                 "tip": _(
-                    "Sets Operations to Other/Red/Blue if loaded with no operations."
+                    "Leave empty operations or default Other/Red/Blue"
                 ),
             },
             {
@@ -168,7 +168,7 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and self.operation_default_empty:
+        if not len(ops) and not self.operation_default_empty:
             self.load_default()
 
     def load_persistent_penbox(self):
@@ -6558,6 +6558,8 @@ class Elemental(Service):
         """
         if elements is None:
             return
+        if not len(list(self.ops())) and not self.operation_default_empty:
+            self.load_default()
         reverse = self.classify_reverse
         if reverse:
             elements = reversed(elements)
