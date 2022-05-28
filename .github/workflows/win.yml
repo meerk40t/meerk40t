@@ -36,11 +36,13 @@ jobs:
 
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
+# 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon 
+# when it branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
     - name: Build pyinstaller, generate bootloaders
       env:
         PYTHONHASHSEED: 12506
       run: |
-        git clone --depth=1 --branch=v4 https://github.com/pyinstaller/pyinstaller
+        git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all --target-arch=32bit
         cd ..
