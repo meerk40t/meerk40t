@@ -472,7 +472,7 @@ def reify_matrix(self):
 
 def correct_empty(context: CutGroup):
     """
-    Iterates through backwards deleting any entries that empty.
+    Iterates through backwards deleting any entries that are empty.
     """
     for index in range(len(context) - 1, -1, -1):
         c = context[index]

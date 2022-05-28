@@ -785,6 +785,8 @@ class RawCut(CutObject):
     def __init__(self, settings=None, passes=1, parent=None):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
+        self.first = True  # Raw cuts are standalone
+        self.last = True
 
     def __len__(self):
         return len(self.plot)
@@ -844,6 +846,8 @@ class DwellCut(CutObject):
             passes=passes,
             parent=parent,
         )
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
         self.raster_step = 0
 
     def reversible(self):
@@ -890,6 +894,8 @@ class PlotCut(CutObject):
         self.travels_left = False
         self._calc_lengths = None
         self._length = None
+        self.first = True  # Plot cuts are standalone
+        self.last = True
 
     def __len__(self):
         return len(self.plot)

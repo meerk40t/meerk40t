@@ -1,7 +1,7 @@
 from datetime import datetime
 import csv
+import json
 import re
-import pickle
 import os
 
 class Wordlist():
@@ -24,7 +24,7 @@ class Wordlist():
         "time": [0, 2, self.wordlist_timestr()]}
         if directory is None:
             directory = os.getcwd()
-        self.default_filename = os.path.join(directory, "wordlist.pkl")
+        self.default_filename = os.path.join(directory, "wordlist.json")
 
     def add(self, key, value, wtype=None):
         self.add_value(key, value, wtype)
@@ -203,20 +203,14 @@ class Wordlist():
     def load_data(self, filename):
         if filename is None:
             filename = self.default_filename
-        try:
-            with open(filename, 'rb') as f:
-                self.content = pickle.load(f)
-        except:
-            pass
+        with open(filename, 'r') as f:
+            self.content = json.load(f)
 
     def save_data(self, filename):
         if filename is None:
             filename = self.default_filename
-        try:
-            with open(filename, 'wb') as f:
-                pickle.dump(self.content, f)
-        except:
-            pass
+        with open(filename, 'w') as f:
+            json.dump(self.content, f)
 
     def delete(self, skey):
         try:

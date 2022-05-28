@@ -93,6 +93,12 @@ class ImageOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         if self.raster_swing:
             raster_swing = "-"
         else:
@@ -118,7 +124,7 @@ class ImageOpNode(Node, Parameters):
 
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
-            if drag_node.type == "elem image":
+            if drag_node.type != "elem image":
                 return False
             # Dragging element onto operation adds that element to the op.
             self.add_reference(drag_node, pos=0)

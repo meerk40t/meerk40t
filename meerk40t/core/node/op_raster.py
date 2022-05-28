@@ -94,6 +94,12 @@ class RasterOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         if self.raster_swing:
             raster_swing = "-"
         else:
@@ -233,7 +239,7 @@ class RasterOpNode(Node, Parameters):
                         )
                         image_node.cache = None
 
-                    return actualize_raster_image_node()
+                    return actualize_raster_image_node
 
                 commands.append(actualize_raster_image(node, step_x, step_y))
             return
@@ -285,7 +291,7 @@ class RasterOpNode(Node, Parameters):
         and converts them into rastercut objects. These objects should have already been converted
         from vector shapes.
 
-        The preference for raster shapes it to use the settings set on this operation rather than on the image.
+        The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
         settings = self.derive()
 
