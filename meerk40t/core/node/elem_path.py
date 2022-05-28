@@ -61,6 +61,9 @@ class PathNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            linecap=self.linecap,
+            linejoin=self.linejoin,
+            fillrule=self.fillrule,
             **self.settings,
         )
 
@@ -141,5 +144,5 @@ class PathNode(Node):
         self.path.stroke_width = self.stroke_width
         self.path.linecap = self.linecap
         self.path.linejoin = self.linejoin
-        self.shape.fillrule = self.fillrule
+        self.path.fillrule = self.fillrule
         return abs(self.path)

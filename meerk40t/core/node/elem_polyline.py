@@ -62,6 +62,9 @@ class PolylineNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            linecap=self.linecap,
+            linejoin=self.linejoin,
+            fillrule=self.fillrule,
             **self.settings,
         )
 
