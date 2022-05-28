@@ -13,7 +13,7 @@ class ElementsWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
         self.key_shift_pressed = False
-        self.ctrl_shift_pressed = False
+        self.key_ctrl_pressed = False
 
     def hit(self):
         return HITCHAIN_HIT

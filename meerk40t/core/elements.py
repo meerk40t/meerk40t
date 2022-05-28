@@ -6513,7 +6513,7 @@ class Elemental(Service):
         if self.has_emphasis():
             if self._emphasized_bounds is not None and contains(
                 self._emphasized_bounds, position
-            ):
+            ) and not keep_old_selection:
                 return  # Select by position aborted since selection position within current select bounds.
         # Remember previous selection, in case we need to append...
         e_list = []
@@ -6521,15 +6521,15 @@ class Elemental(Service):
         if keep_old_selection:
             for node in self.elems(emphasized=True):
                 e_list.append(node)
-        for e in self.elems_nodes(depth=None):
+        for node in self.elems_nodes(emphasized=False):
             try:
-                bounds = e.bounds
+                bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
             if bounds is None:
                 continue
             if contains(bounds, position):
-                f_list.append(e)
+                f_list.append(node)
 
         if len(f_list) > 0:
             # We checked that before, f_list contains only elements with valid bounds...
@@ -6538,17 +6538,17 @@ class Elemental(Service):
                 e_area = float("inf")
             else:
                 e_area = -float("inf")
-            for elem in f_list:
-                cc = elem.bounds
+            for node in f_list:
+                cc = node.bounds
                 f_area = (cc[2]-cc[0]) * (cc[3] - cc[1])
                 if use_smallest:
                     if f_area<e_area:
                         e_area = f_area
-                        e = elem
+                        e = node
                 else:
                     if f_area>e_area:
                         e_area = f_area
-                        e = elem
+                        e = node
             if not e is None:
                 bounds = e.bounds
                 e_list.append(e)
