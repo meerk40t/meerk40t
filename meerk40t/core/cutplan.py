@@ -937,7 +937,7 @@ class CutPlan:
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
                 closest, backwards = self.short_travel_cutcode_candidate(
-                    context, closest, curr, distance
+                    context, closest, backwards, curr, distance
                 )
 
             if closest is None:
@@ -990,7 +990,7 @@ class CutPlan:
         return ordered
 
     def short_travel_cutcode_candidate(
-        self, context: CutCode, closest: Any, curr: complex, distance: float
+        self, context: CutCode, closest: Any, backwards: Any, curr: complex, distance: float
     ) -> Any:
         complete_path = self.context.opt_complete_subpaths
         for cut in context.candidate(
