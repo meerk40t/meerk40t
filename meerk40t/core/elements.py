@@ -184,8 +184,9 @@ class Elemental(Service):
             self.penbox[pen] = box
 
     def save_persistent_penbox(self):
+        sections = {}
         for section in self.penbox:
-            sections = {section: len(self.penbox[section])}
+            sections[section] = len(self.penbox[section])
         self.pen_data.write_persistent_dict("pens", sections)
         for section in self.penbox:
             for i, p in enumerate(self.penbox[section]):
