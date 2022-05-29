@@ -302,7 +302,7 @@ class HatchOpNode(Node, Parameters):
                     node = PolylineNode(shape=abs(polyline))
                     node.settings.update(settings)
                     self.add_node(node)
-        return create_scanline_fill()
+        return create_scanline_fill
 
     def preprocess(self, context, matrix, commands):
         """
