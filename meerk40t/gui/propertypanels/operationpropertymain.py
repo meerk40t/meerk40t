@@ -1001,7 +1001,7 @@ class HatchSettingsPanel(wx.Panel):
                 (w * 0.25, h * 0.25),
             ),
         )
-        matrix = Matrix.scale(0.1)
+        matrix = Matrix.scale(0.05)
         hatches = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, penbox_pass=None))
 
         h_start = []
