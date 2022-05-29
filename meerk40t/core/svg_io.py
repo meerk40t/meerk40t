@@ -209,7 +209,6 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set()
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
