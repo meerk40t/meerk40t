@@ -984,7 +984,7 @@ class HatchSettingsPanel(wx.Panel):
             (w * 0.25, h * 0.75),
             (w * 0.25, h * 0.25),
         )
-        hatch = hatch_algorithm(self.context, None, paths)
+        hatch = hatch_algorithm(self.context, self.operation.settings, None, paths)
         h_start = []
         h_end = []
         t_start = []
