@@ -915,6 +915,9 @@ class HatchSettingsPanel(wx.Panel):
             self.operation.hatch_distance = Length(
                 self.text_distance.GetValue()
             ).length_mm
+            self.hatch_lines = None
+            self.travel_lines = None
+            self.refresh_display()
         except ValueError:
             pass
 
@@ -923,15 +926,24 @@ class HatchSettingsPanel(wx.Panel):
             self.operation.hatch_angle = (
                 f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
             )
+            self.hatch_lines = None
+            self.travel_lines = None
+            self.refresh_display()
         except ValueError:
             return
 
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
 
     def on_display_paint(self, event=None):
         try:
