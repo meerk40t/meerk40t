@@ -2,6 +2,7 @@ import unittest
 
 from meerk40t.fill.fills import eulerian_fill
 from meerk40t.svgelements import Matrix
+from test import bootstrap
 
 
 def draw(fill, w, h, filename="test.png"):
@@ -75,3 +76,11 @@ class TestFill(unittest.TestCase):
             self.assertIn(x, (50, 250, 750, 950))
 
         # draw(fill, w, h)
+
+    def test_fill_kernel_registered(self):
+        kernel = bootstrap.bootstrap()
+        try:
+            eulerian_fill_k = kernel.lookup("hatch/eulerian")
+            self.assertIs(eulerian_fill_k, eulerian_fill)
+        finally:
+            kernel.shutdown()
