@@ -216,7 +216,6 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set()
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
@@ -289,15 +288,15 @@ class SVGWriter:
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             else:
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
-                return
+                continue
             if hasattr(element, "stroke"):
                 stroke = element.stroke
             else:
@@ -382,12 +381,17 @@ class SVGWriter:
                 if not key:
                     # If key is None, do not save.
                     continue
+                if key == "references":
+                    # References key is obsolete
+                    continue
                 value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
         contains = list()
         for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))

@@ -298,13 +298,13 @@ class BalorDriver:
             if isinstance(q, LineCut):
                 last_x, last_y = job.get_last_xy()
                 x, y = q.start
-                if last_x != x and last_y != y:
+                if last_x != x or last_y != y:
                     job.goto(x, y)
                 job.mark(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
                 last_x, last_y = job.get_last_xy()
                 x, y = q.start
-                if last_x != x and last_y != y:
+                if last_x != x or last_y != y:
                     job.goto(x, y)
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
@@ -318,9 +318,9 @@ class BalorDriver:
             elif isinstance(q, PlotCut):
                 last_x, last_y = job.get_last_xy()
                 x, y = q.start
-                if last_x != x and last_y != y:
+                if last_x != x or last_y != y:
                     job.goto(x, y)
-                for x, y, on in q.plot:
+                for x, y, on in q.plot[1:]:
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
                         last_on = on
