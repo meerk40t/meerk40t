@@ -652,6 +652,37 @@ class GraphWalker:
         return value
 
 
+class EulerianFill:
+    """Eulerian fill given some outline shapes, creates a fill."""
+
+    def __init__(self, distance):
+        self.distance = distance
+        self.outlines = []
+
+    def __iadd__(self, other):
+        self.outlines.append(other)
+        return self
+
+    def get_fill(self):
+        min_y = float("inf")
+        max_y = -float("inf")
+        outline_graphs = list()
+        for outline in self.outlines:
+            outline_graph = Graph()
+            outline_graph.add_shape(outline, True)
+            o_min_y = min([p[1] for p in outline])
+            o_max_y = max([p[1] for p in outline])
+            min_y = min(min_y, o_min_y)
+            max_y = max(max_y, o_max_y)
+            outline_graphs.append(outline_graph)
+        graph = Graph()
+        Graph.monotone_fill(graph, outline_graphs, min_y, max_y, self.distance)
+        graph.double_odd_edge()
+        walk = list()
+        graph.walk(walk)
+        return walk
+
+
 class VectorMontonizer:
     """
     Sorts all segments according to their highest y values. Steps through the values in order
@@ -830,33 +861,3 @@ class VectorMontonizer:
 
         self.current = scan
 
-
-class EulerianFill:
-    """Eulerian fill given some outline shapes, creates a fill."""
-
-    def __init__(self, distance):
-        self.distance = distance
-        self.outlines = []
-
-    def __iadd__(self, other):
-        self.outlines.append(other)
-        return self
-
-    def get_fill(self):
-        min_y = float("inf")
-        max_y = -float("inf")
-        outline_graphs = list()
-        for outline in self.outlines:
-            outline_graph = Graph()
-            outline_graph.add_shape(outline, True)
-            o_min_y = min([p[1] for p in outline])
-            o_max_y = max([p[1] for p in outline])
-            min_y = min(min_y, o_min_y)
-            max_y = max(max_y, o_max_y)
-            outline_graphs.append(outline_graph)
-        graph = Graph()
-        Graph.monotone_fill(graph, outline_graphs, min_y, max_y, self.distance)
-        graph.double_odd_edge()
-        walk = list()
-        graph.walk(walk)
-        return walk
