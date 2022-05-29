@@ -1047,6 +1047,8 @@ class PlotCut(CutObject):
         return length
 
     def reverse(self):
+        # Strictly speaking this is wrong. Point with power-to-value means that we need power n-1 to the number of
+        # The reverse would shift everything by 1 since all power-to are really power-from values.
         self.plot = list(reversed(self.plot))
 
     @property
