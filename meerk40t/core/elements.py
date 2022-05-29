@@ -6564,7 +6564,7 @@ class Elemental(Service):
             node.matrix.post_translate(dx, dy)
             node.modified()
 
-    def set_emphasized_by_position(self, position, keep_old_selection=False):
+    def set_emphasized_by_position(self, position, keep_old_selection=False, use_smallest=False):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -6574,34 +6574,59 @@ class Elemental(Service):
         if self.has_emphasis():
             if self._emphasized_bounds is not None and contains(
                 self._emphasized_bounds, position
-            ):
+            ) and not keep_old_selection:
                 return  # Select by position aborted since selection position within current select bounds.
-        for e in self.elems_nodes(depth=1, cascade=False):
+        # Remember previous selection, in case we need to append...
+        e_list = []
+        f_list = [] # found elements...
+        if keep_old_selection:
+            for node in self.elems(emphasized=True):
+                e_list.append(node)
+        for node in self.elems_nodes(emphasized=False):
             try:
-                bounds = e.bounds
+                bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
             if bounds is None:
                 continue
             if contains(bounds, position):
-                e_list = []
-                if keep_old_selection:
-                    for node in self.elems(emphasized=True):
-                        e_list.append(node)
-                    if self._emphasized_bounds is not None:
-                        cc = self._emphasized_bounds
-                        bounds = (
-                            min(bounds[0], cc[0]),
-                            min(bounds[1], cc[1]),
-                            max(bounds[2], cc[2]),
-                            max(bounds[3], cc[3]),
-                        )
+                f_list.append(node)
+
+        if len(f_list) > 0:
+            # We checked that before, f_list contains only elements with valid bounds...
+            e = None
+            if use_smallest:
+                e_area = float("inf")
+            else:
+                e_area = -float("inf")
+            for node in f_list:
+                cc = node.bounds
+                f_area = (cc[2]-cc[0]) * (cc[3] - cc[1])
+                if use_smallest:
+                    if f_area<e_area:
+                        e_area = f_area
+                        e = node
+                else:
+                    if f_area>e_area:
+                        e_area = f_area
+                        e = node
+            if not e is None:
+                bounds = e.bounds
                 e_list.append(e)
-                self._emphasized_bounds = bounds
-                self.set_emphasis(e_list)
-                return
-        self._emphasized_bounds = None
-        self.set_emphasis(None)
+                if self._emphasized_bounds is not None:
+                    cc = self._emphasized_bounds
+                    bounds = (
+                        min(bounds[0], cc[0]),
+                        min(bounds[1], cc[1]),
+                        max(bounds[2], cc[2]),
+                        max(bounds[3], cc[3]),
+                    )
+        if len(e_list)>0:
+            self._emphasized_bounds = bounds
+            self.set_emphasis(e_list)
+        else:
+            self._emphasized_bounds = None
+            self.set_emphasis(None)
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
