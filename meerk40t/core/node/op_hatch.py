@@ -250,9 +250,7 @@ class HatchOpNode(Node, Parameters):
                 continue
             settings = node.settings
             plot = PlotCut(settings=settings)
-            first = True
             for p in node.shape:
                 x, y = p
-                plot.plot_append(int(round(x)), int(round(y)), 0 if first else 1)
-                first = False
+                plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
