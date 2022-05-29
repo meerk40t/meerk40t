@@ -24,7 +24,7 @@ def eulerian_fill(context, settings, matrix, paths):
     if penbox_pass is not None:
         try:
             penbox_pass = context.elements.penbox[penbox_pass]
-        except KeyError:
+        except (KeyError, AttributeError):
             penbox_pass = None
 
     passes = 1
