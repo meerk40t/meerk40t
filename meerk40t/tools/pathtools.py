@@ -416,11 +416,12 @@ class GraphWalker:
         """
         for i in range(0, len(self.walk), 2):
             segment = self.walk[i - 1]
+            # The first time segment will be the last value (a node) which will set value to none. This is fine.
             point = self.walk[i]
             if segment is None:
                 points.append(None)
             else:
-                point.value = segment.value
+                point.value = segment.value  # This doesn't work, nodes are repeated, so they can't store unique values.
             points.append(point)
 
     def remove_loop(self, from_pos, to_pos):
