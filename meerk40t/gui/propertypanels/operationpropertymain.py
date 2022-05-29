@@ -3,7 +3,7 @@ import wx
 from meerk40t.kernel import signal_listener
 
 from ...core.units import Length
-from ...svgelements import Angle, Color
+from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
@@ -953,6 +953,8 @@ class HatchSettingsPanel(wx.Panel):
     def on_size(self, event=None):
         self.Layout()
         self.set_buffer()
+        self.hatch_lines = None
+        self.travel_lines = None
         self.refresh_display()
 
     def refresh_display(self):
@@ -972,38 +974,51 @@ class HatchSettingsPanel(wx.Panel):
         if hatch_algorithm is None:
             return
         paths = (
-            (w * 0.05, h * 0.05),
-            (w * 0.95, h * 0.05),
-            (w * 0.95, h * 0.95),
-            (w * 0.05, h * 0.95),
-            (w * 0.05, h * 0.05),
-        ), (
-            (w * 0.25, h * 0.25),
-            (w * 0.75, h * 0.25),
-            (w * 0.75, h * 0.75),
-            (w * 0.25, h * 0.75),
-            (w * 0.25, h * 0.25),
+            (
+                (w * 0.05, h * 0.05),
+                (w * 0.95, h * 0.05),
+                (w * 0.95, h * 0.95),
+                (w * 0.05, h * 0.95),
+                (w * 0.05, h * 0.05),
+            ),
+            (
+                (w * 0.25, h * 0.25),
+                (w * 0.75, h * 0.25),
+                (w * 0.75, h * 0.75),
+                (w * 0.25, h * 0.75),
+                (w * 0.25, h * 0.25),
+            ),
         )
-        hatch = hatch_algorithm(self.context, self.operation.settings, None, paths)
+        matrix = Matrix.scale(0.1)
+        hatches = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, penbox_pass=None))
+
         h_start = []
         h_end = []
         t_start = []
         t_end = []
         last_x = None
         last_y = None
-        for x, y, on in hatch:
-            if last_x is None:
+        travel = True
+        for settings, hatch in hatches:
+            for p in hatch:
+                if p is None:
+                    travel = True
+                    continue
+                x, y = p
+                if last_x is None:
+                    last_x = x
+                    last_y = y
+                    travel = False
+                    continue
+                if travel:
+                    t_start.append((last_x, last_y))
+                    t_end.append((x, y))
+                else:
+                    h_start.append((last_x, last_y))
+                    h_end.append((x, y))
+                travel = False
                 last_x = x
                 last_y = y
-                continue
-            if on:
-                h_start.append((last_x, last_y))
-                h_end.append((x, y))
-            else:
-                t_start.append((last_x, last_y))
-                t_end.append((x, y))
-            last_x = x
-            last_y = y
         self.hatch_lines = h_start, h_end
         self.travel_lines = t_start, t_end
 
