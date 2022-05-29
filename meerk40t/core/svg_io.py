@@ -279,15 +279,15 @@ class SVGWriter:
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             else:
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
-                return
+                continue
             if hasattr(element, "stroke"):
                 stroke = element.stroke
             else:
