@@ -378,6 +378,8 @@ class SVGWriter:
             pass
         contains = list()
         for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
