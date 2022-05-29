@@ -878,6 +878,25 @@ class HatchSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+
+        self.raster_pen = wx.Pen()
+        self.raster_pen.SetColour(wx.BLACK)
+        self.raster_pen.SetWidth(2)
+
+        self.travel_pen = wx.Pen()
+        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
+        self.travel_pen.SetWidth(2)
+
+        self.direction_pen = wx.Pen()
+        self.direction_pen.SetColour(wx.Colour(127, 127, 255))
+        self.direction_pen.SetWidth(2)
+
+        self.raster_lines = None
+        self.travel_lines = None
+        self.direction_lines = None
 
     def pane_hide(self):
         pass
@@ -918,6 +937,179 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
+
+    def on_display_paint(self, event=None):
+        try:
+            wx.BufferedPaintDC(self.display_panel, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def on_display_erase(self, event=None):
+        pass
+
+    def set_buffer(self):
+        width, height = self.display_panel.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+
+    def on_size(self, event=None):
+        self.Layout()
+        self.set_buffer()
+        self.refresh_display()
+
+    def refresh_display(self):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.refresh_in_ui)
+        else:
+            self.refresh_in_ui()
+
+    def calculate_raster_lines(self):
+        w, h = self._Buffer.Size
+        right = True
+        top = True
+
+        last = None
+        direction = self.operation.raster_direction
+        r_start = list()
+        r_end = list()
+        t_start = list()
+        t_end = list()
+        d_start = list()
+        d_end = list()
+        factor = 3
+        unidirectional = self.operation.raster_swing
+
+        if direction == 0 or direction == 1 or direction == 4:
+            # Direction Line
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w * 0.05, h * 0.95))
+            if direction == 1:
+                # Bottom to Top
+                if self.operation.raster_preference_bottom > 0:
+                    # if bottom preference is left
+                    right = False
+                # Direction Arrow
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 - 4, h * 0.05 + 4))
+                start = int(h * 0.9)
+                end = int(h * 0.1)
+                step = -1000 / self.operation.dpi * factor
+            else:
+                # Top to Bottom or Crosshatch
+                if self.operation.raster_preference_top > 0:
+                    # if top preference is left
+                    right = False
+                d_start.append((w * 0.05, h * 0.95))
+                d_end.append((w * 0.05 + 4, h * 0.95 - 4))
+                d_start.append((w * 0.05, h * 0.95))
+                d_end.append((w * 0.05 - 4, h * 0.95 - 4))
+                start = int(h * 0.1)
+                end = int(h * 0.9)
+                step = 1000 / self.operation.dpi * factor
+            pos = start
+            while min(start, end) <= pos <= max(start, end):
+                # Primary Line Horizontal Raster
+                r_start.append((w * 0.1, pos))
+                r_end.append((w * 0.9, pos))
+
+                # Arrow Segment
+                if last is not None:
+                    # Travel Lines
+                    t_start.append((last[0], last[1]))
+                    t_end.append((w * 0.1 if right else w * 0.9, pos))
+
+                r_start.append((w * 0.9 if right else w * 0.1, pos))
+                r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
+                last = r_start[-1]
+                if not unidirectional:
+                    right = not right
+                pos += step
+        if direction == 2 or direction == 3 or direction == 4:
+            # Direction Line
+            d_start.append((w * 0.05, h * 0.05))
+            d_end.append((w * 0.95, h * 0.05))
+            if direction == 2:
+                # Right to Left
+                if self.operation.raster_preference_right > 0:
+                    # if right preference is bottom
+                    top = False
+                # Direction Arrow
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 + 4))
+                d_start.append((w * 0.05, h * 0.05))
+                d_end.append((w * 0.05 + 4, h * 0.05 - 4))
+                start = int(w * 0.9)
+                end = int(w * 0.1)
+                step = -1000 / self.operation.dpi * factor
+            else:
+                # Left to Right or Crosshatch
+                if self.operation.raster_preference_left > 0:
+                    # if left preference is bottom
+                    top = False
+                d_start.append((w * 0.95, h * 0.05))
+                d_end.append((w * 0.95 - 4, h * 0.05 + 4))
+                d_start.append((w * 0.95, h * 0.05))
+                d_end.append((w * 0.95 - 4, h * 0.05 - 4))
+                start = int(w * 0.1)
+                end = int(w * 0.9)
+                step = 1000 / self.operation.dpi * factor
+            pos = start
+            while min(start, end) <= pos <= max(start, end):
+                # Primary Line Vertical Raster.
+                r_start.append((pos, h * 0.1))
+                r_end.append((pos, h * 0.9))
+
+                # Arrow Segment
+                if last is not None:
+                    # Travel Lines
+                    t_start.append((last[0], last[1]))
+                    t_end.append((pos, h * 0.1 if top else h * 0.9))
+                r_start.append((pos, h * 0.9 if top else h * 0.1))
+                r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
+
+                last = r_start[-1]
+                if not unidirectional:
+                    top = not top
+                pos += step
+        self.raster_lines = r_start, r_end
+        self.travel_lines = t_start, t_end
+        self.direction_lines = d_start, d_end
+
+    def refresh_in_ui(self):
+        """Performs redrawing of the data in the UI thread."""
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        if self.Shown:
+            if self.raster_lines is None:
+                self.calculate_raster_lines()
+            if self.raster_lines is not None:
+                starts, ends = self.raster_lines
+                if len(starts):
+                    gc.SetPen(self.raster_pen)
+                    gc.StrokeLineSegments(starts, ends)
+            if self.travel_lines is not None:
+                starts, ends = self.travel_lines
+                if len(starts):
+                    gc.SetPen(self.travel_pen)
+                    gc.StrokeLineSegments(starts, ends)
+            if self.direction_lines is not None:
+                starts, ends = self.direction_lines
+                if len(starts):
+                    gc.SetPen(self.direction_pen)
+                    gc.StrokeLineSegments(starts, ends)
+        gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
+        del dc
+        self.display_panel.Refresh()
+        self.display_panel.Update()
 
 
 # end of class HatchSettingsPanel
