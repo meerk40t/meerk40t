@@ -372,6 +372,9 @@ class SVGWriter:
                 if not key:
                     # If key is None, do not save.
                     continue
+                if key == "references":
+                    # References key is obsolete
+                    continue
                 value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
@@ -383,8 +386,6 @@ class SVGWriter:
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
-        else:
-            subelement.set("references", None)
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
