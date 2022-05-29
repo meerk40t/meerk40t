@@ -862,7 +862,7 @@ class HatchSettingsPanel(wx.Panel):
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.combo_fill_style = wx.ComboBox(
-            self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=["Euler", "Scan"], style=wx.CB_DROPDOWN
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
