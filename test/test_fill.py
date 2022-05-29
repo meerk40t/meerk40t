@@ -4,6 +4,19 @@ from meerk40t.fill.fills import eulerian_fill
 from meerk40t.svgelements import Matrix
 
 
+def draw(fill, w, h, filename="test.png"):
+    from PIL import Image, ImageDraw
+    im = Image.new('RGBA', (w, h), "white")
+    draw = ImageDraw.Draw(im)
+    last_x = None
+    last_y = None
+    for x, y in fill:
+        if last_x is not None:
+            draw.line((last_x, last_y, x, y), fill="black")
+        last_x, last_y = x, y
+    im.save(filename)
+
+
 class TestFill(unittest.TestCase):
     """Tests the functionality of fills."""
 
@@ -61,13 +74,4 @@ class TestFill(unittest.TestCase):
         for x, y in fill:
             self.assertIn(x, (50, 250, 750, 950))
 
-        # from PIL import Image, ImageDraw
-        # im = Image.new('RGBA', (w, h), "white")
-        # draw = ImageDraw.Draw(im)
-        # last_x = None
-        # last_y = None
-        # for x, y in fill:
-        #     if last_x is not None:
-        #         draw.line((last_x, last_y, x, y), fill="black")
-        #     last_x, last_y = x, y
-        # im.save("test.png")
+        # draw(fill, w, h)
