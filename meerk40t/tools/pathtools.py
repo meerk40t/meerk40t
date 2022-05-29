@@ -12,7 +12,6 @@ class GraphNode(Point):
         Point.__init__(self, x, y)
         self.connections = []
         self.visited = 0
-        self.value = None
 
 
 class Segment:
@@ -117,7 +116,7 @@ class Graph:
     A graph is a set of nodes and their connections. The nodes are points within 2d space and any number of segments
     can connect any number of points. There is no order established by the graph. And for our uses here all graphs will
     end up not only being Eulerian but Euloopian. All nodes should have even numbers of connecting segments so that any
-    walk will always return to the end location.
+    walk will always return back to the end location.
 
     """
 
@@ -240,7 +239,7 @@ class Graph:
         Makes any graph Eulerian. Any graph that is doubled is by definition Eulerian.
 
         This is not used by the algorithm.
-        @return:
+        :return:
         """
         for i in range(len(self.links)):
             s = self.links[i]
@@ -253,11 +252,11 @@ class Graph:
 
     def double_odd_edge(self):
         """
-        Makes any outline path an Eularian path, by doubling every other edge. As each node connects with 1 rung, and
+        Makes any outline path a Eularian path, by doubling every other edge. As each node connects with 1 rung, and
         two edges this will double 1 of those edges in every instance, giving a total of 4 connections. This is makes
         the graph Eulerian.
 
-        @return:
+        :return:
         """
         for i in range(len(self.links)):
             segment = self.links[i]
@@ -268,7 +267,7 @@ class Graph:
 
     def walk(self, points):
         """
-        We have an Eulerian graph we must walk through the graph in any direction. This results in a point series that
+        We have a Eulerian graph we must walk through the graph in any direction. This results in a point series that
         will cross every segment once.
 
         Some segments are marked scaffolding or classes of edge that are not necessary. These are removed for parsimony.
@@ -342,12 +341,12 @@ class GraphWalker:
 
     def make_walk_node(self, g):
         """
-        Starting from the given start node it makes a complete walk in an Eulerian circuit.
+        Starting from the given start node it makes a complete walk in a Eulerian circuit.
 
         It adds the first loop from the start node, then walks its looped walk adding
         any additional loops it finds to the current loop.
-        @param g:
-        @return:
+        :param g:
+        :return:
         """
         start = len(self.walk)
         self.walk.append(g)
@@ -371,9 +370,9 @@ class GraphWalker:
         Travels along unused connections until no more travel is possible. If properly Eulerian,
         this will only happen when it is looped back on itself.
 
-        @param index: index we are adding loop to.
-        @param node: Node to find alternative path through.
-        @return: new index after loop is added to the walk.
+        :param index: index we are adding loop to.
+        :param node: Node to find alternative path through.
+        :return: new index after loop is added to the walk.
         """
         index += 1
         i = index
@@ -395,8 +394,8 @@ class GraphWalker:
         """
         Finds the first unused edge segment within the graph node, or None if all connections are used.
 
-        @param node: Node to find unused edge segment within.
-        @return: index of node connection within the graphnode
+        :param node: Node to find unused edge segment within.
+        :return: index of node connection within the graphnode
         """
         value = None
         for index, c in enumerate(node.connections):
@@ -411,26 +410,22 @@ class GraphWalker:
         """
         Adds nodes within the walk to the points given to it.
 
-        @param points:
-        @return:
+        :param points:
+        :return:
         """
         for i in range(0, len(self.walk), 2):
-            segment = self.walk[i - 1]
-            point = self.walk[i]
-            if segment is None:
+            if self.walk[i - 1] is None:
                 points.append(None)
-            else:
-                point.value = segment.value
-            points.append(point)
+            points.append(self.walk[i])
 
     def remove_loop(self, from_pos, to_pos):
         """
         Removes values between the two given points.
         Since start and end are the same node, it leaves one in place.
 
-        @param from_pos:
-        @param to_pos:
-        @return:
+        :param from_pos:
+        :param to_pos:
+        :return:
         """
         if from_pos == to_pos:
             return 0
@@ -447,9 +442,9 @@ class GraphWalker:
         It iterates from the outside to the center, setting the visited value for each node.
 
         If it finds a marked node, that is the biggest loop within the given walk.
-        @param start:
-        @param end:
-        @return:
+        :param start:
+        :param end:
+        :return:
         """
         for i in range(start, end + 2, 2):
             n = self.get_node(i)
@@ -477,12 +472,13 @@ class GraphWalker:
 
         Clips unneeded scaffolding.
 
-        @return:
+        :return:
         """
         start = 0
         index = 0
         ie = len(self.walk)
         while index < ie:
+            segment = None
             try:
                 segment = self.walk[index + 1]
             except IndexError:
@@ -496,6 +492,7 @@ class GraphWalker:
             index += 2
 
     def remove_scaffold_ends_in_range(self, start, end):
+        current = end - start
         new_end = end
         limit = start + 2
         while new_end >= limit:
@@ -515,6 +512,7 @@ class GraphWalker:
                 if new_start == start:
                     break
                 del self.walk[start:new_start]
+                start = new_start
                 break
             new_start += 2
 
@@ -523,6 +521,7 @@ class GraphWalker:
         end = len(self.walk) - 1
         index = end
         while index >= 0:
+            segment = None
             try:
                 segment = self.walk[index - 1]
             except IndexError:
@@ -606,7 +605,7 @@ class GraphWalker:
     def get_value(self):
         """
         Path values with flip.
-        @return: Flipped path value.
+        :return: Flipped path value.
         """
         if len(self.walk) == 0:
             return 0
@@ -643,6 +642,7 @@ class GraphWalker:
                         # Only skippable nodes existed before returned to original node, so skip that loop.
                         value += (k - j) * 10
                         j = k
+                        j_node = k_node
                         j_segment = k_segment
                         break
             if j_segment.value == "SCAFFOLD":
@@ -685,16 +685,14 @@ class EulerianFill:
 
 class VectorMontonizer:
     """
-    Sorts all segments according to their highest y values. Steps through the values in order
+    Sorts all segments according to their heighest y values. Steps through the values in order
     each step activates and deactivates the segments that are encountered such that it always has a list
     of active segments. Sorting the active segments according to their x-intercepts gives a list of all
     points that a ray would strike passing through that shape. Every other such area is filled. These are
     given rungs, and connected to intercept points.
     """
 
-    def __init__(
-        self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
-    ):
+    def __init__(self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")):
         self.clusters = []
         self.dirty_cluster_sort = True
 
@@ -731,12 +729,12 @@ class VectorMontonizer:
             else:
                 high = p1
                 low = p0
-            # try:
-            #     m = (high.y - low.y) / (high.x - low.x)
-            # except ZeroDivisionError:
-            #     m = float("inf")
+            try:
+                m = (high.y - low.y) / (high.x - low.x)
+            except ZeroDivisionError:
+                m = float("inf")
 
-            # b = low.y - (m * low.x)
+            b = low.y - (m * low.x)
             if self.valid_low_value > high.y:
                 continue  # Cluster before range.
             if self.valid_high_value < low.y:
@@ -860,4 +858,3 @@ class VectorMontonizer:
                 self.actives.append(c)
 
         self.current = scan
-
