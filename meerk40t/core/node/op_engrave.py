@@ -33,7 +33,6 @@ class EngraveOpNode(Node, Parameters):
         Node.__init__(self, type="op engrave", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
-        self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]

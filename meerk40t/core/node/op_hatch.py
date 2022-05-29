@@ -27,7 +27,6 @@ class HatchOpNode(Node, Parameters):
         Node.__init__(self, type="op hatch", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
-        self._status_value = "Queued"
         self._hatch_distance_native = None
 
         if len(args) == 1:
