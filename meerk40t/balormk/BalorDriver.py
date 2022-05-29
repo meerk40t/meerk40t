@@ -320,7 +320,7 @@ class BalorDriver:
                 x, y = q.start
                 if last_x != x and last_y != y:
                     job.goto(x, y)
-                for x, y, on in q.plot:
+                for x, y, on in q.plot[1:]:
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
                         last_on = on
