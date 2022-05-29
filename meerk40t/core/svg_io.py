@@ -383,6 +383,8 @@ class SVGWriter:
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
+        else:
+            subelement.set("references", None)
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
