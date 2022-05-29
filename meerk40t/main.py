@@ -162,6 +162,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(svg_io.plugin)
 
+        from .fill import fills
+
+        plugins.append(fills.plugin)
+
         from .extra import vectrace
 
         plugins.append(vectrace.plugin)
