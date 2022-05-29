@@ -318,7 +318,7 @@ class BalorDriver:
             elif isinstance(q, PlotCut):
                 last_x, last_y = job.get_last_xy()
                 x, y = q.start
-                if last_x != x and last_y != y:
+                if last_x != x or last_y != y:
                     job.goto(x, y)
                 for x, y, on in q.plot[1:]:
                     # q.plot can have different on values, these are parsed
