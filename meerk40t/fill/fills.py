@@ -13,20 +13,13 @@ def split(points):
         yield points[pos : len(points)]
 
 
-def eulerian_fill(context, settings, matrix, paths):
+def eulerian_fill(settings, outlines, matrix, penbox_pass=None):
     """
     Applies optimized Eulerian fill
     @return:
     """
     if matrix is None:
         matrix = Matrix()
-    penbox_pass = settings.get("penbox_pass")
-    if penbox_pass is not None:
-        try:
-            penbox_pass = context.elements.penbox[penbox_pass]
-        except (KeyError, AttributeError):
-            penbox_pass = None
-
     passes = 1
     pass_custom = settings.get("passes_custom", False)
     if pass_custom:
@@ -52,20 +45,22 @@ def eulerian_fill(context, settings, matrix, paths):
         if key in polyline_lookup:
             points = polyline_lookup[key]
         else:
+            rotate = Matrix.rotate(angle)
             counter_rotate = Matrix.rotate(-angle)
-            transformed_vector = matrix.transform_vector([0, distance_y])
-            efill = EulerianFill(
-                abs(complex(transformed_vector[0], transformed_vector[1]))
-            )
-            for sp in paths:
-                sp.transform.reset()
-                if angle is not None:
-                    sp *= Matrix.rotate(angle)
-                sp = abs(sp)
-                efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-            points = efill.get_fill()
 
-            def matrix_point(pt):
+            def mx_rotate(pt):
+                if pt is None:
+                    return None
+                return (
+                    pt[0] * rotate.a
+                    + pt[1] * rotate.c
+                    + 1 * rotate.e,
+                    pt[0] * rotate.b
+                    + pt[1] * rotate.d
+                    + 1 * rotate.f,
+                )
+
+            def mx_counter(pt):
                 if pt is None:
                     return None
                 return (
@@ -76,10 +71,18 @@ def eulerian_fill(context, settings, matrix, paths):
                     + pt[1] * counter_rotate.d
                     + 1 * counter_rotate.f,
                 )
+            transformed_vector = matrix.transform_vector([0, distance_y])
+            efill = EulerianFill(
+                abs(complex(transformed_vector[0], transformed_vector[1]))
+            )
+            for sp in outlines:
+                sp = list(map(mx_rotate, sp))
+                efill += sp
+            points = efill.get_fill()
 
-            points = list(map(matrix_point, points))
+            points = list(map(mx_counter, points))
             polyline_lookup[key] = points
-        yield points
+        yield settings, points
 
 
 def plugin(kernel, lifecycle):
