@@ -392,6 +392,8 @@ class CutPlan:
             3. Device type - only have accel values for lhy devices
             4. Acceleration number (manual or automatic)
             5. Actual raster speed (adjusted if necessary from Op speed)
+        If choice between merged or separated is evenly balanced, we prefer merged
+        by adding a constant value of 50 (mils) to the margins.
         """
 
         # Determine raster direction(s)
@@ -411,8 +413,8 @@ class CutPlan:
             return dx, dy
 
         # set minimum margins otherwise
-        dx = 500 if h_sweep else 0
-        dy = 500 if v_sweep else 0
+        dx = 500 if h_sweep else 50
+        dy = 500 if v_sweep else 50
 
         # Get device and check for lhystudios
         try:
@@ -446,9 +448,9 @@ class CutPlan:
 
         # Calculate margins
         if h_sweep:
-            dx = max(dx, CutPlan.sweep_distance(speed, h_accel))
+            dx = max(dx, CutPlan.sweep_distance(speed, h_accel)) + 50
         if v_sweep:
-            dy = max(dy, CutPlan.sweep_distance(speed, v_accel))
+            dy = max(dy, CutPlan.sweep_distance(speed, v_accel)) + 50
 
         return dx, dy
 
