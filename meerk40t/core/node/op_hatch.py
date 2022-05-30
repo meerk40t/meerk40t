@@ -171,55 +171,11 @@ class HatchOpNode(Node, Parameters):
         @param commands:
         @return:
         """
-        def hatch(settings, outlines):
-            def preprocess_hatch():
-                self.remove_all_children()
-                fills = list(context.match("hatch", suffix=True))
-                penbox_pass = self.settings.get("penbox_pass")
-                if penbox_pass is not None:
-                    try:
-                        penbox_pass = context.elements.penbox[penbox_pass]
-                    except KeyError:
-                        penbox_pass = None
-                hatch_cache = dict()
-                for p in range(self.implicit_passes):
-                    chain_settings = dict(settings)
-                    if penbox_pass is not None:
-                        try:
-                            chain_settings.update(penbox_pass[p])
-                        except IndexError:
-                            pass
-
-                    # Create cache key.
-                    h_dist = chain_settings.get("hatch_distance", "1mm")
-                    h_angle = chain_settings.get("hatch_angle", "0deg")
-                    if isinstance(h_angle, float):
-                        h_angle = str(h_angle)
-                    hatch_type = chain_settings.get("hatch_type")
-                    if hatch_type not in fills:
-                        hatch_type = fills[0]
-                    key = f"{hatch_type};{h_angle},{h_dist}"
-
-                    if key in hatch_cache:
-                        hatches = hatch_cache[key]
-                    else:
-                        # Create new hatch.
-                        algorithm = context.lookup(f"hatch/{hatch_type}")
-                        hatches = list(algorithm(settings=chain_settings, outlines=outlines, matrix=matrix))
-                        hatch_cache[key] = hatches
-
-                    for polyline in HatchOpNode.split(hatches):
-                        node = PolylineNode(shape=Polyline(*polyline))
-                        node.settings.update(chain_settings)
-                        self.add_node(node)
-            return preprocess_hatch
-
-        if self.children:
-            c = list()
+        def hatch():
+            settings = self.settings
+            outlines = list()
             for node in self.children:
                 path = node.as_path()
-                path *= matrix
-                path = abs(path)
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
@@ -227,8 +183,49 @@ class HatchOpNode(Node, Parameters):
                         continue
                     sp = Path(subpath)
                     points = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    c.append(points)
-            commands.append(hatch(settings=self.settings, outlines=c))
+                    outlines.append(points)
+            self.remove_all_children()
+            fills = list(context.match("hatch", suffix=True))
+            penbox_pass = self.settings.get("penbox_pass")
+            if penbox_pass is not None:
+                try:
+                    penbox_pass = context.elements.penbox[penbox_pass]
+                except KeyError:
+                    penbox_pass = None
+            hatch_cache = dict()
+            for p in range(self.implicit_passes):
+                chain_settings = dict(settings)
+                if penbox_pass is not None:
+                    try:
+                        chain_settings.update(penbox_pass[p])
+                    except IndexError:
+                        pass
+
+                # Create cache key.
+                h_dist = chain_settings.get("hatch_distance", "1mm")
+                h_angle = chain_settings.get("hatch_angle", "0deg")
+                if isinstance(h_angle, float):
+                    h_angle = str(h_angle)
+                hatch_type = chain_settings.get("hatch_type")
+                if hatch_type not in fills:
+                    hatch_type = fills[0]
+                key = f"{hatch_type};{h_angle},{h_dist}"
+
+                if key in hatch_cache:
+                    hatches = hatch_cache[key]
+                else:
+                    # Create new hatch.
+                    algorithm = context.lookup(f"hatch/{hatch_type}")
+                    hatches = list(algorithm(settings=chain_settings, outlines=outlines, matrix=matrix))
+                    hatch_cache[key] = hatches
+
+                for polyline in HatchOpNode.split(hatches):
+                    node = PolylineNode(shape=Polyline(*polyline))
+                    node.settings.update(chain_settings)
+                    self.add_node(node)
+
+        if self.children:
+            commands.append(hatch)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
