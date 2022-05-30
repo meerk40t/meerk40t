@@ -96,6 +96,37 @@ class TestFill(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_fill_hatch2(self):
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("operation* delete\n")
+            kernel.console("rect 0 0 1in 1in\n")
+            kernel.console("rect 3in 0 1in 1in\n")
+            kernel.console("hatch\n")
+            hatch = list(kernel.elements.ops())[0]
+
+            rect0 = list(kernel.elements.elems())[0]
+            hatch.add_node(copy(rect0))
+            rect1 = list(kernel.elements.elems())[1]
+            hatch.add_node(copy(rect1))
+            commands = list()
+            # kernel.console("tree list\n")
+            hatch.preprocess(kernel.root, Matrix(), commands)
+            for command in commands:
+                command()
+            # kernel.console("tree list\n")
+            polyline_node0 = hatch.children[0]
+            shape0 = polyline_node0.shape
+            self.assertEqual(len(shape0), 76)
+            # print(shape0)
+
+            polyline_node1 = hatch.children[1]
+            shape1 = polyline_node1.shape
+            self.assertEqual(len(shape1), 50)
+            # print(shape1)
+        finally:
+            kernel.shutdown()
+
 
     def test_fill_kernel_registered(self):
         kernel = bootstrap.bootstrap()
