@@ -221,7 +221,7 @@ def plugin(kernel, lifecycle):
                 message = """This version of MeerK40t is unstable. It is intended primarily for testing purposes. Please report all problems, even small ones to the github issue opened for this version. Do not continue using this version if it is not the latest RC or if your work requires a more stable version.
                 
                 Open Issue Page?"""
-                caption = _("Release Candidate.")
+                caption = _("Report Candidate.")
                 import wx
 
                 style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
@@ -233,7 +233,7 @@ def plugin(kernel, lifecycle):
                 )
                 answer = dlg.ShowModal()
                 if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/967"
+                    issue_page = "https://github.com/meerk40t/meerk40t/issues/1065"
                     import webbrowser
 
                     webbrowser.open(issue_page, new=0, autoraise=True)
