@@ -43,9 +43,9 @@ class TextNode(Node):
         else:
             self.stroke_width = stroke_width
         if font_style is None:
-            self.font_style = font_style
+            self.font_style = "normal"
         else:
-            self.font_style = text.font_style  # normal / italic / oblique
+            self.font_style = font_style  # normal / italic / oblique
         if underline is None:
             self.underline = False
         else:
