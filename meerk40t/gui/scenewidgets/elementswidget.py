@@ -69,7 +69,10 @@ class ElementsWidget(Widget):
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = self.key_shift_pressed
-            smallest = not self.key_ctrl_pressed
+            if self.scene.context.select_smallest:
+                smallest = not self.key_ctrl_pressed
+            else:
+                smallest = self.key_ctrl_pressed
             elements.set_emphasized_by_position(space_pos, keep_old, smallest)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
