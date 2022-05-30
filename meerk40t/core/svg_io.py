@@ -282,7 +282,7 @@ class SVGLoader:
             ppi=ppi,
             color="none",
             transform="scale(%f)" % scale_factor,
-        )
+        )  # todo: xml.etree.ElementTree.ParseError: no element found: line 1, column 0
         context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", label=basename)

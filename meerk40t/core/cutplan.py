@@ -477,6 +477,8 @@ class CutPlan:
             dx, dy = self.get_raster_margins(op.settings)
 
             def adjust_bbox(bbox):
+                if bbox is None:
+                    return None
                 x1, y1, x2, y2 = bbox
                 return x1 - dx, y1 - dy, x2 + dx, y2 + dy
 
