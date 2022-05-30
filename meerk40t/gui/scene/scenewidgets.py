@@ -1549,7 +1549,7 @@ class RectSelectWidget(Widget):
                 return RESPONSE_CHAIN
 
         elif event_type == "leftup":
-            if self.start_location is None: # TODO: Figure out why this sometimes is None
+            if self.start_location is None:
                 return RESPONSE_CHAIN
             _ = self.scene.context._
             self.update_statusmsg(_("Status"))
