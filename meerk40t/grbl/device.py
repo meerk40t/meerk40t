@@ -1455,7 +1455,7 @@ class SerialConnection:
         try:
             if self.laser.in_waiting:
                 self.read_buffer += self.laser.readall()
-        except SerialException:
+        except (SerialException, AttributeError):
             return None
         f = self.read_buffer.find(b"\n")
         if f == -1:
