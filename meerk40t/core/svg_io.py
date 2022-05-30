@@ -169,6 +169,13 @@ class SVGWriter:
                 s = "miter"
             return s
 
+        def rulestr(fillrule):
+            if fillrule == Fillrule.FILLRULE_EVENODD:
+                s = "evenodd"
+            else:
+                s = "nonzero"
+            return s
+
         def copy_attributes(source, target):
             #
 
@@ -207,7 +214,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem path":
                 element = abs(c.path * scale)
@@ -215,7 +222,7 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 subelement = SubElement(xml_tree, "element")
@@ -227,13 +234,15 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+                # Makes no sense here, as it's not used anyway in svg for a rect
+                # subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 # The svg attributes should be up to date, but better safe than sorry
