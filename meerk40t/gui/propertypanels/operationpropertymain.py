@@ -861,8 +861,9 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
+        self.fills = list(self.context.match("hatch", suffix=True))
         self.combo_fill_style = wx.ComboBox(
-            self, wx.ID_ANY, choices=["Euler", "Scan"], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
@@ -901,7 +902,14 @@ class HatchSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        self.combo_fill_style.SetSelection(self.operation.hatch_type)
+        i = 0
+        for ht in self.fills:
+            if ht == self.operation.hatch_type:
+                break
+            i += 1
+        if i == len(self.fills):
+            i = 0
+        self.combo_fill_style.SetSelection(i)
         self.text_angle.SetValue(self.operation.hatch_angle)
         self.text_distance.SetValue(str(self.operation.hatch_distance))
         try:
@@ -940,7 +948,8 @@ class HatchSettingsPanel(wx.Panel):
         self.refresh_display()
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
+        hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
+        self.operation.hatch_type = hatch_type
         self.hatch_lines = None
         self.travel_lines = None
         self.refresh_display()
