@@ -218,6 +218,8 @@ class HatchOpNode(Node, Parameters):
             c = list()
             for node in self.children:
                 path = node.as_path()
+                path *= matrix
+                path = abs(path)
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
