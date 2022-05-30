@@ -41,9 +41,7 @@ class TestFill(unittest.TestCase):
             ),
         )
 
-        fills = list(eulerian_fill(settings={}, outlines=paths, matrix=None, penbox_pass=None))
-        self.assertEqual(len(fills), 1)
-        settings, fill = fills[0]
+        fill = list(eulerian_fill(settings={}, outlines=paths, matrix=None))
         self.assertEqual(len(fill), 13)
         for x, y in fill:
             self.assertIn(x, (500, 2500, 7500, 9500))
@@ -68,9 +66,7 @@ class TestFill(unittest.TestCase):
             ),
         )
         matrix = Matrix.scale(0.005)
-        fills = list(eulerian_fill(settings={}, outlines=paths, matrix=matrix, penbox_pass=None))
-        self.assertEqual(len(fills), 1)
-        settings, fill = fills[0]
+        fill = list(eulerian_fill(settings={}, outlines=paths, matrix=matrix))
         self.assertEqual(len(fill), 327)
         for x, y in fill:
             self.assertIn(x, (50, 250, 750, 950))
