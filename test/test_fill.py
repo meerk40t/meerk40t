@@ -1,7 +1,8 @@
 import unittest
+from copy import copy
 
 from meerk40t.fill.fills import eulerian_fill
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
 
@@ -72,6 +73,29 @@ class TestFill(unittest.TestCase):
             self.assertIn(x, (50, 250, 750, 950))
 
         # draw(fill, w, h)
+
+    def test_fill_hatch(self):
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("operation* delete\n")
+            kernel.console("rect 0 0 1in 1in\n")
+            kernel.console("hatch\n")
+            hatch = list(kernel.elements.ops())[0]
+            rect = list(kernel.elements.elems())[0]
+            hatch.add_node(copy(rect))
+            commands = list()
+            # kernel.console("tree list\n")
+            hatch.preprocess(kernel.root, Matrix(), commands)
+            for command in commands:
+                command()
+            # kernel.console("tree list\n")
+            polyline_node = hatch.children[0]
+            shape = polyline_node.shape
+            self.assertEqual(len(shape), 77)
+            print(shape)
+        finally:
+            kernel.shutdown()
+
 
     def test_fill_kernel_registered(self):
         kernel = bootstrap.bootstrap()
