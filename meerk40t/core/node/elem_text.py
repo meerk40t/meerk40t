@@ -17,6 +17,10 @@ class TextNode(Node):
         stroke=None,
         stroke_width=None,
         font_style = None,
+        underline = None,
+        strikethrough = None,
+        overline = None,
+        texttransform = None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
@@ -42,6 +46,23 @@ class TextNode(Node):
             self.font_style = font_style
         else:
             self.font_style = text.font_style  # normal / italic / oblique
+        if underline is None:
+            self.underline = False
+        else:
+            self.underline = underline
+        if strikethrough is None:
+            self.strikethrough = False
+        else:
+            self.strikethrough = strikethrough
+        # For sake of completeness, afaik there is no way to display it with wxpython
+        if overline is None:
+            self.overline = False
+        else:
+            self.overline = overline
+        if texttransform is None:
+            self.texttransform = ""
+        else:
+            self.texttransform = texttransform
         self.lock = False
 
     def __copy__(self):
@@ -52,6 +73,10 @@ class TextNode(Node):
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
             font_style=self.font_style,
+            underline=self.underline,
+            strikethrough=self.strikethrough,
+            overline=self.overline,
+            texttransform=self.texttransform,
             **self.settings,
         )
 

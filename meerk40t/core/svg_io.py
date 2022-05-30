@@ -276,6 +276,7 @@ class SVGWriter:
                     ("font_size", SVG_ATTR_FONT_SIZE),
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
                     ("font_style", "font-style"),  # Not implemented yet afaics
+                    ("text_transform", "text-transform"),
                 ]
                 for attrib in attribs:
                     val = None
@@ -285,6 +286,16 @@ class SVGWriter:
                         val = getattr(c, attrib[0])
                     if not val is None:
                         subelement.set(attrib[1], str(val))
+                text_dec = ""
+                if c.underline:
+                    text_dec += " underline"
+                if c.overline:
+                    text_dec += " overline"
+                if c.strikethrough:
+                    text_dec += " line-through"
+                if len(text_dec)>0:
+                    text_dec.strip()
+                    subelement.set("text-decoration", text_dec)
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
@@ -491,6 +502,16 @@ class SVGProcessor:
                 fst = element.values.get("font-style")
                 if not fst is None:
                     node.font_style = fst
+                fst = element.values.get("text-transform")
+                if not fst is None:
+                    node.texttransform = fst
+                fst = element.values.get("text-decoration")
+                if not fst is None:
+                    fst = fst.lower()
+                    node.underline = ("underline" in fst)
+                    node.overline = ("overline" in fst)
+                    node.strikethrough = ("line-through" in fst)
+
                 svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
                 if svgfont_to_wx:
                     svgfont_to_wx(node)

@@ -525,6 +525,14 @@ class LaserRender:
             if draw_mode & DRAW_MODE_VARIABLES:
                 # Only if flag show the translated values
                 textstr = self.context.elements.mywordlist.translate(textstr)
+            if not node.texttransform is None:
+                ttf = node.texttransform.lower()
+                if ttf == "capitalize":
+                    textstr = textstr.capitalize()
+                elif ttf == "uppercase":
+                    textstr = textstr.upper()
+                if ttf == "lowercase":
+                    textstr = textstr.lower()
             f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
             f_height -= self.fontdescent_factor * f_descent
             text.width = f_width
