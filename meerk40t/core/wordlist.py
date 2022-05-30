@@ -150,6 +150,8 @@ class Wordlist():
                     value = self.fetch_value(skey, index)
                     if value is None:
                         value = ""
+                elif skey.startswith("date") or skey.startswith("time"):
+                    pass
                 else:
                     # Something unknown...
                     continue
@@ -160,10 +162,12 @@ class Wordlist():
             elif skey == "time":
                 value = self.wordlist_timestr(None)
             elif skey.startswith("date@"):
-                sformat = skey[5:]
+                # Original cASEs, vkey is already lowered...
+                sformat = vkey[6:-1]
                 value = self.wordlist_datestr(sformat)
             elif skey.startswith("time@"):
-                sformat = skey[5:]
+                # Original cASEs, vkey is already lowered...
+                sformat = vkey[6:-1]
                 value = self.wordlist_timestr(sformat)
             if not value is None:
                 result = result.replace(vkey, str(value))
