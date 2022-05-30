@@ -431,7 +431,7 @@ def get_command_code(lines):
                     if home_adjust is not None:
                         yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
                     if home is not None:
-                        yield COMMAND_MOVE, home
+                        yield COMMAND_MOVE, home[0], home[1]
                 elif v == 28.1:
                     if "x" in gc and "y" in gc:
                         x = gc["x"].pop(0)
@@ -483,7 +483,7 @@ def get_command_code(lines):
                     if home_adjust is not None:
                         yield COMMAND_MOVE, home_adjust[0], home_adjust[1]
                     if home2 is not None:
-                        yield COMMAND_MOVE, home2
+                        yield COMMAND_MOVE, home2[0], home2[1]
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if "x" in gc and "y" in gc:
@@ -888,7 +888,7 @@ class GRBLEmulator(Module):
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home is not None:
-                        self.spooler.job(COMMAND_MOVE, self.home)
+                        self.spooler.job(COMMAND_MOVE, self.home[0], self.home[1])
                 elif v == 28.1:
                     if "x" in gc and "y" in gc:
                         x = gc["x"].pop(0)
@@ -946,7 +946,7 @@ class GRBLEmulator(Module):
                             COMMAND_MOVE, self.home_adjust[0], self.home_adjust[1]
                         )
                     if self.home2 is not None:
-                        self.spooler.job(COMMAND_MOVE, self.home2)
+                        self.spooler.job(COMMAND_MOVE, self.home2[0], self.home2[1])
                 elif v == 30.1:
                     # Stores the current absolute position.
                     if "x" in gc and "y" in gc:
