@@ -162,147 +162,6 @@ class HatchOpNode(Node, Parameters):
         if pos != len(points):
             yield points[pos : len(points)]
 
-    def eulerian_fill(self, context, matrix):
-        """
-        Applies optimized Eulerian fill
-        @return:
-        """
-        def create_eulerian_fill():
-            c = list()
-            for node in self.children:
-                path = node.as_path()
-                path.approximate_arcs_with_cubics()
-                self.settings["line_color"] = path.stroke
-                for subpath in path.as_subpaths():
-                    sp = Path(subpath)
-                    if len(sp) == 0:
-                        continue
-                    c.append(sp)
-            self.remove_all_children()
-
-            penbox_pass = self.settings.get("penbox_pass")
-            if penbox_pass is not None:
-                try:
-                    penbox_pass = context.elements.penbox[penbox_pass]
-                except KeyError:
-                    penbox_pass = None
-
-            polyline_lookup = dict()
-            for p in range(self.implicit_passes):
-                settings = dict(self.settings)
-                if penbox_pass is not None:
-                    try:
-                        settings.update(penbox_pass[p])
-                    except IndexError:
-                        pass
-                h_dist = settings.get("hatch_distance", "1mm")
-                h_angle = settings.get("hatch_angle", "0deg")
-                distance_y = float(Length(h_dist))
-                if isinstance(h_angle, float):
-                    angle = Angle.degrees(h_angle)
-                    h_angle = str(h_angle)
-                else:
-                    angle = Angle.parse(h_angle)
-
-                key = f"{h_angle},{h_dist}"
-                if key in polyline_lookup:
-                    polylines = polyline_lookup[key]
-                else:
-                    counter_rotate = Matrix.rotate(-angle)
-                    transformed_vector = matrix.transform_vector([0, distance_y])
-                    efill = EulerianFill(
-                        abs(complex(transformed_vector[0], transformed_vector[1]))
-                    )
-                    for sp in c:
-                        sp.transform.reset()
-                        if angle is not None:
-                            sp *= Matrix.rotate(angle)
-                        sp = abs(sp)
-                        efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    points = efill.get_fill()
-                    polylines = list()
-                    for pts in HatchOpNode.split(points):
-                        polyline = Polyline(pts, stoke=settings.get("line_color"))
-                        polyline *= counter_rotate
-                        polylines.append(abs(polyline))
-                    polyline_lookup[key] = polylines
-                for polyline in polylines:
-                    node = PolylineNode(shape=abs(polyline))
-                    node.settings.update(settings)
-                    self.add_node(node)
-            return
-        return create_eulerian_fill
-
-    def scanline_fill(self, context, matrix):
-        """
-        Apply scanline fill.
-        @return:
-        """
-        def create_scanline_fill():
-            c = list()
-            for node in self.children:
-                path = node.as_path()
-                path.approximate_arcs_with_cubics()
-                self.settings["line_color"] = path.stroke
-                for subpath in path.as_subpaths():
-                    sp = Path(subpath)
-                    if len(sp) == 0:
-                        continue
-                    c.append(sp)
-            self.remove_all_children()
-
-            penbox_pass = self.settings.get("penbox_pass")
-            if penbox_pass is not None:
-                try:
-                    penbox_pass = context.elements.penbox[penbox_pass]
-                except KeyError:
-                    penbox_pass = None
-
-            polyline_lookup = dict()
-            for p in range(self.implicit_passes):
-                settings = dict(self.settings)
-                if penbox_pass is not None:
-                    try:
-                        settings.update(penbox_pass[p])
-                    except IndexError:
-                        pass
-                h_dist = settings.get("hatch_distance", "1mm")
-                h_angle = settings.get("hatch_angle", "0deg")
-                distance_y = float(Length(h_dist))
-                if isinstance(h_angle, float):
-                    angle = Angle.degrees(h_angle)
-                    h_angle = str(h_angle)
-                else:
-                    angle = Angle.parse(h_angle)
-
-                key = f"{h_angle},{h_dist}"
-                if key in polyline_lookup:
-                    polylines = polyline_lookup[key]
-                else:
-                    counter_rotate = Matrix.rotate(-angle)
-                    transformed_vector = matrix.transform_vector([0, distance_y])
-                    efill = EulerianFill(
-                        abs(complex(transformed_vector[0], transformed_vector[1]))
-                    )
-                    for sp in c:
-                        sp.transform.reset()
-                        if angle is not None:
-                            sp *= Matrix.rotate(angle)
-                        sp = abs(sp)
-                        efill += [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    points = efill.get_fill()
-                    polylines = list()
-                    for pts in HatchOpNode.split(points):
-                        polyline = Polyline(pts, stoke=settings.get("line_color"))
-                        polyline *= counter_rotate
-                        polylines.append(abs(polyline))
-                    polyline_lookup[key] = polylines
-                for polyline in polylines:
-                    node = PolylineNode(shape=abs(polyline))
-                    node.settings.update(settings)
-                    self.add_node(node)
-        return create_scanline_fill
-
     def preprocess(self, context, matrix, commands):
         """
         Preprocess hatch values
@@ -312,13 +171,62 @@ class HatchOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+        def hatch(settings, outlines):
+            def preprocess_hatch():
+                self.remove_all_children()
+                fills = list(context.match("hatch", suffix=True))
+                penbox_pass = self.settings.get("penbox_pass")
+                if penbox_pass is not None:
+                    try:
+                        penbox_pass = context.elements.penbox[penbox_pass]
+                    except KeyError:
+                        penbox_pass = None
+                hatch_cache = dict()
+                for p in range(self.implicit_passes):
+                    chain_settings = dict(settings)
+                    if penbox_pass is not None:
+                        try:
+                            chain_settings.update(penbox_pass[p])
+                        except IndexError:
+                            pass
+
+                    # Create cache key.
+                    h_dist = chain_settings.get("hatch_distance", "1mm")
+                    h_angle = chain_settings.get("hatch_angle", "0deg")
+                    if isinstance(h_angle, float):
+                        h_angle = str(h_angle)
+                    hatch_type = chain_settings.get("hatch_type")
+                    if hatch_type not in fills:
+                        hatch_type = fills[0]
+                    key = f"{hatch_type};{h_angle},{h_dist}"
+
+                    if key in hatch_cache:
+                        hatches = hatch_cache[key]
+                    else:
+                        # Create new hatch.
+                        algorithm = context.lookup(f"hatch/{hatch_type}")
+                        hatches = list(algorithm(settings=chain_settings, outlines=outlines, matrix=matrix))
+                        hatch_cache[key] = hatches
+
+                    for polyline in HatchOpNode.split(hatches):
+                        node = PolylineNode(shape=abs(polyline))
+                        node.settings.update(chain_settings)
+                        self.add_node(node)
+            return preprocess_hatch
 
         if self.children:
-            hatch_type = self.settings.get("hatch_type", 0)
-            if hatch_type == 0:
-                commands.append(self.eulerian_fill(context, matrix))
-            else:
-                commands.append(self.scanline_fill(context, matrix))
+            c = list()
+            for node in self.children:
+                path = node.as_path()
+                path.approximate_arcs_with_cubics()
+                self.settings["line_color"] = path.stroke
+                for subpath in path.as_subpaths():
+                    sp = Path(subpath)
+                    if len(sp) == 0:
+                        continue
+                    points = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
+                    c.append(points)
+            commands.append(hatch(settings=self.settings, outlines=c))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
