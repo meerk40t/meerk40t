@@ -221,9 +221,9 @@ class HatchOpNode(Node, Parameters):
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
-                    sp = Path(subpath)
-                    if len(sp) == 0:
+                    if len(subpath) == 0:
                         continue
+                    sp = Path(subpath)
                     points = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
                     c.append(points)
             commands.append(hatch(settings=self.settings, outlines=c))
