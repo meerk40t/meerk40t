@@ -44,10 +44,12 @@ class PolygonTool(ToolWidget):
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "hover":
+        elif event_type in ("leftdown", "leftup", "move", "hover"):
+            self.scene.tool_active = True
             self.mouse_position = space_pos[0], space_pos[1]
             if self.point_series:
                 self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             polyline = Polygon(*self.point_series, stroke="blue", stroke_width=1000)
             elements = self.scene.context.elements
