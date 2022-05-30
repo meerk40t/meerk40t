@@ -209,7 +209,7 @@ class HatchOpNode(Node, Parameters):
                         hatch_cache[key] = hatches
 
                     for polyline in HatchOpNode.split(hatches):
-                        node = PolylineNode(shape=abs(polyline))
+                        node = PolylineNode(shape=Polyline(*polyline))
                         node.settings.update(chain_settings)
                         self.add_node(node)
             return preprocess_hatch
