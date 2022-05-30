@@ -284,7 +284,9 @@ class BalorDriver:
         job.goto(0x8000, 0x8000)
         last_on = None
         self.wobble = None
-        for q in self.queue:
+        queue = self.queue
+        self.queue = list()
+        for q in queue:
             settings = q.settings
             penbox = settings.get("penbox_value")
             if penbox is not None:
