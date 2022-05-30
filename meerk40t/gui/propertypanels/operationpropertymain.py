@@ -987,10 +987,6 @@ class HatchSettingsPanel(wx.Panel):
     def calculate_hatch_lines(self):
         w, h = self._Buffer.Size
         hatch_type = self.operation.hatch_type
-        if hatch_type == 0:
-            hatch_type = "eulerian"
-        else:
-            hatch_type = "scanline"
         hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
         if hatch_algorithm is None:
             return
@@ -1011,7 +1007,7 @@ class HatchSettingsPanel(wx.Panel):
             ),
         )
         matrix = Matrix.scale(0.05)
-        hatches = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, penbox_pass=None))
+        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix))
 
         h_start = []
         h_end = []
@@ -1020,26 +1016,25 @@ class HatchSettingsPanel(wx.Panel):
         last_x = None
         last_y = None
         travel = True
-        for settings, hatch in hatches:
-            for p in hatch:
-                if p is None:
-                    travel = True
-                    continue
-                x, y = p
-                if last_x is None:
-                    last_x = x
-                    last_y = y
-                    travel = False
-                    continue
-                if travel:
-                    t_start.append((last_x, last_y))
-                    t_end.append((x, y))
-                else:
-                    h_start.append((last_x, last_y))
-                    h_end.append((x, y))
-                travel = False
+        for p in hatch:
+            if p is None:
+                travel = True
+                continue
+            x, y = p
+            if last_x is None:
                 last_x = x
                 last_y = y
+                travel = False
+                continue
+            if travel:
+                t_start.append((last_x, last_y))
+                t_end.append((x, y))
+            else:
+                h_start.append((last_x, last_y))
+                h_end.append((x, y))
+            travel = False
+            last_x = x
+            last_y = y
         self.hatch_lines = h_start, h_end
         self.travel_lines = t_start, t_end
 
