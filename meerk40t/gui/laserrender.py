@@ -533,11 +533,14 @@ class LaserRender:
                     textstr = textstr.upper()
                 if ttf == "lowercase":
                     textstr = textstr.lower()
+            #f_width1, f_height1 = gc.GetTextExtent(textstr)
+            #print ("Get Textextent: Height=%.1f" % f_height1)
             f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
+            #print ("Get Full Textextent: Height=%.1f, descent=%.1f, leading=%.1f" % ( f_height, f_descent, f_externalLeading ))
             f_height -= self.fontdescent_factor * f_descent
             text.width = f_width
             text.height = f_height
-
+            # print ("Anchor= %s" % text.anchor)
             if not hasattr(text, "anchor") or text.anchor == "start":
                 y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
             elif text.anchor == "middle":
