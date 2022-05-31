@@ -843,6 +843,19 @@ class EulerianFill:
         self.outlines.append(other)
         return self
 
+    def estimate(self):
+        min_y = float("inf")
+        max_y = -float("inf")
+        for outline in self.outlines:
+            o_min_y = min([p[1] for p in outline])
+            o_max_y = max([p[1] for p in outline])
+            min_y = min(min_y, o_min_y)
+            max_y = max(max_y, o_max_y)
+        try:
+            return (max_y - min_y) / self.distance
+        except ZeroDivisionError:
+            return float("inf")
+
     def get_fill(self):
         min_y = float("inf")
         max_y = -float("inf")
