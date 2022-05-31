@@ -251,6 +251,7 @@ class PreferencesPanel(wx.Panel):
         self.checklist_options = ChoicePropertyPanel(
             self, wx.ID_ANY, context=context, choices="preferences"
         )
+        self.checklist_options.SetupScrolling()
         sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_settings)

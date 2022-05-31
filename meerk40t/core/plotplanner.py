@@ -78,6 +78,7 @@ class PlotPlanner(Parameters):
 
         self.pos_x = None
         self.pos_y = None
+        self.settings_then_jog = False
 
     def push(self, plot):
         self.abort = False
@@ -166,13 +167,22 @@ class PlotPlanner(Parameters):
                 self.pos_y = self.single.single_y
 
             # Jog was needed.
-            if jog:
-                yield new_start_x, new_start_y, jog
-                self.warp(new_start_x, new_start_y)
+            if self.settings_then_jog:
+                if cut.settings is not self.settings:
+                    self.settings = cut.settings
+                    yield None, None, PLOT_SETTING
 
-            if cut.settings is not self.settings:
-                self.settings = cut.settings
-                yield None, None, PLOT_SETTING
+                if jog:
+                    yield new_start_x, new_start_y, jog
+                    self.warp(new_start_x, new_start_y)
+            else:
+                if jog:
+                    yield new_start_x, new_start_y, jog
+                    self.warp(new_start_x, new_start_y)
+
+                if cut.settings is not self.settings:
+                    self.settings = cut.settings
+                    yield None, None, PLOT_SETTING
 
             if jog or self.raster_step_x != 0:
                 # set the directions. Post Jog, Post Settings.

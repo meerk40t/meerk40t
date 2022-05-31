@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node
+from meerk40t.core.node.node import Node, Fillrule
 from meerk40t.svgelements import Path
 
 
@@ -10,7 +10,8 @@ class EllipseNode(Node):
     """
 
     def __init__(
-        self, shape, matrix=None, fill=None, stroke=None, stroke_width=None, **kwargs
+        self, shape, matrix=None, fill=None, stroke=None,
+        stroke_width=None, fillrule = None, **kwargs
     ):
         super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
         self.shape = shape
@@ -31,6 +32,10 @@ class EllipseNode(Node):
             self.stroke_width = shape.stroke_width
         else:
             self.stroke_width = stroke_width
+        if fillrule is None:
+            self.fillrule = Fillrule.FILLRULE_NONZERO
+        else:
+            self.fillrule = fillrule
         self.lock = False
 
     def __repr__(self):
@@ -48,6 +53,7 @@ class EllipseNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=copy(self.stroke_width),
+            fillrule=self.fillrule,
             **self.settings,
         )
 
@@ -57,6 +63,7 @@ class EllipseNode(Node):
             self.shape.transform = self.matrix
             self.shape.stroke_width = self.stroke_width
             self._bounds = self.shape.bbox(with_stroke=True)
+            self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
@@ -117,4 +124,5 @@ class EllipseNode(Node):
     def as_path(self):
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self.shape.fillrule = self.fillrule
         return abs(Path(self.shape))

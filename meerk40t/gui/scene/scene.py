@@ -29,7 +29,6 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
-
 # from weakref import ref
 
 
@@ -75,12 +74,16 @@ class Scene(Module, Job):
         self._cursor = None
         self._reference = None  # Reference Object
         self.attraction_points = []  # Clear all
+        self.default_stroke = None
+        self.default_fill = None
         self.compute = True
 
         self.colors = GuiColors(self.context)
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
+
+        # Stuff for magnet-lines
         self.magnet_x = []
         self.magnet_y = []
         self.magnet_attraction = 2
@@ -90,9 +93,27 @@ class Scene(Module, Job):
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
 
+        # Stuff related to grids and guides
         self.tick_distance = 0
         self.auto_tick = False  # by definition do not auto_tick
+        self.reset_grids()
+
         self.tool_active = False
+        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+
+    def reset_grids(self):
+        self.draw_grid_primary = True
+        self.tick_distance = 0
+        # Secondary grid, perpendicular, but with definable center and scaling
+        self.draw_grid_secondary = False
+        self.grid_secondary_cx = None
+        self.grid_secondary_cy = None
+        self.grid_secondary_scale_x = 1
+        self.grid_secondary_scale_y = 1
+        # Circular grid
+        self.draw_grid_circular = False
+        self.grid_circular_cx = None
+        self.grid_circular_cy = None
 
     def clear_magnets(self):
         self.magnet_x = []
@@ -511,12 +532,12 @@ class Scene(Module, Job):
             previous_top_element = None
 
         if event_type in (
-                "kb_shift_release",
-                "kb_shift_press",
-                "kb_ctrl_release",
-                "kb_ctrl_press",
-                "kb_alt_release",
-                "kb_alt_press",
+            "kb_shift_release",
+            "kb_shift_press",
+            "kb_ctrl_release",
+            "kb_ctrl_press",
+            "kb_alt_release",
+            "kb_alt_press",
         ):
             # print("Keyboard-Event raised: %s" % event_type)
             self.rebuild_hittable_chain()
@@ -543,12 +564,12 @@ class Scene(Module, Job):
             return
 
         if event_type in (
-                "leftdown",
-                "middledown",
-                "rightdown",
-                "wheeldown",
-                "wheelup",
-                "hover",
+            "leftdown",
+            "middledown",
+            "rightdown",
+            "wheeldown",
+            "wheelup",
+            "hover",
         ):
             self.time = time.time()
             self.rebuild_hittable_chain()
@@ -580,9 +601,9 @@ class Scene(Module, Job):
             #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
 
             if (
-                    i == 0
-                    and event_type == "hover"
-                    and previous_top_element is not current_widget
+                i == 0
+                and event_type == "hover"
+                and previous_top_element is not current_widget
             ):
                 if previous_top_element is not None:
                     if self.log_events:
@@ -598,7 +619,7 @@ class Scene(Module, Job):
                 previous_top_element = current_widget
             delta_time = time.time() - self.time
             if (
-                    event_type == "leftup" and delta_time <= 0.30
+                event_type == "leftup" and delta_time <= 0.30
             ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick")
                 if self.log_events:

@@ -17,15 +17,13 @@ from meerk40t.kernel import (
     STATE_UNKNOWN,
     STATE_WAIT,
     CommandSyntaxError,
-    Module,
     Service,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import CutCode, RawCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from ..device.basedevice import (
     DRIVER_STATE_FINISH,
     DRIVER_STATE_MODECHANGE,
@@ -36,11 +34,8 @@ from ..device.basedevice import (
     PLOT_DIRECTION,
     PLOT_FINISH,
     PLOT_JOG,
-    PLOT_LEFT_UPPER,
     PLOT_RAPID,
-    PLOT_RIGHT_LOWER,
     PLOT_SETTING,
-    PLOT_START,
 )
 from .laserspeed import LaserSpeed
 from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
@@ -481,7 +476,7 @@ class LihuiyuDevice(Service, ViewPort):
             "egv_import",
             help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
         )
-        def egv_import(filename, **kwargs):
+        def egv_import(channel, _, filename, **kwargs):
             if filename is None:
                 raise CommandSyntaxError
 
@@ -501,15 +496,18 @@ class LihuiyuDevice(Service, ViewPort):
                 skip(file, "\n", 3)
                 skip(file, "%", 5)
 
-            with open(filename, "r") as f:
-                skip_header(f)
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    buffer = bytes(data, "utf8")
-                    self.out_pipe.write(buffer)
-                self.out_pipe.write(b"\n")
+            try:
+                with open(filename, "r") as f:
+                    skip_header(f)
+                    while True:
+                        data = f.read(1024)
+                        if not data:
+                            break
+                        buffer = bytes(data, "utf8")
+                        self.output.write(buffer)
+                    self.output.write(b"\n")
+            except (PermissionError, IOError, FileNotFoundError):
+                channel(_("Could not load: %s" % filename))
 
         @self.console_argument("filename", type=str)
         @self.console_command(
@@ -806,9 +804,6 @@ class LhystudiosDriver(Parameters):
         self.properties = 0
         self.is_relative = False
         self.laser = False
-
-        service._quit = False
-
         self._thread = None
         self._shutdown = False
         self.last_fetch = None

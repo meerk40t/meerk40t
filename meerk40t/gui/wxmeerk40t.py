@@ -29,6 +29,7 @@ from .icons import (
     icons8_pause_50,
 )
 from .keymap import Keymap
+from .wordlisteditor import WordlistEditor
 from .notes import Notes
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
@@ -328,6 +329,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
         kernel.register("window/Keymap", Keymap)
+        kernel.register("window/Wordlist", WordlistEditor)
         kernel.register("window/Navigation", Navigation)
         kernel.register("window/Notes", Notes)
         kernel.register("window/JobSpooler", JobSpooler)

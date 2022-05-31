@@ -34,6 +34,7 @@ class FileNode(Node):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     @property

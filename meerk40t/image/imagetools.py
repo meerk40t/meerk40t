@@ -1,6 +1,5 @@
 import os
 from copy import copy
-from os import path as ospath
 
 from meerk40t.kernel import CommandSyntaxError
 

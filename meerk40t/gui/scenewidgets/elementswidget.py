@@ -1,5 +1,3 @@
-import wx
-
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.scene.widget import Widget
@@ -15,6 +13,7 @@ class ElementsWidget(Widget):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
         self.key_shift_pressed = False
+        self.key_ctrl_pressed = False
 
     def hit(self):
         return HITCHAIN_HIT
@@ -61,10 +60,20 @@ class ElementsWidget(Widget):
         elif event_type == "kb_shift_press":
             if not self.key_shift_pressed:
                 self.key_shift_pressed = True
+        elif event_type == "kb_ctrl_press":
+            if not self.key_ctrl_pressed:
+                self.key_ctrl_pressed = True
+        elif event_type == "kb_ctrl_release":
+            if self.key_ctrl_pressed:
+                self.key_ctrl_pressed = False
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = self.key_shift_pressed
-            elements.set_emphasized_by_position(space_pos, keep_old)
+            if self.scene.context.select_smallest:
+                smallest = not self.key_ctrl_pressed
+            else:
+                smallest = self.key_ctrl_pressed
+            elements.set_emphasized_by_position(space_pos, keep_old, smallest)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
         return RESPONSE_DROP

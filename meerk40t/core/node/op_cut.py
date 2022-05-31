@@ -29,7 +29,6 @@ class CutOpNode(Node, Parameters):
         Node.__init__(self, type="op cut", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
-        self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
@@ -72,6 +71,7 @@ class CutOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
@@ -81,6 +81,15 @@ class CutOpNode(Node, Parameters):
         default_map["power"] = "default"
         default_map["frequency"] = "default"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         default_map.update(self.settings)
         return default_map
 

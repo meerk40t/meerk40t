@@ -69,7 +69,7 @@ class MeasureTool(ToolWidget):
                 last_x = pt[0]
                 last_y = pt[1]
 
-            # Complet calculation of area by closng the loop
+            # Complete calculation of area by closing the loop
             area_x_y += last_x * points[0][1]
             area_y_x += last_y * points[0][0]
             area = 0.5 * abs(area_x_y - area_y_x)
@@ -143,16 +143,18 @@ class MeasureTool(ToolWidget):
             self.point_series.append((space_pos[0], space_pos[1]))
             self.scene.tool_active = True
             response = RESPONSE_CONSUME
+        elif event_type in ("leftdown", "leftup", "move", "hover"):
+            self.scene.tool_active = True
+            self.mouse_position = space_pos[0], space_pos[1]
+            if self.point_series:
+                self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         elif event_type == "rightdown":
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "hover":
-            self.mouse_position = space_pos[0], space_pos[1]
-            if self.point_series:
-                self.scene.request_refresh()
         elif event_type == "doubleclick":
             self.scene.tool_active = False
             self.point_series = []

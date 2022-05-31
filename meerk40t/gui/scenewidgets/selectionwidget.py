@@ -14,7 +14,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
-from meerk40t.svgelements import Point, Rect
+from meerk40t.svgelements import Point
 
 
 def process_event(
@@ -493,7 +493,7 @@ class RotationWidget(Widget):
             # self.reference_rect.transform.post_rotate(
             #    rot_angle, self.rotate_cx, self.rotate_cy
             # )
-            # b = self.reference_rect.bbox()
+            # b = self.reference_rect.bounds
 
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 try:
@@ -1703,7 +1703,7 @@ class SelectionWidget(Widget):
         elements = self.scene.context.elements
         if refob is None:
             return
-        bb = refob.bbox()
+        bb = refob.bounds
 
         cc = elements.selected_area()
 
@@ -1743,25 +1743,30 @@ class SelectionWidget(Widget):
         refob = self.scene.reference_object
         angle = None
         if not refob is None:
-            ref_angle = refob.rotation.as_radians
-            bb = refob.bbox()
+            ref_angle = float(refob.matrix.rotation.as_radians)
+            ref_angle_deg = refob.matrix.rotation.as_degrees
+            print ("Reference-Angle:", ref_angle, ref_angle_deg)
+            print("Refobangle", ref_angle, refob.matrix.rotation.as_degrees)
+            bb = refob.bounds
             elements = self.scene.context.elements
             cc = elements.selected_area()
             ratio_sel = (cc[3]-cc[1]) > (cc[2] - cc[0])
             from meerk40t.core.units import UNITS_PER_MM
-            #bb = refob.bbox()
+            #bb = refob.bounds
             #refob_width = bb[2] - bb[0]
             #refob_height = bb[3] - bb[1]
             #print ("Before Width= %.1f, Height=%.1f" % (refob_width/ UNITS_PER_MM, refob_height/ UNITS_PER_MM))
-            bb = refob.bbox(transformed=False)
+            bb = refob.shape.bbox(transformed=False)
             refob_width = bb[2] - bb[0]
             refob_height = bb[3] - bb[1]
             print ("After Width= %.1f, Height=%.1f" % (refob_width / UNITS_PER_MM, refob_height/ UNITS_PER_MM))
             ratio_ref = refob_height > refob_width
             angle = ref_angle
+            print ("Now angle is", angle)
             if ratio_ref != ratio_sel:
                 angle += math.tau / 4
-
+            print ("And finally", angle)
+        print ("Function delivers", refob_width, refob_height, angle)
         return (refob_width, refob_height, angle)
 
 
@@ -1772,36 +1777,20 @@ class SelectionWidget(Widget):
         if refob is None or angle is None:
             return
         # Let's establish whether there is rotation in the object
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
         cx = (cc[0] + cc[2]) / 2
         cy = (cc[1] + cc[3]) / 2
         for e in elements.flat(types=("elem",), emphasized=True):
-            obj = e.object
-            obj.transform.post_rotate(angle, cx, cy)
-            obj.node.modified()
-
-        ratio_ref = r_ht > r_wd
-        ratio_sel = (cc[3] - cc[1]) > (cc[2] - cc[0])
-        if ratio_ref != ratio_sel:
-            angle = math.tau / 4
-            cx = (cc[0] + cc[2]) / 2
-            cy = (cc[1] + cc[3]) / 2
-            dx = cc[2] - cc[0]
-            dy = cc[3] - cc[1]
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                e.matrix.post_rotate(angle, cx, cy)
-            # Update bbox
-            cc[0] = cx - dy / 2
-            cc[2] = cc[0] + dy
-            cc[1] = cy - dx / 2
-            cc[3] = cc[1] + dx
-            elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
+            e.matrix.post_rotate(angle, cx, cy)
+            e.modified()
 
     def scale_selection_to_ref(self, method="none", r_wd=None, r_ht=None, angle=None):
         refob = self.scene.reference_object
         if refob is None:
             return
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
 
@@ -1816,12 +1805,17 @@ class SelectionWidget(Widget):
         dx = (cc[2] - cc[0])
         dy = (cc[3] - cc[1])
         aa  = abs(angle)
-        # Swap sides if rotation btween 60..120 or 240..300
+        # Swap sides if rotation between 60..120 or 240..300
         swap_it = False
         if 1 * math.tau / 6 <= aa <= 2 * math.tau/6:
             swap_it = True
         elif 4 * math.tau / 6 <= aa <= 5 * math.tau/6:
             swap_it = True
+
+        if swap_it:
+            print("it would have been swapped, but no...")
+            swap_it = False
+
         if swap_it:
             c = dx
             dx = dy
@@ -1858,7 +1852,7 @@ class SelectionWidget(Widget):
         if not opt_pos is None:
             (r_wd, r_ht, angle) = self.get_refob_dimensions()
             self.scale_selection_to_ref(opt_scale, r_wd, r_ht, angle)
-            self.rotate_elements_if_needed(opt_rotate, r_wd, r_ht,)
+            self.rotate_elements_if_needed(opt_rotate, r_wd, r_ht, angle)
             self.move_selection_to_ref(opt_pos)
             self.scene.request_refresh()
 
@@ -1979,7 +1973,11 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos, True)
+            if self.scene.context.select_smallest:
+                smallest = not self.key_control_pressed
+            else:
+                smallest = self.key_control_pressed
+            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
             # Check if reference is still existing
             self.scene.validate_reference()
             if not elements.has_emphasis():
@@ -1990,7 +1988,11 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos, False)
+            if self.scene.context.select_smallest:
+                smallest = not self.key_control_pressed
+            else:
+                smallest = self.key_control_pressed
+            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
 

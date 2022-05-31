@@ -16,6 +16,11 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        font_style = None,
+        underline = None,
+        strikethrough = None,
+        overline = None,
+        texttransform = None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
@@ -37,7 +42,27 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
-        self.font_style = "normal"  # normal / italic / oblique
+        if font_style is None:
+            self.font_style = "normal"
+        else:
+            self.font_style = font_style  # normal / italic / oblique
+        if underline is None:
+            self.underline = False
+        else:
+            self.underline = underline
+        if strikethrough is None:
+            self.strikethrough = False
+        else:
+            self.strikethrough = strikethrough
+        # For sake of completeness, afaik there is no way to display it with wxpython
+        if overline is None:
+            self.overline = False
+        else:
+            self.overline = overline
+        if texttransform is None:
+            self.texttransform = ""
+        else:
+            self.texttransform = texttransform
         self.lock = False
 
     def __copy__(self):
@@ -48,6 +73,10 @@ class TextNode(Node):
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
             font_style=self.font_style,
+            underline=self.underline,
+            strikethrough=self.strikethrough,
+            overline=self.overline,
+            texttransform=self.texttransform,
             **self.settings,
         )
 
@@ -66,14 +95,8 @@ class TextNode(Node):
         self._bounds_dirty = True
         self.text.width = 0
         self.text.height = 0
-        text = self.text.text
-        brackets = re.compile(r"\{.+\}")
-        for key in brackets.findall(text):
-            skey = key[1:-1]
-            if skey in context.elements.wordlists:
-                value = context.elements.wordlist_fetch(skey)
-                text = text.replace(key, value)
-                self.text.text = text
+        text = context.elements.mywordlist.translate(self.text.text)
+        self.text.text = text
 
         if self.parent.type != "op raster":
             commands.append(self.remove_text)

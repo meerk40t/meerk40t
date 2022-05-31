@@ -33,7 +33,6 @@ class EngraveOpNode(Node, Parameters):
         Node.__init__(self, type="op engrave", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
-        self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
@@ -82,6 +81,15 @@ class EngraveOpNode(Node, Parameters):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Engrave"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"

@@ -90,7 +90,7 @@ class SpoolerPanel(wx.Panel):
             _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_spool.AppendColumn(
-            _("Type"), format=wx.LIST_FORMAT_LEFT, width=53
+            _("Type"), format=wx.LIST_FORMAT_LEFT, width=60
         )
         self.list_job_spool.AppendColumn(
             _("Speed"), format=wx.LIST_FORMAT_LEFT, width=83
@@ -149,6 +149,35 @@ class SpoolerPanel(wx.Panel):
         except AttributeError:
             return str(named_obj)
 
+    def set_spool_item(self, list_id, spool_obj, status=None):
+        if list_id != -1:
+            self.list_job_spool.SetItem(list_id, 1, SpoolerPanel._name_str(spool_obj))
+            if status is not None:
+                self.list_job_spool.SetItem(list_id, 2, status)
+
+            try:
+                self.list_job_spool.SetItem(list_id, 3, str(spool_obj))
+            except AttributeError:
+                pass
+            try:
+                self.list_job_spool.SetItem(list_id, 4, _("%.1fmm/s") % spool_obj.speed)
+            except AttributeError:
+                pass
+            settings = list()
+            try:
+                settings.append(_("power=%g") % spool_obj.power)
+            except AttributeError:
+                pass
+            try:
+                settings.append(_("step=%d") % spool_obj.raster_step_x)
+            except AttributeError:
+                pass
+            try:
+                settings.append(_("overscan=%s") % str(spool_obj.overscan))
+            except AttributeError:
+                pass
+            self.list_job_spool.SetItem(list_id, 5, " ".join(settings))
+
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
@@ -161,38 +190,28 @@ class SpoolerPanel(wx.Panel):
         spooler = self.selected_device.spooler
         if spooler is None:
             return
+        idx = 0
+        if spooler.current is not None:
+            m = self.list_job_spool.InsertItem(idx, _("Current"))
+            self.set_spool_item(m, spooler.current, status=_("running"))
+            idx += 1
+
+        if len(spooler.realtime_queue) > 0:
+            for e in spooler.queue:
+                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
+                self.set_spool_item(m, e, status=_("realtime"))
+                idx += 1
+
         if len(spooler.queue) > 0:
-            # This should actually process and update the queue items.
-            for i, e in enumerate(spooler.queue):
-                m = self.list_job_spool.InsertItem(i, "#%d" % i)
-                if m != -1:
-                    self.list_job_spool.SetItem(m, 1, SpoolerPanel._name_str(e))
-                    try:
-                        self.list_job_spool.SetItem(m, 2, e._status_value)
-                    except AttributeError:
-                        pass
-                    try:
-                        self.list_job_spool.SetItem(m, 3, str(e))
-                    except AttributeError:
-                        pass
-                    try:
-                        self.list_job_spool.SetItem(m, 4, _("%.1fmm/s") % e.speed)
-                    except AttributeError:
-                        pass
-                    settings = list()
-                    try:
-                        settings.append(_("power=%g") % e.power)
-                    except AttributeError:
-                        pass
-                    try:
-                        settings.append(_("step=%d") % e.raster_step_x)
-                    except AttributeError:
-                        pass
-                    try:
-                        settings.append(_("overscan=%s") % str(e.overscan))
-                    except AttributeError:
-                        pass
-                    self.list_job_spool.SetItem(m, 5, " ".join(settings))
+            for e in spooler.queue:
+                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
+                self.set_spool_item(m, e, status=_("queued"))
+                idx += 1
+
+        if spooler.idle is not None:
+            m = self.list_job_spool.InsertItem(idx, _("Idle"))
+            self.set_spool_item(m, spooler.idle, status=_("idle"))
+            idx += 1
 
     def on_tree_popup_clear(self, element=None):
         def delete(event=None):
@@ -211,6 +230,8 @@ class SpoolerPanel(wx.Panel):
         return delete
 
     @signal_listener("spooler;queue")
+    @signal_listener("spooler;idle")
+    @signal_listener("spooler;realtime")
     def on_spooler_update(self, origin, value, *args, **kwargs):
         self.update_spooler = True
         self.refresh_spooler_list()
