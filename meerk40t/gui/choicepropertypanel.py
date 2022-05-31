@@ -201,13 +201,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
-            elif data_type == Angle:
+            elif data_type == Angle.parse:
                 # Angle type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
                 control = wx.TextCtrl(self, -1)
-                control.SetValue(str(data))
+                control.SetValue(str(Angle.parse(data).as_degrees))
                 control_sizer.Add(control)
 
                 def on_textbox_text(param, ctrl, obj, dtype):

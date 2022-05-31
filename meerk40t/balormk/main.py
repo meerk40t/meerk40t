@@ -5,7 +5,7 @@ from meerk40t.balormk.BalorDriver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Angle, Path, Point, Polygon
+from meerk40t.svgelements import Angle, Path, Point, Polygon, Matrix
 
 
 class BalorDevice(Service, ViewPort):
@@ -198,10 +198,10 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "redlight_angle",
                 "object": self,
-                "default": "0deg",
-                "type": Angle,
+                "default": "0",
+                "type": float,
                 "label": _("Redlight Angle Offset"),
-                "tip": _("Offset the redlight positions by this angle, curving around center"),
+                "tip": _("Offset the redlight positions by this (degrees) angle, curving around center"),
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -627,13 +627,37 @@ class BalorDevice(Service, ViewPort):
                 job = CommandList(
                     light_speed=self.redlight_speed, goto_speed=travel_speed
                 )
+            x_offset = self.length(self.redlight_offset_x, axis=0, as_float=True)
+            y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
+
+            rotate = Matrix()
+            rotate.post_rotate(Angle.degrees(self.redlight_angle).as_radians, 0x8000, 0x8000)
+            rotate.post_translate(x_offset, y_offset)
+
+            def mx_rotate(pt):
+                if pt is None:
+                    return None
+                return (
+                    pt[0] * rotate.a
+                    + pt[1] * rotate.c
+                    + 1 * rotate.e,
+                    pt[0] * rotate.b
+                    + pt[1] * rotate.d
+                    + 1 * rotate.f,
+                )
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
                 job.light(x, y, False, jump_delay=200)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
                     x, y = self.scene_to_device_position(x, y)
+                    x, y = mx_rotate((x, y))
+                    x = int(x) & 0xFFFF
+                    y = int(y) & 0xFFFF
                     job.light(x, y, True, jump_delay=0)
             job.light_off()
             return "balor", job
