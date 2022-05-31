@@ -3,7 +3,7 @@ import wx
 from meerk40t.kernel import signal_listener
 
 from ...core.units import Length
-from ...svgelements import Angle, Color
+from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 
 _ = wx.GetTranslation
@@ -861,8 +861,9 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
+        self.fills = list(self.context.match("hatch", suffix=True))
         self.combo_fill_style = wx.ComboBox(
-            self, wx.ID_ANY, choices=["Scan"], style=wx.CB_DROPDOWN
+            self, wx.ID_ANY, choices=self.fills, style=wx.CB_DROPDOWN
         )
         sizer_fill.Add(self.combo_fill_style, 0, wx.EXPAND, 0)
 
@@ -878,6 +879,20 @@ class HatchSettingsPanel(wx.Panel):
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.display_panel.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
+
+        self.raster_pen = wx.Pen()
+        self.raster_pen.SetColour(wx.BLACK)
+        self.raster_pen.SetWidth(2)
+
+        self.travel_pen = wx.Pen()
+        self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
+        self.travel_pen.SetWidth(2)
+
+        self.hatch_lines = None
+        self.travel_lines = None
 
     def pane_hide(self):
         pass
@@ -887,12 +902,19 @@ class HatchSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        self.combo_fill_style.SetSelection(self.operation.hatch_type)
+        i = 0
+        for ht in self.fills:
+            if ht == self.operation.hatch_type:
+                break
+            i += 1
+        if i == len(self.fills):
+            i = 0
+        self.combo_fill_style.SetSelection(i)
         self.text_angle.SetValue(self.operation.hatch_angle)
         self.text_distance.SetValue(str(self.operation.hatch_distance))
         try:
-            angle_inc = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            self.slider_angle.SetValue(int(angle_inc))
+            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
+            self.slider_angle.SetValue(int(h_angle))
         except ValueError:
             pass
 
@@ -901,6 +923,9 @@ class HatchSettingsPanel(wx.Panel):
             self.operation.hatch_distance = Length(
                 self.text_distance.GetValue()
             ).length_mm
+            self.hatch_lines = None
+            self.travel_lines = None
+            self.refresh_display()
         except ValueError:
             pass
 
@@ -909,15 +934,135 @@ class HatchSettingsPanel(wx.Panel):
             self.operation.hatch_angle = (
                 f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
             )
+            self.hatch_lines = None
+            self.travel_lines = None
+            self.refresh_display()
         except ValueError:
             return
 
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        self.operation.hatch_type = int(self.combo_fill_style.GetSelection())
+        hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]
+        self.operation.hatch_type = hatch_type
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def on_display_paint(self, event=None):
+        try:
+            wx.BufferedPaintDC(self.display_panel, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def on_display_erase(self, event=None):
+        pass
+
+    def set_buffer(self):
+        width, height = self.display_panel.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+
+    def on_size(self, event=None):
+        self.Layout()
+        self.set_buffer()
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def refresh_display(self):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.refresh_in_ui)
+        else:
+            self.refresh_in_ui()
+
+    def calculate_hatch_lines(self):
+        w, h = self._Buffer.Size
+        hatch_type = self.operation.hatch_type
+        hatch_algorithm = self.context.lookup(f"hatch/{hatch_type}")
+        if hatch_algorithm is None:
+            return
+        paths = (
+            (
+                (w * 0.05, h * 0.05),
+                (w * 0.95, h * 0.05),
+                (w * 0.95, h * 0.95),
+                (w * 0.05, h * 0.95),
+                (w * 0.05, h * 0.05),
+            ),
+            (
+                (w * 0.25, h * 0.25),
+                (w * 0.75, h * 0.25),
+                (w * 0.75, h * 0.75),
+                (w * 0.25, h * 0.75),
+                (w * 0.25, h * 0.25),
+            ),
+        )
+        matrix = Matrix.scale(0.05)
+        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix))
+
+        h_start = []
+        h_end = []
+        t_start = []
+        t_end = []
+        last_x = None
+        last_y = None
+        travel = True
+        for p in hatch:
+            if p is None:
+                travel = True
+                continue
+            x, y = p
+            if last_x is None:
+                last_x = x
+                last_y = y
+                travel = False
+                continue
+            if travel:
+                t_start.append((last_x, last_y))
+                t_end.append((x, y))
+            else:
+                h_start.append((last_x, last_y))
+                h_end.append((x, y))
+            travel = False
+            last_x = x
+            last_y = y
+        self.hatch_lines = h_start, h_end
+        self.travel_lines = t_start, t_end
+
+    def refresh_in_ui(self):
+        """Performs redrawing of the data in the UI thread."""
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        if self.Shown:
+            if self.hatch_lines is None:
+                self.calculate_hatch_lines()
+            if self.hatch_lines is not None:
+                starts, ends = self.hatch_lines
+                if len(starts):
+                    gc.SetPen(self.raster_pen)
+                    gc.StrokeLineSegments(starts, ends)
+            if self.travel_lines is not None:
+                starts, ends = self.travel_lines
+                if len(starts):
+                    gc.SetPen(self.travel_pen)
+                    gc.StrokeLineSegments(starts, ends)
+        gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
+        del dc
+        self.display_panel.Refresh()
+        self.display_panel.Update()
 
 
 # end of class HatchSettingsPanel

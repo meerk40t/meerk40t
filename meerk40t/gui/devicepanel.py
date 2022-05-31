@@ -138,8 +138,10 @@ class DevicePanel(wx.Panel):
                 None, _("Cannot remove the currently active device."), _("Error")
             ).ShowModal()
             return
-        data.destroy()
-
+        try:
+            data.destroy()
+        except AttributeError:
+            pass
         self.refresh_device_tree()
 
 

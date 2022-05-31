@@ -7,7 +7,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse
-
+from meerk40t.gui.laserrender import swizzlecolor
 
 class EllipseTool(ToolWidget):
     """
@@ -28,8 +28,15 @@ class EllipseTool(ToolWidget):
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
             y1 = max(self.p1.imag, self.p2.imag)
+            if self.scene.default_stroke is None:
+                self.pen.SetColour(wx.BLUE)
+            else:
+                self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.default_stroke)))
             gc.SetPen(self.pen)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            if self.scene.default_fill is None:
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            else:
+                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
@@ -63,6 +70,11 @@ class EllipseTool(ToolWidget):
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
+                    if not self.scene.default_stroke is None:
+                        node.stroke = self.scene.default_stroke
+                    if not self.scene.default_fill is None:
+                        node.fill = self.scene.default_fill
+
                     elements.classify([node])
                     self.notify_created()
                 self.p1 = None

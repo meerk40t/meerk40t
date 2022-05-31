@@ -9,7 +9,6 @@ INT_PARAMETERS = (
     "dot_length",
     "passes",
     "jog_distance",
-    "hatch_type",
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
@@ -44,7 +43,7 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle", "penbox_value", "penbox_pass")
+STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle", "hatch_type", "penbox_value", "penbox_pass")
 
 COLOR_PARAMETERS = ("color", "line_color")
 
@@ -332,7 +331,7 @@ class Parameters:
 
     @property
     def hatch_type(self):
-        return self.settings.get("hatch_type", 0)
+        return self.settings.get("hatch_type", "eulerian")
 
     @hatch_type.setter
     def hatch_type(self, value):

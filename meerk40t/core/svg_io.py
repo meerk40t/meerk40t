@@ -169,6 +169,13 @@ class SVGWriter:
                 s = "miter"
             return s
 
+        def rulestr(fillrule):
+            if fillrule == Fillrule.FILLRULE_EVENODD:
+                s = "evenodd"
+            else:
+                s = "nonzero"
+            return s
+
         def copy_attributes(source, target):
             #
 
@@ -207,16 +214,15 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                subelement.set()
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 subelement = SubElement(xml_tree, "element")
@@ -228,13 +234,15 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, joinstr(c.fillrule))
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+                # Makes no sense here, as it's not used anyway in svg for a rect
+                # subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem text":
                 # The svg attributes should be up to date, but better safe than sorry
@@ -268,6 +276,7 @@ class SVGWriter:
                     ("font_size", SVG_ATTR_FONT_SIZE),
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
                     ("font_style", "font-style"),  # Not implemented yet afaics
+                    ("text_transform", "text-transform"),
                 ]
                 for attrib in attribs:
                     val = None
@@ -277,18 +286,28 @@ class SVGWriter:
                         val = getattr(c, attrib[0])
                     if not val is None:
                         subelement.set(attrib[1], str(val))
+                text_dec = ""
+                if c.underline:
+                    text_dec += " underline"
+                if c.overline:
+                    text_dec += " overline"
+                if c.strikethrough:
+                    text_dec += " line-through"
+                if len(text_dec)>0:
+                    text_dec.strip()
+                    subelement.set("text-decoration", text_dec)
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
-                return
+                continue
             else:
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
-                return
+                continue
             if hasattr(element, "stroke"):
                 stroke = element.stroke
             else:
@@ -373,12 +392,17 @@ class SVGWriter:
                 if not key:
                     # If key is None, do not save.
                     continue
+                if key == "references":
+                    # References key is obsolete
+                    continue
                 value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
         contains = list()
         for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
@@ -478,6 +502,16 @@ class SVGProcessor:
                 fst = element.values.get("font-style")
                 if not fst is None:
                     node.font_style = fst
+                fst = element.values.get("text-transform")
+                if not fst is None:
+                    node.texttransform = fst
+                fst = element.values.get("text-decoration")
+                if not fst is None:
+                    fst = fst.lower()
+                    node.underline = ("underline" in fst)
+                    node.overline = ("overline" in fst)
+                    node.strikethrough = ("line-through" in fst)
+
                 svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
                 if svgfont_to_wx:
                     svgfont_to_wx(node)
