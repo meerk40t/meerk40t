@@ -37,24 +37,16 @@ def eulerian_fill(settings, outlines, matrix, limit=None):
         if pt is None:
             return None
         return (
-            pt[0] * rotate.a
-            + pt[1] * rotate.c
-            + 1 * rotate.e,
-            pt[0] * rotate.b
-            + pt[1] * rotate.d
-            + 1 * rotate.f,
+            pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+            pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
         )
 
     def mx_counter(pt):
         if pt is None:
             return None
         return (
-            pt[0] * counter_rotate.a
-            + pt[1] * counter_rotate.c
-            + 1 * counter_rotate.e,
-            pt[0] * counter_rotate.b
-            + pt[1] * counter_rotate.d
-            + 1 * counter_rotate.f,
+            pt[0] * counter_rotate.a + pt[1] * counter_rotate.c + 1 * counter_rotate.e,
+            pt[0] * counter_rotate.b + pt[1] * counter_rotate.d + 1 * counter_rotate.f,
         )
 
     transformed_vector = matrix.transform_vector([0, distance_y])
@@ -95,24 +87,16 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         if pt is None:
             return None
         return (
-            pt[0] * rotate.a
-            + pt[1] * rotate.c
-            + 1 * rotate.e,
-            pt[0] * rotate.b
-            + pt[1] * rotate.d
-            + 1 * rotate.f,
+            pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+            pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
         )
 
     def mx_counter(pt):
         if pt is None:
             return None
         return (
-            pt[0] * counter_rotate.a
-            + pt[1] * counter_rotate.c
-            + 1 * counter_rotate.e,
-            pt[0] * counter_rotate.b
-            + pt[1] * counter_rotate.d
-            + 1 * counter_rotate.f,
+            pt[0] * counter_rotate.a + pt[1] * counter_rotate.c + 1 * counter_rotate.e,
+            pt[0] * counter_rotate.b + pt[1] * counter_rotate.d + 1 * counter_rotate.f,
         )
 
     transformed_vector = matrix.transform_vector([0, distance_y])
@@ -136,18 +120,28 @@ def scanline_fill(settings, outlines, matrix, limit=None):
     vm.valid_high_value = y_max + distance
     vm.scanline(y_min - distance)
     points = list()
+    forward = True
     while vm.valid_range():
         vm.next_intercept(distance)
         vm.sort_actives()
         y = vm.current
-        for i in range(1, len(vm.actives), 2):
+        for i in (
+                range(1, len(vm.actives), 2)
+                if forward
+                else range(len(vm.actives) - 1, 0, -2)
+        ):
             left_segment = vm.actives[i - 1]
             right_segment = vm.actives[i]
             left_segment_x = vm.intercept(left_segment, y)
             right_segment_x = vm.intercept(right_segment, y)
-            points.append((left_segment_x, y))
-            points.append((right_segment_x, y))
+            if forward:
+                points.append((left_segment_x, y))
+                points.append((right_segment_x, y))
+            else:
+                points.append((right_segment_x, y))
+                points.append((left_segment_x, y))
             points.append(None)
+        forward = not forward
     points = list(map(mx_counter, points))
     return points
 
