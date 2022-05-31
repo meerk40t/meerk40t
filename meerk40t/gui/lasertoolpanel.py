@@ -336,7 +336,7 @@ class LaserToolPanel(wx.Panel):
         self.btn_set_square_1.Bind(wx.EVT_BUTTON, self.on_click_get1)
         self.btn_set_square_2.Bind(wx.EVT_BUTTON, self.on_click_get2)
         self.btn_set_square_3.Bind(wx.EVT_BUTTON, self.on_click_get3)
-        self.btn_create_square.Bind(wx.EVT_BUTTON, self.on_btn_create_square)
+        self.btn_create_square.Bind(wx.EVT_BUTTON, self.on_btn_create_rectangle)
         # self.img_instruction_3.Bind(wx.EVT_LEFT_DCLICK, self.create_scenario)
         # end wxGlade
 
@@ -528,7 +528,7 @@ class LaserToolPanel(wx.Panel):
         radius = r
         return result, center, radius
 
-    def calculate_square(self):
+    def calculate_rectangle(self):
         # We have three corners, they should represent a rectangle.
         # We will check whether this is the case. If the delta is smaller than 5 degrees
         # then we will correct the shape, if its bigger then we will create a rhombus...
@@ -537,10 +537,10 @@ class LaserToolPanel(wx.Panel):
         angle = 0
         signx = 1
         signy = 1
-        # equation for the first line through (x1, y1)-(x2, y2)
-        # y = a1 * x + b1
         dx1 = self.coord_a[0] - self.coord_b[0]
         dy1 = self.coord_a[1] - self.coord_b[1]
+        # equation for the first line through (x1, y1)-(x2, y2)
+        # y = a1 * x + b1
         if dx1 == 0 and dy1 == 0:
             result = False
         if self.coord_a == self.coord_b:
@@ -612,9 +612,15 @@ class LaserToolPanel(wx.Panel):
         elif segment == 4:
             signx = +1
             signy = -1
-
-        # print (center, angle / tau * 360)
-        return result, center, angle, signx, signy
+        dx1 = self.coord_a[0] - center[0]
+        dy1 = self.coord_a[1] - center[1]
+        dx2 = self.coord_b[0] - center[0]
+        dy2 = self.coord_b[1] - center[1]
+        dx3 = self.coord_c[0] - center[0]
+        dy3 = self.coord_c[1] - center[1]
+        sidelen1 = max(sqrt(dx1*dx1 + dy1*dy1), sqrt(dx2*dx2 + dy2*dy2))
+        sidelen2 = sqrt(dx3*dx3 + dy3*dy3)
+        return result, center, angle, signx, signy, sidelen1, sidelen2
 
     def calculate_frame(self):
         result = False
@@ -712,22 +718,18 @@ class LaserToolPanel(wx.Panel):
                 self.context("reference\n")
         event.Skip()
 
-    def on_btn_create_square(self, event):  # wxGlade: clsLasertools.<event_handler>
-        try:
-            dim_x = Length(self.txt_width.GetValue())
-            dim_y = Length(self.txt_width.GetValue())
-        except ValueError:
-            dim_x = Length(DEFAULT_LEN)
-            dim_y = Length(DEFAULT_LEN)
-        result, center, angle, dim_x, dim_y = self.calculate_square()
+    def on_btn_create_rectangle(self, event):  # wxGlade: clsLasertools.<event_handler>
+        dim_x = 0
+        dim_y = 0
+        result, center, angle, signx, signy, dim_x, dim_y = self.calculate_rectangle()
         angle = angle * 360 / tau
         if result:
             p = self.context
             units = p.units_name
 
-            #            self.context("circle {x}mm {y}mm 2mm stroke green".format(x=round(self.coord_a[0]/UNITS_PER_MM,2),y=round(self.coord_a[1]/UNITS_PER_MM,2)) )
-            #            self.context("circle {x}mm {y}mm 2mm stroke green".format(x=round(self.coord_b[0]/UNITS_PER_MM,2),y=round(self.coord_b[1]/UNITS_PER_MM,2)) )
-            #            self.context("circle {x}mm {y}mm 2mm stroke red".format(x=round(self.coord_c[0]/UNITS_PER_MM,2),y=round(self.coord_c[1]/UNITS_PER_MM,2)) )
+            self.context("circle {x}mm {y}mm 2mm stroke green".format(x=round(self.coord_a[0]/UNITS_PER_MM,2),y=round(self.coord_a[1]/UNITS_PER_MM,2)) )
+            self.context("circle {x}mm {y}mm 2mm stroke green".format(x=round(self.coord_b[0]/UNITS_PER_MM,2),y=round(self.coord_b[1]/UNITS_PER_MM,2)) )
+            self.context("circle {x}mm {y}mm 2mm stroke red".format(x=round(self.coord_c[0]/UNITS_PER_MM,2),y=round(self.coord_c[1]/UNITS_PER_MM,2)) )
 
             if self.check_square.GetValue():
                 self.context(
@@ -744,8 +746,8 @@ class LaserToolPanel(wx.Panel):
                 "rect {x} {y} {wd} {ht} rotate {angle}deg -x {x} -y {y}\n".format(
                     x=str(Length(amount=center[0], digits=5, preferred_units=units)),
                     y=str(Length(amount=center[1], digits=5, preferred_units=units)),
-                    wd=str(dim_x.length_mm),
-                    ht=str(dim_y.length_mm),
+                    wd=str(Length(amount=dim_x).length_mm),
+                    ht=str(Length(amount=dim_y).length_mm),
                     angle=angle,
                 )
             )
