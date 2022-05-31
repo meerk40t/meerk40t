@@ -3,9 +3,9 @@ import os
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.BalorDriver import BalorDriver
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Length, ViewPort
+from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Angle, Path, Point, Polygon, Matrix
+from meerk40t.svgelements import Path, Point, Polygon, Matrix
 
 
 class BalorDevice(Service, ViewPort):
@@ -100,14 +100,6 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Offset in the Y axis"),
             },
             {
-                "attr": "offset_angle",
-                "object": self,
-                "default": "0",
-                "type": Angle.parse,
-                "label": _("Angle"),
-                "tip": _("Angle to adjust fiber laser to match red laser"),
-            },
-            {
                 "attr": "scale_x",
                 "object": self,
                 "default": "0",
@@ -198,10 +190,10 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "redlight_angle",
                 "object": self,
-                "default": "0",
-                "type": float,
+                "default": "0deg",
+                "type": Angle,
                 "label": _("Redlight Angle Offset"),
-                "tip": _("Offset the redlight positions by this (degrees) angle, curving around center"),
+                "tip": _("Offset the redlight positions by this angle, curving around center"),
             },
         ]
         self.register_choices("balor-redlight", choices)
