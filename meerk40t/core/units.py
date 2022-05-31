@@ -715,35 +715,35 @@ class Length(object):
 
     @property
     def length_pixels(self):
-        return "{amount}px".format(amount=self.pixels)
+        return f"{self.pixels}px"
 
     @property
     def length_inches(self):
-        return "{amount}in".format(amount=self.inches)
+        return f"{self.inches}in"
 
     @property
     def length_cm(self):
-        return "{amount}cm".format(amount=self.cm)
+        return f"{self.cm}cm"
 
     @property
     def length_mm(self):
-        return "{amount}mm".format(amount=self.mm)
+        return f"{self.mm}mm"
 
     @property
     def length_nm(self):
-        return "{amount}nm".format(amount=self.nm)
+        return f"{self.nm}nm"
 
     @property
     def length_mil(self):
-        return "{amount}mil".format(amount=self.mil)
+        return f"{self.mil}mil"
 
     @property
     def length_um(self):
-        return "{amount}um".format(amount=self.um)
+        return f"{self.um}um"
 
     @property
     def length_units(self):
-        return "{amount}".format(amount=self.units)
+        return f"{self.units}"
 
     def as_percent(self, relative_length):
         return 100.00 * self._amount / Length(relative_length).units
