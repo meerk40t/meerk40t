@@ -157,7 +157,7 @@ class HatchOpNode(Node, Parameters):
         pos = 0
         for i, pts in enumerate(points):
             if pts is None:
-                yield points[pos : i - 1]
+                yield points[pos : i]
                 pos = i + 1
         if pos != len(points):
             yield points[pos : len(points)]
@@ -220,7 +220,7 @@ class HatchOpNode(Node, Parameters):
                     hatch_cache[key] = hatches
 
                 for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline))
+                    node = PolylineNode(shape=Polyline(*polyline, **chain_settings))
                     node.settings.update(chain_settings)
                     self.add_node(node)
 
