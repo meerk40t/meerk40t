@@ -578,6 +578,20 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_skew", False)
         choices = [
             {
+                "attr": "select_smallest",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Select smallest element on scene"),
+                "tip": _(
+                    "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
+        choices = [
+            {
                 "attr": "show_colorbar",
                 "object": self.context.root,
                 "default": True,

@@ -61,6 +61,9 @@ def wxfont_to_svg(svgtextnode):
 
     svgtextnode.font_style = fontstyle
 
+    svgtextnode.underline = wxfont.GetUnderlined()
+    svgtextnode.strikethrough = wxfont.GetStrikethrough()
+
 
 def svgfont_to_wx(svgtextnode):
     ###
@@ -140,3 +143,5 @@ def svgfont_to_wx(svgtextnode):
         wxfont.SetFractionalPointSize(fsize)
     except AttributeError:
         wxfont.SetSize(int(fsize))
+    wxfont.SetUnderlined(svgtextnode.underline)
+    wxfont.SetStrikethrough(svgtextnode.strikethrough)

@@ -26,10 +26,18 @@ class TextEntry(wx.Dialog):
         self.result_text = ""
         self.result_font = self.default_font
         self.result_colour = wx.BLACK
+        self.result_anchor = 0  # 0 = left, 1=center, 2=right
 
         self.txt_Text = wx.TextCtrl(self, wx.ID_ANY, defaultstring)
 
         self.btn_choose_font = wx.Button(self, wx.ID_ANY, _("Select Font"))
+
+        align_options = [_('Left'), _('Center'), _('Right')]
+        self.rb_align = wx.RadioBox(
+                self, wx.ID_ANY, "", wx.DefaultPosition, wx.DefaultSize,
+                align_options, len(align_options), wx.RA_SPECIFY_COLS | wx.BORDER_NONE
+                )
+        self.rb_align.SetToolTip(_("Define where to place the origin (i.e. current mouse position"))
 
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
@@ -83,6 +91,12 @@ class TextEntry(wx.Dialog):
         sizer_h_text.Add(self.txt_Text, 1, 0, 0)
         sizer_h_text.Add(self.btn_choose_font, 0, 0, 0)
 
+        sizer_h_align = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_v_main.Add(sizer_h_align, 0, wx.EXPAND, 0)
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Alignment"))
+        sizer_h_align.Add(label_2, 0, 0, 0)
+        sizer_h_align.Add(self.rb_align, 0, 0, 0)
+
         sizer_h_color = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Color")), wx.HORIZONTAL)
         sizer_v_main.Add(sizer_h_color, 0, wx.EXPAND, 0)
         for i in range(8):
@@ -122,6 +136,36 @@ class TextEntry(wx.Dialog):
         for i in range(8):
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_btn_color)
         self.txt_Text.Bind(wx.EVT_TEXT, self.on_text_change)
+        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+
+    def set_preview_alignment(self):
+        mystyle = self.preview.GetWindowStyle()
+        if self.result_anchor==0:
+            # Align the text to the left.
+            mystyle1 = wx.ALIGN_LEFT
+            mystyle2 = wx.ST_ELLIPSIZE_END
+        elif self.result_anchor==1:
+            mystyle1 =  wx.ALIGN_CENTER
+            mystyle2 = wx.ST_ELLIPSIZE_MIDDLE
+        else:
+            mystyle1 =  wx.ALIGN_RIGHT
+            mystyle2 = wx.ST_ELLIPSIZE_START
+        # Clear old alignment...
+        mystyle = mystyle & ~ wx.ALIGN_LEFT
+        mystyle = mystyle & ~ wx.ALIGN_RIGHT
+        mystyle = mystyle & ~ wx.ALIGN_CENTER
+        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_END
+        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_MIDDLE
+        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_START
+        # Set new one
+        mystyle = mystyle | mystyle1 | mystyle2
+        self.preview.SetWindowStyle(mystyle)
+        self.preview.Refresh()
+
+
+    def on_radio_box(self, event):
+        self.result_anchor = event.GetInt()
+        self.set_preview_alignment()
 
     def on_text_change(self, event):
         svalue = self.context.elements.mywordlist.translate(self.txt_Text.GetValue())
@@ -233,6 +277,12 @@ class TextTool(ToolWidget):
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.result_text
+                if dlg.result_anchor==1:
+                    self.text.anchor = "middle"
+                elif dlg.result_anchor==2:
+                    self.text.anchor = "end"
+                else:
+                    self.text.anchor = "start"
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(text=self.text, type="elem text")
                 color = dlg.result_colour
