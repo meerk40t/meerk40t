@@ -6700,8 +6700,8 @@ class Elemental(Service):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
-                # Are the colors identical?
-                same_color = False
+                # Are the colors identical? if the op is default then in any case
+                same_color = op.default
                 if hasattr(node, "stroke") and node.stroke is not None:
                     # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
                     # Remove opacity
@@ -6709,8 +6709,6 @@ class Elemental(Service):
                     plain_color_node = abs(node.stroke)
                     if plain_color_op==plain_color_node:
                         same_color = True
-                else:
-                    same_color = False
                 # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
                 # print ("Color identical" if same_color else "Color different")
                 if op.type == "op raster":
