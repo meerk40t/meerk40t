@@ -63,7 +63,7 @@ def eulerian_fill(settings, outlines, matrix, limit=None):
     for sp in outlines:
         sp = list(map(mx_rotate, sp))
         efill += sp
-    if efill.estimate() > limit:
+    if limit and efill.estimate() > limit:
         return []
     points = efill.get_fill()
 
