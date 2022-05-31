@@ -13,7 +13,7 @@ def split(points):
         yield points[pos : len(points)]
 
 
-def eulerian_fill(settings, outlines, matrix):
+def eulerian_fill(settings, outlines, matrix, limit=None):
     """
     Applies optimized Eulerian fill
     @return:
@@ -58,12 +58,13 @@ def eulerian_fill(settings, outlines, matrix):
         )
 
     transformed_vector = matrix.transform_vector([0, distance_y])
-    efill = EulerianFill(
-        abs(complex(transformed_vector[0], transformed_vector[1]))
-    )
+    distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+    efill = EulerianFill(distance)
     for sp in outlines:
         sp = list(map(mx_rotate, sp))
         efill += sp
+    if efill.estimate() > limit:
+        return []
     points = efill.get_fill()
 
     points = list(map(mx_counter, points))

@@ -885,11 +885,11 @@ class HatchSettingsPanel(wx.Panel):
 
         self.raster_pen = wx.Pen()
         self.raster_pen.SetColour(wx.BLACK)
-        self.raster_pen.SetWidth(2)
+        self.raster_pen.SetWidth(1)
 
         self.travel_pen = wx.Pen()
         self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
-        self.travel_pen.SetWidth(2)
+        self.travel_pen.SetWidth(1)
 
         self.hatch_lines = None
         self.travel_lines = None
@@ -1006,8 +1006,8 @@ class HatchSettingsPanel(wx.Panel):
                 (w * 0.25, h * 0.25),
             ),
         )
-        matrix = Matrix.scale(0.05)
-        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix))
+        matrix = Matrix.scale(0.018)
+        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, limit=1000))
 
         h_start = []
         h_end = []
@@ -1053,6 +1053,10 @@ class HatchSettingsPanel(wx.Panel):
                 if len(starts):
                     gc.SetPen(self.raster_pen)
                     gc.StrokeLineSegments(starts, ends)
+                else:
+                    font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+                    gc.SetFont(font, wx.BLACK)
+                    gc.DrawText(_("No hatch preview..."), 0, 0)
             if self.travel_lines is not None:
                 starts, ends = self.travel_lines
                 if len(starts):
