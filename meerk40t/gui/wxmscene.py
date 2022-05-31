@@ -560,6 +560,8 @@ class MeerK40tScenePanel(wx.Panel):
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_stroke = color
+
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             obj = e
             try:
@@ -583,6 +585,7 @@ class MeerK40tScenePanel(wx.Panel):
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_fill = color
 
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
