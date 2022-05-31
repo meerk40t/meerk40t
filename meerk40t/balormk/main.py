@@ -195,6 +195,14 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Redlight Y Offset"),
                 "tip": _("Offset the redlight positions by this amount in y"),
             },
+            {
+                "attr": "redlight_angle",
+                "object": self,
+                "default": "0deg",
+                "type": Angle.parse,
+                "label": _("Redlight Angle Offset"),
+                "tip": _("Offset the redlight positions by this angle, curving around center"),
+            },
         ]
         self.register_choices("balor-redlight", choices)
 
