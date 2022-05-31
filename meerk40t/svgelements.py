@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.12"
+SVGELEMENTS_VERSION = "1.6.15"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -2595,6 +2595,14 @@ class Matrix:
             self.f,
         )
 
+    @property
+    def rotation(self):
+        prx = Point(1, 0)
+        prx *= self
+        origin = Point(0, 0)
+        origin *= self
+        return origin.angle_to(prx)
+
     def parse(self, transform_str):
         """Parses the svg transform string.
 
@@ -4123,6 +4131,24 @@ class Curve(PathSegment):
         PathSegment.__init__(self, **kwargs)
         self.start = Point(start) if start is not None else None
         self.end = Point(end) if end is not None else None
+
+    def as_circular_arcs(self, error=ERROR, start=0.0, end=1.0):
+        mid = 0.5 * (end - start) + start
+        start_point = self.point(start)
+        mid_point = self.point(mid)
+        end_point = self.point(end)
+        sample_point0 = self.point(0.25 * (end - start) + start)
+        sample_point1 = self.point(0.75 * (end - start) + start)
+        arc = Arc(start=start_point, end=end_point, control=mid_point)
+        radius = Point.distance(start_point, arc.center)
+        r0 = Point.distance(sample_point0, arc.center)
+        r1 = Point.distance(sample_point1, arc.center)
+        current_error = (abs(r0 - radius) + abs(r1 - radius)) / radius
+        if current_error < error:
+            yield arc
+        else:
+            yield from self.as_circular_arcs(error=error, start=start, end=mid)
+            yield from self.as_circular_arcs(error=error, start=mid, end=end)
 
 
 class Linear(PathSegment):
@@ -6058,12 +6084,17 @@ class Path(Shape, MutableSequence):
         return len(subpaths)
 
     def as_subpaths(self):
-        last = 0
+        start = 0
         for current, seg in enumerate(self):
-            if current != last and isinstance(seg, Move):
-                yield Subpath(self, last, current - 1)
-                last = current
-        yield Subpath(self, last, len(self) - 1)
+            if isinstance(seg, Move):
+                if current != start:
+                    yield Subpath(self, start, current - 1)
+                    start = current
+            if isinstance(seg, Close):
+                yield Subpath(self, start, current)
+                start = current + 1
+        if start != len(self):
+            yield Subpath(self, start, len(self) - 1)
 
     def as_points(self):
         """Returns the list of defining points within path"""
@@ -6175,6 +6206,15 @@ class Path(Shape, MutableSequence):
             if isinstance(segment, Arc):
                 arc_required = int(ceil(abs(segment.sweep) / sweep_limit))
                 self[s : s + 1] = list(segment.as_quad_curves(arc_required))
+
+    def approximate_bezier_with_circular_arcs(self, error=0.01):
+        """
+        Iterates through this path and replaces any bezier curves with circular arcs.
+        """
+        for s in range(len(self) - 1, -1, -1):
+            segment = self[s]
+            if isinstance(segment, (QuadraticBezier, CubicBezier)):
+                self[s : s + 1] = list(segment.as_circular_arcs(error=error))
 
 
 class Rect(Shape):
@@ -7848,7 +7888,7 @@ class Text(SVGElement, GraphicObject, Transformable):
             return 400
         try:
             return int(weight)
-        except KeyError:
+        except ValueError:
             return 400
 
     def property_by_values(self, values):
@@ -8590,6 +8630,8 @@ class SVG(Group):
                             style += styles[css_tag]
                 # Split style element into parts; priority highest
                 if SVG_ATTR_STYLE in attributes:
+                    if len(style) != 0:
+                        style += ";"
                     style += attributes[SVG_ATTR_STYLE]
 
                 # Process style tag left to right.
