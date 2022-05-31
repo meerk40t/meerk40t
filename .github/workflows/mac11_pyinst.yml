@@ -10,7 +10,7 @@ on:
   
 jobs:
   build-macos11:
-    runs-on: macos-11
+    runs-on: macos-10.15
     steps:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
@@ -54,7 +54,7 @@ jobs:
 
     - name: Ensure latest pip and meerk40t-camera
       run: |
-        python3.8 -m pip install --upgrade pip==20.2.3
+        python3.8 -m pip install --upgrade pip
         ## python3.8 -m pip install --upgrade pip
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
         ## python3.8 -m pip install meerk40t-camera opencv-python
