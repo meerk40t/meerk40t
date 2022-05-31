@@ -553,55 +553,6 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("theme", theme)
         self.request_refresh(origin)
 
-    @signal_listener("selstroke")
-    def on_selstroke(self, origin, rgb, *args):
-        # print (origin, rgb, args)
-        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
-            color = None
-        else:
-            color = Color(rgb[0], rgb[1], rgb[2])
-        self.widget_scene.default_stroke = color
-
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            obj = e
-            try:
-                if color is None:
-                    e.stroke = Color("none")
-                else:
-                    e.stroke = color
-                e.altered()
-            except AttributeError:
-                # Ignore and carry on...
-                continue
-        # Reclassify selection...
-        self.context("declassify\nclassify\n")
-        self.context.signal("rebuild_tree")
-        self.request_refresh()
-
-    @signal_listener("selfill")
-    def on_selfill(self, origin, rgb, *args):
-        # print (origin, rgb, args)
-        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
-            color = None
-        else:
-            color = Color(rgb[0], rgb[1], rgb[2])
-        self.widget_scene.default_fill = color
-
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            try:
-                if color is None:
-                    e.fill = Color("none")
-                else:
-                    e.fill = color
-                e.altered()
-            except AttributeError:
-                # Ignore and carry on...
-                continue
-        # Reclassify selection...
-        self.context("declassify\nclassify\n")
-        self.context.signal("rebuild_tree")
-        self.request_refresh()
-
     @signal_listener("selstrokewidth")
     def on_selstrokewidth(self, origin, stroke_width, *args):
         # Stroke_width is a text
