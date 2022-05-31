@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.13"
+SVGELEMENTS_VERSION = "1.6.14"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -8630,6 +8630,8 @@ class SVG(Group):
                             style += styles[css_tag]
                 # Split style element into parts; priority highest
                 if SVG_ATTR_STYLE in attributes:
+                    if len(style) != 0:
+                        style += ";"
                     style += attributes[SVG_ATTR_STYLE]
 
                 # Process style tag left to right.
