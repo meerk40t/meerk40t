@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import lookup_listener, signal_listener
+from meerk40t.kernel import lookup_listener
 
 _ = wx.GetTranslation
 
@@ -138,8 +138,10 @@ class DevicePanel(wx.Panel):
                 None, _("Cannot remove the currently active device."), _("Error")
             ).ShowModal()
             return
-        data.destroy()
-
+        try:
+            data.destroy()
+        except AttributeError:
+            pass
         self.refresh_device_tree()
 
 

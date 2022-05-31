@@ -23,27 +23,27 @@ class BalorDevice(Service, ViewPort):
 
         self.register(
             "format/op cut",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op engrave",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op hatch",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op raster",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op image",
-            "{enabled}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op dots",
-            "{enabled}{element_type} {dwell_time}ms dwell {frequency}kHz",
+            "{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
         )
         self.register("format/op console", "{enabled}{command}")
 
@@ -138,6 +138,14 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
+            },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Number of curve interpolation points"),
             },
             {
                 "attr": "mock",
@@ -250,6 +258,14 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Polygon Delay"),
                 "tip": _("Delay amount between different points in the path travel."),
+            },
+            {
+                "attr": "delay_end",
+                "object": self,
+                "default": 300.0,
+                "type": float,
+                "label": _("End Delay"),
+                "tip": _("Delay amount for the end TC"),
             },
         ]
         self.register_choices("balor-global-timing", choices)
@@ -532,7 +548,6 @@ class BalorDevice(Service, ViewPort):
                 if polygon_delay is None
                 else polygon_delay,
             )
-            job.laser_control(True)
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)

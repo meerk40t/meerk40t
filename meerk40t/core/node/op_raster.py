@@ -8,7 +8,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
 from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import Color, Path, Polygon, Matrix
+from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 MILS_IN_MM = 39.3701
 
@@ -28,7 +28,6 @@ class RasterOpNode(Node, Parameters):
         Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
-        self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
@@ -84,12 +83,39 @@ class RasterOpNode(Node, Parameters):
     def bounds(self):
         if self._bounds_dirty:
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
+        )
+        default_map["penpass"] = (
+            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
+        )
+        default_map["penvalue"] = (
+            f"(v:{self.penbox_value}) " if self.penbox_value else ""
+        )
+        if self.raster_swing:
+            raster_swing = "-"
+        else:
+            raster_swing = "="
+        if self.raster_direction == 0:
+            raster_dir = "T2B"
+        elif self.raster_direction == 1:
+            raster_dir = "B2T"
+        elif self.raster_direction == 2:
+            raster_dir = "R2L"
+        elif self.raster_direction == 3:
+            raster_dir = "L2R"
+        elif self.raster_direction == 4:
+            raster_dir = "X"
+        else:
+            raster_dir = str(self.raster_direction)
+        default_map["direction"] = f"{raster_swing}{raster_dir} "
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -212,7 +238,7 @@ class RasterOpNode(Node, Parameters):
                         )
                         image_node.cache = None
 
-                    return actualize_raster_image_node()
+                    return actualize_raster_image_node
 
                 commands.append(actualize_raster_image(node, step_x, step_y))
             return
@@ -264,7 +290,7 @@ class RasterOpNode(Node, Parameters):
         and converts them into rastercut objects. These objects should have already been converted
         from vector shapes.
 
-        The preference for raster shapes it to use the settings set on this operation rather than on the image.
+        The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
         settings = self.derive()
 

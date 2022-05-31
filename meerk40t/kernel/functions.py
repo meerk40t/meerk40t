@@ -4,7 +4,7 @@ import os.path
 import platform
 import re
 from math import isinf
-from typing import Any, Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Callable, Generator, List, Optional, Tuple, Union
 
 from meerk40t.kernel import CommandSyntaxError, MalformedCommandRegistration
 
@@ -162,7 +162,7 @@ def console_command(
                     # Set nargs
                     nargs = k.get("nargs", 1)
                     if nargs == "*":
-                        nargs = float('inf')
+                        nargs = float("inf")
 
                     # Attempt cast to type.
                     if "type" in k and value is not None:

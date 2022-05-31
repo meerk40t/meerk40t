@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0006 RC5"
+APPLICATION_VERSION = "0.8.0007 RC6"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -161,6 +161,10 @@ def plugin(kernel, lifecycle):
         from .core import svg_io
 
         plugins.append(svg_io.plugin)
+
+        from .fill import fills
+
+        plugins.append(fills.plugin)
 
         from .extra import vectrace
 

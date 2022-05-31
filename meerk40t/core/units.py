@@ -218,6 +218,7 @@ class ViewPort:
         relative_length=None,
         as_float=False,
         unitless=UNITS_PER_PIXEL,
+        digits=None,
         scale=None,
     ):
         """
@@ -243,7 +244,9 @@ class ViewPort:
         else:
             if relative_length is None:
                 relative_length = self.height
-        length = Length(value, relative_length=relative_length, unitless=unitless)
+        length = Length(
+            value, relative_length=relative_length, unitless=unitless, digits=digits
+        )
         if scale is not None:
             length *= scale
 

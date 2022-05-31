@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.kernel import Job, signal_listener
 
-from ..core.cutcode import CutCode, LineCut
+from ..core.cutcode import CutCode
 from ..svgelements import Matrix
 from .icons import (
     icons8_laser_beam_hazard2_50,

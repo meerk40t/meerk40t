@@ -26,10 +26,7 @@ def plugin(kernel, lifecycle):
 
             @kernel.console_command("gui", help=_("starts the gui"))
             def gui_start(**kwargs):
-                kernel.console_command_remove("gui")
-                meerk40tgui = kernel_root.open("module/wxMeerK40t")
-                kernel.console("window open MeerK40t\n")
-                meerk40tgui.MainLoop()
+                kernel._gui = True  # Set gui to initialize.
 
         else:
             kernel._gui = False
@@ -47,6 +44,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "preregister":
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
+        from meerk40t.gui.fonts import svgfont_to_wx, wxfont_to_svg
 
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")
@@ -54,6 +52,8 @@ def plugin(kernel, lifecycle):
         # Registers the render-op make_raster. This is used to do cut planning.
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
+        kernel_root.register("font/svg_to_wx", svgfont_to_wx)
+        kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
 
         from meerk40t.gui.scene.scene import Scene
@@ -221,7 +221,7 @@ def plugin(kernel, lifecycle):
                 message = """This version of MeerK40t is unstable. It is intended primarily for testing purposes. Please report all problems, even small ones to the github issue opened for this version. Do not continue using this version if it is not the latest RC or if your work requires a more stable version.
                 
                 Open Issue Page?"""
-                caption = _("Release Candidate.")
+                caption = _("Report Candidate.")
                 import wx
 
                 style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
@@ -233,7 +233,7 @@ def plugin(kernel, lifecycle):
                 )
                 answer = dlg.ShowModal()
                 if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/967"
+                    issue_page = "https://github.com/meerk40t/meerk40t/issues/1065"
                     import webbrowser
 
                     webbrowser.open(issue_page, new=0, autoraise=True)

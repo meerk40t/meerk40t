@@ -14,7 +14,7 @@ from meerk40t.gui.scene.scene import (
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import create_menu_for_node
-from meerk40t.svgelements import Point, Rect
+from meerk40t.svgelements import Point
 
 
 def process_event(
@@ -1777,6 +1777,7 @@ class SelectionWidget(Widget):
         if refob is None or angle is None:
             return
         # Let's establish whether there is rotation in the object
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
         cx = (cc[0] + cc[2]) / 2
@@ -1789,6 +1790,7 @@ class SelectionWidget(Widget):
         refob = self.scene.reference_object
         if refob is None:
             return
+        bb = refob.bounds
         elements = self.scene.context.elements
         cc = elements.selected_area()
 
@@ -1971,7 +1973,11 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos, True)
+            if self.scene.context.select_smallest:
+                smallest = not self.key_control_pressed
+            else:
+                smallest = self.key_control_pressed
+            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
             # Check if reference is still existing
             self.scene.validate_reference()
             if not elements.has_emphasis():
@@ -1982,7 +1988,11 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            elements.set_emphasized_by_position(space_pos, False)
+            if self.scene.context.select_smallest:
+                smallest = not self.key_control_pressed
+            else:
+                smallest = self.key_control_pressed
+            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
 
