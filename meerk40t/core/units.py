@@ -1,5 +1,6 @@
 import re
 from copy import copy
+from math import tau
 
 from meerk40t.svgelements import Matrix
 
@@ -715,38 +716,144 @@ class Length(object):
 
     @property
     def length_pixels(self):
-        return "{amount}px".format(amount=self.pixels)
+        return f"{self.pixels}px"
 
     @property
     def length_inches(self):
-        return "{amount}in".format(amount=self.inches)
+        return f"{self.inches}in"
 
     @property
     def length_cm(self):
-        return "{amount}cm".format(amount=self.cm)
+        return f"{self.cm}cm"
 
     @property
     def length_mm(self):
-        return "{amount}mm".format(amount=self.mm)
+        return f"{self.mm}mm"
 
     @property
     def length_nm(self):
-        return "{amount}nm".format(amount=self.nm)
+        return f"{self.nm}nm"
 
     @property
     def length_mil(self):
-        return "{amount}mil".format(amount=self.mil)
+        return f"{self.mil}mil"
 
     @property
     def length_um(self):
-        return "{amount}um".format(amount=self.um)
+        return f"{self.um}um"
 
     @property
     def length_units(self):
-        return "{amount}".format(amount=self.units)
+        return f"{self.units}"
 
     def as_percent(self, relative_length):
         return 100.00 * self._amount / Length(relative_length).units
 
+
+class Angle(object):
+    """
+    Angle conversion and math, stores angle as a float in radians and
+    converts to other forms of angle. Failures to parse raise ValueError.
+    """
+
+    def __init__(self, angle, digits=None):
+        self._digits = digits
+        if not isinstance(angle, str):
+            self.angle = float(angle)
+            self.preferred_units = "rad"
+            return
+        angle = angle.lower()
+        if angle.endswith("deg"):
+            self.angle = float(angle[:-3]) * tau / 360.0
+            self.preferred_units = "deg"
+        elif angle.endswith("grad"):
+            self.angle = float(angle[:-4]) * tau / 400.0
+            self.preferred_units = "grad"
+        elif angle.endswith("rad"):
+            # Must be after 'grad' since 'grad' ends with 'rad' too.
+            self.angle = float(angle[:-3])
+            self.preferred_units = "rad"
+        elif angle.endswith("turn"):
+            self.angle = float(angle[:-4]) * tau
+            self.preferred_units = "turn"
+        elif angle.endswith("%"):
+            self.angle = float(angle[:-1]) * tau / 100.0
+            self.preferred_units = "%"
+        else:
+            self.angle = float(angle)
+            self.preferred_units = "rad"
+
+    def __str__(self):
+        return self.angle_preferred
+
+    def __copy__(self):
+        return Angle(self.angle)
+
+    def __eq__(self, other):
+        if hasattr(other, "angle"):
+            other = other.angle
+        c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
+        return c1
+
+    def normalize(self):
+        self.angle /= tau
+
+    @property
+    def angle_preferred(self):
+        if self.preferred_units == "rad":
+            return self.angle_radians
+        elif self.preferred_units == "grad":
+            return self.angle_gradians
+        elif self.preferred_units == "deg":
+            return self.angle_degrees
+        elif self.preferred_units == "turn":
+            return self.angle_turns
+
+    @property
+    def radians(self):
+        amount = self.angle
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def degrees(self):
+        amount = self.angle * 360.0 / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def gradians(self):
+        amount = self.angle * 400.0 / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def turns(self):
+        amount = self.angle / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def angle_radians(self):
+        return f"{self.radians}rad"
+
+    @property
+    def angle_degrees(self):
+        return f"{self.degrees}deg"
+
+    @property
+    def angle_gradians(self):
+        return f"{self.gradians}grad"
+
+    @property
+    def angle_turns(self):
+        return f"{self.turns}turn"
+
+    def is_orthogonal(self):
+        return (self.angle % (tau / 4.0)) == 0
 
 # TODO: Add in speed for units. mm/s in/s mm/minute.

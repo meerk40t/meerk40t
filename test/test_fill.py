@@ -117,7 +117,7 @@ class TestFill(unittest.TestCase):
             # kernel.console("tree list\n")
             polyline_node0 = hatch.children[0]
             shape0 = polyline_node0.shape
-            self.assertEqual(len(shape0), 76)
+            self.assertEqual(len(shape0), 77)
             # print(shape0)
 
             polyline_node1 = hatch.children[1]
