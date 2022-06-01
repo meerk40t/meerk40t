@@ -76,6 +76,22 @@ class Numpath:
         numpath.segments = np.copy(self.segments)
         return numpath
 
+    def translate(self, dx, dy):
+        self.segments[:self.length, 0] += complex(dx, dy)
+        self.segments[:self.length, 4] += complex(dx, dy)
+        types = self.segments[:self.length, 2]
+        q = np.where(types.astype(int) != TYPE_RAMP)
+        self.segments[q, 1] += complex(dx, dy)
+        self.segments[q, 3] += complex(dx, dy)
+
+    def scale(self, scale):
+        self.segments[:self.length, 0] *= scale
+        self.segments[:self.length, 4] *= scale
+        types = self.segments[:self.length, 2]
+        q = np.where(types.astype(int) != TYPE_RAMP)
+        self.segments[q, 1] *= scale
+        self.segments[q, 3] *= scale
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
@@ -88,6 +104,10 @@ class Numpath:
         if self.length != self.capacity:
             self.capacity = self.length
             self.segments = self.segments[0 : self.length]
+
+    def add_polyline(self, lines, power=1.0):
+        for i in range(1, len(lines)):
+            self.add_line(lines[i-1], lines[i], power=power)
 
     def add_line(self, start, end, power=1.0):
         self._ensure_capacity(self.length + 1)

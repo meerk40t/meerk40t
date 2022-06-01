@@ -1,6 +1,8 @@
 import unittest
 from copy import copy
 
+import numpy as np
+
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
 from meerk40t.numpath import Numpath
 from meerk40t.svgelements import Matrix, Rect
@@ -20,6 +22,48 @@ def draw(segments, w, h, filename="test.png"):
 
 class TestNumpath(unittest.TestCase):
     """Tests the functionality of numpath class."""
+
+    def test_numpath_translate_scale(self):
+        w = 10000
+        h = 10000
+        numpath = Numpath()
+        numpath.add_polyline((
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+        ))
+        numpath.add_polyline((
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            ))
+        numpath.scale(w)
+
+        numpath2 = Numpath()
+        numpath2.add_polyline((
+                complex(w * 0.05, h * 0.05),
+                complex(w * 0.95, h * 0.05),
+                complex(w * 0.95, h * 0.95),
+                complex(w * 0.05, h * 0.95),
+                complex(w * 0.05, h * 0.05),
+        ))
+        numpath2.add_polyline((
+                complex(w * 0.25, h * 0.25),
+                complex(w * 0.75, h * 0.25),
+                complex(w * 0.75, h * 0.75),
+                complex(w * 0.25, h * 0.75),
+                complex(w * 0.25, h * 0.25),
+            ))
+        self.assertTrue(np.all(numpath.segments == numpath2.segments))
+        numpath.translate(3,3)
+        self.assertFalse(np.all(numpath.segments == numpath2.segments))
+        numpath.translate(-3,-3)
+        self.assertTrue(np.all(numpath.segments == numpath2.segments))
+
 
     def test_numpath_scanline(self):
         w = 10000
