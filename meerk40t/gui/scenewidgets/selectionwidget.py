@@ -1936,7 +1936,10 @@ class SelectionWidget(Widget):
                 smallest = not self.key_control_pressed
             else:
                 smallest = self.key_control_pressed
-            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
+            elements.set_emphasized_by_position(space_pos,
+                keep_old_selection=False,
+                use_smallest=smallest,
+                exit_over_selection=True)
             # Check if reference is still existing
             self.scene.validate_reference()
             if not elements.has_emphasis():
@@ -1951,7 +1954,10 @@ class SelectionWidget(Widget):
                 smallest = not self.key_control_pressed
             else:
                 smallest = self.key_control_pressed
-            elements.set_emphasized_by_position(space_pos, False, use_smallest=smallest)
+            elements.set_emphasized_by_position(space_pos,
+                keep_old_selection=False,
+                use_smallest=smallest,
+                exit_over_selection=True)
             elements.signal("activate_selected_nodes", 0)
             return RESPONSE_CONSUME
 

@@ -6564,7 +6564,12 @@ class Elemental(Service):
             node.matrix.post_translate(dx, dy)
             node.modified()
 
-    def set_emphasized_by_position(self, position, keep_old_selection=False, use_smallest=False):
+    def set_emphasized_by_position(
+        self, position,
+        keep_old_selection=False,
+        use_smallest=False,
+        exit_over_selection = False
+        ):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -6574,7 +6579,7 @@ class Elemental(Service):
         if self.has_emphasis():
             if self._emphasized_bounds is not None and contains(
                 self._emphasized_bounds, position
-            ) and not keep_old_selection:
+            ) and exit_over_selection:
                 return  # Select by position aborted since selection position within current select bounds.
         # Remember previous selection, in case we need to append...
         e_list = []
