@@ -59,7 +59,8 @@ TYPE_QUAD = 1
 TYPE_CUBIC = 2
 TYPE_ARC = 3
 TYPE_DWELL = 4
-TYPE_RAMP = 5
+TYPE_WAIT = 5
+TYPE_RAMP = 6
 
 
 class Numpath:
@@ -143,12 +144,23 @@ class Numpath:
         )
         self.length += 1
 
+    def add_wait(self, position, time=1.0):
+        self._ensure_capacity(self.length + 1)
+        self.segments[self.length] = (
+            position,
+            position,
+            complex(TYPE_WAIT, time),
+            position,
+            position,
+        )
+        self.length += 1
+
     def add_ramp(self, start, end, power_start=0.0, power_end=1.0):
         self._ensure_capacity(self.length + 1)
         self.segments[self.length] = (
             start,
             power_start,
-            complex(TYPE_LINE, 1),
+            complex(TYPE_RAMP, 1),
             power_end,
             end,
         )
@@ -256,6 +268,9 @@ class Numpath:
             elif segment_type == TYPE_DWELL:
                 yield start.real, start.imag, 0
                 yield start.real, start.imag, -power
+            elif segment_type == TYPE_WAIT:
+                yield start.real, start.imag, 0
+                yield float('nan'), float('nan'), -power
             elif segment_type == TYPE_RAMP:
                 pos = list(
                     ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
