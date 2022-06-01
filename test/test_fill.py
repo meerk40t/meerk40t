@@ -150,7 +150,7 @@ class TestFill(unittest.TestCase):
         fill = list(scanline_fill(settings={}, outlines=paths, matrix=None))
         for p in fill:
             if p is None:
-                pass
+                continue
             x, y = p
             self.assertIn(x, (500, 2500, 7500, 9500))
 
