@@ -504,6 +504,8 @@ class ShadowTree:
 
         @return:
         """
+        # Rebuild tree destroys the emphasis, so let's store it...
+        emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
@@ -536,6 +538,9 @@ class ShadowTree:
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
         self.wxtree.Expand(node_registration.item)
+        # Restore emphasiss
+        for e in emphasized_list:
+            e.emphasized = True
 
     def register_children(self, node):
         """
@@ -615,6 +620,8 @@ class ShadowTree:
         """
         tree = self.wxtree
         node_item = node.item
+        if node_item is None:
+            return
         tree.SetItemBackgroundColour(node_item, None)
         try:
             if node.highlighted:
