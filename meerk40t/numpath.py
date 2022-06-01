@@ -103,6 +103,33 @@ class Numpath:
         rotation = complex(math.cos(angle), math.sin(angle))
         self.uscale(rotation)
 
+    def transform(self, mx):
+        for segment in self.segments[0: self.length]:
+            start = segment[0]
+            c0 = segment[1]
+            segpow = segment[2]
+            c1 = segment[3]
+            end = segment[4]
+
+            start = complex(
+                start.real * mx.a + start.imag * mx.c + 1 * mx.e,
+                start.real * mx.b + start.imag * mx.d + 1 * mx.f,
+            )
+            end = complex(
+                end.real * mx.a + end.imag * mx.c + 1 * mx.e,
+                end.real * mx.b + end.imag * mx.d + 1 * mx.f,
+            )
+            if segpow.real != TYPE_RAMP:
+                c0 = complex(
+                    c0.real * mx.a + c0.imag * mx.c + 1 * mx.e,
+                    c0.real * mx.b + c0.imag * mx.d + 1 * mx.f,
+                )
+                c1 = complex(
+                    c1.real * mx.a + c1.imag * mx.c + 1 * mx.e,
+                    c1.real * mx.b + c1.imag * mx.d + 1 * mx.f,
+                )
+            segment[:] = start, c0, segpow, c1, end
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return

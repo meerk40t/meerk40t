@@ -88,6 +88,29 @@ class TestNumpath(unittest.TestCase):
         for x, y in zip(numpath.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
             self.assertAlmostEqual(x, y)
 
+    def test_numpath_transform(self):
+        numpath = Numpath()
+        numpath.add_polyline((
+            complex(0.05, 0.05),
+            complex(0.95, 0.05),
+            complex(0.95, 0.95),
+            complex(0.05, 0.95),
+            complex(0.05, 0.05),
+        ))
+        numpath.add_polyline((
+            complex(0.25, 0.25),
+            complex(0.75, 0.25),
+            complex(0.75, 0.75),
+            complex(0.25, 0.75),
+            complex(0.25, 0.25),
+        ))
+        numpath.uscale(10000)
+        c = copy(numpath)
+        numpath.rotate(tau * .25)
+        c.transform(Matrix("rotate(.25turn)"))
+        t = numpath.segments == c.segments
+        self.assertTrue(np.all(t))
+
     def test_numpath_scanline(self):
         w = 10000
         h = 10000
