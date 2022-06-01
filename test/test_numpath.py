@@ -1,5 +1,6 @@
 import unittest
 from copy import copy
+from math import tau
 
 import numpy as np
 
@@ -41,7 +42,7 @@ class TestNumpath(unittest.TestCase):
                 complex(0.25, 0.75),
                 complex(0.25, 0.25),
             ))
-        numpath.scale(w)
+        numpath.uscale(w)
 
         numpath2 = Numpath()
         numpath2.add_polyline((
@@ -64,6 +65,28 @@ class TestNumpath(unittest.TestCase):
         numpath.translate(-3,-3)
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
 
+    def test_numpath_bbox(self):
+        w = 10000
+        numpath = Numpath()
+        numpath.add_polyline((
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+        ))
+        numpath.add_polyline((
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            ))
+        numpath.uscale(w)
+        self.assertEqual(numpath.bbox(), (500.0, 500.0, 9500.0, 9500.0))
+        numpath.rotate(tau * .25)
+        for x, y in zip(numpath.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
+            self.assertAlmostEqual(x, y)
 
     def test_numpath_scanline(self):
         w = 10000

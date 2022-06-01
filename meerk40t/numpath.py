@@ -78,6 +78,11 @@ class Numpath:
         numpath.segments = np.copy(self.segments)
         return numpath
 
+    def bbox(self):
+        max_value = max(np.max(self.segments[:self.length, 0]), np.max(self.segments[:self.length, 4]))
+        min_value = max(np.min(self.segments[:self.length, 0]), np.min(self.segments[:self.length, 4]))
+        return min_value.real, min_value.imag, max_value.real, max_value.imag
+
     def translate(self, dx, dy):
         self.segments[:self.length, 0] += complex(dx, dy)
         self.segments[:self.length, 4] += complex(dx, dy)
