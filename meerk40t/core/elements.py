@@ -5099,8 +5099,12 @@ class Elemental(Service):
                 self.flat(selected=True, cascade=False, types=non_structural_nodes)
             )
             for node in nodes:
-                if node.parent is not None:  # May have already removed.
-                    node.remove_node()
+                # If we are selecting an operation it also selects/emphasizes the
+                # contained elements - so both will be deleted...
+                # To circumvent this, we inquire once more the selected status...
+                if node.selected:
+                    if node.parent is not None:  # May have already removed.
+                        node.remove_node()
             self.set_emphasis(None)
 
         # ==========
