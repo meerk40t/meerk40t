@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
@@ -84,13 +86,17 @@ class Numpath:
         self.segments[q, 1] += complex(dx, dy)
         self.segments[q, 3] += complex(dx, dy)
 
-    def scale(self, scale):
+    def uscale(self, scale):
         self.segments[:self.length, 0] *= scale
         self.segments[:self.length, 4] *= scale
         types = self.segments[:self.length, 2]
         q = np.where(types.astype(int) != TYPE_RAMP)
         self.segments[q, 1] *= scale
         self.segments[q, 3] *= scale
+
+    def rotate(self, angle):
+        rotation = complex(math.cos(angle), math.sin(angle))
+        self.uscale(rotation)
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
