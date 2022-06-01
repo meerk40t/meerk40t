@@ -5074,7 +5074,7 @@ class Elemental(Service):
         # REMOVE MULTI (Tree Selected)
         # ==========
         # Calculate the amount of selected nodes in the tree:
-        # If there are ops selected then they take preference
+        # If there are ops selected then they take precedence
         # and will only be counted
         @self.tree_conditional(
             lambda cond:
