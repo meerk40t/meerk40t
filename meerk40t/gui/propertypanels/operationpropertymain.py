@@ -884,15 +884,20 @@ class HatchSettingsPanel(wx.Panel):
         self.display_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_display_erase)
 
         self.raster_pen = wx.Pen()
-        self.raster_pen.SetColour(wx.BLACK)
+        self.raster_pen.SetColour(wx.Colour(0, 0, 0, 180))
         self.raster_pen.SetWidth(1)
 
         self.travel_pen = wx.Pen()
         self.travel_pen.SetColour(wx.Colour(255, 127, 255, 127))
         self.travel_pen.SetWidth(1)
 
+        self.outline_pen = wx.Pen()
+        self.outline_pen.SetColour(wx.Colour(0, 127, 255, 127))
+        self.outline_pen.SetWidth(1)
+
         self.hatch_lines = None
         self.travel_lines = None
+        self.outline_lines = None
 
     def pane_hide(self):
         pass
@@ -1008,7 +1013,20 @@ class HatchSettingsPanel(wx.Panel):
         )
         matrix = Matrix.scale(0.018)
         hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, limit=1000))
-
+        o_start = []
+        o_end = []
+        for path in paths:
+            last_x = None
+            last_y = None
+            for x, y in path:
+                if last_x is None:
+                    last_x = x
+                    last_y = y
+                    continue
+                o_start.append((x, y))
+                o_end.append((last_x, last_y))
+                last_x, last_y = x, y
+        self.outline_lines = o_start, o_end
         h_start = []
         h_end = []
         t_start = []
@@ -1061,6 +1079,11 @@ class HatchSettingsPanel(wx.Panel):
                 starts, ends = self.travel_lines
                 if len(starts):
                     gc.SetPen(self.travel_pen)
+                    gc.StrokeLineSegments(starts, ends)
+            if self.outline_lines is not None:
+                starts, ends = self.outline_lines
+                if len(starts):
+                    gc.SetPen(self.outline_pen)
                     gc.StrokeLineSegments(starts, ends)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
