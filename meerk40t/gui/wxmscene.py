@@ -553,6 +553,24 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("theme", theme)
         self.request_refresh(origin)
 
+    @signal_listener("selstroke")
+    def on_selstroke(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_stroke = color
+
+    @signal_listener("selfill")
+    def on_selfill(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_fill = color
+
     @signal_listener("selstrokewidth")
     def on_selstrokewidth(self, origin, stroke_width, *args):
         # Stroke_width is a text
