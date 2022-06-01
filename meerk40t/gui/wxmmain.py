@@ -400,17 +400,14 @@ class CustomStatusBar(wx.StatusBar):
             button = event.EventObject
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
-            mysignal = "selstroke"
-            self.context.signal(mysignal, rgb)
+            self.context("stroke #%02x%02x%02x --classify\n" % (color.Red(), color.Green(), color.Blue()))
 
     def on_button_color_right(self, event):
         # Okay my backgroundcolor is...
         if not self.startup:
             button = event.EventObject
             color = button.GetBackgroundColour()
-            rgb = [color.Red(), color.Green(), color.Blue()]
-            mysignal = "selfill"
-            self.context.signal(mysignal, rgb)
+            self.context("fill #%02x%02x%02x --classify\n" % (color.Red(), color.Green(), color.Blue()))
 
     def on_stroke_width(self, event):
         if not self.startup:

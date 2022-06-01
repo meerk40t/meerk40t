@@ -3316,6 +3316,7 @@ class Elemental(Service):
                             e.altered()
                 return "elements", data
 
+        @self.console_option("classify", "c", type=bool, action="store_true", help="Reclassify element")
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
@@ -3330,10 +3331,13 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_stroke(
-            command, channel, _, color, data=None, filter=None, **kwargs
+            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             apply = data
             if filter is not None:
                 apply = list()
@@ -3369,8 +3373,18 @@ class Elemental(Service):
                 for e in apply:
                     e.stroke = Color(color)
                     e.altered()
+            if classify is None:
+                classify = False
+            if classify:
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                self.signal("rebuild_tree")
             return "elements", data
 
+        @self.console_option("classify", "c", type=bool, action="store_true", help="Reclassify element")
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
         @self.console_command(
@@ -3382,9 +3396,12 @@ class Elemental(Service):
             ),
             output_type="elements",
         )
-        def element_fill(command, channel, _, color, data=None, filter=None, **kwargs):
+        def element_fill(command, channel, _, color, data=None, classify=None, filter=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             apply = data
             if filter is not None:
                 apply = list()
@@ -3420,6 +3437,15 @@ class Elemental(Service):
                 for e in apply:
                     e.fill = Color(color)
                     e.altered()
+            if classify is None:
+                classify = False
+            if classify:
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -4044,10 +4070,17 @@ class Elemental(Service):
         def element_classify(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.classify(data)
+            if was_emphasized:
+                for e in data:
+                    e.emphasized = True
+
             return "elements", data
 
         @self.console_command(
@@ -4059,10 +4092,17 @@ class Elemental(Service):
         def declassify(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.remove_elements_from_operations(data)
+            # restore emphasized flag as it is relevant for subsequent operations
+            if was_emphasized:
+                for e in data:
+                    e.emphasized = True
             return "elements", data
 
         # ==========
@@ -5180,7 +5220,7 @@ class Elemental(Service):
             for i in range(copies):
                 node.parent.add_reference(node.node, type="reference", pos=index)
             node.modified()
-            self.signal("rebuild_tree")
+            self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
@@ -6665,12 +6705,19 @@ class Elemental(Service):
             was_classified = False
             # image_added code removed because it could never be used
             for op in operations:
+                # Are the colors identical? if the op is default then in any case
+                same_color = op.default
+                if hasattr(node, "stroke") and node.stroke is not None:
+                    # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
+                    # Remove opacity
+                    plain_color_op = abs(op.color)
+                    plain_color_node = abs(node.stroke)
+                    if plain_color_op==plain_color_node:
+                        same_color = True
+                # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
+                # print ("Color identical" if same_color else "Color different")
                 if op.type == "op raster":
-                    if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and (op.color == node.stroke or op.default)
-                    ):
+                    if same_color:
                         op.add_reference(node)
                         was_classified = True
                     elif node.type == "elem image":
@@ -6687,11 +6734,7 @@ class Elemental(Service):
                         op.add_reference(node)
                         was_classified = True
                 elif op.type in ("op engrave", "op cut", "op hatch"):
-                    if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and op.color == node.stroke
-                    ) or op.default:
+                    if same_color:
                         op.add_reference(node)
                         was_classified = True
                 elif op.type == "op image" and node.type == "elem image":
@@ -6704,6 +6747,7 @@ class Elemental(Service):
                     break  # May only classify in Dots.
 
             if not was_classified:
+                # print("Was not classified: add new op...")
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
@@ -6712,9 +6756,12 @@ class Elemental(Service):
                 elif (
                     hasattr(node, "stroke")
                     and node.stroke is not None
-                    and node.stroke.value is not None
                 ):
-                    op = EngraveOpNode(color=node.stroke, speed=35.0)
+                # If it's plain red then make a cutop...
+                    if node.stroke.red == 0xff and node.stroke.blue==0 and node.stroke.green==0:
+                        op = CutOpNode(color=node.stroke, speed=5.0)
+                    else:
+                        op = EngraveOpNode(color=node.stroke, speed=35.0)
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
