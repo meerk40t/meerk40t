@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
+from meerk40t.svgelements import Matrix
 
 
 class NumpathNode(Node):
@@ -15,42 +16,23 @@ class NumpathNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        linecap = None,
-        linejoin = None,
-        fillrule = None,
+        linecap=Linecap.CAP_BUTT,
+        linejoin=Linejoin.JOIN_MITER,
+        fillrule=Fillrule.FILLRULE_NONZERO,
         **kwargs,
     ):
         super(NumpathNode, self).__init__(type="elem numpath")
         self.path = path
         self.settings = kwargs
         if matrix is None:
-            self.matrix = path.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = path.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = path.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = path.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if linecap is None:
-            self.linecap = Linecap.CAP_BUTT
-        else:
-            self.linecap = linecap
-        if linejoin is None:
-            self.linejoin = Linejoin.JOIN_MITER
-        else:
-            self.linejoin = linejoin
-        if fillrule is None:
-            self.fillrule = Fillrule.FILLRULE_NONZERO
-        else:
-            self.fillrule = fillrule
+            matrix = Matrix()
+        self.matrix = matrix
+        self.fill = fill
+        self.stroke = stroke
+        self.stroke_width = stroke_width
+        self.linecap = linecap
+        self.linejoin = linejoin
+        self.fillrule = fillrule
         self.lock = False
 
     def __copy__(self):

@@ -5,6 +5,7 @@ from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_line import LineNode
+from meerk40t.core.node.elem_numpath import NumpathNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.elem_point import PointNode
 from meerk40t.core.node.elem_polyline import PolylineNode
@@ -56,6 +57,7 @@ class RootNode(Node):
             "elem polyline": PolylineNode,
             "elem image": ImageNode,
             "elem text": TextNode,
+            "elem numpath": NumpathNode,
             "reference": ReferenceNode,
             "cutcode": CutNode,
             "branch ops": BranchOperationsNode,

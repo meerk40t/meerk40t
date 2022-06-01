@@ -11,8 +11,10 @@ from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from ..numpath import Numpath
 
-from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox, SVG_RULE_EVENODD, SVG_RULE_NONZERO
+from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox, SVG_RULE_EVENODD, SVG_RULE_NONZERO, Line, \
+    QuadraticBezier, CubicBezier, Linear
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -3034,6 +3036,33 @@ class Elemental(Service):
             for e in data:
                 paths.append(abs(Path(e)))
             return "shapes", paths
+
+        @self.console_command(
+            "numpath",
+            help=_("Convert any element nodes to numpath nodes"),
+            input_type="elements",
+        )
+        def element_path_convert(data, **kwargs):
+            numpath = Numpath()
+            for node in data:
+                try:
+                    e = node.as_path()
+                except AttributeError:
+                    continue
+                for seg in e:
+                    if isinstance(seg, Linear):
+                        numpath.add_line(complex(seg.start), complex(seg.end))
+                    elif isinstance(seg, QuadraticBezier):
+                        numpath.add_quad(complex(seg.start), complex(seg.control), complex(seg.end))
+                    elif isinstance(seg, CubicBezier):
+                        numpath.add_quad(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+            node = self.elem_branch.add(path=numpath, type="elem numpath", stroke=Color("black"), fill=Color("green"))
+            self.set_emphasis([node])
+            node.focus()
+            if data is None:
+                data = list()
+            data.append(node)
+            return "elements", data
 
         @self.console_command(
             "path",

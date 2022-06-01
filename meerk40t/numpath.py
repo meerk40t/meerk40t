@@ -130,6 +130,13 @@ class Numpath:
                 )
             segment[:] = start, c0, segpow, c1, end
 
+    @property
+    def first_point(self):
+        if self.length:
+            return self.segments[0,0]
+        else:
+            return None
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return

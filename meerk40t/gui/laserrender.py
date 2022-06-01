@@ -133,6 +133,8 @@ class LaserRender:
             except AttributeError:
                 if node.type == "elem path":
                     node.draw = self.draw_path_node
+                elif node.type == "elem numpath":
+                    node.draw = self.draw_numpath_node
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in (
@@ -190,6 +192,19 @@ class LaserRender:
                         curve.end[0],
                         curve.end[1],
                     )
+        return p
+
+    def make_numpath(self, gc, path):
+        """
+        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        """
+        p = gc.CreatePath()
+        first_point = path.first_point
+        if first_point is not None:
+            p.MoveToPoint(first_point.real, first_point.imag)
+        for e in path.segments[:path.length]:
+            end = e[4]
+            p.AddLineToPoint(end.real, end.imag)
         return p
 
     def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
@@ -463,6 +478,66 @@ class LaserRender:
                 fr = wx.ODDEVEN_RULE
             else:
                 fr = wx.WINDING_RULE
+        gc.PushState()
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        self.set_element_pen(
+            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj
+        )
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
+            gc.FillPath(node.cache, fillStyle=fr)
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
+            gc.StrokePath(node.cache)
+        gc.PopState()
+
+    def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the laser path element."""
+        try:
+            matrix = node.matrix
+            width_scale = sqrt(abs(matrix.determinant))
+        except AttributeError:
+            matrix = None
+            width_scale = 1.0
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = self.make_numpath(gc, node.path)
+            node.cache = cache
+        if not hasattr(node, "linecap") or node.linecap is None:
+            lc = wx.CAP_ROUND
+        else:
+            if node.linecap == Linecap.CAP_BUTT:
+                lc = wx.CAP_BUTT
+            elif node.linecap == Linecap.CAP_ROUND:
+                lc = wx.CAP_ROUND
+            elif node.linecap == Linecap.CAP_SQUARE:
+                lc = wx.CAP_PROJECTING
+            else:
+                lc = wx.CAP_ROUND
+
+        if not hasattr(node, "linejoin") or node.linejoin is None:
+            lj = wx.JOIN_MITER
+        else:
+            if node.linejoin == Linejoin.JOIN_ARCS:
+                lj = wx.JOIN_ROUND
+            elif node.linejoin == Linejoin.JOIN_BEVEL:
+                lj = wx.JOIN_BEVEL
+            elif node.linejoin == Linejoin.JOIN_MITER:
+                lj = wx.JOIN_MITER
+            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
+                lj = wx.JOIN_MITER
+            else:
+                lj = wx.JOIN_ROUND
+
+        if not hasattr(node, "fillrule") or node.fillrule is None:
+            fr = wx.WINDING_RULE
+        else:
+            if node.fillrule == Fillrule.FILLRULE_EVENODD:
+                fr = wx.ODDEVEN_RULE
+            else:
+                fr = wx.WINDING_RULE
+
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
