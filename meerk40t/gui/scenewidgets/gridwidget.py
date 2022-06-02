@@ -34,7 +34,19 @@ class GridWidget(Widget):
         self.sy2 = 0
         self.cx = 0
         self.cy = 0
-        self.step = 0
+        # Min and max coords of the screen estate
+        self.min_x = 0
+        self.min_y = 0
+        self.max_x = 0
+        self.max_y = 0
+        self.tlenx1 = 0
+        self.tleny1 = 0
+        self.tlenx2 = 0
+        self.tleny2 = 0
+        self.sxx1 = 0
+        self.syy1 = 0
+        self.sxx2 = 0
+        self.syy2 = 0
 
         self.set_colors()
 
@@ -77,75 +89,47 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
+        from time import time
+
+        start_time = time()
         context = self.scene.context
         units_width = float(context.device.unit_width)
         units_height = float(context.device.unit_height)
-        step = 0
-        if self.scene.tick_distance > 0:
-            s = "{dist}{unit}".format(
-                dist=self.scene.tick_distance, unit=context.units_name
-            )
-            # print ("Calculate grid with %s" %s)
-            step = float(Length(s))
-            # The very first time we get absurd values, so let's do as if nothing had happened...
-            if units_width / step > 1000 or units_height / step > 1000:
-                # print ("Something strange happened: %s" %s)
-                step = 0
-        if step == 0:
-            # print ("Default kicked in")
-            step = float(Length("10mm"))
         starts = []
         ends = []
         starts2 = []
         ends2 = []
-        if step == 0:
-            self.grid = None
-            self.grid2 = None
-            return
 
-        # Secondary grid
-        x = 0.0
-        while x < units_width:
+        # Primary grid
+        x = self.sxx1
+        while x <= self.max_x:
             starts.append((x, 0.0))
             ends.append((x, units_height))
-            x += step
+            x += self.tlenx1
 
-        y = 0.0
-        while y < units_height:
+        y = self.syy1
+        while y <= self.max_y:
             starts.append((0.0, y))
             ends.append((units_width, y))
-            y += step
+            y += self.tleny1
 
         # Secondary grid
-        tlenx = step * self.scene.grid_secondary_scale_x
-        tleny = step * self.scene.grid_secondary_scale_y
 
-        # Establish minimal starting point
-        sxx = self.sx
-        while sxx > 0:
-            sxx -= tlenx
-        if sxx < 0:
-            sxx += tlenx
-        syy = self.sy
-        while syy > 0:
-            syy -= tleny
-        if syy < 0:
-            syy += tleny
-
-        x = sxx
-        while x <= units_width:
+        x = self.sxx2
+        while x <= self.max_x:
             starts2.append((x, 0.0))
             ends2.append((x, units_height))
-            x += tlenx
-        y = syy
-        while y < units_height:
+            x += self.tlenx2
+        y = self.syy2
+        while y <= self.max_y:
             starts2.append((0.0, y))
             ends2.append((units_width, y))
-            y += tleny
+            y += self.tleny2
 
-        self.step = step
         self.grid = starts, ends
         self.grid2 = starts2, ends2
+        end_time = time()
+        # print ("Grid-Calc done, time=%.6f, grid1=%d, grid2=%d" % ( end_time - start_time, len(starts), len(starts2)))
 
     def calculate_gridsize(self, w, h):
         # Establish the delta for about 15 ticks
@@ -215,6 +199,47 @@ class GridWidget(Widget):
         else:
             self.cy = self.scene.grid_circular_cy
 
+        self.min_x, self.min_y = self.scene.convert_window_to_scene([0, 0])
+        self.min_x = max(0, self.min_x)
+        self.min_y = max(0, self.min_y)
+        self.max_x, self.max_y = self.scene.convert_window_to_scene([w, h])
+        self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
+        self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+        tlen = float(
+            Length(
+                "{value}{units}".format(
+                    value=self.scene.tick_distance, units=self.scene.context.units_name
+                )
+            )
+        )
+        self.tlenx1 = tlen
+        self.tleny1 = tlen
+        self.sxx1 = round(self.min_x / self.tlenx1, 0) * (self.tlenx1 + 1)
+        while self.sxx1 > self.min_x:
+            self.sxx1 -= self.tlenx1
+        if self.sxx1 < self.min_x:
+            self.sxx1 += self.tlenx1
+        self.syy1 = round(self.min_y / self.tleny1, 0) * (self.tleny1 + 1)
+        while self.syy1 > self.min_y:
+            self.syy1 -= self.tleny1
+        if self.syy1 < self.min_y:
+            self.syy1 += self.tleny1
+
+        self.tlenx2 = tlen * self.scene.grid_secondary_scale_x
+        self.tleny2 = tlen * self.scene.grid_secondary_scale_y
+        self.sxx2 = round(self.min_x / self.tlenx2, 0) * (self.tlenx2 + 1)
+        while self.sxx2 > self.min_x:
+            self.sxx2 -= self.tlenx2
+        if self.sxx2 < self.min_x:
+            self.sxx2 += self.tlenx2
+        self.syy2 = round(self.min_y / self.tleny2, 0) * (self.tleny2 + 1)
+        while self.syy2 > self.min_y:
+            self.syy2 -= self.tleny2
+        if self.syy2 < self.min_y:
+            self.syy2 += self.tleny2
+        #print ("Min= %.1f, %.1f" % (self.min_x, self.min_y))
+        #print ("Max= %.1f, %.1f" % (self.max_x, self.max_y))
+
         if points == 0:
             return
 
@@ -233,100 +258,84 @@ class GridWidget(Widget):
 
         # Let's add grid points - set the full grid
         p = self.scene.context
-        tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=p.units_name
-                )
-            )
-        )
-        if tlen >= 1000:
-            if self.scene.draw_grid_primary:
-                # That's easy just the rectangular stuff
-                x = 0
-                while x <= p.device.unit_width:
-                    y = 0
-                    while y <= p.device.unit_height:
+        if self.scene.draw_grid_primary:
+            # That's easy just the rectangular stuff
+            x = self.sxx1
+            while x <= self.max_x:
+                y = self.syy1
+                while y <= self.max_y:
+                    self.scene.grid_points.append([x, y])
+                    y += self.tleny1
+                x += self.tlenx1
+        prim_ct = len(self.scene.grid_points)
+
+        s_time_2 = time()
+        if self.scene.draw_grid_secondary:
+            # is it identical to the primary?
+            if (
+                not self.scene.draw_grid_primary
+                or self.sx != 0
+                or self.sy != 0
+                or self.scene.grid_secondary_scale_x != 1
+                or self.scene.grid_secondary_scale_y != 1
+            ):
+                x = self.sxx2
+                while x <= self.max_x:
+                    y = self.syy2
+                    while y <= self.max_y:
                         self.scene.grid_points.append([x, y])
-                        y += tlen
-                    x += tlen
-            prim_ct = len(self.scene.grid_points)
-            if self.scene.draw_grid_secondary:
-                # is it identical to the primary?
-                if (
-                    not self.scene.draw_grid_primary
-                    or self.sx != 0
-                    or self.sy != 0
-                    or self.scene.grid_secondary_scale_x != 1
-                    or self.scene.grid_secondary_scale_y != 1
-                ):
-                    tlenx = tlen * self.scene.grid_secondary_scale_x
-                    tleny = tlen * self.scene.grid_secondary_scale_y
+                        y += self.tleny2
+                    x += self.tlenx2
 
-                    # Establish mininmal starting point
-                    sxx = self.sx
-                    while sxx > 0:
-                        sxx -= tlenx
-                    if sxx < 0:
-                        sxx += tlenx
-                    syy = self.sy
-                    while syy > 0:
-                        syy -= tleny
-                    if syy < 0:
-                        syy += tleny
+        second_ct = len(self.scene.grid_points) - prim_ct
 
-                    x = sxx
-                    while x <= p.device.unit_width:
-                        y = syy
-                        while y <= p.device.unit_height:
-                            self.scene.grid_points.append([x, y])
-                            y += tleny
-                        x += tlenx
+        s_time_3 = time()
+        if self.scene.draw_grid_circular:
+            # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
+            start_x = self.cx
+            start_y = self.cy
+            x = start_x
+            y = start_y
+            self.scene.grid_points.append([x, y])
+            r_angle = 0
+            segments = 48
+            i = 0
+            max_r = sqrt(
+                p.device.unit_width * p.device.unit_width
+                + p.device.unit_height * p.device.unit_height
+            )
+            tlen = (self.tlenx1 + self.tleny1) / 2
+            r_fourth = max_r // (4 * tlen) * tlen
+            while r_angle < tau:
+                if i % 2 == 0:
+                    r = 0
+                else:
+                    r = r_fourth
+                while r < max_r:
+                    r += tlen
+                    x = start_x + r * cos(r_angle)
+                    y = start_y + r * sin(r_angle)
 
-            second_ct = len(self.scene.grid_points) - prim_ct
-            if self.scene.draw_grid_circular:
-                # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
-                start_x = self.cx
-                start_y = self.cy
-                x = start_x
-                y = start_y
-                self.scene.grid_points.append([x, y])
-                r_angle = 0
-                segments = 48
-                i = 0
-                max_r = sqrt(
-                    p.device.unit_width * p.device.unit_width
-                    + p.device.unit_height * p.device.unit_height
-                )
-                r_fourth = max_r // (4 * tlen) * tlen
-                while r_angle < tau:
-                    if i % 2 == 0:
-                        r = 0
-                    else:
-                        r = r_fourth
-                    while r < max_r:
-                        r += tlen
-                        x = start_x + r * cos(r_angle)
-                        y = start_y + r * sin(r_angle)
+                    if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
+                        self.scene.grid_points.append([x, y])
 
-                        if x <= p.device.unit_width and y <= p.device.unit_height:
-                            self.scene.grid_points.append([x, y])
-
-                    i += 1
-                    r_angle += tau / segments
-                circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
+                i += 1
+                r_angle += tau / segments
+            circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
 
         end_time = time()
-        # print(
-        #   "Ready, time needed: %.6f, grid points added=%d (primary=%d, secondary=%d, circ=%d)"
-        #   % (end_time - start_time, len(self.scene.grid_points), prim_ct, second_ct, circ_ct)
-        # )
+        #print("Ready, time needed: %.6f, grid points added=%d (primary=%d, %.6f, secondary=%d, %.6f circ=%d, %.6f)" %
+        #    (end_time - start_time,
+        #    len(self.scene.grid_points),
+        #    prim_ct, s_time_2-start_time,
+        #    second_ct, s_time_3-s_time_2,
+        #    circ_ct, end_time-s_time_3))
 
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
         """
-        # print ("GridWidget draw")
+        #print ("GridWidget draw")
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
@@ -392,19 +401,20 @@ class GridWidget(Widget):
                 u_height = float(context.device.unit_height)
                 gc.Clip(0, 0, u_width, u_height)
                 siz = sqrt(u_width * u_width + u_height * u_height)
-                # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, self.step, self.sx, self.sy))
-                # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=self.step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
+                # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
+                # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
                 sox = self.cx / u_width
                 soy = self.cy / u_height
+                step = self.tlenx1
                 factor = max(2 * (1 - sox), 2 * (1 - soy))
 
                 y = 0
 
                 while y < siz * factor:
-                    y += 2 * self.step
+                    y += 2 * step
                     gc.DrawEllipse(self.cx - y / 2, self.cy - y / 2, y, y)
                 mid_y = (
-                    y // (4 * self.step) * self.step
+                    y // (4 * step) * step
                 )  # (around one fourth of radius)
                 # print("Last Y=%.1f (%s), mid_y=%.1f (%s)" % (y, Length(amount=y).length_mm, mid_y, Length(amount=mid_y).length_mm))
                 radials_start = []

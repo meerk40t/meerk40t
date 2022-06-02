@@ -5106,21 +5106,45 @@ class Elemental(Service):
         # ==========
         # REMOVE MULTI (Tree Selected)
         # ==========
+        # Calculate the amount of selected nodes in the tree:
+        # If there are ops selected then they take precedence
+        # and will only be counted
         @self.tree_conditional(
-            lambda cond: len(
+            lambda cond:
+            len(
                 list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                    self.flat(selected=True, cascade=False, types=operate_nodes)
+                )
+            ) if len(
+                list(
+                    self.flat(selected=True, cascade=False, types=operate_nodes)
+                )
+            ) > 0 else
+            len(
+                list(
+                    self.flat(selected=True, cascade=False, types=elem_group_nodes)
                 )
             )
             > 1
         )
         @self.tree_calc(
             "ecount",
-            lambda i: len(
+            lambda i:
+            len(
                 list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                    self.flat(selected=True, cascade=False, types=operate_nodes)
                 )
-            ),
+            ) if len(
+                list(
+                    self.flat(selected=True, cascade=False, types=operate_nodes)
+                )
+            ) > 0 else
+            len(
+                list(
+                    self.flat(selected=True, cascade=False, types=elem_group_nodes)
+                )
+            )
+            ,
         )
         @self.tree_operation(
             _("Remove %s selected items") % "{ecount}",
@@ -5128,12 +5152,24 @@ class Elemental(Service):
             help="",
         )
         def remove_multi_nodes(node, **kwargs):
+            if len(
+                list(
+                    self.flat(selected=True, cascade=False, types=operate_nodes)
+                )
+            ) > 0 :
+                types = operate_nodes
+            else:
+                types = elem_group_nodes
             nodes = list(
-                self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                self.flat(selected=True, cascade=False, types=types)
             )
             for node in nodes:
-                if node.parent is not None:  # May have already removed.
-                    node.remove_node()
+                # If we are selecting an operation it also selects/emphasizes the
+                # contained elements - so both will be deleted...
+                # To circumvent this, we inquire once more the selected status...
+                if node.selected:
+                    if node.parent is not None:  # May have already removed.
+                        node.remove_node()
             self.set_emphasis(None)
 
         # ==========
