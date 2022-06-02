@@ -3053,14 +3053,29 @@ class Elemental(Service):
                     if isinstance(seg, Line):
                         numpath.add_line(complex(seg.start), complex(seg.end))
                     elif isinstance(seg, QuadraticBezier):
-                        numpath.add_quad(complex(seg.start), complex(seg.control), complex(seg.end))
+                        numpath.add_quad(
+                            complex(seg.start), complex(seg.control), complex(seg.end)
+                        )
                     elif isinstance(seg, CubicBezier):
-                        numpath.add_cubic(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+                        numpath.add_cubic(
+                            complex(seg.start),
+                            complex(seg.control1),
+                            complex(seg.control2),
+                            complex(seg.end),
+                        )
                     elif isinstance(seg, Close):
                         numpath.close()
                         numpath.add_break()
                 numpath.add_break()
-            node = self.elem_branch.add(path=numpath, type="elem numpath", stroke=Color("black"), fill=Color("green"))
+            node = self.elem_branch.add(
+                path=numpath,
+                type="elem numpath",
+                stroke=data[0].stroke,
+                fill=data[0].fill,
+                fillrule=data[0].fillrule,
+                linecap=data[0].linecap,
+                linejoin=data[0].linejoin,
+            )
             self.set_emphasis([node])
             node.focus()
             if data is None:
