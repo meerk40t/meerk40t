@@ -99,6 +99,30 @@ class Numpath:
         """
         return self.length
 
+    def _ensure_capacity(self, capacity):
+        if self.capacity > capacity:
+            return
+        self.capacity = self.capacity << 1
+        new_segments = np.zeros((self.capacity, 5), dtype="complex")
+        new_segments[0 : self.length] = self.segments[0 : self.length]
+        self.segments = new_segments
+
+    def _trim(self):
+        if self.length != self.capacity:
+            self.capacity = self.length
+            self.segments = self.segments[0 : self.length]
+
+    @property
+    def first_point(self):
+        """
+        First point within the path if said point exists
+        @return:
+        """
+        if self.length:
+            return self.segments[0, 0]
+        else:
+            return None
+
     def bbox(self, mx=None):
         """
         bounding box of the particular segments.
@@ -130,6 +154,38 @@ class Numpath:
             min_x, min_y = min_x * mx.a + min_y * mx.c + 1 * mx.e, min_x * mx.b + min_y * mx.d + 1 * mx.f,
             max_x, max_y = max_x * mx.a + max_y * mx.c + 1 * mx.e, max_x * mx.b + max_y * mx.d + 1 * mx.f,
         return min_x, min_y, max_x, max_y
+
+    def transform(self, mx):
+        """
+        Affine Transformation by an arbitrary matrix.
+        @param mx: Matrix to transform by
+        @return:
+        """
+        for segment in self.segments[0 : self.length]:
+            start = segment[0]
+            c0 = segment[1]
+            segpow = segment[2]
+            c1 = segment[3]
+            end = segment[4]
+
+            start = complex(
+                start.real * mx.a + start.imag * mx.c + 1 * mx.e,
+                start.real * mx.b + start.imag * mx.d + 1 * mx.f,
+            )
+            end = complex(
+                end.real * mx.a + end.imag * mx.c + 1 * mx.e,
+                end.real * mx.b + end.imag * mx.d + 1 * mx.f,
+            )
+            if segpow.real != TYPE_RAMP:
+                c0 = complex(
+                    c0.real * mx.a + c0.imag * mx.c + 1 * mx.e,
+                    c0.real * mx.b + c0.imag * mx.d + 1 * mx.f,
+                )
+                c1 = complex(
+                    c1.real * mx.a + c1.imag * mx.c + 1 * mx.e,
+                    c1.real * mx.b + c1.imag * mx.d + 1 * mx.f,
+                )
+            segment[:] = start, c0, segpow, c1, end
 
     def translate(self, dx, dy):
         """
@@ -168,62 +224,6 @@ class Numpath:
         """
         rotation = complex(math.cos(angle), math.sin(angle))
         self.uscale(rotation)
-
-    def transform(self, mx):
-        """
-        Affine Transformation by an arbitrary matrix.
-        @param mx: Matrix to transform by
-        @return:
-        """
-        for segment in self.segments[0 : self.length]:
-            start = segment[0]
-            c0 = segment[1]
-            segpow = segment[2]
-            c1 = segment[3]
-            end = segment[4]
-
-            start = complex(
-                start.real * mx.a + start.imag * mx.c + 1 * mx.e,
-                start.real * mx.b + start.imag * mx.d + 1 * mx.f,
-            )
-            end = complex(
-                end.real * mx.a + end.imag * mx.c + 1 * mx.e,
-                end.real * mx.b + end.imag * mx.d + 1 * mx.f,
-            )
-            if segpow.real != TYPE_RAMP:
-                c0 = complex(
-                    c0.real * mx.a + c0.imag * mx.c + 1 * mx.e,
-                    c0.real * mx.b + c0.imag * mx.d + 1 * mx.f,
-                )
-                c1 = complex(
-                    c1.real * mx.a + c1.imag * mx.c + 1 * mx.e,
-                    c1.real * mx.b + c1.imag * mx.d + 1 * mx.f,
-                )
-            segment[:] = start, c0, segpow, c1, end
-
-    @property
-    def first_point(self):
-        """
-        First point within the path if said point exists
-        @return:
-        """
-        if self.length:
-            return self.segments[0, 0]
-        else:
-            return None
-
-    def _ensure_capacity(self, capacity):
-        if self.capacity > capacity:
-            return
-        self.capacity = self.capacity << 1
-        new_segments = np.zeros((self.capacity, 5), dtype="complex")
-        new_segments[0 : self.length] = self.segments[0 : self.length]
-        self.segments = new_segments
-
-    def _trim(self):
-        if self.length != self.capacity:
-            self.capacity = self.length
-            self.segments = self.segments[0 : self.length]
 
     def close(self, power=1.0):
         """
@@ -276,37 +276,6 @@ class Numpath:
             end,
         )
         self.length += 1
-
-    def end(self, power=1.0):
-        """
-        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
-        @param power: Unused power value for break.
-        @return:
-        """
-        self._ensure_capacity(self.length + 1)
-        self.segments[self.length] = (
-            float("nan"),
-            float("nan"),
-            complex(TYPE_END, power),
-            float("nan"),
-            float("nan"),
-        )
-        self.length += 1
-
-    def as_subpaths(self):
-        """
-        Generate individual subpaths.
-
-        @return:
-        """
-        types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) == TYPE_END)[0]
-        last = 0
-        for m in q:
-            yield Numpath(self.segments[last : m])
-            last = m + 1
-        if last != self.length:
-            yield Numpath(self.segments[last : self.length])
 
     def quad(self, start, control, end, power=1.0):
         """
@@ -420,6 +389,37 @@ class Numpath:
             end,
         )
         self.length += 1
+
+    def end(self, power=1.0):
+        """
+        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
+        @param power: Unused power value for break.
+        @return:
+        """
+        self._ensure_capacity(self.length + 1)
+        self.segments[self.length] = (
+            float("nan"),
+            float("nan"),
+            complex(TYPE_END, power),
+            float("nan"),
+            float("nan"),
+        )
+        self.length += 1
+
+    def as_subpaths(self):
+        """
+        Generate individual subpaths.
+
+        @return:
+        """
+        types = self.segments[: self.length, 2]
+        q = np.where(types.astype(int) == TYPE_END)[0]
+        last = 0
+        for m in q:
+            yield Numpath(self.segments[last : m])
+            last = m + 1
+        if last != self.length:
+            yield Numpath(self.segments[last : self.length])
 
     def travel_distance(self):
         """
