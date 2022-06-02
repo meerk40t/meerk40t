@@ -30,7 +30,7 @@ from meerk40t.svgelements import (
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
-from ..numpath import TYPE_LINE, TYPE_RAMP, TYPE_QUAD, TYPE_CUBIC, TYPE_BREAK
+from ..numpath import TYPE_LINE, TYPE_RAMP, TYPE_QUAD, TYPE_CUBIC, TYPE_END
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002

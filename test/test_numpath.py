@@ -5,7 +5,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.numpath import Numpath, TYPE_BREAK, TYPE_LINE
+from meerk40t.numpath import Numpath, TYPE_END, TYPE_LINE
 from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
@@ -28,14 +28,14 @@ class TestNumpath(unittest.TestCase):
         w = 10000
         h = 10000
         numpath = Numpath()
-        numpath.add_polyline((
+        numpath.polyline((
                 complex(0.05, 0.05),
                 complex(0.95, 0.05),
                 complex(0.95, 0.95),
                 complex(0.05, 0.95),
                 complex(0.05, 0.05),
         ))
-        numpath.add_polyline((
+        numpath.polyline((
                 complex(0.25, 0.25),
                 complex(0.75, 0.25),
                 complex(0.75, 0.75),
@@ -45,14 +45,14 @@ class TestNumpath(unittest.TestCase):
         numpath.uscale(w)
 
         numpath2 = Numpath()
-        numpath2.add_polyline((
+        numpath2.polyline((
                 complex(w * 0.05, h * 0.05),
                 complex(w * 0.95, h * 0.05),
                 complex(w * 0.95, h * 0.95),
                 complex(w * 0.05, h * 0.95),
                 complex(w * 0.05, h * 0.05),
         ))
-        numpath2.add_polyline((
+        numpath2.polyline((
                 complex(w * 0.25, h * 0.25),
                 complex(w * 0.75, h * 0.25),
                 complex(w * 0.75, h * 0.75),
@@ -68,14 +68,14 @@ class TestNumpath(unittest.TestCase):
     def test_numpath_bbox(self):
         w = 10000
         numpath = Numpath()
-        numpath.add_polyline((
+        numpath.polyline((
                 complex(0.05, 0.05),
                 complex(0.95, 0.05),
                 complex(0.95, 0.95),
                 complex(0.05, 0.95),
                 complex(0.05, 0.05),
         ))
-        numpath.add_polyline((
+        numpath.polyline((
                 complex(0.25, 0.25),
                 complex(0.75, 0.25),
                 complex(0.75, 0.75),
@@ -90,14 +90,14 @@ class TestNumpath(unittest.TestCase):
 
     def test_numpath_transform(self):
         numpath = Numpath()
-        numpath.add_polyline((
+        numpath.polyline((
             complex(0.05, 0.05),
             complex(0.95, 0.05),
             complex(0.95, 0.95),
             complex(0.05, 0.95),
             complex(0.05, 0.05),
         ))
-        numpath.add_polyline((
+        numpath.polyline((
             complex(0.25, 0.25),
             complex(0.75, 0.25),
             complex(0.75, 0.75),
@@ -113,7 +113,7 @@ class TestNumpath(unittest.TestCase):
 
     def test_numpath_close(self):
         numpath = Numpath()
-        numpath.add_polyline((
+        numpath.polyline((
             complex(0.05, 0.05),
             complex(0.95, 0.05),
             complex(0.95, 0.95),
@@ -121,8 +121,8 @@ class TestNumpath(unittest.TestCase):
             complex(0.05, 0.05),
         ))
         numpath.close()
-        numpath.add_break()
-        numpath.add_polyline((
+        numpath.end()
+        numpath.polyline((
             complex(0.25, 0.25),
             complex(0.75, 0.25),
             complex(0.75, 0.75),
@@ -169,7 +169,7 @@ class TestNumpath(unittest.TestCase):
                 continue
             x, y = p
             if last_x is not None:
-                path.add_line(complex(last_x, last_y), complex(x,y))
+                path.line(complex(last_x, last_y), complex(x, y))
             last_x, last_y = x, y
         p = copy(path)
         self.assertNotEqual(path, p)

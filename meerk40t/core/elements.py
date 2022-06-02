@@ -1,7 +1,6 @@
 import functools
 import os.path
 import re
-from datetime import datetime
 from copy import copy
 from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
@@ -24,7 +23,6 @@ from ..svgelements import (
     Line,
     QuadraticBezier,
     CubicBezier,
-    Linear,
     Close,
 )
 from .cutcode import CutCode
@@ -3064,13 +3062,13 @@ class Elemental(Service):
                     continue
                 for seg in e:
                     if isinstance(seg, Line):
-                        numpath.add_line(complex(seg.start), complex(seg.end))
+                        numpath.line(complex(seg.start), complex(seg.end))
                     elif isinstance(seg, QuadraticBezier):
-                        numpath.add_quad(
+                        numpath.quad(
                             complex(seg.start), complex(seg.control), complex(seg.end)
                         )
                     elif isinstance(seg, CubicBezier):
-                        numpath.add_cubic(
+                        numpath.cubic(
                             complex(seg.start),
                             complex(seg.control1),
                             complex(seg.control2),
@@ -3078,8 +3076,8 @@ class Elemental(Service):
                         )
                     elif isinstance(seg, Close):
                         numpath.close()
-                        numpath.add_break()
-                numpath.add_break()
+                        numpath.end()
+                numpath.end()
             if len(numpath) == 0:
                 return "elements", data
             try:
