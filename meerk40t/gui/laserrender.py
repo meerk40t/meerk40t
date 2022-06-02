@@ -202,6 +202,8 @@ class LaserRender:
         p = gc.CreatePath()
         for subpath in path.as_subpaths():
             first_point = subpath.first_point
+            if first_point is not None:
+                continue
             end = first_point
             for e in subpath.segments:
                 seg_type = int(e[2].real)

@@ -218,7 +218,7 @@ class Numpath:
         q = np.where(types.astype(int) == TYPE_BREAK)[0]
         last = 0
         for m in q:
-            yield Numpath(self.segments[last : m + 1])
+            yield Numpath(self.segments[last : m])
             last = m + 1
         if last != self.length:
             yield Numpath(self.segments[last : self.length])
