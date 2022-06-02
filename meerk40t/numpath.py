@@ -129,7 +129,7 @@ class Numpath:
         @param mx: Conditional matrix operation.
         @return:
         """
-        segments = self.segments[:self.length]
+        segments = self.segments[: self.length]
         nans = np.isnan(segments[:, 0])
         firsts = segments[~nans, 0]
         nans = np.isnan(segments[:, 4])
@@ -151,8 +151,14 @@ class Numpath:
             np.min(np.imag(lasts)),
         )
         if mx is not None:
-            min_x, min_y = min_x * mx.a + min_y * mx.c + 1 * mx.e, min_x * mx.b + min_y * mx.d + 1 * mx.f,
-            max_x, max_y = max_x * mx.a + max_y * mx.c + 1 * mx.e, max_x * mx.b + max_y * mx.d + 1 * mx.f,
+            min_x, min_y = (
+                min_x * mx.a + min_y * mx.c + 1 * mx.e,
+                min_x * mx.b + min_y * mx.d + 1 * mx.f,
+            )
+            max_x, max_y = (
+                max_x * mx.a + max_y * mx.c + 1 * mx.e,
+                max_x * mx.b + max_y * mx.d + 1 * mx.f,
+            )
         return min_x, min_y, max_x, max_y
 
     def transform(self, mx):
@@ -416,7 +422,7 @@ class Numpath:
         q = np.where(types.astype(int) == TYPE_END)[0]
         last = 0
         for m in q:
-            yield Numpath(self.segments[last : m])
+            yield Numpath(self.segments[last:m])
             last = m + 1
         if last != self.length:
             yield Numpath(self.segments[last : self.length])
