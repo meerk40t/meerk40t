@@ -13,8 +13,20 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 from ..numpath import Numpath
 
-from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox, SVG_RULE_EVENODD, SVG_RULE_NONZERO, Line, \
-    QuadraticBezier, CubicBezier, Linear, Close
+from ..svgelements import (
+    Angle,
+    Color,
+    Matrix,
+    SVGElement,
+    Viewbox,
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
+    Line,
+    QuadraticBezier,
+    CubicBezier,
+    Linear,
+    Close,
+)
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -45,9 +57,7 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Default Operation Empty"),
-                "tip": _(
-                    "Leave empty operations or default Other/Red/Blue"
-                ),
+                "tip": _("Leave empty operations or default Other/Red/Blue"),
             },
             {
                 "attr": "classify_reverse",
@@ -181,7 +191,7 @@ class Elemental(Service):
             box = list()
             for i in range(length):
                 penbox = dict()
-                settings.read_persistent_string_dict(f'{pen} {i}', penbox, suffix=True)
+                settings.read_persistent_string_dict(f"{pen} {i}", penbox, suffix=True)
                 box.append(penbox)
             self.penbox[pen] = box
 
@@ -192,7 +202,7 @@ class Elemental(Service):
         self.pen_data.write_persistent_dict("pens", sections)
         for section in self.penbox:
             for i, p in enumerate(self.penbox[section]):
-                self.pen_data.write_persistent_dict(f'{section} {i}', p)
+                self.pen_data.write_persistent_dict(f"{section} {i}", p)
 
     def wordlist_fetch(self, key):
         try:
@@ -206,7 +216,6 @@ class Elemental(Service):
         except IndexError:
             wordlist[0] = 1
             return wordlist[wordlist[0]]
-
 
     def index_range(self, index_string):
         """
@@ -287,7 +296,7 @@ class Elemental(Service):
             help=_("Wordlist base operation"),
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, remainder = None, **kwargs):
+        def wordlist(command, channel, _, remainder=None, **kwargs):
             return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
@@ -298,9 +307,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_add(
-            command, channel, _, key=None, value=None, **kwargs
-        ):
+        def wordlist_add(command, channel, _, key=None, value=None, **kwargs):
             if key is not None:
                 if value is None:
                     value = ""
@@ -315,9 +322,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_addcounter(
-            command, channel, _, key=None, value=None, **kwargs
-        ):
+        def wordlist_addcounter(command, channel, _, key=None, value=None, **kwargs):
             if key is not None:
                 if value is None:
                     value = 1
@@ -337,9 +342,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_get(
-            command, channel, _, key=None, index=None, **kwargs
-        ):
+        def wordlist_get(command, channel, _, key=None, index=None, **kwargs):
             if key is not None:
                 result = self.mywordlist.fetch_value(skey=key, idx=index)
                 channel(str(result))
@@ -366,7 +369,9 @@ class Elemental(Service):
                 channel(_("Not enough parameters given"))
             return "wordlist", key
 
-        @self.console_argument("key", help=_("Individual wordlist value (use @ALL for all)"))
+        @self.console_argument(
+            "key", help=_("Individual wordlist value (use @ALL for all)")
+        )
         @self.console_argument("index", help=_("index to use"))
         @self.console_command(
             "index",
@@ -374,18 +379,18 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_index(
-            command, channel, _, key=None, index=None, **kwargs
-        ):
+        def wordlist_index(command, channel, _, key=None, index=None, **kwargs):
             if key is not None and index is not None:
                 try:
                     index = int(index)
                 except ValueError:
                     index = 0
-                self.mywordlist.set_index(skey=key,idx=index)
+                self.mywordlist.set_index(skey=key, idx=index)
             return "wordlist", key
 
-        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_argument(
+            "filename", help=_("Wordlist file (if empty use mk40-default)")
+        )
         @self.console_command(
             "restore",
             help=_("Loads a previously saved wordlist"),
@@ -404,8 +409,9 @@ class Elemental(Service):
             self.mywordlist.load_data(new_file)
             return "wordlist", ""
 
-
-        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_argument(
+            "filename", help=_("Wordlist file (if empty use mk40-default)")
+        )
         @self.console_command(
             "backup",
             help=_("Saves the current wordlist"),
@@ -429,9 +435,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_list(
-            command, channel, _, key=None, **kwargs
-        ):
+        def wordlist_list(command, channel, _, key=None, **kwargs):
             channel("----------")
             if key is None:
                 for skey in self.mywordlist.content:
@@ -439,11 +443,14 @@ class Elemental(Service):
             else:
                 if key in self.mywordlist.content:
                     wordlist = self.mywordlist.content[key]
-                    channel(_("Wordlist %s (Type=%d, Index=%d)):") % (key, wordlist[0], wordlist[1]-2))
+                    channel(
+                        _("Wordlist %s (Type=%d, Index=%d)):")
+                        % (key, wordlist[0], wordlist[1] - 2)
+                    )
                     for idx, value in enumerate(wordlist[2:]):
                         channel("#%d: %s" % (idx, str(value)))
                 else:
-                    channel(_("There is no such pattern %s") % key )
+                    channel(_("There is no such pattern %s") % key)
             channel("----------")
             return "wordlist", key
 
@@ -454,9 +461,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_load(
-            command, channel, _, filename=None, **kwargs
-        ):
+        def wordlist_load(command, channel, _, filename=None, **kwargs):
             if filename is None:
                 channel(_("No file specified."))
                 return
@@ -466,10 +471,10 @@ class Elemental(Service):
                 return
 
             rows, columns, names = self.mywordlist.load_csv_file(new_file)
-            channel (_("Rows added: %d") % rows)
-            channel (_("Values added: %d") % columns)
+            channel(_("Rows added: %d") % rows)
+            channel(_("Values added: %d") % columns)
             for name in names:
-                channel ("  " + name)
+                channel("  " + name)
             return "wordlist", names
 
         # ==========
@@ -686,7 +691,9 @@ class Elemental(Service):
             input_type="ops",
             output_type="ops",
         )
-        def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        def penbox_pass(
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        ):
             if data is not None:
                 if key is not None:
                     for op in data:
@@ -706,7 +713,7 @@ class Elemental(Service):
                                 else:
                                     channel(f"{str(op)} penbox_pass is set to {key}.")
                             except AttributeError:
-                                pass # No op.settings.
+                                pass  # No op.settings.
                         channel("----------")
             return "ops", data
 
@@ -717,7 +724,9 @@ class Elemental(Service):
             input_type="ops",
             output_type="ops",
         )
-        def penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        def penbox_value(
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        ):
             if data is not None:
                 if key is not None:
                     for op in data:
@@ -737,10 +746,9 @@ class Elemental(Service):
                                 else:
                                     channel(f"{str(op)} penbox_value is set to {key}.")
                             except AttributeError:
-                                pass # No op.settings.
+                                pass  # No op.settings.
                         channel("----------")
             return "ops", data
-
 
         # ==========
         # OPERATION BASE
@@ -3170,7 +3178,9 @@ class Elemental(Service):
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "cap", type=str, help=_("Linecap to apply to the path (one of butt, round, square)")
+            "cap",
+            type=str,
+            help=_("Linecap to apply to the path (one of butt, round, square)"),
         )
         @self.console_command(
             "linecap",
@@ -3234,7 +3244,11 @@ class Elemental(Service):
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "join", type=str, help=_("jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)")
+            "join",
+            type=str,
+            help=_(
+                "jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)"
+            ),
         )
         @self.console_command(
             "linejoin",
@@ -3306,7 +3320,10 @@ class Elemental(Service):
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "rule", type=str, help=_("rule to apply to fill the path (one of %s, %s)") % (SVG_RULE_NONZERO, SVG_RULE_EVENODD)
+            "rule",
+            type=str,
+            help=_("rule to apply to fill the path (one of %s, %s)")
+            % (SVG_RULE_NONZERO, SVG_RULE_EVENODD),
         )
         @self.console_command(
             "fillrule",
@@ -3364,7 +3381,9 @@ class Elemental(Service):
                             e.altered()
                 return "elements", data
 
-        @self.console_option("classify", "c", type=bool, action="store_true", help="Reclassify element")
+        @self.console_option(
+            "classify", "c", type=bool, action="store_true", help="Reclassify element"
+        )
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
             "color", type=Color, help=_("Color to color the given stroke")
@@ -3432,7 +3451,9 @@ class Elemental(Service):
                 self.signal("rebuild_tree")
             return "elements", data
 
-        @self.console_option("classify", "c", type=bool, action="store_true", help="Reclassify element")
+        @self.console_option(
+            "classify", "c", type=bool, action="store_true", help="Reclassify element"
+        )
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
         @self.console_command(
@@ -3444,7 +3465,9 @@ class Elemental(Service):
             ),
             output_type="elements",
         )
-        def element_fill(command, channel, _, color, data=None, classify=None, filter=None, **kwargs):
+        def element_fill(
+            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
                 was_emphasized = True
@@ -5125,41 +5148,26 @@ class Elemental(Service):
         # If there are ops selected then they take precedence
         # and will only be counted
         @self.tree_conditional(
-            lambda cond:
-            len(
-                list(
-                    self.flat(selected=True, cascade=False, types=operate_nodes)
-                )
-            ) if len(
-                list(
-                    self.flat(selected=True, cascade=False, types=operate_nodes)
-                )
-            ) > 0 else
-            len(
-                list(
-                    self.flat(selected=True, cascade=False, types=elem_group_nodes)
-                )
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=operate_nodes))
+            )
+            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+            > 0
+            else len(
+                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
             )
             > 1
         )
         @self.tree_calc(
             "ecount",
-            lambda i:
-            len(
-                list(
-                    self.flat(selected=True, cascade=False, types=operate_nodes)
-                )
-            ) if len(
-                list(
-                    self.flat(selected=True, cascade=False, types=operate_nodes)
-                )
-            ) > 0 else
-            len(
-                list(
-                    self.flat(selected=True, cascade=False, types=elem_group_nodes)
-                )
+            lambda i: len(
+                list(self.flat(selected=True, cascade=False, types=operate_nodes))
             )
-            ,
+            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+            > 0
+            else len(
+                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+            ),
         )
         @self.tree_operation(
             _("Remove %s selected items") % "{ecount}",
@@ -5167,17 +5175,14 @@ class Elemental(Service):
             help="",
         )
         def remove_multi_nodes(node, **kwargs):
-            if len(
-                list(
-                    self.flat(selected=True, cascade=False, types=operate_nodes)
-                )
-            ) > 0 :
+            if (
+                len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+                > 0
+            ):
                 types = operate_nodes
             else:
                 types = elem_group_nodes
-            nodes = list(
-                self.flat(selected=True, cascade=False, types=types)
-            )
+            nodes = list(self.flat(selected=True, cascade=False, types=types))
             for node in nodes:
                 # If we are selecting an operation it also selects/emphasizes the
                 # contained elements - so both will be deleted...
@@ -6689,11 +6694,12 @@ class Elemental(Service):
             node.modified()
 
     def set_emphasized_by_position(
-        self, position,
+        self,
+        position,
         keep_old_selection=False,
         use_smallest=False,
-        exit_over_selection = False
-        ):
+        exit_over_selection=False,
+    ):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -6701,13 +6707,15 @@ class Elemental(Service):
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
         if self.has_emphasis():
-            if self._emphasized_bounds is not None and contains(
-                self._emphasized_bounds, position
-            ) and exit_over_selection:
+            if (
+                self._emphasized_bounds is not None
+                and contains(self._emphasized_bounds, position)
+                and exit_over_selection
+            ):
                 return  # Select by position aborted since selection position within current select bounds.
         # Remember previous selection, in case we need to append...
         e_list = []
-        f_list = [] # found elements...
+        f_list = []  # found elements...
         if keep_old_selection:
             for node in self.elems(emphasized=True):
                 e_list.append(node)
@@ -6730,13 +6738,13 @@ class Elemental(Service):
                 e_area = -float("inf")
             for node in f_list:
                 cc = node.bounds
-                f_area = (cc[2]-cc[0]) * (cc[3] - cc[1])
+                f_area = (cc[2] - cc[0]) * (cc[3] - cc[1])
                 if use_smallest:
-                    if f_area<e_area:
+                    if f_area < e_area:
                         e_area = f_area
                         e = node
                 else:
-                    if f_area>e_area:
+                    if f_area > e_area:
                         e_area = f_area
                         e = node
             if not e is None:
@@ -6750,7 +6758,7 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
-        if len(e_list)>0:
+        if len(e_list) > 0:
             self._emphasized_bounds = bounds
             self.set_emphasis(e_list)
         else:
@@ -6796,7 +6804,7 @@ class Elemental(Service):
                     # Remove opacity
                     plain_color_op = abs(op.color)
                     plain_color_node = abs(node.stroke)
-                    if plain_color_op==plain_color_node:
+                    if plain_color_op == plain_color_node:
                         same_color = True
                 # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
                 # print ("Color identical" if same_color else "Color different")
@@ -6837,12 +6845,13 @@ class Elemental(Service):
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif (
-                    hasattr(node, "stroke")
-                    and node.stroke is not None
-                ):
-                # If it's plain red then make a cutop...
-                    if node.stroke.red == 0xff and node.stroke.blue==0 and node.stroke.green==0:
+                elif hasattr(node, "stroke") and node.stroke is not None:
+                    # If it's plain red then make a cutop...
+                    if (
+                        node.stroke.red == 0xFF
+                        and node.stroke.blue == 0
+                        and node.stroke.green == 0
+                    ):
                         op = CutOpNode(color=node.stroke, speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
