@@ -3049,12 +3049,13 @@ class Elemental(Service):
             "numpath",
             help=_("Convert any element nodes to numpath nodes"),
             input_type="elements",
+            output_type="elements"
         )
         def element_path_convert(data, **kwargs):
             if data is None:
-                return
+                return "elements", data
             if len(data) == 0:
-                return
+                return "elements", data
             numpath = Numpath()
             for node in data:
                 try:
@@ -3080,7 +3081,7 @@ class Elemental(Service):
                         numpath.add_break()
                 numpath.add_break()
             if len(numpath) == 0:
-                return # No path.
+                return "elements", data
             try:
                 fillrule = data[0].fillrule
             except AttributeError:
@@ -3104,8 +3105,6 @@ class Elemental(Service):
             )
             self.set_emphasis([node])
             node.focus()
-            if data is None:
-                data = list()
             data.append(node)
             return "elements", data
 
