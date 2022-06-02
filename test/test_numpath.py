@@ -5,7 +5,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.numpath import Numpath, TYPE_CLOSE
+from meerk40t.numpath import Numpath, TYPE_BREAK
 from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
@@ -120,7 +120,8 @@ class TestNumpath(unittest.TestCase):
             complex(0.05, 0.95),
             complex(0.05, 0.05),
         ))
-        numpath.add_close()
+        numpath.close()
+        numpath.add_break()
         numpath.add_polyline((
             complex(0.25, 0.25),
             complex(0.75, 0.25),
@@ -133,7 +134,7 @@ class TestNumpath(unittest.TestCase):
         subpaths = list(numpath.as_subpaths())
         self.assertEqual(len(subpaths), 2)
         self.assertEqual(len(subpaths[0]), 5)
-        self.assertEqual(int(subpaths[0][-1][2]), TYPE_CLOSE)
+        self.assertEqual(int(subpaths[0].segments[-1][2]), TYPE_BREAK)
         self.assertEqual(len(subpaths[1]), 4)
 
     def test_numpath_scanline(self):

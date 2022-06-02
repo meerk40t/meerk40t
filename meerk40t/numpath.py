@@ -63,14 +63,19 @@ TYPE_ARC = 3
 TYPE_DWELL = 4
 TYPE_WAIT = 5
 TYPE_RAMP = 6
-TYPE_CLOSE = 99
+TYPE_BREAK = 99
 
 
 class Numpath:
-    def __init__(self):
-        self.length = 0
-        self.capacity = 12
-        self.segments = np.zeros((self.capacity, 5), dtype="complex")
+    def __init__(self, segments=None):
+        if segments is not None:
+            self.segments = segments
+            self.length = len(self.segments)
+            self.capacity = self.length
+        else:
+            self.length = 0
+            self.capacity = 12
+            self.segments = np.zeros((self.capacity, 5), dtype="complex")
 
     def __copy__(self):
         numpath = Numpath()
@@ -79,14 +84,22 @@ class Numpath:
         numpath.segments = np.copy(self.segments)
         return numpath
 
+    def __len__(self):
+        return self.length
+
     def bbox(self):
+        segments = self.segments[:self.length]
+        nans = np.isnan(segments[:, 0])
+        firsts = segments[~nans, 0]
+        nans = np.isnan(segments[:, 4])
+        lasts = segments[~nans, 4]
         max_value = max(
-            np.max(self.segments[: self.length, 0]),
-            np.max(self.segments[: self.length, 4]),
+            np.max(firsts),
+            np.max(lasts),
         )
-        min_value = max(
-            np.min(self.segments[: self.length, 0]),
-            np.min(self.segments[: self.length, 4]),
+        min_value = min(
+            np.min(firsts),
+            np.min(lasts),
         )
         return min_value.real, min_value.imag, max_value.real, max_value.imag
 
@@ -172,38 +185,43 @@ class Numpath:
         )
         self.length += 1
 
-    def add_close(self, power=1.0):
+    def close(self, power=1.0):
         if self.length == 0:
             raise ValueError("Empty path cannot close")
         self._ensure_capacity(self.length + 1)
         types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) == TYPE_CLOSE)[0]
+        q = np.where(types.astype(int) == TYPE_BREAK)[0]
         if len(q):
             last = q[-1] + 1
             if self.length <= last:
-                raise ValueError("Path already closed")
+                raise ValueError("Empty path cannot close")
         else:
             last = 0
-        start_segment = self.segments[last]
-        end_segment = self.segments[self.length - 1]
+        start_segment = self.segments[last][0]
+        end_segment = self.segments[self.length - 1][-1]
+        if start_segment != end_segment:
+            self.add_line(end_segment, start_segment, power=power)
+
+    def add_break(self, power=1.0):
+        self._ensure_capacity(self.length + 1)
         self.segments[self.length] = (
-            end_segment[-1],
-            end_segment[-1],
-            complex(TYPE_CLOSE, power),
-            start_segment[0],
-            start_segment[0],
+            float("nan"),
+            float("nan"),
+            complex(TYPE_BREAK, power),
+            float("nan"),
+            float("nan"),
         )
         self.length += 1
 
     def as_subpaths(self):
         types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) == TYPE_CLOSE)[0]
+        q = np.where(types.astype(int) == TYPE_BREAK)[0]
         last = 0
         for m in q:
-            yield self.segments[last : m + 1]
+            yield Numpath(self.segments[last : m + 1])
             last = m + 1
         if last != self.length:
-            yield self.segments[last:self.length]
+            yield Numpath(self.segments[last : self.length])
 
     def add_quad(self, start, control, end, power=1.0):
         self._ensure_capacity(self.length + 1)

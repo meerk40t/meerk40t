@@ -14,7 +14,7 @@ from meerk40t.kernel import CommandSyntaxError, Service, Settings
 from ..numpath import Numpath
 
 from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox, SVG_RULE_EVENODD, SVG_RULE_NONZERO, Line, \
-    QuadraticBezier, CubicBezier, Linear
+    QuadraticBezier, CubicBezier, Linear, Close
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -3050,12 +3050,16 @@ class Elemental(Service):
                 except AttributeError:
                     continue
                 for seg in e:
-                    if isinstance(seg, Linear):
+                    if isinstance(seg, Line):
                         numpath.add_line(complex(seg.start), complex(seg.end))
                     elif isinstance(seg, QuadraticBezier):
                         numpath.add_quad(complex(seg.start), complex(seg.control), complex(seg.end))
                     elif isinstance(seg, CubicBezier):
-                        numpath.add_quad(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+                        numpath.add_cubic(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+                    elif isinstance(seg, Close):
+                        numpath.close()
+                        numpath.add_break()
+                numpath.add_break()
             node = self.elem_branch.add(path=numpath, type="elem numpath", stroke=Color("black"), fill=Color("green"))
             self.set_emphasis([node])
             node.focus()

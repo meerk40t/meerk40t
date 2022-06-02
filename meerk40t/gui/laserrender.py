@@ -30,6 +30,7 @@ from meerk40t.svgelements import (
 )
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
+from ..numpath import TYPE_LINE, TYPE_RAMP, TYPE_QUAD, TYPE_CUBIC, TYPE_BREAK
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -199,12 +200,35 @@ class LaserRender:
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
         p = gc.CreatePath()
-        first_point = path.first_point
-        if first_point is not None:
-            p.MoveToPoint(first_point.real, first_point.imag)
-        for e in path.segments[:path.length]:
-            end = e[4]
-            p.AddLineToPoint(end.real, end.imag)
+        for subpath in path.as_subpaths():
+            first_point = subpath.first_point
+            end = first_point
+            for e in subpath.segments:
+                seg_type = int(e[2].real)
+                if seg_type == TYPE_BREAK:
+                    if first_point == end:
+                        p.CloseSubpath()
+                        end = None
+                    continue
+                start = e[0]
+                if end != start:
+                    # Start point does not equal previous end point.
+                    p.MoveToPoint(first_point.real, first_point.imag)
+                c0 = e[1]
+                c1 = e[3]
+                end = e[4]
+
+                if seg_type in (TYPE_LINE, TYPE_RAMP):
+                    p.AddLineToPoint(end.real, end.imag)
+                elif seg_type == TYPE_QUAD:
+                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                elif seg_type == TYPE_CUBIC:
+                    p.AddCurveToPoint(c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag)
+                else:
+                    print(seg_type)
+            if first_point == end:
+                p.CloseSubpath()
+
         return p
 
     def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
