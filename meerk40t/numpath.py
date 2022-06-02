@@ -63,6 +63,7 @@ TYPE_ARC = 3
 TYPE_DWELL = 4
 TYPE_WAIT = 5
 TYPE_RAMP = 6
+TYPE_CLOSE = 99
 
 
 class Numpath:
@@ -79,22 +80,28 @@ class Numpath:
         return numpath
 
     def bbox(self):
-        max_value = max(np.max(self.segments[:self.length, 0]), np.max(self.segments[:self.length, 4]))
-        min_value = max(np.min(self.segments[:self.length, 0]), np.min(self.segments[:self.length, 4]))
+        max_value = max(
+            np.max(self.segments[: self.length, 0]),
+            np.max(self.segments[: self.length, 4]),
+        )
+        min_value = max(
+            np.min(self.segments[: self.length, 0]),
+            np.min(self.segments[: self.length, 4]),
+        )
         return min_value.real, min_value.imag, max_value.real, max_value.imag
 
     def translate(self, dx, dy):
-        self.segments[:self.length, 0] += complex(dx, dy)
-        self.segments[:self.length, 4] += complex(dx, dy)
-        types = self.segments[:self.length, 2]
+        self.segments[: self.length, 0] += complex(dx, dy)
+        self.segments[: self.length, 4] += complex(dx, dy)
+        types = self.segments[: self.length, 2]
         q = np.where(types.astype(int) != TYPE_RAMP)
         self.segments[q, 1] += complex(dx, dy)
         self.segments[q, 3] += complex(dx, dy)
 
     def uscale(self, scale):
-        self.segments[:self.length, 0] *= scale
-        self.segments[:self.length, 4] *= scale
-        types = self.segments[:self.length, 2]
+        self.segments[: self.length, 0] *= scale
+        self.segments[: self.length, 4] *= scale
+        types = self.segments[: self.length, 2]
         q = np.where(types.astype(int) != TYPE_RAMP)
         self.segments[q, 1] *= scale
         self.segments[q, 3] *= scale
@@ -104,7 +111,7 @@ class Numpath:
         self.uscale(rotation)
 
     def transform(self, mx):
-        for segment in self.segments[0: self.length]:
+        for segment in self.segments[0 : self.length]:
             start = segment[0]
             c0 = segment[1]
             segpow = segment[2]
@@ -133,7 +140,7 @@ class Numpath:
     @property
     def first_point(self):
         if self.length:
-            return self.segments[0,0]
+            return self.segments[0, 0]
         else:
             return None
 
@@ -152,7 +159,7 @@ class Numpath:
 
     def add_polyline(self, lines, power=1.0):
         for i in range(1, len(lines)):
-            self.add_line(lines[i-1], lines[i], power=power)
+            self.add_line(lines[i - 1], lines[i], power=power)
 
     def add_line(self, start, end, power=1.0):
         self._ensure_capacity(self.length + 1)
@@ -164,6 +171,39 @@ class Numpath:
             end,
         )
         self.length += 1
+
+    def add_close(self, power=1.0):
+        if self.length == 0:
+            raise ValueError("Empty path cannot close")
+        self._ensure_capacity(self.length + 1)
+        types = self.segments[: self.length, 2]
+        q = np.where(types.astype(int) == TYPE_CLOSE)[0]
+        if len(q):
+            last = q[-1] + 1
+            if self.length <= last:
+                raise ValueError("Path already closed")
+        else:
+            last = 0
+        start_segment = self.segments[last]
+        end_segment = self.segments[self.length - 1]
+        self.segments[self.length] = (
+            end_segment[-1],
+            end_segment[-1],
+            complex(TYPE_CLOSE, power),
+            start_segment[0],
+            start_segment[0],
+        )
+        self.length += 1
+
+    def as_subpaths(self):
+        types = self.segments[: self.length, 2]
+        q = np.where(types.astype(int) == TYPE_CLOSE)[0]
+        last = 0
+        for m in q:
+            yield self.segments[last : m + 1]
+            last = m + 1
+        if last != self.length:
+            yield self.segments[last:self.length]
 
     def add_quad(self, start, control, end, power=1.0):
         self._ensure_capacity(self.length + 1)
@@ -335,7 +375,7 @@ class Numpath:
                 yield start.real, start.imag, -power
             elif segment_type == TYPE_WAIT:
                 yield start.real, start.imag, 0
-                yield float('nan'), float('nan'), -power
+                yield float("nan"), float("nan"), -power
             elif segment_type == TYPE_RAMP:
                 pos = list(
                     ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)

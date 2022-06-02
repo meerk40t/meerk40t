@@ -5,7 +5,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.numpath import Numpath
+from meerk40t.numpath import Numpath, TYPE_CLOSE
 from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
@@ -110,6 +110,31 @@ class TestNumpath(unittest.TestCase):
         c.transform(Matrix("rotate(.25turn)"))
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
+
+    def test_numpath_close(self):
+        numpath = Numpath()
+        numpath.add_polyline((
+            complex(0.05, 0.05),
+            complex(0.95, 0.05),
+            complex(0.95, 0.95),
+            complex(0.05, 0.95),
+            complex(0.05, 0.05),
+        ))
+        numpath.add_close()
+        numpath.add_polyline((
+            complex(0.25, 0.25),
+            complex(0.75, 0.25),
+            complex(0.75, 0.75),
+            complex(0.25, 0.75),
+            complex(0.25, 0.25),
+        ))
+        numpath.uscale(10000)
+        numpath.rotate(tau * .25)
+        subpaths = list(numpath.as_subpaths())
+        self.assertEqual(len(subpaths), 2)
+        self.assertEqual(len(subpaths[0]), 5)
+        self.assertEqual(int(subpaths[0][-1][2]), TYPE_CLOSE)
+        self.assertEqual(len(subpaths[1]), 4)
 
     def test_numpath_scanline(self):
         w = 10000
