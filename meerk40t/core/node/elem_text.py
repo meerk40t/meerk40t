@@ -1,4 +1,3 @@
-import re
 from copy import copy
 
 from meerk40t.core.node.node import Node

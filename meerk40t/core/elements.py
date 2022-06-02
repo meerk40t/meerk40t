@@ -3051,6 +3051,10 @@ class Elemental(Service):
             input_type="elements",
         )
         def element_path_convert(data, **kwargs):
+            if data is None:
+                return
+            if len(data) == 0:
+                return
             numpath = Numpath()
             for node in data:
                 try:
@@ -3075,14 +3079,28 @@ class Elemental(Service):
                         numpath.close()
                         numpath.add_break()
                 numpath.add_break()
+            if len(numpath) == 0:
+                return # No path.
+            try:
+                fillrule = data[0].fillrule
+            except AttributeError:
+                fillrule = None
+            try:
+                cap = data[0].linecap
+            except AttributeError:
+                cap = None
+            try:
+                join = data[0].linejoin
+            except AttributeError:
+                join = None
             node = self.elem_branch.add(
                 path=numpath,
                 type="elem numpath",
                 stroke=data[0].stroke,
                 fill=data[0].fill,
-                fillrule=data[0].fillrule,
-                linecap=data[0].linecap,
-                linejoin=data[0].linejoin,
+                fillrule=fillrule,
+                linecap=cap,
+                linejoin=join,
             )
             self.set_emphasis([node])
             node.focus()

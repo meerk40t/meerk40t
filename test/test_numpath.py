@@ -5,7 +5,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.numpath import Numpath, TYPE_BREAK
+from meerk40t.numpath import Numpath, TYPE_BREAK, TYPE_LINE
 from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
@@ -132,9 +132,10 @@ class TestNumpath(unittest.TestCase):
         numpath.uscale(10000)
         numpath.rotate(tau * .25)
         subpaths = list(numpath.as_subpaths())
-        self.assertEqual(len(subpaths), 2)
-        self.assertEqual(len(subpaths[0]), 5)
-        self.assertEqual(int(subpaths[0].segments[-1][2]), TYPE_BREAK)
+        for subpath in subpaths:
+            for seg in subpath.segments:
+                self.assertEqual(seg[2].real, TYPE_LINE)
+        self.assertEqual(len(subpaths[0]), 4)
         self.assertEqual(len(subpaths[1]), 4)
 
     def test_numpath_scanline(self):
