@@ -201,21 +201,15 @@ class LaserRender:
         """
         p = gc.CreatePath()
         for subpath in path.as_subpaths():
-            first_point = subpath.first_point
-            if first_point is not None:
+            if len(subpath) == 0:
                 continue
-            end = first_point
+            end = None
             for e in subpath.segments:
                 seg_type = int(e[2].real)
-                if seg_type == TYPE_BREAK:
-                    if first_point == end:
-                        p.CloseSubpath()
-                        end = None
-                    continue
                 start = e[0]
                 if end != start:
                     # Start point does not equal previous end point.
-                    p.MoveToPoint(first_point.real, first_point.imag)
+                    p.MoveToPoint(start.real, start.imag)
                 c0 = e[1]
                 c1 = e[3]
                 end = e[4]
@@ -228,7 +222,7 @@ class LaserRender:
                     p.AddCurveToPoint(c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag)
                 else:
                     print(seg_type)
-            if first_point == end:
+            if subpath.first_point == end:
                 p.CloseSubpath()
 
         return p
