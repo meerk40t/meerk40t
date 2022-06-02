@@ -150,5 +150,5 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
         context = kernel.root
-        context.register("hatch/eulerian", eulerian_fill)
         context.register("hatch/scanline", scanline_fill)
+        context.register("hatch/eulerian", eulerian_fill)
