@@ -59,7 +59,7 @@ class NumpathNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._bounds = self.path.bbox()
+            self._bounds = self.path.bbox(self.matrix)
             self._bounds_dirty = False
         return self._bounds
 

@@ -87,21 +87,32 @@ class Numpath:
     def __len__(self):
         return self.length
 
-    def bbox(self):
+    def bbox(self, mx=None):
         segments = self.segments[:self.length]
         nans = np.isnan(segments[:, 0])
         firsts = segments[~nans, 0]
         nans = np.isnan(segments[:, 4])
         lasts = segments[~nans, 4]
-        max_value = max(
-            np.max(firsts),
-            np.max(lasts),
+        max_x = max(
+            np.max(np.real(firsts)),
+            np.max(np.real(lasts)),
         )
-        min_value = min(
-            np.min(firsts),
-            np.min(lasts),
+        min_x = min(
+            np.min(np.real(firsts)),
+            np.min(np.real(lasts)),
         )
-        return min_value.real, min_value.imag, max_value.real, max_value.imag
+        max_y = max(
+            np.max(np.imag(firsts)),
+            np.max(np.imag(lasts)),
+        )
+        min_y = min(
+            np.min(np.imag(firsts)),
+            np.min(np.imag(lasts)),
+        )
+        if mx is not None:
+            min_x, min_y = min_x * mx.a + min_y * mx.c + 1 * mx.e, min_x * mx.b + min_y * mx.d + 1 * mx.f,
+            max_x, max_y = max_x * mx.a + max_y * mx.c + 1 * mx.e, max_x * mx.b + max_y * mx.d + 1 * mx.f,
+        return min_x, min_y, max_x, max_y
 
     def translate(self, dx, dy):
         self.segments[: self.length, 0] += complex(dx, dy)
@@ -190,7 +201,7 @@ class Numpath:
             raise ValueError("Empty path cannot close")
         self._ensure_capacity(self.length + 1)
         types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) == TYPE_BREAK)[0]
+        q = np.where(np.real(types) == TYPE_BREAK)[0]
         if len(q):
             last = q[-1] + 1
             if self.length <= last:
