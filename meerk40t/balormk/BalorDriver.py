@@ -60,7 +60,7 @@ class BalorDriver:
         return False
 
     def balor_job(self, job):
-        self.connection.write(job)
+        self.connection.job(job)
         if self.redlight_preferred:
             self.connection.light_on()
         else:
@@ -106,7 +106,7 @@ class BalorDriver:
         @return:
         """
         self.connection.light_off()
-        self.connection.write(job)
+        self.connection.job(job)
         if self.redlight_preferred:
             self.connection.light_on()
         else:
@@ -340,7 +340,7 @@ class BalorDriver:
                         marked = True
         # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
-        self.connection.write(job)
+        self.connection.job(job)
         if self.service.redlight_preferred:
             self.connection.light_on()
         else:
@@ -408,7 +408,7 @@ class BalorDriver:
         @return:
         """
         if data_type == "balor":
-            self.connection.write(data)
+            self.connection.job(data)
 
     def set(self, attribute, value):
         """

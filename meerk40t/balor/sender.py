@@ -146,6 +146,9 @@ class Sender:
         self._write_port = 0x0000
         self._debug = debug
 
+    def is_open(self):
+        return self._usb_connection is not None
+
     def open(self):
         mock = self.service.mock
         machine_index = self.service.machine_index

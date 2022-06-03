@@ -707,14 +707,14 @@ class BalorDevice(Service, ViewPort):
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connection.open()
+            self.driver.connection.start()
 
         @self.console_command(
             "usb_disconnect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connection.close()
+            self.driver.connection.stop()
 
         @self.console_command(
             "print",

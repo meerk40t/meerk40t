@@ -116,18 +116,22 @@ class BalorController:
 
     def get_list_status(self):
         # Requires realtime response.
-        if self.connection is not None and self.state == STATE_ACTIVE:
+        if self.state == STATE_ACTIVE:
             return self.connection.raw_get_list_status()
 
     def get_serial_number(self):
         # Requires realtime response.
-        if self.connection is not None and self.state == STATE_ACTIVE:
+        if self.state == STATE_ACTIVE:
             return self.connection.raw_get_serial_no()
 
     def get_status(self):
         # Requires realtime response.
-        if self.connection is not None and self.state == STATE_ACTIVE:
+        if self.state == STATE_ACTIVE:
             return self.connection.read_port()
+
+    def get_port(self):
+        if self.connection is not None:
+            return self.connection.get_port()
 
     def start(self):
         """
@@ -145,26 +149,6 @@ class BalorController:
             )
             self._thread.stop = self.stop
             self.update_state(STATE_INITIALIZE)
-
-    def open(self):
-        self.pipe_channel("open()")
-        try:
-            self.connection.open()
-        except BalorMachineException as e:
-            self.service.signal("pipe;usb_status", str(e))
-            self.channel(str(e))
-            return
-        if self.service.redlight_preferred:
-            self.light_on()
-        else:
-            self.light_off()
-
-    def close(self):
-        self.pipe_channel("close()")
-        if self.connection is not None:
-            self.connection.close()
-            self.connection = None
-            self.service.signal("pipe;usb_status", "Disconnected")
 
     def pause(self):
         """
@@ -254,7 +238,9 @@ class BalorController:
                 self.connection_errors += 1
                 self.service.signal("pipe;running", False)
                 time.sleep(0.5)
-                self.close()
+                self.pipe_channel("close()")
+                self.connection.close()
+                self.service.signal("pipe;usb_status", "Disconnected")
                 continue
             if queue_processed:
                 # Packet was sent.
@@ -293,7 +279,13 @@ class BalorController:
             self.service.signal("pipe;thread", self.state)
 
     def process_queue(self):
-        self.connection.open()
+        if not self.connection.is_open():
+            self.pipe_channel("open()")
+            self.connection.open()
+            if self.service.redlight_preferred:
+                self.light_on()
+            else:
+                self.light_off()
         packet = None
         if len(self._preempt):  # check for and prepend preempt
             self._preempt_lock.acquire(True)
@@ -310,6 +302,7 @@ class BalorController:
             packet = self._queue.pop(0)
             self._queue_lock.release()
         if packet is not None:
+            print(packet)
             method_str, args = packet
             method = getattr(self.connection, method_str)
             method(*args)
