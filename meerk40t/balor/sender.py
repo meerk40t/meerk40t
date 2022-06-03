@@ -172,6 +172,9 @@ class Sender:
     def job(self, *args, **kwargs):
         return CommandList(*args, **kwargs, sender=self)
 
+    def command(self, *args, **kwargs):
+        self._send_command(*args, **kwargs)
+
     def _send_command(self, *args, **kwargs):
         if self._usb_connection is None:
             self.open()

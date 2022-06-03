@@ -1,7 +1,7 @@
 import time
 
 from meerk40t.balor.command_list import CommandList, Wobble
-from meerk40t.balor.sender import BalorMachineException, Sender
+from meerk40t.balormk.connection import BalorController
 from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -13,8 +13,7 @@ class BalorDriver:
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.channel = self.service.channel("balor")
-        self.connection = Sender(service, debug=self.channel)
+        self.connection = BalorController(service)
         self.paused = False
 
         self.connected = False
@@ -23,8 +22,6 @@ class BalorDriver:
         self.laser = False
 
         self._shutdown = False
-
-        self.redlight_preferred = False
 
         self.queue = list()
         self.plot_planner = PlotPlanner(
@@ -42,42 +39,6 @@ class BalorDriver:
 
     def service_detach(self):
         self._shutdown = True
-
-    def connect_if_needed(self):
-        if not self.connected:
-            self.connect()
-
-    def connect(self):
-        """
-        Connect to the Balor Sender
-
-        @return:
-        """
-        self.connected = False
-        while not self.connected:
-            try:
-                self.connected = self.connection.open()
-                if self.redlight_preferred:
-                    self.connection.light_on()
-                else:
-                    self.connection.light_off()
-            except BalorMachineException as e:
-                self.service.signal("pipe;usb_status", str(e))
-                self.channel(str(e))
-                return
-            if not self.connected:
-                self.service.signal("pipe;usb_status", "Connecting...")
-                if self._shutdown:
-                    self.service.signal("pipe;usb_status", "Failed to connect")
-                    return
-                time.sleep(1)
-        self.connected = True
-        self.service.signal("pipe;usb_status", "Connected")
-
-    def disconnect(self):
-        self.connection.close()
-        self.connected = False
-        self.service.signal("pipe;usb_status", "Disconnected")
 
     def hold_work(self):
         """
@@ -99,8 +60,7 @@ class BalorDriver:
         return False
 
     def balor_job(self, job):
-        self.connect_if_needed()
-        self.connection.execute(job, 1)
+        self.connection.write(job)
         if self.redlight_preferred:
             self.connection.light_on()
         else:
@@ -145,9 +105,8 @@ class BalorDriver:
         @param job:
         @return:
         """
-        self.connect_if_needed()
         self.connection.light_off()
-        self.connection.execute(job, 1)
+        self.connection.write(job)
         if self.redlight_preferred:
             self.connection.light_on()
         else:
@@ -251,7 +210,6 @@ class BalorDriver:
 
         @return:
         """
-        self.connect_if_needed()
         job = CommandList()
         job.ready()
         # marked = False
@@ -382,8 +340,8 @@ class BalorDriver:
                         marked = True
         # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
-        self.connection.execute(job, 1)
-        if self.redlight_preferred:
+        self.connection.write(job)
+        if self.service.redlight_preferred:
             self.connection.light_on()
         else:
             self.connection.light_off()
@@ -397,7 +355,6 @@ class BalorDriver:
         @param y:
         @return:
         """
-        self.connect_if_needed()
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
@@ -408,7 +365,6 @@ class BalorDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-
         self.connection.set_xy(self.native_x, self.native_y)
 
     def move_rel(self, dx, dy):
@@ -419,7 +375,6 @@ class BalorDriver:
         @param dy:
         @return:
         """
-        self.connect_if_needed()
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
@@ -433,7 +388,6 @@ class BalorDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-
         self.connection.set_xy(self.native_x, self.native_y)
 
     def home(self, x=None, y=None):
@@ -454,8 +408,7 @@ class BalorDriver:
         @return:
         """
         if data_type == "balor":
-            self.connect_if_needed()
-            self.connection.execute(data, 1)
+            self.connection.write(data)
 
     def set(self, attribute, value):
         """
@@ -534,12 +487,11 @@ class BalorDriver:
         Wants the driver to pause.
         @return:
         """
-        self.connect_if_needed()
         if self.paused:
             self.resume()
             return
         self.paused = True
-        self.connection.raw_stop_list()
+        self.connection.realtime_pause()
 
     def resume(self):
         """
@@ -550,9 +502,8 @@ class BalorDriver:
 
         @return:
         """
-        self.connect_if_needed()
         self.paused = False
-        self.connection.raw_restart_list()
+        self.connection.realtime_resume()
 
     def reset(self):
         """
