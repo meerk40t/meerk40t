@@ -1,7 +1,6 @@
 import threading
 import time
 
-from meerk40t.balor.command_list import CommandList
 from meerk40t.balor.sender import Sender, SET_XY_POSITION, STOP_LIST, RESTART_LIST, BalorMachineException, \
     BalorCommunicationException
 from meerk40t.kernel import STATE_UNKNOWN, STATE_INITIALIZE, STATE_END, STATE_TERMINATE, STATE_ACTIVE, STATE_PAUSE, \
