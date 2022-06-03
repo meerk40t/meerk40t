@@ -97,7 +97,7 @@ class BalorController:
         self.start()
 
     def job(self, job):
-        self.write(("job", (job,)))
+        self.write(("execute", (job,)))
 
     def light_on(self):
         self.write(("port_on", (8,)))
@@ -302,7 +302,6 @@ class BalorController:
             packet = self._queue.pop(0)
             self._queue_lock.release()
         if packet is not None:
-            print(packet)
             method_str, args = packet
             method = getattr(self.connection, method_str)
             method(*args)
