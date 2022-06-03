@@ -14,7 +14,7 @@ class BalorDriver:
         self.native_y = 0x8000
         self.name = str(self.service)
         self.channel = self.service.channel("balor")
-        self.connection = Sender(debug=self.channel)
+        self.connection = Sender(service, debug=self.channel)
         self.paused = False
 
         self.connected = False
@@ -56,30 +56,7 @@ class BalorDriver:
         self.connected = False
         while not self.connected:
             try:
-                self.connected = self.connection.open(
-                    mock=self.service.mock,
-                    machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile
-                    if self.service.corfile_enabled
-                    else None,
-                    first_pulse_killer=self.service.first_pulse_killer,
-                    pwm_pulse_width=self.service.pwm_pulse_width,
-                    pwm_half_period=self.service.pwm_half_period,
-                    standby_param_1=self.service.standby_param_1,
-                    standby_param_2=self.service.standby_param_2,
-                    timing_mode=self.service.timing_mode,
-                    delay_mode=self.service.delay_mode,
-                    laser_mode=self.service.laser_mode,
-                    control_mode=self.service.control_mode,
-                    fpk2_p1=self.service.fpk2_p1,
-                    fpk2_p2=self.service.fpk2_p2,
-                    fpk2_p3=self.service.fpk2_p3,
-                    fpk2_p4=self.service.fpk2_p3,
-                    fly_res_p1=self.service.fly_res_p1,
-                    fly_res_p2=self.service.fly_res_p2,
-                    fly_res_p3=self.service.fly_res_p3,
-                    fly_res_p4=self.service.fly_res_p4,
-                )
+                self.connected = self.connection.open()
                 if self.redlight_preferred:
                     self.connection.light_on()
                 else:
