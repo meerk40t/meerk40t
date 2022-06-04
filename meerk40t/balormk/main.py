@@ -828,6 +828,7 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
+        @self.console_option("duration", "d", type=float, help=_("time to set/unset the port"))
         @self.console_argument("off", type=str)
         @self.console_argument("bit", type=int)
         @self.console_command(
@@ -835,7 +836,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Turns port on or off, eg. port off 8"),
             all_arguments_required=True,
         )
-        def balor_port(command, channel, _, off, bit=None, **kwgs):
+        def balor_port(command, channel, _, off, bit=None, duration=None, **kwgs):
             off = off == "off"
             if off:
                 self.driver.connection.port_off(bit)
@@ -843,7 +844,11 @@ class BalorDevice(Service, ViewPort):
             else:
                 self.driver.connection.port_on(bit)
                 channel(f"Turning off bit {bit}")
-
+            if duration is not None:
+                if off:
+                    self(f".timer 1 {duration} port on {bit}")
+                else:
+                    self(f".timer 1 {duration} port off {bit}")
 
         @self.console_command(
             "status",
