@@ -153,6 +153,10 @@ class CommandSequencer:
             ]
         )
 
+    #######################
+    # LIST APPENDING OPERATIONS
+    #######################
+
     def _list_end(self):
         if self._active_list:
             self._queue.append(self._active_list)
@@ -178,6 +182,10 @@ class CommandSequencer:
         cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
         self._queue.append(cmd)
 
+    #######################
+    # UNIT CONVERSIONS
+    #######################
+
     def _convert_speed(self, speed):
         """
         mm/s speed implies a distance but the galvo head doesn't move mm and doesn't know what lens you are currently
@@ -200,10 +208,69 @@ class CommandSequencer:
         """
         return int(round(20000.0 / frequency_khz))
 
+
+    #######################
+    # HIGH LEVEL OPERATIONS
+    #######################
+
+    def write_correction_file(self, filename):
+        if filename is None:
+            self.write_blank_correct_file()
+            return
+        try:
+            table = self._read_correction_file(filename)
+        except IOError:
+            self.write_blank_correct_file()
+            return
+
+    def write_blank_correct_file(self):
+        self.write_cor_table(True)
+        for i in range(65 * 65):
+            self.write_cor_line(0, 0, 0 if i == 0 else 1)
+
+    def _read_correction_file(self, filename):
+        """
+        Reads a standard .cor file and builds a table from that.
+
+        @param filename:
+        @return:
+        """
+        table = []
+        with open(filename, "rb") as f:
+            f.seek(0x24)
+            for j in range(65):
+                for k in range(65):
+                    dx = int.from_bytes(f.read(4), "little", signed=True)
+                    dx = dx if dx >= 0 else -dx + 0x8000
+                    dy = int.from_bytes(f.read(4), "little", signed=True)
+                    dy = dy if dy >= 0 else -dy + 0x8000
+                    table.append([dx & 0xFFFF, dy & 0xFFFF])
+        return table
+
+    def _write_correction_table(self, table):
+        assert(len(table), 65*65)
+        self.write_cor_table(True)
+        first = True
+        for dx, dy in table:
+            self.write_cor_line(dx, dy, 0 if first else 1)
+            first = False
+
+
     #######################
     # PLOTLIKE SHORTCUTS
     #######################
 
+    def mark(self, x, y):
+        pass
+
+    def goto(self, x, y):
+        pass
+
+    def light(self, x, y):
+        pass
+
+    def dark(self, x, y):
+        pass
 
     #######################
     # COMMAND LIST SHORTCUTS
@@ -547,8 +614,8 @@ class CommandSequencer:
     def laser_signal_on(self):
         self._command(LaserSignalOn)
 
-    def write_cor_line(self, x0, y0, x1, y1, on):
-        self._command(WriteCorLine, x0, y0, x1, y1, on)
+    def write_cor_line(self, dx, dy, non_first):
+        self._command(WriteCorLine, dx, dy, non_first)
 
     def reset_list(self):
         self._command(ResetList)
@@ -556,8 +623,8 @@ class CommandSequencer:
     def restart_list(self):
         self._command(RestartList)
 
-    def write_cor_table(self, table=1):
-        self._command(WriteCorTable, table)
+    def write_cor_table(self, table: bool = True):
+        self._command(WriteCorTable, int(table))
 
     def set_control_mode(self, mode):
         self._command(SetControlMode, mode)
