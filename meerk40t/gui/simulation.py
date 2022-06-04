@@ -17,6 +17,7 @@ from .laserrender import LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
+from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
 
 _ = wx.GetTranslation
