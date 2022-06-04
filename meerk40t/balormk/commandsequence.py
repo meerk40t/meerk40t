@@ -251,6 +251,9 @@ class CommandSequencer:
         self._list_write(listMarkTo, x, y, angle, distance)
 
     def list_jump_speed(self, speed):
+        if self._travel_speed == speed:
+            return
+        self._travel_speed = speed
         self._list_write(listJumpSpeed, self._convert_speed(speed))
 
     def list_laser_on_delay(self, delay):
@@ -309,6 +312,9 @@ class CommandSequencer:
         @param speed:
         @return:
         """
+        if self._speed == speed:
+            return
+        self._speed = speed
         self._list_write(self._convert_speed(speed))
 
     def list_jump_delay(self, delay):
