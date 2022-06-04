@@ -86,11 +86,17 @@ class BalorController:
     def job(self, job):
         self.write(("execute", (job,)))
 
+    def port_on(self, bit):
+        self.write(("port_on", (bit,)))
+
+    def port_off(self, bit):
+        self.write(("port_off", (bit,)))
+
     def light_on(self):
-        self.write(("port_on", (8,)))
+        self.port_on(8)
 
     def light_off(self):
-        self.write(("port_off", (8,)))
+        self.port_off(8)
 
     def set_xy(self, x, y):
         self.write(("command", (SET_XY_POSITION, int(x), int(y))))

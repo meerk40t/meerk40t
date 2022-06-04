@@ -828,6 +828,23 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
+        @self.console_argument("off", type=str)
+        @self.console_argument("bit", type=int)
+        @self.console_command(
+            "port",
+            help=_("Turns port on or off, eg. port off 8"),
+            all_arguments_required=True,
+        )
+        def balor_port(command, channel, _, off, bit=None, **kwgs):
+            off = off == "off"
+            if off:
+                self.driver.connection.port_off(bit)
+                channel(f"Turning on bit {bit}")
+            else:
+                self.driver.connection.port_on(bit)
+                channel(f"Turning off bit {bit}")
+
+
         @self.console_command(
             "status",
             help=_("Sends status check"),
