@@ -136,6 +136,17 @@ class CommandSequencer:
         self._wobble = None
         self._port_bits = 0
 
+    def __enter__(self):
+        self._list_new()
+        self.list_ready()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._wobble:
+            for wx, wy in self._wobble(self._last_x, self._last_y, None, None):
+                self.list_mark(wx, wy)
+        self._list_end()
+
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(
             [
@@ -155,16 +166,11 @@ class CommandSequencer:
         )
 
 
-
     #######################
     # PLOTLIKE SHORTCUTS
     #######################
 
-    def ready(self):
-        self.list_ready()
-
     def mark(self, x, y):
-        self.list_ready()
         self.list_mark_speed(self._mark_speed)
         if self._wobble:
             for wx, wy in self._wobble(self._last_x, self._last_y, x, y):
@@ -173,31 +179,25 @@ class CommandSequencer:
             self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
-        self.list_ready()
         self.list_jump_speed(self._goto_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
-        self.list_ready()
         if self.light_on():
             self.list_write_port()
         self.list_jump_speed(self._light_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
-        self.list_ready()
         if self.light_off():
             self.list_write_port()
         self.list_jump_speed(self._dark_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
-    def flush(self):
-        if self._wobble:
-            for wx, wy in self._wobble(self._last_x, self._last_y, None, None):
-                self.list_mark(wx, wy)
-        self._list_end()
-
     def frequency(self, frequency):
+        if self._frequency == frequency:
+            return
+        self._frequency = frequency
         self.list_qswitch_period(self._convert_frequency(frequency))
 
     def light_on(self):
