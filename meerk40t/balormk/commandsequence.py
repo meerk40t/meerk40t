@@ -26,12 +26,12 @@ listDirectLaserSwitch = 0x801C
 listFlyDelay = 0x801D
 listSetCo2FPK = 0x801E
 listFlyWaitInput = 0x801F
-listIPGOpenMO = 0x8021
+listFiberOpenMO = 0x8021
 listWaitForInput = 0x8022
 listChangeMarkCount = 0x8023
 listSetWeldPowerWave = 0x8024
 listEnableWeldPowerWave = 0x8025
-listIPGYLPMPulseWidth = 0x8026
+listFiberYLPMPulseWidth = 0x8026
 listFlyEncoderCount = 0x8028
 listSetDaZWord = 0x8029
 listJptSetParam = 0x8050
@@ -132,6 +132,7 @@ class CommandSequencer:
         self._delay_end = None
 
         self._wobble = None
+        self._port_bits = 0
 
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(
@@ -180,6 +181,33 @@ class CommandSequencer:
         @return:
         """
         return int(speed / 2.0)
+
+    def _convert_frequency(self, frequency_khz):
+        """
+        Converts frequency to period.
+
+        20000000.0 / frequency in hz
+
+        @param frequency_khz: Frequency to convert
+        @return:
+        """
+        return int(round(20000.0 / frequency_khz))
+
+    #######################
+    # PLOTLIKE SHORTCUTS
+    #######################
+
+
+    #######################
+    # COMMAND LIST SHORTCUTS
+    #######################
+
+    def list_frequency(self, frequency):
+        self.list_qswitch_period(self._convert_frequency(frequency))
+
+    #######################
+    # COMMAND LIST COMMAND
+    #######################
 
     def list_jump(self, x, y):
         self._list_write(listJumpTo, int(x), int(y))
@@ -231,7 +259,221 @@ class CommandSequencer:
         self._list_write(listLaserOffDelay, delay, sign)
 
     def list_mark_frequency(self, frequency):
-        pass
+        """
+        This command is used in some machines but it's not clear given the amount of reverse engineering how those
+        values are set. This is done for laser_type = 4.
+
+        @param frequency:
+        @return:
+        """
+        # listMarkFreq
+        raise NotImplementedError
+
+    def list_mark_power_ratio(self, power_ratio):
+        """
+        This command is used in some machines. Laser_type=4 and laser_type=0 (CO2), if 0x800A returned 0.
+
+        @param power_ratio:
+        @return:
+        """
+        # listMarkPowerRatio
+        raise NotImplementedError
+
+    def list_mark_speed(self, speed):
+        """
+        Sets the marking speed for the laser.
+
+        @param speed:
+        @return:
+        """
+        self._list_write(self._convert_speed(speed))
+
+    def list_jump_delay(self, delay):
+        """
+        Set laser jump delay in microseconds
+        @param delay:
+        @return:
+        """
+        sign = 0
+        if delay < 0:
+            sign = 0x8000
+        self._list_write(listJumpDelay, delay, sign)
+
+    def list_polygon_delay(self, delay):
+        """
+        Set polygon delay in microseconds
+        @param delay:
+        @return:
+        """
+        sign = 0
+        if delay < 0:
+            sign = 0x8000
+        self._list_write(listPolygonDelay, delay, sign)
+
+    def list_write_port(self):
+        """
+        Writes the set port values to the list.
+
+        @return:
+        """
+        self._list_write(listWritePort, self._port_bits)
+
+    def list_mark_current(self, current):
+        """
+        Also called as part of setting the power ratio. This is not correctly understood.
+        @param current:
+        @return:
+        """
+        # listMarkCurrent
+        raise NotImplementedError
+
+    def list_mark_frequency_2(self, frequency):
+        """
+        Also called as part of setting frequency and is not correctly understood.
+
+        @param frequency:
+        @return:
+        """
+        # listMarkFreq2
+        raise NotImplementedError
+
+    def list_fly_enable(self, enabled=1):
+        """
+        On-The-Fly control enable/disable within list.
+
+        @param enabled:
+        @return:
+        """
+        self._list_write(listFlyEnable, enabled)
+
+    def list_qswitch_period(self, qswitch):
+        """
+        Sets the qswitch period, which in is the inversely related to frequency.
+
+        @param qswitch:
+        @return:
+        """
+        self._list_write(listQSwitchPeriod, qswitch)
+
+    def list_direct_laser_switch(self):
+        """
+        This is not understood.
+        @return:
+        """
+        # ListDirectLaserSwitch
+        raise NotImplementedError
+
+    def list_fly_delay(self, delay):
+        """
+        On-the-fly control.
+
+        @param delay:
+        @return:
+        """
+        self._list_write(listFlyDelay, delay)
+
+    def list_set_CO2_FPK(self):
+        """
+        Set the CO2 Laser, First Pulse Killer.
+
+        @return:
+        """
+        self._list_write(listSetCo2FPK)
+
+    def list_fly_wait_input(self):
+        """
+        Sets the On-the-fly to wait for input.
+        @return:
+        """
+        self._list_write(listFlyWaitInput)
+
+    def list_fiber_open_mo(self, open_mo):
+        """
+        Sets motion operations, without MO set the laser does not automatically fire while moving.
+
+        @param open_mo:
+        @return:
+        """
+        self._list_write(listFiberOpenMO, open_mo)
+
+    def list_wait_for_input(self):
+        """
+        Unknown.
+
+        @return:
+        """
+        self._list_write(listWaitForInput)
+
+    def list_change_mark_count(self, count):
+        """
+        Unknown.
+
+        @param count:
+        @return:
+        """
+        self._list_write(listChangeMarkCount, count)
+
+    def list_set_weld_power_wave(self, weld_power_wave):
+        """
+        Unknown.
+
+        @param weld_power_wave:
+        @return:
+        """
+        self._list_write(listSetWeldPowerWave, weld_power_wave)
+
+    def list_enable_weld_power_wave(self, enabled):
+        """
+        Unknown.
+
+        @param enabled:
+        @return:
+        """
+        self._list_write(listEnableWeldPowerWave, enabled)
+
+    def list_fiber_YLPM_pulse_width(self, pulse_width):
+        """
+        Unknown.
+
+        @param pulse_width:
+        @return:
+        """
+        self._list_write(listFiberYLPMPulseWidth, pulse_width)
+
+    def list_fly_encoder_count(self, count):
+        """
+        Unknown.
+
+        @param count:
+        @return:
+        """
+        self._list_write(listFlyEncoderCount, count)
+
+    def list_set_da_z_word(self, word):
+        """
+        Unknown.
+
+        @param word:
+        @return:
+        """
+        self._list_write(listSetDaZWord, word)
+
+    def list_jpt_set_param(self, param):
+        """
+        Unknown.
+
+        @param param:
+        @return:
+        """
+        self._list_write(listJptSetParam, param)
+
+    def list_ready(self):
+        """
+        Seen at the start of any new command list.
+
+        @return:
+        """
+        self._list_write(listReadyMark)
 
 
 class Wobble:
