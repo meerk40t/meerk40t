@@ -86,8 +86,8 @@ SetFpkParam = 0x0062
 Reset = 0x0040
 Unknown_Init = 0x0024
 GetFlySpeed = 0x0038
-IPGPulseWidth = 0x002F
-IPGGetConfigExtend = 0x0030
+FiberPulseWidth = 0x002F
+FiberGetConfigExtend = 0x0030
 InputPort = 0x0031  # ClearLockInputPort calls 0x04, then if EnableLockInputPort 0x02 else 0x01, GetLockInputPort
 GetMarkTime = 0x0041
 GetUserData = 0x0036
@@ -153,9 +153,10 @@ class CommandSequencer:
         )
 
     def _list_end(self):
-        self._queue.append(self._active_list)
-        self._active_list = None
-        self._active_index = 0
+        if self._active_list:
+            self._queue.append(self._active_list)
+            self._active_list = None
+            self._active_index = 0
 
     def _list_new(self):
         self._active_list = copy(empty)
@@ -170,6 +171,11 @@ class CommandSequencer:
             self._active_index : self._active_list + 12
         ] = self._command_to_bytes(command, v1, v2, v3, v4, v5)
         self._active_index += 12
+
+    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
+        self._list_end()
+        cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
+        self._queue.append(cmd)
 
     def _convert_speed(self, speed):
         """
@@ -474,6 +480,194 @@ class CommandSequencer:
         @return:
         """
         self._list_write(listReadyMark)
+
+    #######################
+    # COMMAND LIST SHORTCUTS
+    #######################
+
+    def disable_laser(self):
+        self._command(DisableLaser)
+
+    def enable_laser(self):
+        self._command(EnableLaser)
+
+    def execute_list(self):
+        self._command(ExecuteList)
+
+    def set_pwm_pulse_width(self, pulse_width):
+        self._command(SetPwmPulseWidth, pulse_width)
+
+    def get_state(self):
+        self._command(GetVersion)
+
+    def get_serial_number(self):
+        self._command(GetSerialNo)
+
+    def get_list_status(self):
+        self._command(GetListStatus)
+
+    def get_position_xy(self):
+        self._command(GetPositionXY)
+
+    def goto_xy(self, x, y):
+        self._command(GotoXY, int(x), int(y))
+
+    def laser_signal_off(self):
+        self._command(LaserSignalOff)
+
+    def laser_signal_on(self):
+        self._command(LaserSignalOn)
+
+    def write_cor_line(self, x0, y0, x1, y1, on):
+        self._command(WriteCorLine, x0, y0, x1, y1, on)
+
+    def reset_list(self):
+        self._command(ResetList)
+
+    def restart_list(self):
+        self._command(RestartList)
+
+    def write_cor_table(self, table=1):
+        self._command(WriteCorTable, table)
+
+    def set_control_mode(self, mode):
+        self._command(SetControlMode, mode)
+
+    def set_delay_mode(self, mode):
+        self._command(SetDelayMode, mode)
+
+    def set_max_poly_delay(self, delay):
+        self._command(SetMaxPolyDelay, delay)
+
+    def set_end_of_list(self, end):
+        self._command(SetEndOfList, end)
+
+    def set_first_pulse_killer(self, fpk):
+        self._command(SetFirstPulseKiller, fpk)
+
+    def set_laser_mode(self, mode):
+        self._command(SetLaserMode, mode)
+
+    def set_timing(self, timing):
+        self._command(SetTiming, timing)
+
+    def set_standby(self, standby):
+        self._command(SetStandby, standby)
+
+    def set_pwm_half_period(self, pwm_half_period):
+        self._command(SetPwmPulseWidth, pwm_half_period)
+
+    def stop_execute(self):
+        self._command(StopExecute)
+
+    def stop_list(self):
+        self._command(StopList)
+
+    def write_port(self):
+        self._command(WritePort, self._port_bits)
+
+    def write_analog_port_1(self, port):
+        self._command(WriteAnalogPort1, port)
+
+    def write_analog_port_2(self, port):
+        self._command(WriteAnalogPort2, port)
+
+    def write_analog_port_x(self, port):
+        self._command(WriteAnalogPortX, port)
+
+    def read_port(self):
+        self._command(ReadPort)
+
+    def set_axis_motion_param(self, param):
+        self._command(SetAxisMotionParam, param)
+
+    def set_axis_origin_param(self, param):
+        self._command(SetAxisOriginParam, param)
+
+    def axis_go_origin(self):
+        self._command(AxisGoOrigin)
+
+    def move_axis_to(self, a):
+        self._command(MoveAxisTo)
+
+    def get_axis_pos(self):
+        self._command(GetAxisPos)
+
+    def get_fly_wait_count(self):
+        self._command(GetFlyWaitCount)
+
+    def get_mark_count(self):
+        self._command(GetMarkCount)
+
+    def set_pfk_param_2(self, param):
+        self._command(SetFpkParam2, param)
+
+    def set_fiber_mo(self, mo):
+        """
+        mo == 0 close
+        mo == 1 open
+
+        @param mo:
+        @return:
+        """
+        self._command(Fiber_SetMo, mo)
+
+    def get_fiber_st_mo_ap(self):
+        self._command(Fiber_GetStMO_AP)
+
+    def enable_z(self):
+        self._command(EnableZ)
+
+    def disable_z(self):
+        self._command(DisableZ)
+
+    def set_z_data(self, zdata):
+        self._command(SetZData, zdata)
+
+    def set_spi_simmer_current(self, current):
+        self._command(SetSPISimmerCurrent, current)
+
+    def set_fpk_param(self, param):
+        self._command(SetFpkParam, param)
+
+    def reset(self):
+        self._command(Reset)
+
+    def unknown_init(self):
+        self._command(Unknown_Init)
+
+    def get_fly_speed(self):
+        self._command(GetFlySpeed)
+
+    def fiber_pulse_width(self):
+        self._command(FiberPulseWidth)
+
+    def get_fiber_config_extend(self):
+        self._command(FiberGetConfigExtend)
+
+    def input_port(self, port):
+        self._command(InputPort, port)
+
+    def clear_lock_input_port(self):
+        self._command(InputPort, 0x04)
+
+    def enable_lock_input_port(self):
+        self._command(InputPort, 0x02)
+
+    def disable_lock_input_port(self):
+        self._command(InputPort, 0x01)
+
+    def get_input_port(self):
+        self._command(InputPort)
+
+    def get_mark_time(self):
+        self._command(GetMarkTime)
+
+    def get_user_data(self):
+        self._command(GetUserData)
+
+    def set_fly_res(self, fly_res):
+        self._command(SetFlyRes, fly_res)
 
 
 class Wobble:
