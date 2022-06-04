@@ -1,7 +1,11 @@
 import math
 import sys
+from copy import copy
 
 import numpy as np
+
+eol = [0x02, 0x80] + [0] * 10
+empty_packet = bytearray(eol * 0x100)  # Create an empty packet.
 
 
 class Simulation:
@@ -767,10 +771,11 @@ class CommandList(CommandSource):
         last_xy = self._start_x, self._start_y
 
         # Write buffer.
-        buf = bytearray([0] * 0xC00)  # Create a packet.
-        eol = bytes([0x02, 0x80] + [0] * 10)  # End of Line Command
+        buf = None
         i = 0
         for op in self.operations:
+            if buf is None:
+                buf = copy(empty_packet)
             if op.has_d():
                 nx, ny = op.get_xy()
                 x, y = last_xy
@@ -781,12 +786,12 @@ class CommandList(CommandSource):
             buf[i : i + 12] = op.serialize()
             i += 12
             if i >= 0xC00:
+                if buf is not None:
+                    yield buf
                 i = 0
-                yield buf
-        while i < 0xC00:
-            buf[i : i + 12] = eol
-            i += 12
-        yield buf
+                buf = None
+        if buf is not None:
+            yield buf
 
     ######################
     # GEOMETRY HELPERS
