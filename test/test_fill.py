@@ -1,7 +1,7 @@
 import unittest
 from copy import copy
 
-from meerk40t.fill.fills import eulerian_fill
+from meerk40t.fill.fills import eulerian_fill, scanline_fill
 from meerk40t.svgelements import Matrix, Rect
 from test import bootstrap
 
@@ -127,6 +127,32 @@ class TestFill(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+    def test_fill_scanline(self):
+        w = 10000
+        h = 10000
+        paths = (
+            (
+                (w * 0.05, h * 0.05),
+                (w * 0.95, h * 0.05),
+                (w * 0.95, h * 0.95),
+                (w * 0.05, h * 0.95),
+                (w * 0.05, h * 0.05),
+            ),
+            (
+                (w * 0.25, h * 0.25),
+                (w * 0.75, h * 0.25),
+                (w * 0.75, h * 0.75),
+                (w * 0.25, h * 0.75),
+                (w * 0.25, h * 0.25),
+            ),
+        )
+
+        fill = list(scanline_fill(settings={}, outlines=paths, matrix=None))
+        for p in fill:
+            if p is None:
+                continue
+            x, y = p
+            self.assertIn(x, (500, 2500, 7500, 9500))
 
     def test_fill_kernel_registered(self):
         kernel = bootstrap.bootstrap()

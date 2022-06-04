@@ -16,7 +16,7 @@ from .laserrender import LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
-from .scenewidgets.gridwidget import GridWidget
+from .scenewidgets.bedwidget import BedWidget
 from .wxutils import disable_window
 
 _ = wx.GetTranslation
@@ -121,7 +121,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.auto_tick = False
         self.widget_scene.tick_distance = 10  # mm
 
-        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
