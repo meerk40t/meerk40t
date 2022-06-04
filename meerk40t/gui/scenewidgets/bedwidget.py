@@ -75,7 +75,6 @@ class BedWidget(Widget):
         Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "background":
-            print ("Bed received bg-signal:", args[0])
             self.background = args[0]
             if args[0] is None:
                 self.scene.has_background = False
