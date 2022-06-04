@@ -31,6 +31,13 @@ class GridWidget(Widget):
         self.grid_line_pen2 = wx.Pen()
         self.grid_line_pen3 = wx.Pen()
         self.last_ticksize = 0
+        self.last_w = 0
+        self.last_h = 0
+        self.last_min_x = float("inf")
+        self.last_min_y = float("inf")
+        self.last_max_x = -float("inf")
+        self.last_max_y = -float("inf")
+
         self.draw_grid = True
         self.sx = 0
         self.sy = 0
@@ -335,9 +342,26 @@ class GridWidget(Widget):
             self.calculate_tickdistance(w, h)
         self.calculate_gridsize(w, h)
 
+        # When do we need to redraw?!
         if self.last_ticksize != self.scene.tick_distance:
             self.last_ticksize = self.scene.tick_distance
             self.grid = None
+        # With the new zoom-algorithm we also need to redraw if the origin
+        # or the size have changed...
+        # That's a price I am willing to pay...
+        if self.last_w != w or self.last_h != h:
+            self.last_w = w
+            self.last_h = h
+            self.grid = None
+        if self.min_x != self.last_min_x or self.min_y != self.last_min_y:
+            self.last_min_x  = self.min_x
+            self.last_min_y  = self.min_y
+            self.grid = None
+        if self.max_x != self.last_max_x or self.max_y != self.last_max_y:
+            self.last_max_x  = self.max_x
+            self.last_max_y  = self.max_y
+            self.grid = None
+
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
