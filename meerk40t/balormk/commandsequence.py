@@ -111,6 +111,7 @@ class CommandSequencer:
         dark_speed=None,
     ):
         self._queue = list()
+        self._light_bit = 8
         self._active_list = None
         self._active_index = 0
         self._last_x = x
@@ -261,16 +262,58 @@ class CommandSequencer:
     #######################
 
     def mark(self, x, y):
-        pass
+        self.list_ready()
+        self.list_mark_speed(self._mark_speed)
+        if self._wobble:
+            for wx, wy in self._wobble(self._last_x, self._last_y, x, y):
+                self.list_mark(wx, wy)
+        else:
+            self.list_mark(x, y)
 
-    def goto(self, x, y):
-        pass
+    def goto(self, x, y, long=None, short=None, distance_limit=None):
+        self.list_ready()
+        self.list_jump_speed(self._goto_speed)
+        self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
-    def light(self, x, y):
-        pass
+    def light(self, x, y, long=None, short=None, distance_limit=None):
+        self.list_ready()
+        if self.light_on():
+            self.list_write_port()
+        self.list_jump_speed(self._light_speed)
+        self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
-    def dark(self, x, y):
-        pass
+    def dark(self, x, y, long=None, short=None, distance_limit=None):
+        self.list_ready()
+        if self.light_off():
+            self.list_write_port()
+        self.list_jump_speed(self._dark_speed)
+        self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
+
+    def flush(self):
+        if self._wobble:
+            for wx, wy in self._wobble(self._last_x, self._last_y, None, None):
+                self.list_mark(wx, wy)
+
+    def light_on(self):
+        if self.is_port(self._light_bit):
+            self.port_on(self._light_bit)
+            return True
+        return False
+
+    def light_off(self):
+        if not self.is_port(self._light_bit):
+            self.port_off(self._light_bit)
+            return True
+        return False
+
+    def is_port(self, bit):
+        return bool((1 << bit) & self._port_bits)
+
+    def port_on(self, bit):
+        self._port_bits = self._port_bits | (1 << bit)
+
+    def port_off(self, bit):
+        self._port_bits = ~((~self._port_bits) | (1 << bit))
 
     #######################
     # COMMAND LIST SHORTCUTS
