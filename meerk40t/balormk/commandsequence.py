@@ -126,6 +126,7 @@ class CommandSequencer:
         self._frequency = None
         self._power = None
 
+        self._delay_jump = None
         self._delay_on = None
         self._delay_off = None
         self._delay_poly = None
@@ -215,8 +216,18 @@ class CommandSequencer:
     # COMMAND LIST COMMAND
     #######################
 
-    def list_jump(self, x, y):
-        self._list_write(listJumpTo, int(x), int(y))
+    def list_jump(self, x, y, short=None, long=None, distance_limit=None):
+        distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
+        if distance_limit and distance > distance_limit:
+            time = long
+        else:
+            time = short
+        if distance > 0xFFFF:
+            distance = 0xFFFF
+        angle = 0
+        if time:
+            self.list_jump_delay(time)
+        self._list_write(listJumpTo, int(x), int(y), angle, distance)
 
     def list_end_of_list(self):
         self._list_write(listEndOfList)
@@ -226,7 +237,7 @@ class CommandSequencer:
 
     def list_delay_time(self, time):
         """
-        Delay time in 10 microseconds units
+        Delay time in microseconds units
 
         @param time:
         @return:
@@ -248,6 +259,9 @@ class CommandSequencer:
         @param delay:
         @return:
         """
+        if self._delay_on == delay:
+            return
+        self._delay_on = delay
         sign = 0
         if delay < 0:
             sign = 0x8000
@@ -259,6 +273,9 @@ class CommandSequencer:
         @param delay:
         @return:
         """
+        if self._delay_off == delay:
+            return
+        self._delay_off = delay
         sign = 0
         if delay < 0:
             sign = 0x8000
@@ -300,6 +317,9 @@ class CommandSequencer:
         @param delay:
         @return:
         """
+        if self._delay_jump == delay:
+            return
+        self._delay_jump = delay
         sign = 0
         if delay < 0:
             sign = 0x8000
@@ -311,6 +331,9 @@ class CommandSequencer:
         @param delay:
         @return:
         """
+        if self._delay_poly == delay:
+            return
+        self._delay_poly = delay
         sign = 0
         if delay < 0:
             sign = 0x8000
@@ -378,7 +401,7 @@ class CommandSequencer:
         """
         self._list_write(listFlyDelay, delay)
 
-    def list_set_CO2_FPK(self):
+    def list_set_co2_fpk(self):
         """
         Set the CO2 Laser, First Pulse Killer.
 
@@ -437,7 +460,7 @@ class CommandSequencer:
         """
         self._list_write(listEnableWeldPowerWave, enabled)
 
-    def list_fiber_YLPM_pulse_width(self, pulse_width):
+    def list_fiber_ylpm_pulse_width(self, pulse_width):
         """
         Unknown.
 
