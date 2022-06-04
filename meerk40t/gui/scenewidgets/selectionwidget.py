@@ -1625,9 +1625,14 @@ class SelectionWidget(Widget):
         self.selection_pen = wx.Pen()
         self.selection_pen.SetColour(self.scene.colors.color_manipulation)
         self.selection_pen.SetStyle(wx.PENSTYLE_DOT)
+        # want to have sharp edges
+        self.selection_pen.SetJoin(wx.JOIN_MITER)
+
         self.handle_pen = wx.Pen()
         self.handle_pen.SetColour(self.scene.colors.color_manipulation_handle)
         self.handle_pen.SetStyle(wx.PENSTYLE_SOLID)
+        # want to have sharp edges
+        self.handle_pen.SetJoin(wx.JOIN_MITER)
 
         self.popupID1 = None
         self.popupID2 = None
