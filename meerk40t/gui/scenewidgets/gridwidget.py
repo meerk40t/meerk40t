@@ -18,8 +18,12 @@ class GridWidget(Widget):
     Interface Widget
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, name=None):
         Widget.__init__(self, scene, all=True)
+        if name is None:
+            self.name = "Standard"
+        else:
+            self.name = name
         self.grid = None
         self.grid2 = None
         self.background = None
@@ -63,26 +67,8 @@ class GridWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
-        Capture and deal with the double click event.
-
-        Doubleclick in the grid loads a menu to remove the background.
+        Capture and deal with events.
         """
-        if event_type == "hover":
-            return RESPONSE_CHAIN
-        elif event_type == "doubleclick":
-            menu = wx.Menu()
-            _ = self.scene.context._
-            if self.background is not None:
-                item = menu.Append(wx.ID_ANY, _("Remove Background"), "")
-                self.scene.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.scene.gui.signal("background", None),
-                    id=item.GetId(),
-                )
-                if menu.MenuItemCount != 0:
-                    self.scene.gui.PopupMenu(menu)
-                    menu.Destroy()
-        self.grid = None
         return RESPONSE_CHAIN
 
     def calculate_grid(self):
@@ -128,7 +114,7 @@ class GridWidget(Widget):
         self.grid = starts, ends
         self.grid2 = starts2, ends2
         end_time = time()
-        # print ("Grid-Calc done, time=%.6f, grid1=%d, grid2=%d" % ( end_time - start_time, len(starts), len(starts2)))
+        # print ("Grid-Calc %s done, time=%.6f, grid1=%d, grid2=%d" % (self.name, end_time - start_time, len(starts), len(starts2)))
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -245,6 +231,7 @@ class GridWidget(Widget):
             self.syy2 -= self.tleny2
         if self.syy2 < self.min_y:
             self.syy2 += self.tleny2
+        #print ("calculate_gridsize %s, tlen=%.1f" % (self.name, tlen))
         #print ("Min= %.1f, %.1f" % (self.min_x, self.min_y))
         #print ("Max= %.1f, %.1f" % (self.max_x, self.max_y))
 
@@ -340,24 +327,8 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
-        # print ("GridWidget draw")
+        # print ("GridWidget %s draw" % self.name)
 
-        if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            context = self.scene.context
-            unit_width = context.device.unit_width
-            unit_height = context.device.unit_height
-            background = self.background
-            if background is None:
-                brush = wx.Brush(
-                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
-                )
-                gc.SetBrush(brush)
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            elif isinstance(background, int):
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            else:
-                gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
         # Get proper gridsize
         w, h = gc.Size
         if self.scene.auto_tick:
@@ -403,8 +374,8 @@ class GridWidget(Widget):
 
             if self.scene.draw_grid_circular:
                 gc.SetPen(self.grid_line_pen3)
-                u_width = float(context.device.unit_width)
-                u_height = float(context.device.unit_height)
+                u_width = float(self.scene.context.device.unit_width)
+                u_height = float(self.scene.context.device.unit_height)
                 gc.Clip(0, 0, u_width, u_height)
                 siz = sqrt(u_width * u_width + u_height * u_height)
                 # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
@@ -491,7 +462,5 @@ class GridWidget(Widget):
         """
         if signal == "grid":
             self.grid = None
-        elif signal == "background":
-            self.background = args[0]
         elif signal == "theme":
             self.set_colors()

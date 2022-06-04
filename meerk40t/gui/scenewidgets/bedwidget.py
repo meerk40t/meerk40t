@@ -14,8 +14,12 @@ class BedWidget(Widget):
     Bed Widget Interface Widget
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, name=None):
         Widget.__init__(self, scene, all=True)
+        if name is None:
+            self.name = "Standard"
+        else:
+            self.name = name
         self.background = None
 
     def hit(self):
@@ -46,8 +50,9 @@ class BedWidget(Widget):
 
     def process_draw(self, gc):
         """
-        Draw the grid on the scene.
+        Draws the background on the scene.
         """
+        # print ("Bedwidget draw %s" % self.name)
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             unit_width = context.device.unit_width
@@ -70,4 +75,12 @@ class BedWidget(Widget):
         Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "background":
+            print ("Bed received bg-signal:", args[0])
             self.background = args[0]
+            if args[0] is None:
+                self.scene.has_background = False
+            elif isinstance(args[0], int):
+                # A pure color is not deemed to represent a 'real' background
+                self.scene.has_background = False
+            else:
+                self.scene.has_background = True

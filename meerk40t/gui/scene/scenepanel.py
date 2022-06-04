@@ -252,6 +252,7 @@ class ScenePanel(wx.Panel):
             self.scene.event(event.GetPosition(), "rightdown+control")
         else:
             self.scene.event(event.GetPosition(), "rightdown")
+        event.Skip()
 
     def on_right_mouse_up(self, event):
         """
