@@ -99,7 +99,6 @@ class GridWidget(Widget):
         ends = []
         starts2 = []
         ends2 = []
-
         # Primary grid
         x = self.sxx1
         while x <= self.max_x:
@@ -131,7 +130,7 @@ class GridWidget(Widget):
         end_time = time()
         # print ("Grid-Calc done, time=%.6f, grid1=%d, grid2=%d" % ( end_time - start_time, len(starts), len(starts2)))
 
-    def calculate_gridsize(self, w, h):
+    def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
         wpoints = w / 30.0
         hpoints = h / 20.0
@@ -174,6 +173,13 @@ class GridWidget(Widget):
 
         self.scene.tick_distance = delta1
 
+    def calculate_gridsize(self, w, h):
+        scaled_conversion = (
+            self.scene.context.device.length(
+                str(1) + self.scene.context.units_name, as_float=True
+            )
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
         points = self.scene.tick_distance * scaled_conversion
 
         p = self.scene.context
@@ -212,6 +218,8 @@ class GridWidget(Widget):
                 )
             )
         )
+        if tlen==0:
+            tlen = float(Length("10mm"))
         self.tlenx1 = tlen
         self.tleny1 = tlen
         self.sxx1 = round(self.min_x / self.tlenx1, 0) * (self.tlenx1 + 1)
@@ -239,9 +247,6 @@ class GridWidget(Widget):
             self.syy2 += self.tleny2
         #print ("Min= %.1f, %.1f" % (self.min_x, self.min_y))
         #print ("Max= %.1f, %.1f" % (self.max_x, self.max_y))
-
-        if points == 0:
-            return
 
     def calculate_grid_points(self):
         """
@@ -335,7 +340,7 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
-        #print ("GridWidget draw")
+        # print ("GridWidget draw")
 
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
@@ -354,9 +359,10 @@ class GridWidget(Widget):
             else:
                 gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
         # Get proper gridsize
+        w, h = gc.Size
         if self.scene.auto_tick:
-            w, h = gc.Size
-            self.calculate_gridsize(w, h)
+            self.calculate_tickdistance(w, h)
+        self.calculate_gridsize(w, h)
 
         if self.last_ticksize != self.scene.tick_distance:
             self.last_ticksize = self.scene.tick_distance
