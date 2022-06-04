@@ -665,7 +665,6 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "stop",
             help=_("stops the idle running job"),
-            input_type=(None),
         )
         def stoplight(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping idle job")

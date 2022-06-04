@@ -6,18 +6,6 @@ from meerk40t.balor.sender import Sender, SET_XY_POSITION, STOP_LIST, RESTART_LI
 from meerk40t.kernel import STATE_UNKNOWN, STATE_INITIALIZE, STATE_END, STATE_TERMINATE, STATE_ACTIVE, STATE_PAUSE, \
     STATE_BUSY, STATE_SUSPEND, STATE_IDLE
 
-STATUS_BAD_STATE = 204
-# 0xCC, 11001100
-STATUS_OK = 206
-# 0xCE, 11001110
-STATUS_ERROR = 207
-# 0xCF, 11001111
-STATUS_FINISH = 236
-# 0xEC, 11101100
-STATUS_BUSY = 238
-# 0xEE, 11101110
-STATUS_POWER = 239
-
 
 class BalorController:
     """
@@ -170,10 +158,9 @@ class BalorController:
             self.update_state(STATE_ACTIVE)
 
     def abort(self):
-        self.connection.abort()
         self._queue = list()
         self._preempt = list()
-        self.update_state(STATE_TERMINATE)
+        self.realtime_write(("abort", tuple()))
 
     def stop(self, *args):
         self.abort()
