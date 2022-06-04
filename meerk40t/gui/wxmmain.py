@@ -400,8 +400,11 @@ class CustomStatusBar(wx.StatusBar):
             button = event.EventObject
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
-            self.context("stroke #%02x%02x%02x --classify\n" % (color.Red(), color.Green(), color.Blue()))
-            rgb = [color.Red(), color.Green(), color.Blue()]
+            if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+                colstr = "none"
+            else:
+                colstr = "#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2])
+            self.context("stroke %s --classify\n" % colstr)
             self.context.signal("selstroke", rgb)
 
     def on_button_color_right(self, event):
@@ -409,8 +412,12 @@ class CustomStatusBar(wx.StatusBar):
         if not self.startup:
             button = event.EventObject
             color = button.GetBackgroundColour()
-            self.context("fill #%02x%02x%02x --classify\n" % (color.Red(), color.Green(), color.Blue()))
             rgb = [color.Red(), color.Green(), color.Blue()]
+            if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+                colstr = "none"
+            else:
+                colstr = "#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2])
+            self.context("fill %s --classify\n" % colstr)
             self.context.signal("selfill", rgb)
 
     def on_stroke_width(self, event):
