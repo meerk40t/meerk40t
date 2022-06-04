@@ -107,7 +107,7 @@ class BalorDriver:
         """
         self.connection.light_off()
         self.connection.job(job)
-        if self.redlight_preferred:
+        if self.service.redlight_preferred:
             self.connection.light_on()
         else:
             self.connection.light_off()
