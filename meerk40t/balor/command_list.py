@@ -1000,7 +1000,7 @@ class CommandList(CommandSource):
         @return:
         """
         x = int(round(x))
-        y = int(round(x))
+        y = int(round(y))
         self.ready()
         if self._mark_speed is not None:
             self.set_cut_speed(self._mark_speed)
@@ -1053,7 +1053,7 @@ class CommandList(CommandSource):
         @return:
         """
         x = int(round(x))
-        y = int(round(x))
+        y = int(round(y))
         if light:
             self.light_on()
             if self._light_speed is not None:
@@ -1083,7 +1083,7 @@ class CommandList(CommandSource):
         @return:
         """
         x = int(round(x))
-        y = int(round(x))
+        y = int(round(y))
         self.ready()
         if self._goto_speed is not None:
             self.set_travel_speed(self._goto_speed)
