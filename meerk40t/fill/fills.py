@@ -1,6 +1,40 @@
+import math
+
 from meerk40t.core.units import Length
 from meerk40t.svgelements import Angle, Matrix, Point
 from meerk40t.tools.pathtools import EulerianFill, VectorMontonizer
+
+
+class Wobble:
+    def __init__(self, algorithm, radius=50, speed=50, interval=10):
+        self._total_count = 0
+        self._total_distance = 0
+        self._remainder = 0
+        self.previous_angle = None
+        self.radius = radius
+        self.speed = speed
+        self.interval = interval
+        self._last_x = None
+        self._last_y = None
+        self._algorithm = algorithm
+
+    def __call__(self, x0, y0, x1, y1):
+        self._algorithm(self, x0, y0, x1, y1)
+
+    def wobble(self, x0, y0, x1, y1):
+        distance_change = abs(complex(x0, y0) - complex(x1, y1))
+        positions = 1 - self._remainder
+        intervals = distance_change / self.interval
+        while positions <= intervals:
+            amount = positions / intervals
+            tx = amount * (x1 - x0) + x0
+            ty = amount * (y1 - y0) + y0
+            self._total_distance += self.interval
+            self._total_count += 1
+            yield tx, ty
+            positions += 1
+        self._remainder += intervals
+        self._remainder %= 1
 
 
 def split(points):
@@ -144,6 +178,82 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         forward = not forward
     points = list(map(mx_counter, points))
     return points
+
+
+def circle(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        t = wobble._total_distance / (math.tau * wobble.radius)
+        dx = wobble.radius * math.cos(t * wobble.speed)
+        dy = wobble.radius * math.sin(t * wobble.speed)
+        yield tx + dx, ty + dy
+
+def sinewave(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        d = math.sin(wobble._total_distance / wobble.speed)
+        dx = wobble.radius * d * math.cos(angle)
+        dy = wobble.radius * d * math.sin(angle)
+        yield tx + dx, ty + dy
+
+def sawtooth(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        d = -1 if wobble._total_count % 2 else 1
+        dx = wobble.radius * d * math.cos(angle)
+        dy = wobble.radius * d * math.sin(angle)
+        yield tx + dx, ty + dy
+
+def jigsaw(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0)
+        angle_perp = angle + math.tau / 4.0
+        d = math.sin(wobble._total_distance / wobble.speed)
+        dx = wobble.radius * d * math.cos(angle_perp)
+        dy = wobble.radius * d * math.sin(angle_perp)
+
+        d = -1 if wobble._total_count % 2 else 1
+        dx += wobble.radius * d * math.cos(angle)
+        dy += wobble.radius * d * math.sin(angle)
+        yield tx + dx, ty + dy
+
+def gear(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        d = -1 if (wobble._total_count // 2) % 2 else 1
+        dx = wobble.radius * d * math.cos(angle)
+        dy = wobble.radius * d * math.sin(angle)
+        yield tx + dx, ty + dy
+
+def slowtooth(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        if wobble.previous_angle is None:
+            wobble.previous_angle = angle
+        amount = 1.0 / wobble.speed
+        angle = amount * (angle - wobble.previous_angle) + wobble.previous_angle
+        d = -1 if wobble._total_count % 2 else 1
+        dx = wobble.radius * d * math.cos(angle)
+        dy = wobble.radius * d * math.sin(angle)
+        wobble.previous_angle = angle
+        yield tx + dx, ty + dy
 
 
 def plugin(kernel, lifecycle):
