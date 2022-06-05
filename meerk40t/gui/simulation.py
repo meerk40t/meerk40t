@@ -12,7 +12,7 @@ from .icons import (
     icons8_play_50,
     icons8_route_50,
 )
-from .laserrender import LaserRender, DRAW_MODE_BACKGROUND
+from .laserrender import LaserRender, DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
@@ -61,6 +61,10 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
+        # No Labels in circular
+        if self.widget_scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
+            # Was set...
+            self.widget_scene.context.draw_mode ^= DRAW_MODE_GUIDES
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
@@ -123,8 +127,12 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.auto_tick = False
         self.widget_scene.tick_distance = 10  # mm
 
-        self.widget_scene.add_scenewidget(GridWidget(self.widget_scene, name="Simulation"))
-        self.widget_scene.add_scenewidget(BedWidget(self.widget_scene, name="Simulation"))
+        self.widget_scene.add_scenewidget(
+            GridWidget(self.widget_scene, name="Simulation")
+        )
+        self.widget_scene.add_scenewidget(
+            BedWidget(self.widget_scene, name="Simulation")
+        )
         self.reticle = SimReticleWidget(self.widget_scene, self)
         self.widget_scene.add_interfacewidget(self.reticle)
         self.running = False
@@ -222,12 +230,18 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.request_refresh()
 
     def toggle_grid(self, gridtype):
-        if gridtype=="primary":
-            self.widget_scene.draw_grid_primary = not self.widget_scene.draw_grid_primary
-        elif gridtype=="secondary":
-            self.widget_scene.draw_grid_secondary = not self.widget_scene.draw_grid_secondary
-        elif gridtype=="circular":
-            self.widget_scene.draw_grid_circular = not self.widget_scene.draw_grid_circular
+        if gridtype == "primary":
+            self.widget_scene.draw_grid_primary = (
+                not self.widget_scene.draw_grid_primary
+            )
+        elif gridtype == "secondary":
+            self.widget_scene.draw_grid_secondary = (
+                not self.widget_scene.draw_grid_secondary
+            )
+        elif gridtype == "circular":
+            self.widget_scene.draw_grid_circular = (
+                not self.widget_scene.draw_grid_circular
+            )
         self.widget_scene.request_refresh()
 
     def toggle_grid_p(self, event):
@@ -240,7 +254,9 @@ class SimulationPanel(wx.Panel, Job):
         self.toggle_grid("circular")
 
     def remove_background(self, event):
-        self.widget_scene._signal_widget(self.widget_scene.widget_root, "background", None)
+        self.widget_scene._signal_widget(
+            self.widget_scene.widget_root, "background", None
+        )
         self.widget_scene.request_refresh()
 
     def on_mouse_right_down(self, event=None):
@@ -270,41 +286,44 @@ class SimulationPanel(wx.Panel, Job):
         )
         menu.AppendSeparator()
         id1 = menu.Append(
-                wx.ID_ANY,
-                _("Show Background"),
-                _("Display the background picture in the Simulation pane"),
-                wx.ITEM_CHECK
-            )
-        self.Bind(wx.EVT_MENU, self.toggle_background, id = id1.GetId())
-        menu.Check(id1.GetId(), (self.widget_scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0))
+            wx.ID_ANY,
+            _("Show Background"),
+            _("Display the background picture in the Simulation pane"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_background, id=id1.GetId())
+        menu.Check(
+            id1.GetId(),
+            (self.widget_scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0),
+        )
         id2 = menu.Append(
-                wx.ID_ANY,
-                _("Show Primary Grid"),
-                _("Display the primary grid in the Simulation pane"),
-                wx.ITEM_CHECK
-            )
-        self.Bind(wx.EVT_MENU, self.toggle_grid_p, id = id2.GetId())
+            wx.ID_ANY,
+            _("Show Primary Grid"),
+            _("Display the primary grid in the Simulation pane"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_grid_p, id=id2.GetId())
         menu.Check(id2.GetId(), self.widget_scene.draw_grid_primary)
         id3 = menu.Append(
-                wx.ID_ANY,
-                _("Show Secondary Grid"),
-                _("Display the secondary grid in the Simulation pane"),
-                wx.ITEM_CHECK
-            )
-        self.Bind(wx.EVT_MENU, self.toggle_grid_s, id = id3.GetId())
+            wx.ID_ANY,
+            _("Show Secondary Grid"),
+            _("Display the secondary grid in the Simulation pane"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_grid_s, id=id3.GetId())
         menu.Check(id3.GetId(), self.widget_scene.draw_grid_secondary)
         id4 = menu.Append(
-                wx.ID_ANY,
-                _("Show Circular Grid"),
-                _("Display the circular grid in the Simulation pane"),
-                wx.ITEM_CHECK
-            )
-        self.Bind(wx.EVT_MENU, self.toggle_grid_c, id = id4.GetId())
+            wx.ID_ANY,
+            _("Show Circular Grid"),
+            _("Display the circular grid in the Simulation pane"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.widget_scene.draw_grid_circular)
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
-            self.Bind(wx.EVT_MENU, self. remove_background, id=id5.GetId())
+            self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -612,5 +631,7 @@ class Simulation(MWindow):
     def on_background_signal(self, origin, background):
         if not background is None:
             background = wx.Bitmap.FromBuffer(*background)
-        self.panel.widget_scene._signal_widget(self.panel.widget_scene.widget_root, "background", background)
+        self.panel.widget_scene._signal_widget(
+            self.panel.widget_scene.widget_root, "background", background
+        )
         self.panel.widget_scene.request_refresh()
