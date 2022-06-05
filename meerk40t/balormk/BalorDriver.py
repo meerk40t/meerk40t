@@ -246,7 +246,7 @@ class BalorDriver:
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
                 t = 0
-                for p in range(int(interp)):
+                for p in range(int(interp) + 1):
                     while self.hold_work():
                         time.sleep(0.05)
                     p = q.point(t)
