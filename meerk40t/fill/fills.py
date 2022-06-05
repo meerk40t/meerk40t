@@ -267,7 +267,7 @@ def plugin(kernel, lifecycle):
         context = kernel.root
         context.register("hatch/scanline", scanline_fill)
         context.register("hatch/eulerian", eulerian_fill)
-        context.register("wobble/circles", circle)
+        context.register("wobble/circle", circle)
         context.register("wobble/sinewave", sinewave)
         context.register("wobble/sawtooth", sawtooth)
         context.register("wobble/jigsaw", jigsaw)
