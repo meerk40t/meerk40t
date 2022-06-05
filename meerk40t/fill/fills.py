@@ -191,6 +191,34 @@ def circle(wobble, x0, y0, x1, y1):
         yield tx + dx, ty + dy
 
 
+def circle_right(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        dx = wobble.radius * math.cos(angle)
+        dy = wobble.radius * math.sin(angle)
+        t = wobble._total_distance / (math.tau * wobble.radius)
+        dx += wobble.radius * math.cos(t * wobble.speed)
+        dy += wobble.radius * math.sin(t * wobble.speed)
+        yield tx + dx, ty + dy
+
+
+def circle_left(wobble, x0, y0, x1, y1):
+    if x1 is None or y1 is None:
+        yield x0, y0
+        return
+    for tx, ty in wobble.wobble(x0, y0, x1, y1):
+        angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
+        dx = -wobble.radius * math.cos(angle)
+        dy = -wobble.radius * math.sin(angle)
+        t = wobble._total_distance / (math.tau * wobble.radius)
+        dx += wobble.radius * math.cos(t * wobble.speed)
+        dy += wobble.radius * math.sin(t * wobble.speed)
+        yield tx + dx, ty + dy
+
+
 def sinewave(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -268,6 +296,8 @@ def plugin(kernel, lifecycle):
         context.register("hatch/scanline", scanline_fill)
         context.register("hatch/eulerian", eulerian_fill)
         context.register("wobble/circle", circle)
+        context.register("wobble/circle_right", circle_right)
+        context.register("wobble/circle_left", circle_left)
         context.register("wobble/sinewave", sinewave)
         context.register("wobble/sawtooth", sawtooth)
         context.register("wobble/jigsaw", jigsaw)
