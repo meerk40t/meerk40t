@@ -63,6 +63,8 @@ class RectSelectWidget(Widget):
         self.selection_pen.SetColour(self.selection_style[0][0])
         self.selection_pen.SetWidth(25)
         self.selection_pen.SetStyle(self.selection_style[0][1])
+        # want to have sharp edges
+        self.selection_pen.SetJoin(wx.JOIN_MITER)
         self.start_location = None
         self.end_location = None
 

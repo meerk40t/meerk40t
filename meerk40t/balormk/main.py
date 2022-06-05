@@ -623,7 +623,7 @@ class BalorDevice(Service, ViewPort):
             y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
 
             rotate = Matrix()
-            rotate.post_rotate(Angle.degrees(self.redlight_angle).as_radians, 0x8000, 0x8000)
+            rotate.post_rotate(self.redlight_angle.radians, 0x8000, 0x8000)
             rotate.post_translate(x_offset, y_offset)
 
             def mx_rotate(pt):

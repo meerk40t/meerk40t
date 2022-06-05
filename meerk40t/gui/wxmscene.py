@@ -9,6 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
+from meerk40t.gui.scenewidgets.bedwidget import BedWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
@@ -86,6 +87,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.auto_tick = True
 
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
@@ -552,6 +554,24 @@ class MeerK40tScenePanel(wx.Panel):
     def on_theme_change(self, origin, theme=None):
         self.scene.signal("theme", theme)
         self.request_refresh(origin)
+
+    @signal_listener("selstroke")
+    def on_selstroke(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_stroke = color
+
+    @signal_listener("selfill")
+    def on_selfill(self, origin, rgb, *args):
+        # print (origin, rgb, args)
+        if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
+            color = None
+        else:
+            color = Color(rgb[0], rgb[1], rgb[2])
+        self.widget_scene.default_fill = color
 
     @signal_listener("selstrokewidth")
     def on_selstrokewidth(self, origin, stroke_width, *args):
