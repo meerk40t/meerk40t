@@ -160,9 +160,9 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         vm.sort_actives()
         y = vm.current
         for i in (
-                range(1, len(vm.actives), 2)
-                if forward
-                else range(len(vm.actives) - 1, 0, -2)
+            range(1, len(vm.actives), 2)
+            if forward
+            else range(len(vm.actives) - 1, 0, -2)
         ):
             left_segment = vm.actives[i - 1]
             right_segment = vm.actives[i]
@@ -190,6 +190,7 @@ def circle(wobble, x0, y0, x1, y1):
         dy = wobble.radius * math.sin(t * wobble.speed)
         yield tx + dx, ty + dy
 
+
 def sinewave(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -201,6 +202,7 @@ def sinewave(wobble, x0, y0, x1, y1):
         dy = wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
 
+
 def sawtooth(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -211,6 +213,7 @@ def sawtooth(wobble, x0, y0, x1, y1):
         dx = wobble.radius * d * math.cos(angle)
         dy = wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
+
 
 def jigsaw(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
@@ -228,6 +231,7 @@ def jigsaw(wobble, x0, y0, x1, y1):
         dy += wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
 
+
 def gear(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
         yield x0, y0
@@ -238,6 +242,7 @@ def gear(wobble, x0, y0, x1, y1):
         dx = wobble.radius * d * math.cos(angle)
         dy = wobble.radius * d * math.sin(angle)
         yield tx + dx, ty + dy
+
 
 def slowtooth(wobble, x0, y0, x1, y1):
     if x1 is None or y1 is None:
@@ -262,3 +267,9 @@ def plugin(kernel, lifecycle):
         context = kernel.root
         context.register("hatch/scanline", scanline_fill)
         context.register("hatch/eulerian", eulerian_fill)
+        context.register("wobble/circles", circle)
+        context.register("wobble/sinewave", sinewave)
+        context.register("wobble/sawtooth", sawtooth)
+        context.register("wobble/jigsaw", jigsaw)
+        context.register("wobble/gear", gear)
+        context.register("wobble/slowtooth", slowtooth)
