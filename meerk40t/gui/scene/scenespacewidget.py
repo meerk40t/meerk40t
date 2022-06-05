@@ -61,7 +61,7 @@ class SceneSpaceWidget(Widget):
             cutoff = 0.99
         else:
             # Linux
-            cutoff = 30.
+            cutoff = 3.0
         return cutoff
 
     @property
