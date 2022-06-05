@@ -18,8 +18,12 @@ class GridWidget(Widget):
     Interface Widget
     """
 
-    def __init__(self, scene):
+    def __init__(self, scene, name=None):
         Widget.__init__(self, scene, all=True)
+        if name is None:
+            self.name = "Standard"
+        else:
+            self.name = name
         self.grid = None
         self.grid2 = None
         self.background = None
@@ -27,6 +31,13 @@ class GridWidget(Widget):
         self.grid_line_pen2 = wx.Pen()
         self.grid_line_pen3 = wx.Pen()
         self.last_ticksize = 0
+        self.last_w = 0
+        self.last_h = 0
+        self.last_min_x = float("inf")
+        self.last_min_y = float("inf")
+        self.last_max_x = -float("inf")
+        self.last_max_y = -float("inf")
+
         self.draw_grid = True
         self.sx = 0
         self.sy = 0
@@ -63,26 +74,8 @@ class GridWidget(Widget):
 
     def event(self, window_pos=None, space_pos=None, event_type=None):
         """
-        Capture and deal with the double click event.
-
-        Doubleclick in the grid loads a menu to remove the background.
+        Capture and deal with events.
         """
-        if event_type == "hover":
-            return RESPONSE_CHAIN
-        elif event_type == "doubleclick":
-            menu = wx.Menu()
-            _ = self.scene.context._
-            if self.background is not None:
-                item = menu.Append(wx.ID_ANY, _("Remove Background"), "")
-                self.scene.gui.Bind(
-                    wx.EVT_MENU,
-                    lambda e: self.scene.gui.signal("background", None),
-                    id=item.GetId(),
-                )
-                if menu.MenuItemCount != 0:
-                    self.scene.gui.PopupMenu(menu)
-                    menu.Destroy()
-        self.grid = None
         return RESPONSE_CHAIN
 
     def calculate_grid(self):
@@ -99,7 +92,6 @@ class GridWidget(Widget):
         ends = []
         starts2 = []
         ends2 = []
-
         # Primary grid
         x = self.sxx1
         while x <= self.max_x:
@@ -129,9 +121,9 @@ class GridWidget(Widget):
         self.grid = starts, ends
         self.grid2 = starts2, ends2
         end_time = time()
-        # print ("Grid-Calc done, time=%.6f, grid1=%d, grid2=%d" % ( end_time - start_time, len(starts), len(starts2)))
+        # print ("Grid-Calc %s done, time=%.6f, grid1=%d, grid2=%d" % (self.name, end_time - start_time, len(starts), len(starts2)))
 
-    def calculate_gridsize(self, w, h):
+    def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
         wpoints = w / 30.0
         hpoints = h / 20.0
@@ -174,6 +166,13 @@ class GridWidget(Widget):
 
         self.scene.tick_distance = delta1
 
+    def calculate_gridsize(self, w, h):
+        scaled_conversion = (
+            self.scene.context.device.length(
+                str(1) + self.scene.context.units_name, as_float=True
+            )
+            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
+        )
         points = self.scene.tick_distance * scaled_conversion
 
         p = self.scene.context
@@ -212,6 +211,8 @@ class GridWidget(Widget):
                 )
             )
         )
+        if tlen==0:
+            tlen = float(Length("10mm"))
         self.tlenx1 = tlen
         self.tleny1 = tlen
         self.sxx1 = round(self.min_x / self.tlenx1, 0) * (self.tlenx1 + 1)
@@ -237,11 +238,9 @@ class GridWidget(Widget):
             self.syy2 -= self.tleny2
         if self.syy2 < self.min_y:
             self.syy2 += self.tleny2
+        #print ("calculate_gridsize %s, tlen=%.1f" % (self.name, tlen))
         #print ("Min= %.1f, %.1f" % (self.min_x, self.min_y))
         #print ("Max= %.1f, %.1f" % (self.max_x, self.max_y))
-
-        if points == 0:
-            return
 
     def calculate_grid_points(self):
         """
@@ -335,32 +334,34 @@ class GridWidget(Widget):
         """
         Draw the grid on the scene.
         """
-        #print ("GridWidget draw")
+        # print ("GridWidget %s draw" % self.name)
 
-        if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            context = self.scene.context
-            unit_width = context.device.unit_width
-            unit_height = context.device.unit_height
-            background = self.background
-            if background is None:
-                brush = wx.Brush(
-                    colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
-                )
-                gc.SetBrush(brush)
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            elif isinstance(background, int):
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
-            else:
-                gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
         # Get proper gridsize
+        w, h = gc.Size
         if self.scene.auto_tick:
-            w, h = gc.Size
-            self.calculate_gridsize(w, h)
+            self.calculate_tickdistance(w, h)
+        self.calculate_gridsize(w, h)
 
+        # When do we need to redraw?!
         if self.last_ticksize != self.scene.tick_distance:
             self.last_ticksize = self.scene.tick_distance
             self.grid = None
+        # With the new zoom-algorithm we also need to redraw if the origin
+        # or the size have changed...
+        # That's a price I am willing to pay...
+        if self.last_w != w or self.last_h != h:
+            self.last_w = w
+            self.last_h = h
+            self.grid = None
+        if self.min_x != self.last_min_x or self.min_y != self.last_min_y:
+            self.last_min_x  = self.min_x
+            self.last_min_y  = self.min_y
+            self.grid = None
+        if self.max_x != self.last_max_x or self.max_y != self.last_max_y:
+            self.last_max_x  = self.max_x
+            self.last_max_y  = self.max_y
+            self.grid = None
+
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
             if self.grid is None:
@@ -397,8 +398,8 @@ class GridWidget(Widget):
 
             if self.scene.draw_grid_circular:
                 gc.SetPen(self.grid_line_pen3)
-                u_width = float(context.device.unit_width)
-                u_height = float(context.device.unit_height)
+                u_width = float(self.scene.context.device.unit_width)
+                u_height = float(self.scene.context.device.unit_height)
                 gc.Clip(0, 0, u_width, u_height)
                 siz = sqrt(u_width * u_width + u_height * u_height)
                 # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
@@ -485,7 +486,5 @@ class GridWidget(Widget):
         """
         if signal == "grid":
             self.grid = None
-        elif signal == "background":
-            self.background = args[0]
         elif signal == "theme":
             self.set_colors()
