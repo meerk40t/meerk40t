@@ -137,7 +137,7 @@ class BalorOperationPanel(wx.Panel):
                 "default": "circle",
                 "type": str,
                 "style": "combo",
-                "choices": list(self.context.matrix("wobble", suffix=True)),
+                "choices": list(self.context.match("wobble", suffix=True)),
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Pattern Type"),
                 "tip": _("Pattern type for the given wobble."),

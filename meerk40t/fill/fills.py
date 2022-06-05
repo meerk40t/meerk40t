@@ -19,7 +19,7 @@ class Wobble:
         self._algorithm = algorithm
 
     def __call__(self, x0, y0, x1, y1):
-        self._algorithm(self, x0, y0, x1, y1)
+        yield from self._algorithm(self, x0, y0, x1, y1)
 
     def wobble(self, x0, y0, x1, y1):
         distance_change = abs(complex(x0, y0) - complex(x1, y1))
