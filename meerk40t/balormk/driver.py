@@ -1,10 +1,11 @@
 import time
 
-from meerk40t.balor.command_list import CommandList, Wobble
+from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.controller import BalorController
 from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.fill.fills import Wobble
 
 
 class BalorDriver:
@@ -165,44 +166,33 @@ class BalorDriver:
         wobble_enabled = (
                 str(settings.get("wobble_enabled", False)).lower() == "true"
         )
-        if wobble_enabled:
-            wobble_radius = settings.get("wobble_radius", "1.5mm")
-            wobble_r = self.service.physical_to_device_length(
-                wobble_radius, 0
-            )[0]
-            wobble_interval = settings.get("wobble_interval", "0.3mm")
-            wobble_speed = settings.get("wobble_speed", 50.0)
-            wobble_type = settings.get("wobble_type", "circle")
-            wobble_interval = self.service.physical_to_device_length(
-                wobble_interval, 0
-            )[0]
-            if self.wobble is None:
-                self.wobble = Wobble(
-                    radius=wobble_r,
-                    speed=wobble_speed,
-                    interval=wobble_interval,
-                )
-            else:
-                # set our parameterizations
-                self.wobble.radius = wobble_r
-                self.wobble.speed = wobble_speed
-            if wobble_type == "circle":
-                job._mark_modification = self.wobble.circle
-            elif wobble_type == "sinewave":
-                job._mark_modification = self.wobble.sinewave
-            elif wobble_type == "sawtooth":
-                job._mark_modification = self.wobble.sawtooth
-            elif wobble_type == "jigsaw":
-                job._mark_modification = self.wobble.jigsaw
-            elif wobble_type == "gear":
-                job._mark_modification = self.wobble.gear
-            elif wobble_type == "slowtooth":
-                job._mark_modification = self.wobble.slowtooth
-            else:
-                raise ValueError
-        else:
+        if not wobble_enabled:
             job._mark_modification = None
-            job._interpolations = None
+            return
+        wobble_radius = settings.get("wobble_radius", "1.5mm")
+        wobble_r = self.service.physical_to_device_length(
+            wobble_radius, 0
+        )[0]
+        wobble_interval = settings.get("wobble_interval", "0.3mm")
+        wobble_speed = settings.get("wobble_speed", 50.0)
+        wobble_type = settings.get("wobble_type", "circle")
+        wobble_interval = self.service.physical_to_device_length(
+            wobble_interval, 0
+        )[0]
+        algorithm = self.service.lookup(f"wobble/{wobble_type}")
+        if self.wobble is None:
+            self.wobble = Wobble(
+                algorithm=algorithm,
+                radius=wobble_r,
+                speed=wobble_speed,
+                interval=wobble_interval,
+            )
+        else:
+            # set our parameterizations
+            self.wobble.algorithm = algorithm
+            self.wobble.radius = wobble_r
+            self.wobble.speed = wobble_speed
+        job._mark_modification = self.wobble
 
     def plot_start(self):
         """
