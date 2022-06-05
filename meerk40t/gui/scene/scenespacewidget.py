@@ -28,6 +28,7 @@ class SceneSpaceWidget(Widget):
         self._previous_zoom = None
         self._placement_event = None
         self._placement_event_type = None
+        self.osv =-1
 
     def hit(self):
         """
@@ -35,6 +36,33 @@ class SceneSpaceWidget(Widget):
         should be dealt with here. These are mostly zoom and pan events.
         """
         return HITCHAIN_DELEGATE_AND_HIT
+
+    @property
+    def zoom_cutoff(self):
+        # Sets the maximum zoom_factor for the system
+        # establish os-system
+        if self.osv < 0:
+            from platform import system
+            sysname = system()
+            if sysname == "Windows":
+                # Windows
+                self.osv = 0
+            elif sysname == "Darwin":
+                # Mac
+                self.osv = 1
+            else:
+                # Linux
+                self.osv = 2
+        if self.osv == 0:
+            # Windows
+            cutoff = 22.0
+        elif self.osv == 1:
+            # Mac
+            cutoff = 0.99
+        else:
+            # Linux
+            cutoff = 30.
+        return cutoff
 
     @property
     def pan_factor(self):
@@ -79,10 +107,12 @@ class SceneSpaceWidget(Widget):
         elif event_type == "wheeldown" and self.scene.context.mouse_wheel_pan:
             self.scene_widget.matrix.post_translate(0, self.pan_factor)
         elif event_type == "wheelup" or event_type == "wheelup_ctrl":
-            self.scene_widget.matrix.post_scale(
-                self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
-            )
-            self.scene.request_refresh()
+            # print ("Zoom forward, current: %.5f, %.5f" % (self.scene_widget.matrix.value_scale_x(), self.scene_widget.matrix.value_scale_y()))
+            if self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff:
+                self.scene_widget.matrix.post_scale(
+                    self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
+                )
+                self.scene.request_refresh()
             return RESPONSE_CONSUME
         # elif event_type == "zoom-in":
         #     self.scene_widget.matrix.post_scale(self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1])
