@@ -77,6 +77,7 @@ class Scene(Module, Job):
         self.default_stroke = None
         self.default_fill = None
         self.compute = True
+        self.has_background = False
 
         self.colors = GuiColors(self.context)
 

@@ -7,6 +7,7 @@ from meerk40t.gui.laserrender import DRAW_MODE_GUIDES
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.scene.widget import Widget
 
+_ = wx.GetTranslation
 
 class GuideWidget(Widget):
     """
@@ -125,6 +126,15 @@ class GuideWidget(Widget):
                     )
                 )
             )
+            amount = round((p.device.unit_width / tlen) * (p.device.unit_height / tlen)/1000, 0)*1000
+            if amount >= 2000:
+                dlg = wx.MessageDialog( None,
+                _("You will create more than {:,.0f} magnet-lines! Are you really, really sure?").format(amount),
+                _("Huge amount of magnet lines"), wx.YES_NO | wx.ICON_QUESTION)
+                result = dlg.ShowModal()
+                dlg.Destroy()
+                if result == wx.ID_NO:
+                    return
 
             x = 0
             while x <= p.device.unit_width:
@@ -144,7 +154,6 @@ class GuideWidget(Widget):
         Capture and deal with the double click event.
         Doubleclick in the grid loads a menu to remove the background.
         """
-        _ = self.scene.context._
 
         def add_scale_options(self, menu):
             kind = wx.ITEM_CHECK if self.scene.auto_tick else wx.ITEM_NORMAL
