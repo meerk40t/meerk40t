@@ -1,7 +1,7 @@
 import time
 
 from meerk40t.balor.command_list import CommandList, Wobble
-from meerk40t.balormk.connection import BalorController
+from meerk40t.balormk.controller import BalorController
 from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner

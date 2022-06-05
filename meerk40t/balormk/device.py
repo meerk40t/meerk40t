@@ -1,7 +1,7 @@
 import os
 
 from meerk40t.balor.command_list import CommandList
-from meerk40t.balormk.BalorDriver import BalorDriver
+from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
