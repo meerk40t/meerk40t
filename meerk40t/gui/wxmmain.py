@@ -2392,7 +2392,7 @@ class MeerK40t(MWindow):
         for file, id, shortcode in recents:
             if file is not None and file:
                 shortfile = _("Load {file}...").format(file=os.path.basename(file))
-                self.recent_file_menu.Append(id, shortcode + "  " + file, shortfile)
+                self.recent_file_menu.Append(id, shortcode + "  " + file.replace("&", "&&"), shortfile)
                 self.Bind(
                     wx.EVT_MENU,
                     partial(lambda f, event: self.load_or_open(f), file),
