@@ -740,17 +740,15 @@ class CameraInterface(MWindow):
                 if index is not None:
                     ukey = CAM_INDEX % index
                     testuri = getattr(kernel.root, ukey)
-                    print("attribute for %d=%s" % (index, testuri))
                     if testuri is None or testuri < 0:
                         # Only offer it at the very first time, user might have chosen a different one...
                         foundstr = getattr(kernel.root, CAM_FOUND)
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
+                            # Took default
                             testuri = 0
-                            print("Took default")
                         else:
                             testuri = available_cameras[index]
-                            print("Took camera %s" % testuri)
                         setattr(kernel.root, ukey, int(testuri))
                         kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
                     kernel.root.camera_default = index
