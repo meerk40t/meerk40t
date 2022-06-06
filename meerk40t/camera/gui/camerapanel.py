@@ -319,6 +319,10 @@ class CameraPanel(wx.Panel, Job):
 
     def swap_camera(self, uri):
         def swap(event=None):
+            CAM_INDEX = "cam_%d_uri"
+            ukey = CAM_INDEX % self.index
+            context = self.context.get_context("/")
+            setattr(context, ukey, str(uri))
             self.context("camera%d --uri %s stop start\n" % (self.index, str(uri)))
             self.frame_bitmap = None
 
@@ -739,16 +743,18 @@ class CameraInterface(MWindow):
                     ukey = CAM_INDEX % index
                     testuri = getattr(kernel.root, ukey)
                     if testuri is None or testuri < 0:
-                        # Only offer it at the very first time, user might have chosen a different one...
                         foundstr = getattr(kernel.root, CAM_FOUND)
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
                             # Took default
-                            testuri = 0
+                            if len(available_cameras>0):
+                                testuri = available_cameras[0]
+                            else:
+                                testuri = 0
                         else:
                             testuri = available_cameras[index]
                         setattr(kernel.root, ukey, int(testuri))
-                        kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
+                    kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
                 kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
