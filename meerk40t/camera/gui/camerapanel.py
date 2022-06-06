@@ -1,5 +1,6 @@
 import platform
 
+import cv2
 import wx
 from wx import aui
 
@@ -25,8 +26,24 @@ _ = wx.GetTranslation
 
 CORNER_SIZE = 25
 
+available_cameras = []
+
+def get_cameras():
+    # checks the first 5 indexes, fill up with default after that.
+    index = 0
+    i = 5
+    while i > 0:
+        cap = cv2.VideoCapture(index)
+        if cap.read()[0]:
+            available_cameras.append(index)
+            cap.release()
+        index += 1
+        i -= 1
+    print("Get Cameras provided:", available_cameras)
+
 
 def register_panel_camera(window, context):
+    get_cameras()
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
@@ -730,7 +747,19 @@ class CameraInterface(MWindow):
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 0)
+                for ci in range(5):
+                    kernel.root.setting(int, "cam_%d_uri" % ci, -1)
                 if index is not None:
+                    ukey= "cam_%d_uri" % index
+                    testuri = getattr(kernel.root, ukey)
+                    if testuri is None or testuri<0:
+                        # Only offer it at the very first time, user might have chosen a different one...
+                        if index>=len(available_cameras):
+                            testuri = 0
+                        else:
+                            testuri = available_cameras[index]
+                        setattr(kernel.root, ukey, testuri)
+                        kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
                 kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
