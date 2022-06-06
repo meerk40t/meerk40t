@@ -26,24 +26,8 @@ _ = wx.GetTranslation
 
 CORNER_SIZE = 25
 
-available_cameras = []
-
-def get_cameras():
-    # checks the first 5 indexes, fill up with default after that.
-    index = 0
-    i = 5
-    while i > 0:
-        cap = cv2.VideoCapture(index)
-        if cap.read()[0]:
-            available_cameras.append(index)
-            cap.release()
-        index += 1
-        i -= 1
-    print("Get Cameras provided:", available_cameras)
-
 
 def register_panel_camera(window, context):
-    get_cameras()
     for index in range(5):
         panel = CameraPanel(
             window, wx.ID_ANY, context=context, gui=window, index=index, pane=True
@@ -688,6 +672,7 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
         self.add_module_delegate(self.panel)
+        self.available_cameras = []
 
         # ==========
         # MENU BAR
@@ -744,25 +729,68 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        CAM_FOUND = "cam_found_indices"
+        CAM_INDEX = "cam_%d_uri"
+
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 0)
                 for ci in range(5):
-                    kernel.root.setting(int, "cam_%d_uri" % ci, -1)
+                    kernel.root.setting(int, CAM_INDEX % ci, -1)
                 if index is not None:
-                    ukey= "cam_%d_uri" % index
+                    ukey = CAM_INDEX % index
                     testuri = getattr(kernel.root, ukey)
-                    if testuri is None or testuri<0:
+                    print("attribute for %d=%s" % (index, testuri))
+                    if testuri is None or testuri < 0:
                         # Only offer it at the very first time, user might have chosen a different one...
-                        if index>=len(available_cameras):
+                        foundstr = getattr(kernel.root, CAM_FOUND)
+                        available_cameras = foundstr.split(";")
+                        if index >= len(available_cameras):
                             testuri = 0
+                            print("Took default")
                         else:
                             testuri = available_cameras[index]
-                        setattr(kernel.root, ukey, testuri)
+                            print("Took camera %s" % testuri)
+                        setattr(kernel.root, ukey, int(testuri))
                         kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
                 kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
+
+            return specific
+
+        def get_cameras(search=None):
+
+            def specific(event=None):
+                available_cameras = []
+                # Reset stuff...
+                kernel.root.setting(str, CAM_FOUND, "")
+                for ci in range(5):
+                    ukey = CAM_INDEX % ci
+                    kernel.root.setting(int, ukey, -1)
+                    setattr(kernel.root, ukey, -1)
+
+                MAXFIND = 5
+                found = 0
+                fstr = _("Cameras found: %d")
+                progress = wx.ProgressDialog(_("Looking for Cameras"), fstr % found, maximum=MAXFIND, parent=None, style=wx.PD_APP_MODAL)
+                # checks for cameras in the first 5 USB
+                index = 0
+                keepgoing = True
+                while index < MAXFIND and keepgoing:
+                    try:
+                        cap = cv2.VideoCapture(index)
+                        if cap.read()[0]:
+                            available_cameras.append(str(index))
+                            cap.release()
+                            found += 1
+                    except:
+                        pass
+                    keepgoing = progress.Update(index + 1, fstr % found)
+                    index += 1
+                progress.Destroy()
+                foundstr = ";".join(available_cameras)
+                setattr(kernel.root, CAM_FOUND, foundstr)
 
             return specific
 
@@ -779,6 +807,7 @@ class CameraInterface(MWindow):
                     (_("Camera %d") % 2, camera_click(2)),
                     (_("Camera %d") % 3, camera_click(3)),
                     (_("Camera %d") % 4, camera_click(4)),
+                    (_("Identify cameras"), get_cameras(True))
                 ),
             },
         )
