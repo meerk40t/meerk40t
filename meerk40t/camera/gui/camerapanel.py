@@ -1,6 +1,5 @@
 import platform
 
-import cv2
 import wx
 from wx import aui
 
@@ -672,7 +671,6 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.context, index=index)
         self.add_module_delegate(self.panel)
-        self.available_cameras = []
 
         # ==========
         # MENU BAR
@@ -767,11 +765,14 @@ class CameraInterface(MWindow):
                     ukey = CAM_INDEX % ci
                     kernel.root.setting(int, ukey, -1)
                     setattr(kernel.root, ukey, -1)
-
+                try:
+                    import cv2
+                except ImportError:
+                    return
                 MAXFIND = 5
                 found = 0
                 fstr = _("Cameras found: %d")
-                progress = wx.ProgressDialog(_("Looking for Cameras"), fstr % found, maximum=MAXFIND, parent=None, style=wx.PD_APP_MODAL)
+                progress = wx.ProgressDialog(_("Looking for Cameras"), fstr % found, maximum=MAXFIND, parent=None, style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
                 # checks for cameras in the first 5 USB
                 index = 0
                 keepgoing = True
