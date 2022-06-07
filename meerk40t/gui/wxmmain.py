@@ -2626,6 +2626,7 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
