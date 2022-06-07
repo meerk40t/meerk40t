@@ -164,6 +164,14 @@ class Parameters:
         self.settings["delay_polygon"] = value
 
     @property
+    def delay_end(self):
+        return self.settings.get("delay_end", 800.0)
+
+    @delay_end.setter
+    def delay_end(self, value):
+        self.settings["delay_end"] = value
+
+    @property
     def dwell_time(self):
         return self.settings.get("dwell_time", 50.0)
 

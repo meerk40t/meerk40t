@@ -77,6 +77,7 @@ ID_MENU_ZOOM_OUT = wx.NewId()
 ID_MENU_ZOOM_IN = wx.NewId()
 ID_MENU_ZOOM_SIZE = wx.NewId()
 ID_MENU_ZOOM_BED = wx.NewId()
+ID_MENU_SCENE_MINMAX = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
 ID_MENU_HIDE_FILLS = wx.NewId()
@@ -539,6 +540,9 @@ class MeerK40t(MWindow):
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
         self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
+        self.ui_visible = True
+        self.hidden_panes = []
+
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
@@ -576,6 +580,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
 
     def register_options_and_choices(self, context):
         _ = context._
@@ -1235,6 +1240,34 @@ class MeerK40t(MWindow):
             _pane.Show()
             self._mgr.Update()
 
+        @context.console_command(
+            "toggleui",
+            input_type="panes",
+            help=_("Hides/Restores all the visible panes (except scen)"),
+        )
+        def toggle_ui(command, _, channel, pane=None, **kwargs):
+            # Toggle visibility of all UI-elements
+            self.ui_visible = not self.ui_visible
+
+            if self.ui_visible:
+                for pane_name in self.hidden_panes:
+                    pane = self._mgr.GetPane(pane_name)
+                    pane.Show()
+                self._mgr.Update()
+                channel(_("Panes restored."))
+            else:
+                self.hidden_panes = []
+                for pane in self._mgr.GetAllPanes():
+                    if pane.IsShown():
+                        if pane.name == "scene":
+                            # Scene remains
+                            pass
+                        else:
+                            self.hidden_panes.append (pane.name)
+                            pane.Hide()
+                self._mgr.Update()
+                channel(_("Panes hidden."))
+
         @context.console_argument("pane", help=_("pane to be hidden"))
         @context.console_command(
             "hide",
@@ -1680,6 +1713,10 @@ class MeerK40t(MWindow):
         self.view_menu.Append(
             ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
         )
+        self.view_menu.Append(
+            ID_MENU_SCENE_MINMAX, _("Show/Hide UI-Panels\tCtrl-U"), _("Show/Hide all panels/ribbon bar")
+        )
+
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(
@@ -1940,6 +1977,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=ID_MENU_ZOOM_BED)
+        self.Bind(wx.EVT_MENU, self.on_click_toggle_ui, id=ID_MENU_SCENE_MINMAX)
 
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID
@@ -2585,6 +2623,10 @@ class MeerK40t(MWindow):
             x1 = Length(amount=bbox[2] + x_delta, relative_length=self.context.device.width).length_mm
             y1 = Length(amount=bbox[3] + y_delta, relative_length=self.context.device.height).length_mm
             self.context(f"scene focus {x0} {y0} {x1} {y1}\n")
+
+    def on_click_toggle_ui(self, event=None):
+        self.context("pane toggleui\n")
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """

@@ -82,6 +82,7 @@ class TestFill(unittest.TestCase):
             kernel.console("hatch\n")
             hatch = list(kernel.elements.ops())[0]
             rect = list(kernel.elements.elems())[0]
+            hatch.hatch_type = "eulerian"
             hatch.add_node(copy(rect))
             commands = list()
             # kernel.console("tree list\n")
@@ -104,7 +105,7 @@ class TestFill(unittest.TestCase):
             kernel.console("rect 3in 0 1in 1in\n")
             kernel.console("hatch\n")
             hatch = list(kernel.elements.ops())[0]
-
+            hatch.hatch_type = "eulerian"
             rect0 = list(kernel.elements.elems())[0]
             hatch.add_node(copy(rect0))
             rect1 = list(kernel.elements.elems())[1]

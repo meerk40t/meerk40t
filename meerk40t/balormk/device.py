@@ -1,11 +1,11 @@
 import os
 
 from meerk40t.balor.command_list import CommandList
-from meerk40t.balormk.BalorDriver import BalorDriver
+from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Path, Point, Polygon, Matrix
+from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
 
 
 class BalorDevice(Service, ViewPort):
@@ -194,6 +194,14 @@ class BalorDevice(Service, ViewPort):
                 "type": Angle,
                 "label": _("Redlight Angle Offset"),
                 "tip": _("Offset the redlight positions by this angle, curving around center"),
+            },
+            {
+                "attr": "redlight_preferred",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Prefer redlight on"),
+                "tip": _("Redlight preference will turn toggleable redlights on after a job completes."),
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -505,7 +513,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             "mark",
-            input_type="elements",
+            input_type="shapes",
             output_type="balor",
             help=_("runs mark on path."),
         )
@@ -569,6 +577,9 @@ class BalorDevice(Service, ViewPort):
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
         @self.console_option(
+            "jump_delay", "d", type=float, default=200.0, help="Sets the jump delay for light travel moves"
+        )
+        @self.console_option(
             "simulation_speed",
             "m",
             type=float,
@@ -593,6 +604,7 @@ class BalorDevice(Service, ViewPort):
             _,
             speed=False,
             travel_speed=None,
+            jump_delay=200,
             simulation_speed=None,
             quantization=500,
             data=None,
@@ -637,27 +649,41 @@ class BalorDevice(Service, ViewPort):
                     + pt[1] * rotate.d
                     + 1 * rotate.f,
                 )
+
+            dark_delay = 8
+            if jump_delay < 0:
+                jump_delay = None
+                dark_delay = None
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                job.light(x, y, False, jump_delay=200)
+                if isinstance(e, (Polygon, Polyline)):
+                    job.light(x, y, False, jump_delay=jump_delay)
+                    for pt in e:
+                        x, y = self.scene_to_device_position(*pt)
+                        x, y = mx_rotate((x, y))
+                        x = int(x) & 0xFFFF
+                        y = int(y) & 0xFFFF
+                        job.light(x, y, True, jump_delay=dark_delay)
+                    continue
+
+                job.light(x, y, False, jump_delay=jump_delay)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
                     x, y = self.scene_to_device_position(x, y)
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    job.light(x, y, True, jump_delay=0)
+                    job.light(x, y, True, jump_delay=dark_delay)
             job.light_off()
             return "balor", job
 
         @self.console_command(
             "stop",
             help=_("stops the idle running job"),
-            input_type=(None),
         )
         def stoplight(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping idle job")
@@ -699,14 +725,14 @@ class BalorDevice(Service, ViewPort):
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connect()
+            self.driver.connection.start()
 
         @self.console_command(
             "usb_disconnect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.disconnect()
+            self.driver.connection.stop()
 
         @self.console_command(
             "print",
@@ -772,7 +798,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             "duplicate",
-            help=_("loop the selected job forever"),
+            help=_("duplicate the balor job the given number of times."),
             input_type="balor",
             output_type="balor",
         )
@@ -790,9 +816,13 @@ class BalorDevice(Service, ViewPort):
             output_type="balor",
         )
         def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connect_if_needed()
             channel("Looping job: {job}".format(job=str(data)))
-            self.spooler.set_idle(("light", data))
+
+            def gen():
+                yield "light", data
+                yield "wait_finished"
+
+            self.spooler.set_idle(gen)
             return "balor", data
 
         @self.console_argument("x", type=float, default=0.0)
@@ -805,7 +835,6 @@ class BalorDevice(Service, ViewPort):
             if x is not None and y is not None:
                 rx = int(0x8000 + x) & 0xFFFF
                 ry = int(0x8000 + y) & 0xFFFF
-                self.driver.connect_if_needed()
                 self.driver.connection.set_xy(rx, ry)
 
         @self.console_argument("off", type=str)
@@ -815,23 +844,42 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
             if off == "off":
-                self.driver.connect_if_needed()
                 reply = self.driver.connection.light_off()
-                self.driver.redlight_preferred = False
+                self.redlight_preferred = False
                 channel("Turning off redlight.")
             else:
-                self.driver.connect_if_needed()
                 reply = self.driver.connection.light_on()
                 channel("Turning on redlight.")
-                self.driver.redlight_preferred = True
+                self.redlight_preferred = True
+
+        @self.console_option("duration", "d", type=float, help=_("time to set/unset the port"))
+        @self.console_argument("off", type=str)
+        @self.console_argument("bit", type=int)
+        @self.console_command(
+            "port",
+            help=_("Turns port on or off, eg. port off 8"),
+            all_arguments_required=True,
+        )
+        def balor_port(command, channel, _, off, bit=None, duration=None, **kwgs):
+            off = off == "off"
+            if off:
+                self.driver.connection.port_off(bit)
+                channel(f"Turning on bit {bit}")
+            else:
+                self.driver.connection.port_on(bit)
+                channel(f"Turning off bit {bit}")
+            if duration is not None:
+                if off:
+                    self(f".timer 1 {duration} port on {bit}")
+                else:
+                    self(f".timer 1 {duration} port off {bit}")
 
         @self.console_command(
             "status",
             help=_("Sends status check"),
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
-            self.driver.connect_if_needed()
-            reply = self.driver.connection.read_port()
+            reply = self.driver.connection.get_status()
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -845,8 +893,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Checks the list status."),
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
-            self.driver.connect_if_needed()
-            reply = self.driver.connection.raw_get_list_status()
+            reply = self.driver.connection.get_list_status()
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -860,8 +907,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Checks the serial number."),
         )
         def balor_serial(command, channel, _, remainder=None, **kwgs):
-            self.driver.connect_if_needed()
-            reply = self.driver.connection.raw_get_serial_no()
+            reply = self.driver.connection.get_serial_number()
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -869,44 +915,6 @@ class BalorDevice(Service, ViewPort):
                         index="{0:x}".format(index), bits="{0:b}".format(b)
                     )
                 )
-
-        # @self.console_argument("filename", type=str, default=None)
-        # @self.console_command(
-        #     "calibrate",
-        #     help=_("set the calibration file"),
-        # )
-        # def set_calfile(command, channel, _, filename=None, remainder=None, **kwgs):
-        #     if filename is None:
-        #         calfile = self.calfile
-        #         if calfile is None:
-        #             channel("No calibration file set.")
-        #         else:
-        #             channel(
-        #                 "Calibration file is set to: {file}".format(file=self.calfile)
-        #             )
-        #             from os.path import exists
-        #
-        #             if exists(calfile):
-        #                 channel("Calibration file exists!")
-        #                 cal = balor.Cal.Cal(calfile)
-        #                 if cal.enabled:
-        #                     channel("Calibration file successfully loads.")
-        #                 else:
-        #                     channel("Calibration file does not load.")
-        #             else:
-        #                 channel("WARNING: Calibration file does not exist.")
-        #     else:
-        #         from os.path import exists
-        #
-        #         if exists(filename):
-        #             self.calfile = filename
-        #         else:
-        #             channel(
-        #                 "The file at {filename} does not exist.".format(
-        #                     filename=os.path.realpath(filename)
-        #                 )
-        #             )
-        #             channel("Calibration file was not set.")
 
         @self.console_argument("filename", type=str, default=None)
         @self.console_command(
@@ -986,12 +994,19 @@ class BalorDevice(Service, ViewPort):
 
             self.signal("bed_size")
 
+        @self.console_option(
+            "count",
+            "c",
+            default=15,
+            type=int,
+            help="Number of instances of boxes to draw.",
+        )
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
+        def element_outline(command, channel, _, count=15, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1008,6 +1023,8 @@ class BalorDevice(Service, ViewPort):
                 (xmin, ymax),
                 (xmin, ymin),
             ]
+            if count > 1:
+                points *= count
             return "shapes", [Polygon(*points)]
 
         @self.console_command(
@@ -1107,325 +1124,11 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
-        # @self.console_option(
-        #     "raster-x-res",
-        #     help="X resolution (in mm) of the laser.",
-        #     default=0.15,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "raster-y-res",
-        #     help="X resolution (in mm) of the laser.",
-        #     default=0.15,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "x",
-        #     "xoffs",
-        #     help="Specify an x offset for the image (mm.)",
-        #     default=0.0,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "y",
-        #     "yoffs",
-        #     help="Specify an y offset for the image (mm.)",
-        #     default=0.0,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "d", "dither", help="Configure dithering", default=0.1, type=float
-        # )
-        # @self.console_option(
-        #     "s",
-        #     "scale",
-        #     help="Pixels per mm (default 23.62 px/mm - 600 DPI)",
-        #     default=23.622047,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "t",
-        #     "threshold",
-        #     help="Greyscale threshold for burning (default 0.5, negative inverts)",
-        #     default=0.5,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "g",
-        #     "grayscale",
-        #     help="Greyscale rastering (power, speed, q_switch_frequency, passes)",
-        #     default=False,
-        #     type=bool,
-        # )
-        # @self.console_option(
-        #     "grayscale-min",
-        #     help="Minimum (black=1) value of the gray scale",
-        #     default=None,
-        #     type=float,
-        # )
-        # @self.console_option(
-        #     "grayscale-max",
-        #     help="Maximum (white=255) value of the gray scale",
-        #     default=None,
-        #     type=float,
-        # )
-        # @self.console_command("balor-raster", input_type="image", output_type="balor")
-        # def balor_raster(
-        #     command,
-        #     channel,
-        #     _,
-        #     data=None,
-        #     raster_x_res=0.15,
-        #     raster_y_res=0.15,
-        #     xoffs=0.0,
-        #     yoffs=0.0,
-        #     dither=0.1,
-        #     scale=23.622047,
-        #     threshold=0.5,
-        #     grayscale=False,
-        #     grayscale_min=None,
-        #     grayscale_max=None,
-        #     **kwgs,
-        # ):
-        #     # def raster_render(self, job, cal, in_file, out_file, args):
-        #     if len(data) == 0:
-        #         channel("No image selected.")
-        #         return
-        #     in_file = data[0].image
-        #     width = in_file.size[0] / scale
-        #     height = in_file.size[1] / scale
-        #     x0, y0 = xoffs, yoffs
-        #
-        #     invert = False
-        #     if threshold < 0:
-        #         invert = True
-        #         threshold *= -1.0
-        #     dither = 0
-        #     passes = 1
-        #     if grayscale:
-        #         gsmin = grayscale_min
-        #         gsmax = grayscale_max
-        #         gsslope = (gsmax - gsmin) / 256.0
-        #     cal = None
-        #     if self.calibration_file is not None:
-        #         try:
-        #             cal = Cal(self.calibration_file)
-        #         except TypeError:
-        #             pass
-        #     job = CommandList(cal=cal)
-        #
-        #     img = scipy.interpolate.RectBivariateSpline(
-        #         np.linspace(y0, y0 + height, in_file.size[1]),
-        #         np.linspace(x0, x0 + width, in_file.size[0]),
-        #         np.asarray(in_file),
-        #     )
-        #
-        #     dither = 0
-        #     job.set_mark_settings(
-        #         travel_speed=self.travel_speed,
-        #         power=self.laser_power,
-        #         frequency=self.q_switch_frequency,
-        #         cut_speed=self.cut_speed,
-        #         laser_on_delay=self.delay_laser_on,
-        #         laser_off_delay=self.delay_laser_off,
-        #         polygon_delay=self.delay_polygon,
-        #     )
-        #     y = y0
-        #     count = 0
-        #     burning = False
-        #     old_y = y0
-        #     while y < y0 + height:
-        #         x = x0
-        #         job.goto(x, y)
-        #         old_x = x0
-        #         while x < x0 + width:
-        #             px = img(y, x)[0][0]
-        #             if invert:
-        #                 px = 255.0 - px
-        #
-        #             if grayscale:
-        #                 if px > 0:
-        #                     gsval = gsmin + gsslope * px
-        #                     if grayscale == "power":
-        #                         job.set_power(gsval)
-        #                     elif grayscale == "speed":
-        #                         job.set_cut_speed(gsval)
-        #                     elif grayscale == "q_switch_frequency":
-        #                         job.set_frequency(gsval)
-        #                     elif grayscale == "passes":
-        #                         passes = int(round(gsval))
-        #                         # Would probably be better to do this over the course of multiple
-        #                         # rasters for heat disappation during 2.5D engraving
-        #                     # pp = int(round((int(px)/255) * args.laser_power * 40.95))
-        #                     # job.change_settings(q_switch_period, pp, cut_speed)
-        #
-        #                     if not burning:
-        #                         job.laser_control(True)  # laser turn on
-        #                     i = passes
-        #                     while i > 1:
-        #                         job.mark(x, y)
-        #                         job.mark(old_x, old_y)
-        #                         i -= 2
-        #                     job.mark(x, y)
-        #                     burning = True
-        #
-        #                 else:
-        #                     if burning:
-        #                         # laser turn off
-        #                         job.laser_control(False)
-        #                     job.goto(x, y)
-        #                     burning = False
-        #             else:
-        #
-        #                 if px + dither > threshold:
-        #                     if not burning:
-        #                         job.laser_control(True)  # laser turn on
-        #                     job.mark(x, y)
-        #                     burning = True
-        #                     dither = 0.0
-        #                 else:
-        #                     if burning:
-        #                         # laser turn off
-        #                         job.laser_control(False)
-        #                     job.goto(x, y)
-        #                     dither += abs(px + dither - threshold) * dither
-        #                     burning = False
-        #             old_x = x
-        #             x += raster_x_res
-        #         if burning:
-        #             # laser turn off
-        #             job.laser_control(False)
-        #             burning = False
-        #
-        #         old_y = y
-        #         y += raster_y_res
-        #         count += 1
-        #         if not (count % 20):
-        #             print("\ty = %.3f" % y, file=sys.stderr)
-        #
-        #     return "balor", job
-
-        # @self.console_option(
-        #     "travel_speed", "t", type=float, help="Set the travel speed."
-        # )
-        # @self.console_option("power", "p", type=float, help="Set the power level")
-        # @self.console_option(
-        #     "frequency", "q", type=float, help="Set the device's qswitch frequency"
-        # )
-        # @self.console_option(
-        #     "cut_speed", "s", type=float, help="Set the cut speed of the device"
-        # )
-        # @self.console_option("power", "p", type=float, help="Set the power level")
-        # @self.console_option(
-        #     "laser_on_delay", "n", type=float, help="Sets the device's laser on delay"
-        # )
-        # @self.console_option(
-        #     "laser_off_delay", "f", type=float, help="Sets the device's laser off delay"
-        # )
-        # @self.console_option(
-        #     "polygon_delay",
-        #     "n",
-        #     type=float,
-        #     help="Sets the device's laser polygon delay",
-        # )
-        # @self.console_option(
-        #     "angle", "a", type=Angle.parse, default=0, help=_("Angle of the fill")
-        # )
-        # @self.console_option(
-        #     "distance", "d", type=str, default="1mm", help=_("distance between rungs")
-        # )
-        # @self.console_command(
-        #     "hatch",
-        #     help=_("hatch <angle> <distance>"),
-        #     output_type="balor",
-        # )
-        # def hatch(
-        #     command,
-        #     channel,
-        #     _,
-        #     angle=None,
-        #     distance=None,
-        #     travel_speed=None,
-        #     power=None,
-        #     frequency=None,
-        #     cut_speed=None,
-        #     laser_on_delay=None,
-        #     laser_off_delay=None,
-        #     polygon_delay=None,
-        #     **kwargs,
-        # ):
-        #     from meerk40t.balor.Cal import Cal
-        #
-        #     cal = None
-        #     if self.calibration_file is not None:
-        #         try:
-        #             cal = Cal(self.calibration_file)
-        #         except TypeError:
-        #             pass
-        #     job = CommandList(cal=cal)
-        #     job.set_mark_settings(
-        #         travel_speed=self.travel_speed
-        #         if travel_speed is None
-        #         else travel_speed,
-        #         power=self.laser_power if power is None else power,
-        #         frequency=self.q_switch_frequency if frequency is None else frequency,
-        #         cut_speed=self.cut_speed if cut_speed is None else cut_speed,
-        #         laser_on_delay=self.delay_laser_on
-        #         if laser_on_delay is None
-        #         else laser_on_delay,
-        #         laser_off_delay=self.delay_laser_off
-        #         if laser_off_delay is None
-        #         else laser_off_delay,
-        #         polygon_delay=self.delay_polygon
-        #         if polygon_delay is None
-        #         else polygon_delay,
-        #     )
-        #     job.light_on()
-        #     elements = self.elements
-        #     channel(_("Hatch Filling"))
-        #     if distance is not None:
-        #         distance = "1mm"
-        #     distance = float(Length(distance))
-        #     transformed_vector = self._matrix.transform_vector([0, distance])
-        #     distance = abs(complex(transformed_vector[0], transformed_vector[1]))
-        #
-        #     efill = EulerianFill(distance)
-        #     for element in elements.elems(emphasized=True):
-        #         if not isinstance(element, Shape):
-        #             continue
-        #         e = abs(Path(element))
-        #         e *= self._matrix
-        #         if angle is not None:
-        #             e *= Matrix.rotate(angle)
-        #
-        #         pts = [abs(e).point(i / 100.0, error=1e-4) for i in range(101)]
-        #         efill += pts
-        #
-        #     points = efill.get_fill()
-        #
-        #     def split(points):
-        #         pos = 0
-        #         for i, pts in enumerate(points):
-        #             if pts is None:
-        #                 yield points[pos : i - 1]
-        #                 pos = i + 1
-        #         if pos != len(points):
-        #             yield points[pos : len(points)]
-        #
-        #     for s in split(points):
-        #         for p in s:
-        #             if p.value == "RUNG":
-        #                 job.mark(p.x, p.y)
-        #             if p.value == "EDGE":
-        #                 job.goto(p.x, p.y)
-        #     return "balor", job
-
     @property
     def current(self):
         """
         @return: the location in nm for the current known x value.
         """
-        # return float(self.driver.native_x / self.width) * 0xFFF
         return self.device_to_scene_position(
             self.driver.native_x,
             self.driver.native_y,

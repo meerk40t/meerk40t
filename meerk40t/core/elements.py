@@ -5484,9 +5484,9 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("home -f"),
                 type="op console",
                 pos=pos,
+                command="home -f",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -5495,27 +5495,27 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("move_abs 0 0"),
                 type="op console",
                 pos=pos,
+                command="move_abs 0 0",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("beep"),
                 type="op console",
                 pos=pos,
+                command="beep",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('interrupt "Spooling was interrupted"'),
                 type="op console",
                 pos=pos,
+                command='interrupt "Spooling was interrupted"',
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -5531,9 +5531,19 @@ class Elemental(Service):
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("quit"),
                 type="op console",
                 pos=pos,
+                command="quit",
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_prompt("opname", _("Console command to append to operations?"))
+        @self.tree_operation(_("Append Console"), node_type="branch ops", help="")
+        def append_operation_custom(node, opname, pos=None, **kwargs):
+            self.op_branch.add(
+                type="op console",
+                pos=pos,
+                command=opname,
             )
 
         @self.tree_operation(
@@ -6845,6 +6855,8 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 # Are the colors identical? if the op is default then in any case
+                if op.type == "op console":
+                    continue
                 same_color = op.default
                 if hasattr(node, "stroke") and node.stroke is not None:
                     # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
