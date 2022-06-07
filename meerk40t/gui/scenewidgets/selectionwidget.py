@@ -1159,12 +1159,16 @@ class MoveWidget(Widget):
 
         self.duplicated_elements = True
         # Iterate through list of selected elements, duplicate them
-
         context = self.scene.context
         elements = context.elements
-        adding_elements = [copy(e) for e in list(elements.elems(emphasized=True))]
-        elements.add_elems(adding_elements)
-        elements.classify(adding_elements)
+        copy_nodes = list()
+        for e in list(elements.elems(emphasized=True)):
+            copy_node = copy(e)
+            if hasattr(e, "wxfont"):
+                copy_node.wxfont = e.wxfont
+            e.parent.add_node(copy_node)
+            copy_nodes.append(copy_node)
+        elements.classify(copy_nodes)
 
     def process_draw(self, gc):
         if self.master.tool_running:  # We don't need that overhead
