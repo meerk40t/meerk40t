@@ -1046,7 +1046,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_option(
             "count",
             "c",
-            default=64,
+            default=256,
             type=int,
             help="Number of instances of boxes to draw.",
         )
@@ -1055,7 +1055,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, count=64, data=None, args=tuple(), **kwargs):
+        def element_outline(command, channel, _, count=256, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """
