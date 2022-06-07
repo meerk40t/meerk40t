@@ -650,6 +650,10 @@ class BalorDevice(Service, ViewPort):
                     + 1 * rotate.f,
                 )
 
+            dark_delay = 8
+            if jump_delay < 0:
+                jump_delay = None
+                dark_delay = None
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
@@ -663,7 +667,7 @@ class BalorDevice(Service, ViewPort):
                         x, y = mx_rotate((x, y))
                         x = int(x) & 0xFFFF
                         y = int(y) & 0xFFFF
-                        job.light(x, y, True, jump_delay=0)
+                        job.light(x, y, True, jump_delay=dark_delay)
                     continue
 
                 job.light(x, y, False, jump_delay=jump_delay)
@@ -673,7 +677,7 @@ class BalorDevice(Service, ViewPort):
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    job.light(x, y, True, jump_delay=0)
+                    job.light(x, y, True, jump_delay=dark_delay)
             job.light_off()
             return "balor", job
 
