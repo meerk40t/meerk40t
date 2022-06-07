@@ -4826,7 +4826,7 @@ class Elemental(Service):
             return hull
 
         @self.console_argument(
-            "method", help=_("Method to use (one of segment, quick, hull, complex)")
+            "method", help=_("Method to use (one of quick, hull, complex, segment, circle)")
         )
         @self.console_argument("resolution")
         @self.console_command(
@@ -4840,10 +4840,10 @@ class Elemental(Service):
             if method is None:
                 method = "quick"
             method = method.lower()
-            if not method in ("segment", "quick", "hull", "complex"):
+            if not method in ("segment", "quick", "hull", "complex", "circle"):
                 channel(
                     _(
-                        "Invalid method, please use one of segment, quick, hull, complex."
+                        "Invalid method, please use one of quick, hull, complex, segment, circle."
                     )
                 )
                 return
