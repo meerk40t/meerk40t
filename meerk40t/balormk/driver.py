@@ -439,7 +439,7 @@ class BalorDriver:
 
         @return:
         """
-        pass
+        self.connection.wait_finished()
 
     def function(self, function):
         function()

@@ -301,6 +301,16 @@ class Sender:
         self.read_port()
         return bool(self._usb_connection.status & 0x04)
 
+    def is_ready_and_not_busy(self):
+        self.read_port()
+        return bool(self._usb_connection.status & 0x20) and not bool(self._usb_connection.status & 0x04)
+
+    def wait_finished(self):
+        while self.is_ready_and_not_busy():
+            time.sleep(self.sleep_time)
+            if self._terminate_execution:
+                return
+
     def execute(
         self, command_list: CommandSource, loop_count=1, callback_finished=None
     ):

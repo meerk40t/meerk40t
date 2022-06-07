@@ -798,7 +798,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             "duplicate",
-            help=_("loop the selected job forever"),
+            help=_("duplicate the balor job the given number of times."),
             input_type="balor",
             output_type="balor",
         )
@@ -817,7 +817,12 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Looping job: {job}".format(job=str(data)))
-            self.spooler.set_idle(("light", data))
+
+            def gen():
+                yield "light", data
+                yield "wait_finished"
+
+            self.spooler.set_idle(gen)
             return "balor", data
 
         @self.console_argument("x", type=float, default=0.0)

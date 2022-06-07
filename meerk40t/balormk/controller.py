@@ -126,6 +126,15 @@ class BalorController:
         if self.connection is not None:
             return self.connection.get_port()
 
+    def wait_finished(self):
+        while len(self._queue) or len(self._preempt):
+            time.sleep(0.01)
+            if self.connection._terminate_execution:
+                self._queue.clear()
+                self._preempt.clear()
+                return
+        self.write(("wait_finished", tuple()))
+
     def start(self):
         """
         Controller state change to `Started`.
