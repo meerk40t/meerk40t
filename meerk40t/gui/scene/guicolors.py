@@ -42,19 +42,17 @@ class GuiColors:
         # then this is degenerate and will lead to default colors
         def identical(color1, color2):
             return color1.GetRGB() == color2.GetRGB()
-        degenerate = False
-        degenerate = degenerate or identical(self.color_bed, self.color_guide)
-        degenerate = degenerate or identical(self.color_bed, self.color_grid)
-        degenerate = degenerate or identical(self.color_bed, self.color_guide2)
-        degenerate = degenerate or identical(self.color_bed, self.color_grid2)
-        degenerate = degenerate or identical(self.color_bed, self.color_guide3)
-        degenerate = degenerate or identical(self.color_bed, self.color_grid3)
-        degenerate = degenerate or identical(self.color_bed, self.color_selection1)
-        degenerate = degenerate or identical(self.color_bed, self.color_selection2)
-        degenerate = degenerate or identical(self.color_bed, self.color_selection3)
-        if degenerate:
-            print ("Degenerate colors :-(")
-            self.set_default_colors()
+
+        bed_color = self.color_bed
+        fixed = 0
+        for key in ("grid", "guide", "grid2", "guide2", "grid3", "guide3", "selection1", "selection2", "selection3"):
+            item_color = self._get_color(key)
+            if identical(bed_color, item_color):
+                fixed += 1
+                color_key = f"color_{key}"
+                setattr(self.context, color_key, self.default_color[key])
+        # if fixed>0:
+        # self.context("Reset %d colors to their defaults, as thye wre indistinguishable from the bed" % fixed)
 
     def set_default_colors(self):
         """
