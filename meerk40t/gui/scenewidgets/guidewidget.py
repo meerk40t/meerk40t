@@ -9,6 +9,7 @@ from meerk40t.gui.scene.widget import Widget
 
 _ = wx.GetTranslation
 
+
 class GuideWidget(Widget):
     """
     Interface Widget
@@ -126,11 +127,22 @@ class GuideWidget(Widget):
                     )
                 )
             )
-            amount = round((p.device.unit_width / tlen) * (p.device.unit_height / tlen)/1000, 0)*1000
+            amount = (
+                round(
+                    (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
+                    0,
+                )
+                * 1000
+            )
             if amount >= 2000:
-                dlg = wx.MessageDialog( None,
-                _("You will create more than {:,.0f} magnet-lines! Are you really, really sure?").format(amount),
-                _("Huge amount of magnet lines"), wx.YES_NO | wx.ICON_QUESTION)
+                dlg = wx.MessageDialog(
+                    None,
+                    _(
+                        "You will create more than {:,.0f} magnet-lines! Are you really, really sure?"
+                    ).format(amount),
+                    _("Huge amount of magnet lines"),
+                    wx.YES_NO | wx.ICON_QUESTION,
+                )
                 result = dlg.ShowModal()
                 dlg.Destroy()
                 if result == wx.ID_NO:
