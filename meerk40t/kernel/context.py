@@ -143,8 +143,8 @@ class Context:
             )
         else:
             load_value = default
-            if not isinstance(load_value, setting_type):
-                load_value = setting_type(load_value)
+        if load_value is not None and not isinstance(load_value, setting_type):
+            load_value = setting_type(load_value)
         setattr(self, key, load_value)
         return load_value
 
