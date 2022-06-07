@@ -58,9 +58,9 @@ def plugin(service, lifecycle):
                 if v == 2:
                     service("element* ants light loop\n")
                 if v == 3:
-                    service("element* light loop\n")
+                    service("element* path light loop\n")
                 if v == 4:
-                    service("element* light --speed loop\n")
+                    service("element* path light --speed loop\n")
 
             return light_program
 
