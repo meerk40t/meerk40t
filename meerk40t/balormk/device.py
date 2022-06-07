@@ -691,7 +691,6 @@ class BalorDevice(Service, ViewPort):
             command,
             channel,
             _,
-            speed=False,
             data=None,
             **kwgs,
         ):
