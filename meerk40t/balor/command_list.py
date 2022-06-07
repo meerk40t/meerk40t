@@ -1,7 +1,11 @@
 import math
 import sys
+from copy import copy
 
 import numpy as np
+
+eol = [0x02, 0x80] + [0] * 10
+empty_packet = bytearray(eol * 0x100)  # Create an empty packet.
 
 
 class Simulation:
@@ -767,10 +771,11 @@ class CommandList(CommandSource):
         last_xy = self._start_x, self._start_y
 
         # Write buffer.
-        buf = bytearray([0] * 0xC00)  # Create a packet.
-        eol = bytes([0x02, 0x80] + [0] * 10)  # End of Line Command
+        buf = None
         i = 0
         for op in self.operations:
+            if buf is None:
+                buf = copy(empty_packet)
             if op.has_d():
                 nx, ny = op.get_xy()
                 x, y = last_xy
@@ -781,12 +786,12 @@ class CommandList(CommandSource):
             buf[i : i + 12] = op.serialize()
             i += 12
             if i >= 0xC00:
+                if buf is not None:
+                    yield buf
                 i = 0
-                yield buf
-        while i < 0xC00:
-            buf[i : i + 12] = eol
-            i += 12
-        yield buf
+                buf = None
+        if buf is not None:
+            yield buf
 
     ######################
     # GEOMETRY HELPERS
@@ -994,6 +999,10 @@ class CommandList(CommandSource):
         @param y:
         @return:
         """
+        if self._last_x == x and self._last_y == y:
+            return
+        x = int(round(x))
+        y = int(round(y))
         self.ready()
         if self._mark_speed is not None:
             self.set_cut_speed(self._mark_speed)
@@ -1045,6 +1054,10 @@ class CommandList(CommandSource):
         @param jump_delay:
         @return:
         """
+        x = int(round(x))
+        y = int(round(y))
+        if self._last_x == x and self._last_y == y:
+            return
         if light:
             self.light_on()
             if self._light_speed is not None:
@@ -1073,6 +1086,10 @@ class CommandList(CommandSource):
         @param jump_delay:8
         @return:
         """
+        if self._last_x == x and self._last_y == y:
+            return
+        x = int(round(x))
+        y = int(round(y))
         self.ready()
         if self._goto_speed is not None:
             self.set_travel_speed(self._goto_speed)
@@ -1263,106 +1280,3 @@ class CommandList(CommandSource):
 
     def raw_ready_mark(self, *args):
         self.append(OpReadyMark(*args))
-
-
-class Wobble:
-    def __init__(self, radius=50, speed=50, interval=10):
-        self._total_count = 0
-        self._total_distance = 0
-        self._remainder = 0
-        self.previous_angle = None
-        self.radius = radius
-        self.speed = speed
-        self.interval = interval
-        self._last_x = None
-        self._last_y = None
-
-    def wobble(self, x0, y0, x1, y1):
-        distance_change = abs(complex(x0, y0) - complex(x1, y1))
-        positions = 1 - self._remainder
-        intervals = distance_change / self.interval
-        while positions <= intervals:
-            amount = positions / intervals
-            tx = amount * (x1 - x0) + x0
-            ty = amount * (y1 - y0) + y0
-            self._total_distance += self.interval
-            self._total_count += 1
-            yield tx, ty
-            positions += 1
-        self._remainder += intervals
-        self._remainder %= 1
-
-    def circle(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            t = self._total_distance / (math.tau * self.radius)
-            dx = self.radius * math.cos(t * self.speed)
-            dy = self.radius * math.sin(t * self.speed)
-            yield tx + dx, ty + dy
-
-    def sinewave(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-            d = math.sin(self._total_distance / self.speed)
-            dx = self.radius * d * math.cos(angle)
-            dy = self.radius * d * math.sin(angle)
-            yield tx + dx, ty + dy
-
-    def sawtooth(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-            d = -1 if self._total_count % 2 else 1
-            dx = self.radius * d * math.cos(angle)
-            dy = self.radius * d * math.sin(angle)
-            yield tx + dx, ty + dy
-
-    def jigsaw(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            angle = math.atan2(y1 - y0, x1 - x0)
-            angle_perp = angle + math.tau / 4.0
-            d = math.sin(self._total_distance / self.speed)
-            dx = self.radius * d * math.cos(angle_perp)
-            dy = self.radius * d * math.sin(angle_perp)
-
-            d = -1 if self._total_count % 2 else 1
-            dx += self.radius * d * math.cos(angle)
-            dy += self.radius * d * math.sin(angle)
-            yield tx + dx, ty + dy
-
-    def gear(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-            d = -1 if (self._total_count // 2) % 2 else 1
-            dx = self.radius * d * math.cos(angle)
-            dy = self.radius * d * math.sin(angle)
-            yield tx + dx, ty + dy
-
-    def slowtooth(self, x0, y0, x1, y1):
-        if x1 is None or y1 is None:
-            yield x0, y0
-            return
-        for tx, ty in self.wobble(x0, y0, x1, y1):
-            angle = math.atan2(y1 - y0, x1 - x0) + math.tau / 4.0
-            if self.previous_angle is None:
-                self.previous_angle = angle
-            amount = 1.0 / self.speed
-            angle = amount * (angle - self.previous_angle) + self.previous_angle
-            d = -1 if self._total_count % 2 else 1
-            dx = self.radius * d * math.cos(angle)
-            dy = self.radius * d * math.sin(angle)
-            self.previous_angle = angle
-            yield tx + dx, ty + dy

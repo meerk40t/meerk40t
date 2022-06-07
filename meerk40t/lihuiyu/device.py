@@ -2183,7 +2183,6 @@ class LhystudiosController:
                 if self.state not in (
                     STATE_PAUSE,
                     STATE_BUSY,
-                    STATE_BUSY,
                     STATE_TERMINATE,
                 ):
                     self.update_state(STATE_IDLE)

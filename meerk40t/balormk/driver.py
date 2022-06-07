@@ -1,10 +1,11 @@
 import time
 
-from meerk40t.balor.command_list import CommandList, Wobble
-from meerk40t.balor.sender import BalorMachineException, Sender
+from meerk40t.balor.command_list import CommandList
+from meerk40t.balormk.controller import BalorController
 from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.fill.fills import Wobble
 
 
 class BalorDriver:
@@ -13,8 +14,7 @@ class BalorDriver:
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.channel = self.service.channel("balor")
-        self.connection = Sender(debug=self.channel)
+        self.connection = BalorController(service)
         self.paused = False
 
         self.connected = False
@@ -23,8 +23,6 @@ class BalorDriver:
         self.laser = False
 
         self._shutdown = False
-
-        self.redlight_preferred = False
 
         self.queue = list()
         self.plot_planner = PlotPlanner(
@@ -42,65 +40,6 @@ class BalorDriver:
 
     def service_detach(self):
         self._shutdown = True
-
-    def connect_if_needed(self):
-        if not self.connected:
-            self.connect()
-
-    def connect(self):
-        """
-        Connect to the Balor Sender
-
-        @return:
-        """
-        self.connected = False
-        while not self.connected:
-            try:
-                self.connected = self.connection.open(
-                    mock=self.service.mock,
-                    machine_index=self.service.machine_index,
-                    cor_file=self.service.corfile
-                    if self.service.corfile_enabled
-                    else None,
-                    first_pulse_killer=self.service.first_pulse_killer,
-                    pwm_pulse_width=self.service.pwm_pulse_width,
-                    pwm_half_period=self.service.pwm_half_period,
-                    standby_param_1=self.service.standby_param_1,
-                    standby_param_2=self.service.standby_param_2,
-                    timing_mode=self.service.timing_mode,
-                    delay_mode=self.service.delay_mode,
-                    laser_mode=self.service.laser_mode,
-                    control_mode=self.service.control_mode,
-                    fpk2_p1=self.service.fpk2_p1,
-                    fpk2_p2=self.service.fpk2_p2,
-                    fpk2_p3=self.service.fpk2_p3,
-                    fpk2_p4=self.service.fpk2_p3,
-                    fly_res_p1=self.service.fly_res_p1,
-                    fly_res_p2=self.service.fly_res_p2,
-                    fly_res_p3=self.service.fly_res_p3,
-                    fly_res_p4=self.service.fly_res_p4,
-                )
-                if self.redlight_preferred:
-                    self.connection.light_on()
-                else:
-                    self.connection.light_off()
-            except BalorMachineException as e:
-                self.service.signal("pipe;usb_status", str(e))
-                self.channel(str(e))
-                return
-            if not self.connected:
-                self.service.signal("pipe;usb_status", "Connecting...")
-                if self._shutdown:
-                    self.service.signal("pipe;usb_status", "Failed to connect")
-                    return
-                time.sleep(1)
-        self.connected = True
-        self.service.signal("pipe;usb_status", "Connected")
-
-    def disconnect(self):
-        self.connection.close()
-        self.connected = False
-        self.service.signal("pipe;usb_status", "Disconnected")
 
     def hold_work(self):
         """
@@ -122,9 +61,8 @@ class BalorDriver:
         return False
 
     def balor_job(self, job):
-        self.connect_if_needed()
-        self.connection.execute(job, 1)
-        if self.redlight_preferred:
+        self.connection.job(job)
+        if self.service.redlight_preferred:
             self.connection.light_on()
         else:
             self.connection.light_off()
@@ -168,10 +106,9 @@ class BalorDriver:
         @param job:
         @return:
         """
-        self.connect_if_needed()
         self.connection.light_off()
-        self.connection.execute(job, 1)
-        if self.redlight_preferred:
+        self.connection.job(job)
+        if self.service.redlight_preferred:
             self.connection.light_on()
         else:
             self.connection.light_off()
@@ -229,44 +166,33 @@ class BalorDriver:
         wobble_enabled = (
                 str(settings.get("wobble_enabled", False)).lower() == "true"
         )
-        if wobble_enabled:
-            wobble_radius = settings.get("wobble_radius", "1.5mm")
-            wobble_r = self.service.physical_to_device_length(
-                wobble_radius, 0
-            )[0]
-            wobble_interval = settings.get("wobble_interval", "0.3mm")
-            wobble_speed = settings.get("wobble_speed", 50.0)
-            wobble_type = settings.get("wobble_type", "circle")
-            wobble_interval = self.service.physical_to_device_length(
-                wobble_interval, 0
-            )[0]
-            if self.wobble is None:
-                self.wobble = Wobble(
-                    radius=wobble_r,
-                    speed=wobble_speed,
-                    interval=wobble_interval,
-                )
-            else:
-                # set our parameterizations
-                self.wobble.radius = wobble_r
-                self.wobble.speed = wobble_speed
-            if wobble_type == "circle":
-                job._mark_modification = self.wobble.circle
-            elif wobble_type == "sinewave":
-                job._mark_modification = self.wobble.sinewave
-            elif wobble_type == "sawtooth":
-                job._mark_modification = self.wobble.sawtooth
-            elif wobble_type == "jigsaw":
-                job._mark_modification = self.wobble.jigsaw
-            elif wobble_type == "gear":
-                job._mark_modification = self.wobble.gear
-            elif wobble_type == "slowtooth":
-                job._mark_modification = self.wobble.slowtooth
-            else:
-                raise ValueError
-        else:
+        if not wobble_enabled:
             job._mark_modification = None
-            job._interpolations = None
+            return
+        wobble_radius = settings.get("wobble_radius", "1.5mm")
+        wobble_r = self.service.physical_to_device_length(
+            wobble_radius, 0
+        )[0]
+        wobble_interval = settings.get("wobble_interval", "0.3mm")
+        wobble_speed = settings.get("wobble_speed", 50.0)
+        wobble_type = settings.get("wobble_type", "circle")
+        wobble_interval = self.service.physical_to_device_length(
+            wobble_interval, 0
+        )[0]
+        algorithm = self.service.lookup(f"wobble/{wobble_type}")
+        if self.wobble is None:
+            self.wobble = Wobble(
+                algorithm=algorithm,
+                radius=wobble_r,
+                speed=wobble_speed,
+                interval=wobble_interval,
+            )
+        else:
+            # set our parameterizations
+            self.wobble.algorithm = algorithm
+            self.wobble.radius = wobble_r
+            self.wobble.speed = wobble_speed
+        job._mark_modification = self.wobble
 
     def plot_start(self):
         """
@@ -274,10 +200,8 @@ class BalorDriver:
 
         @return:
         """
-        self.connect_if_needed()
         job = CommandList()
         job.ready()
-        # marked = False
         job.raw_mark_end_delay(0x0320)
         job.set_write_port(self.connection.get_port())
         job.set_travel_speed(self.service.default_rapid_speed)
@@ -310,7 +234,7 @@ class BalorDriver:
                     job.goto(x, y)
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
-                t = 0
+                t = step_size
                 for p in range(int(interp)):
                     while self.hold_work():
                         time.sleep(0.05)
@@ -368,12 +292,10 @@ class BalorDriver:
                         elif on & (
                                 PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            # job.laser_off(int(self.service.delay_end / 10.0))
                             job.set_travel_speed(self.service.default_rapid_speed)
                             job.goto(x, y)
                         continue
                     if on == 0:
-                        # job.laser_off(int(self.service.delay_end / 10.0))
                         job.set_travel_speed(self.service.default_rapid_speed)
                         job.goto(x, y)
                     else:
@@ -400,13 +322,12 @@ class BalorDriver:
                                         float(settings.get("power", self.service.default_power)) / 10.0
                                 )
                                 job.set_power(current_power * on)
-                        # job.laser_on()
                         job.mark(x, y)
-                        marked = True
-        # job.laser_off(int(self.service.delay_end / 10.0))
         job.flush()
-        self.connection.execute(job, 1)
-        if self.redlight_preferred:
+        job.raw_mark_end_delay(self.service.delay_end)
+
+        self.connection.job(job)
+        if self.service.redlight_preferred:
             self.connection.light_on()
         else:
             self.connection.light_off()
@@ -420,7 +341,6 @@ class BalorDriver:
         @param y:
         @return:
         """
-        self.connect_if_needed()
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
@@ -431,7 +351,6 @@ class BalorDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-
         self.connection.set_xy(self.native_x, self.native_y)
 
     def move_rel(self, dx, dy):
@@ -442,7 +361,6 @@ class BalorDriver:
         @param dy:
         @return:
         """
-        self.connect_if_needed()
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
@@ -456,7 +374,6 @@ class BalorDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-
         self.connection.set_xy(self.native_x, self.native_y)
 
     def home(self, x=None, y=None):
@@ -477,8 +394,7 @@ class BalorDriver:
         @return:
         """
         if data_type == "balor":
-            self.connect_if_needed()
-            self.connection.execute(data, 1)
+            self.connection.job(data)
 
     def set(self, attribute, value):
         """
@@ -523,7 +439,7 @@ class BalorDriver:
 
         @return:
         """
-        pass
+        self.connection.wait_finished()
 
     def function(self, function):
         function()
@@ -557,12 +473,11 @@ class BalorDriver:
         Wants the driver to pause.
         @return:
         """
-        self.connect_if_needed()
         if self.paused:
             self.resume()
             return
         self.paused = True
-        self.connection.raw_stop_list()
+        self.connection.realtime_pause()
 
     def resume(self):
         """
@@ -573,9 +488,8 @@ class BalorDriver:
 
         @return:
         """
-        self.connect_if_needed()
         self.paused = False
-        self.connection.raw_restart_list()
+        self.connection.realtime_resume()
 
     def reset(self):
         """

@@ -2475,6 +2475,7 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":

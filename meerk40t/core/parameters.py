@@ -331,7 +331,7 @@ class Parameters:
 
     @property
     def hatch_type(self):
-        return self.settings.get("hatch_type", "eulerian")
+        return self.settings.get("hatch_type", "scanline")
 
     @hatch_type.setter
     def hatch_type(self, value):

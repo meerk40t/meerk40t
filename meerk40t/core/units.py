@@ -757,6 +757,11 @@ class Angle(object):
     """
 
     def __init__(self, angle, digits=None):
+        if isinstance(angle, Angle):
+            self._digits = angle._digits
+            self.angle = angle.angle
+            self.preferred_units = angle.preferred_units
+            return
         self._digits = digits
         if not isinstance(angle, str):
             self.angle = float(angle)

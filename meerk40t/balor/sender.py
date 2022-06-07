@@ -137,15 +137,21 @@ class Sender:
         )  # TODO maybe this should get it from the usb connection class,
         # n.b. not instance which will not exist at the time it's needed necessarily
 
-    def __init__(self, footswitch_callback=None, debug=False):
+    def __init__(self, service, debug=False):
+        self.service = service
         self._lock = threading.Lock()
         self._terminate_execution = False
-        self._footswitch_callback = footswitch_callback
-        self._debug = debug
+        self._footswitch_callback = None
         self._usb_connection = None
         self._write_port = 0x0000
+        self._debug = debug
 
-    def open(self, machine_index=0, mock=False, **kwargs):
+    def is_open(self):
+        return self._usb_connection is not None
+
+    def open(self):
+        mock = self.service.mock
+        machine_index = self.service.machine_index
         if self._usb_connection is not None:
             raise BalorCommunicationException("Attempting to open an open connection.")
         if not mock:
@@ -154,7 +160,7 @@ class Sender:
             connection = MockConnection(machine_index, debug=self._debug)
         connection.open()
         self._usb_connection = connection
-        self._init_machine(**kwargs)
+        self._init_machine()
         time.sleep(
             0.05
         )  # We sacrifice this time at the altar of the unknown race condition
@@ -169,47 +175,48 @@ class Sender:
     def job(self, *args, **kwargs):
         return CommandList(*args, **kwargs, sender=self)
 
+    def command(self, *args, **kwargs):
+        self._send_command(*args, **kwargs)
+
     def _send_command(self, *args, **kwargs):
         if self._usb_connection is None:
-            raise BalorCommunicationException("No usb connection.")
+            self.open()
         return self._usb_connection.send_command(*args, **kwargs)
 
     def _send_correction_entry(self, *args):
         if self._usb_connection is None:
-            raise BalorCommunicationException("No usb connection.")
+            self.open()
         self._usb_connection.send_correction_entry(*args)
 
     def _send_list_chunk(self, *args):
         if self._usb_connection is None:
-            raise BalorCommunicationException("No usb connection.")
+            self.open()
         self._usb_connection.send_list_chunk(*args)
 
-    def _init_machine(
-        self,
-        cor_file=None,
-        first_pulse_killer=200,
-        pwm_half_period=125,
-        pwm_pulse_width=125,
-        standby_param_1=2000,
-        standby_param_2=20,
-        timing_mode=1,
-        delay_mode=1,
-        laser_mode=1,
-        control_mode=0,
-        fpk2_p1=0xFFB,
-        fpk2_p2=1,
-        fpk2_p3=409,
-        fpk2_p4=100,
-        fly_res_p1=0,
-        fly_res_p2=99,
-        fly_res_p3=1000,
-        fly_res_p4=25,
-        **kwargs,
-    ):
+    def _init_machine(self):
         """Initialize the machine."""
         self.serial_number = self.raw_get_serial_no()
         self.version = self.raw_get_version()
         self.raw_get_st_mo_ap()
+
+        cor_file = self.service.corfile if self.service.corfile_enabled else None
+        first_pulse_killer = self.service.first_pulse_killer
+        pwm_pulse_width = self.service.pwm_pulse_width
+        pwm_half_period = self.service.pwm_half_period
+        standby_param_1 = self.service.standby_param_1
+        standby_param_2 = self.service.standby_param_2
+        timing_mode = self.service.timing_mode
+        delay_mode = self.service.delay_mode
+        laser_mode = self.service.laser_mode
+        control_mode = self.service.control_mode
+        fpk2_p1 = self.service.fpk2_p1
+        fpk2_p2 = self.service.fpk2_p2
+        fpk2_p3 = self.service.fpk2_p3
+        fpk2_p4 = self.service.fpk2_p3
+        fly_res_p1 = self.service.fly_res_p1
+        fly_res_p2 = self.service.fly_res_p2
+        fly_res_p3 = self.service.fly_res_p3
+        fly_res_p4 = self.service.fly_res_p4
 
         # Unknown function
         self.raw_reset()
@@ -293,6 +300,16 @@ class Sender:
         Note that running a lighting job counts as being busy."""
         self.read_port()
         return bool(self._usb_connection.status & 0x04)
+
+    def is_ready_and_not_busy(self):
+        self.read_port()
+        return bool(self._usb_connection.status & 0x20) and not bool(self._usb_connection.status & 0x04)
+
+    def wait_finished(self):
+        while self.is_ready_and_not_busy():
+            time.sleep(self.sleep_time)
+            if self._terminate_execution:
+                return
 
     def execute(
         self, command_list: CommandSource, loop_count=1, callback_finished=None
