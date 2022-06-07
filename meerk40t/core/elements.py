@@ -6823,6 +6823,8 @@ class Elemental(Service):
             # image_added code removed because it could never be used
             for op in operations:
                 # Are the colors identical? if the op is default then in any case
+                if op.type == "op console":
+                    continue
                 same_color = op.default
                 if hasattr(node, "stroke") and node.stroke is not None:
                     # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
