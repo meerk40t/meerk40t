@@ -35,6 +35,26 @@ class GuiColors:
             self.context.setting(
                 str, "color_{key}".format(key=key), self.default_color[key]
             )
+        self.sanity_check()
+
+    def sanity_check(self):
+        # Look at some color-combinations to see if there are identical colors, if that's the case
+        # then this is degenerate and will lead to default colors
+        def identical(color1, color2):
+            return color1.GetRGB() == color2.GetRGB()
+        degenerate = False
+        degenerate = degenerate or identical(self.color_bed, self.color_guide)
+        degenerate = degenerate or identical(self.color_bed, self.color_grid)
+        degenerate = degenerate or identical(self.color_bed, self.color_guide2)
+        degenerate = degenerate or identical(self.color_bed, self.color_grid2)
+        degenerate = degenerate or identical(self.color_bed, self.color_guide3)
+        degenerate = degenerate or identical(self.color_bed, self.color_grid3)
+        degenerate = degenerate or identical(self.color_bed, self.color_selection1)
+        degenerate = degenerate or identical(self.color_bed, self.color_selection2)
+        degenerate = degenerate or identical(self.color_bed, self.color_selection3)
+        if degenerate:
+            print ("Degenerate colors :-(")
+            self.set_default_colors()
 
     def set_default_colors(self):
         """
