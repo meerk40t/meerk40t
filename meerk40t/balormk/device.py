@@ -577,6 +577,9 @@ class BalorDevice(Service, ViewPort):
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
         @self.console_option(
+            "jump_delay", "d", type=float, default=200.0, help="Sets the jump delay for light travel moves"
+        )
+        @self.console_option(
             "simulation_speed",
             "m",
             type=float,
@@ -601,6 +604,7 @@ class BalorDevice(Service, ViewPort):
             _,
             speed=False,
             travel_speed=None,
+            jump_delay=200,
             simulation_speed=None,
             quantization=500,
             data=None,
@@ -645,6 +649,7 @@ class BalorDevice(Service, ViewPort):
                     + pt[1] * rotate.d
                     + 1 * rotate.f,
                 )
+
             for e in paths:
                 x, y = e.point(0)
                 x, y = self.scene_to_device_position(x, y)
@@ -652,7 +657,7 @@ class BalorDevice(Service, ViewPort):
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
                 if isinstance(e, (Polygon, Polyline)):
-                    job.light(x, y, False, jump_delay=200)
+                    job.light(x, y, False, jump_delay=jump_delay)
                     for pt in e:
                         x, y = self.scene_to_device_position(*pt)
                         x, y = mx_rotate((x, y))
@@ -661,7 +666,7 @@ class BalorDevice(Service, ViewPort):
                         job.light(x, y, True, jump_delay=0)
                     continue
 
-                job.light(x, y, False, jump_delay=200)
+                job.light(x, y, False, jump_delay=jump_delay)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
                     x, y = self.scene_to_device_position(x, y)
