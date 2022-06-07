@@ -707,7 +707,6 @@ class BalorDevice(Service, ViewPort):
                 y = int(y) & 0xFFFF
                 last_x, last_y = x, y
                 if isinstance(e, (Polygon, Polyline)):
-                    job.raw_travel(x, y)
                     for pt in e:
                         x, y = self.scene_to_device_position(*pt)
                         x = int(x) & 0xFFFF
@@ -1047,7 +1046,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_option(
             "count",
             "c",
-            default=15,
+            default=64,
             type=int,
             help="Number of instances of boxes to draw.",
         )
@@ -1056,7 +1055,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, count=15, data=None, args=tuple(), **kwargs):
+        def element_outline(command, channel, _, count=64, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1071,7 +1070,6 @@ class BalorDevice(Service, ViewPort):
                 (xmax, ymin),
                 (xmax, ymax),
                 (xmin, ymax),
-                (xmin, ymin),
             ]
             if count > 1:
                 points *= count
