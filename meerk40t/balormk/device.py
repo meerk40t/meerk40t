@@ -5,7 +5,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Path, Point, Polygon, Matrix
+from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
 
 
 class BalorDevice(Service, ViewPort):
@@ -513,7 +513,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             "mark",
-            input_type="elements",
+            input_type="shapes",
             output_type="balor",
             help=_("runs mark on path."),
         )
@@ -651,6 +651,16 @@ class BalorDevice(Service, ViewPort):
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
+                if isinstance(e, (Polygon, Polyline)):
+                    job.light(x, y, False, jump_delay=200)
+                    for pt in e:
+                        x, y = self.scene_to_device_position(*pt)
+                        x, y = mx_rotate((x, y))
+                        x = int(x) & 0xFFFF
+                        y = int(y) & 0xFFFF
+                        job.light(x, y, True, jump_delay=0)
+                    continue
+
                 job.light(x, y, False, jump_delay=200)
                 for i in range(1, quantization + 1):
                     x, y = e.point(i / float(quantization))
