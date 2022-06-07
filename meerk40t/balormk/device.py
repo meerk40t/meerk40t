@@ -682,6 +682,57 @@ class BalorDevice(Service, ViewPort):
             return "balor", job
 
         @self.console_command(
+            "lite",
+            input_type="shapes",
+            output_type="balor",
+            help=_("runs lite light on events."),
+        )
+        def light(
+            command,
+            channel,
+            _,
+            speed=False,
+            data=None,
+            **kwgs,
+        ):
+            """
+            Creates a light job out of elements. If speed is set then
+            """
+            channel("Creating light job out of elements.")
+            paths = data
+            job = CommandList()
+            for e in paths:
+                x, y = e.point(0)
+                x, y = self.scene_to_device_position(x, y)
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                last_x, last_y = x, y
+                if isinstance(e, (Polygon, Polyline)):
+                    job.raw_travel(x, y)
+                    for pt in e:
+                        x, y = self.scene_to_device_position(*pt)
+                        x = int(x) & 0xFFFF
+                        y = int(y) & 0xFFFF
+                        if x != last_x or y != last_x:
+                            job.raw_travel(x, y)
+                        last_x, last_y = x, y
+
+                    continue
+                quantization = 20
+                if x != last_x or y != last_x:
+                    job.raw_travel(x, y)
+                last_x, last_y = x, y
+                for i in range(1, 21):
+                    x, y = e.point(i / float(quantization))
+                    x, y = self.scene_to_device_position(x, y)
+                    x = int(x) & 0xFFFF
+                    y = int(y) & 0xFFFF
+                    if x != last_x or y != last_x:
+                        job.raw_travel(x, y)
+                    last_x, last_y = x, y
+            return "balor", job
+
+        @self.console_command(
             "stop",
             help=_("stops the idle running job"),
         )
