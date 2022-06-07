@@ -999,6 +999,8 @@ class CommandList(CommandSource):
         @param y:
         @return:
         """
+        if self._last_x == x and self._last_y == y:
+            return
         x = int(round(x))
         y = int(round(y))
         self.ready()
@@ -1054,6 +1056,8 @@ class CommandList(CommandSource):
         """
         x = int(round(x))
         y = int(round(y))
+        if self._last_x == x and self._last_y == y:
+            return
         if light:
             self.light_on()
             if self._light_speed is not None:
@@ -1082,6 +1086,8 @@ class CommandList(CommandSource):
         @param jump_delay:8
         @return:
         """
+        if self._last_x == x and self._last_y == y:
+            return
         x = int(round(x))
         y = int(round(y))
         self.ready()
