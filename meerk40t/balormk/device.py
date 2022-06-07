@@ -980,12 +980,19 @@ class BalorDevice(Service, ViewPort):
 
             self.signal("bed_size")
 
+        @self.console_option(
+            "count",
+            "c",
+            default=15,
+            type=int,
+            help="Number of instances of boxes to draw.",
+        )
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
+        def element_outline(command, channel, _, count=15, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1002,6 +1009,8 @@ class BalorDevice(Service, ViewPort):
                 (xmin, ymax),
                 (xmin, ymin),
             ]
+            if count > 1:
+                points *= count
             return "shapes", [Polygon(*points)]
 
         @self.console_command(
