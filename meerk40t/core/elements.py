@@ -5926,38 +5926,6 @@ class Elemental(Service):
             drop_node.drop(node)
             self.signal("tree_changed")
 
-        def radio_match(node, i=0, **kwargs):
-            if "raster_step_x" in node.settings:
-                step_x = float(node.settings["raster_step_x"])
-            else:
-                step_y = 1.0
-            if "raster_step_y" in node.settings:
-                step_x = float(node.settings["raster_step_y"])
-            else:
-                step_y = 1.0
-            if i == step_x and i == step_y:
-                m = node.matrix
-                if m.a == step_x or m.b == 0.0 or m.c == 0.0 or m.d == step_y:
-                    return True
-            return False
-
-        @self.tree_separator_before()
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem image", help="")
-        def set_step_n_elem(node, i=1, **kwargs):
-            step_value = i
-            node.step_x = step_value
-            node.step_y = step_value
-            m = node.matrix
-            tx = m.e
-            ty = m.f
-            node.matrix = Matrix.scale(float(step_value), float(step_value))
-            node.matrix.post_translate(tx, ty)
-            node.modified()
-            self.signal("element_property_reload", node)
-
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
         def image_actualize_pixels(node, **kwargs):
