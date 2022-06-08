@@ -207,21 +207,12 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        dpi = self.dpi
-        oneinch_x = float(Length("1in"))
-        oneinch_y = float(Length("1in"))
-        transformed_step = matrix.transform_vector([oneinch_x, oneinch_y])
-        self.raster_step_x = transformed_step[0] / dpi
-        self.raster_step_y = transformed_step[1] / dpi
-
+        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
         if len(self.children) == 0:
             return
         if len(self.children) == 1 and self.children[0].type == "elem image":
             dpi = float(self.settings.get("dpi", 500))
-            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
+            step_x, step_y = context.device.dpi_to_steps(dpi)
             self.settings["raster_step_x"] = step_x
             self.settings["raster_step_y"] = step_y
             node = self.children[0]

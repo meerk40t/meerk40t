@@ -5637,7 +5637,6 @@ class Elemental(Service):
             xmin, ymin, xmax, ymax = bounds
             xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
             xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
-            dpi = node.dpi
             step_x, step_y = self.device.dpi_to_steps(node.dpi)
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
