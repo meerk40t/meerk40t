@@ -300,7 +300,7 @@ class ViewPort:
             self.unit_height,
         )
 
-    def dpi_to_steps(self, dpi):
+    def dpi_to_steps(self, dpi, matrix=None):
         """
         Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
         the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
@@ -315,13 +315,12 @@ class ViewPort:
         # We require vectors so any positional offsets are non-contributing.
         unit_x = UNITS_PER_INCH
         unit_y = UNITS_PER_INCH
-        if self._matrix is None:
-            self.calculate_matrices()
-        oneinch_x0 = self._matrix.transform_vector([unit_x, 0])[0]
-        oneinch_y0 = self._matrix.transform_vector([0, unit_y])[1]
-
-        oneinch_x = self.physical_to_device_length("1in", 0)[0]
-        oneinch_y = self.physical_to_device_length(0, "1in")[1]
+        if matrix is None:
+            if self._matrix is None:
+                self.calculate_matrices()
+            matrix = self._matrix
+        oneinch_x = matrix.transform_vector([unit_x, 0])[0]
+        oneinch_y = matrix.transform_vector([0, unit_y])[1]
         step_x = float(oneinch_x / dpi)
         step_y = float(oneinch_y / dpi)
         return step_x, step_y
