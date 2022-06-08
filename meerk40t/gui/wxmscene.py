@@ -166,6 +166,11 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @self.context.console_command("color", input_type="scene")
         def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            """
+            Sets the scene colors. This is usually done with `scene color <aspect> <color>` which
+            sets the aspect to the color specified. `scene color unset` unsets all colors and returns
+            them to the default settings. `scene color random` changes all colors to random.
+            """
             if aspect is None:
                 for key in dir(self.context):
                     if key.startswith("color_"):
@@ -174,6 +179,10 @@ class MeerK40tScenePanel(wx.Panel):
                 color_key = f"color_{aspect}"
                 if aspect == "unset":  # reset all
                     self.widget_scene.colors.set_default_colors()
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if aspect == "random":  # reset all
+                    self.widget_scene.colors.set_random_colors()
                     self.context.signal("theme", True)
                     return "scene", data
                 if color == "unset":  # reset one

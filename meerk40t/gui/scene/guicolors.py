@@ -1,3 +1,5 @@
+import random
+
 import wx
 
 from meerk40t.svgelements import Color
@@ -53,6 +55,15 @@ class GuiColors:
                 setattr(self.context, color_key, self.default_color[key])
         # if fixed>0:
         # self.context("Reset %d colors to their defaults, as thye wre indistinguishable from the bed" % fixed)
+
+    def set_random_colors(self):
+        """
+        Reset all colors to random values...
+        """
+        for key in self.default_color:
+            color_key = f"color_{key}"
+            random_color = "#%02X%02X%02X" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+            setattr(self.context, color_key, random_color)
 
     def set_default_colors(self):
         """
