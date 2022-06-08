@@ -5090,8 +5090,8 @@ class Elemental(Service):
             node.power = float(power)
             self.signal("element_property_reload", node)
 
-        def radio_match(node, i=100, **kwargs):
-            return node.dpi == i
+        def radio_match(node, dpi=100, **kwargs):
+            return node.dpi == dpi
 
         @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
