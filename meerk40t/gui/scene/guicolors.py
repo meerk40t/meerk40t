@@ -62,7 +62,11 @@ class GuiColors:
         """
         for key in self.default_color:
             color_key = f"color_{key}"
-            random_color = "#%02X%02X%02X" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+            random_color = "#%02X%02X%02X" % (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
             setattr(self.context, color_key, random_color)
 
     def set_default_colors(self):
