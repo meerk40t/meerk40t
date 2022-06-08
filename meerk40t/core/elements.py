@@ -4960,7 +4960,9 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(_("Edit"), node_type="op console", help="")
         def edit_console_command(node, **kwargs):
-            self.open("window/ConsoleProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5013,7 +5015,6 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
-            # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 group_node.append_child(e)
