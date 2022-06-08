@@ -9,6 +9,9 @@ from meerk40t.svgelements import Matrix
 class ImageNode(Node):
     """
     ImageNode is the bootstrapped node type for the 'elem image' type.
+
+    ImageNode contains a main matrix and some number of images with matrix offsets. The main matrix and the image
+    matrix are concatted to find the current image
     """
 
     def __init__(
@@ -23,8 +26,9 @@ class ImageNode(Node):
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
-        self.image = image
-        self.matrix = matrix
+        self.images = {"default": [image, Matrix()]}
+        self.active = "default"
+        self.matrix = matrix  # global matrix.
         self.settings = kwargs
         self.overscan = overscan
         self.direction = direction
@@ -43,18 +47,24 @@ class ImageNode(Node):
         self.dither_type = "Floyd-Steinberg"
 
         self.operations = list()
-        self.processed_image = None
-        self.processed_matrix = None
 
         self._needs_update = False
         self._context = None
         self._update_thread = None
         self._update_lock = threading.Lock()
 
+    @property
+    def image(self):
+        return self.get_image(self.active)
+
+    @property
+    def active_matrix(self):
+        return self.get_combined_matrix(self.active)
+
     def __copy__(self):
         return ImageNode(
             image=self.image,
-            matrix=copy(self.matrix),
+            matrix=copy(self.active_matrix),
             overscan=self.overscan,
             direction=self.direction,
             dpi=self.dpi,
@@ -71,12 +81,20 @@ class ImageNode(Node):
             str(self._parent),
         )
 
+    def get_image(self, name):
+        return self.images.get(name)[0]
+
+    def get_matrix(self, name):
+        return self.images.get(name)[1]
+
+    def get_combined_matrix(self, name):
+        return self.get_matrix(name) * self.matrix
+
     def preprocess(self, context, matrix, commands):
         self._context = context
         self.process_image()
         self._context = None
-        self.image = self.processed_image
-        self.matrix = self.processed_matrix
+        self.active = "processed"
         self.matrix *= matrix
         self._bounds_dirty = True
 
@@ -84,10 +102,11 @@ class ImageNode(Node):
     def bounds(self):
         if self._bounds_dirty:
             image_width, image_height = self.image.size
-            x0, y0 = self.matrix.point_in_matrix_space((0, 0))
-            x1, y1 = self.matrix.point_in_matrix_space((image_width, image_height))
-            x2, y2 = self.matrix.point_in_matrix_space((0, image_height))
-            x3, y3 = self.matrix.point_in_matrix_space((image_width, 0))
+            matrix = self.active_matrix
+            x0, y0 = matrix.point_in_matrix_space((0, 0))
+            x1, y1 = matrix.point_in_matrix_space((image_width, image_height))
+            x2, y2 = matrix.point_in_matrix_space((0, image_height))
+            x3, y3 = matrix.point_in_matrix_space((image_width, 0))
             self._bounds_dirty = False
             self._bounds = (
                 min(x0, x1, x2, x3),
@@ -141,12 +160,15 @@ class ImageNode(Node):
         self._context = context
         self._needs_update = True
         if self._update_thread is None:
+
             def clear(result):
                 self._needs_update = False
                 self._context = None
                 self._update_thread = None
 
-            self._update_thread = context.threaded(self.process_image_thread, result=clear, daemon=True)
+            self._update_thread = context.threaded(
+                self.process_image_thread, result=clear, daemon=True
+            )
 
     def process_image_thread(self):
         if self._context is None:
@@ -160,11 +182,16 @@ class ImageNode(Node):
             self._context.signal("image updated", self)
 
     def process_image(self):
-        image = self.image
-        matrix = Matrix(self.matrix)
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
         from meerk40t.image.actualize import actualize
         from meerk40t.image.imagetools import dither
+
+        try:
+            image, matrix = self.images["default"]
+        except KeyError:
+            return
+
+        matrix = matrix * self.matrix
 
         r = self.red * 0.299
         g = self.green * 0.587
@@ -186,17 +213,20 @@ class ImageNode(Node):
 
         dpi = self.dpi
         step_x, step_y = self._context.device.dpi_to_steps(dpi)
-        image, matrix = actualize(
-            image, matrix, step_x=step_x, step_y=step_y, inverted=self.invert
-        )
-        if self.invert:
-            empty_mask = image.convert("L").point(
-                lambda e: 0 if e == 0 else 255
+        self.step_x, self.step_y = step_x, step_y
+
+        m = matrix
+        if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
+            image, amatrix = actualize(
+                image, matrix, step_x=step_x, step_y=step_y, inverted=self.invert
             )
         else:
-            empty_mask = image.convert("L").point(
-                lambda e: 0 if e == 255 else 255
-            )
+            amatrix = Matrix(matrix)
+
+        if self.invert:
+            empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
+        else:
+            empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
 
         # Process operations.
         for op in self.operations:
@@ -327,8 +357,11 @@ class ImageNode(Node):
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
             image = image.convert("1")
-        self.processed_image = image
-        self.processed_matrix = matrix
+        m = Matrix(matrix).inverse()
+        self.images["processed"] = (image, amatrix * m)
+        self.images["default"][1] = Matrix()
+        self.active = "processed"
+        self.altered()
 
     @staticmethod
     def line(p):
@@ -397,34 +430,3 @@ class ImageNode(Node):
             r.append(255)
         r.append(round(int(p[-1][1])))
         return r
-
-    def needs_actualization(self):
-        """
-        Return whether this image node has native sized pixels.
-
-        @return:
-        """
-        if self.image.mode not in ("L", "1"):
-            return True
-        m = self.matrix
-        # Transformation must be uniform to permit native rastering.
-        return m.a != self.step_x or m.b != 0.0 or m.c != 0.0 or m.d != self.step_y
-
-    def make_actual(self):
-        """
-        Makes PIL image actual in that it manipulates the pixels to actually exist
-        rather than simply apply the transform on the image to give the resulting image.
-        Since our goal is to raster the images real pixels this is required.
-
-        SVG matrices are defined as follows.
-        [a c e]
-        [b d f]
-
-        Pil requires a, c, e, b, d, f accordingly.
-        """
-        from meerk40t.image.actualize import actualize
-
-        self.image, self.matrix = actualize(
-            self.image, self.matrix, step_x=self.step_x, step_y=self.step_y
-        )
-        self.altered()

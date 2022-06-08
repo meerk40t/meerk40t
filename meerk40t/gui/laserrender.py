@@ -648,12 +648,8 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        image = node.processed_image
-        if image is None:
-            image = node.image
-            matrix = node.matrix
-        else:
-            matrix = node.processed_matrix
+        image = node.image
+        matrix = node.active_matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))

@@ -205,24 +205,14 @@ class ImageOpNode(Node, Parameters):
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
 
         for node in self.children:
-            step_x, step_y = context.device.dpi_to_steps(node.dpi, matrix=matrix)
-            node.step_x = step_x
-            node.step_y = step_y
-            m1 = node.matrix
-            # Transformation must be uniform to permit native rastering.
-            if m1.a != step_x or m1.b != 0.0 or m1.c != 0.0 or m1.d != step_y:
+            def actual(image_node):
+                def process_images():
+                    image_node._context = context
+                    image_node.process_image()
 
-                def actual(image_node, s_x, s_y):
-                    def actualize_images():
-                        image_node.image, image_node.matrix = actualize(
-                            image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
-                        )
-                        image_node.cache = None
+                return process_images
 
-                    return actualize_images
-
-                commands.append(actual(node, step_x, step_y))
-                break
+            commands.append(actual(node))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
@@ -240,10 +230,6 @@ class ImageOpNode(Node, Parameters):
             overscan = self.overscan
             if not isinstance(overscan, float):
                 overscan = float(Length(overscan))
-
-            # Set steps
-            step_x = image_node.step_x
-            step_y = image_node.step_y
 
             # Set variables by direction
             if image_node.direction is not None:
@@ -268,8 +254,11 @@ class ImageOpNode(Node, Parameters):
             bidirectional = bool(self.raster_swing)
 
             # Perform correct actualization
-            if image_node.needs_actualization():
-                image_node.make_actual()
+            image_node.process_image()
+            # Set steps
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+
 
             # Set variables
             matrix = image_node.matrix
