@@ -5024,31 +5024,45 @@ class Elemental(Service):
                 n.output = not n.output
                 n.notify_update()
 
-        # TODO: Restore convert node type ability
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
-        # def convert_operation_image(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Image"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
-        # def convert_operation_raster(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Raster"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
-        # def convert_operation_engrave(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Engrave"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
-        # def convert_operation_cut(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Cut"
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        def convert_operation_image(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op image"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        def convert_operation_raster(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op raster"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        def convert_operation_engrave(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op engrave"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        def convert_operation_cut(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op cut"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Hatch"), node_type=operate_nodes, help="")
+        def convert_operation_hatch(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op hatch"
+                n.replace_node(**new_settings)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
