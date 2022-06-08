@@ -14,17 +14,17 @@ def plugin(kernel, lifecycle=None):
     This functionality will largely depend on PIL/Pillow for the image command subfunctions.
     """
 
+    if lifecycle == "preregister":
+        kernel.register("raster_script/Gold", RasterScripts.raster_script_gold())
+        kernel.register("raster_script/Stipo", RasterScripts.raster_script_stipo())
+        kernel.register("raster_script/Gravy", RasterScripts.raster_script_gravy())
+        kernel.register("raster_script/Xin", RasterScripts.raster_script_xin())
+        kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
+        kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     if lifecycle != "register":
         return
     _ = kernel.translation
-    kernel.register("raster_script/Gold", RasterScripts.raster_script_gold())
-    kernel.register("raster_script/Stipo", RasterScripts.raster_script_stipo())
-    kernel.register("raster_script/Gravy", RasterScripts.raster_script_gravy())
-    kernel.register("raster_script/Xin", RasterScripts.raster_script_xin())
-    kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
-    kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
-
     choices = [
         {
             "attr": "image_dpi",
