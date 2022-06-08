@@ -4943,7 +4943,7 @@ class Elemental(Service):
                 if not node.matrix.is_identity():
                     result = True
             except AttributeError:
-                # There was an error druing check for matrix.is_identity
+                # There was an error during check for matrix.is_identity
                 pass
             return result
 
@@ -5065,6 +5065,14 @@ class Elemental(Service):
                 new_settings["type"] = "op hatch"
                 n.replace_node(**new_settings)
 
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Dots"), node_type=operate_nodes, help="")
+        def convert_operation_dots(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op dots"
+                n.replace_node(**new_settings)
+
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
 
@@ -5095,7 +5103,7 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
-        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("%sppi") % "{power}",
             node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
@@ -5110,7 +5118,7 @@ class Elemental(Service):
 
         @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
-        @self.tree_values("dpi", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("DPI %s") % "{dpi}",
             node_type=("op raster", "elem image"),
