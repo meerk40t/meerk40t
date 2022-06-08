@@ -6023,7 +6023,10 @@ class Elemental(Service):
             _("Apply: %s") % "{script}", node_type="elem image", help=""
         )
         def image_rasterwizard_apply(node, script=None, **kwargs):
-            self("image wizard %s\n" % script)
+            raster_script = self.lookup(f"raster_script/{script}")
+            node.operations = raster_script
+            node.update(self)
+            # self("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")

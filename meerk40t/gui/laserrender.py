@@ -366,7 +366,7 @@ class LaserRender:
                     # No valid cache. Generate.
                     cut.c_width, cut.c_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=1000)
+                        cut.cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image)
@@ -648,10 +648,12 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        try:
+        image = node.processed_image
+        if image is None:
+            image = node.image
             matrix = node.matrix
-        except AttributeError:
-            matrix = None
+        else:
+            matrix = node.processed_matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
@@ -666,17 +668,17 @@ class LaserRender:
                     max_allowed = node.max_allowed
                 except AttributeError:
                     max_allowed = 2048
-                node.c_width, node.c_height = node.image.size
+                node.c_width, node.c_height = image.size
                 node.cache = self.make_thumbnail(
-                    node.image,
+                    image,
                     maximum=max_allowed,
                     alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
                 )
             gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         else:
-            node.c_width, node.c_height = node.image.size
+            node.c_width, node.c_height = image.size
             cache = self.make_thumbnail(
-                node.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
             )
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()

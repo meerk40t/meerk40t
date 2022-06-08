@@ -1,6 +1,9 @@
+import threading
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.image.imagetools import RasterScripts
+from meerk40t.svgelements import Matrix
 
 
 class ImageNode(Node):
@@ -30,6 +33,24 @@ class ImageNode(Node):
         self.step_y = step_y
         self.lock = False
 
+        self.invert = False
+        self.red = 1.0
+        self.green = 1.0
+        self.blue = 1.0
+        self.lightness = 1.0
+        self.view_invert = False
+        self.dither = True
+        self.dither_type = "Floyd-Steinberg"
+
+        self.operations = list()
+        self.processed_image = None
+        self.processed_matrix = None
+
+        self._needs_update = False
+        self._context = None
+        self._update_thread = None
+        self._update_lock = threading.Lock()
+
     def __copy__(self):
         return ImageNode(
             image=self.image,
@@ -51,6 +72,11 @@ class ImageNode(Node):
         )
 
     def preprocess(self, context, matrix, commands):
+        self._context = context
+        self.process_image()
+        self._context = None
+        self.image = self.processed_image
+        self.matrix = self.processed_matrix
         self.matrix *= matrix
         self._bounds_dirty = True
 
@@ -110,6 +136,267 @@ class ImageNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def update(self, context):
+        self._context = context
+        self._needs_update = True
+        if self._update_thread is None:
+            def clear(result):
+                self._needs_update = False
+                self._context = None
+                self._update_thread = None
+
+            self._update_thread = context.threaded(self.process_image_thread, result=clear, daemon=True)
+
+    def process_image_thread(self):
+        if self._context is None:
+            return  # Requires temporary context.
+        while self._needs_update:
+            self._needs_update = False
+            self.process_image()
+            # Unset cache.
+            self.wx_bitmap_image = None
+            self.cache = None
+            self._context.signal("image updated", self)
+
+    def process_image(self):
+        image = self.image
+        matrix = Matrix(self.matrix)
+        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+        from meerk40t.image.actualize import actualize
+        from meerk40t.image.imagetools import dither
+
+        r = self.red * 0.299
+        g = self.green * 0.587
+        b = self.blue * 0.114
+        v = self.lightness
+        c = r + g + b
+        try:
+            c /= v
+            r = r / c
+            g = g / c
+            b = b / c
+        except ZeroDivisionError:
+            pass
+        if image.mode != "L":
+            image = image.convert("RGB")
+            image = image.convert("L", matrix=[r, g, b, 1.0])
+        if self.invert:
+            image = image.point(lambda e: 255 - e)
+
+        dpi = self.dpi
+        step_x, step_y = self._context.device.dpi_to_steps(dpi)
+        image, matrix = actualize(
+            image, matrix, step_x=step_x, step_y=step_y, inverted=self.invert
+        )
+        if self.invert:
+            empty_mask = image.convert("L").point(
+                lambda e: 0 if e == 0 else 255
+            )
+        else:
+            empty_mask = image.convert("L").point(
+                lambda e: 0 if e == 255 else 255
+            )
+
+        # Process operations.
+        for op in self.operations:
+            name = op["name"]
+            if name == "crop":
+                try:
+                    if op["enable"] and op["bounds"] is not None:
+                        crop = op["bounds"]
+                        left = int(crop[0])
+                        upper = int(crop[1])
+                        right = int(crop[2])
+                        lower = int(crop[3])
+                        image = image.crop((left, upper, right, lower))
+                except KeyError:
+                    pass
+            elif name == "edge_enhance":
+                try:
+                    if op["enable"]:
+                        if image.mode == "P":
+                            image = image.convert("L")
+                        image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
+                except KeyError:
+                    pass
+            elif name == "auto_contrast":
+                try:
+                    if op["enable"]:
+                        if image.mode not in ("RGB", "L"):
+                            # Auto-contrast raises NotImplementedError if P
+                            # Auto-contrast raises OSError if not RGB, L.
+                            image = image.convert("L")
+                        image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
+                except KeyError:
+                    pass
+            elif name == "tone":
+                try:
+                    if op["enable"] and op["values"] is not None:
+                        if image.mode == "L":
+                            image = image.convert("P")
+                            tone_values = op["values"]
+                            if op["type"] == "spline":
+                                spline = ImageNode.spline(tone_values)
+                            else:
+                                tone_values = [q for q in tone_values if q is not None]
+                                spline = ImageNode.line(tone_values)
+                            if len(spline) < 256:
+                                spline.extend([255] * (256 - len(spline)))
+                            if len(spline) > 256:
+                                spline = spline[:256]
+                            image = image.point(spline)
+                            if image.mode != "L":
+                                image = image.convert("L")
+                except KeyError:
+                    pass
+            elif name == "contrast":
+                try:
+                    if op["enable"]:
+                        if op["contrast"] is not None and op["brightness"] is not None:
+                            contrast = ImageEnhance.Contrast(image)
+                            c = (op["contrast"] + 128.0) / 128.0
+                            image = contrast.enhance(c)
+
+                            brightness = ImageEnhance.Brightness(image)
+                            b = (op["brightness"] + 128.0) / 128.0
+                            image = brightness.enhance(b)
+                except KeyError:
+                    pass
+            elif name == "gamma":
+                try:
+                    if op["enable"] and op["factor"] is not None:
+                        if image.mode == "L":
+                            gamma_factor = float(op["factor"])
+
+                            def crimp(px):
+                                px = int(round(px))
+                                if px < 0:
+                                    return 0
+                                if px > 255:
+                                    return 255
+                                return px
+
+                            if gamma_factor == 0:
+                                gamma_lut = [0] * 256
+                            else:
+                                gamma_lut = [
+                                    crimp(pow(i / 255, (1.0 / gamma_factor)) * 255)
+                                    for i in range(256)
+                                ]
+                            image = image.point(gamma_lut)
+                            if image.mode != "L":
+                                image = image.convert("L")
+                except KeyError:
+                    pass
+            elif name == "unsharp_mask":
+                try:
+                    if (
+                        op["enable"]
+                        and op["percent"] is not None
+                        and op["radius"] is not None
+                        and op["threshold"] is not None
+                    ):
+                        unsharp = ImageFilter.UnsharpMask(
+                            radius=op["radius"],
+                            percent=op["percent"],
+                            threshold=op["threshold"],
+                        )
+                        image = image.filter(unsharp)
+                except (KeyError, ValueError):  # Value error if wrong type of image.
+                    pass
+            elif name == "halftone":
+                try:
+                    if op["enable"]:
+                        image = RasterScripts.halftone(
+                            image,
+                            sample=op["sample"],
+                            angle=op["angle"],
+                            oversample=op["oversample"],
+                            black=op["black"],
+                        )
+                except KeyError:
+                    pass
+
+        if empty_mask is not None:
+            background = Image.new(image.mode, image.size, "white")
+            background.paste(image, mask=empty_mask)
+            image = background  # Mask exists use it to remove any pixels that were pure reject.
+
+        if self.dither and self.dither_type is not None:
+            if self.dither_type != "Floyd-Steinberg":
+                image = dither(image, self.dither_type)
+            image = image.convert("1")
+        self.processed_image = image
+        self.processed_matrix = matrix
+
+    @staticmethod
+    def line(p):
+        N = len(p) - 1
+        try:
+            m = [(p[i + 1][1] - p[i][1]) / (p[i + 1][0] - p[i][0]) for i in range(0, N)]
+        except ZeroDivisionError:
+            m = [1] * N
+        # b = y - mx
+        b = [p[i][1] - (m[i] * p[i][0]) for i in range(0, N)]
+        r = list()
+        for i in range(0, p[0][0]):
+            r.append(0)
+        for i in range(len(p) - 1):
+            x0 = p[i][0]
+            x1 = p[i + 1][0]
+            range_list = [int(round((m[i] * x) + b[i])) for x in range(x0, x1)]
+            r.extend(range_list)
+        for i in range(p[-1][0], 256):
+            r.append(255)
+        r.append(round(int(p[-1][1])))
+        return r
+
+    @staticmethod
+    def spline(p):
+        """
+        Spline interpreter.
+
+        Returns all integer locations between different spline interpolation values
+        @param p: points to be quad spline interpolated.
+        @return: integer y values for given spline points.
+        """
+        try:
+            N = len(p) - 1
+            w = [(p[i + 1][0] - p[i][0]) for i in range(0, N)]
+            h = [(p[i + 1][1] - p[i][1]) / w[i] for i in range(0, N)]
+            ftt = (
+                [0]
+                + [3 * (h[i + 1] - h[i]) / (w[i + 1] + w[i]) for i in range(0, N - 1)]
+                + [0]
+            )
+            A = [(ftt[i + 1] - ftt[i]) / (6 * w[i]) for i in range(0, N)]
+            B = [ftt[i] / 2 for i in range(0, N)]
+            C = [h[i] - w[i] * (ftt[i + 1] + 2 * ftt[i]) / 6 for i in range(0, N)]
+            D = [p[i][1] for i in range(0, N)]
+        except ZeroDivisionError:
+            return list(range(256))
+        r = list()
+        for i in range(0, p[0][0]):
+            r.append(0)
+        for i in range(len(p) - 1):
+            a = p[i][0]
+            b = p[i + 1][0]
+            r.extend(
+                int(
+                    round(
+                        A[i] * (x - a) ** 3
+                        + B[i] * (x - a) ** 2
+                        + C[i] * (x - a)
+                        + D[i]
+                    )
+                )
+                for x in range(a, b)
+            )
+        for i in range(p[-1][0], 256):
+            r.append(255)
+        r.append(round(int(p[-1][1])))
+        return r
 
     def needs_actualization(self):
         """
