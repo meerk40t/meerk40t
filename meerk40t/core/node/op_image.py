@@ -205,11 +205,7 @@ class ImageOpNode(Node, Parameters):
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
 
         for node in self.children:
-            dpi = node.dpi
-            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
+            step_x, step_y = self.device.dpi_to_steps(node.dpi)
             node.step_x = step_x
             node.step_y = step_y
             m1 = node.matrix

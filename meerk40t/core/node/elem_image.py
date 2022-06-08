@@ -115,8 +115,6 @@ class ImageNode(Node):
         """
         Return whether this image node has native sized pixels.
 
-        @param step_x:
-        @param step_y:
         @return:
         """
         if self.image.mode not in ("L", "1"):
