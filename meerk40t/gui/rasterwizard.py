@@ -194,8 +194,8 @@ class RasterWizardPanel(wx.Panel):
                 scale, scale, self.matrix.value_trans_x(), self.matrix.value_trans_y()
             )
             self.focus_factor = None
-        if self.pil_image is not None and self.needs_centering:
-            box = self.pil_image.getbbox()
+        if self.node is not None and self.needs_centering:
+            box = self.node.image.getbbox()
             if box is not None:
                 self.focus_viewport_scene(box, self._preview_panel_buffer.Size)
             self.needs_centering = False
@@ -288,7 +288,7 @@ class RasterWizardPanel(wx.Panel):
         gc.SetBrush(wx.WHITE_BRUSH)
         w, h = self._preview_panel_buffer.GetSize()
         gc.DrawRectangle(0, 0, w, h)
-        if self.context is None or self.node is None or self.pil_image is None:
+        if self.context is None or self.node is None:
             font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
             gc.SetFont(font, wx.BLACK)
             if self.wizard_thread is not None and self.wizard_thread.is_alive():
@@ -302,8 +302,8 @@ class RasterWizardPanel(wx.Panel):
         wx_bitmap = self.wx_bitmap_image
         if wx_bitmap is None:
             renderer = LaserRender(self.context)
-            self.wx_bitmap_image = renderer.make_thumbnail(self.pil_image)
-        width, height = self.pil_image.size
+            self.wx_bitmap_image = renderer.make_thumbnail(self.node.image)
+        width, height = self.node.image.size
         gc.DrawBitmap(self.wx_bitmap_image, 0, 0, width, height)
         gc.PopState()
         font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
@@ -476,17 +476,15 @@ class RasterWizardPanel(wx.Panel):
     def on_buttons_operations(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
-        # TODO: broken
         if self.wizard_thread is not None:
             return
         if self.node is not None:
-            self.node.image = self.pil_image
-            self.node.values["raster_step"] = self.step_image
-            self.node.transform = self.matrix_image
-            (
-                self.node.image_width,
-                self.node.image_height,
-            ) = self.pil_image.size
+            # self.node.values["raster_step_x"] = self.step_image
+            # self.node.transform = self.matrix_image
+            # (
+            #     self.node.image_width,
+            #     self.node.image_height,
+            # ) = self.pil_image.size
             self.node.lock = True
             try:
                 self.node.node.object = self.node
@@ -536,6 +534,7 @@ class DitherPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
         # end wxGlade
 
     def __set_properties(self):
@@ -562,6 +561,7 @@ class DitherPanel(wx.Panel):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_dither.SetValue(op["enable"])
         self.combo_dither.SetSelection(self.choices.index(self.op["type"]))
 
@@ -598,6 +598,7 @@ class CropPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: CropPanel.__set_properties
@@ -635,6 +636,7 @@ class CropPanel(wx.Panel):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_crop.SetValue(op["enable"])
         self.Layout()
         width, height = self.image_view_panel.Size
@@ -683,29 +685,7 @@ class ResamplePanel(wx.Panel):
         self.text_resample_pixels = wx.TextCtrl(
             self, wx.ID_ANY, "1000 x 1000 pixels", style=wx.TE_READONLY
         )
-        self.combo_resample_step = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-            style=wx.CB_DROPDOWN,
-        )
-        self.combo_resample_dpi = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=[
-                "1000",
-                "500",
-                "333",
-                "250",
-                "200",
-                "167",
-                "143",
-                "125",
-                "111",
-                "100",
-            ],
-            style=wx.CB_DROPDOWN,
-        )
+        self.text_resample_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
 
         self.__set_properties()
         self.__do_layout()
@@ -729,15 +709,9 @@ class ResamplePanel(wx.Panel):
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_resample_units, self.combo_resample_units
         )
+        self.Bind(wx.EVT_TEXT, self.on_text_resample_dpi, self.text_resample_dpi)
         self.Bind(
-            wx.EVT_COMBOBOX, self.on_combo_resample_step, self.combo_resample_step
-        )
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.on_combo_resample_step, self.combo_resample_step
-        )
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_resample_dpi, self.combo_resample_dpi)
-        self.Bind(
-            wx.EVT_TEXT_ENTER, self.on_combo_resample_dpi, self.combo_resample_dpi
+            wx.EVT_TEXT_ENTER, self.on_text_resample_dpi, self.text_resample_dpi
         )
         # end wxGlade
         self.context = None
@@ -756,10 +730,7 @@ class ResamplePanel(wx.Panel):
         self.check_resample_maintain_aspect.SetValue(1)
         self.text_resample_height.SetToolTip(_("Image Height"))
         self.combo_resample_units.SetSelection(0)
-        self.combo_resample_step.SetToolTip(_("Image resample step"))
-        self.combo_resample_step.SetSelection(1)
-        self.combo_resample_dpi.SetToolTip(_("Image resample DPI at given step"))
-        self.combo_resample_dpi.SetSelection(1)
+        self.text_resample_dpi.SetToolTip(_("Image resample DPI"))
         # end wxGlade
 
     def __do_layout(self):
@@ -787,11 +758,10 @@ class ResamplePanel(wx.Panel):
         sizer_resample.Add(sizer_resample_height, 0, wx.EXPAND, 0)
         sizer_resample.Add(self.text_resample_pixels, 0, 0, 0)
         sizer_resample.Add((20, 20), 0, 0, 0)
-        label_step = wx.StaticText(self, wx.ID_ANY, _("Step"))
+        label_step = wx.StaticText(self, wx.ID_ANY, _("DPI:"))
         label_step.SetMinSize((50, 16))
         sizer_resample_step.Add(label_step, 0, 0, 0)
-        sizer_resample_step.Add(self.combo_resample_step, 0, 0, 0)
-        sizer_resample_step.Add(self.combo_resample_dpi, 0, 0, 0)
+        sizer_resample_step.Add(self.text_resample_dpi, 0, 0, 0)
         label_ppi = wx.StaticText(self, wx.ID_ANY, _("pixels/in"))
         sizer_resample_step.Add(label_ppi, 11, 0, 0)
         sizer_resample.Add(sizer_resample_step, 0, wx.EXPAND, 0)
@@ -806,8 +776,7 @@ class ResamplePanel(wx.Panel):
         self.original_op = deepcopy(op)
         self.node = node
         self.check_enable_resample.SetValue(op["enable"])
-        self.combo_resample_step.SetSelection(op["step"] - 1)
-        self.combo_resample_dpi.SetSelection(op["step"] - 1)
+        self.text_resample_dpi.SetValue(str(op["dpi"]))
         self.combo_resample_units.SetSelection(op["units"])
         self.check_resample_maintain_aspect.SetValue(op["aspect"])
         self.refresh_dims()
@@ -828,6 +797,7 @@ class ResamplePanel(wx.Panel):
             return
         image = self.node.image
         matrix = Matrix(self.node.matrix)
+        step_x, step_y = self.context.device.dpi_to_steps(self.op["dpi"])
         boundary_points = []
         box = None
         try:
@@ -849,7 +819,11 @@ class ResamplePanel(wx.Panel):
         ymin = min([e[1] for e in boundary_points])
         xmax = max([e[0] for e in boundary_points])
         ymax = max([e[1] for e in boundary_points])
-        bbox = xmin, ymin, xmax, ymax
+        bbox = [xmin, ymin, xmax, ymax]
+        bbox[0] /= step_x
+        bbox[1] /= step_y
+        bbox[2] /= step_x
+        bbox[3] /= step_y
 
         width = int(ceil(bbox[2] - bbox[0]))
         height = int(ceil(bbox[3] - bbox[1]))
@@ -907,7 +881,7 @@ class ResamplePanel(wx.Panel):
         selected = self.combo_resample_step.GetSelection() + 1
         current = self.op["step"]
         if selected != current:
-            self.combo_resample_dpi.SetSelection(
+            self.text_resample_dpi.SetSelection(
                 self.combo_resample_step.GetSelection()
             )
             self.op["step"] = self.combo_resample_step.GetSelection() + 1
@@ -917,18 +891,18 @@ class ResamplePanel(wx.Panel):
                 "RasterWizard-Refocus", float(selected) / float(current)
             )
 
-    def on_combo_resample_dpi(
+    def on_text_resample_dpi(
         self, event=None
     ):  # wxGlade: ResamplePanel.<event_handler>
-        selected = self.combo_resample_dpi.GetSelection() + 1
-        current = self.op["step"]
+        try:
+            selected = float(self.text_resample_dpi.GetValue())
+            self.text_resample_dpi.SetBackgroundColour(None)
+        except ValueError:
+            self.text_resample_dpi.SetBackgroundColour(wx.RED)
+            return
+
+        current = self.op["dpi"]
         if selected != current:
-            self.combo_resample_step.SetSelection(
-                self.combo_resample_dpi.GetSelection()
-            )
-            self.op["step"] = self.combo_resample_dpi.GetSelection() + 1
-            if current == 0:
-                current = 1
             self.context.signal(
                 "RasterWizard-Refocus", float(selected) / float(current)
             )
@@ -960,6 +934,7 @@ class GammaPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
         self.last_x = None
 
     def __set_properties(self):
@@ -991,10 +966,11 @@ class GammaPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.text_gamma_factor.SetValue(str(op["factor"]))
         self.slider_gamma_factor.SetValue(op["factor"] * 100.0)
         self.check_enable_gamma.SetValue(op["enable"])
@@ -1088,6 +1064,7 @@ class GrayscalePanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: GrayscalePanel.__set_properties
@@ -1138,10 +1115,11 @@ class GrayscalePanel(wx.Panel):
         sizer_grayscale.Fit(self)
         self.Layout()
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_grayscale.SetValue(op["enable"])
         self.check_invert_grayscale.SetValue(op["invert"])
 
@@ -1217,6 +1195,7 @@ class ToneCurvePanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
         self.point = -1
 
     def __set_properties(self):
@@ -1243,10 +1222,11 @@ class ToneCurvePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_tone.SetValue(op["enable"])
         self.Layout()
         width, height = self.curve_panel.Size
@@ -1410,6 +1390,7 @@ class SharpenPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: SharpenPanel.__set_properties
@@ -1460,10 +1441,11 @@ class SharpenPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_sharpen.SetValue(op["enable"])
         self.slider_sharpen_percent.SetValue(op["percent"])
         self.slider_sharpen_radius.SetValue(op["radius"])
@@ -1549,6 +1531,7 @@ class OutputPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: OutputPanel.__set_properties
@@ -1571,10 +1554,11 @@ class OutputPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         try:
             self.check_enable_output.SetValue(self.op["enable"])
             self.check_replace_output.SetValue(self.op["replace"])
@@ -1610,6 +1594,7 @@ class BasicPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: OutputPanel.__set_properties
@@ -1628,12 +1613,13 @@ class BasicPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.check_enable.SetLabel(_("Enable %s") % op["name"])
         self.check_enable.SetValue(op["enable"])
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
 
     def on_check_enable(self, event=None):
         self.op["enable"] = self.check_enable.GetValue()
@@ -1686,6 +1672,7 @@ class ContrastPanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: ContrastPanel.__set_properties
@@ -1728,10 +1715,11 @@ class ContrastPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_contrast.SetValue(self.op["enable"])
         self.text_contrast_contrast.SetValue(str(self.op["contrast"]))
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
@@ -1827,6 +1815,7 @@ class HalftonePanel(wx.Panel):
         self.context = None
         self.op = None
         self.original_op = None
+        self.node = None
 
     def __set_properties(self):
         # begin wxGlade: HalftonePanel.__set_properties
@@ -1878,10 +1867,11 @@ class HalftonePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def set_operation(self, context, op, svg_image=None):
+    def set_operation(self, context, op, node=None):
         self.context = context
         self.op = op
         self.original_op = deepcopy(op)
+        self.node = node
         self.check_enable_halftone.SetValue(self.op["enable"])
         self.check_halftone_black.SetValue(self.op["black"])
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
