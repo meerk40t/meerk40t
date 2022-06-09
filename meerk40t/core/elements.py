@@ -2123,6 +2123,189 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
+            "bedalign",
+            help=_("align selected elements in relation to the bed"),
+            input_type=("elements", None),
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, remainder=None, **kwargs):
+            if not remainder:
+                channel(
+                    "top\nbottom\nleft\nright\ncenter"
+                )
+                return
+            if data is None:
+                data = list(self.elems(emphasized=True))
+
+            # Element conversion.
+            d = list()
+            elem_branch = self.elem_branch
+            for node in data:
+                while node.parent and node.parent is not elem_branch:
+                    node = node.parent
+                if node not in d:
+                    d.append(node)
+            data = d
+            return "align", data
+
+        @self.console_command(
+            "top",
+            help=_("align elements at top"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = -1.0 * top_edge
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bottom",
+            help=_("align elements at bottom"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = device_height - bottom_edge
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "left",
+            help=_("align elements at left"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = -1 * left_edge
+            dy = 0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "right",
+            help=_("align elements at right"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = device_width - right_edge
+            dy = 0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "center",
+            help=_("align elements at center"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = (device_width - left_edge - right_edge) / 2.0
+            dy = (device_height - top_edge - bottom_edge) / 2.0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+
+#--------------------
+        @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
             input_type="align",
