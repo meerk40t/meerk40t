@@ -339,7 +339,7 @@ class RibbonPanel(wx.Panel):
 
         if self.is_dark:
             provider = self._ribbon.GetArtProvider()
-            # _update_ribbon_artprovider_for_dark_mode(provider)
+            _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -475,69 +475,57 @@ class RibbonPanel(wx.Panel):
 
 
 
-# def _update_ribbon_artprovider_for_dark_mode(provider: RB.RibbonArtProvider) -> None:
-#     def _set_ribbon_colour(
-#         provider: RB.RibbonArtProvider, art_id_list: list, colour: wx.Colour
-#     ) -> None:
-#         for id_ in art_id_list:
-#             provider.SetColour(id_, colour)
+def _update_ribbon_artprovider_for_dark_mode(provider):
+    def _set_ribbon_colour(provider, art_id_list, colour):
+        for id_ in art_id_list:
+            provider.SetColour(id_, colour)
 
-#     TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+    TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
 
-#     BTNFACE_HOVER = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-#     INACTIVE_BG = copy.copy(
-#         wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
-#     )
-#     INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
-#     BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
-#     BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
+    BTNFACE_HOVER = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+    INACTIVE_BG = copy.copy(
+        wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
+    )
+    INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
+    BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
+    BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
 
-#     texts = [
-#         RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
-#         RB.RIBBON_ART_PANEL_LABEL_COLOUR,
-#     ]
-#     try:  # wx 4.0 compat, not supported on that
-#         texts.extend(
-#             [
-#                 RB.RIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
-#                 RB.RIBBON_ART_TAB_HOVER_LABEL_COLOUR,
-#             ]
-#         )
-#         _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
-#     except AttributeError:
-#         _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], TEXTCOLOUR)
-#         pass
-#     _set_ribbon_colour(provider, texts, TEXTCOLOUR)
+    texts = [
+        RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_COLOUR,
+    ]
+    _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
+    _set_ribbon_colour(provider, texts, TEXTCOLOUR)
 
-#     backgrounds = [
-#         RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR,
-#         RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
-#         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
-#         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
-#         RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
-#         RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
-#         RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
-#     ]
-#     _set_ribbon_colour(provider, backgrounds, BTNFACE)
-#     _set_ribbon_colour(
-#         provider,
-#         [
-#             RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-#             RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
-#             RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
-#             RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-#         ],
-#         INACTIVE_BG,
-#     )
+    backgrounds = [
+        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
+    ]
+    _set_ribbon_colour(provider, backgrounds, BTNFACE)
+    _set_ribbon_colour(
+        provider,
+        [
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
+            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+        ],
+        INACTIVE_BG,
+    )
