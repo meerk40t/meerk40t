@@ -22,7 +22,7 @@ class RelocateTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         pass
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         # Add snap behaviour
         response = RESPONSE_CHAIN
         if event_type in ("hover", "hover_start"):
@@ -30,8 +30,13 @@ class RelocateTool(ToolWidget):
         elif event_type == "leftdown":
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
-            x = space_pos[0]
-            y = space_pos[1]
+            if nearest_snap is None:
+                x = space_pos[0]
+                y = space_pos[1]
+            else:
+                x = nearest_snap[0]
+                y = nearest_snap[1]
+
             if x > bed_width:
                 x = bed_width
             if y > bed_height:
