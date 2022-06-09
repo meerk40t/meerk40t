@@ -39,7 +39,6 @@ from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.textproperty import TextPropertyPanel
-from .rasterwizard import RasterWizard
 from .simulation import Simulation
 from .wxmmain import MeerK40t
 
@@ -335,7 +334,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
-        kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)

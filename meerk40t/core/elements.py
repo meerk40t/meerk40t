@@ -6005,16 +6005,6 @@ class Elemental(Service):
         def image_save(node, **kwargs):
             self("image save output.png\n")
 
-        @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_open(node, script=None, **kwargs):
-            self("window open RasterWizard %s\n" % script)
-
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
