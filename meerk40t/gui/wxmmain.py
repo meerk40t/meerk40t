@@ -699,7 +699,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Draw"),
                 "icon": icons8_pencil_drawing_50,
-                "tip": _(""),
+                "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -711,7 +711,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Ellipse"),
                 "icon": icons8_oval_50,
-                "tip": _(""),
+                "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -723,7 +723,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Circle"),
                 "icon": icons8_circle_50,
-                "tip": _(""),
+                "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -735,7 +735,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polygon"),
                 "icon": icons8_polygon_50,
-                "tip": _(""),
+                "tip": _("Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -747,7 +747,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polyline"),
                 "icon": icons8_polyline_50,
-                "tip": _(""),
+                "tip": _("Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -759,7 +759,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Rectangle"),
                 "icon": icons8_rectangular_50,
-                "tip": _(""),
+                "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -771,7 +771,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
-                "tip": _(""),
+                "tip": _("Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -783,7 +783,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Text"),
                 "icon": icons8_type_50,
-                "tip": _(""),
+                "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -795,7 +795,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Measure"),
                 "icon": icons8_measure_50,
-                "tip": _(""),
+                "tip": _("Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -889,7 +889,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Left"),
                 "icon": icons8_align_left_50,
-                "tip": _("Align selected elements at the leftmost position"),
+                "tip": _("Align selected elements at the leftmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align left\n"),
                 "right": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
@@ -900,7 +900,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Right"),
                 "icon": icons8_align_right_50,
-                "tip": _("Align selected elements at the rightmost position"),
+                "tip": _("Align selected elements at the rightmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align right\n"),
                 "right": lambda v: kernel.elements("align bedright\n"),
                 "size": buttonsize,
@@ -911,7 +911,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Top"),
                 "icon": icons8_align_top_50,
-                "tip": _("Align selected elements at the topmost position"),
+                "tip": _("Align selected elements at the topmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align top\n"),
                 "right": lambda v: kernel.elements("align bedtop\n"),
                 "size": buttonsize,
@@ -922,7 +922,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Bottom"),
                 "icon": icons8_align_bottom_50,
-                "tip": _("Align selected elements at the lowest position"),
+                "tip": _("Align selected elements at the lowest position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align bottom\n"),
                 "right": lambda v: kernel.elements("align bedbottom\n"),
                 "size": buttonsize,
@@ -933,7 +933,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Center"),
                 "icon": icons_centerize,
-                "tip": _("Align selected elements at their center"),
+                "tip": _("Align selected elements at their center (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align center\n"),
                 "right": lambda v: kernel.elements("align bedcenter\n"),
                 "size": buttonsize,
