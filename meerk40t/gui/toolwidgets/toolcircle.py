@@ -45,14 +45,20 @@ class CircleTool(ToolWidget):
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True
-            self.p1 = complex(space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.p1 = complex(space_pos[0], space_pos[1])
+            else:
+                self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            self.p2 = complex(space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.p2 = complex(space_pos[0], space_pos[1])
+            else:
+                self.p2 = complex(nearest_snap[0], nearest_snap[1])
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
         elif event_type == "leftclick":
@@ -67,7 +73,10 @@ class CircleTool(ToolWidget):
             try:
                 if self.p1 is None:
                     return
-                self.p2 = complex(space_pos[0], space_pos[1])
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
