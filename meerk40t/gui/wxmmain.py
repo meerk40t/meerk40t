@@ -891,7 +891,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_align_left_50,
                 "tip": _("Align selected elements at the leftmost position"),
                 "action": lambda v: kernel.elements("align left\n"),
-                "left": lambda v: kernel.elements("align bedleft\n"),
+                "right": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
             },
         )
