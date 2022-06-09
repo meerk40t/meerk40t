@@ -346,7 +346,7 @@ class Drag(wx.Panel):
         )
         self.button_align_trace_hull.SetToolTip(
             _(
-                "Perform a convex hull trace of the selection (Right different alogorithm)"
+                "Perform a convex hull trace of the selection (Right different algorithm)"
             )
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())

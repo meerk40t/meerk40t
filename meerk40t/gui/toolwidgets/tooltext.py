@@ -261,14 +261,18 @@ class TextTool(ToolWidget):
             gc.DrawText(self.text.text, self.x, self.y)
 
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.p1 = complex(space_pos[0], space_pos[1])
             _ = self.scene.context._
             self.text = SVGText("")
-            x = space_pos[0]
-            y = space_pos[1]
+            if nearest_snap is None:
+                x = space_pos[0]
+                y = space_pos[1]
+            else:
+                x = nearest_snap[0]
+                y = nearest_snap[1]
             self.x = x
             self.y = y
             self.text *= "translate({x}, {y}) scale({scale})".format(

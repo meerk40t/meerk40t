@@ -215,7 +215,7 @@ class BorderWidget(Widget):
     def hit(self):
         return HITCHAIN_DELEGATE
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):
@@ -561,7 +561,7 @@ class RotationWidget(Widget):
         value = self._contains(x, y)
         return value == 2
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "rotation"
         response = process_event(
             widget=self,
@@ -773,7 +773,7 @@ class CornerWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "corner"
         response = process_event(
             widget=self,
@@ -970,7 +970,7 @@ class SideWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "side"
         s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
             "Y" if self.index in (0, 2) else "X"
@@ -1092,7 +1092,7 @@ class SkewWidget(Widget):
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "skew"
         s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
         response = process_event(
@@ -1233,7 +1233,7 @@ class MoveWidget(Widget):
 
         self.scene.request_refresh()
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "move"
         response = process_event(
             widget=self,
@@ -1318,7 +1318,7 @@ class MoveRotationOriginWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "rotcenter"
         response = process_event(
             widget=self,
@@ -1432,7 +1432,7 @@ class ReferenceWidget(Widget):
 
         self.scene.request_refresh()
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         s_me = "reference"
         response = process_event(
             widget=self,
@@ -1932,7 +1932,7 @@ class SelectionWidget(Widget):
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         elements = self.scene.context.elements
         # mirror key-events to provide them to the widgets as they get deleted and created after every event...
         if event_type == "kb_shift_release":
