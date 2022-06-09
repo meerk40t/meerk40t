@@ -891,7 +891,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_align_left_50,
                 "tip": _("Align selected elements at the leftmost position"),
                 "action": lambda v: kernel.elements("align left\n"),
-                "left": lambda v: kernel.elements("bedalign left\n"),
+                "left": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
             },
         )
@@ -902,7 +902,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_align_right_50,
                 "tip": _("Align selected elements at the rightmost position"),
                 "action": lambda v: kernel.elements("align right\n"),
-                "right": lambda v: kernel.elements("bedalign right\n"),
+                "right": lambda v: kernel.elements("align bedright\n"),
                 "size": buttonsize,
             },
         )
@@ -913,7 +913,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_align_top_50,
                 "tip": _("Align selected elements at the topmost position"),
                 "action": lambda v: kernel.elements("align top\n"),
-                "right": lambda v: kernel.elements("bedalign top\n"),
+                "right": lambda v: kernel.elements("align bedtop\n"),
                 "size": buttonsize,
             },
         )
@@ -924,7 +924,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_align_bottom_50,
                 "tip": _("Align selected elements at the lowest position"),
                 "action": lambda v: kernel.elements("align bottom\n"),
-                "right": lambda v: kernel.elements("bedalign bottom\n"),
+                "right": lambda v: kernel.elements("align bedbottom\n"),
                 "size": buttonsize,
             },
         )
@@ -935,7 +935,7 @@ class MeerK40t(MWindow):
                 "icon": icons_centerize,
                 "tip": _("Align selected elements at their center"),
                 "action": lambda v: kernel.elements("align center\n"),
-                "right": lambda v: kernel.elements("bedalign center\n"),
+                "right": lambda v: kernel.elements("align bedcenter\n"),
                 "size": buttonsize,
             },
         )
