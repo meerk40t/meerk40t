@@ -49,6 +49,13 @@ class EllipseTool(ToolWidget):
             self.p2 = complex(space_pos[0], space_pos[1])
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            # Dear user: that's too quick for my taste - take your time...
+            self.p1 = None
+            self.p2 = None
+            self.scene.tool_active = False
+            self.scene.request_refresh()
+            response = RESPONSE_ABORT
         elif event_type == "leftup":
             self.scene.tool_active = False
             try:
