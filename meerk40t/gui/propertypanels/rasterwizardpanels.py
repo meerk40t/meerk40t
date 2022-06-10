@@ -156,13 +156,13 @@ class GrayscalePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_grayscale.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_check_invert_grayscale(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["invert"] = self.check_invert_grayscale.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_grayscale_component(
         self, event=None
@@ -181,7 +181,7 @@ class GrayscalePanel(wx.Panel):
         )
         self.text_grayscale_lightness.SetValue(str(self.op["lightness"]))
 
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
 
 class ContrastPanel(wx.Panel):
@@ -298,7 +298,7 @@ class ContrastPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["enable"] = self.check_enable_contrast.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_button_reset_contrast(
         self, event=None
@@ -309,21 +309,21 @@ class ContrastPanel(wx.Panel):
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
         self.slider_contrast_contrast.SetValue(self.op["contrast"])
         self.slider_contrast_brightness.SetValue(self.op["brightness"])
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_contrast_contrast(
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["contrast"] = int(self.slider_contrast_contrast.GetValue())
         self.text_contrast_contrast.SetValue(str(self.op["contrast"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_contrast_brightness(
         self, event=None
     ):  # wxGlade: ContrastPanel.<event_handler>
         self.op["brightness"] = int(self.slider_contrast_brightness.GetValue())
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
 
 class HalftonePanel(wx.Panel):
@@ -462,7 +462,7 @@ class HalftonePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["enable"] = self.check_enable_halftone.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_button_reset_halftone(
         self, event=None
@@ -479,34 +479,34 @@ class HalftonePanel(wx.Panel):
         self.slider_halftone_angle.SetValue(self.op["angle"])
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
         self.slider_halftone_oversample.SetValue(self.op["oversample"])
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_check_halftone_black(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["black"] = self.check_halftone_black.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_halftone_sample(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["sample"] = int(self.slider_halftone_sample.GetValue())
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_halftone_angle(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["angle"] = int(self.slider_halftone_angle.GetValue())
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_halftone_oversample(
         self, event=None
     ):  # wxGlade: HalftonePanel.<event_handler>
         self.op["oversample"] = int(self.slider_halftone_oversample.GetValue())
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
 
 class ToneCurvePanel(wx.Panel):
@@ -614,7 +614,7 @@ class ToneCurvePanel(wx.Panel):
                         self.op["values"][pos[0]] = (pos[0], v)
                 else:
                     self.op["values"][self.point] = (pos[0], v)
-                self.context.signal("RasterWizard-Image")
+                self.node.update(self.context)
                 self.update_in_gui_thread()
             except (KeyError, IndexError):
                 pass
@@ -672,14 +672,14 @@ class ToneCurvePanel(wx.Panel):
 
     def on_check_enable_tone(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_tone.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_button_reset_tone(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.original_op["enable"]
         self.op["type"] = self.original_op["type"]
         self.op["values"].clear()
         self.op["values"].extend(self.original_op["values"])
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
         self.on_update_tone()
         self.update_in_gui_thread()
 
@@ -820,7 +820,7 @@ class SharpenPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_sharpen.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_button_reset_sharpen(
         self, event=None
@@ -834,14 +834,14 @@ class SharpenPanel(wx.Panel):
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_sharpen_percent(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["percent"] = int(self.slider_sharpen_percent.GetValue())
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_text_sharpen_percent(
         self, event=None
@@ -851,7 +851,7 @@ class SharpenPanel(wx.Panel):
     def on_slider_sharpen_radius(self, event):  # wxGlade: RasterWizard.<event_handler>
         self.op["radius"] = int(self.slider_sharpen_radius.GetValue())
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_text_sharpen_radius(
         self, event=None
@@ -863,7 +863,7 @@ class SharpenPanel(wx.Panel):
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["threshold"] = int(self.slider_sharpen_threshold.GetValue())
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_text_sharpen_threshold(self, event):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -950,7 +950,7 @@ class GammaPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_gamma.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_button_reset_gamma(
         self, event=None
@@ -958,14 +958,14 @@ class GammaPanel(wx.Panel):
         self.op["factor"] = self.original_op["factor"]
         self.slider_gamma_factor.SetValue(self.op["factor"] * 100.0)
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_slider_gamma_factor(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["factor"] = self.slider_gamma_factor.GetValue() / 100.0
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_text_gamma_factor(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         pass
@@ -1052,11 +1052,11 @@ class DitherPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["enable"] = self.check_enable_dither.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
     def on_combo_dither_type(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.op["type"] = self.choices[self.combo_dither.GetSelection()]
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
 
 class EdgePanel(wx.Panel):
@@ -1116,7 +1116,7 @@ class EdgePanel(wx.Panel):
 
     def on_check_enable(self, event=None):
         self.op["enable"] = self.check_enable.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
 
 
 class AutoContrastPanel(wx.Panel):
@@ -1176,4 +1176,4 @@ class AutoContrastPanel(wx.Panel):
 
     def on_check_enable(self, event=None):
         self.op["enable"] = self.check_enable.GetValue()
-        self.context.signal("RasterWizard-Image")
+        self.node.update(self.context)
