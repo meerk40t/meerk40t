@@ -1,6 +1,11 @@
+from copy import copy
 import wx
 
+from meerk40t.svgelements import Color, Rect
+from meerk40t.core.node.elem_rect import RectNode
+from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import get_key_name
+from meerk40t.gui.zmatrix import ZMatrix
 
 
 class ScenePanel(wx.Panel):
@@ -17,6 +22,11 @@ class ScenePanel(wx.Panel):
         self.scene_panel.SetDoubleBuffered(True)
 
         self._Buffer = None
+        # Stuff for animated shapes...
+        self._DrawBuffer = None
+        self.animate = True
+        self.counter = 0
+        self.maxcounter = 1000
 
         self.__set_properties()
         self.__do_layout()
@@ -291,17 +301,83 @@ class ScenePanel(wx.Panel):
                 zoom = 1.0
             self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoom=zoom))
 
+    def draw_animation(self, canvas, counter):
+        canvas.DrawRectangle(0, 0, 5000, 5000)
+        nodes = list()
+        for e in list(self.scene.context.elements.elems(emphasized=True)):
+            if e.type == "elem file" or e.type == "elem group":
+                # We only show basic types
+                continue
+            if e.type == "elem image" or e.type == "elem text":
+                bb = e.bounds
+                rect = Rect(x=bb[0], y=bb[1], width=(bb[2] - bb[0]), height=(bb[3] - bb[1]))
+                copy_node = RectNode(shape=rect, matrix = copy(e.matrix))
+                copy_node.stroke = Color(255, 0, 0)
+            else:
+                copy_node = copy(e)
+                if hasattr(e, "fill"):
+                    copy_node.fill = None
+                if hasattr(e, "stroke"):
+                    copy_node.stroke = Color(255, 0, 0)
+            nodes.append(copy_node)
+        if len(nodes)>0:
+            print ("Nodes to display: %d" % len(nodes))
+            matrix = self.scene.matrix
+            scale_x = matrix.value_scale_x()
+            try:
+                zoom_scale = 1 / scale_x
+            except ZeroDivisionError:
+                matrix.reset()
+                zoom_scale = 1
+            if zoom_scale < 1:
+                zoom_scale = 1
+            draw_mode = self.scene.context.draw_mode
+            animation_render = LaserRender(self.scene.context)
+            animation_render.xor_mode = True
+            animation_render.pen_style = wx.PENSTYLE_USER_DASH
+            if counter % 2 == 0:
+                animation_render.pen_dash = [1, 2, 5, 2]
+            else:
+                animation_render.pen_dash = [5, 2, 1, 2]
+            animation_render.render(nodes, canvas, draw_mode, zoomscale=zoom_scale)
+        else:
+            print("nothing to display")
+
     def on_paint(self, event=None):
         """
         Scene Panel paint event calls the paints the bitmap self._Buffer. If self._Buffer does not exist initially
         it is created in the self.scene.update_buffer_ui_thread() call.
         """
-        try:
-            if self._Buffer is None:
-                self.scene.update_buffer_ui_thread()
-            wx.BufferedPaintDC(self.scene_panel, self._Buffer)
-        except (RuntimeError, AssertionError, TypeError):
-            pass
+        #try:
+        print ("Paint")
+        if self._Buffer is None:
+            print("Update was needed")
+            self.scene.update_buffer_ui_thread()
+            # The buffer contains all the regular stuff
+        # Now we add all the animation things...
+        w, h = self._Buffer.Size
+        self._DrawBuffer = self._Buffer.GetSubBitmap(wx.Rect(0, 0, w, h))
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._DrawBuffer)
+        # Now lets do additional drawing on it...
+        gc = None
+        if self.animate:
+            gc = wx.GraphicsContext.Create(dc)
+            gc.Size = dc.Size
+            if self.scene.matrix is not None and not self.scene.matrix.is_identity():
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.scene.matrix)))
+            self.draw_animation(gc, self.counter)
+            self.counter += 1
+            if self.counter >= self.maxcounter:
+                self.counter = 0
+        wx.BufferedPaintDC(self.scene_panel, self._DrawBuffer)
+        # I am done, so lets get rid of it
+        if not gc is None:
+            gc.Destroy()
+        dc.SelectObject(wx.NullBitmap)
+        del dc
+        #except (RuntimeError, AssertionError, TypeError):
+        #    pass
 
     def on_erase(self, event):
         """

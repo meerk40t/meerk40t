@@ -78,6 +78,9 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
+        self.xor_mode = False
+        self.pen_style = wx.PENSTYLE_SOLID
+        self.pen_dash = None
         system = platform.system()
         if system == "Darwin":
             # to be verified
@@ -246,6 +249,9 @@ class LaserRender:
                     self.pen.SetWidth(int(width))
             except OverflowError:
                 pass  # Exceeds 32 bit signed integer.
+            self.pen.SetStyle(self.pen_style)
+            if not self.pen_dash is None:
+                self.pen.SetDashes(self.pen_dash)
             gc.SetPen(self.pen)
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
