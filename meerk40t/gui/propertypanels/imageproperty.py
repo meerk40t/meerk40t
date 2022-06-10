@@ -167,35 +167,35 @@ class ImagePropertyPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: ImageProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        label_8 = wx.StaticText(self, wx.ID_ANY, _("DPI:"))
-        label_8.SetToolTip(_("Dots Per Inch"))
-        sizer_6.Add(label_8, 1, 0, 0)
-        sizer_6.Add(self.text_dpi, 5, 0, 0)
-        sizer_main.Add(sizer_6, 1, wx.EXPAND, 0)
-        label_1 = wx.StaticText(self, wx.ID_ANY, _("X:"))
-        sizer_2.Add(label_1, 1, 0, 0)
-        sizer_2.Add(self.text_x, 5, 0, 0)
-        sizer_main.Add(sizer_2, 1, wx.EXPAND, 0)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Y:"))
-        sizer_3.Add(label_2, 1, 0, 0)
-        sizer_3.Add(self.text_y, 5, 0, 0)
-        sizer_main.Add(sizer_3, 1, wx.EXPAND, 0)
-        label_3 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        sizer_4.Add(label_3, 1, 0, 0)
-        sizer_4.Add(self.text_width, 5, 0, 0)
-        sizer_main.Add(sizer_4, 1, wx.EXPAND, 0)
-        label_5 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        sizer_5.Add(label_5, 1, 0, 0)
-        sizer_5.Add(self.text_height, 5, 0, 0)
-        sizer_main.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_dpi = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.VERTICAL
+        )
+        self.text_dpi.SetToolTip(_("Dots Per Inch"))
+        sizer_dpi.Add(self.text_dpi, 5, 0, 0)
+
+        sizer_main.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
+        label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
+
+        sizer_xy.Add(label_x, 1, 0, 0)
+        sizer_xy.Add(self.text_x, 5, 0, 0)
+        sizer_xy.Add(label_y, 1, 0, 0)
+        sizer_xy.Add(self.text_y, 5, 0, 0)
+        sizer_main.Add(sizer_xy, 1, wx.EXPAND, 0)
+
+        label_w = wx.StaticText(self, wx.ID_ANY, _("Width:"))
+        label_h = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+        sizer_dim.Add(label_w, 1, 0, 0)
+        sizer_dim.Add(self.text_width, 5, 0, 0)
+        sizer_dim.Add(label_h, 1, 0, 0)
+        sizer_dim.Add(self.text_height, 5, 0, 0)
+        sizer_main.Add(sizer_dim, 1, wx.EXPAND, 0)
 
         sizer_dither = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
         )
         sizer_dither.Add(self.check_enable_dither, 0, 0, 0)
         sizer_dither.Add(self.combo_dither, 0, 0, 0)
@@ -204,6 +204,8 @@ class ImagePropertyPanel(wx.Panel):
 
         #-----
 
+        sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grayscale = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL
         )
@@ -220,18 +222,20 @@ class ImagePropertyPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL
         )
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
-        sizer_grayscale_red.Add(self.slider_grayscale_red, 5, wx.EXPAND, 0)
+        sizer_grayscale_red.Add(self.slider_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
-        sizer_grayscale.Add(sizer_grayscale_red, 0, wx.EXPAND, 0)
-        sizer_grayscale_green.Add(self.slider_grayscale_green, 5, wx.EXPAND, 0)
+        sizer_rg.Add(sizer_grayscale_red, 0, wx.EXPAND, 0)
+        sizer_grayscale_green.Add(self.slider_grayscale_green, 1, wx.EXPAND, 0)
         sizer_grayscale_green.Add(self.text_grayscale_green, 1, 0, 0)
-        sizer_grayscale.Add(sizer_grayscale_green, 0, wx.EXPAND, 0)
-        sizer_grayscale_blue.Add(self.slider_grayscale_blue, 5, wx.EXPAND, 0)
+        sizer_rg.Add(sizer_grayscale_green, 0, wx.EXPAND, 0)
+        sizer_grayscale_blue.Add(self.slider_grayscale_blue, 1, wx.EXPAND, 0)
         sizer_grayscale_blue.Add(self.text_grayscale_blue, 1, 0, 0)
-        sizer_grayscale.Add(sizer_grayscale_blue, 0, wx.EXPAND, 0)
-        sizer_grayscale_lightness.Add(self.slider_grayscale_lightness, 5, wx.EXPAND, 0)
+        sizer_bl.Add(sizer_grayscale_blue, 0, wx.EXPAND, 0)
+        sizer_grayscale_lightness.Add(self.slider_grayscale_lightness, 1, wx.EXPAND, 0)
         sizer_grayscale_lightness.Add(self.text_grayscale_lightness, 1, 0, 0)
-        sizer_grayscale.Add(sizer_grayscale_lightness, 0, wx.EXPAND, 0)
+        sizer_bl.Add(sizer_grayscale_lightness, 0, wx.EXPAND, 0)
+        sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
+        sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_grayscale, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
