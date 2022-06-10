@@ -29,8 +29,6 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
-# from weakref import ref
-
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 

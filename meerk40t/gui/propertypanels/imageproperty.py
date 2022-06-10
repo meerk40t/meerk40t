@@ -19,8 +19,32 @@ class ImagePropertyPanel(wx.Panel):
         self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
 
+        self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.choices = [
+            "Floyd-Steinberg",
+            "Atkinson",
+            "Jarvis-Judice-Ninke",
+            "Stucki",
+            "Burkes",
+            "Sierra3",
+            "Sierra2",
+            "Sierra-2-4a",
+        ]
+        self.combo_dither = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.choices,
+            style=wx.CB_DROPDOWN,
+        )
+
         self.__set_properties()
         self.__do_layout()
+
+        self.Bind(
+            wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
+        )
+        self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
 
         self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
@@ -55,6 +79,8 @@ class ImagePropertyPanel(wx.Panel):
             self.text_height.SetValue(str((bounds[3] - bounds[1])))
         except AttributeError:
             pass
+        self.check_enable_dither.SetValue(node.dither)
+        self.combo_dither.SetValue(node.dither_type)
 
     def __set_properties(self):
         self.text_x.SetToolTip(_("X property of image"))
@@ -65,6 +91,10 @@ class ImagePropertyPanel(wx.Panel):
         self.text_width.Enable(False)
         self.text_height.SetToolTip(_("Height property of image"))
         self.text_height.Enable(False)
+        self.check_enable_dither.SetToolTip(_("Enable Dither"))
+        self.check_enable_dither.SetValue(1)
+        self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
+        self.combo_dither.SetSelection(0)
         # end wxGlade
 
     def __do_layout(self):
@@ -96,6 +126,9 @@ class ImagePropertyPanel(wx.Panel):
         sizer_5.Add(label_5, 1, 0, 0)
         sizer_5.Add(self.text_height, 5, 0, 0)
         sizer_8.Add(sizer_5, 1, wx.EXPAND, 0)
+
+        sizer_8.Add(self.check_enable_dither, 0, 0, 0)
+        sizer_8.Add(self.combo_dither, 0, 0, 0)
         self.SetSizer(sizer_8)
         self.Layout()
         self.Centre()
@@ -116,6 +149,17 @@ class ImagePropertyPanel(wx.Panel):
 
     def on_text_height(self, event):  # wxGlade: ImageProperty.<event_handler>
         event.Skip()
+
+    def on_check_enable_dither(
+        self, event=None
+    ):  # wxGlade: RasterWizard.<event_handler>
+        self.node.dither = self.check_enable_dither.GetValue()
+        self.node.update(self.context)
+
+    def on_combo_dither_type(self, event=None):  # wxGlade: RasterWizard.<event_handler>
+        self.node.dither_type = self.choices[self.combo_dither.GetSelection()]
+        self.node.update(self.context)
+
 
 
 class ImageProperty(MWindow):

@@ -16,8 +16,15 @@ from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
-from .propertypanels.rasterwizardpanels import SharpenPanel, ContrastPanel, ToneCurvePanel, HalftonePanel, GammaPanel, \
-    DitherPanel, EdgePanel, AutoContrastPanel
+from .propertypanels.rasterwizardpanels import (
+    SharpenPanel,
+    ContrastPanel,
+    ToneCurvePanel,
+    HalftonePanel,
+    GammaPanel,
+    EdgePanel,
+    AutoContrastPanel,
+)
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
@@ -331,7 +338,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/ToneCurveProperty", ToneCurvePanel)
         kernel.register("property/ImageNode/HalftoneProperty", HalftonePanel)
         kernel.register("property/ImageNode/GammaProperty", GammaPanel)
-        kernel.register("property/ImageNode/DitherProperty", DitherPanel)
         kernel.register("property/ImageNode/EdgeProperty", EdgePanel)
         kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
 
