@@ -219,7 +219,6 @@ class ImagePropertyPanel(wx.Panel):
         sizer_grayscale_red = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL
         )
-        sizer_grayscale.Add(self.check_enable_grayscale, 0, 0, 0)
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
         sizer_grayscale_red.Add(self.slider_grayscale_red, 5, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
