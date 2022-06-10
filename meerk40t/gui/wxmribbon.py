@@ -5,6 +5,7 @@ import wx.ribbon as RB
 from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
+from meerk40t.svgelements import Color
 
 from .icons import icons8_connected_50, icons8_opened_folder_50
 from .mwindow import MWindow
@@ -118,10 +119,10 @@ class RibbonPanel(wx.Panel):
                 resize_param = None
             if "alt-action" in button:
                 button_bar.AddHybridButton(
-                    new_id,
-                    button["label"],
-                    button["icon"].GetBitmap(resize=resize_param),
-                    button["tip"],
+                    button_id=new_id,
+                    label=button["label"],
+                    bitmap=button["icon"].GetBitmap(resize=resize_param),
+                    help_string=button["tip"],
                 )
 
                 def drop_bind(alt_action):
@@ -148,10 +149,11 @@ class RibbonPanel(wx.Panel):
                     bkind = RB.RIBBON_BUTTON_NORMAL
 
                 button_bar.AddButton(
-                    new_id,
-                    button["label"],
-                    button["icon"].GetBitmap(resize=resize_param),
-                    button["tip"],
+                    button_id=new_id,
+                    label=button["label"],
+                    bitmap=button["icon"].GetBitmap(resize=resize_param),
+                    bitmap_disabled=button["icon"].GetBitmap(resize=resize_param, color=Color("grey")),
+                    help_string=button["tip"],
                     kind=bkind,
                 )
             self.button_actions.append(
