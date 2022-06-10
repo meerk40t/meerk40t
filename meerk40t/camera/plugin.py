@@ -18,7 +18,7 @@ def plugin(kernel, lifecycle=None):
             import cv2
         except ImportError as e:
             print("OpenCV is not installed. Disabling Camera. Install with:")
-            print("\tpip install opencv-python headless")
+            print("\tpip install opencv-python-headless")
             return True
         try:
             import numpy as np

@@ -9,7 +9,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     if lifecycle == "register":
-        from meerk40t.balormk.main import BalorDevice
+        from meerk40t.balormk.device import BalorDevice
 
         kernel.register("provider/device/balor", BalorDevice)
     elif lifecycle == "preboot":

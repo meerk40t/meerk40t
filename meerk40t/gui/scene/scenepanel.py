@@ -92,15 +92,15 @@ class ScenePanel(wx.Panel):
         if "shift+" in literal:
             if not self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = True
-                self.scene.event(self.scene.last_position, "kb_shift_press")
+                self.scene.event(self.scene.last_position, "kb_shift_press", None)
         if "ctrl+" in literal:
             if not self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = True
-                self.scene.event(self.scene.last_position, "kb_ctrl_press")
+                self.scene.event(self.scene.last_position, "kb_ctrl_press", None)
         if "alt+" in literal:
             if not self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = True
-                self.scene.event(self.scene.last_position, "kb_alt_press")
+                self.scene.event(self.scene.last_position, "kb_alt_press", None)
                 # self.scene.event(self.scene.last_position, "kb_alt_press")
         evt.Skip()
 
@@ -119,15 +119,15 @@ class ScenePanel(wx.Panel):
         if "shift+" in literal:
             if self.isShiftPressed:  # ignore multiple calls
                 self.isShiftPressed = False
-                self.scene.event(self.scene.last_position, "kb_shift_release")
+                self.scene.event(self.scene.last_position, "kb_shift_release", None)
         if "ctrl+" in literal:
             if self.isCtrlPressed:  # ignore multiple calls
                 self.isCtrlPressed = False
-                self.scene.event(self.scene.last_position, "kb_ctrl_release")
+                self.scene.event(self.scene.last_position, "kb_ctrl_release", None)
         if "alt+" in literal:
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
-                self.scene.event(self.scene.last_position, "kb_alt_release")
+                self.scene.event(self.scene.last_position, "kb_alt_release", None)
         evt.Skip()
 
     def on_size(self, event=None):
@@ -155,19 +155,19 @@ class ScenePanel(wx.Panel):
         if event.GetWheelAxis() == wx.MOUSE_WHEEL_VERTICAL and not event.ShiftDown():
             if event.HasAnyModifiers():
                 if rotation > 1:
-                    self.scene.event(event.GetPosition(), "wheelup_ctrl")
+                    self.scene.event(event.GetPosition(), "wheelup_ctrl", None)
                 elif rotation < -1:
-                    self.scene.event(event.GetPosition(), "wheeldown_ctrl")
+                    self.scene.event(event.GetPosition(), "wheeldown_ctrl", None)
             else:
                 if rotation > 1:
-                    self.scene.event(event.GetPosition(), "wheelup")
+                    self.scene.event(event.GetPosition(), "wheelup", None)
                 elif rotation < -1:
-                    self.scene.event(event.GetPosition(), "wheeldown")
+                    self.scene.event(event.GetPosition(), "wheeldown", None)
         else:
             if rotation > 1:
-                self.scene.event(event.GetPosition(), "wheelleft")
+                self.scene.event(event.GetPosition(), "wheelleft", None)
             elif rotation < -1:
-                self.scene.event(event.GetPosition(), "wheelright")
+                self.scene.event(event.GetPosition(), "wheelright", None)
 
     def on_mousewheel_zoom(self, event):
         """
@@ -179,12 +179,12 @@ class ScenePanel(wx.Panel):
         if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.scene.event(event.GetPosition(), "wheelup")
+            self.scene.event(event.GetPosition(), "wheelup", None)
         elif rotation < -1:
-            self.scene.event(event.GetPosition(), "wheeldown")
+            self.scene.event(event.GetPosition(), "wheeldown", None)
 
     def on_mouse_capture_lost(self, event):
-        self.scene.event(None, "lost")
+        self.scene.event(None, "lost", None)
 
     def on_mouse_middle_down(self, event):
         """
@@ -193,7 +193,7 @@ class ScenePanel(wx.Panel):
         self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(event.GetPosition(), "middledown")
+        self.scene.event(event.GetPosition(), "middledown", None)
 
     def on_mouse_middle_up(self, event):
         """
@@ -201,7 +201,7 @@ class ScenePanel(wx.Panel):
         """
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(event.GetPosition(), "middleup")
+        self.scene.event(event.GetPosition(), "middleup", None)
 
     def on_left_mouse_down(self, event):
         """
@@ -215,7 +215,7 @@ class ScenePanel(wx.Panel):
 
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(event.GetPosition(), "leftdown")
+        self.scene.event(event.GetPosition(), "leftdown", None)
 
     def on_left_mouse_up(self, event):
         """
@@ -227,7 +227,7 @@ class ScenePanel(wx.Panel):
             return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(event.GetPosition(), "leftup")
+        self.scene.event(event.GetPosition(), "leftup", None)
 
     def on_mouse_double_click(self, event):
         """
@@ -235,7 +235,7 @@ class ScenePanel(wx.Panel):
         """
         if self.scene_panel.HasCapture():
             return
-        self.scene.event(event.GetPosition(), "doubleclick")
+        self.scene.event(event.GetPosition(), "doubleclick", None)
 
     last_mode = None
 
@@ -245,9 +245,9 @@ class ScenePanel(wx.Panel):
         Calls move if the mouse is currently dragging.
         """
         if event.Moving():
-            self.scene.event(event.GetPosition(), "hover")
+            self.scene.event(event.GetPosition(), "hover", None)
         else:
-            self.scene.event(event.GetPosition(), "move")
+            self.scene.event(event.GetPosition(), "move", None)
 
     def on_right_mouse_down(self, event):
         """
@@ -257,18 +257,18 @@ class ScenePanel(wx.Panel):
         """
         self.SetFocus()
         if event.AltDown():
-            self.scene.event(event.GetPosition(), "rightdown+alt")
+            self.scene.event(event.GetPosition(), "rightdown+alt", None)
         elif event.ControlDown():
-            self.scene.event(event.GetPosition(), "rightdown+control")
+            self.scene.event(event.GetPosition(), "rightdown+control", None)
         else:
-            self.scene.event(event.GetPosition(), "rightdown")
+            self.scene.event(event.GetPosition(), "rightdown", None)
         event.Skip()
 
     def on_right_mouse_up(self, event):
         """
         Scene Panel right mouse up event.
         """
-        self.scene.event(event.GetPosition(), "rightup")
+        self.scene.event(event.GetPosition(), "rightup", None)
 
     def on_magnify_mouse(self, event):
         """
@@ -291,15 +291,15 @@ class ScenePanel(wx.Panel):
         This code requires WXPython 4.1 and the bind will fail otherwise.
         """
         if event.IsGestureStart():
-            self.scene.event(event.GetPosition(), "gesture-start")
+            self.scene.event(event.GetPosition(), "gesture-start", None)
         elif event.IsGestureEnd():
-            self.scene.event(event.GetPosition(), "gesture-end")
+            self.scene.event(event.GetPosition(), "gesture-end", None)
         else:
             try:
                 zoom = event.GetZoomFactor()
             except AttributeError:
                 zoom = 1.0
-            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoom=zoom))
+            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoom=zoom), None)
 
     def draw_animation(self, canvas, counter):
         canvas.DrawRectangle(0, 0, 5000, 5000)

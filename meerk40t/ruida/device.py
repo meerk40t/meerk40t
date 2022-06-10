@@ -22,7 +22,7 @@ from ..core.cutcode import CutCode, PlotCut
 from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_uM, ViewPort
+from ..core.units import UNITS_PER_uM, ViewPort, Length
 from ..svgelements import Color
 
 STATE_ABORT = -1
@@ -206,7 +206,7 @@ class RuidaDevice(Service, ViewPort):
                 "attr": "bedwidth",
                 "object": self,
                 "default": "24in",
-                "type": float,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
             },
@@ -214,7 +214,7 @@ class RuidaDevice(Service, ViewPort):
                 "attr": "bedheight",
                 "object": self,
                 "default": "16in",
-                "type": float,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
             },
