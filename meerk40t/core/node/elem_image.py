@@ -29,6 +29,8 @@ class ImageNode(Node):
         self.images = {"default": [image, Matrix()]}
         self.active = "default"
         self.matrix = matrix  # global matrix.
+        self.text = None
+
         self.settings = kwargs
         self.overscan = overscan
         self.direction = direction
@@ -159,12 +161,16 @@ class ImageNode(Node):
     def update(self, context):
         self._context = context
         self._needs_update = True
+        self.text = "Processing..."
+        self._context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
+                self.text = None
                 self._needs_update = False
-                self._context = None
                 self._update_thread = None
+                self._context.signal("refresh_scene", "Scene")
+                self._context = None
 
             self._update_thread = context.threaded(
                 self.process_image_thread, result=clear, daemon=True

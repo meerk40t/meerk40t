@@ -678,6 +678,14 @@ class LaserRender:
             )
             gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
+        if node.text is not None:
+            gc.PushState()
+            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+            font = wx.Font()
+            font.SetFractionalPointSize(20)
+            gc.SetFont(font, wx.BLACK)
+            gc.DrawText(node.text, 30, 30)
+            gc.PopState()
 
     def make_raster(
         self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1
