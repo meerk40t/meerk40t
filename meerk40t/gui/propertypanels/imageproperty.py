@@ -153,8 +153,6 @@ class ImagePropertyPanel(wx.Panel):
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
         self.combo_dither.SetSelection(0)
-        self.check_enable_grayscale.SetToolTip(_("Enable Grayscale Convert"))
-        self.check_enable_grayscale.SetValue(1)
         self.check_invert_grayscale.SetToolTip(_("Invert Grayscale"))
         self.slider_grayscale_red.SetToolTip(_("Red component amount"))
         self.text_grayscale_red.SetToolTip(_("Red Factor"))
