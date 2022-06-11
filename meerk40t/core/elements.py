@@ -1646,6 +1646,51 @@ class Elemental(Service):
             return "elements", elements_list
 
         # ==========
+        # REGMARK COMMANDS
+        # ==========
+        def move_nodes_to(target, nodes):
+            for elem in nodes:
+                target.drop(elem)
+
+        @self.console_argument("cmd", type=str, help=_("free, clear, add"))
+        @self.console_command(
+            "regmark",
+            help=_("regmark cmd"),
+            input_type=(None, "elements"),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def regmark(command, channel, _, data, cmd = None, **kwargs):
+            # Move regmarks into the regular element tree and vice versa
+            if cmd == "free":
+                target = self.elem_branch
+            else:
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd =="free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data)==0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
+            else:
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
+            self.signal("tree_changed")
+            return "elements", data
+
+        # ==========
         # ELEMENT SUBCOMMANDS
         # ==========
 
@@ -5911,7 +5956,7 @@ class Elemental(Service):
         @self.tree_operation(
             _("Move back to elements"), node_type=elem_group_nodes, help=""
         )
-        def move_back(node, copies=1, **kwargs):
+        def move_back(node, **kwargs):
             # Drag and Drop
             drop_node = self.elem_branch
             drop_node.drop(node)
@@ -5920,7 +5965,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
-        def move_to_regmark(node, copies=1, **kwargs):
+        def move_to_regmark(node, **kwargs):
             # Drag and Drop
             drop_node = self.reg_branch
             drop_node.drop(node)
