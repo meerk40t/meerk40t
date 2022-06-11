@@ -486,7 +486,7 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type=""):
+    def event(self, window_pos, event_type="", nearest_snap = None):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -504,7 +504,7 @@ class Scene(Module, Job):
         """
         need_refresh = False
         if self.log_events:
-            self.log_events("%s: %s" % (event_type, str(window_pos)))
+            self.log_events("%s: %s" % (event_type, str(window_pos), str(nearest_snap)))
 
         if window_pos is None:
             # Capture Lost
@@ -512,7 +512,7 @@ class Scene(Module, Job):
                 if hit is None:
                     continue  # Element was dropped.
                 current_widget, current_matrix = hit
-                current_widget.event(None, None, event_type)
+                current_widget.event(None, None, event_type, None)
             return
         if self.last_position is None:
             self.last_position = window_pos
@@ -559,7 +559,7 @@ class Scene(Module, Job):
                     )
                 try:
                     # We ignore the 'consume' etc. for the time being...
-                    response = current_widget.event(window_pos, space_pos, event_type)
+                    response = current_widget.event(window_pos, space_pos, event_type, None)
                 except AttributeError:
                     pass
             return
@@ -611,8 +611,8 @@ class Scene(Module, Job):
                         self.log_events(
                             "Converted %s: %s" % ("hover_end", str(window_pos))
                         )
-                    previous_top_element.event(window_pos, window_pos, "hover_end")
-                current_widget.event(window_pos, space_pos, "hover_start")
+                    previous_top_element.event(window_pos, window_pos, "hover_end", None)
+                current_widget.event(window_pos, space_pos, "hover_start", None)
                 if self.log_events:
                     self.log_events(
                         "Converted %s: %s" % ("hover_start", str(window_pos))
@@ -622,7 +622,7 @@ class Scene(Module, Job):
             if (
                 event_type == "leftup" and delta_time <= 0.30
             ):  # Anything within 0.3 seconds will be converted to a leftclick
-                response = current_widget.event(window_pos, space_pos, "leftclick")
+                response = current_widget.event(window_pos, space_pos, "leftclick", nearest_snap)
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             elif event_type == "leftup":
@@ -631,11 +631,11 @@ class Scene(Module, Job):
                         "Did not convert to click, event of my own right, %.2f"
                         % delta_time
                     )
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(window_pos, space_pos, event_type, nearest_snap)
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
             else:
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(window_pos, space_pos, event_type, nearest_snap)
 
             if type(response) is tuple:
                 params = response[1:]
@@ -663,19 +663,21 @@ class Scene(Module, Job):
                 # print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
                 new_x = window_pos[0]
                 new_y = window_pos[1]
+                snap_x = None
+                snap_y = None
+
                 if not new_x_space is None:
                     sdx = new_x_space - space_pos[0]
                     odx = sdx
                     if current_matrix is not None and not current_matrix.is_identity():
                         sdx *= current_matrix.value_scale_x()
-                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
-                    new_x = window_pos[0] + sdx
+                    snap_x = window_pos[0] + sdx
                     sdy = new_y_space - space_pos[1]
                     ody = sdy
                     if current_matrix is not None and not current_matrix.is_identity():
                         sdy *= current_matrix.value_scale_y()
-                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
-                    new_y = window_pos[1] + sdy
+                    # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
+                    snap_y = window_pos[1] + sdy
 
                 dx = new_x - self.last_position[0]
                 dy = new_y - self.last_position[1]
@@ -687,6 +689,19 @@ class Scene(Module, Job):
                     dx,
                     dy,
                 )
+                if snap_x is None:
+                    nearest_snap = None
+                else:
+                    # We are providing the space and screen coordinates
+                    snap_space = current_matrix.point_in_inverse_space((snap_x, snap_y))
+                    nearest_snap = (
+                        snap_space[0],
+                        snap_space[1],
+                        snap_x,
+                        snap_y,
+                    )
+                    # print ("Snap provided", nearest_snap)
+
                 self.last_position = window_pos
                 new_x_space = None
                 new_y_space = None
