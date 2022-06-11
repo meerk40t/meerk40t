@@ -61,6 +61,7 @@ class RibbonPanel(wx.Panel):
         self.context = context
         self.stored_labels = {}
         self.stored_height = 0
+        self.art_provider_count = 0
 
         self.button_actions = []
 
@@ -142,6 +143,8 @@ class RibbonPanel(wx.Panel):
                 break
 
     def set_buttons(self, new_values, button_bar):
+
+        show_tip = not self.context.disable_tool_tips
         button_bar.ClearButtons()
         buttons = []
         for button, name, sname in new_values:
@@ -163,7 +166,7 @@ class RibbonPanel(wx.Panel):
                     button_id = new_id,
                     label = button["label"],
                     bitmap = button["icon"].GetBitmap(resize=resize_param),
-                    help_string = button["tip"],
+                    help_string = button["tip"] if show_tip else "",
                 )
 
                 def drop_bind(alt_action):
@@ -193,7 +196,7 @@ class RibbonPanel(wx.Panel):
                     label = button["label"],
                     bitmap = button["icon"].GetBitmap(resize=resize_param),
                     bitmap_disabled = button["icon"].GetBitmap(resize=resize_param, color=Color("grey")),
-                    help_string = button["tip"],
+                    help_string = button["tip"] if show_tip else "",
                     kind = bkind,
                 )
             if "right" in button:
@@ -269,6 +272,17 @@ class RibbonPanel(wx.Panel):
         self.enable_all_buttons_on_bar(self.geometry_button_bar, active)
         self.enable_all_buttons_on_bar(self.align_button_bar, active)
         self.enable_all_buttons_on_bar(self.modify_button_bar, active)
+
+    @signal_listener("ribbonbar")
+    def on_rb_toggle(self, origin, *args):
+        for bar in self.ribbon_bars:
+            bar.SetArtProvider(self._ribbon._art)
+        for panel in self.ribbon_panels:
+            panel.SetArtProvider(self._ribbon._art)
+        for page in self.ribbon_pages:
+            page.SetArtProvider(self._ribbon._art)
+#        self._ribbon.Realize()
+        self._ribbon.Refresh()
 
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
@@ -457,6 +471,35 @@ class RibbonPanel(wx.Panel):
 
     def pane_hide(self):
         pass
+
+    def on_page_change(self, event):
+        page = event.GetPage()
+        p_id = page.GetId()
+        if p_id  == ID_PAGE_TOGGLE:
+            # Change Art Provider
+            self._ribbon.DismissExpandedPanel()
+            if self.art_provider_count == 0:
+                page.SetLabel("AUI")
+                self._ribbon.SetArtProvider(RB.RibbonAUIArtProvider())
+            elif self.art_provider_count == 1:
+                page.SetLabel("MSW")
+                self._ribbon.SetArtProvider(RB.RibbonMSWArtProvider())
+            elif self.art_provider_count == 2:
+                page.SetLabel("OSX")
+                self._ribbon.SetArtProvider(RB.RibbonOSXArtProvider())
+            elif self.art_provider_count == 3:
+                page.SetLabel("Default")
+                self._ribbon.SetArtProvider(RB.RibbonDefaultArtProvider())
+
+            # if self.is_dark:
+            provider = self._ribbon.GetArtProvider()
+            _update_ribbon_artprovider_for_dark_mode(provider)
+            self.art_provider_count += 1
+            if self.art_provider_count>3:
+                self.art_provider_count = 0
+
+            self.context.signal("ribbonbar")
+            event.Veto()
 
     # def on_page_change(self, event):
     #     page = event.GetPage()
