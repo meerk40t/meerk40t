@@ -89,7 +89,7 @@ def debug_system_colors():
         )
 
 def register_panel_ribbon(window, context):
-    debug_system_colors()
+    # debug_system_colors()
     minh = 75 # 150
     pane = (
         aui.AuiPaneInfo()
@@ -345,68 +345,10 @@ class RibbonPanel(wx.Panel):
         self.enable_all_buttons_on_bar(self.align_button_bar, active)
         self.enable_all_buttons_on_bar(self.modify_button_bar, active)
 
-    @signal_listener("ribbonbar")
-    def on_rb_toggle(self, origin, *args):
-        for bar in self.ribbon_bars:
-            bar.SetArtProvider(self._ribbon._art)
-        for panel in self.ribbon_panels:
-            panel.SetArtProvider(self._ribbon._art)
-        for page in self.ribbon_pages:
-            page.SetArtProvider(self._ribbon._art)
-#        self._ribbon.Realize()
-        self._ribbon.Refresh()
-
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
-    #     if showit:
-    #         if len(self.stored_labels) == 0:
-    #             return
-    #     else:
-    #         self.stored_labels = {}
-
-    #     for bar in self.ribbon_bars:
-    #         for button in bar._buttons:
-    #             b_id = str(button.id)
-    #             old_label = button.label
-    #             if showit:
-    #                 try:
-    #                     old_label = self.stored_labels[b_id]
-    #                 except KeyError:
-    #                     old_label = "?? %s" % b_id
-    #                 button.label=old_label
-    #             else:
-    #                 self.stored_labels[b_id] = old_label
-    #                 button.label = ""
-    #     for panel in self.ribbon_panels:
-    #         #print (dir(panel))
-    #         #print ("----------------------------")
-    #         #print (vars(panel))
-    #         b_id = str(panel.GetId())
-    #         old_label = panel.GetLabel()
-    #         # siz = panel.DoGetBestSize()
-    #         # if not showit:
-    #         #     siz.SetHeight(siz.GetHeight()/2)
-    #         if showit:
-    #             try:
-    #                 old_label = self.stored_labels[b_id]
-    #             except KeyError:
-    #                 old_label = "?? %s" % b_id
-    #             panel.SetLabel(old_label)
-    #         else:
-    #             self.stored_labels[b_id] = old_label
-    #             panel.SetLabel("")
-    #     #     panel.DoSetSize(wx.DefaultCoord, wx.DefaultCoord, wx.DefaultCoord, siz.GetHeight(), wx.SIZE_USE_EXISTING)
-    #     # for page in self.ribbon_pages:
-    #     #     # page.Realize()
-    #     #     siz = page.DoGetBestSize()
-    #     #     if not showit:
-    #     #         siz.SetHeight(siz.GetHeight()/2)
-
-    #     #     page.DoSetSize(wx.DefaultCoord, wx.DefaultCoord, wx.DefaultCoord, siz.GetHeight(), wx.SIZE_USE_EXISTING)
-    #         # page.DoSetSize(wx.DefaultCoord, wx.DefaultCoord, wx.DefaultCoord, myheight,  wx.SIZE_USE_EXISTING)
-    #     # Resize the panels, the pages, the bar, the aui_pane...
-    #     self.ensure_realize()
-    #     self._ribbon.Refresh()
+    #     self._ribbon.ShowPanels(True)
+    
 
     @property
     def is_dark(self):
@@ -539,9 +481,9 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
-        minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, _("_"))
-        self.ribbon_pages.append(minmaxpage)
+        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, _("_"))
+        # self.ribbon_pages.append(minmaxpage)
 
         self.ensure_realize()
 
@@ -551,35 +493,6 @@ class RibbonPanel(wx.Panel):
     def pane_hide(self):
         pass
 
-    def on_page_change(self, event):
-        page = event.GetPage()
-        p_id = page.GetId()
-        if p_id  == ID_PAGE_TOGGLE:
-            # Change Art Provider
-            self._ribbon.DismissExpandedPanel()
-            provider = self._ribbon.GetArtProvider()
-            if self.art_provider_count == 0:
-                page.SetLabel("Black, Blue, Red")
-                provider.SetColourScheme(wx.BLACK, wx.BLUE, wx.RED)
-            elif self.art_provider_count == 1:
-                page.SetLabel("Black, Red, Blue")
-                provider.SetColourScheme(wx.BLACK, wx.RED, wx.BLUE)
-            elif self.art_provider_count == 2:
-                page.SetLabel("OSX")
-                self._ribbon.SetArtProvider(RB.RibbonOSXArtProvider())
-            elif self.art_provider_count == 3:
-                page.SetLabel("Default")
-                self._ribbon.SetArtProvider(RB.RibbonDefaultArtProvider())
-
-            # if self.is_dark:
-            provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
-            self.art_provider_count += 1
-            if self.art_provider_count>3:
-                self.art_provider_count = 0
-
-            self.context.signal("ribbonbar")
-            event.Veto()
 
     # def on_page_change(self, event):
     #     page = event.GetPage()
@@ -598,56 +511,25 @@ class RibbonPanel(wx.Panel):
 
 
 
-# RIBBON_ART_TAB_SEPARATION_SIZE = 1
-# RIBBON_ART_PAGE_BORDER_LEFT_SIZE = 2
-# RIBBON_ART_PAGE_BORDER_TOP_SIZE = 3
-# RIBBON_ART_PAGE_BORDER_RIGHT_SIZE = 4
-# RIBBON_ART_PAGE_BORDER_BOTTOM_SIZE = 5
-# RIBBON_ART_PANEL_X_SEPARATION_SIZE = 6
-# RIBBON_ART_PANEL_Y_SEPARATION_SIZE = 7
-# RIBBON_ART_TOOL_GROUP_SEPARATION_SIZE = 8
-# RIBBON_ART_GALLERY_BITMAP_PADDING_LEFT_SIZE = 9
-# RIBBON_ART_GALLERY_BITMAP_PADDING_RIGHT_SIZE = 10
-# RIBBON_ART_GALLERY_BITMAP_PADDING_TOP_SIZE = 11
-# RIBBON_ART_GALLERY_BITMAP_PADDING_BOTTOM_SIZE = 12
-# RIBBON_ART_PANEL_LABEL_FONT = 13
-# RIBBON_ART_BUTTON_BAR_LABEL_FONT = 14
-# RIBBON_ART_TAB_LABEL_FONT = 15
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
-# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR = 18
-# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR = 19
-# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR = 20
-# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_GRADIENT_COLOUR = 21
 # RIBBON_ART_BUTTON_BAR_ACTIVE_BORDER_COLOUR = 22
-# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_TOP_COLOUR = 23
-# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR = 24
-# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_COLOUR = 25
-# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_GRADIENT_COLOUR = 26
 # RIBBON_ART_GALLERY_BORDER_COLOUR = 27
-
 # RIBBON_ART_GALLERY_BUTTON_ACTIVE_FACE_COLOUR = 40
-# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_COLOUR = 41
-# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_GRADIENT_COLOUR = 42
-# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_TOP_COLOUR = 43
-# RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR = 44
 # RIBBON_ART_GALLERY_ITEM_BORDER_COLOUR = 45
 # RIBBON_ART_TAB_LABEL_COLOUR = 46
 # RIBBON_ART_TAB_SEPARATOR_COLOUR = 47
 # RIBBON_ART_TAB_SEPARATOR_GRADIENT_COLOUR = 48
-#
 # RIBBON_ART_TAB_BORDER_COLOUR = 59
 # RIBBON_ART_PANEL_BORDER_COLOUR = 60
 # RIBBON_ART_PANEL_BORDER_GRADIENT_COLOUR = 61
 # RIBBON_ART_PANEL_MINIMISED_BORDER_COLOUR = 62
 # RIBBON_ART_PANEL_MINIMISED_BORDER_GRADIENT_COLOUR = 63
-
 # RIBBON_ART_PANEL_LABEL_COLOUR = 66
 # RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR = 67
 # RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR = 68
 # RIBBON_ART_PANEL_HOVER_LABEL_COLOUR = 69
 # RIBBON_ART_PANEL_MINIMISED_LABEL_COLOUR = 70
-
 # RIBBON_ART_PANEL_BUTTON_FACE_COLOUR = 75
 # RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR = 76
 # RIBBON_ART_PAGE_BORDER_COLOUR = 77
@@ -679,14 +561,19 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
     TOOLTIP_BG = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK))
     BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
     BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
+    HIGHLIGHT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT))
 
     texts = [
         RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
         RB.RIBBON_ART_PANEL_LABEL_COLOUR,
     ]
-    _set_ribbon_colour(provider, [RB.RIBBON_ART_TAB_LABEL_COLOUR], INACTIVE_TEXT)
     _set_ribbon_colour(provider, texts, TEXTCOLOUR)
-
+    disabled = [
+       RB.RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR,
+       RB.RIBBON_ART_TAB_LABEL_COLOUR,
+    ]
+    _set_ribbon_colour(provider, disabled, INACTIVE_TEXT)
+ 
     backgrounds = [
         # Toolbar element backgrounds
         RB.RIBBON_ART_TOOL_BACKGROUND_TOP_COLOUR,
@@ -746,3 +633,18 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,                
     ]
     _set_ribbon_colour(provider, backgrounds, BTNFACE)
+    highlights  = [
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
+    ]
+    _set_ribbon_colour(provider, highlights, HIGHLIGHT)
+    borders = [
+        RB.RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR,
+    ]
+    _set_ribbon_colour(provider, borders, wx.RED)    
+    
+    lowlights = [
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+    ]
+    _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
