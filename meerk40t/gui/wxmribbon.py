@@ -219,6 +219,9 @@ class RibbonPanel(wx.Panel):
     def set_buttons(self, new_values, button_bar):
 
         show_tip = not self.context.disable_tool_tips
+        button_bar._current_layout = 0
+        button_bar._hovered_button = None
+        button_bar._active_button = None
         button_bar.ClearButtons()
         buttons = []
         for button, name, sname in new_values:
