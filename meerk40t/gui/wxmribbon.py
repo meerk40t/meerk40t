@@ -353,13 +353,9 @@ class RibbonPanel(wx.Panel):
 
     @property
     def is_dark(self):
-        # try:
-        #     sysappearance = wx.SystemSettings().GetAppearance()
-        #     result = sysappearance.IsDark()
-        #     dark_bg = sysappearance.IsUsingDarkBackground()
-        # except:
-        #     result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        #     dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # wxPython's SysAppearance does not always deliver a reliable response from
+        # wx.SystemSettings().GetAppearance().IsDark()
+        # so lets tick with 'old way', although this one is fishy...
         result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return result
 
@@ -483,9 +479,9 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
-        minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
-        self.ribbon_pages.append(minmaxpage)
+        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
+        # self.ribbon_pages.append(minmaxpage)
 
         self.ensure_realize()
 
@@ -496,17 +492,17 @@ class RibbonPanel(wx.Panel):
         pass
 
 
-    def on_page_change(self, event):
-        page = event.GetPage()
-        p_id = page.GetId()
-        # print ("Page Changing to ", p_id)
-        if p_id  == ID_PAGE_TOGGLE:
-            slist = debug_system_colors()
-            msg = ""
-            for s in slist:
-                msg += s + "\n"
-            wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
-            event.Veto()
+    # def on_page_change(self, event):
+    #     page = event.GetPage()
+    #     p_id = page.GetId()
+    #     # print ("Page Changing to ", p_id)
+    #     if p_id  == ID_PAGE_TOGGLE:
+    #         slist = debug_system_colors()
+    #         msg = ""
+    #         for s in slist:
+    #             msg += s + "\n"
+    #         wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
+    #         event.Veto()
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
