@@ -25,9 +25,13 @@ class RelocateTool(ToolWidget):
     def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         # Add snap behaviour
         response = RESPONSE_CHAIN
-        if event_type in ("hover", "hover_start"):
+        if event_type == "leftdown":
             self.scene.tool_active = True
-        elif event_type == "leftdown":
+            response = RESPONSE_CONSUME
+        elif event_type =="move":
+            if self.scene.tool_active:
+                response = RESPONSE_CONSUME
+        elif event_type in ("leftup", "leftclick"):
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
             if nearest_snap is None:
