@@ -22,7 +22,7 @@ from ..core.units import (
 )
 from ..image.imagetools import RasterScripts
 from ..svgelements import Matrix
-from .icons import icons8_fantasy_50
+from .icons import icons8_fantasy_50, STD_ICON_SIZE
 from .laserrender import LaserRender
 from .mwindow import MWindow
 from .zmatrix import ZMatrix
@@ -58,6 +58,7 @@ class RasterWizardPanel(wx.Panel):
         self.focus_factor = None
         self.needs_centering = True
         self.needs_update = True
+        self.pil_image = None
 
         self.sizer_operation_panels = None
 
@@ -1967,6 +1968,7 @@ class RasterWizard(MWindow):
                 "icon": icons8_fantasy_50,
                 "tip": _("Run RasterWizard"),
                 "action": lambda v: kernel.console("window toggle RasterWizard\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 

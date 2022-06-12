@@ -6,7 +6,7 @@ from meerk40t.kernel import signal_listener
 
 from ..core.node.node import Node
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import icons8_laser_beam_52
+from .icons import icons8_laser_beam_52, STD_ICON_SIZE
 from .mwindow import MWindow
 from .wxutils import disable_window
 
@@ -523,6 +523,7 @@ class ExecuteJob(MWindow):
                 "icon": icons8_laser_beam_52,
                 "tip": _("Execute the current laser project"),
                 "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 
