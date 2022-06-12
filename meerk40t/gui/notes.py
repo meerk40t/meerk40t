@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from .icons import icons8_comments_50
+from .icons import icons8_comments_50, STD_ICON_SIZE
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -122,6 +122,7 @@ class Notes(MWindow):
                 "icon": icons8_comments_50,
                 "tip": _("Open Notes Window"),
                 "action": lambda v: kernel.console("window toggle Notes\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 
