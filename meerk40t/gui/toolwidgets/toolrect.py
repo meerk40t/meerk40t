@@ -46,12 +46,13 @@ class RectTool(ToolWidget):
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            if nearest_snap is None:
-                self.p2 = complex(space_pos[0], space_pos[1])
-            else:
-                self.p2 = complex(nearest_snap[0], nearest_snap[1])
-            self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            if not self.p1 is None:
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
         elif event_type == "leftclick":
             # Dear user: that's too quick for my taste - take your time...
             self.p1 = None
@@ -91,4 +92,6 @@ class RectTool(ToolWidget):
             response = RESPONSE_ABORT
         elif event_type == "lost":
             self.scene.tool_active = False
+            self.p1 = None
+            self.p2 = None
         return response
