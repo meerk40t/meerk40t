@@ -220,6 +220,7 @@ REGEX_COLOR_HSL = re.compile(
     % (PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT)
 )
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_CSS_COMMENT = re.compile(r"\/\*[\s\S]*?\*\/|\/\/.*$", re.MULTILINE)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
     r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
@@ -4791,7 +4792,10 @@ class Arc(Curve):
                         if abs(delta_b.x) < 1e-12:  # slope_b == inf
                             cy = bc_mid.y
                         else:
-                            cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                            if abs(slope_b) > 1e-12:
+                                cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                            else:
+                                cy = float("inf")
                     elif abs(delta_b.y) < 1e-12:  # slope_b == 0
                         cx = bc_mid.x
                         if abs(delta_a.y) < 1e-12:  # slope_a == inf
@@ -8839,7 +8843,9 @@ class SVG(Group):
                     s = Title(values, title=elem.text)
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
-                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
+                    textstyle = elem.text
+                    textstyle = re.sub(REGEX_CSS_COMMENT, '', textstyle)
+                    assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
