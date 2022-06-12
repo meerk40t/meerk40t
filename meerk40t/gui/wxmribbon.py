@@ -68,11 +68,16 @@ def debug_system_colors():
         source = "Sysappearance"
         is_dark = sysappearance.IsDark()
         dark_bg = sysappearance.IsUsingDarkBackground()
+        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        source = "Default"
+        is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
     except:
         source = "Default"
         is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-    reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
     for colpair in slist:
         syscol = wx.SystemSettings().GetColour(colpair[0])
         if syscol is None:
@@ -348,13 +353,14 @@ class RibbonPanel(wx.Panel):
 
     @property
     def is_dark(self):
-        try:
-            sysappearance = wx.SystemSettings().GetAppearance()
-            result = sysappearance.IsDark()
-            dark_bg = sysappearance.IsUsingDarkBackground()
-        except:
-            result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-            dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # try:
+        #     sysappearance = wx.SystemSettings().GetAppearance()
+        #     result = sysappearance.IsDark()
+        #     dark_bg = sysappearance.IsUsingDarkBackground()
+        # except:
+        #     result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        #     dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return result
 
     def ensure_realize(self):
