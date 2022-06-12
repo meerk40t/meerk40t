@@ -17,6 +17,38 @@ ID_PAGE_MAIN = 10
 ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
 
+class RibbonButtonBar(RB.RibbonButtonBar):
+    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=0):
+        super().__init__(parent, id, pos, size, agwStyle)
+
+    def OnPaint(self, event):
+        """
+        Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
+
+        :param `event`: a :class:`PaintEvent` event to be processed.
+        """
+
+        dc = wx.AutoBufferedPaintDC(self)
+        self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
+
+        try:
+            layout = self._layouts[self._current_layout]
+        except IndexError:
+            return
+
+        for button in layout.buttons:
+            base = button.base
+
+            bitmap = base.bitmap_large
+            bitmap_small = base.bitmap_small
+
+            if base.state & RB.RIBBON_BUTTONBAR_BUTTON_DISABLED:
+                bitmap = base.bitmap_large_disabled
+                bitmap_small = base.bitmap_small_disabled
+
+            rect = wx.Rect(button.position + self._layout_offset, base.sizes[button.size].size)
+            self._art.DrawButtonBarButton(dc, self, rect, base.kind, base.state | button.size, base.label, bitmap, bitmap_small)
+
 def debug_system_colors():
     reslist = list()
     slist = (
@@ -392,7 +424,7 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_panels.append(self.project_panel)
 
-        button_bar = RB.RibbonButtonBar(self.project_panel)
+        button_bar = RibbonButtonBar(self.project_panel)
         self.project_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -405,7 +437,7 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_panels.append(self.control_panel)
 
-        button_bar = RB.RibbonButtonBar(self.control_panel)
+        button_bar = RibbonButtonBar(self.control_panel)
         self.control_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -418,7 +450,7 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_panels.append(self.config_panel)
 
-        button_bar = RB.RibbonButtonBar(self.config_panel)
+        button_bar = RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -439,7 +471,7 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_panels.append(self.tool_panel)
 
-        button_bar = RB.RibbonButtonBar(self.tool_panel)
+        button_bar = RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -452,7 +484,7 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_panels.append(self.modify_panel)
 
-        button_bar = RB.RibbonButtonBar(self.modify_panel)
+        button_bar = RibbonButtonBar(self.modify_panel)
         self.modify_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -464,7 +496,7 @@ class RibbonPanel(wx.Panel):
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
         )
         self.ribbon_panels.append(self.geometry_panel)
-        button_bar = RB.RibbonButtonBar(self.geometry_panel)
+        button_bar = RibbonButtonBar(self.geometry_panel)
         self.geometry_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
@@ -476,7 +508,7 @@ class RibbonPanel(wx.Panel):
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
         )
         self.ribbon_panels.append(self.align_panel)
-        button_bar = RB.RibbonButtonBar(self.align_panel)
+        button_bar = RibbonButtonBar(self.align_panel)
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
