@@ -69,7 +69,8 @@ def debug_system_colors():
         dark_bg = sysappearance.IsUsingDarkBackground()
     except:
         source = "Default"
-        pass
+        is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
     print("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
     for colpair in slist:
         syscol = wx.SystemSettings().GetColour(colpair[0])
@@ -80,7 +81,12 @@ def debug_system_colors():
                 s = syscol.GetAsString(wx.C2S_NAME)
             except AssertionError:
                 s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
-        print ("%s for %s" % (s, colpair[1]))
+        print (
+            "{col} xx\033[38;2;{r};{g};{b}m TE \033[0m \033[48;2;{r};{g};{b} ST \033[0m xx for {desc}".format(
+                col=s, desc=colpair[1], 
+                r=syscol.Red(), g=syscol.Green(), b=syscol.Blue()
+                )
+        )
 
 def register_panel_ribbon(window, context):
     debug_system_colors()
@@ -404,7 +410,14 @@ class RibbonPanel(wx.Panel):
 
     @property
     def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        try:
+            sysappearance = wx.SystemSettings().GetAppearance()
+            result = sysappearance.IsDark()
+            dark_bg = sysappearance.IsUsingDarkBackground()
+        except:
+            result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+            dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return result
 
     def ensure_realize(self):
         self._ribbon_dirty = True
@@ -417,9 +430,9 @@ class RibbonPanel(wx.Panel):
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
 
-        #if self.is_dark:
-        #    provider = self._ribbon.GetArtProvider()
-        #    _update_ribbon_artprovider_for_dark_mode(provider)
+        if self.is_dark:
+            provider = self._ribbon.GetArtProvider()
+            _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -585,10 +598,75 @@ class RibbonPanel(wx.Panel):
 
 
 
+# RIBBON_ART_TAB_SEPARATION_SIZE = 1
+# RIBBON_ART_PAGE_BORDER_LEFT_SIZE = 2
+# RIBBON_ART_PAGE_BORDER_TOP_SIZE = 3
+# RIBBON_ART_PAGE_BORDER_RIGHT_SIZE = 4
+# RIBBON_ART_PAGE_BORDER_BOTTOM_SIZE = 5
+# RIBBON_ART_PANEL_X_SEPARATION_SIZE = 6
+# RIBBON_ART_PANEL_Y_SEPARATION_SIZE = 7
+# RIBBON_ART_TOOL_GROUP_SEPARATION_SIZE = 8
+# RIBBON_ART_GALLERY_BITMAP_PADDING_LEFT_SIZE = 9
+# RIBBON_ART_GALLERY_BITMAP_PADDING_RIGHT_SIZE = 10
+# RIBBON_ART_GALLERY_BITMAP_PADDING_TOP_SIZE = 11
+# RIBBON_ART_GALLERY_BITMAP_PADDING_BOTTOM_SIZE = 12
+# RIBBON_ART_PANEL_LABEL_FONT = 13
+# RIBBON_ART_BUTTON_BAR_LABEL_FONT = 14
+# RIBBON_ART_TAB_LABEL_FONT = 15
+# RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
+# RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
+# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR = 18
+# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR = 19
+# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR = 20
+# RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_GRADIENT_COLOUR = 21
+# RIBBON_ART_BUTTON_BAR_ACTIVE_BORDER_COLOUR = 22
+# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_TOP_COLOUR = 23
+# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR = 24
+# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_COLOUR = 25
+# RIBBON_ART_BUTTON_BAR_ACTIVE_BACKGROUND_GRADIENT_COLOUR = 26
+# RIBBON_ART_GALLERY_BORDER_COLOUR = 27
+
+# RIBBON_ART_GALLERY_BUTTON_ACTIVE_FACE_COLOUR = 40
+# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_COLOUR = 41
+# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_GRADIENT_COLOUR = 42
+# RIBBON_ART_GALLERY_BUTTON_DISABLED_BACKGROUND_TOP_COLOUR = 43
+# RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR = 44
+# RIBBON_ART_GALLERY_ITEM_BORDER_COLOUR = 45
+# RIBBON_ART_TAB_LABEL_COLOUR = 46
+# RIBBON_ART_TAB_SEPARATOR_COLOUR = 47
+# RIBBON_ART_TAB_SEPARATOR_GRADIENT_COLOUR = 48
+#
+# RIBBON_ART_TAB_BORDER_COLOUR = 59
+# RIBBON_ART_PANEL_BORDER_COLOUR = 60
+# RIBBON_ART_PANEL_BORDER_GRADIENT_COLOUR = 61
+# RIBBON_ART_PANEL_MINIMISED_BORDER_COLOUR = 62
+# RIBBON_ART_PANEL_MINIMISED_BORDER_GRADIENT_COLOUR = 63
+
+# RIBBON_ART_PANEL_LABEL_COLOUR = 66
+# RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR = 67
+# RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR = 68
+# RIBBON_ART_PANEL_HOVER_LABEL_COLOUR = 69
+# RIBBON_ART_PANEL_MINIMISED_LABEL_COLOUR = 70
+
+# RIBBON_ART_PANEL_BUTTON_FACE_COLOUR = 75
+# RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR = 76
+# RIBBON_ART_PAGE_BORDER_COLOUR = 77
+
+# RIBBON_ART_TOOLBAR_BORDER_COLOUR = 86
+# RIBBON_ART_TOOLBAR_HOVER_BORDER_COLOUR = 87
+# RIBBON_ART_TOOLBAR_FACE_COLOUR = 88
+
+
+
 def _update_ribbon_artprovider_for_dark_mode(provider):
     def _set_ribbon_colour(provider, art_id_list, colour):
         for id_ in art_id_list:
-            provider.SetColour(id_, colour)
+            try:
+                provider.SetColour(id_, colour)
+            except:
+                # Not all colorcodes are supported by all providers.
+                # So lets ignore it
+                pass
 
     TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
 
@@ -597,6 +675,8 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
     )
     INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
+    TOOLTIP_FG = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT))
+    TOOLTIP_BG = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK))
     BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
     BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
 
@@ -608,8 +688,43 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
     _set_ribbon_colour(provider, texts, TEXTCOLOUR)
 
     backgrounds = [
-        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_BUTTON_BAR_HOVER_BACKGROUND_COLOUR,
+        # Toolbar element backgrounds
+        RB.RIBBON_ART_TOOL_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TOOL_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TOOL_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TOOL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
+        # Page Background
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        # Art Gallery
+        RB.RIBBON_ART_GALLERY_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_FACE_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_FACE_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_TOP_COLOUR,
+        
+        # Panel backgrounds
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
@@ -618,24 +733,16 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        # Tab Background
         RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
         RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,                
     ]
     _set_ribbon_colour(provider, backgrounds, BTNFACE)
-    _set_ribbon_colour(
-        provider,
-        [
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
-            RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-        ],
-        INACTIVE_BG,
-    )
