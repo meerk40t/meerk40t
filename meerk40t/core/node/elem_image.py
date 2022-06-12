@@ -1,6 +1,7 @@
 import threading
 from copy import copy
 
+from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.node import Node
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix
@@ -121,6 +122,9 @@ class ImageNode(Node):
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)
         default_map.update(self.settings)
+        default_map["width"] = self.image.width
+        default_map["height"] = self.image.height
+        default_map["element_type"] = "Image"
         default_map["matrix"] = self.matrix
         default_map["dpi"] = self.dpi
         default_map["overscan"] = self.overscan
@@ -367,6 +371,17 @@ class ImageNode(Node):
         self.images["processed"] = (image, amatrix * m)
         self.images["default"][1] = Matrix()
         self.active = "processed"
+        self.layers_changed()
+        self.altered()
+
+    def layers_changed(self):
+        self.remove_all_children()
+        for name in self.images:
+            node = LayerNode(layer_name=name)
+            self.add_node(node)
+
+    def activate(self, layer):
+        self.active = layer
         self.altered()
 
     @staticmethod

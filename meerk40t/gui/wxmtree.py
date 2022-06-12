@@ -62,8 +62,9 @@ def register_panel_tree(window, context):
         "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
     )
     context.register("format/op console", "{enabled}{command}")
+    context.register("format/layer", "{element_type} {name}")
     context.register("format/elem ellipse", "{element_type} {id}")
-    context.register("format/elem image", "{element_type} {id}")
+    context.register("format/elem image", "{element_type} {width}x{height}")
     context.register("format/elem line", "{element_type} {id}")
     context.register("format/elem path", "{element_type} {id}")
     context.register("format/elem point", "{element_type} {id}")
