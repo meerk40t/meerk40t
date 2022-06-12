@@ -124,7 +124,7 @@ def debug_system_colors():
 
 def register_panel_ribbon(window, context):
     # debug_system_colors()
-    minh = 75 # 150
+    minh = 150
     pane = (
         aui.AuiPaneInfo()
         .Name("ribbon")
