@@ -18,6 +18,7 @@ ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
 
 def debug_system_colors():
+    reslist = list()
     slist = (
         (wx.SYS_COLOUR_SCROLLBAR, "The scrollbar grey area."),
         (wx.SYS_COLOUR_DESKTOP, "The desktop colour."),
@@ -52,13 +53,13 @@ def debug_system_colors():
         (wx.SYS_COLOUR_MENUBAR, "The background colour for the menu bar when menus appear as flat menus."),
         (wx.SYS_COLOUR_LISTBOXTEXT, "Text colour for list-like controls."),
         (wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT, "Text colour for the unfocused selection of list-like controls."),
-        (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
-        (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
-        (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
-        (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
+        # (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
+        # (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
+        # (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
+        # (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        # (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        # (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        # (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
     )
     is_dark = False
     dark_bg = False
@@ -71,7 +72,7 @@ def debug_system_colors():
         source = "Default"
         is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-    print("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+    reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
     for colpair in slist:
         syscol = wx.SystemSettings().GetColour(colpair[0])
         if syscol is None:
@@ -81,15 +82,10 @@ def debug_system_colors():
                 s = syscol.GetAsString(wx.C2S_NAME)
             except AssertionError:
                 s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
-        print (
-            "{col} xx\033[38;2;{r};{g};{b}m TE \033[0m \033[48;2;{r};{g};{b} ST \033[0m xx for {desc}".format(
-                col=s, desc=colpair[1], 
-                r=syscol.Red(), g=syscol.Green(), b=syscol.Blue()
-                )
-        )
+        reslist.append( "{col} for {desc}".format(col=s, desc=colpair[1]) )
+    return reslist
 
 def register_panel_ribbon(window, context):
-    # debug_system_colors()
     minh = 75 # 150
     pane = (
         aui.AuiPaneInfo()
@@ -348,7 +344,7 @@ class RibbonPanel(wx.Panel):
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)
-    
+
 
     @property
     def is_dark(self):
@@ -481,9 +477,9 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
-        # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, _("_"))
-        # self.ribbon_pages.append(minmaxpage)
+        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
+        self.ribbon_pages.append(minmaxpage)
 
         self.ensure_realize()
 
@@ -494,22 +490,17 @@ class RibbonPanel(wx.Panel):
         pass
 
 
-    # def on_page_change(self, event):
-    #     page = event.GetPage()
-    #     p_id = page.GetId()
-    #     # print ("Page Changing to ", p_id)
-    #     if p_id  == ID_PAGE_TOGGLE:
-    #         self.panels_shown = not self.panels_shown
-    #         if self.panels_shown:
-    #             newlabel = "-"
-    #         else:
-    #             newlabel = "+"
-    #         page.SetLabel(newlabel)
-    #         # event.Skip()
-    #         self.context.signal("ribbonbar", self.panels_shown)
-    #         event.Veto()
-
-
+    def on_page_change(self, event):
+        page = event.GetPage()
+        p_id = page.GetId()
+        # print ("Page Changing to ", p_id)
+        if p_id  == ID_PAGE_TOGGLE:
+            slist = debug_system_colors()
+            msg = ""
+            for s in slist:
+                msg += s + "\n"
+            wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
+            event.Veto()
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
@@ -573,7 +564,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
        RB.RIBBON_ART_TAB_LABEL_COLOUR,
     ]
     _set_ribbon_colour(provider, disabled, INACTIVE_TEXT)
- 
+
     backgrounds = [
         # Toolbar element backgrounds
         RB.RIBBON_ART_TOOL_BACKGROUND_TOP_COLOUR,
@@ -610,7 +601,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_COLOUR,
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_TOP_COLOUR,
-        
+
         # Panel backgrounds
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
@@ -630,7 +621,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,                
+        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
     ]
     _set_ribbon_colour(provider, backgrounds, BTNFACE)
     highlights  = [
@@ -641,8 +632,8 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
     borders = [
         RB.RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR,
     ]
-    _set_ribbon_colour(provider, borders, wx.RED)    
-    
+    _set_ribbon_colour(provider, borders, wx.RED)
+
     lowlights = [
         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
