@@ -389,6 +389,9 @@ class RibbonPanel(wx.Panel):
 
     @property
     def is_dark(self):
+        # wxPython's SysAppearance does not always deliver a reliable response from
+        # wx.SystemSettings().GetAppearance().IsDark()
+        # so lets tick with 'old way', although this one is fishy...
         result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return result
 

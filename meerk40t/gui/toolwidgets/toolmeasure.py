@@ -146,7 +146,7 @@ class MeasureTool(ToolWidget):
                 self.point_series.append((nearest_snap[0], nearest_snap[1]))
             self.scene.tool_active = True
             response = RESPONSE_CONSUME
-        elif event_type in ("leftdown", "leftup", "move", "hover"):
+        elif event_type == "leftdown":
             self.scene.tool_active = True
             if nearest_snap is None:
                 self.mouse_position = space_pos[0], space_pos[1]
@@ -155,6 +155,14 @@ class MeasureTool(ToolWidget):
             if self.point_series:
                 self.scene.request_refresh()
             response = RESPONSE_CONSUME
+        elif event_type in ("leftup", "move", "hover"):
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            if self.point_series:
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
         elif event_type == "rightdown":
             self.scene.tool_active = False
             self.point_series = []

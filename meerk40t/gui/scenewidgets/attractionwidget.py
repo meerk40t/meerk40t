@@ -6,7 +6,6 @@ from meerk40t.core.element_types import elem_nodes
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
-    RESPONSE_CHANGE_POSITION,
 )
 from meerk40t.gui.scene.widget import Widget
 
@@ -130,7 +129,7 @@ class AttractionWidget(Widget):
                             and abs(new_y - self.my_y) <= self.action_attract_len
                         ):
                             # Is the distance small enough?
-                            response = (RESPONSE_CHANGE_POSITION, new_x, new_y)
+                            response = (RESPONSE_CHAIN, new_x, new_y)
 
         return response
 

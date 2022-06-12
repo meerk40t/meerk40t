@@ -43,6 +43,7 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    STD_ICON_SIZE,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -646,6 +647,7 @@ class MeerK40t(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        buttonsize = STD_ICON_SIZE
         kernel.register(
             "button/project/Open",
             {
@@ -654,6 +656,7 @@ class MeerK40t(MWindow):
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
                 "priority": -200,
+                "size": buttonsize,
             },
         )
         kernel.register(
@@ -664,11 +667,12 @@ class MeerK40t(MWindow):
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
+                "size": buttonsize,
             },
         )
 
         # Default Size for tool buttons - none: use icon size
-        buttonsize = None
+        buttonsize = STD_ICON_SIZE
 
         kernel.register(
             "button/tools/Scene",
@@ -802,7 +806,7 @@ class MeerK40t(MWindow):
             },
         )
         # Default Size for smaller buttons
-        buttonsize = 25
+        buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/modify/Flip",

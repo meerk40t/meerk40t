@@ -747,7 +747,7 @@ class CameraInterface(MWindow):
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
                             # Took default
-                            if len(available_cameras>0):
+                            if len(available_cameras)>0:
                                 testuri = available_cameras[0]
                             else:
                                 testuri = 0
