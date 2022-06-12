@@ -21,6 +21,7 @@ from ..svgelements import (
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
+    SVG_ATTR_TEXT_ANCHOR,
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
@@ -50,6 +51,7 @@ from ..svgelements import (
     Polyline,
     Rect,
     SimpleLine,
+    Length,
     SVGImage,
     SVGText,
 )
@@ -277,9 +279,13 @@ class SVGWriter:
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
                     ("font_style", "font-style"),  # Not implemented yet afaics
                     ("text_transform", "text-transform"),
+                    ("anchor", SVG_ATTR_TEXT_ANCHOR),
+                    ("x", SVG_ATTR_X),
+                    ("y", SVG_ATTR_Y),
                 ]
                 for attrib in attribs:
                     val = None
+                    # Look for both element and node
                     if hasattr(element, attrib[0]):
                         val = getattr(element, attrib[0])
                     if val is None and hasattr(c, attrib[0]):
@@ -492,6 +498,10 @@ class SVGProcessor:
             node.linejoin = nlj
 
     def parse(self, element, context_node, e_list):
+        # print ("Parse element: %s" % vars(element))
+        # for key in element.values:
+        #     entry = element.values.get(key)
+        #     print ("Key=%s, Entry=%s" % ( key, entry ))
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
@@ -499,6 +509,19 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                # Maybe superceded by concrete values later, so do it first
+                fst = element.values.get("font")
+                if fst is not None:
+                    # This comes inherited from a class so lets split it up...
+                    subvalues = fst.split()
+                    for sv in subvalues:
+                        svl = sv.lower()
+                        if svl in ("italic", "normal", "oblique"):
+                            node.font_style = svl
+                        elif svl in ("lighter", "bold", "bolder"):
+                            node.text.font_weight = svl
+                        elif svl in ("fantasy", "serif", "cursive", "sans-serif", "monospace"):
+                            node.text.font_family = svl
                 fst = element.values.get("font-style")
                 if not fst is None:
                     node.font_style = fst
@@ -511,6 +534,15 @@ class SVGProcessor:
                     node.underline = ("underline" in fst)
                     node.overline = ("overline" in fst)
                     node.strikethrough = ("line-through" in fst)
+                fst = element.values.get(SVG_ATTR_TEXT_ANCHOR)
+                if not fst is None:
+                    node.text.anchor = fst
+                fst = element.values.get("x")
+                if not fst is None:
+                    node.text.x = Length(fst).value()
+                fst = element.values.get("y")
+                if not fst is None:
+                    node.text.y = Length(fst).value()
 
                 svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
                 if svgfont_to_wx:

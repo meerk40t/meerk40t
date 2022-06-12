@@ -174,6 +174,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(inkscape.plugin)
 
+        from .extra import hershey
+
+        plugins.append(hershey.plugin)
+
         from .extra import embroider
 
         plugins.append(embroider.plugin)

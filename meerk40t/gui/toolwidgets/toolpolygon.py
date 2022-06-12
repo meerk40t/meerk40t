@@ -42,7 +42,6 @@ class PolygonTool(ToolWidget):
     def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
-            self.point_series.append((space_pos[0], space_pos[1]))
             if nearest_snap is None:
                 self.point_series.append((space_pos[0], space_pos[1]))
             else:
