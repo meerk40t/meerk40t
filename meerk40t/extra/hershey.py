@@ -58,6 +58,10 @@ def plugin(kernel, lifecycle):
             font_path = join(safe_dir, font)
             if not os.path.exists(font_path):
                 channel(_("Font was not found at {path}").format(path=font_path))
+                for p in glob(join(safe_dir, "*.shx")):
+                    channel(p)
+                for p in glob(join(safe_dir, "*.SHX")):
+                    channel(p)
                 return
             if remainder is None:
                 channel(_("No text to make a path with."))
