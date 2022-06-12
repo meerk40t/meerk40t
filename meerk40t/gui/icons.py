@@ -4,6 +4,7 @@ from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
 DARKMODE = False
 
+STD_ICON_SIZE = 50
 
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
@@ -26,7 +27,7 @@ class PyEmbeddedImage(py_embedded_image):
 
         image = py_embedded_image.GetImage(self)
         if resize is not None:
-            if isinstance(resize, int):
+            if isinstance(resize, int) or isinstance(resize, float):
                 image = image.Scale(resize, resize)
             else:
                 image = image.Scale(*resize)
