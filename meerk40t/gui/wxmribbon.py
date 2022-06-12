@@ -417,9 +417,9 @@ class RibbonPanel(wx.Panel):
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
 
-        if self.is_dark:
-            provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
+        #if self.is_dark:
+        #    provider = self._ribbon.GetArtProvider()
+        #    _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -526,9 +526,9 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
-        # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, _("_"))
-        # self.ribbon_pages.append(minmaxpage)
+        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, _("_"))
+        self.ribbon_pages.append(minmaxpage)
 
         self.ensure_realize()
 
@@ -544,12 +544,13 @@ class RibbonPanel(wx.Panel):
         if p_id  == ID_PAGE_TOGGLE:
             # Change Art Provider
             self._ribbon.DismissExpandedPanel()
+            provider = self._ribbon.GetArtProvider()
             if self.art_provider_count == 0:
-                page.SetLabel("AUI")
-                self._ribbon.SetArtProvider(RB.RibbonAUIArtProvider())
+                page.SetLabel("Black, Blue, Red")
+                provider.SetColourScheme(wx.BLACK, wx.BLUE, wx.RED)
             elif self.art_provider_count == 1:
-                page.SetLabel("MSW")
-                self._ribbon.SetArtProvider(RB.RibbonMSWArtProvider())
+                page.SetLabel("Black, Red, Blue")
+                provider.SetColourScheme(wx.BLACK, wx.RED, wx.BLUE)
             elif self.art_provider_count == 2:
                 page.SetLabel("OSX")
                 self._ribbon.SetArtProvider(RB.RibbonOSXArtProvider())
