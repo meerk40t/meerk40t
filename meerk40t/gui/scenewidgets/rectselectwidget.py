@@ -97,10 +97,6 @@ class RectSelectWidget(Widget):
             self.end_location = space_pos
             # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
-        elif event_type == "leftclick":
-            self.start_location = None
-            self.end_location = None
-            return RESPONSE_DROP
         elif event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False
@@ -176,7 +172,7 @@ class RectSelectWidget(Widget):
             else:
                 return RESPONSE_CHAIN
 
-        elif event_type == "leftup":
+        elif event_type in ("leftup", "leftclick"):
             if self.start_location is None:
                 return RESPONSE_CHAIN
             _ = self.scene.context._
