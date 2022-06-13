@@ -628,11 +628,24 @@ class LaserRender:
                     textstr = textstr.upper()
                 if ttf == "lowercase":
                     textstr = textstr.lower()
-            #f_width1, f_height1 = gc.GetTextExtent(textstr)
-            #print ("Get Textextent: Height=%.1f" % f_height1)
+            # There's a fundamental flaw in wxPython to get the right fontsize
+            # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
+            # as result for the font-height and dont take the real glyphs into account
+            # That means that ".", "a", "g" and "T" all have the same height...
+            # Consequently the size is always off... This can be somewhat compensated by taking
+            # the descent from the font-metric into account.
+            # A 'real' height routine would most probably need to draw the string on an
+            # empty canvas and find the first and last dots on a line...
             f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
-            #print ("Get Full Textextent: Height=%.1f, descent=%.1f, leading=%.1f" % ( f_height, f_descent, f_externalLeading ))
-            f_height -= self.fontdescent_factor * f_descent
+            # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
+            # That stuff drives my crazy...
+            # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
+            has_underscore = any(substring in textstr for substring in ('g', 'j', 'p', 'q', 'y', ',', ';'))
+            delta = self.fontdescent_factor * f_descent
+            if has_underscore:
+                delta -= self.fontdescent_factor/2 * f_descent
+            delta -= f_externalLeading
+            f_height -= delta
             text.width = f_width
             text.height = f_height
             # print ("Anchor= %s" % text.anchor)

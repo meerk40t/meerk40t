@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.15"
+SVGELEMENTS_VERSION = "1.6.16"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -220,6 +220,7 @@ REGEX_COLOR_HSL = re.compile(
     % (PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT)
 )
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_CSS_COMMENT = re.compile(r"\/\*[\s\S]*?\*\/|\/\/.*$", re.MULTILINE)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
     r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
@@ -4771,44 +4772,52 @@ class Arc(Curve):
             if control is not None:
                 delta_a = control - self.start
                 delta_b = self.end - control
-                if abs(delta_a.x) > 1e-12:
-                    slope_a = delta_a.y / delta_a.x
-                else:
-                    slope_a = float("inf")
-                if abs(delta_b.x) > 1e-12:
-                    slope_b = delta_b.y / delta_b.x
-                else:
-                    slope_b = float("inf")
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
-                if abs(delta_a.y) < 1e-12:  # slope_a == 0
+                if self.start == self.end:
                     cx = ab_mid.x
-                    if abs(delta_b.x) < 1e-12:  # slope_b == inf
-                        cy = bc_mid.y
+                    cy = ab_mid.y
+                    self.sweep = tau
+                else:
+                    if abs(delta_a.x) > 1e-12:
+                        slope_a = delta_a.y / delta_a.x
                     else:
-                        cy = bc_mid.y + (bc_mid.x - cx) / slope_b
-                elif abs(delta_b.y) < 1e-12:  # slope_b == 0
-                    cx = bc_mid.x
-                    if abs(delta_a.y) < 1e-12:  # slope_a == inf
+                        slope_a = float("inf")
+                    if abs(delta_b.x) > 1e-12:
+                        slope_b = delta_b.y / delta_b.x
+                    else:
+                        slope_b = float("inf")
+                    if abs(delta_a.y) < 1e-12:  # slope_a == 0
+                        cx = ab_mid.x
+                        if abs(delta_b.x) < 1e-12:  # slope_b == inf
+                            cy = bc_mid.y
+                        else:
+                            if abs(slope_b) > 1e-12:
+                                cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                            else:
+                                cy = float("inf")
+                    elif abs(delta_b.y) < 1e-12:  # slope_b == 0
+                        cx = bc_mid.x
+                        if abs(delta_a.y) < 1e-12:  # slope_a == inf
+                            cy = ab_mid.y
+                        else:
+                            cy = ab_mid.y + (ab_mid.x - cx) / slope_a
+                    elif abs(delta_a.x) < 1e-12:  # slope_a == inf
+                        cy = ab_mid.y
+                        cx = slope_b * (bc_mid.y - cy) + bc_mid.x
+                    elif abs(delta_b.x) < 1e-12:  # slope_b == inf
+                        cy = bc_mid.y
+                        cx = slope_a * (ab_mid.y - cy) + ab_mid.x
+                    elif abs(slope_a - slope_b) < 1e-12:
+                        cx = ab_mid.x
                         cy = ab_mid.y
                     else:
-                        cy = ab_mid.y + (ab_mid.x - cx) / slope_a
-                elif abs(delta_a.x) < 1e-12:  # slope_a == inf
-                    cy = ab_mid.y
-                    cx = slope_b * (bc_mid.y - cy) + bc_mid.x
-                elif abs(delta_b.x) < 1e-12:  # slope_b == inf
-                    cy = bc_mid.y
-                    cx = slope_a * (ab_mid.y - cy) + ab_mid.x
-                elif abs(slope_a - slope_b) < 1e-12:
-                    cx = ab_mid.x
-                    cy = ab_mid.y
-                else:
-                    cx = (
-                        slope_a * slope_b * (ab_mid.y - bc_mid.y)
-                        - slope_a * bc_mid.x
-                        + slope_b * ab_mid.x
-                    ) / (slope_b - slope_a)
-                    cy = ab_mid.y - (cx - ab_mid.x) / slope_a
+                        cx = (
+                                     slope_a * slope_b * (ab_mid.y - bc_mid.y)
+                                     - slope_a * bc_mid.x
+                                     + slope_b * ab_mid.x
+                             ) / (slope_b - slope_a)
+                        cy = ab_mid.y - (cx - ab_mid.x) / slope_a
                 self.center = Point(cx, cy)
                 cw = bool(Point.orientation(self.start, control, self.end) == 2)
             elif "r" in kwargs:
@@ -8834,7 +8843,9 @@ class SVG(Group):
                     s = Title(values, title=elem.text)
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
-                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
+                    textstyle = elem.text
+                    textstyle = re.sub(REGEX_CSS_COMMENT, '', textstyle)
+                    assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()
