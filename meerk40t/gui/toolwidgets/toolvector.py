@@ -74,7 +74,7 @@ class VectorTool(ToolWidget):
                 self.c0 = (nearest_snap[0], nearest_snap[1])
             if self.path:
                 self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+                response = RESPONSE_CONSUME
         elif event_type == "leftup":
             self.scene.tool_active = False
             if self.c0 is not None and self.path:
@@ -105,4 +105,5 @@ class VectorTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "lost":
             self.scene.tool_active = False
+            self.path = None
         return response
