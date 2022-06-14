@@ -172,7 +172,14 @@ class RectSelectWidget(Widget):
             else:
                 return RESPONSE_CHAIN
 
-        elif event_type in ("leftup", "leftclick"):
+        elif event_type == "leftclick":
+            # That's too fast
+            # still chaining though
+            self.scene.request_refresh()
+            self.start_location = None
+            self.end_location = None
+            return RESPONSE_CHAIN
+        elif event_type == "leftup":
             if self.start_location is None:
                 return RESPONSE_CHAIN
             _ = self.scene.context._
