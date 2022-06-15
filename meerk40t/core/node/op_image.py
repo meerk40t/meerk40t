@@ -261,8 +261,8 @@ class ImageOpNode(Node, Parameters):
 
 
             # Set variables
-            matrix = image_node.matrix
-            pil_image = image_node.image
+            matrix = image_node.active_matrix
+            pil_image = image_node.active_image
             offset_x = matrix.value_trans_x()
             offset_y = matrix.value_trans_y()
 

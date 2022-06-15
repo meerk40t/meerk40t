@@ -1,7 +1,8 @@
 import threading
 from copy import copy
 
-from meerk40t.core.node.layernode import LayerNode
+from PIL.Image import DecompressionBombError
+
 from meerk40t.core.node.node import Node
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix
@@ -11,8 +12,8 @@ class ImageNode(Node):
     """
     ImageNode is the bootstrapped node type for the 'elem image' type.
 
-    ImageNode contains a main matrix and some number of images with matrix offsets. The main matrix and the image
-    matrix are concatted to find the current image
+    ImageNode contains a main matrix, main image. A processed image and a processed matrix.
+    The processed matrix must be concated with the main matrix to be accurate.
     """
 
     def __init__(
@@ -27,10 +28,17 @@ class ImageNode(Node):
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
-        self.images = {"default": [image, Matrix()]}
-        self.active = "default"
-        self.matrix = matrix  # global matrix.
+        self.image = image
+        self.matrix = matrix
+        self.processed_image = None
+        self.processed_matrix = None
+        self.process_image_failed = False
         self.text = None
+
+        self._needs_update = False
+        self._context = None
+        self._update_thread = None
+        self._update_lock = threading.Lock()
 
         self.settings = kwargs
         self.overscan = overscan
@@ -51,23 +59,10 @@ class ImageNode(Node):
 
         self.operations = list()
 
-        self._needs_update = False
-        self._context = None
-        self._update_thread = None
-        self._update_lock = threading.Lock()
-
-    @property
-    def image(self):
-        return self.get_image(self.active)
-
-    @property
-    def active_matrix(self):
-        return self.get_combined_matrix(self.active)
-
     def __copy__(self):
         return ImageNode(
             image=self.image,
-            matrix=copy(self.active_matrix),
+            matrix=copy(self.matrix),
             overscan=self.overscan,
             direction=self.direction,
             dpi=self.dpi,
@@ -84,27 +79,30 @@ class ImageNode(Node):
             str(self._parent),
         )
 
-    def get_image(self, name):
-        return self.images.get(name)[0]
+    @property
+    def active_image(self):
+        if self.processed_image is not None:
+            return self.processed_image
+        else:
+            return self.image
 
-    def get_matrix(self, name):
-        return self.images.get(name)[1]
-
-    def get_combined_matrix(self, name):
-        return self.get_matrix(name) * self.matrix
+    @property
+    def active_matrix(self):
+        if self.processed_matrix is None:
+            return self.matrix
+        return  self.processed_matrix * self.matrix
 
     def preprocess(self, context, matrix, commands):
         self._context = context
         self.process_image()
         self._context = None
-        self.active = "processed"
         self.matrix *= matrix
         self._bounds_dirty = True
 
     @property
     def bounds(self):
         if self._bounds_dirty:
-            image_width, image_height = self.image.size
+            image_width, image_height = self.active_image.size
             matrix = self.active_matrix
             x0, y0 = matrix.point_in_matrix_space((0, 0))
             x1, y1 = matrix.point_in_matrix_space((image_width, image_height))
@@ -122,8 +120,9 @@ class ImageNode(Node):
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)
         default_map.update(self.settings)
-        default_map["width"] = self.image.width
-        default_map["height"] = self.image.height
+        image = self.active_image
+        default_map["width"] = image.width
+        default_map["height"] = image.height
         default_map["element_type"] = "Image"
         default_map["matrix"] = self.matrix
         default_map["dpi"] = self.dpi
@@ -170,12 +169,17 @@ class ImageNode(Node):
         if self._update_thread is None:
 
             def clear(result):
-                self.text = None
+                if self.process_image_failed:
+                    self.text = "Process image could not exist in memory."
+                else:
+                    self.text = None
                 self._needs_update = False
                 self._update_thread = None
                 self._context.signal("refresh_scene", "Scene")
                 self._context = None
 
+            self.processed_image = None
+            self.processed_matrix = None
             self._update_thread = context.threaded(
                 self.process_image_thread, result=clear, daemon=True
             )
@@ -196,12 +200,8 @@ class ImageNode(Node):
         from meerk40t.image.actualize import actualize
         from meerk40t.image.imagetools import dither
 
-        try:
-            image, matrix = self.images["default"]
-        except KeyError:
-            return
-
-        matrix = matrix * self.matrix
+        image = self.image
+        main_matrix = self.matrix
 
         r = self.red * 0.299
         g = self.green * 0.587
@@ -225,13 +225,16 @@ class ImageNode(Node):
         step_x, step_y = self._context.device.dpi_to_steps(dpi)
         self.step_x, self.step_y = step_x, step_y
 
-        m = matrix
-        if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
-            image, amatrix = actualize(
-                image, matrix, step_x=step_x, step_y=step_y, inverted=self.invert
-            )
+        if main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y:
+            try:
+                image, actualized_matrix = actualize(
+                    image, main_matrix, step_x=step_x, step_y=step_y, inverted=self.invert
+                )
+            except (MemoryError, DecompressionBombError):
+                self.process_image_failed = True
+                return
         else:
-            amatrix = Matrix(matrix)
+            actualized_matrix = Matrix(main_matrix)
 
         if self.invert:
             empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
@@ -367,22 +370,12 @@ class ImageNode(Node):
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
             image = image.convert("1")
-        m = Matrix(matrix).inverse()
-        self.images["processed"] = (image, amatrix * m)
-        self.images["default"][1] = Matrix()
-        self.active = "processed"
-        self.layers_changed()
+        inverted_main_matrix = Matrix(main_matrix).inverse()
+        self.processed_matrix = actualized_matrix * inverted_main_matrix
+        self.processed_image = image
+        # self.matrix = actualized_matrix
         self.altered()
-
-    def layers_changed(self):
-        self.remove_all_children()
-        for name in self.images:
-            node = LayerNode(layer_name=name)
-            self.add_node(node)
-
-    def activate(self, layer):
-        self.active = layer
-        self.altered()
+        self.process_image_failed = False
 
     @staticmethod
     def line(p):
