@@ -146,6 +146,31 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_combo_text(attr, control, obj),
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type == str and data_style == "combosmall":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                clabel = wx.StaticText(self, wx.ID_ANY, label)
+                control_sizer.Add(clabel, 0, 0, 0)
+
+                control = wx.ComboBox(
+                    self,
+                    wx.ID_ANY,
+                    choices=c.get("choices", [c.get("default")]),
+                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                )
+                control.SetValue(data)
+
+                def on_combosmall_text(param, ctrl, obj):
+                    def select(event=None):
+                        setattr(obj, param, ctrl.GetValue())
+
+                    return select
+
+                control_sizer.Add(control)
+                control.Bind(
+                    wx.EVT_COMBOBOX,
+                    on_combosmall_text(attr, control, obj),
+                )
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(

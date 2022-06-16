@@ -44,6 +44,7 @@ from .icons import (
     icons_evenspace_horiz,
     icons_evenspace_vert,
     STD_ICON_SIZE,
+    DARKMODE,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -543,6 +544,20 @@ class MeerK40t(MWindow):
 
         self.ui_visible = True
         self.hidden_panes = []
+        self.theme_to_use = "auto"
+        self.theme_colors={
+            "window_bg": None,
+            "button_face": None,
+            "button_hover": None,
+            "text": None,
+            "text_inactive": None,
+            "inactive_bg": None,
+            "tooltip_fg": None,
+            "tooltip_bg": None,
+            "inactive_bg": None,
+            "highlight": None,
+        }
+        self.update_theme_colors()
 
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
@@ -630,6 +645,23 @@ class MeerK40t(MWindow):
             },
         ]
         context.kernel.register_choices("preferences", choices)
+
+        choices = [
+            {
+                "attr": "gui_appearance",
+                "object": context.root,
+                "default": "auto",
+                "type": str,
+                "label": _("GUI-Theme"),
+                "tip": _(
+                    "Choose whether the GUI appearance shall follow the system theme\nor whether it should be dark or bright regardless."
+                ),
+                "style": "combosmall",
+                "choices": ["auto", "dark", "bright"],
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
@@ -1372,6 +1404,22 @@ class MeerK40t(MWindow):
                 panel.pane_show()
             self.context.register("pane/about", _pane)
             self._mgr.Update()
+
+        @context.console_argument("theme", help=_("Theme, one auf auto, dark, bright"))
+        @context.console_command(
+            "guitheme", help=_("Set GUI-appearance")
+        )
+        def guitheme(command, _, channel, theme = None, **kwargs):
+            if theme is None:
+                theme = getattr(self.context, "gui_appearance", "auto")
+                channel(_("Active GUI-Theme: %s") % theme)
+            else:
+                theme = str(theme).lower()
+                if theme in ("auto", "dark", "bright"):
+                    setattr(self.context, "gui_appearance", theme)
+                    self.context.signal("gui_appearance")
+                else:
+                    channel(_("Invalid theme, use one of auto, dark, bright"))
 
     def on_pane_reset(self, event=None):
         self.on_panes_closed()
@@ -2353,6 +2401,12 @@ class MeerK40t(MWindow):
                 if not e.selected:
                     e.selected = True
 
+    @signal_listener("gui_appearance")
+    def on_gui_update(self, origin, *args):
+        print("gui signalled")
+        self.update_theme_colors()
+        self._mgr.Update()
+
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
@@ -2722,3 +2776,224 @@ class MeerK40t(MWindow):
                 s=_("No help text"),
             )
         self.update_statusbar(helptext)
+
+############### Dark Theme
+
+    def theme(self):
+        KEY_ = "gui_appearance"
+        DEFAULT_ = "auto"
+        stheme = DEFAULT_
+        self.context.setting(str, KEY_, DEFAULT_)
+        if hasattr(self.context, KEY_):
+            s = getattr(self.context, KEY_)
+            s = s.lower()
+            if s in ("dark", "bright", "auto"):
+                stheme = s
+        return stheme
+
+    def is_dark(self):
+        stheme = self.theme()
+        res = False
+        if stheme=="auto":
+            res = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        elif stheme == "dark":
+            res = True
+        elif stheme == "bright":
+            res = False
+        return res
+
+    def update_theme_colors(self):
+        def debug_system_colors():
+            ## Helper routine
+            reslist = list()
+            slist = (
+                (wx.SYS_COLOUR_SCROLLBAR, "The scrollbar grey area."),
+                (wx.SYS_COLOUR_DESKTOP, "The desktop colour."),
+                (wx.SYS_COLOUR_ACTIVECAPTION, "Active window caption colour."),
+                (wx.SYS_COLOUR_INACTIVECAPTION, "Inactive window caption colour."),
+                (wx.SYS_COLOUR_MENU, "Menu background colour."),
+                (wx.SYS_COLOUR_WINDOW, "Window background colour."),
+                (wx.SYS_COLOUR_WINDOWFRAME, "Window frame colour."),
+                (wx.SYS_COLOUR_MENUTEXT, "Colour of the text used in the menus."),
+                (wx.SYS_COLOUR_WINDOWTEXT, "Colour of the text used in generic windows."),
+                (wx.SYS_COLOUR_CAPTIONTEXT, "Colour of the text used in captions, size boxes and scrollbar arrow boxes."),
+                (wx.SYS_COLOUR_ACTIVEBORDER, "Active window border colour."),
+                (wx.SYS_COLOUR_INACTIVEBORDER, "Inactive window border colour."),
+                (wx.SYS_COLOUR_APPWORKSPACE, "Background colour for MDI applications."),
+                (wx.SYS_COLOUR_HIGHLIGHT, "Colour of item(s) selected in a control."),
+                (wx.SYS_COLOUR_HIGHLIGHTTEXT, "Colour of the text of item(s) selected in a control."),
+                (wx.SYS_COLOUR_BTNFACE, "Face shading colour on push buttons."),
+                (wx.SYS_COLOUR_BTNSHADOW, "Edge shading colour on push buttons."),
+                (wx.SYS_COLOUR_GRAYTEXT, "Colour of greyed (disabled) text."),
+                (wx.SYS_COLOUR_BTNTEXT, "Colour of the text on push buttons."),
+                (wx.SYS_COLOUR_INACTIVECAPTIONTEXT, "Colour of the text in inactive captions."),
+                (wx.SYS_COLOUR_BTNHIGHLIGHT, "Highlight colour for buttons."),
+                (wx.SYS_COLOUR_3DDKSHADOW, "Dark shadow colour for three-dimensional display elements."),
+                (wx.SYS_COLOUR_3DLIGHT, "Light colour for three-dimensional display elements."),
+                (wx.SYS_COLOUR_INFOTEXT, "Text colour for tooltip controls."),
+                (wx.SYS_COLOUR_INFOBK, "Background colour for tooltip controls."),
+                # (wx.SYS_COLOUR_LISTBOX, "Background colour for list-like controls."),
+                # (wx.SYS_COLOUR_HOTLIGHT, "Colour for a hyperlink or hot-tracked item."),
+                # (wx.SYS_COLOUR_GRADIENTACTIVECAPTION, "Right side colour in the colour gradient of an active window’s title bar."),
+                # (wx.SYS_COLOUR_GRADIENTINACTIVECAPTION, "Right side colour in the colour gradient of an inactive window’s title bar."),
+                # (wx.SYS_COLOUR_MENUHILIGHT, "The colour used to highlight menu items when the menu appears as a flat menu."),
+                # (wx.SYS_COLOUR_MENUBAR, "The background colour for the menu bar when menus appear as flat menus."),
+                # (wx.SYS_COLOUR_LISTBOXTEXT, "Text colour for list-like controls."),
+                # (wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT, "Text colour for the unfocused selection of list-like controls."),
+                # (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
+                # (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
+                # (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
+                # (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+                # (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+                # (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+                # (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
+            )
+            is_dark = False
+            dark_bg = False
+            try:
+                sysappearance = wx.SystemSettings().GetAppearance()
+                source = "Sysappearance"
+                is_dark = sysappearance.IsDark()
+                dark_bg = sysappearance.IsUsingDarkBackground()
+                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+                source = "Default"
+                is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+                dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+            except:
+                source = "Default"
+                is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+                dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+            for colpair in slist:
+                syscol = wx.SystemSettings().GetColour(colpair[0])
+                if syscol is None:
+                    s = "Null"
+                else:
+                    try:
+                        s = syscol.GetAsString(wx.C2S_NAME)
+                    except AssertionError:
+                        s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
+                reslist.append( "{col} for {desc}".format(col=s, desc=colpair[1]) )
+            return reslist
+
+        def _get_color_direct(color_key, defaultcolor):
+            if hasattr(self.context, color_key):
+                s = getattr(self.context, color_key)
+                if len(s) == 0 or s == "default":
+                    # print ("Reset requested for color: %s" % color_key)
+                    s = defaultcolor
+                    setattr(self.context, color_key, s)
+            else:
+                s = defaultcolor
+            c = Color(s)
+            mycol = wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+            return mycol.GetRGBA()
+
+        def SetAUIColors(provider, collist, color):
+            mycol = wx.Colour()
+            mycol.SetRGBA(color)
+            for id_ in collist:
+                provider.SetColour(id_, mycol)
+
+        # Set default bg colors
+
+        # debug_system_colors()
+        # slist = debug_system_colors()
+        # for l in slist:
+        #     print(l)
+
+        from copy import copy
+        self.context.setting(str, "theme_dark_color", "#000000")
+        self.context.setting(str, "theme_bright_color", "#FFFFFF")
+        self.context.setting(str, "theme_colors", "")
+        self.context.setting(bool, "theme_isdark", False)
+        dark_bg = _get_color_direct("theme_dark_color", "#000000")
+        bright_bg = _get_color_direct("theme_bright_color", "#FFFFFF")
+
+        stheme = self.theme()
+        dark_ = self.is_dark()
+        # Make icons aware of the theme choice...
+        DARKMODE = dark_
+        setattr(self.context, "theme_isdark", dark_)
+        if stheme == "auto":
+            print ("Set theme to auto")
+            if dark_:
+                self.theme_colors["window_bg"] = dark_bg
+            else:
+                self.theme_colors["window_bg"] = bright_bg
+            self.theme_colors["button_face"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE).GetRGBA()
+            BTNFACE_HOVER = copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+            print ("Hover initially: %s" % BTNFACE_HOVER.GetAsString(wx.C2S_CSS_SYNTAX))
+            BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
+            self.theme_colors["button_hover"] = BTNFACE_HOVER.GetRGBA()
+
+            self.theme_colors["text"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT).GetRGBA()
+            self.theme_colors["text_inactive"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT).GetRGBA()
+            self.theme_colors["inactive_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION).GetRGBA()
+            self.theme_colors["tooltip_fg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT).GetRGBA()
+            self.theme_colors["tooltip_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK).GetRGBA()
+            self.theme_colors["highlight"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT).GetRGBA()
+            for id_ in self.theme_colors:
+                ccol = wx.Colour()
+                ccol.SetRGBA(self.theme_colors[id_])
+                try:
+                    s = ccol.GetAsString(wx.C2S_NAME)
+                except AssertionError:
+                    s = ccol.GetAsString(wx.C2S_CSS_SYNTAX)
+                print ("%s: %s" % (id_, s))
+        elif stheme == "dark":
+            print ("Set theme to dark")
+            # We use copy as we want modify the colors.
+            self.theme_colors["window_bg"] = dark_bg
+            self.theme_colors["button_face"] = dark_bg
+            BTNFACE_HOVER = copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+            BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
+            self.theme_colors["button_hover"] = BTNFACE_HOVER.GetRGBA()
+
+            self.theme_colors["text"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT).GetRGBA()
+            self.theme_colors["text_inactive"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT).GetRGBA()
+            self.theme_colors["inactive_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION).GetRGBA()
+            self.theme_colors["tooltip_fg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT).GetRGBA()
+            self.theme_colors["tooltip_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK).GetRGBA()
+            self.theme_colors["highlight"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT).GetRGBA()
+        elif stheme == "bright":
+            print ("Set theme to bright")
+            self.theme_colors["window_bg"] = bright_bg
+            self.theme_colors["button_face"] = wx.Colour(red=240, green=240, blue=240).GetRGBA()
+            self.theme_colors["button_hover"] = wx.Colour(red=0, green=60, blue=107).GetRGBA()
+            self.theme_colors["text"] = wx.BLACK.GetRGBA()
+            self.theme_colors["text_inactive"] = wx.Colour(red=109, green=109, blue=109).GetRGBA()
+            self.theme_colors["inactive_bg"] = wx.Colour(red=191, green=205, blue=219).GetRGBA()
+            self.theme_colors["tooltip_fg"] = wx.BLACK.GetRGBA()
+            self.theme_colors["tooltip_bg"] = wx.Colour(red=255, green=255, blue=225).GetRGBA()
+            self.theme_colors["highlight"] = wx.Colour(red=0, green=102, blue=204).GetRGBA()
+        setattr(self.context, "theme_colors", self.theme_colors)
+        # And now let's update the ArtProvider of the AUIManager
+        default = aui.AuiDefaultDockArt()
+        provider = default.Clone()
+
+        aui_ids = [
+            aui.AUI_DOCKART_BACKGROUND_COLOUR,
+        ]
+        color = self.theme_colors["window_bg"]
+        SetAUIColors(provider, aui_ids, color)
+
+        aui_ids = [
+            aui.AUI_DOCKART_ACTIVE_CAPTION_COLOUR,
+            aui.AUI_DOCKART_ACTIVE_CAPTION_GRADIENT_COLOUR,
+            aui.AUI_DOCKART_ACTIVE_CAPTION_TEXT_COLOUR,
+        ]
+        color = self.theme_colors["text"]
+        SetAUIColors(provider, aui_ids, color)
+
+        aui_ids = [
+            aui.AUI_DOCKART_INACTIVE_CAPTION_COLOUR,
+            aui.AUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR,
+            aui.AUI_DOCKART_INACTIVE_CAPTION_GRADIENT_COLOUR
+        ]
+        color = self.theme_colors["text"]
+        SetAUIColors(provider, aui_ids, color)
+        self._mgr.SetArtProvider(provider)
+        return
+
