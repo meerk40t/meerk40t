@@ -51,7 +51,6 @@ class PyEmbeddedImage(py_embedded_image):
         ):
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
             if DARKMODE and use_theme:
-                print ("replaced color as it was dark 1...")
                 reverse = color.distance_to("black") <= 200
                 black_bg = False
             else:
@@ -60,7 +59,6 @@ class PyEmbeddedImage(py_embedded_image):
             if reverse:
                 self.RemoveAlpha(image, black_bg=black_bg)
         elif DARKMODE and use_theme:
-            print ("replaced color as it was dark 2...")
             image.Replace(0, 0, 0, 255, 255, 255)
         return Bitmap(image)
 
