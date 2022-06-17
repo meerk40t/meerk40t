@@ -226,7 +226,7 @@ class wxMeerK40t(wx.App, Module):
 
         context._kernel.run_later = run_later
 
-        icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        # icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
         icons.icon_g = 230
         icons.icon_b = 230
