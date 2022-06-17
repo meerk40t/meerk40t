@@ -82,7 +82,7 @@ class TestCutcode(unittest.TestCase):
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
         image = image.convert("L")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), step_x=1, step_y=1))
+        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000))
 
         # raster_step is default to 0 and not set.
         laserop.raster_step_x = 2
@@ -119,7 +119,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), step_x=3, step_y=3))
+        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0))
         for i in range(2):  # Check for knockon.
             cutcode = CutCode(laserop.as_cutobjects())
             self.assertEqual(len(cutcode), 2)
@@ -169,14 +169,14 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), step_x=3, step_y=3))
+        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0))
 
         # Add SVG Image2
         image2 = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
         draw = ImageDraw.Draw(image2)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), step_x=2, step_y=2, direction=4))  # crosshatch
+        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=500, direction=4))  # crosshatch
         for i in range(2):  # Check for knockon
             cutcode = CutCode(laserop.as_cutobjects())
             self.assertEqual(len(cutcode), 3)
@@ -232,17 +232,17 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image1)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image1, matrix=Matrix(), step_x=3, step_y=3))
+        laserop.add_node(ImageNode(image=image1, matrix=Matrix(), dpi=1000.0/3.0))
 
         # Add SVG Image2
         image2 = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
         draw = ImageDraw.Draw(image2)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), step_x=2, step_y=2))
+        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=500.0))
 
         # Add SVG Image3
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), step_x=3, step_y=3))
+        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=1000.0/3.0))
 
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 6)
@@ -327,7 +327,7 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), step_x=1, step_y=1))
+        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000))
 
         for i in range(4):
             cutcode = CutCode(laserop.as_cutobjects())

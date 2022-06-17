@@ -359,7 +359,7 @@ class TestPlotplanner(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((0, 0, 255, 255), "black")
         image = image.convert("L")
-        rasterop.add_node(ImageNode(image=image, step_x=1, step_y=1, matrix=Matrix()))
+        rasterop.add_node(ImageNode(image=image, dpi=1000.0, matrix=Matrix()))
 
         vectorop = EngraveOpNode()
         vectorop.add_node(PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black"))

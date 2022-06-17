@@ -366,7 +366,7 @@ class LaserRender:
                     # No valid cache. Generate.
                     cut.c_width, cut.c_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=1000)
+                        cut.cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image)
@@ -661,38 +661,57 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
+        image = node.active_image
+        matrix = node.active_matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_CACHE == 0:
-            cache = None
-            try:
-                cache = node.cache
-            except AttributeError:
-                pass
-            if cache is None:
-                try:
-                    max_allowed = node.max_allowed
-                except AttributeError:
-                    max_allowed = 2048
-                node.c_width, node.c_height = node.image.size
-                node.cache = self.make_thumbnail(
-                    node.image,
-                    maximum=max_allowed,
-                    alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                )
-            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
-        else:
-            node.c_width, node.c_height = node.image.size
-            cache = self.make_thumbnail(
-                node.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+        if node.process_image_failed:
+            image_width, image_height = image.size
+            gc.SetBrush(wx.RED_BRUSH)
+            gc.SetPen(wx.RED_PEN)
+            gc.DrawRectangle(0, 0, image_width, image_height)
+            gc.DrawBitmap(
+                icons8_image_50.GetBitmap(), 0, 0, image_width, image_height
             )
-            gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+        else:
+            if draw_mode & DRAW_MODE_CACHE == 0:
+                cache = None
+                try:
+                    cache = node.cache
+                except AttributeError:
+                    pass
+                if cache is None:
+                    try:
+                        max_allowed = node.max_allowed
+                    except AttributeError:
+                        max_allowed = 2048
+                    node.c_width, node.c_height = image.size
+                    node.cache = self.make_thumbnail(
+                        image,
+                        maximum=max_allowed,
+                        alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                    )
+                gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+            else:
+                node.c_width, node.c_height = image.size
+                try:
+                    cache = self.make_thumbnail(
+                        image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                    )
+                    gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+                except MemoryError:
+                    pass
         gc.PopState()
+        txt = node.text
+        if txt is not None:
+            gc.PushState()
+            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+            font = wx.Font()
+            font.SetFractionalPointSize(20)
+            gc.SetFont(font, wx.BLACK)
+            gc.DrawText(txt, 30, 30)
+            gc.PopState()
 
     def make_raster(
         self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1

@@ -16,6 +16,15 @@ from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
+from .propertypanels.rasterwizardpanels import (
+    SharpenPanel,
+    ContrastPanel,
+    ToneCurvePanel,
+    HalftonePanel,
+    GammaPanel,
+    EdgePanel,
+    AutoContrastPanel,
+)
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
@@ -39,7 +48,6 @@ from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.textproperty import TextPropertyPanel
-from .rasterwizard import RasterWizard
 from .simulation import Simulation
 from .wxmmain import MeerK40t
 
@@ -325,6 +333,14 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
+        kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)
+        kernel.register("property/ImageNode/ContrastProperty", ContrastPanel)
+        kernel.register("property/ImageNode/ToneCurveProperty", ToneCurvePanel)
+        kernel.register("property/ImageNode/HalftoneProperty", HalftonePanel)
+        kernel.register("property/ImageNode/GammaProperty", GammaPanel)
+        kernel.register("property/ImageNode/EdgeProperty", EdgePanel)
+        kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
+
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
         kernel.register("window/About", About)
@@ -335,7 +351,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/JobSpooler", JobSpooler)
         kernel.register("window/ExecuteJob", ExecuteJob)
         kernel.register("window/BufferView", BufferView)
-        kernel.register("window/RasterWizard", RasterWizard)
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)

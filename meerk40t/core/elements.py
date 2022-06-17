@@ -5144,7 +5144,7 @@ class Elemental(Service):
                 if not node.matrix.is_identity():
                     result = True
             except AttributeError:
-                # There was an error druing check for matrix.is_identity
+                # There was an error during check for matrix.is_identity
                 pass
             return result
 
@@ -5161,7 +5161,9 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(_("Edit"), node_type="op console", help="")
         def edit_console_command(node, **kwargs):
-            self.open("window/ConsoleProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5214,7 +5216,6 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
-            # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 group_node.append_child(e)
@@ -5225,31 +5226,53 @@ class Elemental(Service):
                 n.output = not n.output
                 n.notify_update()
 
-        # TODO: Restore convert node type ability
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
-        # def convert_operation_image(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Image"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
-        # def convert_operation_raster(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Raster"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
-        # def convert_operation_engrave(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Engrave"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
-        # def convert_operation_cut(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Cut"
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        def convert_operation_image(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op image"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        def convert_operation_raster(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op raster"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        def convert_operation_engrave(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op engrave"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        def convert_operation_cut(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op cut"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Hatch"), node_type=operate_nodes, help="")
+        def convert_operation_hatch(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op hatch"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Dots"), node_type=operate_nodes, help="")
+        def convert_operation_dots(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op dots"
+                n.replace_node(**new_settings)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
@@ -5281,7 +5304,7 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
-        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("%sppi") % "{power}",
             node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
@@ -5291,12 +5314,12 @@ class Elemental(Service):
             node.power = float(power)
             self.signal("element_property_reload", node)
 
-        def radio_match(node, i=100, **kwargs):
-            return node.dpi == i
+        def radio_match(node, dpi=100, **kwargs):
+            return node.dpi == dpi
 
         @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
-        @self.tree_values("dpi", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("DPI %s") % "{dpi}",
             node_type=("op raster", "elem image"),
@@ -5815,11 +5838,7 @@ class Elemental(Service):
             xmin, ymin, xmax, ymax = bounds
             xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
             xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
-            dpi = node.dpi
-            oneinch_x = self.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = self.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
+            step_x, step_y = self.device.dpi_to_steps(node.dpi)
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
                 list(node.flat(types=elem_ref_nodes)),
@@ -6127,38 +6146,6 @@ class Elemental(Service):
             drop_node.drop(node)
             self.signal("tree_changed")
 
-        def radio_match(node, i=0, **kwargs):
-            if "raster_step_x" in node.settings:
-                step_x = float(node.settings["raster_step_x"])
-            else:
-                step_y = 1.0
-            if "raster_step_y" in node.settings:
-                step_x = float(node.settings["raster_step_y"])
-            else:
-                step_y = 1.0
-            if i == step_x and i == step_y:
-                m = node.matrix
-                if m.a == step_x or m.b == 0.0 or m.c == 0.0 or m.d == step_y:
-                    return True
-            return False
-
-        @self.tree_separator_before()
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem image", help="")
-        def set_step_n_elem(node, i=1, **kwargs):
-            step_value = i
-            node.step_x = step_value
-            node.step_y = step_value
-            m = node.matrix
-            tx = m.e
-            ty = m.f
-            node.matrix = Matrix.scale(float(step_value), float(step_value))
-            node.matrix.post_translate(tx, ty)
-            node.modified()
-            self.signal("element_property_reload", node)
-
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
         def image_actualize_pixels(node, **kwargs):
@@ -6219,16 +6206,6 @@ class Elemental(Service):
         def image_save(node, **kwargs):
             self("image save output.png\n")
 
-        @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_open(node, script=None, **kwargs):
-            self("window open RasterWizard %s\n" % script)
-
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
@@ -6237,7 +6214,9 @@ class Elemental(Service):
             _("Apply: %s") % "{script}", node_type="elem image", help=""
         )
         def image_rasterwizard_apply(node, script=None, **kwargs):
-            self("image wizard %s\n" % script)
+            raster_script = self.lookup(f"raster_script/{script}")
+            node.operations = raster_script
+            node.update(self)
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
