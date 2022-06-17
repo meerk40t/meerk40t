@@ -18,6 +18,43 @@ class RibbonButtonBar(RB.RibbonButtonBar):
     def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=0):
         super().__init__(parent, id, pos, size, agwStyle)
 
+    def SetBitmap(self, id,
+            bitmap,
+            bitmap_small=wx.NullBitmap,
+            bitmap_disabled=wx.NullBitmap,
+            bitmap_small_disabled=wx.NullBitmap):
+        result = False
+        for base in self._buttons:
+            # base = button.base
+            if base.id == id:
+                base.bitmap_large = bitmap
+                if not base.bitmap_large.IsOk():
+                    base.bitmap_large = self.MakeResizedBitmap(base.bitmap_small, self._bitmap_size_large)
+
+                elif base.bitmap_large.GetSize() != self._bitmap_size_large:
+                    base.bitmap_large = self.MakeResizedBitmap(base.bitmap_large, self._bitmap_size_large)
+
+                base.bitmap_small = bitmap_small
+
+                if not base.bitmap_small.IsOk():
+                    base.bitmap_small = self.MakeResizedBitmap(base.bitmap_large, self._bitmap_size_small)
+
+                elif base.bitmap_small.GetSize() != self._bitmap_size_small:
+                    base.bitmap_small = self.MakeResizedBitmap(base.bitmap_small, self._bitmap_size_small)
+
+                base.bitmap_large_disabled = bitmap_disabled
+
+                if not base.bitmap_large_disabled.IsOk():
+                    base.bitmap_large_disabled = self.MakeDisabledBitmap(base.bitmap_large)
+
+                base.bitmap_small_disabled = bitmap_small_disabled
+
+                if not base.bitmap_small_disabled.IsOk():
+                    base.bitmap_small_disabled = self.MakeDisabledBitmap(base.bitmap_small)
+                result = True
+                break
+        return result
+
     def OnPaint(self, event):
         """
         Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
@@ -85,6 +122,7 @@ class RibbonPanel(wx.Panel):
         self.ribbon_bars = []
         self.ribbon_panels = []
         self.ribbon_pages = []
+        self.ribbon_buttons = []
         self.darkmode = False
 
         # Some helper variables for showing / hiding the toolbar
@@ -203,7 +241,7 @@ class RibbonPanel(wx.Panel):
                     bitmap = button["icon"].GetBitmap(resize=resize_param),
                     help_string = button["tip"] if show_tip else "",
                 )
-
+                self.ribbon_buttons.append((new_id, button["icon"], resize_param))
                 def drop_bind(alt_action):
                     def on_dropdown(event):
                         menu = wx.Menu()
@@ -234,6 +272,8 @@ class RibbonPanel(wx.Panel):
                     help_string = button["tip"] if show_tip else "",
                     kind = bkind,
                 )
+                self.ribbon_buttons.append((new_id, button["icon"], resize_param))
+
             if "right" in button:
                 self.button_actions.append(
                     [
@@ -307,6 +347,17 @@ class RibbonPanel(wx.Panel):
         self._update_ribbon_artprovider()
         for panel in self.ribbon_panels:
             panel[0].Label = "" if self.darkmode else panel[1]
+        for button in self.ribbon_buttons:
+            but_id = button[0]
+            bitmap = button[1].GetBitmap(resize=button[2])
+            bitmap_disabled = button[1].GetBitmap(resize=button[2], color=Color("grey"))
+            for bars in self.ribbon_bars:
+                found = bars.SetBitmap(
+                    but_id,
+                    bitmap = bitmap,
+                    bitmap_disabled=bitmap_disabled)
+                if found:
+                    break
         self._ribbon.Refresh()
 
     @signal_listener("emphasized")
