@@ -44,7 +44,7 @@ from .icons import (
     icons_evenspace_horiz,
     icons_evenspace_vert,
     STD_ICON_SIZE,
-    DARKMODE,
+    set_darkmode,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -605,6 +605,8 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
+        dark_ = self.is_dark()
+        set_darkmode(dark_)
         choices = [
             {
                 "attr": "select_smallest",
@@ -652,7 +654,7 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": "auto",
                 "type": str,
-                "label": _("GUI-Theme"),
+                "label": _("GUI-Theme: "),
                 "tip": _(
                     "Choose whether the GUI appearance shall follow the system theme\nor whether it should be dark or bright regardless."
                 ),
@@ -1518,10 +1520,6 @@ class MeerK40t(MWindow):
                 check(shown)
             except AttributeError:
                 pass
-
-    @property
-    def is_dark(self):
-        return wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
 
     def __kernel_initialize(self):
         context = self.context
@@ -2403,7 +2401,6 @@ class MeerK40t(MWindow):
 
     @signal_listener("gui_appearance")
     def on_gui_update(self, origin, *args):
-        print("gui signalled")
         self.update_theme_colors()
         # bgcol = wx.Colour()
         # bgcol.SetRGBA(self.theme_colors["window_bg"])
@@ -2807,79 +2804,80 @@ class MeerK40t(MWindow):
         return res
 
     def update_theme_colors(self):
-        def debug_system_colors():
-            ## Helper routine
-            reslist = list()
-            slist = (
-                (wx.SYS_COLOUR_SCROLLBAR, "The scrollbar grey area."),
-                (wx.SYS_COLOUR_DESKTOP, "The desktop colour."),
-                (wx.SYS_COLOUR_ACTIVECAPTION, "Active window caption colour."),
-                (wx.SYS_COLOUR_INACTIVECAPTION, "Inactive window caption colour."),
-                (wx.SYS_COLOUR_MENU, "Menu background colour."),
-                (wx.SYS_COLOUR_WINDOW, "Window background colour."),
-                (wx.SYS_COLOUR_WINDOWFRAME, "Window frame colour."),
-                (wx.SYS_COLOUR_MENUTEXT, "Colour of the text used in the menus."),
-                (wx.SYS_COLOUR_WINDOWTEXT, "Colour of the text used in generic windows."),
-                (wx.SYS_COLOUR_CAPTIONTEXT, "Colour of the text used in captions, size boxes and scrollbar arrow boxes."),
-                (wx.SYS_COLOUR_ACTIVEBORDER, "Active window border colour."),
-                (wx.SYS_COLOUR_INACTIVEBORDER, "Inactive window border colour."),
-                (wx.SYS_COLOUR_APPWORKSPACE, "Background colour for MDI applications."),
-                (wx.SYS_COLOUR_HIGHLIGHT, "Colour of item(s) selected in a control."),
-                (wx.SYS_COLOUR_HIGHLIGHTTEXT, "Colour of the text of item(s) selected in a control."),
-                (wx.SYS_COLOUR_BTNFACE, "Face shading colour on push buttons."),
-                (wx.SYS_COLOUR_BTNSHADOW, "Edge shading colour on push buttons."),
-                (wx.SYS_COLOUR_GRAYTEXT, "Colour of greyed (disabled) text."),
-                (wx.SYS_COLOUR_BTNTEXT, "Colour of the text on push buttons."),
-                (wx.SYS_COLOUR_INACTIVECAPTIONTEXT, "Colour of the text in inactive captions."),
-                (wx.SYS_COLOUR_BTNHIGHLIGHT, "Highlight colour for buttons."),
-                (wx.SYS_COLOUR_3DDKSHADOW, "Dark shadow colour for three-dimensional display elements."),
-                (wx.SYS_COLOUR_3DLIGHT, "Light colour for three-dimensional display elements."),
-                (wx.SYS_COLOUR_INFOTEXT, "Text colour for tooltip controls."),
-                (wx.SYS_COLOUR_INFOBK, "Background colour for tooltip controls."),
-                # (wx.SYS_COLOUR_LISTBOX, "Background colour for list-like controls."),
-                # (wx.SYS_COLOUR_HOTLIGHT, "Colour for a hyperlink or hot-tracked item."),
-                # (wx.SYS_COLOUR_GRADIENTACTIVECAPTION, "Right side colour in the colour gradient of an active window’s title bar."),
-                # (wx.SYS_COLOUR_GRADIENTINACTIVECAPTION, "Right side colour in the colour gradient of an inactive window’s title bar."),
-                # (wx.SYS_COLOUR_MENUHILIGHT, "The colour used to highlight menu items when the menu appears as a flat menu."),
-                # (wx.SYS_COLOUR_MENUBAR, "The background colour for the menu bar when menus appear as flat menus."),
-                # (wx.SYS_COLOUR_LISTBOXTEXT, "Text colour for list-like controls."),
-                # (wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT, "Text colour for the unfocused selection of list-like controls."),
-                # (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
-                # (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
-                # (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
-                # (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-                # (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-                # (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-                # (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
-            )
-            is_dark = False
-            dark_bg = False
-            try:
-                sysappearance = wx.SystemSettings().GetAppearance()
-                source = "Sysappearance"
-                is_dark = sysappearance.IsDark()
-                dark_bg = sysappearance.IsUsingDarkBackground()
-                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
-                source = "Default"
-                is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
-            except:
-                source = "Default"
-                is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-                reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
-            for colpair in slist:
-                syscol = wx.SystemSettings().GetColour(colpair[0])
-                if syscol is None:
-                    s = "Null"
-                else:
-                    try:
-                        s = syscol.GetAsString(wx.C2S_NAME)
-                    except AssertionError:
-                        s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
-                reslist.append( "{col} for {desc}".format(col=s, desc=colpair[1]) )
-            return reslist
+
+        # def debug_system_colors():
+        #     ## Helper routine
+        #     reslist = list()
+        #     slist = (
+        #         (wx.SYS_COLOUR_SCROLLBAR, "The scrollbar grey area."),
+        #         (wx.SYS_COLOUR_DESKTOP, "The desktop colour."),
+        #         (wx.SYS_COLOUR_ACTIVECAPTION, "Active window caption colour."),
+        #         (wx.SYS_COLOUR_INACTIVECAPTION, "Inactive window caption colour."),
+        #         (wx.SYS_COLOUR_MENU, "Menu background colour."),
+        #         (wx.SYS_COLOUR_WINDOW, "Window background colour."),
+        #         (wx.SYS_COLOUR_WINDOWFRAME, "Window frame colour."),
+        #         (wx.SYS_COLOUR_MENUTEXT, "Colour of the text used in the menus."),
+        #         (wx.SYS_COLOUR_WINDOWTEXT, "Colour of the text used in generic windows."),
+        #         (wx.SYS_COLOUR_CAPTIONTEXT, "Colour of the text used in captions, size boxes and scrollbar arrow boxes."),
+        #         (wx.SYS_COLOUR_ACTIVEBORDER, "Active window border colour."),
+        #         (wx.SYS_COLOUR_INACTIVEBORDER, "Inactive window border colour."),
+        #         (wx.SYS_COLOUR_APPWORKSPACE, "Background colour for MDI applications."),
+        #         (wx.SYS_COLOUR_HIGHLIGHT, "Colour of item(s) selected in a control."),
+        #         (wx.SYS_COLOUR_HIGHLIGHTTEXT, "Colour of the text of item(s) selected in a control."),
+        #         (wx.SYS_COLOUR_BTNFACE, "Face shading colour on push buttons."),
+        #         (wx.SYS_COLOUR_BTNSHADOW, "Edge shading colour on push buttons."),
+        #         (wx.SYS_COLOUR_GRAYTEXT, "Colour of greyed (disabled) text."),
+        #         (wx.SYS_COLOUR_BTNTEXT, "Colour of the text on push buttons."),
+        #         (wx.SYS_COLOUR_INACTIVECAPTIONTEXT, "Colour of the text in inactive captions."),
+        #         (wx.SYS_COLOUR_BTNHIGHLIGHT, "Highlight colour for buttons."),
+        #         (wx.SYS_COLOUR_3DDKSHADOW, "Dark shadow colour for three-dimensional display elements."),
+        #         (wx.SYS_COLOUR_3DLIGHT, "Light colour for three-dimensional display elements."),
+        #         (wx.SYS_COLOUR_INFOTEXT, "Text colour for tooltip controls."),
+        #         (wx.SYS_COLOUR_INFOBK, "Background colour for tooltip controls."),
+        #         # (wx.SYS_COLOUR_LISTBOX, "Background colour for list-like controls."),
+        #         # (wx.SYS_COLOUR_HOTLIGHT, "Colour for a hyperlink or hot-tracked item."),
+        #         # (wx.SYS_COLOUR_GRADIENTACTIVECAPTION, "Right side colour in the colour gradient of an active window’s title bar."),
+        #         # (wx.SYS_COLOUR_GRADIENTINACTIVECAPTION, "Right side colour in the colour gradient of an inactive window’s title bar."),
+        #         # (wx.SYS_COLOUR_MENUHILIGHT, "The colour used to highlight menu items when the menu appears as a flat menu."),
+        #         # (wx.SYS_COLOUR_MENUBAR, "The background colour for the menu bar when menus appear as flat menus."),
+        #         # (wx.SYS_COLOUR_LISTBOXTEXT, "Text colour for list-like controls."),
+        #         # (wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT, "Text colour for the unfocused selection of list-like controls."),
+        #         # (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
+        #         # (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
+        #         # (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
+        #         # (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        #         # (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        #         # (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
+        #         # (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
+        #     )
+        #     is_dark_ = False
+        #     dark_bg_ = False
+        #     try:
+        #         sysappearance = wx.SystemSettings().GetAppearance()
+        #         source = "Sysappearance"
+        #         is_dark_ = sysappearance.IsDark()
+        #         dark_bg_ = sysappearance.IsUsingDarkBackground()
+        #         reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark_, dark_bg_))
+        #         source = "Default"
+        #         is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        #         dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        #         reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        #     except:
+        #         source = "Default"
+        #         is_dark_ = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        #         dark_bg_ = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        #         reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark_, dark_bg_))
+        #     for colpair in slist:
+        #         syscol = wx.SystemSettings().GetColour(colpair[0])
+        #         if syscol is None:
+        #             s = "Null"
+        #         else:
+        #             try:
+        #                 s = syscol.GetAsString(wx.C2S_NAME)
+        #             except AssertionError:
+        #                 s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
+        #         reslist.append( "{col} for {desc}".format(col=s, desc=colpair[1]) )
+        #     return reslist
 
         def _get_color_direct(color_key, defaultcolor):
             if hasattr(self.context, color_key):
@@ -2914,17 +2912,16 @@ class MeerK40t(MWindow):
         stheme = self.theme()
         dark_ = self.is_dark()
         # Make icons aware of the theme choice...
-        DARKMODE = dark_
+        set_darkmode(dark_)
         setattr(self.context, "theme_isdark", dark_)
         if stheme == "auto":
-            print ("Set theme to auto")
+            # print ("Set theme to auto")
             if dark_:
                 self.theme_colors["window_bg"] = wx.BLACK.GetRGBA()
             else:
                 self.theme_colors["window_bg"] = wx.WHITE.GetRGBA()
             self.theme_colors["button_face"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE).GetRGBA()
             BTNFACE_HOVER = copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-            print ("Hover initially: %s" % BTNFACE_HOVER.GetAsString(wx.C2S_CSS_SYNTAX))
             BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
             self.theme_colors["button_hover"] = BTNFACE_HOVER.GetRGBA()
 
@@ -2937,13 +2934,13 @@ class MeerK40t(MWindow):
             for id_ in self.theme_colors:
                 ccol = wx.Colour()
                 ccol.SetRGBA(self.theme_colors[id_])
-                try:
-                    s = ccol.GetAsString(wx.C2S_NAME)
-                except AssertionError:
-                    s = ccol.GetAsString(wx.C2S_CSS_SYNTAX)
-                print ("%s: %s" % (id_, s))
+                # try:
+                #     s = ccol.GetAsString(wx.C2S_NAME)
+                # except AssertionError:
+                #     s = ccol.GetAsString(wx.C2S_CSS_SYNTAX)
+                # print ("%s: %s" % (id_, s))
         elif stheme == "dark":
-            print ("Set theme to dark")
+            # print ("Set theme to dark")
             # We use copy as we want modify the colors.
             self.theme_colors["window_bg"] = wx.BLACK.GetRGBA()
             self.theme_colors["button_face"] = wx.Colour(red=51, green=51, blue=51).GetRGBA()
@@ -2958,7 +2955,7 @@ class MeerK40t(MWindow):
             self.theme_colors["tooltip_bg"] = wx.Colour(red=0, green=0, blue=0, alpha=0.8).GetRGBA()
             self.theme_colors["highlight"] = wx.Colour(red=53, green=132, blue=228).GetRGBA()
         elif stheme == "bright":
-            print ("Set theme to bright")
+            # print ("Set theme to bright")
             self.theme_colors["window_bg"] = wx.WHITE.GetRGBA()
             self.theme_colors["button_face"] = wx.Colour(red=240, green=240, blue=240).GetRGBA()
             self.theme_colors["button_hover"] = wx.Colour(red=0, green=60, blue=107).GetRGBA()
