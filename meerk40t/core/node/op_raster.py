@@ -207,14 +207,14 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+
+        # Calculate raster steps from DPI device context
+        step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+        self.raster_step_x, self.raster_step_y = step_x, step_y
+
         if len(self.children) == 0:
             return
         if len(self.children) == 1 and self.children[0].type == "elem image":
-            dpi = float(self.settings.get("dpi", 500))
-            step_x, step_y = context.device.dpi_to_steps(dpi)
-            self.settings["raster_step_x"] = step_x
-            self.settings["raster_step_y"] = step_y
             node = self.children[0]
             node.step_x = step_x
             node.step_y = step_y
@@ -321,14 +321,9 @@ class RasterOpNode(Node, Parameters):
                 continue
 
             # Perform correct actualization
-            osx = image_node.step_x
-            osy = image_node.step_y
             image_node.step_x = step_x
             image_node.step_y = step_y
-            if image_node.needs_actualization():
-                image_node.make_actual()
-            image_node.step_x = osx
-            image_node.step_y = osy
+            image_node.process_image()
 
             # Set variables
             matrix = image_node.matrix

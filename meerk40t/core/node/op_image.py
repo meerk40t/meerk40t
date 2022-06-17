@@ -253,12 +253,9 @@ class ImageOpNode(Node, Parameters):
                 start_on_left = True
             bidirectional = bool(self.raster_swing)
 
-            # Perform correct actualization
-            image_node.process_image()
-            # Set steps
+            # Get steps from individual images
             step_x = image_node.step_x
             step_y = image_node.step_y
-
 
             # Set variables
             matrix = image_node.active_matrix

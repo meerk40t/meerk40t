@@ -24,6 +24,7 @@ class ImageNode(Node):
         overscan=None,
         direction=None,
         dpi=500,
+        operations=None,
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
@@ -35,7 +36,6 @@ class ImageNode(Node):
         self.text = None
 
         self._needs_update = False
-        self._context = None
         self._update_thread = None
         self._update_lock = threading.Lock()
 
@@ -43,8 +43,8 @@ class ImageNode(Node):
         self.overscan = overscan
         self.direction = direction
         self.dpi = dpi
-        self.native_step_x = None
-        self.native_step_y = None
+        self.step_x = None
+        self.step_y = None
         self.lock = False
 
         self.invert = False
@@ -56,7 +56,9 @@ class ImageNode(Node):
         self.dither = True
         self.dither_type = "Floyd-Steinberg"
 
-        self.operations = list()
+        if operations is None:
+            operations = list()
+        self.operations = operations
 
     def __copy__(self):
         return ImageNode(
@@ -65,6 +67,7 @@ class ImageNode(Node):
             overscan=self.overscan,
             direction=self.direction,
             dpi=self.dpi,
+            operations=self.operations,
             **self.settings,
         )
 
@@ -90,11 +93,15 @@ class ImageNode(Node):
         return self.processed_matrix * self.matrix
 
     def preprocess(self, context, matrix, commands):
-        self._context = context
-        self.process_image()
-        self._context = None
+        """
+        Preprocess step during the cut planning stages.
+
+        We require a context to calculate the correct step values relative to the device
+        """
+        self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self._bounds_dirty = True
+        self.process_image()
 
     @property
     def bounds(self):
@@ -159,10 +166,9 @@ class ImageNode(Node):
         return False
 
     def update(self, context):
-        self._context = context
         self._needs_update = True
         self.text = "Processing..."
-        self._context.signal("refresh_scene", "Scene")
+        context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
@@ -172,8 +178,8 @@ class ImageNode(Node):
                     self.text = None
                 self._needs_update = False
                 self._update_thread = None
-                self._context.signal("refresh_scene", "Scene")
-                self._context = None
+                context.signal("refresh_scene", "Scene")
+                context.signal("image updated", self)
 
             self.processed_image = None
             self.processed_matrix = None
@@ -182,17 +188,19 @@ class ImageNode(Node):
             )
 
     def process_image_thread(self):
-        if self._context is None:
-            return  # Requires temporary context.
         while self._needs_update:
             self._needs_update = False
             self.process_image()
             # Unset cache.
             self.wx_bitmap_image = None
             self.cache = None
-            self._context.signal("image updated", self)
 
     def process_image(self):
+        if self.step_x is None:
+            step = UNITS_PER_INCH / self.dpi
+            self.step_x = step
+            self.step_y = step
+
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
         from meerk40t.image.actualize import actualize
         from meerk40t.image.imagetools import dither
@@ -219,15 +227,11 @@ class ImageNode(Node):
             image = image.point(lambda e: 255 - e)
 
         # Calculate device real step.
-        dpi = self.dpi
-        step_x, step_y = self._context.device.dpi_to_steps(dpi)
-        self.step_x, self.step_y = step_x, step_y
-
-        step_scene = UNITS_PER_INCH / dpi
-        if main_matrix.a != step_scene or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_scene:
+        step_x, step_y = self.step_x, self.step_y
+        if main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y:
             try:
                 image, actualized_matrix = actualize(
-                    image, main_matrix, step_x=step_scene, step_y=step_scene, inverted=self.invert
+                    image, main_matrix, step_x=step_x, step_y=step_y, inverted=self.invert
                 )
             except (MemoryError, DecompressionBombError):
                 self.process_image_failed = True
