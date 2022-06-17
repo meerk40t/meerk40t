@@ -2405,6 +2405,10 @@ class MeerK40t(MWindow):
     def on_gui_update(self, origin, *args):
         print("gui signalled")
         self.update_theme_colors()
+        # bgcol = wx.Colour()
+        # bgcol.SetRGBA(self.theme_colors["window_bg"])
+        # for pane in self._mgr.GetAllPanes():
+        #     pane.window.SetBackgroundColour(bgcol)
         self._mgr.Update()
 
     def __set_titlebar(self):
@@ -2904,12 +2908,8 @@ class MeerK40t(MWindow):
         #     print(l)
 
         from copy import copy
-        self.context.setting(str, "theme_dark_color", "#000000")
-        self.context.setting(str, "theme_bright_color", "#FFFFFF")
         self.context.setting(str, "theme_colors", "")
         self.context.setting(bool, "theme_isdark", False)
-        dark_bg = _get_color_direct("theme_dark_color", "#000000")
-        bright_bg = _get_color_direct("theme_bright_color", "#FFFFFF")
 
         stheme = self.theme()
         dark_ = self.is_dark()
@@ -2919,9 +2919,9 @@ class MeerK40t(MWindow):
         if stheme == "auto":
             print ("Set theme to auto")
             if dark_:
-                self.theme_colors["window_bg"] = dark_bg
+                self.theme_colors["window_bg"] = wx.BLACK.GetRGBA()
             else:
-                self.theme_colors["window_bg"] = bright_bg
+                self.theme_colors["window_bg"] = wx.WHITE.GetRGBA()
             self.theme_colors["button_face"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE).GetRGBA()
             BTNFACE_HOVER = copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
             print ("Hover initially: %s" % BTNFACE_HOVER.GetAsString(wx.C2S_CSS_SYNTAX))
@@ -2945,21 +2945,21 @@ class MeerK40t(MWindow):
         elif stheme == "dark":
             print ("Set theme to dark")
             # We use copy as we want modify the colors.
-            self.theme_colors["window_bg"] = dark_bg
-            self.theme_colors["button_face"] = dark_bg
-            BTNFACE_HOVER = copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+            self.theme_colors["window_bg"] = wx.BLACK.GetRGBA()
+            self.theme_colors["button_face"] = wx.Colour(red=51, green=51, blue=51).GetRGBA()
+            BTNFACE_HOVER = wx.Colour(red=21, green=83, blue=158)
             BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
             self.theme_colors["button_hover"] = BTNFACE_HOVER.GetRGBA()
 
-            self.theme_colors["text"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT).GetRGBA()
-            self.theme_colors["text_inactive"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT).GetRGBA()
-            self.theme_colors["inactive_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION).GetRGBA()
-            self.theme_colors["tooltip_fg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT).GetRGBA()
-            self.theme_colors["tooltip_bg"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK).GetRGBA()
-            self.theme_colors["highlight"] = wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT).GetRGBA()
+            self.theme_colors["text"] = wx.Colour(red=238, green=238, blue=236).GetRGBA()
+            self.theme_colors["text_inactive"] = wx.Colour(red=145, green=145, blue=144).GetRGBA()
+            self.theme_colors["inactive_bg"] = wx.Colour(red=53, green=53, blue=53).GetRGBA()
+            self.theme_colors["tooltip_fg"] = wx.WHITE.GetRGBA()
+            self.theme_colors["tooltip_bg"] = wx.Colour(red=0, green=0, blue=0, alpha=0.8).GetRGBA()
+            self.theme_colors["highlight"] = wx.Colour(red=53, green=132, blue=228).GetRGBA()
         elif stheme == "bright":
             print ("Set theme to bright")
-            self.theme_colors["window_bg"] = bright_bg
+            self.theme_colors["window_bg"] = wx.WHITE.GetRGBA()
             self.theme_colors["button_face"] = wx.Colour(red=240, green=240, blue=240).GetRGBA()
             self.theme_colors["button_hover"] = wx.Colour(red=0, green=60, blue=107).GetRGBA()
             self.theme_colors["text"] = wx.BLACK.GetRGBA()
@@ -2970,9 +2970,9 @@ class MeerK40t(MWindow):
             self.theme_colors["highlight"] = wx.Colour(red=0, green=102, blue=204).GetRGBA()
         setattr(self.context, "theme_colors", self.theme_colors)
         # And now let's update the ArtProvider of the AUIManager
-        default = aui.AuiDefaultDockArt()
-        provider = default.Clone()
-
+        # default = aui.AuiDefaultDockArt()
+        # provider = default.Clone()
+        provider = self._mgr.GetArtProvider()
         aui_ids = [
             aui.AUI_DOCKART_BACKGROUND_COLOUR,
         ]
@@ -2994,6 +2994,6 @@ class MeerK40t(MWindow):
         ]
         color = self.theme_colors["text"]
         SetAUIColors(provider, aui_ids, color)
-        self._mgr.SetArtProvider(provider)
+        # self._mgr.SetArtProvider(provider)
         return
 
