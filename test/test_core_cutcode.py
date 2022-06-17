@@ -169,14 +169,22 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0))
+        inode1 = ImageNode(image=image, matrix=Matrix(), dpi=1000.0 / 3.0)
+        inode1.step_x = 3
+        inode1.step_y = 3
+        inode1.process_image()
+        laserop.add_node(inode1)
 
         # Add SVG Image2
         image2 = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
         draw = ImageDraw.Draw(image2)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=500, direction=4))  # crosshatch
+        inode2 = ImageNode(image=image2, matrix=Matrix(), dpi=500, direction=4)
+        inode2.step_x = 2
+        inode2.step_y = 2
+        inode2.process_image()
+        laserop.add_node(inode2)  # crosshatch
         for i in range(2):  # Check for knockon
             cutcode = CutCode(laserop.as_cutobjects())
             self.assertEqual(len(cutcode), 3)
