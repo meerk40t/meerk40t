@@ -4,6 +4,7 @@ from copy import copy
 from PIL.Image import DecompressionBombError
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
 from meerk40t.svgelements import Matrix
 
@@ -23,8 +24,6 @@ class ImageNode(Node):
         overscan=None,
         direction=None,
         dpi=500,
-        step_x=None,
-        step_y=None,
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
@@ -44,8 +43,8 @@ class ImageNode(Node):
         self.overscan = overscan
         self.direction = direction
         self.dpi = dpi
-        self.step_x = step_x
-        self.step_y = step_y
+        self.native_step_x = None
+        self.native_step_y = None
         self.lock = False
 
         self.invert = False
@@ -66,8 +65,6 @@ class ImageNode(Node):
             overscan=self.overscan,
             direction=self.direction,
             dpi=self.dpi,
-            step_x=self.step_x,
-            step_y=self.step_y,
             **self.settings,
         )
 
@@ -90,7 +87,7 @@ class ImageNode(Node):
     def active_matrix(self):
         if self.processed_matrix is None:
             return self.matrix
-        return  self.processed_matrix * self.matrix
+        return self.processed_matrix * self.matrix
 
     def preprocess(self, context, matrix, commands):
         self._context = context
@@ -221,14 +218,16 @@ class ImageNode(Node):
         if self.invert:
             image = image.point(lambda e: 255 - e)
 
+        # Calculate device real step.
         dpi = self.dpi
         step_x, step_y = self._context.device.dpi_to_steps(dpi)
         self.step_x, self.step_y = step_x, step_y
 
-        if main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y:
+        step_scene = UNITS_PER_INCH / dpi
+        if main_matrix.a != step_scene or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_scene:
             try:
                 image, actualized_matrix = actualize(
-                    image, main_matrix, step_x=step_x, step_y=step_y, inverted=self.invert
+                    image, main_matrix, step_x=step_scene, step_y=step_scene, inverted=self.invert
                 )
             except (MemoryError, DecompressionBombError):
                 self.process_image_failed = True

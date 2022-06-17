@@ -268,7 +268,7 @@ class RasterOpNode(Node, Parameters):
             matrix = Matrix.scale(step_x, step_y)
             matrix.post_translate(bounds[0], bounds[1])
             image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
+                image=image, matrix=matrix
             )
             self.children.clear()
             self.add_node(image_node)
