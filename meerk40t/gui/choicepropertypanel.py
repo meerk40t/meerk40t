@@ -136,7 +136,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_combo_text(param, ctrl, obj):
                     def select(event=None):
-                        setattr(obj, param, ctrl.GetValue())
+                        v = ctrl.GetValue()
+                        setattr(obj, param, v)
+                        self.context.signal(param, v)
 
                     return select
 
@@ -148,9 +150,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == str and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                clabel = wx.StaticText(self, wx.ID_ANY, label)
+                clabel = wx.StaticText(self,
+                    id=wx.ID_ANY,
+                    label=label,
+                    # size=(-1, 23),
+                    style=wx.ALIGN_CENTER_VERTICAL
+                )
                 control_sizer.Add(clabel, 0, 0, 0)
-
                 control = wx.ComboBox(
                     self,
                     wx.ID_ANY,
@@ -161,7 +167,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_combosmall_text(param, ctrl, obj):
                     def select(event=None):
-                        setattr(obj, param, ctrl.GetValue())
+                        v = ctrl.GetValue()
+                        setattr(obj, param, v)
+                        self.context.signal(param, v)
 
                     return select
 
