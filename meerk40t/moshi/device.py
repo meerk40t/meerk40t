@@ -401,12 +401,26 @@ class MoshiDriver(Parameters):
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
+    def _calc_home_position(self):
+        """
+        Calculate the home position with the given home adjust and the corner the device is
+        expected to home to.
+        """
+        x = self.service.home_adjust_x
+        y = self.service.home_adjust_y
+
+        if self.service.home_right:
+            x += int(self.service.device.width)
+        if self.service.home_bottom:
+            y += int(self.service.device.height)
+        return x, y
+
     def home(self, *values):
         """
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        x, y = self.calc_home_position()
+        x, y = self._calc_home_position()
         try:
             x = int(values[0])
         except (ValueError, IndexError):
@@ -882,20 +896,6 @@ class MoshiDriver(Parameters):
             "driver;position",
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
-
-    def calc_home_position(self):
-        """
-        Calculate the home position with the given home adjust and the corner the device is
-        expected to home to.
-        """
-        x = self.service.home_adjust_x
-        y = self.service.home_adjust_y
-
-        if self.service.home_right:
-            x += int(self.service.device.width)
-        if self.service.home_bottom:
-            y += int(self.service.device.height)
-        return x, y
 
     def laser_disable(self, *values):
         self.laser_enabled = False
