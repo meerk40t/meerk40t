@@ -105,8 +105,8 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-        self.setting(int, "home_adjust_x", 0)
-        self.setting(int, "home_adjust_y", 0)
+        self.setting(str, "home_x", "0mm")
+        self.setting(str, "home_y", "0mm")
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
