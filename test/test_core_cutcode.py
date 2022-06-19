@@ -82,7 +82,11 @@ class TestCutcode(unittest.TestCase):
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
         image = image.convert("L")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000))
+        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
+        inode.step_x = 1
+        inode.step_y = 1
+        inode.process_image()
+        laserop.add_node(inode)
 
         # raster_step is default to 0 and not set.
         laserop.raster_step_x = 2
@@ -106,22 +110,26 @@ class TestCutcode(unittest.TestCase):
         :return:
         """
         # Initialize with Raster Defaults, +crosshatch
-        laserop = RasterOpNode(raster_direction=4)
-        # Default step 2.
+        rasterop = RasterOpNode(raster_direction=4, dpi=500)
 
         # Add Path
         initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
         path = Path(initial)
-        laserop.add_node(PathNode(path))
+        rasterop.add_node(PathNode(path))
 
         # Add SVG Image
         image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0))
+        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0)
+        inode.step_x = 3
+        inode.step_y = 3
+
+        rasterop.add_node(inode)
+
         for i in range(2):  # Check for knockon.
-            cutcode = CutCode(laserop.as_cutobjects())
+            cutcode = CutCode(rasterop.as_cutobjects())
             self.assertEqual(len(cutcode), 2)
 
             rastercut0 = cutcode[0]
@@ -240,17 +248,29 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image1)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image1, matrix=Matrix(), dpi=1000.0/3.0))
+        inode = ImageNode(image=image1, matrix=Matrix(), dpi=1000.0 / 3.0)
+        inode.step_x = 3
+        inode.step_y = 3
+        inode.process_image()
+        laserop.add_node(inode)
 
         # Add SVG Image2
         image2 = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
         draw = ImageDraw.Draw(image2)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((80, 80, 120, 120), "black")
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=500.0))
+        inode = ImageNode(image=image2, matrix=Matrix(), dpi=500.0)
+        inode.step_x = 2
+        inode.step_y = 2
+        inode.process_image()
+        laserop.add_node(inode)
 
         # Add SVG Image3
-        laserop.add_node(ImageNode(image=image2, matrix=Matrix(), dpi=1000.0/3.0))
+        inode = ImageNode(image=image2, matrix=Matrix(), dpi=1000.0/3.0)
+        inode.step_x = 3
+        inode.step_y = 3
+        inode.process_image()
+        laserop.add_node(inode)
 
         cutcode = CutCode(laserop.as_cutobjects())
         self.assertEqual(len(cutcode), 6)
@@ -335,7 +355,11 @@ class TestCutcode(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((50, 50, 150, 150), "white")
         draw.ellipse((100, 100, 105, 105), "black")
-        laserop.add_node(ImageNode(image=image, matrix=Matrix(), dpi=1000))
+        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
+        inode.step_x = 1
+        inode.step_y = 1
+        inode.process_image()
+        laserop.add_node(inode)
 
         for i in range(4):
             cutcode = CutCode(laserop.as_cutobjects())

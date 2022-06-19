@@ -294,6 +294,8 @@ class RasterOpNode(Node, Parameters):
         # Set steps
         step_x = self.raster_step_x
         step_y = self.raster_step_y
+        assert step_x != 0
+        assert step_y != 0
 
         # Set variables by direction
         direction = self.raster_direction

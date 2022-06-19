@@ -232,7 +232,6 @@ class TestActualize(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             kernel_root = kernel.get_context("/")
-            # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             draw = ImageDraw.Draw(image)
             draw.ellipse((0, 0, 256, 256), "black")
