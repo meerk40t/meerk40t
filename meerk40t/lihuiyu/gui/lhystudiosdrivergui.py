@@ -292,30 +292,20 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_home.Add(sizer_4, 2, wx.EXPAND, 0)
 
-        self.spin_home_x = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
-        )
-        self.spin_home_x.SetMinSize((80, 23))
-        self.spin_home_x.SetToolTip(_("Translate Home X"))
-        sizer_4.Add(self.spin_home_x, 0, 0, 0)
-
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("steps"))
-        sizer_4.Add(label_12, 0, 0, 0)
+        self.text_home_x = wx.TextCtrl(self, wx.ID_ANY, "0mm")
+        self.text_home_x.SetMinSize((80, 23))
+        self.text_home_x.SetToolTip(_("Translate Home X"))
+        sizer_4.Add(self.text_home_x, 0, 0, 0)
 
         sizer_2 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL
         )
         sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
 
-        self.spin_home_y = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, _("0.0"), min=-50000.0, max=50000.0
-        )
-        self.spin_home_y.SetMinSize((80, 23))
-        self.spin_home_y.SetToolTip(_("Translate Home Y"))
-        sizer_2.Add(self.spin_home_y, 0, 0, 0)
-
-        label_11 = wx.StaticText(self, wx.ID_ANY, _("steps"))
-        sizer_2.Add(label_11, 0, 0, 0)
+        self.text_home_y = wx.TextCtrl(self, wx.ID_ANY, "0mm")
+        self.text_home_y.SetMinSize((80, 23))
+        self.text_home_y.SetToolTip(_("Translate Home Y"))
+        sizer_2.Add(self.text_home_y, 0, 0, 0)
 
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         self.button_home_by_current.SetToolTip(
@@ -384,8 +374,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.SetSizer(sizer_27)
 
-        self.spin_home_x.SetValue(self.context.home_adjust_x)
-        self.spin_home_y.SetValue(self.context.home_adjust_y)
+        self.text_home_x.SetValue(self.context.home_x)
+        self.text_home_y.SetValue(self.context.home_y)
         self.text_bedwidth.SetValue(self.context.bedwidth)
         self.text_bedheight.SetValue(self.context.bedheight)
         self.text_scale_x.SetValue("%.4f" % self.context.scale_x)
@@ -393,8 +383,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.spin_home_x)
-        self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.spin_home_y)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.text_home_x)
+        self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -410,18 +400,17 @@ class ConfigurationLaserPanel(wx.Panel):
         pass
 
     def spin_on_home_x(self, event=None):
-        self.context.home_adjust_x = int(self.spin_home_x.GetValue())
+        self.context.home_x = int(self.text_home_x.GetValue())
 
     def spin_on_home_y(self, event=None):
-        self.context.home_adjust_y = int(self.spin_home_y.GetValue())
+        self.context.home_y = int(self.text_home_y.GetValue())
 
     def on_button_set_home_current(self, event=None):
-        native_x = self.context.device.native_x
-        native_y = self.context.device.native_y
-        self.context.home_adjust_x = int(native_x)
-        self.context.home_adjust_y = int(native_y)
-        self.spin_home_x.SetValue(self.context.home_adjust_x)
-        self.spin_home_y.SetValue(self.context.home_adjust_y)
+        current_x, current_y = self.context.device.current
+        self.context.home_x = Length(amount=current_x).length_mm
+        self.context.home_y = Length(amount=current_y).length_mm
+        self.text_home_x.SetValue(self.context.home_x)
+        self.text_home_y.SetValue(self.context.home_y)
 
     def on_text_bedwidth(self, event=None):
         try:
