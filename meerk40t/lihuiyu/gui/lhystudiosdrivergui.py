@@ -441,6 +441,15 @@ class ConfigurationLaserPanel(wx.Panel):
             ctrl.Refresh()
             return
 
+        self.context.device.width = bedwidth.preferred_length
+        self.context.device.bedwidth = bedwidth.preferred_length
+        self.context.signal(
+            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
+        )
+        self.context.device.realize()
+        self.context("viewport_update\n")
+
+    def on_text_bedheight(self, event=None):
         ctrl = self.text_bedheight
         try:
             bedheight = Length(ctrl.GetValue())
@@ -450,51 +459,45 @@ class ConfigurationLaserPanel(wx.Panel):
             ctrl.SetBackgroundColour(wx.RED)
             ctrl.Refresh()
             return
-        self.context.device.width = bedwidth.preferred_length
         self.context.device.height = bedheight.preferred_length
-        self.context.device.bedwidth = bedwidth.preferred_length
         self.context.device.bedheight = bedheight.preferred_length
         self.context.signal(
             "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
-        self.context("viewport_update\n")
-
-    def on_text_bedheight(self, event=None):
-        try:
-            Length(self.text_bedwidth.GetValue())
-            Length(self.text_bedheight.GetValue())
-        except ValueError:
-            return
-        self.context.device.width = self.text_bedwidth.GetValue()
-        self.context.device.height = self.text_bedheight.GetValue()
-        self.context.device.bedwidth = self.text_bedwidth.GetValue()
-        self.context.device.bedheight = self.text_bedheight.GetValue()
-        self.context.signal(
-            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
-        )
+        self.context.device.realize()
         self.context("viewport_update\n")
 
     def on_text_x_scale(self, event=None):
         try:
-            self.context.device.scale_x = float(self.text_scale_x.GetValue())
-            self.context.device.scale_y = float(self.text_scale_y.GetValue())
+            self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
+            self.text_scale_x.SetBackgroundColour(None)
+            self.text_scale_x.Refresh()
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
+            self.context.device.realize()
             self.context("viewport_update\n")
         except ValueError:
-            pass
+            self.text_scale_x.SetBackgroundColour(wx.RED)
+            self.text_scale_x.Refresh()
 
     def on_text_y_scale(self, event=None):
         try:
-            self.context.device.scale_x = float(self.text_scale_x.GetValue())
-            self.context.device.scale_y = float(self.text_scale_y.GetValue())
+            self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
+            self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
+            self.context.device.scale_x = self.context.device.user_scale_x
+            self.context.device.scale_y = self.context.device.user_scale_y
+            self.text_scale_y.SetBackgroundColour(None)
+            self.text_scale_y.Refresh()
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
+            self.context.device.realize()
             self.context("viewport_update\n")
         except ValueError:
-            pass
+            self.text_scale_y.SetBackgroundColour(wx.RED)
+            self.text_scale_y.Refresh()
 
 
 class ConfigurationInterfacePanel(wx.Panel):
