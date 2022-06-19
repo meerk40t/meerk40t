@@ -148,19 +148,13 @@ def plugin(kernel, lifecycle=None):
         script = context.lookup("raster_script", script)
         if script is None:
             channel(_("Raster Script %s is not registered.") % script)
-            return
+            script = []
 
         for inode in data:
-            (
-                inode.image,
-                inode.matrix,
-                step,
-            ) = RasterScripts.wizard_image(inode, script)
-            if step is not None:
-                inode.step_x = step
-                inode.step_y = step
-            inode.lock = True
-            inode.altered()
+            if not len(script) and inode.operations:
+                channel(_("Disabled raster script."))
+            inode.operations = script
+            inode.update(context)
         return "image", data
 
     @context.console_command(

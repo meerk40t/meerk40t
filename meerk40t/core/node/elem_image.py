@@ -243,8 +243,8 @@ class ImageNode(Node):
             empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
         else:
             empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
-
         # Process operations.
+
         for op in self.operations:
             name = op["name"]
             if name == "crop":
