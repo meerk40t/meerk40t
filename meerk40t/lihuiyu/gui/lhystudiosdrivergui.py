@@ -383,8 +383,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.spin_on_home_x, self.text_home_x)
-        self.Bind(wx.EVT_TEXT, self.spin_on_home_y, self.text_home_y)
+        self.Bind(wx.EVT_TEXT, self.on_text_home_x, self.text_home_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_home_y, self.text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -399,11 +399,29 @@ class ConfigurationLaserPanel(wx.Panel):
     def pane_hide(self):
         pass
 
-    def spin_on_home_x(self, event=None):
-        self.context.home_x = int(self.text_home_x.GetValue())
+    def on_text_home_x(self, event=None):
+        ctrl = self.text_home_x
+        try:
+            length = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
+        except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
+            return
+        self.context.home_x = length.preferred_length
 
-    def spin_on_home_y(self, event=None):
-        self.context.home_y = int(self.text_home_y.GetValue())
+    def on_text_home_y(self, event=None):
+        ctrl = self.text_home_y
+        try:
+            length = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
+        except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
+            return
+        self.context.home_y = length.preferred_length
 
     def on_button_set_home_current(self, event=None):
         current_x, current_y = self.context.device.current
@@ -413,15 +431,29 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_home_y.SetValue(self.context.home_y)
 
     def on_text_bedwidth(self, event=None):
+        ctrl = self.text_bedwidth
         try:
-            Length(self.text_bedwidth.GetValue())
-            Length(self.text_bedheight.GetValue())
+            bedwidth = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
         except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
             return
-        self.context.device.width = self.text_bedwidth.GetValue()
-        self.context.device.height = self.text_bedheight.GetValue()
-        self.context.device.bedwidth = self.text_bedwidth.GetValue()
-        self.context.device.bedheight = self.text_bedheight.GetValue()
+
+        ctrl = self.text_bedheight
+        try:
+            bedheight = Length(ctrl.GetValue())
+            ctrl.SetBackgroundColour(None)
+            ctrl.Refresh()
+        except ValueError:
+            ctrl.SetBackgroundColour(wx.RED)
+            ctrl.Refresh()
+            return
+        self.context.device.width = bedwidth.preferred_length
+        self.context.device.height = bedheight.preferred_length
+        self.context.device.bedwidth = bedwidth.preferred_length
+        self.context.device.bedheight = bedheight.preferred_length
         self.context.signal(
             "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
