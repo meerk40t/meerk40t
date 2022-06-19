@@ -5274,6 +5274,18 @@ class Elemental(Service):
                 new_settings["type"] = "op dots"
                 n.replace_node(**new_settings)
 
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_values(
+            "script", values=list(self.match("raster_script", suffix=True))
+        )
+        @self.tree_operation(
+            _("Apply: %s") % "{script}", node_type="elem image", help=""
+        )
+        def image_rasterwizard_apply(node, script=None, **kwargs):
+            raster_script = self.lookup(f"raster_script/{script}")
+            node.operations = raster_script
+            node.update(self)
+
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
 
@@ -6205,18 +6217,6 @@ class Elemental(Service):
         @self.tree_operation(_("Save output.png"), node_type="elem image", help="")
         def image_save(node, **kwargs):
             self("image save output.png\n")
-
-        @self.tree_submenu(_("Apply raster script"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("Apply: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_apply(node, script=None, **kwargs):
-            raster_script = self.lookup(f"raster_script/{script}")
-            node.operations = raster_script
-            node.update(self)
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
