@@ -167,8 +167,8 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
-        self.setting(int, "home_adjust_x", 0)
-        self.setting(int, "home_adjust_y", 0)
+        self.setting(str, "home_x", "0mm")
+        self.setting(str, "home_y", "0mm")
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
