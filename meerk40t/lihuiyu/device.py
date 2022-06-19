@@ -750,7 +750,7 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in scene units for the current known postion.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
@@ -1555,17 +1555,14 @@ class LhystudiosDriver(Parameters):
         self.native_y = 0
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
-        adjust_x = self.service.home_adjust_x
-        adjust_y = self.service.home_adjust_y
+        adjust_x = self.service.home_x
+        adjust_y = self.service.home_y
         try:
             adjust_x = values[0]
             adjust_y = values[1]
-            if isinstance(adjust_x, str):
-                # TODO: May require revision
-                adjust_x = self.service.length(adjust_x, 0, unitless=UNITS_PER_MIL)
-                adjust_y = self.service.length(adjust_y, 1, unitless=UNITS_PER_MIL)
         except IndexError:
             pass
+        adjust_x,  adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y, 1)
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
