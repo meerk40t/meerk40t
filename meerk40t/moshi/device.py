@@ -160,6 +160,13 @@ class MoshiDevice(Service, ViewPort):
             self.bedheight,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            # flip_x=self.flip_x,
+            # flip_y=self.flip_y,
+            # swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
         )
 
         self.state = 0
@@ -401,40 +408,26 @@ class MoshiDriver(Parameters):
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
-    def _calc_home_position(self):
-        """
-        Calculate the home position with the given home adjust and the corner the device is
-        expected to home to.
-        """
-        x = self.service.home_adjust_x
-        y = self.service.home_adjust_y
-
-        if self.service.home_right:
-            x += int(self.service.device.width)
-        if self.service.home_bottom:
-            y += int(self.service.device.height)
-        return x, y
-
     def home(self, *values):
         """
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        x, y = self._calc_home_position()
+        adjust_x = self.service.home_x
+        adjust_y = self.service.home_y
         try:
-            x = int(values[0])
-        except (ValueError, IndexError):
+            adjust_x = values[0]
+            adjust_y = values[1]
+        except IndexError:
             pass
-        try:
-            y = int(values[1])
-        except (ValueError, IndexError):
-            pass
+        adjust_x,  adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y, 1)
+
         self.rapid_mode()
         self.speed = 40
-        self.program_mode(x, y, x, y)
+        self.program_mode(adjust_x,  adjust_y, adjust_x,  adjust_y)
         self.rapid_mode()
-        self.native_x = x
-        self.native_y = y
+        self.native_x = adjust_x
+        self.native_y = adjust_y
 
     def unlock_rail(self):
         """
