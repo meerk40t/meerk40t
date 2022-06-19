@@ -364,6 +364,8 @@ class TestPlotplanner(unittest.TestCase):
         inode.step_y = 1
         inode.process_image()
         rasterop.add_node(inode)
+        rasterop.raster_step_x = 1
+        rasterop.raster_step_y = 1
 
         vectorop = EngraveOpNode()
         vectorop.add_node(PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black"))

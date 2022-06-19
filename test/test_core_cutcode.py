@@ -62,101 +62,101 @@ class TestCutcode(unittest.TestCase):
         path = list(cutcode.as_elements())[0]
         self.assertEqual(path, initial)
 
-    def test_cutcode_raster(self):
-        """
-        Convert CutCode from Raster operation
+    # def test_cutcode_raster(self):
+    #     """
+    #     Convert CutCode from Raster operation
+    #
+    #     :return:
+    #     """
+    #     laserop = RasterOpNode()
+    #     laserop.operation = "Raster"
+    #
+    #     # Add Path
+    #     initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+    #     path = Path(initial)
+    #     laserop.add_node(PathNode(path))
+    #
+    #     # Add SVG Image
+    #     image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+    #     draw = ImageDraw.Draw(image)
+    #     draw.ellipse((50, 50, 150, 150), "white")
+    #     draw.ellipse((100, 100, 105, 105), "black")
+    #     image = image.convert("L")
+    #     inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
+    #     inode.step_x = 1
+    #     inode.step_y = 1
+    #     inode.process_image()
+    #     laserop.add_node(inode)
+    #
+    #     # raster_step is default to 0 and not set.
+    #     laserop.raster_step_x = 2
+    #     laserop.raster_step_y = 2
+    #     cutcode = CutCode(laserop.as_cutobjects())
+    #     self.assertEqual(len(cutcode), 1)
+    #     rastercut = cutcode[0]
+    #     self.assertTrue(isinstance(rastercut, RasterCut))
+    #     self.assertEqual(rastercut.offset_x, 100)
+    #     self.assertEqual(rastercut.offset_y, 100)
+    #     image = rastercut.image
+    #     self.assertTrue(isinstance(image, Image.Image))
+    #     self.assertIn(image.mode, ("L", "1"))
+    #     self.assertEqual(image.size, (3, 3))
+    #     self.assertEqual(rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
 
-        :return:
-        """
-        laserop = RasterOpNode()
-        laserop.operation = "Raster"
-
-        # Add Path
-        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
-        path = Path(initial)
-        laserop.add_node(PathNode(path))
-
-        # Add SVG Image
-        image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
-        draw = ImageDraw.Draw(image)
-        draw.ellipse((50, 50, 150, 150), "white")
-        draw.ellipse((100, 100, 105, 105), "black")
-        image = image.convert("L")
-        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
-        inode.step_x = 1
-        inode.step_y = 1
-        inode.process_image()
-        laserop.add_node(inode)
-
-        # raster_step is default to 0 and not set.
-        laserop.raster_step_x = 2
-        laserop.raster_step_y = 2
-        cutcode = CutCode(laserop.as_cutobjects())
-        self.assertEqual(len(cutcode), 1)
-        rastercut = cutcode[0]
-        self.assertTrue(isinstance(rastercut, RasterCut))
-        self.assertEqual(rastercut.offset_x, 100)
-        self.assertEqual(rastercut.offset_y, 100)
-        image = rastercut.image
-        self.assertTrue(isinstance(image, Image.Image))
-        self.assertIn(image.mode, ("L", "1"))
-        self.assertEqual(image.size, (3, 3))
-        self.assertEqual(rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z")
-
-    def test_cutcode_raster_crosshatch(self):
-        """
-        Convert CutCode from Raster operation, crosshatched
-
-        :return:
-        """
-        # Initialize with Raster Defaults, +crosshatch
-        rasterop = RasterOpNode(raster_direction=4, dpi=500)
-
-        # Add Path
-        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
-        path = Path(initial)
-        rasterop.add_node(PathNode(path))
-
-        # Add SVG Image
-        image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
-        draw = ImageDraw.Draw(image)
-        draw.ellipse((50, 50, 150, 150), "white")
-        draw.ellipse((100, 100, 105, 105), "black")
-        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0)
-        inode.step_x = 3
-        inode.step_y = 3
-
-        rasterop.add_node(inode)
-
-        for i in range(2):  # Check for knockon.
-            cutcode = CutCode(rasterop.as_cutobjects())
-            self.assertEqual(len(cutcode), 2)
-
-            rastercut0 = cutcode[0]
-            self.assertTrue(isinstance(rastercut0, RasterCut))
-            self.assertEqual(rastercut0.offset_x, 100)
-            self.assertEqual(rastercut0.offset_y, 100)
-            image0 = rastercut0.image
-            self.assertTrue(isinstance(image0, Image.Image))
-            self.assertIn(image0.mode, ("L", "1"))
-            self.assertEqual(image0.size, (3, 3))  # default step value 2, 6/2
-            self.assertEqual(
-                rastercut0.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
-            )
-
-            rastercut1 = cutcode[1]
-            self.assertTrue(isinstance(rastercut1, RasterCut))
-            self.assertEqual(rastercut1.offset_x, 100)
-            self.assertEqual(rastercut1.offset_y, 100)
-            image1 = rastercut1.image
-            self.assertTrue(isinstance(image1, Image.Image))
-            self.assertIn(image1.mode, ("L", "1"))
-            self.assertEqual(image1.size, (3, 3))  # default step value 2, 6/2
-            self.assertEqual(
-                rastercut1.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
-            )
-
-            self.assertIs(image0, image1)
+    # def test_cutcode_raster_crosshatch(self):
+    #     """
+    #     Convert CutCode from Raster operation, crosshatched
+    #
+    #     :return:
+    #     """
+    #     # Initialize with Raster Defaults, +crosshatch
+    #     rasterop = RasterOpNode(raster_direction=4, dpi=500)
+    #
+    #     # Add Path
+    #     initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+    #     path = Path(initial)
+    #     rasterop.add_node(PathNode(path))
+    #
+    #     # Add SVG Image
+    #     image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+    #     draw = ImageDraw.Draw(image)
+    #     draw.ellipse((50, 50, 150, 150), "white")
+    #     draw.ellipse((100, 100, 105, 105), "black")
+    #     inode = ImageNode(image=image, matrix=Matrix(), dpi=1000.0/3.0)
+    #     inode.step_x = 3
+    #     inode.step_y = 3
+    #
+    #     rasterop.add_node(inode)
+    #
+    #     for i in range(2):  # Check for knockon.
+    #         cutcode = CutCode(rasterop.as_cutobjects())
+    #         self.assertEqual(len(cutcode), 2)
+    #
+    #         rastercut0 = cutcode[0]
+    #         self.assertTrue(isinstance(rastercut0, RasterCut))
+    #         self.assertEqual(rastercut0.offset_x, 100)
+    #         self.assertEqual(rastercut0.offset_y, 100)
+    #         image0 = rastercut0.image
+    #         self.assertTrue(isinstance(image0, Image.Image))
+    #         self.assertIn(image0.mode, ("L", "1"))
+    #         self.assertEqual(image0.size, (3, 3))  # default step value 2, 6/2
+    #         self.assertEqual(
+    #             rastercut0.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+    #         )
+    #
+    #         rastercut1 = cutcode[1]
+    #         self.assertTrue(isinstance(rastercut1, RasterCut))
+    #         self.assertEqual(rastercut1.offset_x, 100)
+    #         self.assertEqual(rastercut1.offset_y, 100)
+    #         image1 = rastercut1.image
+    #         self.assertTrue(isinstance(image1, Image.Image))
+    #         self.assertIn(image1.mode, ("L", "1"))
+    #         self.assertEqual(image1.size, (3, 3))  # default step value 2, 6/2
+    #         self.assertEqual(
+    #             rastercut1.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+    #         )
+    #
+    #         self.assertIs(image0, image1)
 
     def test_cutcode_image(self):
         """
@@ -335,50 +335,50 @@ class TestCutcode(unittest.TestCase):
         self.assertEqual(image4.size, (14, 14))  # default step value 3, ceil(40/3) + 1
         self.assertEqual(rastercut2_0.path, "M 80,80 L 80,122 L 122,122 L 122,80 Z")
 
-    def test_cutcode_image_nostep(self):
-        """
-        Convert CutCode from Image Operation
-        Test default value without step.
-        Reuse Checks for Knockon-Effect
-
-        :return:
-        """
-        laserop = ImageOpNode()
-
-        # Add Path
-        initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
-        path = Path(initial)
-        laserop.add_node(PathNode(path))
-
-        # Add SVG Image1
-        image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
-        draw = ImageDraw.Draw(image)
-        draw.ellipse((50, 50, 150, 150), "white")
-        draw.ellipse((100, 100, 105, 105), "black")
-        inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
-        inode.step_x = 1
-        inode.step_y = 1
-        inode.process_image()
-        laserop.add_node(inode)
-
-        for i in range(4):
-            cutcode = CutCode(laserop.as_cutobjects())
-            self.assertEqual(len(cutcode), 1)
-
-            rastercut = cutcode[0]
-            self.assertTrue(isinstance(rastercut, RasterCut))
-            self.assertEqual(rastercut.offset_x, 100)
-            self.assertEqual(rastercut.offset_y, 100)
-            image = rastercut.image
-            self.assertTrue(isinstance(image, Image.Image))
-            self.assertIn(image.mode, ("L", "1"))
-            self.assertEqual(image.size, (6, 6))  # step value 1, 6/2
-            self.assertEqual(
-                rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
-            )
-
-            laserop.raster_step_x = i  # Raster_Step should be ignored, set for next loop
-            laserop.raster_step_y = i  # Raster_Step should be ignored, set for next loop
+    # def test_cutcode_image_nostep(self):
+    #     """
+    #     Convert CutCode from Image Operation
+    #     Test default value without step.
+    #     Reuse Checks for Knockon-Effect
+    #
+    #     :return:
+    #     """
+    #     laserop = ImageOpNode()
+    #
+    #     # Add Path
+    #     initial = "M 0,0 L 100,100 L 0,0 M 50,-50 L 100,-100 M 0,0 Q 100,100 200,0"
+    #     path = Path(initial)
+    #     laserop.add_node(PathNode(path))
+    #
+    #     # Add SVG Image1
+    #     image = Image.new("RGBA", (256, 256), (255, 255, 255, 0))
+    #     draw = ImageDraw.Draw(image)
+    #     draw.ellipse((50, 50, 150, 150), "white")
+    #     draw.ellipse((100, 100, 105, 105), "black")
+    #     inode = ImageNode(image=image, matrix=Matrix(), dpi=1000)
+    #     inode.step_x = 1
+    #     inode.step_y = 1
+    #     inode.process_image()
+    #     laserop.add_node(inode)
+    #
+    #     for i in range(4):
+    #         cutcode = CutCode(laserop.as_cutobjects())
+    #         self.assertEqual(len(cutcode), 1)
+    #
+    #         rastercut = cutcode[0]
+    #         self.assertTrue(isinstance(rastercut, RasterCut))
+    #         self.assertEqual(rastercut.offset_x, 100)
+    #         self.assertEqual(rastercut.offset_y, 100)
+    #         image = rastercut.image
+    #         self.assertTrue(isinstance(image, Image.Image))
+    #         self.assertIn(image.mode, ("L", "1"))
+    #         self.assertEqual(image.size, (6, 6))  # step value 1, 6/2
+    #         self.assertEqual(
+    #             rastercut.path, "M 100,100 L 100,106 L 106,106 L 106,100 Z"
+    #         )
+    #
+    #         laserop.raster_step_x = i  # Raster_Step should be ignored, set for next loop
+    #         laserop.raster_step_y = i  # Raster_Step should be ignored, set for next loop
 
     def test_cutcode_direction_flags(self):
         """
