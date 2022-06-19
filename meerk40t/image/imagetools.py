@@ -218,13 +218,13 @@ def plugin(kernel, lifecycle=None):
             elements.classify([node])
         return "image", data
 
-    @context.console_command(
-        "resample", help=_("Resample image"), input_type="image", output_type="image"
-    )
-    def image_resample(data, **kwargs):
-        for node in data:
-            node.make_actual()
-        return "image", data
+    # @context.console_command(
+    #     "resample", help=_("Resample image"), input_type="image", output_type="image"
+    # )
+    # def image_resample(data, **kwargs):
+    #     for node in data:
+    #         node.make_actual()
+    #     return "image", data
 
     @context.console_option("method", "m", type=str, default="Floyd-Steinberg")
     @context.console_command(
