@@ -66,8 +66,8 @@ class Scene(Module, Job):
         self.screen_refresh_lock = threading.Lock()
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
-        self.time = None
-        self.distance = None
+        self._down_start_time = None
+        self._down_start_pos = None
         self._cursor = None
         self._reference = None  # Reference Object
         self.attraction_points = []  # Clear all
@@ -483,7 +483,7 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type="", nearest_snap = None):
+    def event(self, window_pos, event_type="", nearest_snap=None):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -567,10 +567,10 @@ class Scene(Module, Job):
             "wheelup",
             "hover",
         ):
-            self.time = time.time()
+            self._down_start_time = time.time()
+            self._down_start_pos = window_pos
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-        old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -613,9 +613,8 @@ class Scene(Module, Job):
                         "Converted %s: %s" % ("hover_start", str(window_pos))
                     )
                 previous_top_element = current_widget
-            delta_time = time.time() - self.time
             if (
-                event_type == "leftup" and delta_time <= 0.30
+                event_type == "leftup" and time.time() - self._down_start_time <= 0.30 and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2])) < 50
             ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(window_pos, space_pos, "leftclick", nearest_snap)
                 if self.log_events:
@@ -623,8 +622,7 @@ class Scene(Module, Job):
             elif event_type == "leftup":
                 if self.log_events:
                     self.log_events(
-                        "Did not convert to click, event of my own right, %.2f"
-                        % delta_time
+                        f"Did not convert to click, {time.time() - self._down_start_time}"
                     )
                 response = current_widget.event(window_pos, space_pos, event_type, nearest_snap)
                 # print ("Leftup called for widget #%d" % i )
