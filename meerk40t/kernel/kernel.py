@@ -122,9 +122,7 @@ class Kernel(Settings):
         self.channels = {}
 
         # Console Commands.
-        self.commands = []
         self._console_buffer = ""
-        self.queue = []
         self._console_channel = self.channel("console", timestamp=True, ansi=True)
         self.console_channel_file = None
 
