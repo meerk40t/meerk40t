@@ -7075,12 +7075,6 @@ class Elemental(Service):
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
-        Classify does the placement of elements within operations.
-        "Image" is the default for images.
-        Typically,
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        However, this differs based on the ops in question.
         @param elements: list of elements to classify.
         @param operations: operations list to classify into.
         @param add_op_function: function to add a new operation, because of a lack of classification options.
@@ -7097,82 +7091,51 @@ class Elemental(Service):
             operations = list(self.ops())
         if add_op_function is None:
             add_op_function = self.add_op
+
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
             was_classified = False
-            # image_added code removed because it could never be used
             for op in operations:
-                # Are the colors identical? if the op is default then in any case
-                if op.type == "op console":
+                if hasattr(op, "classify"):
+                    classified, should_break = op.classify(node)
+                else:
                     continue
-                same_color = op.default
-                if hasattr(node, "stroke") and node.stroke is not None:
-                    # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
-                    # Remove opacity
-                    plain_color_op = abs(op.color)
-                    plain_color_node = abs(node.stroke)
-                    if plain_color_op == plain_color_node:
-                        same_color = True
-                # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
-                # print ("Color identical" if same_color else "Color different")
-                if op.type == "op raster":
-                    if same_color:
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem image":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem text":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif (
-                        hasattr(node, "fill")
-                        and node.fill is not None
-                        and node.fill.argb is not None
-                    ):
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type in ("op engrave", "op cut", "op hatch"):
-                    if same_color:
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type == "op image" and node.type == "elem image":
-                    op.add_reference(node)
+                if classified:
                     was_classified = True
-                    break  # May only classify in one image operation.
-                elif op.type == "op dots" and node.type == "elem point":
-                    op.add_reference(node)
-                    was_classified = True
-                    break  # May only classify in Dots.
+                if should_break:
+                    break
 
+            ######################
+            # NON-CLASSIFIED ELEMENTS
+            ######################
             if not was_classified:
-                # print("Was not classified: add new op...")
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None:
-                    # If it's plain red then make a cutop...
                     if (
-                        node.stroke.red == 0xFF
-                        and node.stroke.blue == 0
-                        and node.stroke.green == 0
+                            node.stroke.red == 0xFF
+                            and node.stroke.blue == 0
+                            and node.stroke.green == 0
                     ):
                         op = CutOpNode(color=node.stroke, speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
+
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
+
                 if (
-                    hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                        hasattr(node, "fill")
+                        and node.fill is not None
+                        and node.fill.argb is not None
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)

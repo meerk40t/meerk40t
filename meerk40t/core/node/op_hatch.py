@@ -5,11 +5,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
-from meerk40t.svgelements import Angle, Color, Matrix, Path
-from meerk40t.tools.pathtools import EulerianFill
-
-MILS_IN_MM = 39.3701
+from meerk40t.svgelements import Color, Path
 
 
 class HatchOpNode(Node, Parameters):
@@ -117,6 +113,20 @@ class HatchOpNode(Node, Parameters):
                 some_nodes = True
             return some_nodes
         return False
+
+    def classify(self, node):
+        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
+            plain_color_op = abs(self.color)
+            plain_color_node = abs(node.stroke)
+            if plain_color_op != plain_color_node:
+                return False, False
+        if node.type in "elem path":
+            if len(node.path) == 0:
+                return False, False  # Degenerate path does not classify.
+            if node.path[-1].d().lower() == "z":
+                self.add_reference(node)
+                return True, True
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

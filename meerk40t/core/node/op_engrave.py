@@ -120,11 +120,28 @@ class EngraveOpNode(Node, Parameters):
                 # Disallow drop of image elems onto a Dot op.
                 if drag_node.type == "elem image":
                     continue
-                # Add element to operation
+                # Add reference to element to operation
                 self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
+
+    def classify(self, node):
+        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
+            plain_color_op = abs(self.color)
+            plain_color_node = abs(node.stroke)
+            if plain_color_op != plain_color_node:
+                return False, False
+        if node.type in (
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+        ):
+            self.add_reference(node)
+            return True, False
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
