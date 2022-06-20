@@ -5213,12 +5213,28 @@ class Elemental(Service):
                 node.insert_sibling(n)
             node.remove_node()  # Removing group/file node.
 
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        @self.tree_operation(_("Elements in scene..."), node_type=elem_nodes, help="", enable=False)
+        def element_label(node, **kwargs):
+            return
+
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 group_node.append_child(e)
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
+            )
+            >= 1
+        )
+        @self.tree_operation(_("Remove all items from operation"), node_type=op_nodes, help="")
+        def clear_all_op_entries(node, **kwargs):
+            node.remove_all_children()
 
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
@@ -5365,7 +5381,7 @@ class Elemental(Service):
             node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
-        @self.tree_separator_after()
+        @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
             node_type=operate_nodes,
@@ -5406,68 +5422,145 @@ class Elemental(Service):
         # Calculate the amount of selected nodes in the tree:
         # If there are ops selected then they take precedence
         # and will only be counted
+
         @self.tree_conditional(
             lambda cond: len(
-                list(self.flat(selected=True, cascade=False, types=operate_nodes))
+                list(self.flat(selected=True, cascade=False, types=("reference")))
             )
-            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-            > 0
-            else len(
-                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
-            )
-            > 1
+            >= 1
         )
         @self.tree_calc(
             "ecount",
             lambda i: len(
-                list(self.flat(selected=True, cascade=False, types=operate_nodes))
+                list(self.flat(selected=True, cascade=False, types=("reference")))
             )
-            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-            > 0
-            else len(
-                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
-            ),
         )
         @self.tree_operation(
-            _("Remove %s selected items") % "{ecount}",
-            node_type=non_structural_nodes,
+            _("Remove %s selected items from operations") % "{ecount}",
+            node_type=("reference"),
             help="",
         )
-        def remove_multi_nodes(node, **kwargs):
-            if (
-                len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-                > 0
-            ):
-                types = operate_nodes
-            else:
-                types = elem_group_nodes
-            nodes = list(self.flat(selected=True, cascade=False, types=types))
+        def remove_multi_references(node, **kwargs):
+            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
             for node in nodes:
-                # If we are selecting an operation it also selects/emphasizes the
-                # contained elements - so both will be deleted...
-                # To circumvent this, we inquire once more the selected status...
-                if node.selected:
-                    if node.parent is not None:  # May have already removed.
-                        node.remove_node()
+                if node.parent is not None:  # May have already removed.
+                    node.remove_node()
             self.set_emphasis(None)
 
+        # @self.tree_conditional(
+        #     lambda cond: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     )
+        #     > 1
+        # )
+        # @self.tree_calc(
+        #     "ecount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "rcount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=("reference")))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "eloc",
+        #     lambda s: "operations"
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else "element-list",
+        # )
+        # @self.tree_operation(
+        #     _("Delete %s selected items from %s (Ref=%s)") % ("{ecount}", "{eloc}", "{rcount}"),
+        #     node_type=non_structural_nodes,
+        #     help="",
+        # )
+        # def remove_multi_nodes(node, **kwargs):
+        #     if (
+        #         len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #         > 0
+        #     ):
+        #         types = operate_nodes
+        #     else:
+        #         types = elem_group_nodes
+        #     nodes = list(self.flat(selected=True, cascade=False, types=types))
+        #     for node in nodes:
+        #         # If we are selecting an operation / an element within an operation, then it
+        #         # also selects/emphasizes the contained elements in the elements branch...
+        #         # So both will be deleted...
+        #         # To circumvent this, we inquire once more the selected status...
+        #         if node.selected:
+        #             if node.parent is not None:  # May have already removed.
+        #                 node.remove_node()
+        #     self.set_emphasis(None)
+
         # ==========
-        # REMOVE SINGLE (Tree Selected)
+        # REMOVE SINGLE (Tree Selected - ELEMENT)
         # ==========
         @self.tree_conditional(
             lambda cond: len(
                 list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                    self.flat(selected=True, cascade=False, types=elem_nodes)
                 )
             )
             == 1
         )
         @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=non_structural_nodes,
+            _("Delete element '%s' fully") % "{name}",
+            node_type=elem_nodes,
+            help="",
+        )
+        def remove_type_elem(node, **kwargs):
+
+            node.remove_node()
+            self.set_emphasis(None)
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=op_nodes)
+                )
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete operation '%s' fully") % "{name}",
+            node_type=op_nodes,
             help="",
         )
         def remove_type_op(node, **kwargs):
+
+            node.remove_node()
+            self.set_emphasis(None)
+
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=("file", "group"))
+                )
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete group '%s' and all its child-elements fully") % "{name}",
+            node_type=("file", "group"),
+            help="",
+        )
+        def remove_type_grp(node, **kwargs):
+
             node.remove_node()
             self.set_emphasis(None)
 
@@ -5487,7 +5580,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s operations") % "{ecount}",
+            _("Delete %s operations") % "{ecount}",
             node_type=(
                 "op cut",
                 "op raster",
@@ -5508,10 +5601,11 @@ class Elemental(Service):
         # ==========
         # REMOVE ELEMENTS
         # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        # More than one, special case == 1 already dealt with
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s elements") % "{ecount}",
+            _("Delete %s elements, as selected in scene") % "{ecount}",
             node_type=elem_group_nodes,
             help="",
         )
@@ -6531,7 +6625,7 @@ class Elemental(Service):
 
         return decor
 
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+    def tree_operation(self, name, node_type=None, help=None, enable=True, **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
@@ -6557,6 +6651,7 @@ class Elemental(Service):
             inner.user_prompt = list()
             inner.calcs = list()
             inner.values = [0]
+            inner.enabled = enable
             registered_name = inner.__name__
 
             for _in in ins:
