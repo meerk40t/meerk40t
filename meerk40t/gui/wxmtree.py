@@ -505,6 +505,44 @@ class ShadowTree:
 
         @return:
         """
+        def parse_tree(startnode, expansion, level):
+            if startnode is None:
+                return
+            cookie = 0
+            try:
+                pnode, cookie = self.wxtree.GetFirstChild(startnode)
+            except:
+                return
+            while pnode.IsOk():
+                txt = self.wxtree.GetItemText(pnode)
+                state = self.wxtree.IsExpanded(pnode)
+                if state:
+                    expansion.append("%d-%s" % (level, txt))
+                parse_tree(pnode, expansion, level + 1)
+                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+        def restore_tree(startnode, expansion, level):
+            if startnode is None:
+                return
+            cookie = 0
+            try:
+                pnode, cookie = self.wxtree.GetFirstChild(startnode)
+            except:
+                return
+            while pnode.IsOk():
+                txt = self.wxtree.GetItemText(pnode)
+                chk = "%d-%s" % (level, txt)
+                for elem in expansion:
+                    if chk == elem:
+                        self.wxtree.ExpandAllChildren(pnode)
+                        break
+                parse_tree(pnode, expansion, level + 1)
+                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+        # let's try to remember which branches were expanded:
+        were_expanded = []
+        parse_tree(self.wxtree.GetRootItem(), were_expanded, 0)
+        # print ("Expanded were: %s" % were_expanded)
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
@@ -542,6 +580,8 @@ class ShadowTree:
         # Restore emphasiss
         for e in emphasized_list:
             e.emphasized = True
+        restore_tree(self.wxtree.GetRootItem(), were_expanded, 0)
+
 
     def register_children(self, node):
         """
