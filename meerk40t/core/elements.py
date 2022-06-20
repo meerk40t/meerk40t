@@ -7009,6 +7009,8 @@ class Elemental(Service):
             for op in operations:
                 if hasattr(op, "classify"):
                     classified, should_break = op.classify(node)
+                else:
+                    continue
                 if classified:
                     was_classified = True
                     classified = False
