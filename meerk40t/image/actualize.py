@@ -33,6 +33,8 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
     assert step_x != 0
     assert step_y != 0
     assert isinstance(image, Image.Image)
+    if "transparency" in image.info:
+        image = image.convert("RGBA")
     try:
         # If transparency we paste 0 into the image where transparent.
         mask = image.getchannel("A").point(lambda e: 255 - e)
