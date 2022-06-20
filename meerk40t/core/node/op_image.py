@@ -152,8 +152,8 @@ class ImageOpNode(Node, Parameters):
             "elem image",
         ):
             self.add_reference(node)
-            return True
-        return False
+            return True, True
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

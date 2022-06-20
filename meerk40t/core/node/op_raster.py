@@ -159,21 +159,21 @@ class RasterOpNode(Node, Parameters):
                 same_color = True
         if same_color:
             self.add_reference(node)
-            return True
+            return True, True
         if node.type in (
             "elem image",
             "elem text",
         ):
             self.add_reference(node)
-            return True
+            return True, True
         if (
             hasattr(node, "fill")
             and node.fill is not None
             and node.fill.argb is not None
         ):
             self.add_reference(node)
-            return True
-        return False
+            return True, True
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

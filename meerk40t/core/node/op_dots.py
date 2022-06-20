@@ -106,13 +106,13 @@ class DotsOpNode(Node, Parameters):
             plain_color_op = abs(self.color)
             plain_color_node = abs(node.stroke)
             if plain_color_op != plain_color_node:
-                return False
+                return False, False
         if node.type in (
             "elem point",
         ):
             self.add_reference(node)
-            return True
-        return False
+            return True, True
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

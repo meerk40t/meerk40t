@@ -131,7 +131,7 @@ class EngraveOpNode(Node, Parameters):
             plain_color_op = abs(self.color)
             plain_color_node = abs(node.stroke)
             if plain_color_op != plain_color_node:
-                return False
+                return False, False
         if node.type in (
             "elem ellipse",
             "elem path",
@@ -140,8 +140,8 @@ class EngraveOpNode(Node, Parameters):
             "elem line",
         ):
             self.add_reference(node)
-            return True
-        return False
+            return True, False
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
