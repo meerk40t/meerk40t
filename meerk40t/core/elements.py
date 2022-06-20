@@ -7003,7 +7003,6 @@ class Elemental(Service):
                 add_op_function(node)
                 continue
             was_classified = False
-            # image_added code removed because it could never be used
             for op in operations:
                 if hasattr(op, "classify"):
                     classified, should_break = op.classify(node)

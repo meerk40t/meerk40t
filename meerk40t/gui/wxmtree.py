@@ -216,10 +216,10 @@ class ElementsTree(MWindow):
 
 class ShadowTree:
     """
-    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the elements
-    tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends any
-    requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.'operations' and when those are
-    reflected in the tree, the shadow tree is updated accordingly.
+    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the
+    elements tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends
+    any requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.operations' and when those
+    are reflected in the tree, the shadow tree is updated accordingly.
     """
 
     def __init__(self, service, gui, wxtree):
