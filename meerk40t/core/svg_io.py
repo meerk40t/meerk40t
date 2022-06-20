@@ -299,7 +299,7 @@ class SVGWriter:
                     text_dec += " overline"
                 if c.strikethrough:
                     text_dec += " line-through"
-                if len(text_dec)>0:
+                if len(text_dec) > 0:
                     text_dec.strip()
                     subelement.set("text-decoration", text_dec)
             elif c.type == "group":
@@ -474,9 +474,9 @@ class SVGProcessor:
         if not lc is None:
             nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
-            if lc==SVG_RULE_EVENODD:
+            if lc == SVG_RULE_EVENODD:
                 nlc = Fillrule.FILLRULE_EVENODD
-            elif lc==SVG_RULE_NONZERO:
+            elif lc == SVG_RULE_NONZERO:
                 nlc = Fillrule.FILLRULE_NONZERO
             node.fillrule = nlc
 
@@ -484,33 +484,29 @@ class SVGProcessor:
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
         if not lc is None:
             nlc = Linecap.CAP_ROUND
-            if lc=="butt":
+            if lc == "butt":
                 nlc = Linecap.CAP_BUTT
-            elif lc=="round":
+            elif lc == "round":
                 nlc = Linecap.CAP_ROUND
-            elif lc=="square":
+            elif lc == "square":
                 nlc = Linecap.CAP_SQUARE
             node.linecap = nlc
         lj = element.values.get(SVG_ATTR_STROKE_JOIN)
         if not lj is None:
             nlj = Linejoin.JOIN_MITER
-            if lj=="arcs":
+            if lj == "arcs":
                 nlj = Linejoin.JOIN_ARCS
-            elif lj=="bevel":
+            elif lj == "bevel":
                 nlj = Linejoin.JOIN_BEVEL
-            elif lj=="miter":
+            elif lj == "miter":
                 nlj = Linejoin.JOIN_MITER
-            elif lj=="miter-clip":
+            elif lj == "miter-clip":
                 nlj = Linejoin.JOIN_MITER_CLIP
-            elif lj=="round":
+            elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
 
     def parse(self, element, context_node, e_list):
-        # print ("Parse element: %s" % vars(element))
-        # for key in element.values:
-        #     entry = element.values.get(key)
-        #     print ("Key=%s, Entry=%s" % ( key, entry ))
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
@@ -529,7 +525,13 @@ class SVGProcessor:
                             node.font_style = svl
                         elif svl in ("lighter", "bold", "bolder"):
                             node.text.font_weight = svl
-                        elif svl in ("fantasy", "serif", "cursive", "sans-serif", "monospace"):
+                        elif svl in (
+                            "fantasy",
+                            "serif",
+                            "cursive",
+                            "sans-serif",
+                            "monospace",
+                        ):
                             node.text.font_family = svl
                 fst = element.values.get("font-style")
                 if not fst is None:
@@ -540,9 +542,9 @@ class SVGProcessor:
                 fst = element.values.get("text-decoration")
                 if not fst is None:
                     fst = fst.lower()
-                    node.underline = ("underline" in fst)
-                    node.overline = ("overline" in fst)
-                    node.strikethrough = ("line-through" in fst)
+                    node.underline = "underline" in fst
+                    node.overline = "overline" in fst
+                    node.strikethrough = "line-through" in fst
                 fst = element.values.get(SVG_ATTR_TEXT_ANCHOR)
                 if not fst is None:
                     node.text.anchor = fst
