@@ -828,7 +828,6 @@ class ShadowTree:
             event.Skip()
         else:
             event.Allow()
-            self.rebuild_tree()
         self.dragging_nodes = None
 
     def on_item_right_click(self, event):
