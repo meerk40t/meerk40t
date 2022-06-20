@@ -1051,7 +1051,7 @@ class SizePanel(wx.Panel):
                     self.object_ratio = self.object_width / self.object_height
                 except ZeroDivisionError:
                     self.object_ratio = 0
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 pass
 
         if self.object_width is not None:
