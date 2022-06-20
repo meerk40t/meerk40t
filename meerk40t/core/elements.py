@@ -7002,9 +7002,7 @@ class Elemental(Service):
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
-            classified = False
             was_classified = False
-            should_break = False
             # image_added code removed because it could never be used
             for op in operations:
                 if hasattr(op, "classify"):
@@ -7013,7 +7011,6 @@ class Elemental(Service):
                     continue
                 if classified:
                     was_classified = True
-                    classified = False
                 if should_break:
                     break
 
@@ -7050,7 +7047,6 @@ class Elemental(Service):
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
-
 
     def add_classify_op(self, op):
         """
