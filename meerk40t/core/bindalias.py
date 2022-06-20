@@ -412,7 +412,7 @@ class Alias(Service):
             if command in self.aliases:
                 aliased_command = self.aliases[command]
                 for cmd in aliased_command.split(";"):
-                    self("%s\n" % cmd)
+                    self(f"{cmd}\n")
             else:
                 raise CommandMatchRejected(_("This is not an alias."))
 
