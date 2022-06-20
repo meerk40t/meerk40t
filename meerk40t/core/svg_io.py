@@ -645,16 +645,17 @@ class SVGProcessor:
                 self.elements.signal("note", self.pathname)
                 return
             node_type = element.values.get("type")
+            if node_type is None or node_type == "op":
+                # Meerk40t 0.7.x fallback node types.
+                op_type = element.values.get("operation")
+                if op_type is None:
+                    return
+                node_type = f"op {op_type.lower()}"
+
             if node_type is not None:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
                 if tag == "operation":
-                    if node_type == "op":
-                        # Meerk40t 0.7.x fallback node types.
-                        op_type = element.values.get("operation")
-                        if op_type is None:
-                            return
-                        node_type = "op %s" % op_type.lower()
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
@@ -678,7 +679,7 @@ class SVGProcessor:
                         pass
                     op.id = node_id
                 # Check if SVGElement: element
-                if tag == "element":
+                elif tag == "element":
                     elem = context_node.add(type=node_type)
                     elem.settings.update(element.values)
                     try:
