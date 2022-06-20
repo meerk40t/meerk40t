@@ -120,9 +120,9 @@ class HatchOpNode(Node, Parameters):
             plain_color_node = abs(node.stroke)
             if plain_color_op != plain_color_node:
                 return False, False
-        if node.type in (
-            "elem path",
-        ):
+        if node.type in "elem path":
+            if len(node.path) == 0:
+                return False, False  # Degenerate path does not classify.
             if node.path[-1].d().lower() == "z":
                 self.add_reference(node)
                 return True, True
