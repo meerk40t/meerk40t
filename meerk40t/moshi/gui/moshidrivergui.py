@@ -120,8 +120,8 @@ class MoshiConfigurationPanel(wx.Panel):
         self, event
     ):  # wxGlade: MoshiDriverGui.<event_handler>
         current_x, current_y = self.context.device.current
-        self.context.home_x = Length(amount=current_x).length_mm
-        self.context.home_y = Length(amount=current_y).length_mm
+        self.context.home_x = "%.1fmm" % Length(amount=current_x).mm
+        self.context.home_y = "%.1fmm" % Length(amount=current_y).mm
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 
