@@ -304,16 +304,22 @@ class SVGWriter:
                     subelement.set("text-decoration", text_dec)
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
-                SVGWriter._write_elements(xml_tree, c)
+                group_element = SubElement(xml_tree, SVG_TAG_GROUP)
+                SVGWriter._write_elements(group_element, c)
                 continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
                 continue
             else:
+                # This is a non-standard element. Save custom.
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
                 continue
+
+            ###############
+            # SAVE STROKE
+            ###############
             if hasattr(element, "stroke"):
                 stroke = element.stroke
             else:
@@ -338,6 +344,9 @@ class SVGWriter:
                 except AttributeError:
                     pass
 
+            ###############
+            # SAVE FILL
+            ###############
             if hasattr(element, "fill"):
                 fill = element.fill
             else:
