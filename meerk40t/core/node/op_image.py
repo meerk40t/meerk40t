@@ -147,6 +147,14 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def classify(self, node):
+        if node.type in (
+            "elem image",
+        ):
+            self.add_reference(node)
+            return True
+        return False
+
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
