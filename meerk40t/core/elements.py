@@ -5275,6 +5275,14 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Apply raster script"))
+        @self.tree_operation(
+            _("Set to None") , node_type="elem image", help=""
+        )
+        def image_rasterwizard_apply_none(node, **kwargs):
+            node.operations = []
+            node.update(self)
+
+        @self.tree_submenu(_("Apply raster script"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
