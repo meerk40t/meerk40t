@@ -5,7 +5,6 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import Color, Path, Polygon
 
 MILS_IN_MM = 39.3701

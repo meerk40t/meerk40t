@@ -6,8 +6,6 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import Color
 
-MILS_IN_MM = 39.3701
-
 
 class DotsOpNode(Node, Parameters):
     """
