@@ -5623,6 +5623,17 @@ class Elemental(Service):
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
+        @self.tree_operation(
+            _("Convert to Elements"),
+            node_type="blob",
+            help="",
+        )
+        def blob2path(node, **kwargs):
+            emulator_class = kernel.lookup(f"emulator/{node.data_type}")
+            emulator = emulator_class()
+            emulator.parse(node.data, self)
+            return True
+
         @self.tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
         @self.tree_operation(
             _("Convert to Cutcode"),
