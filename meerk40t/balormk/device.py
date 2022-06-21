@@ -819,11 +819,11 @@ class BalorDevice(Service, ViewPort):
         def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Looping job: {job}".format(job=str(data)))
 
-            def gen():
+            def looping_job():
                 yield "light", data
                 yield "wait_finished"
 
-            self.spooler.set_idle(gen)
+            self.spooler.set_idle(looping_job)
             return "balor", data
 
         @self.console_argument("x", type=float, default=0.0)
