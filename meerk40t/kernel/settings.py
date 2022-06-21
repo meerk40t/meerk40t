@@ -63,6 +63,8 @@ class Settings:
                 for key in section:
                     value = section[key]
                     try:
+                        if "%" in value:
+                            value = value.replace("%", "%%")
                         parser.set(section_key, key, value)
                     except NoSectionError:
                         parser.add_section(section_key)

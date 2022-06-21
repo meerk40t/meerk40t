@@ -124,7 +124,7 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     return create_menu_for_choices(gui, choices)
 
 
-def create_menu_for_node(gui, node, elements) -> wx.Menu:
+def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Menu:
     """
     Create menu for a particular node. Does not invoke the menu.
 
@@ -146,6 +146,70 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
             f(node, **func_dict)
 
         return specific
+    # Check specifically for the optional first (use case: reference nodes)
+    if not optional_2nd_node is None:
+        mc1 = menu.MenuItemCount
+        last_was_separator = False
+        for func in elements.tree_operations_for_node(optional_2nd_node):
+            submenu_name = func.submenu
+            submenu = None
+            if submenu_name in submenus:
+                submenu = submenus[submenu_name]
+            else:
+                if submenu_name is not None:
+                    last_was_separator = False
+                    submenu = wx.Menu()
+                    menu.AppendSubMenu(submenu, submenu_name, func.help)
+                    submenus[submenu_name] = submenu
+
+            menu_context = submenu if submenu is not None else menu
+            if func.separate_before:
+                last_was_separator = True
+                menu_context.AppendSeparator()
+            if func.reference is not None:
+                menu_context.AppendSubMenu(
+                    create_menu_for_node(gui, func.reference(optional_2nd_node), elements, optional_2nd_node),
+                    func.real_name,
+                )
+                continue
+            if func.radio_state is not None:
+                last_was_separator = False
+                item = menu_context.Append(
+                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO
+                )
+                check = func.radio_state
+                item.Check(check)
+                if check and menu_context not in radio_check_not_needed:
+                    radio_check_not_needed.append(menu_context)
+                if func.enabled:
+                    gui.Bind(
+                        wx.EVT_MENU,
+                        menu_functions(func, optional_2nd_node),
+                        item,
+                    )
+                else:
+                    item.Enable(False)
+            else:
+                last_was_separator = False
+                item = menu_context.Append(
+                        wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
+                    )
+                if func.enabled:
+                    gui.Bind(
+                        wx.EVT_MENU,
+                        menu_functions(func, node),
+                        item,
+                    )
+                else:
+                    item.Enable(False)
+                if menu_context not in radio_check_not_needed:
+                    radio_check_not_needed.append(menu_context)
+            if not submenu and func.separate_after:
+                last_was_separator = True
+                menu.AppendSeparator()
+        mc2 = menu.MenuItemCount
+        if not last_was_separator and  mc2 - mc1 >0:
+            menu.AppendSeparator()
 
     for func in elements.tree_operations_for_node(node):
         submenu_name = func.submenu
@@ -171,23 +235,31 @@ def create_menu_for_node(gui, node, elements) -> wx.Menu:
             item = menu_context.Append(
                 wx.ID_ANY, func.real_name, func.help, wx.ITEM_RADIO
             )
-            gui.Bind(
-                wx.EVT_MENU,
-                menu_functions(func, node),
-                item,
-            )
             check = func.radio_state
             item.Check(check)
             if check and menu_context not in radio_check_not_needed:
                 radio_check_not_needed.append(menu_context)
+            if func.enabled:
+                gui.Bind(
+                    wx.EVT_MENU,
+                    menu_functions(func, node),
+                    item,
+                )
+            else:
+                item.Enable(False)
         else:
-            gui.Bind(
-                wx.EVT_MENU,
-                menu_functions(func, node),
-                menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
-                ),
+            item = menu_context.Append(
+                wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
             )
+            if func.enabled:
+                gui.Bind(
+                    wx.EVT_MENU,
+                    menu_functions(func, node),
+                    item,
+                )
+            else:
+                item.Enable(False)
+
             if menu_context not in radio_check_not_needed:
                 radio_check_not_needed.append(menu_context)
         if not submenu and func.separate_after:
@@ -215,9 +287,13 @@ def create_menu(gui, node, elements):
     """
     if node is None:
         return
+    # Is it a reference object?
+    optional_node = None
     if hasattr(node, "node"):
+        optional_node = node
         node = node.node
-    menu = create_menu_for_node(gui, node, elements)
+
+    menu = create_menu_for_node(gui, node, elements, optional_node)
     if menu.MenuItemCount != 0:
         gui.PopupMenu(menu)
         menu.Destroy()

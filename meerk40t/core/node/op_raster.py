@@ -93,9 +93,7 @@ class RasterOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
-        default_map["penpass"] = (
-            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
-        )
+        default_map["penpass"] = f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
@@ -152,6 +150,31 @@ class RasterOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def classify(self, node):
+        same_color = self.default
+        if not same_color and hasattr(node, "stroke") and node.stroke is not None:
+            plain_color_op = abs(self.color)
+            plain_color_node = abs(node.stroke)
+            if plain_color_op != plain_color_node:
+                same_color = True
+        if same_color:
+            self.add_reference(node)
+            return True, True
+        if node.type in (
+            "elem image",
+            "elem text",
+        ):
+            self.add_reference(node)
+            return True, True
+        if (
+            hasattr(node, "fill")
+            and node.fill is not None
+            and node.fill.argb is not None
+        ):
+            self.add_reference(node)
+            return True, True
+        return False, False
+
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
@@ -207,23 +230,14 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        dpi = self.dpi
-        oneinch_x = float(Length("1in"))
-        oneinch_y = float(Length("1in"))
-        transformed_step = matrix.transform_vector([oneinch_x, oneinch_y])
-        self.raster_step_x = transformed_step[0] / dpi
-        self.raster_step_y = transformed_step[1] / dpi
+
+        # Calculate raster steps from DPI device context
+        step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+        self.raster_step_x, self.raster_step_y = step_x, step_y
 
         if len(self.children) == 0:
             return
         if len(self.children) == 1 and self.children[0].type == "elem image":
-            dpi = float(self.settings.get("dpi", 500))
-            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
-            self.settings["raster_step_x"] = step_x
-            self.settings["raster_step_y"] = step_y
             node = self.children[0]
             node.step_x = step_x
             node.step_y = step_y
@@ -276,9 +290,7 @@ class RasterOpNode(Node, Parameters):
             image = image.convert("L")
             matrix = Matrix.scale(step_x, step_y)
             matrix.post_translate(bounds[0], bounds[1])
-            image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
-            )
+            image_node = ImageNode(image=image, matrix=matrix)
             self.children.clear()
             self.add_node(image_node)
 
@@ -303,6 +315,8 @@ class RasterOpNode(Node, Parameters):
         # Set steps
         step_x = self.raster_step_x
         step_y = self.raster_step_y
+        assert step_x != 0
+        assert step_y != 0
 
         # Set variables by direction
         direction = self.raster_direction
@@ -330,14 +344,9 @@ class RasterOpNode(Node, Parameters):
                 continue
 
             # Perform correct actualization
-            osx = image_node.step_x
-            osy = image_node.step_y
             image_node.step_x = step_x
             image_node.step_y = step_y
-            if image_node.needs_actualization():
-                image_node.make_actual()
-            image_node.step_x = osx
-            image_node.step_y = osy
+            image_node.process_image()
 
             # Set variables
             matrix = image_node.matrix

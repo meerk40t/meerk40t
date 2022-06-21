@@ -506,9 +506,6 @@ class Planner(Service):
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
-                elif c.type == "blob":
-                    # BlobNodes are denuded into normal objects.
-                    c = c.blob
                 copy_c = copy(c)
                 try:
                     copy_c.copy_children_as_real(c)
@@ -753,7 +750,10 @@ class Planner(Service):
                     y_last = y_pos
                     x_pos += x_distance
                 y_pos += y_distance
+            y_pos -= y_distance
+            x_pos -= x_distance
             if x_pos != 0 or y_pos != 0:
+                data.plan.append(origin)
                 data.plan.append(offset(-x_pos, -y_pos))
             data.plan.extend(post_plan)
             self.signal("plan", data.name, None)

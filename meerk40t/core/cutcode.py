@@ -49,6 +49,9 @@ class CutObject(Parameters):
         self.next = None
         self.previous = None
         self.passes = passes
+        if passes != 1:
+            # If passes is greater than 1 we must flag custom passes as on.
+            self.passes_custom = True
         self._burns_done = 0
 
         self.mode = None
@@ -177,7 +180,7 @@ class CutObject(Parameters):
             if isinstance(c, CutGroup):
                 if c.burn_started:
                     return True
-            elif c.burns_done == c.passes:
+            elif c.burns_done == c.implicit_passes:
                 return True
         return False
 
@@ -185,7 +188,7 @@ class CutObject(Parameters):
         if self.contains is None:
             return False
         for c in self.contains:
-            if c.burns_done < c.passes:
+            if c.burns_done < c.implicit_passes:
                 return True
         return False
 
@@ -193,11 +196,11 @@ class CutObject(Parameters):
         yield self
 
     def candidate(self):
-        if self.burns_done < self.passes:
+        if self.burns_done < self.implicit_passes:
             yield self
 
     def is_burned(self):
-        return self.burns_done == self.passes
+        return self.burns_done == self.implicit_passes
 
 
 class CutGroup(list, CutObject, ABC):
@@ -315,17 +318,17 @@ class CutGroup(list, CutObject, ABC):
             # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
             if complete_path and not grp.closed and isinstance(grp, CutGroup):
-                if grp[0].burns_done < grp[0].passes:
+                if grp[0].burns_done < grp[0].implicit_passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
-                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].implicit_passes:
                     yield grp[-1]
                 continue
             # If we are either burning any path segment
             # or this is a closed path
             # then we should yield all segments.
             for seg in grp.flat():
-                if seg is not None and seg.burns_done < seg.passes:
+                if seg is not None and seg.burns_done < seg.implicit_passes:
                     yield seg
 
 
@@ -532,7 +535,7 @@ class LineCut(CutObject):
         self.raster_step = 0
 
     def __repr__(self):
-        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
+        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
 
     def generator(self):
         # pylint: disable=unsubscriptable-object

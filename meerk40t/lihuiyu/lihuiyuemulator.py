@@ -1,14 +1,17 @@
 from meerk40t.core.cutcode import CutCode, RawCut
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.kernel import Module
+from meerk40t.numpath import Numpath
+from meerk40t.svgelements import Color
 
 
-class LhystudiosEmulator(Module):
+class LihuiyuEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.context.setting(bool, "fix_speeds", False)
 
-        self.parser = LhystudiosParser()
+        self.parser = LihuiyuParser()
         self.parser.fix_speeds = self.context.fix_speeds
         self.parser.channel = self.context.channel("lhy")
 
@@ -21,7 +24,7 @@ class LhystudiosEmulator(Module):
         self.parser.position = pos
 
     def __repr__(self):
-        return "LhystudiosEmulator(%s)" % self.name
+        return "LihuiyuEmulator(%s)" % self.name
 
     def initialize(self, *args, **kwargs):
         context = self.context
@@ -36,9 +39,9 @@ class LhystudiosEmulator(Module):
         send.unwatch(self.parser.write_packet)
 
 
-class LhystudiosParser:
+class LihuiyuParser:
     """
-    LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
+    LihuiyuParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
     When the position is changed it calls a self.position() function if one exists.
     """
 
@@ -79,6 +82,24 @@ class LhystudiosParser:
         self.fix_speeds = False
         self.number_consumer = {}
 
+    def parse(self, data, elements):
+        self.path = Numpath()
+
+        def position(p):
+            if p is None:
+                return
+            from_x, from_y, to_x, to_y = p
+
+            if self.program_mode:
+                if self.laser:
+                    self.path.line(complex(from_x,from_y), complex(to_x,to_y))
+
+        self.position = position
+        self.write(data)
+        self.path.uscale(UNITS_PER_MIL)
+        elements.elem_branch.add(type="elem numpath", path=self.path, stroke=Color("black"), **self.settings.settings)
+        elements.signal("refresh_scene", 0)
+
     @property
     def program_mode(self):
         return self.compact_state
@@ -118,7 +139,7 @@ class LhystudiosParser:
         if self.header_skipped:
             self.write(data)
         else:
-            data = LhystudiosParser.remove_header(data)
+            data = LihuiyuParser.remove_header(data)
             self.write(data)
 
     def write_packet(self, packet):
@@ -420,7 +441,7 @@ class EGVBlob:
         return "EGV(%s, %d bytes)" % (self.name, len(self.data))
 
     def as_cutobjects(self):
-        parser = LhystudiosParser()
+        parser = LihuiyuParser()
         self._cutcode = CutCode()
         self._cut = RawCut()
 
@@ -453,10 +474,24 @@ class EGVBlob:
         return cutcode
 
     def generate(self):
-        yield "blob", "egv", LhystudiosParser.remove_header(self.data)
+        yield "blob", "egv", LihuiyuParser.remove_header(self.data)
 
 
 class EgvLoader:
+    @staticmethod
+    def remove_header(data):
+        count_lines = 0
+        count_flag = 0
+        for i in range(len(data)):
+            b = data[i]
+            c = chr(b)
+            if c == "\n":
+                count_lines += 1
+            elif c == "%":
+                count_flag += 1
+            if count_lines >= 3 and count_flag >= 5:
+                return data[i:]
+
     @staticmethod
     def load_types():
         yield "Engrave Files", ("egv",), "application/x-egv"
@@ -467,8 +502,11 @@ class EgvLoader:
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            blob = EGVBlob(bytearray(f.read()), basename)
             op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(blob, type="blob")
-            kernel.root.close(basename)
+            op_branch.add(
+                data=bytearray(EgvLoader.remove_header(f.read())),
+                data_type="egv",
+                type="blob",
+                name=basename,
+            )
         return True
