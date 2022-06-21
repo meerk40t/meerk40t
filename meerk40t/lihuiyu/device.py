@@ -38,7 +38,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
-from .lihuiyuemulator import EgvLoader, LihuiyuEmulator
+from .lihuiyuemulator import EgvLoader, LihuiyuEmulator, LihuiyuParser
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -77,7 +77,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
-        kernel.register("emulator/egv", LihuiyuEmulator)
+        kernel.register("parser/egv", LihuiyuParser)
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):

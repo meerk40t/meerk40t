@@ -46,7 +46,7 @@ def plugin(kernel, lifecycle=None):
 
         _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
-        kernel.register("emulator/ruida", RuidaEmulator)
+        kernel.register("parser/ruida", RuidaParser)
 
         @kernel.console_option(
             "verbose",
@@ -284,6 +284,14 @@ class RuidaDevice(Service, ViewPort):
                 channel(_("----------"))
 
             return "spooler", spooler
+
+
+class RuidaParser:
+    def __init__(self):
+        pass
+
+    def parse(self, data, elements):
+        pass
 
 
 class RuidaEmulator(Module, Parameters):
