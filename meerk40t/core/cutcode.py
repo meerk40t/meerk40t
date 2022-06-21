@@ -49,6 +49,9 @@ class CutObject(Parameters):
         self.next = None
         self.previous = None
         self.passes = passes
+        if passes != 1:
+            # If passes is greater than 1 we must flag custom passes as on.
+            self.passes_custom = True
         self._burns_done = 0
 
         self.mode = None
@@ -177,7 +180,7 @@ class CutObject(Parameters):
             if isinstance(c, CutGroup):
                 if c.burn_started:
                     return True
-            elif c.burns_done == c.passes:
+            elif c.burns_done == c.implicit_passes:
                 return True
         return False
 
@@ -185,7 +188,7 @@ class CutObject(Parameters):
         if self.contains is None:
             return False
         for c in self.contains:
-            if c.burns_done < c.passes:
+            if c.burns_done < c.implicit_passes:
                 return True
         return False
 
@@ -193,11 +196,11 @@ class CutObject(Parameters):
         yield self
 
     def candidate(self):
-        if self.burns_done < self.passes:
+        if self.burns_done < self.implicit_passes:
             yield self
 
     def is_burned(self):
-        return self.burns_done == self.passes
+        return self.burns_done == self.implicit_passes
 
 
 class CutGroup(list, CutObject, ABC):
@@ -532,7 +535,7 @@ class LineCut(CutObject):
         self.raster_step = 0
 
     def __repr__(self):
-        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
+        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
 
     def generator(self):
         # pylint: disable=unsubscriptable-object
