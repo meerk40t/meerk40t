@@ -2,7 +2,7 @@ import time
 
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.controller import BalorController
-from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
+from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut, DwellCut, WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.fill.fills import Wobble
@@ -271,6 +271,10 @@ class BalorDriver:
                             )
                             job.set_power(current_power * on)
                     job.mark(x, y)
+            elif isinstance(q, DwellCut):
+                pass
+            elif isinstance(q, WaitCut):
+                pass
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():

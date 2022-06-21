@@ -19,7 +19,7 @@ class WaitOperation(Node):
 
     @property
     def wait(self):
-        return self.settings.get("wait")
+        return float(self.settings.get("wait"))
 
     @property
     def output(self):
@@ -45,6 +45,10 @@ class WaitOperation(Node):
         return WaitOperation(self.wait)
 
     def __len__(self):
+        return 1
+
+    @property
+    def implicit_passes(self):
         return 1
 
     def default_map(self, default_map=None):

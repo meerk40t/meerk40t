@@ -173,7 +173,7 @@ class CutPlan:
                     if not hasattr(op, "type"):
                         blob_plan.append(op)
                         continue
-                    if not op.type.startswith("op") or op.type == "op console" or op.type == "op wait":
+                    if not op.type.startswith("op") or op.type == "op console":
                         blob_plan.append(op)
                         continue
                     if op.type == "op dots":
