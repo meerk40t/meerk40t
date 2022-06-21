@@ -322,52 +322,51 @@ class Sender:
         it can be a callable that provides data as above on command."""
         self._terminate_execution = False
         with self._lock:
-            while self.is_busy():
-                time.sleep(self.sleep_time)
-                if self._terminate_execution:
-                    return False
-            while not self.is_ready():
-                time.sleep(self.sleep_time)
-                if self._terminate_execution:
-                    return False
-
+            self.wait_finished()
+            self.raw_reset_list()
             self.port_on(bit=0)
             if command_list.movement:
                 self.raw_fiber_open_mo(1, 0)
-
             loop_index = 0
             while loop_index < loop_count:
+                packet_count = 0
                 if command_list.tick is not None:
                     command_list.tick(command_list, loop_index)
-                self.raw_reset_list()
-                execute_list = False
-                packet_count = 0
+
                 for packet in command_list.packet_generator():
                     if self._terminate_execution:
                         return False
-                    self._send_command(GET_REGISTER, 0x0001 if not execute_list else 0x0000)  # 0x0007
-                    self._usb_connection.send_list_chunk(packet)
 
+                    ready = False
+                    while not ready:
+                        # Wait until ready.
+                        if self._terminate_execution:
+                            return False
+                        self._send_command(GET_REGISTER, 0x0001 if not execute_list else 0x0000)  # 0x0007
+                        ready = bool(self._usb_connection.status & 0x20)
+
+                    self._usb_connection.send_list_chunk(packet)
                     self.raw_set_end_of_list(0x0001 if not execute_list else 0x0000)  # 0x00019
-                    if packet_count == 1:
-                        self.raw_execute_list()  # 0x0005
+                    if not execute_list and packet_count >= 1:
+                        self.raw_execute_list()
                         execute_list = True
                     packet_count += 1
 
-                if not execute_list:
-                    self.raw_execute_list()
-
                 # when done, SET_END_OF_LIST(0), SET_CONTROL_MODE(1), 7(1)
-                self.raw_set_end_of_list(0, 0)
                 self.raw_set_control_mode(1, 0)
-                self._send_command(GET_REGISTER, 0x0001)  # 0x0007
-
-                while self.is_busy():
+                busy = True
+                while busy:
+                    # Wait until no longer busy.
                     if self._terminate_execution:
-                        if command_list.movement:
-                            self.raw_fiber_open_mo(0, 0)
                         return False
+                    self._send_command(GET_REGISTER, 0x0001)  # 0x0007
+                    bool(self._usb_connection.status & 0x04)
                 loop_index += 1
+            self.port_on(bit=0)
+            # self.raw_set_standby(0x70D0, 0x0014)
+            if command_list.movement:
+                self.raw_fiber_open_mo(0, 0)
+
         if command_list.movement:
             self.raw_fiber_open_mo(0, 0)
         if callback_finished is not None:
