@@ -43,5 +43,12 @@ class BlobNode(Node):
     def drop(self, drag_node):
         return False
 
+    def allow_save(self):
+        """
+        Returns false to prevent saving of blob types into operations.
+        @return:
+        """
+        return False
+
     def generate(self):
         yield "blob", self.data_type, self.data

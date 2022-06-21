@@ -6395,6 +6395,9 @@ class Elemental(Service):
         settings = self.op_data
         settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
+            if hasattr(op, "allow_save"):
+                if not op.allow_save():
+                    continue
             section = "%s %06i" % (name, i)
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
