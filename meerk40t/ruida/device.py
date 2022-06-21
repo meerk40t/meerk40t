@@ -46,6 +46,7 @@ def plugin(kernel, lifecycle=None):
 
         _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
+        kernel.register("emulator/ruida", RuidaEmulator)
         kernel.register("parser/ruida", RuidaParser)
 
         @kernel.console_option(

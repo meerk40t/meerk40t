@@ -77,6 +77,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
+        kernel.register("emulator/lhystudios", LihuiyuEmulator)
         kernel.register("parser/egv", LihuiyuParser)
     if lifecycle == "preboot":
         suffix = "lhystudios"
@@ -668,7 +669,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             try:
-                self.open_as("emulator/egv", "lhyemulator")
+                self.open_as("emulator/lhystudios", "lhyemulator")
                 channel(_("Lhystudios Emulator attached to %s" % str(self)))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
