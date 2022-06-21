@@ -288,6 +288,7 @@ class CommandSequencer:
             return
         try:
             table = self._read_correction_file(filename)
+            self._write_correction_table(table)
         except IOError:
             self.write_blank_correct_file()
             return
