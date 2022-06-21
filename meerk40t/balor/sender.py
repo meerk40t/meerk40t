@@ -352,7 +352,9 @@ class Sender:
                         self.raw_execute_list()
                         execute_list = True
                     packet_count += 1
-
+                if not execute_list:
+                    self.raw_execute_list()
+                    execute_list = True
                 # when done, SET_END_OF_LIST(0), SET_CONTROL_MODE(1), 7(1)
                 self.raw_set_control_mode(1, 0)
                 busy = True
