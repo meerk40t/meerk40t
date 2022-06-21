@@ -15,6 +15,7 @@ class BalorDriver:
         self.native_y = 0x8000
         self.name = str(self.service)
         self.connection = BalorController(service)
+        self.service.add_service_delegate(self.connection)
         self.paused = False
 
         self.connected = False

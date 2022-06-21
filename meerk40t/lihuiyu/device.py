@@ -2155,6 +2155,8 @@ class LhystudiosController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:

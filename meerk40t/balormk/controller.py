@@ -54,7 +54,7 @@ class BalorController:
 
     def shutdown(self, *args, **kwargs):
         if self._thread is not None:
-            self.do_shutdown = True
+            self.is_shutdown = True
 
     def write(self, job):
         """
@@ -232,6 +232,8 @@ class BalorController:
                     self.service.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.service.signal("pipe;failing", self.refuse_counts)
                 self.service.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except BalorCommunicationException:
