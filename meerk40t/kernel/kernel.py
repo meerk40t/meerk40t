@@ -2906,6 +2906,14 @@ class Kernel(Settings):
                     )
                 )
                 return
+            if directory == "`":
+                self.current_directory = get_safe_path(self.name)
+                channel(
+                    _("Configuration Directory: {dir}").format(
+                        dir=str(self.current_directory)
+                    )
+                )
+                return
             if directory == "@":
                 import sys
 
