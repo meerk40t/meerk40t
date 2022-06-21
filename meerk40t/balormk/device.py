@@ -650,6 +650,7 @@ class BalorDevice(Service, ViewPort):
                     + 1 * rotate.f,
                 )
 
+            job.movement = False
             dark_delay = 8
             if jump_delay < 0:
                 jump_delay = None
