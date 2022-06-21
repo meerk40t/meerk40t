@@ -218,7 +218,7 @@ class Numpath:
         self.segments[: self.length, 0] *= scale
         self.segments[: self.length, 4] *= scale
         types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) != TYPE_RAMP)
+        q = np.where(types.real != TYPE_RAMP)
         self.segments[q, 1] *= scale
         self.segments[q, 3] *= scale
 

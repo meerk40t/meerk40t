@@ -1,7 +1,9 @@
 from meerk40t.core.cutcode import CutCode, RawCut
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.kernel import Module
 from meerk40t.numpath import Numpath
+from meerk40t.svgelements import Color
 
 
 class LihuiyuEmulator(Module):
@@ -83,25 +85,20 @@ class LihuiyuParser:
     def parse(self, data, elements):
         self.path = Numpath()
 
-        def new_cut():
-            if self.path is not None and len(self.path):
-                elements.elem_branch.add(type="elem numpath", path=self.path, **self.settings.settings)
-                self.path = Numpath()
-
         def position(p):
-            if p is None or self.path is None:
-                new_cut()
+            if p is None:
                 return
-
             from_x, from_y, to_x, to_y = p
 
             if self.program_mode:
                 if self.laser:
                     self.path.line(complex(from_x,from_y), complex(to_x,to_y))
-            else:
-                new_cut()
+
         self.position = position
         self.write(data)
+        self.path.uscale(UNITS_PER_MIL)
+        elements.elem_branch.add(type="elem numpath", path=self.path, stroke=Color("black"), **self.settings.settings)
+        elements.signal("refresh_scene", 0)
 
     @property
     def program_mode(self):
