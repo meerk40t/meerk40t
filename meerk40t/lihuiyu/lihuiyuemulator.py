@@ -3,12 +3,12 @@ from meerk40t.core.parameters import Parameters
 from meerk40t.kernel import Module
 
 
-class LhystudiosEmulator(Module):
+class LihuiyuEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.context.setting(bool, "fix_speeds", False)
 
-        self.parser = LhystudiosParser()
+        self.parser = LihuiyuParser()
         self.parser.fix_speeds = self.context.fix_speeds
         self.parser.channel = self.context.channel("lhy")
 
@@ -21,7 +21,7 @@ class LhystudiosEmulator(Module):
         self.parser.position = pos
 
     def __repr__(self):
-        return "LhystudiosEmulator(%s)" % self.name
+        return "LihuiyuEmulator(%s)" % self.name
 
     def initialize(self, *args, **kwargs):
         context = self.context
@@ -36,9 +36,9 @@ class LhystudiosEmulator(Module):
         send.unwatch(self.parser.write_packet)
 
 
-class LhystudiosParser:
+class LihuiyuParser:
     """
-    LhystudiosParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
+    LihuiyuParser parses LHYMicro-GL code with a state diagram. This should accurately reconstruct the values.
     When the position is changed it calls a self.position() function if one exists.
     """
 
@@ -118,7 +118,7 @@ class LhystudiosParser:
         if self.header_skipped:
             self.write(data)
         else:
-            data = LhystudiosParser.remove_header(data)
+            data = LihuiyuParser.remove_header(data)
             self.write(data)
 
     def write_packet(self, packet):
@@ -420,7 +420,7 @@ class EGVBlob:
         return "EGV(%s, %d bytes)" % (self.name, len(self.data))
 
     def as_cutobjects(self):
-        parser = LhystudiosParser()
+        parser = LihuiyuParser()
         self._cutcode = CutCode()
         self._cut = RawCut()
 
@@ -453,7 +453,7 @@ class EGVBlob:
         return cutcode
 
     def generate(self):
-        yield "blob", "egv", LhystudiosParser.remove_header(self.data)
+        yield "blob", "egv", LihuiyuParser.remove_header(self.data)
 
 
 class EgvLoader:

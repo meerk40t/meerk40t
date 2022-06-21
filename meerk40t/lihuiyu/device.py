@@ -38,7 +38,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
-from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
+from .lihuiyuemulator import EgvLoader, LihuiyuEmulator
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -77,7 +77,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
-        kernel.register("emulator/lhystudios", LhystudiosEmulator)
+        kernel.register("emulator/egv", LihuiyuEmulator)
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
@@ -668,7 +668,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             try:
-                self.open_as("emulator/lhystudios", "lhyemulator")
+                self.open_as("emulator/egv", "lhyemulator")
                 channel(_("Lhystudios Emulator attached to %s" % str(self)))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))

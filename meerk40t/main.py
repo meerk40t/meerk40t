@@ -114,9 +114,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
-        from .lihuiyu import device as lhystudios_driver
+        from .lihuiyu import device as lihuiyu
 
-        plugins.append(lhystudios_driver.plugin)
+        plugins.append(lihuiyu.plugin)
 
         from .moshi import device as moshi_driver
 
