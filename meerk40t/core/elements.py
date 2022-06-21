@@ -29,7 +29,6 @@ from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node, Linecap, Linejoin, Fillrule
-from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
@@ -5837,6 +5836,16 @@ class Elemental(Service):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_prompt("wait_time", _("Wait for how long (in seconds)?"), data_type=float)
+        @self.tree_operation(_("Append Wait"), node_type="branch ops", help="")
+        def append_operation_wait(node, wait_time, pos=None, **kwargs):
+            self.op_branch.add(
+                type="op wait",
+                pos=pos,
+                wait=wait_time,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
             _("Append Home/Beep/Interrupt"), node_type="branch ops", help=""
         )
@@ -6331,18 +6340,6 @@ class Elemental(Service):
         @self.tree_operation(_("Save output.png"), node_type="elem image", help="")
         def image_save(node, **kwargs):
             self("image save output.png\n")
-
-        @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
-        @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
-        def cutcode_convert_svg(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_elems(list(node.as_elements()))
-
-        @self.tree_conditional_try(lambda node: hasattr(node, "generate"))
-        @self.tree_operation(_("Process as Operation"), node_type=op_nodes, help="")
-        def cutcode_operation(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_op(node)
 
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()

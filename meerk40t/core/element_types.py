@@ -39,6 +39,7 @@ non_structural_nodes = (
     "op dots",
     "op hatch",
     "op console",
+    "op wait",
     "reference",
     "lasercode",
     "cutcode",
@@ -62,6 +63,7 @@ operate_nodes = (
     "op dots",
     "op hatch",
     "op console",
+    "op wait",
 )
 op_nodes = (
     "op cut",
@@ -71,6 +73,7 @@ op_nodes = (
     "op dots",
     "op hatch",
     "op console",
+    "op wait",
 )
 elem_nodes = (
     "elem ellipse",
