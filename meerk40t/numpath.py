@@ -419,7 +419,7 @@ class Numpath:
         @return:
         """
         types = self.segments[: self.length, 2]
-        q = np.where(types.astype(int) == TYPE_END)[0]
+        q = np.where(types.real == TYPE_END)[0]
         last = 0
         for m in q:
             yield Numpath(self.segments[last:m])
