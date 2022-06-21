@@ -1057,10 +1057,9 @@ class MockConnection:
 
     @property
     def status(self):
-        return 0x0220
-        # import random
-        #
-        # return random.randint(0, 255)
+        import random
+
+        return random.randint(0, 255)
 
     def open(self):
         self.device = True
