@@ -292,21 +292,21 @@ class Sender:
 
     def is_ready(self):
         """Returns true if the laser is ready for more data, false otherwise."""
-        self.read_port()
+        self._send_command(GET_REGISTER, 0x0001)
         return bool(self._usb_connection.status & 0x20)
 
     def is_busy(self):
         """Returns true if the machine is busy, false otherwise;
         Note that running a lighting job counts as being busy."""
-        self.read_port()
+        self._send_command(GET_REGISTER, 0x0001)
         return bool(self._usb_connection.status & 0x04)
 
     def is_ready_and_not_busy(self):
-        self.read_port()
+        self._send_command(GET_REGISTER, 0x0001)
         return bool(self._usb_connection.status & 0x20) and not bool(self._usb_connection.status & 0x04)
 
     def wait_finished(self):
-        while self.is_ready_and_not_busy():
+        while not self.is_ready_and_not_busy():
             time.sleep(self.sleep_time)
             if self._terminate_execution:
                 return
@@ -367,9 +367,6 @@ class Sender:
             # self.raw_set_standby(0x70D0, 0x0014)
             if command_list.movement:
                 self.raw_fiber_open_mo(0, 0)
-
-        if command_list.movement:
-            self.raw_fiber_open_mo(0, 0)
         if callback_finished is not None:
             callback_finished()
         return True
@@ -1060,9 +1057,10 @@ class MockConnection:
 
     @property
     def status(self):
-        import random
-
-        return random.randint(0, 255)
+        return 0x0220
+        # import random
+        #
+        # return random.randint(0, 255)
 
     def open(self):
         self.device = True
