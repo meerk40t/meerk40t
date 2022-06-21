@@ -62,8 +62,9 @@ def register_panel_tree(window, context):
         "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
     )
     context.register("format/op console", "{enabled}{command}")
+    context.register("format/layer", "{element_type} {name}")
     context.register("format/elem ellipse", "{element_type} {id}")
-    context.register("format/elem image", "{element_type} {id}")
+    context.register("format/elem image", "{element_type} {width}x{height}")
     context.register("format/elem line", "{element_type} {id}")
     context.register("format/elem path", "{element_type} {id}")
     context.register("format/elem point", "{element_type} {id}")
@@ -72,6 +73,7 @@ def register_panel_tree(window, context):
     context.register("format/elem text", "{element_type} {id}: {text}")
     context.register("format/reference", "*{reference}")
     context.register("format/group", "{element_type} {id}")
+    context.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
     context.register("format/file", "{element_type}: {filename}")
     context.register("format/lasercode", "{element_type}")
     context.register("format/cutcode", "{element_type}")
@@ -215,10 +217,10 @@ class ElementsTree(MWindow):
 
 class ShadowTree:
     """
-    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the elements
-    tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends any
-    requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.'operations' and when those are
-    reflected in the tree, the shadow tree is updated accordingly.
+    The shadowTree creates a 'wx.Tree' structure from the 'elements.tree' structure. It listens to updates to the
+    elements tree and updates the GUI version accordingly. This tree does not permit alterations to it, rather it sends
+    any requested alterations to the 'elements.tree' or the 'elements.elements' or 'elements.operations' and when those
+    are reflected in the tree, the shadow tree is updated accordingly.
     """
 
     def __init__(self, service, gui, wxtree):
@@ -504,6 +506,44 @@ class ShadowTree:
 
         @return:
         """
+        def parse_tree(startnode, expansion, level):
+            if startnode is None:
+                return
+            cookie = 0
+            try:
+                pnode, cookie = self.wxtree.GetFirstChild(startnode)
+            except:
+                return
+            while pnode.IsOk():
+                txt = self.wxtree.GetItemText(pnode)
+                state = self.wxtree.IsExpanded(pnode)
+                if state:
+                    expansion.append("%d-%s" % (level, txt))
+                parse_tree(pnode, expansion, level + 1)
+                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+        def restore_tree(startnode, expansion, level):
+            if startnode is None:
+                return
+            cookie = 0
+            try:
+                pnode, cookie = self.wxtree.GetFirstChild(startnode)
+            except:
+                return
+            while pnode.IsOk():
+                txt = self.wxtree.GetItemText(pnode)
+                chk = "%d-%s" % (level, txt)
+                for elem in expansion:
+                    if chk == elem:
+                        self.wxtree.ExpandAllChildren(pnode)
+                        break
+                parse_tree(pnode, expansion, level + 1)
+                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+        # let's try to remember which branches were expanded:
+        were_expanded = []
+        parse_tree(self.wxtree.GetRootItem(), were_expanded, 0)
+        # print ("Expanded were: %s" % were_expanded)
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
@@ -541,6 +581,8 @@ class ShadowTree:
         # Restore emphasiss
         for e in emphasized_list:
             e.emphasized = True
+        restore_tree(self.wxtree.GetRootItem(), were_expanded, 0)
+
 
     def register_children(self, node):
         """

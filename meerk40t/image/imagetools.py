@@ -14,17 +14,17 @@ def plugin(kernel, lifecycle=None):
     This functionality will largely depend on PIL/Pillow for the image command subfunctions.
     """
 
+    if lifecycle == "preregister":
+        kernel.register("raster_script/Gold", RasterScripts.raster_script_gold())
+        kernel.register("raster_script/Stipo", RasterScripts.raster_script_stipo())
+        kernel.register("raster_script/Gravy", RasterScripts.raster_script_gravy())
+        kernel.register("raster_script/Xin", RasterScripts.raster_script_xin())
+        kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
+        kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     if lifecycle != "register":
         return
     _ = kernel.translation
-    kernel.register("raster_script/Gold", RasterScripts.raster_script_gold())
-    kernel.register("raster_script/Stipo", RasterScripts.raster_script_stipo())
-    kernel.register("raster_script/Gravy", RasterScripts.raster_script_gravy())
-    kernel.register("raster_script/Xin", RasterScripts.raster_script_xin())
-    kernel.register("raster_script/Newsy", RasterScripts.raster_script_newsy())
-    kernel.register("raster_script/Simple", RasterScripts.raster_script_simple())
     kernel.register("load/ImageLoader", ImageLoader)
-
     choices = [
         {
             "attr": "image_dpi",
@@ -148,19 +148,13 @@ def plugin(kernel, lifecycle=None):
         script = context.lookup("raster_script", script)
         if script is None:
             channel(_("Raster Script %s is not registered.") % script)
-            return
+            script = []
 
         for inode in data:
-            (
-                inode.image,
-                inode.matrix,
-                step,
-            ) = RasterScripts.wizard_image(inode, script)
-            if step is not None:
-                inode.step_x = step
-                inode.step_y = step
-            inode.lock = True
-            inode.altered()
+            if not len(script) and inode.operations:
+                channel(_("Disabled raster script."))
+            inode.operations = script
+            inode.update(context)
         return "image", data
 
     @context.console_command(
@@ -218,13 +212,13 @@ def plugin(kernel, lifecycle=None):
             elements.classify([node])
         return "image", data
 
-    @context.console_command(
-        "resample", help=_("Resample image"), input_type="image", output_type="image"
-    )
-    def image_resample(data, **kwargs):
-        for node in data:
-            node.make_actual()
-        return "image", data
+    # @context.console_command(
+    #     "resample", help=_("Resample image"), input_type="image", output_type="image"
+    # )
+    # def image_resample(data, **kwargs):
+    #     for node in data:
+    #         node.make_actual()
+    #     return "image", data
 
     @context.console_option("method", "m", type=str, default="Floyd-Steinberg")
     @context.console_command(
@@ -1146,7 +1140,7 @@ class RasterScripts:
     def raster_script_gold():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 3}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 333}
         )
         ops.append(
             {
@@ -1192,7 +1186,7 @@ class RasterScripts:
     def raster_script_stipo():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 2}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 500}
         )
         ops.append(
             {
@@ -1230,7 +1224,7 @@ class RasterScripts:
     def raster_script_gravy():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 3}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 333}
         )
         ops.append(
             {
@@ -1281,7 +1275,7 @@ class RasterScripts:
     def raster_script_xin():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 2}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 500}
         )
         ops.append(
             {
@@ -1318,7 +1312,7 @@ class RasterScripts:
     def raster_script_newsy():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 2}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 500}
         )
         ops.append(
             {
@@ -1356,7 +1350,7 @@ class RasterScripts:
     def raster_script_simple():
         ops = list()
         ops.append(
-            {"name": "resample", "enable": True, "aspect": True, "units": 0, "step": 3}
+            {"name": "resample", "enable": True, "aspect": True, "units": 0, "dpi": 333}
         )
         ops.append(
             {

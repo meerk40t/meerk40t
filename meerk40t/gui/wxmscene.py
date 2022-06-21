@@ -1,3 +1,5 @@
+import random
+
 import wx
 from wx import aui
 
@@ -162,10 +164,15 @@ class MeerK40tScenePanel(wx.Panel):
             "aspect", type=str, help="aspect of the scene to color"
         )
         @self.context.console_argument(
-            "color", type=Color, help="color to apply to scene"
+            "color", type=str, help="color to apply to scene"
         )
         @self.context.console_command("color", input_type="scene")
         def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+            """
+            Sets the scene colors. This is usually done with `scene color <aspect> <color>` which
+            sets the aspect to the color specified. `scene color unset` unsets all colors and returns
+            them to the default settings. `scene color random` changes all colors to random.
+            """
             if aspect is None:
                 for key in dir(self.context):
                     if key.startswith("color_"):
@@ -176,8 +183,21 @@ class MeerK40tScenePanel(wx.Panel):
                     self.widget_scene.colors.set_default_colors()
                     self.context.signal("theme", True)
                     return "scene", data
+                if aspect == "random":  # reset all
+                    self.widget_scene.colors.set_random_colors()
+                    self.context.signal("theme", True)
+                    return "scene", data
                 if color == "unset":  # reset one
                     setattr(self.context, color_key, "default")
+                    self.context.signal("theme", True)
+                    return "scene", data
+                if color == "random":  # randomize one
+                    random_color = "#%02X%02X%02X" % (
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                        random.randint(0, 255),
+                    )
+                    setattr(self.context, color_key, random_color)
                     self.context.signal("theme", True)
                     return "scene", data
 
@@ -187,13 +207,14 @@ class MeerK40tScenePanel(wx.Panel):
                             "No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for semitransparent red)"
                         )
                     )
+                    return "scene", data
+                color = Color(color)
+                if hasattr(self.context, color_key):
+                    setattr(self.context, color_key, color.hexa)
+                    channel(_("Scene aspect color is set."))
+                    self.context.signal("theme", False)
                 else:
-                    if hasattr(self.context, color_key):
-                        setattr(self.context, color_key, color.hexa)
-                        channel(_("Scene aspect color is set."))
-                        self.context.signal("theme", False)
-                    else:
-                        channel(_("%s is not a known scene color command") % aspect)
+                    channel(_("%s is not a known scene color command") % aspect)
 
             return "scene", data
 

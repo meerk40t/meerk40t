@@ -300,6 +300,31 @@ class ViewPort:
             self.unit_height,
         )
 
+    def dpi_to_steps(self, dpi, matrix=None):
+        """
+        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
+        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
+        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
+        per 2 mils.
+
+        Note, steps size can be negative if our driver is x or y flipped.
+
+        @param dpi:
+        @return:
+        """
+        # We require vectors so any positional offsets are non-contributing.
+        unit_x = UNITS_PER_INCH
+        unit_y = UNITS_PER_INCH
+        if matrix is None:
+            if self._matrix is None:
+                self.calculate_matrices()
+            matrix = self._matrix
+        oneinch_x = matrix.transform_vector([unit_x, 0])[0]
+        oneinch_y = matrix.transform_vector([0, unit_y])[1]
+        step_x = float(oneinch_x / dpi)
+        step_y = float(oneinch_y / dpi)
+        return step_x, step_y
+
     @property
     def length_width(self):
         return Length(self.width)

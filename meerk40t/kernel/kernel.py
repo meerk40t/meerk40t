@@ -26,7 +26,7 @@ from .service import Service
 from .settings import Settings
 from .states import *
 
-KERNEL_VERSION = "0.0.1"
+KERNEL_VERSION = "0.0.2"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
@@ -122,14 +122,7 @@ class Kernel(Settings):
         self.channels = {}
 
         # Console Commands.
-        self.commands = []
-        self.console_job = Job(
-            job_name="kernel.console.ticks",
-            process=self._console_job_tick,
-            interval=0.05,
-        )
         self._console_buffer = ""
-        self.queue = []
         self._console_channel = self.channel("console", timestamp=True, ansi=True)
         self.console_channel_file = None
 
@@ -2036,42 +2029,6 @@ class Kernel(Settings):
             self._console_buffer = self._console_buffer[pos + 1 :]
             self._console_parse(command, channel=self._console_channel)
 
-    def _console_job_tick(self) -> None:
-        """
-        Processes the console_job ticks. This executes any outstanding queued commands and any looped commands.
-
-        @return:
-        """
-        for command in self.commands:
-            self._console_parse(command, channel=self._console_channel)
-        if len(self.queue):
-            for command in self.queue:
-                self._console_parse(command, channel=self._console_channel)
-            self.queue.clear()
-        if len(self.commands) == 0 and len(self.queue) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_queue(self, command: str) -> None:
-        self.queue = [
-            c for c in self.queue if c != command
-        ]  # Only allow 1 copy of any command.
-        self.queue.append(command)
-        if self.console_job not in self.jobs:
-            self.add_job(self.console_job)
-
-    def _tick_command(self, command: str) -> None:
-        self.commands = [
-            c for c in self.commands if c != command
-        ]  # Only allow 1 copy of any command.
-        self.commands.append(command)
-        if self.console_job not in self.jobs:
-            self.schedule(self.console_job)
-
-    def _untick_command(self, command: str) -> None:
-        self.commands = [c for c in self.commands if c != command]
-        if len(self.commands) == 0:
-            self.unschedule(self.console_job)
-
     def _console_interface(self, command: str):
         pass
 
@@ -2352,19 +2309,6 @@ class Kernel(Settings):
         def echo_to_console(channel, remainder=None, **kwargs):
             if remainder:
                 channel(remainder)
-
-        @self.console_command("loop", help=_("loop <command>"))
-        def loop(remainder=None, **kwargs):
-            if remainder:
-                self._tick_command(remainder)
-
-        @self.console_command("end", help=_("end <commmand>"))
-        def end(remainder=None, **kwargs):
-            if remainder:
-                self._untick_command(remainder)
-            else:
-                self.commands.clear()
-                self.schedule(self.console_job)
 
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
