@@ -273,7 +273,7 @@ class TextProperty(MWindow):
 
         self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties

@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+from wx.lib.agw import aui
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
@@ -52,8 +52,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(wx.Size(174, 230))
+        .FloatingSize(wx.Size(174, 230))
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
@@ -70,8 +70,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(wx.Size(174, 230))
+        .FloatingSize(wx.Size(174, 230))
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
@@ -88,8 +88,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(150, 75)
-        .FloatingSize(150, 75)
+        .MinSize(wx.Size(150, 75))
+        .FloatingSize(wx.Size(150, 75))
         .MaxSize(200, 100)
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
@@ -106,8 +106,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
+        .MinSize(wx.Size(75, 50))
+        .FloatingSize(wx.Size(150, 75))
         .Hide()
         .Caption(_("Pulse"))
         .CaptionVisible(not context.pane_lock)
@@ -124,8 +124,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
+        .MinSize(wx.Size(75, 50))
+        .FloatingSize(wx.Size(150, 75))
         .Hide()
         .Caption(_("Element-Size"))
         .CaptionVisible(not context.pane_lock)
@@ -142,8 +142,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(wx.Size(174, 230))
+        .FloatingSize(wx.Size(174, 230))
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
@@ -161,8 +161,8 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Float()
-        .MinSize(190, 110)
-        .FloatingSize(190, 110)
+        .MinSize(wx.Size(190, 110))
+        .FloatingSize(wx.Size(190, 110))
         .Hide()
         .Caption(_("Distances"))
         .CaptionVisible(not context.pane_lock)
@@ -1797,7 +1797,7 @@ class Navigation(MWindow):
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
 
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties

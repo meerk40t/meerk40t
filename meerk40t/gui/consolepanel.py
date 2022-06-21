@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+from wx.lib.agw import aui
 try:
     from wx import richtext
 except ImportError:
@@ -71,8 +71,8 @@ def register_panel_console(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Layer(2)
-        .MinSize(600, 100)
-        .FloatingSize(600, 230)
+        .MinSize(wx.Size(600, 100))
+        .FloatingSize(wx.Size(600, 230))
         .Caption(_("Console"))
         .Name("console")
         .CaptionVisible(not context.pane_lock)
@@ -376,7 +376,7 @@ class Console(MWindow):
         super().__init__(581, 410, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))

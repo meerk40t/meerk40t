@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+from wx.lib.agw import aui
 
 from ..kernel import signal_listener
 from ..svgelements import Color
@@ -28,7 +28,7 @@ def register_panel_tree(window, context):
         aui.AuiPaneInfo()
         .Name("tree")
         .Left()
-        .MinSize(200, -1)
+        .MinSize(wx.Size(200, -1))
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
@@ -197,7 +197,7 @@ class ElementsTree(MWindow):
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))

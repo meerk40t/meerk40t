@@ -1,5 +1,5 @@
 import wx
-from wx import aui
+from wx.lib.agw import aui
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
@@ -22,20 +22,20 @@ def register_panel_laser(window, context):
     optimize_panel = ChoicePropertyPanel(
         window, wx.ID_ANY, context=context, choices="optimize"
     )
-    notebook = wx.aui.AuiNotebook(
+    notebook = wx.lib.agw.aui.AuiNotebook(
         window,
         -1,
-        style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-        | wx.aui.AUI_NB_SCROLL_BUTTONS
-        | wx.aui.AUI_NB_TAB_SPLIT
-        | wx.aui.AUI_NB_TAB_MOVE
-        | wx.aui.AUI_NB_BOTTOM,
+        style=wx.lib.agw.aui.AUI_NB_TAB_EXTERNAL_MOVE
+        | wx.lib.agw.aui.AUI_NB_SCROLL_BUTTONS
+        | wx.lib.agw.aui.AUI_NB_TAB_SPLIT
+        | wx.lib.agw.aui.AUI_NB_TAB_MOVE
+        | wx.lib.agw.aui.AUI_NB_BOTTOM,
     )
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(250, 210)
-        .FloatingSize(400, 200)
+        .MinSize(wx.Size(250, 210))
+        .FloatingSize(wx.Size(400, 200))
         .MaxSize(500, 300)
         .Caption(_("Laser"))
         .CaptionVisible(not context.pane_lock)

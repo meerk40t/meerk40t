@@ -188,7 +188,7 @@ class RotarySettings(MWindow):
 
         self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context.rotary)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties

@@ -417,7 +417,7 @@ class MoshiControllerGui(MWindow):
 
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Controller"))
