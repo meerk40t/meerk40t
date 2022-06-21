@@ -159,7 +159,7 @@ class DotsOpNode(Node, Parameters):
             if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (point_node.point[0], point_node[1]),
+                (point_node.point[0], point_node.point[1]),
                 settings=settings,
                 passes=passes,
             )
