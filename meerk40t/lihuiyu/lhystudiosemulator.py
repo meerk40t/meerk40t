@@ -458,6 +458,20 @@ class EGVBlob:
 
 class EgvLoader:
     @staticmethod
+    def remove_header(data):
+        count_lines = 0
+        count_flag = 0
+        for i in range(len(data)):
+            b = data[i]
+            c = chr(b)
+            if c == "\n":
+                count_lines += 1
+            elif c == "%":
+                count_flag += 1
+            if count_lines >= 3 and count_flag >= 5:
+                return data[i:]
+
+    @staticmethod
     def load_types():
         yield "Engrave Files", ("egv",), "application/x-egv"
 
@@ -467,8 +481,11 @@ class EgvLoader:
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            blob = EGVBlob(bytearray(f.read()), basename)
             op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(blob, type="blob")
-            kernel.root.close(basename)
+            op_branch.add(
+                data=bytearray(EgvLoader.remove_header(f.read())),
+                data_type="egv",
+                type="blob",
+                name=basename,
+            )
         return True
