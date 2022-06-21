@@ -2277,9 +2277,7 @@ class RDLoader:
     def load(kernel, elements_modifier, pathname, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            ruidaemulator = kernel.root.open_as("emulator/ruida", basename)
-            ruidaemulator.elements = elements_modifier
-            ruidaemulator.design = True
-            ruidaemulator.write(BytesIO(ruidaemulator.unswizzle(f.read())))
+            op_branch = elements_modifier.get(type="branch ops")
+            op_branch.add(data=bytearray(f.read()), data_type="ruida", type="blob", name=basename)
             kernel.root.close(basename)
             return True
