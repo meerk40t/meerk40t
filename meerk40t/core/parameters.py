@@ -338,14 +338,6 @@ class Parameters:
         self.settings["hatch_angle"] = value
 
     @property
-    def hatch_angle_inc(self):
-        return self.settings.get("hatch_angle_inc", "0deg")
-
-    @hatch_angle_inc.setter
-    def hatch_angle_inc(self, value):
-        self.settings["hatch_angle_inc"] = value
-
-    @property
     def hatch_distance(self):
         return self.settings.get("hatch_distance", "1mm")
 
