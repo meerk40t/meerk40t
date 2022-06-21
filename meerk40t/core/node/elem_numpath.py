@@ -1,10 +1,11 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
+from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import Matrix
 
 
-class NumpathNode(Node):
+class NumpathNode(Node, Parameters):
     """
     NumpathNode is the bootstrapped node type for the 'elem numpath' type.
     """
@@ -19,11 +20,12 @@ class NumpathNode(Node):
         linecap=Linecap.CAP_BUTT,
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_NONZERO,
+        *args,
         **kwargs,
     ):
-        super(NumpathNode, self).__init__(type="elem numpath")
+        super().__init__(*args, **kwargs)
+        self.settings.update(kwargs)
         self.path = path
-        self.settings = kwargs
         if matrix is None:
             matrix = Matrix()
         self.matrix = matrix
