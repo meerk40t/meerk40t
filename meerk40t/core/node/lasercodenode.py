@@ -1,3 +1,4 @@
+from meerk40t.core.element_types import op_nodes
 from meerk40t.core.node.node import Node
 
 
@@ -29,12 +30,28 @@ class LaserCodeNode(Node):
     def __len__(self):
         return len(self.commands)
 
+    def _str_commands(self):
+        for cmd in self.commands:
+            if isinstance(cmd, str):
+                yield cmd
+            else:
+                yield cmd[0]
+
     def default_map(self, default_map=None):
         default_map = super(LaserCodeNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "LaserCode"
+        default_map["commands"] = " ".join(self._str_commands)
         return default_map
 
     def drop(self, drag_node):
+        drop_node = self
+        if drag_node.type in op_nodes:
+            drop_node.insert_sibling(drag_node)
+            return True
+        elif drop_node.type == "branch ops":
+            # Dragging operation to op branch to effectively move to bottom.
+            drop_node.append_child(drag_node)
+            return True
         return False
 
     def generate(self):
