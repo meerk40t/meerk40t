@@ -47,7 +47,7 @@ class BalorController:
         return str(self._queue)
 
     def added(self):
-        self.start()
+        pass
 
     def service_detach(self):
         pass
