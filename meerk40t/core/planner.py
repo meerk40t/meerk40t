@@ -506,9 +506,6 @@ class Planner(Service):
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
-                elif c.type == "blob":
-                    # BlobNodes are denuded into normal objects.
-                    c = c.blob
                 copy_c = copy(c)
                 try:
                     copy_c.copy_children_as_real(c)
