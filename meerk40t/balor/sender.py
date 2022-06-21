@@ -328,6 +328,7 @@ class Sender:
             if command_list.movement:
                 self.raw_fiber_open_mo(1, 0)
             loop_index = 0
+            execute_list = False
             while loop_index < loop_count:
                 packet_count = 0
                 if command_list.tick is not None:
