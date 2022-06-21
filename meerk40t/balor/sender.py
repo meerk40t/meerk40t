@@ -361,7 +361,7 @@ class Sender:
                     if self._terminate_execution:
                         return False
                     self._send_command(GET_REGISTER, 0x0001)  # 0x0007
-                    bool(self._usb_connection.status & 0x04)
+                    busy = bool(self._usb_connection.status & 0x04)
                 loop_index += 1
             self.port_on(bit=0)
             # self.raw_set_standby(0x70D0, 0x0014)
