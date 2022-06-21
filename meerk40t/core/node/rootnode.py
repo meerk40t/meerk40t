@@ -1,3 +1,4 @@
+from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
@@ -48,6 +49,7 @@ class RootNode(Node):
             "op hatch": HatchOpNode,
             "op console": ConsoleOperation,
             "lasercode": LaserCodeNode,
+            "blob": BlobNode,
             "group": GroupNode,
             "elem ellipse": EllipseNode,
             "elem line": LineNode,

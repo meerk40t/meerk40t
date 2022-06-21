@@ -1646,6 +1646,51 @@ class Elemental(Service):
             return "elements", elements_list
 
         # ==========
+        # REGMARK COMMANDS
+        # ==========
+        def move_nodes_to(target, nodes):
+            for elem in nodes:
+                target.drop(elem)
+
+        @self.console_argument("cmd", type=str, help=_("free, clear, add"))
+        @self.console_command(
+            "regmark",
+            help=_("regmark cmd"),
+            input_type=(None, "elements"),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def regmark(command, channel, _, data, cmd = None, **kwargs):
+            # Move regmarks into the regular element tree and vice versa
+            if cmd == "free":
+                target = self.elem_branch
+            else:
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd =="free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data)==0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
+            else:
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
+            self.signal("tree_changed")
+            return "elements", data
+
+        # ==========
         # ELEMENT SUBCOMMANDS
         # ==========
 
@@ -1995,6 +2040,161 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
+            "bedtop",
+            help=_("align elements at top edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = -1.0 * top_edge
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedbottom",
+            help=_("align elements at bottom edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = device_height - bottom_edge
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedleft",
+            help=_("align elements at left edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = -1 * left_edge
+            dy = 0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedright",
+            help=_("align elements at right edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = device_width - right_edge
+            dy = 0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedcenter",
+            help=_("align elements at bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = (device_width - left_edge - right_edge) / 2.0
+            dy = (device_height - top_edge - bottom_edge) / 2.0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
             "centerv",
             help=_("align elements at center vertical"),
             input_type="align",
@@ -2122,6 +2322,7 @@ class Elemental(Service):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
+#--------------------
         @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
@@ -4826,7 +5027,7 @@ class Elemental(Service):
             return hull
 
         @self.console_argument(
-            "method", help=_("Method to use (one of segment, quick, hull, complex)")
+            "method", help=_("Method to use (one of quick, hull, complex, segment, circle)")
         )
         @self.console_argument("resolution")
         @self.console_command(
@@ -4840,10 +5041,10 @@ class Elemental(Service):
             if method is None:
                 method = "quick"
             method = method.lower()
-            if not method in ("segment", "quick", "hull", "complex"):
+            if not method in ("segment", "quick", "hull", "complex", "circle"):
                 channel(
                     _(
-                        "Invalid method, please use one of segment, quick, hull, complex."
+                        "Invalid method, please use one of quick, hull, complex, segment, circle."
                     )
                 )
                 return
@@ -4943,7 +5144,7 @@ class Elemental(Service):
                 if not node.matrix.is_identity():
                     result = True
             except AttributeError:
-                # There was an error druing check for matrix.is_identity
+                # There was an error during check for matrix.is_identity
                 pass
             return result
 
@@ -4960,7 +5161,9 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(_("Edit"), node_type="op console", help="")
         def edit_console_command(node, **kwargs):
-            self.open("window/ConsoleProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5010,13 +5213,28 @@ class Elemental(Service):
                 node.insert_sibling(n)
             node.remove_node()  # Removing group/file node.
 
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        @self.tree_operation(_("Elements in scene..."), node_type=elem_nodes, help="", enable=False)
+        def element_label(node, **kwargs):
+            return
+
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
-            # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 group_node.append_child(e)
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
+            )
+            >= 1
+        )
+        @self.tree_operation(_("Remove all items from operation"), node_type=op_nodes, help="")
+        def clear_all_op_entries(node, **kwargs):
+            node.remove_all_children()
 
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
@@ -5024,31 +5242,73 @@ class Elemental(Service):
                 n.output = not n.output
                 n.notify_update()
 
-        # TODO: Restore convert node type ability
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
-        # def convert_operation_image(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Image"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
-        # def convert_operation_raster(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Raster"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
-        # def convert_operation_engrave(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Engrave"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
-        # def convert_operation_cut(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Cut"
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        def convert_operation_image(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op image"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        def convert_operation_raster(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op raster"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        def convert_operation_engrave(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op engrave"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        def convert_operation_cut(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op cut"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Hatch"), node_type=operate_nodes, help="")
+        def convert_operation_hatch(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op hatch"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Dots"), node_type=operate_nodes, help="")
+        def convert_operation_dots(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op dots"
+                n.replace_node(**new_settings)
+
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_operation(
+            _("Set to None") , node_type="elem image", help=""
+        )
+        def image_rasterwizard_apply_none(node, **kwargs):
+            node.operations = []
+            node.update(self)
+
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_values(
+            "script", values=list(self.match("raster_script", suffix=True))
+        )
+        @self.tree_operation(
+            _("Apply: %s") % "{script}", node_type="elem image", help=""
+        )
+        def image_rasterwizard_apply(node, script=None, **kwargs):
+            raster_script = self.lookup(f"raster_script/{script}")
+            node.operations = raster_script
+            node.update(self)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
@@ -5080,7 +5340,7 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
-        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("%sppi") % "{power}",
             node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
@@ -5090,12 +5350,12 @@ class Elemental(Service):
             node.power = float(power)
             self.signal("element_property_reload", node)
 
-        def radio_match(node, i=100, **kwargs):
-            return node.dpi == i
+        def radio_match(node, dpi=100, **kwargs):
+            return node.dpi == dpi
 
         @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
-        @self.tree_values("dpi", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
             _("DPI %s") % "{dpi}",
             node_type=("op raster", "elem image"),
@@ -5121,7 +5381,7 @@ class Elemental(Service):
             node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
-        @self.tree_separator_after()
+        @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
             node_type=operate_nodes,
@@ -5162,68 +5422,145 @@ class Elemental(Service):
         # Calculate the amount of selected nodes in the tree:
         # If there are ops selected then they take precedence
         # and will only be counted
+
         @self.tree_conditional(
             lambda cond: len(
-                list(self.flat(selected=True, cascade=False, types=operate_nodes))
+                list(self.flat(selected=True, cascade=False, types=("reference")))
             )
-            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-            > 0
-            else len(
-                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
-            )
-            > 1
+            >= 1
         )
         @self.tree_calc(
             "ecount",
             lambda i: len(
-                list(self.flat(selected=True, cascade=False, types=operate_nodes))
+                list(self.flat(selected=True, cascade=False, types=("reference")))
             )
-            if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-            > 0
-            else len(
-                list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
-            ),
         )
         @self.tree_operation(
-            _("Remove %s selected items") % "{ecount}",
-            node_type=non_structural_nodes,
+            _("Remove %s selected items from operations") % "{ecount}",
+            node_type=("reference"),
             help="",
         )
-        def remove_multi_nodes(node, **kwargs):
-            if (
-                len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
-                > 0
-            ):
-                types = operate_nodes
-            else:
-                types = elem_group_nodes
-            nodes = list(self.flat(selected=True, cascade=False, types=types))
+        def remove_multi_references(node, **kwargs):
+            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
             for node in nodes:
-                # If we are selecting an operation it also selects/emphasizes the
-                # contained elements - so both will be deleted...
-                # To circumvent this, we inquire once more the selected status...
-                if node.selected:
-                    if node.parent is not None:  # May have already removed.
-                        node.remove_node()
+                if node.parent is not None:  # May have already removed.
+                    node.remove_node()
             self.set_emphasis(None)
 
+        # @self.tree_conditional(
+        #     lambda cond: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     )
+        #     > 1
+        # )
+        # @self.tree_calc(
+        #     "ecount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "rcount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=("reference")))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "eloc",
+        #     lambda s: "operations"
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else "element-list",
+        # )
+        # @self.tree_operation(
+        #     _("Delete %s selected items from %s (Ref=%s)") % ("{ecount}", "{eloc}", "{rcount}"),
+        #     node_type=non_structural_nodes,
+        #     help="",
+        # )
+        # def remove_multi_nodes(node, **kwargs):
+        #     if (
+        #         len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #         > 0
+        #     ):
+        #         types = operate_nodes
+        #     else:
+        #         types = elem_group_nodes
+        #     nodes = list(self.flat(selected=True, cascade=False, types=types))
+        #     for node in nodes:
+        #         # If we are selecting an operation / an element within an operation, then it
+        #         # also selects/emphasizes the contained elements in the elements branch...
+        #         # So both will be deleted...
+        #         # To circumvent this, we inquire once more the selected status...
+        #         if node.selected:
+        #             if node.parent is not None:  # May have already removed.
+        #                 node.remove_node()
+        #     self.set_emphasis(None)
+
         # ==========
-        # REMOVE SINGLE (Tree Selected)
+        # REMOVE SINGLE (Tree Selected - ELEMENT)
         # ==========
         @self.tree_conditional(
             lambda cond: len(
                 list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
+                    self.flat(selected=True, cascade=False, types=elem_nodes)
                 )
             )
             == 1
         )
         @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=non_structural_nodes,
+            _("Delete element '%s' fully") % "{name}",
+            node_type=elem_nodes,
+            help="",
+        )
+        def remove_type_elem(node, **kwargs):
+
+            node.remove_node()
+            self.set_emphasis(None)
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=op_nodes)
+                )
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete operation '%s' fully") % "{name}",
+            node_type=op_nodes,
             help="",
         )
         def remove_type_op(node, **kwargs):
+
+            node.remove_node()
+            self.set_emphasis(None)
+
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(
+                    self.flat(selected=True, cascade=False, types=("file", "group"))
+                )
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete group '%s' and all its child-elements fully") % "{name}",
+            node_type=("file", "group"),
+            help="",
+        )
+        def remove_type_grp(node, **kwargs):
+
             node.remove_node()
             self.set_emphasis(None)
 
@@ -5243,7 +5580,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s operations") % "{ecount}",
+            _("Delete %s operations") % "{ecount}",
             node_type=(
                 "op cut",
                 "op raster",
@@ -5264,10 +5601,11 @@ class Elemental(Service):
         # ==========
         # REMOVE ELEMENTS
         # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        # More than one, special case == 1 already dealt with
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s elements") % "{ecount}",
+            _("Delete %s elements, as selected in scene") % "{ecount}",
             node_type=elem_group_nodes,
             help="",
         )
@@ -5284,6 +5622,18 @@ class Elemental(Service):
         )
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
+
+        @self.tree_conditional_try(lambda node: kernel.lookup(f"parser/{node.data_type}") is not None)
+        @self.tree_operation(
+            _("Convert to Elements"),
+            node_type="blob",
+            help="Convert blob to elements ",
+        )
+        def blob2path(node, **kwargs):
+            parser_class = kernel.lookup(f"parser/{node.data_type}")
+            parser = parser_class()
+            parser.parse(node.data, self)
+            return True
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
         @self.tree_operation(
@@ -5614,11 +5964,7 @@ class Elemental(Service):
             xmin, ymin, xmax, ymax = bounds
             xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
             xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
-            dpi = node.dpi
-            oneinch_x = self.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = self.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
+            step_x, step_y = self.device.dpi_to_steps(node.dpi)
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
                 list(node.flat(types=elem_ref_nodes)),
@@ -5911,7 +6257,7 @@ class Elemental(Service):
         @self.tree_operation(
             _("Move back to elements"), node_type=elem_group_nodes, help=""
         )
-        def move_back(node, copies=1, **kwargs):
+        def move_back(node, **kwargs):
             # Drag and Drop
             drop_node = self.elem_branch
             drop_node.drop(node)
@@ -5920,43 +6266,11 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
-        def move_to_regmark(node, copies=1, **kwargs):
+        def move_to_regmark(node, **kwargs):
             # Drag and Drop
             drop_node = self.reg_branch
             drop_node.drop(node)
             self.signal("tree_changed")
-
-        def radio_match(node, i=0, **kwargs):
-            if "raster_step_x" in node.settings:
-                step_x = float(node.settings["raster_step_x"])
-            else:
-                step_y = 1.0
-            if "raster_step_y" in node.settings:
-                step_x = float(node.settings["raster_step_y"])
-            else:
-                step_y = 1.0
-            if i == step_x and i == step_y:
-                m = node.matrix
-                if m.a == step_x or m.b == 0.0 or m.c == 0.0 or m.d == step_y:
-                    return True
-            return False
-
-        @self.tree_separator_before()
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem image", help="")
-        def set_step_n_elem(node, i=1, **kwargs):
-            step_value = i
-            node.step_x = step_value
-            node.step_y = step_value
-            m = node.matrix
-            tx = m.e
-            ty = m.f
-            node.matrix = Matrix.scale(float(step_value), float(step_value))
-            node.matrix.post_translate(tx, ty)
-            node.modified()
-            self.signal("element_property_reload", node)
 
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
@@ -6017,26 +6331,6 @@ class Elemental(Service):
         @self.tree_operation(_("Save output.png"), node_type="elem image", help="")
         def image_save(node, **kwargs):
             self("image save output.png\n")
-
-        @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_open(node, script=None, **kwargs):
-            self("window open RasterWizard %s\n" % script)
-
-        @self.tree_submenu(_("Apply raster script"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("Apply: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_apply(node, script=None, **kwargs):
-            self("image wizard %s\n" % script)
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
         @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
@@ -6113,6 +6407,9 @@ class Elemental(Service):
         settings = self.op_data
         settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
+            if hasattr(op, "allow_save"):
+                if not op.allow_save():
+                    continue
             section = "%s %06i" % (name, i)
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
@@ -6343,7 +6640,7 @@ class Elemental(Service):
 
         return decor
 
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+    def tree_operation(self, name, node_type=None, help=None, enable=True, **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
@@ -6369,6 +6666,7 @@ class Elemental(Service):
             inner.user_prompt = list()
             inner.calcs = list()
             inner.values = [0]
+            inner.enabled = enable
             registered_name = inner.__name__
 
             for _in in ins:
@@ -6792,12 +7090,6 @@ class Elemental(Service):
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
-        Classify does the placement of elements within operations.
-        "Image" is the default for images.
-        Typically,
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        However, this differs based on the ops in question.
         @param elements: list of elements to classify.
         @param operations: operations list to classify into.
         @param add_op_function: function to add a new operation, because of a lack of classification options.
@@ -6814,82 +7106,51 @@ class Elemental(Service):
             operations = list(self.ops())
         if add_op_function is None:
             add_op_function = self.add_op
+
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
             was_classified = False
-            # image_added code removed because it could never be used
             for op in operations:
-                # Are the colors identical? if the op is default then in any case
-                if op.type == "op console":
+                if hasattr(op, "classify"):
+                    classified, should_break = op.classify(node)
+                else:
                     continue
-                same_color = op.default
-                if hasattr(node, "stroke") and node.stroke is not None:
-                    # print ("Color-node: %d, %d, %d, Color-op: %d, %d, %d" % (node.stroke.red, node.stroke.green, node.stroke.blue, op.color.red, op.color.green, op.color.blue))
-                    # Remove opacity
-                    plain_color_op = abs(op.color)
-                    plain_color_node = abs(node.stroke)
-                    if plain_color_op == plain_color_node:
-                        same_color = True
-                # print ("Node-stroke=%s, op.color=%s, node.type=%s, Default=%s, op-type=%s" % (node.stroke, op.color, node.type, op.default, op.type))
-                # print ("Color identical" if same_color else "Color different")
-                if op.type == "op raster":
-                    if same_color:
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem image":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem text":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif (
-                        hasattr(node, "fill")
-                        and node.fill is not None
-                        and node.fill.argb is not None
-                    ):
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type in ("op engrave", "op cut", "op hatch"):
-                    if same_color:
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type == "op image" and node.type == "elem image":
-                    op.add_reference(node)
+                if classified:
                     was_classified = True
-                    break  # May only classify in one image operation.
-                elif op.type == "op dots" and node.type == "elem point":
-                    op.add_reference(node)
-                    was_classified = True
-                    break  # May only classify in Dots.
+                if should_break:
+                    break
 
+            ######################
+            # NON-CLASSIFIED ELEMENTS
+            ######################
             if not was_classified:
-                # print("Was not classified: add new op...")
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None:
-                    # If it's plain red then make a cutop...
                     if (
-                        node.stroke.red == 0xFF
-                        and node.stroke.blue == 0
-                        and node.stroke.green == 0
+                            node.stroke.red == 0xFF
+                            and node.stroke.blue == 0
+                            and node.stroke.green == 0
                     ):
                         op = CutOpNode(color=node.stroke, speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
+
                 if op is not None:
                     add_op_function(op)
                     op.add_reference(node)
                     operations.append(op)
+
                 if (
-                    hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
+                        hasattr(node, "fill")
+                        and node.fill is not None
+                        and node.fill.argb is not None
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)

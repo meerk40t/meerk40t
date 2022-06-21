@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME, RESPONSE_ABORT
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Rect
 from meerk40t.gui.laserrender import swizzlecolor
@@ -36,22 +36,39 @@ class RectTool(ToolWidget):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True
-            self.p1 = complex(space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.p1 = complex(space_pos[0], space_pos[1])
+            else:
+                self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            self.p2 = complex(space_pos[0], space_pos[1])
+            if not self.p1 is None:
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            # Dear user: that's too quick for my taste - take your time...
+            self.p1 = None
+            self.p2 = None
+            self.scene.tool_active = False
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            response = RESPONSE_ABORT
         elif event_type == "leftup":
             self.scene.tool_active = False
             try:
                 if self.p1 is None:
                     return
-                self.p2 = complex(space_pos[0], space_pos[1])
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
@@ -72,7 +89,9 @@ class RectTool(ToolWidget):
             except IndexError:
                 pass
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            response = RESPONSE_ABORT
         elif event_type == "lost":
             self.scene.tool_active = False
+            self.p1 = None
+            self.p2 = None
         return response

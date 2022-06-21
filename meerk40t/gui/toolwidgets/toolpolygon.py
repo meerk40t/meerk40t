@@ -39,10 +39,13 @@ class PolygonTool(ToolWidget):
             points.append(points[0])
             gc.DrawLines(points)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
-            self.point_series.append((space_pos[0], space_pos[1]))
+            if nearest_snap is None:
+                self.point_series.append((space_pos[0], space_pos[1]))
+            else:
+                self.point_series.append((nearest_snap[0], nearest_snap[1]))
             self.scene.tool_active = True
             response = RESPONSE_CONSUME
         elif event_type == "rightdown":
@@ -51,12 +54,23 @@ class PolygonTool(ToolWidget):
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type in ("leftdown", "leftup", "move", "hover"):
+        elif event_type == "leftdown":
             self.scene.tool_active = True
-            self.mouse_position = space_pos[0], space_pos[1]
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.point_series:
                 self.scene.request_refresh()
             response = RESPONSE_CONSUME
+        elif event_type in ("leftup", "move", "hover"):
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            if self.point_series:
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             polyline = Polygon(*self.point_series, stroke="blue", stroke_width=1000)
             elements = self.scene.context.elements

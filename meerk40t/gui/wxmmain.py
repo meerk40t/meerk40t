@@ -43,6 +43,7 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    STD_ICON_SIZE,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -77,6 +78,7 @@ ID_MENU_ZOOM_OUT = wx.NewId()
 ID_MENU_ZOOM_IN = wx.NewId()
 ID_MENU_ZOOM_SIZE = wx.NewId()
 ID_MENU_ZOOM_BED = wx.NewId()
+ID_MENU_SCENE_MINMAX = wx.NewId()
 
 # 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
 ID_MENU_HIDE_FILLS = wx.NewId()
@@ -448,13 +450,13 @@ class CustomStatusBar(wx.StatusBar):
         wd = int(round(rect.width / ct))
         rect.x += 1
         rect.y += 1
-        rect.width = wd
+        rect.width = int(wd)
         self.cb_move.SetRect(rect)
         rect.x += wd
         self.cb_handle.SetRect(rect)
-        rect.x += wd
+        rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
-        rect.x += wd
+        rect.x += int(wd)
         self.cb_skew.SetRect(rect)
 
         if self.context.show_colorbar:
@@ -539,6 +541,9 @@ class MeerK40t(MWindow):
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
         self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
+        self.ui_visible = True
+        self.hidden_panes = []
+
         # notify AUI which frame to use
         self._mgr.SetManagedWindow(self)
 
@@ -576,6 +581,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+
 
     def register_options_and_choices(self, context):
         _ = context._
@@ -641,6 +647,7 @@ class MeerK40t(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        buttonsize = STD_ICON_SIZE
         kernel.register(
             "button/project/Open",
             {
@@ -649,6 +656,7 @@ class MeerK40t(MWindow):
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
                 "priority": -200,
+                "size": buttonsize,
             },
         )
         kernel.register(
@@ -659,11 +667,12 @@ class MeerK40t(MWindow):
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
+                "size": buttonsize,
             },
         )
 
         # Default Size for tool buttons - none: use icon size
-        buttonsize = None
+        buttonsize = STD_ICON_SIZE
 
         kernel.register(
             "button/tools/Scene",
@@ -694,7 +703,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Draw"),
                 "icon": icons8_pencil_drawing_50,
-                "tip": _(""),
+                "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -706,7 +715,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Ellipse"),
                 "icon": icons8_oval_50,
-                "tip": _(""),
+                "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -718,7 +727,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Circle"),
                 "icon": icons8_circle_50,
-                "tip": _(""),
+                "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -730,7 +739,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polygon"),
                 "icon": icons8_polygon_50,
-                "tip": _(""),
+                "tip": _("Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -742,7 +751,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polyline"),
                 "icon": icons8_polyline_50,
-                "tip": _(""),
+                "tip": _("Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -754,7 +763,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Rectangle"),
                 "icon": icons8_rectangular_50,
-                "tip": _(""),
+                "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -766,7 +775,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
-                "tip": _(""),
+                "tip": _("Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -778,7 +787,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Text"),
                 "icon": icons8_type_50,
-                "tip": _(""),
+                "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -790,14 +799,14 @@ class MeerK40t(MWindow):
             {
                 "label": _("Measure"),
                 "icon": icons8_measure_50,
-                "tip": _(""),
+                "tip": _("Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "toggle": "tool",
                 "size": buttonsize,
             },
         )
         # Default Size for smaller buttons
-        buttonsize = 25
+        buttonsize = STD_ICON_SIZE / 2
 
         kernel.register(
             "button/modify/Flip",
@@ -884,8 +893,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Left"),
                 "icon": icons8_align_left_50,
-                "tip": _("Align selected elements at the leftmost position"),
+                "tip": _("Align selected elements at the leftmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align left\n"),
+                "right": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
             },
         )
@@ -894,8 +904,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Right"),
                 "icon": icons8_align_right_50,
-                "tip": _("Align selected elements at the rightmost position"),
+                "tip": _("Align selected elements at the rightmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align right\n"),
+                "right": lambda v: kernel.elements("align bedright\n"),
                 "size": buttonsize,
             },
         )
@@ -904,8 +915,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Top"),
                 "icon": icons8_align_top_50,
-                "tip": _("Align selected elements at the topmost position"),
+                "tip": _("Align selected elements at the topmost position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align top\n"),
+                "right": lambda v: kernel.elements("align bedtop\n"),
                 "size": buttonsize,
             },
         )
@@ -914,8 +926,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Bottom"),
                 "icon": icons8_align_bottom_50,
-                "tip": _("Align selected elements at the lowest position"),
+                "tip": _("Align selected elements at the lowest position (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align bottom\n"),
+                "right": lambda v: kernel.elements("align bedbottom\n"),
                 "size": buttonsize,
             },
         )
@@ -924,8 +937,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Center"),
                 "icon": icons_centerize,
-                "tip": _("Align selected elements at their center"),
+                "tip": _("Align selected elements at their center (right click: of the bed)"),
                 "action": lambda v: kernel.elements("align center\n"),
+                "right": lambda v: kernel.elements("align bedcenter\n"),
                 "size": buttonsize,
             },
         )
@@ -1234,6 +1248,34 @@ class MeerK40t(MWindow):
                 return
             _pane.Show()
             self._mgr.Update()
+
+        @context.console_command(
+            "toggleui",
+            input_type="panes",
+            help=_("Hides/Restores all the visible panes (except scen)"),
+        )
+        def toggle_ui(command, _, channel, pane=None, **kwargs):
+            # Toggle visibility of all UI-elements
+            self.ui_visible = not self.ui_visible
+
+            if self.ui_visible:
+                for pane_name in self.hidden_panes:
+                    pane = self._mgr.GetPane(pane_name)
+                    pane.Show()
+                self._mgr.Update()
+                channel(_("Panes restored."))
+            else:
+                self.hidden_panes = []
+                for pane in self._mgr.GetAllPanes():
+                    if pane.IsShown():
+                        if pane.name == "scene":
+                            # Scene remains
+                            pass
+                        else:
+                            self.hidden_panes.append (pane.name)
+                            pane.Hide()
+                self._mgr.Update()
+                channel(_("Panes hidden."))
 
         @context.console_argument("pane", help=_("pane to be hidden"))
         @context.console_command(
@@ -1599,8 +1641,10 @@ class MeerK40t(MWindow):
             )
 
         self.window_menu.AppendSeparator()
+        # If the Main-window has disappeared out of sight (i.e. on a multi-monitor environment)
+        # then resetting windows becomes difficult, so a shortcut is in order...
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
+            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-R"), ""
         )
         self.Bind(
             wx.EVT_MENU,
@@ -1680,6 +1724,10 @@ class MeerK40t(MWindow):
         self.view_menu.Append(
             ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
         )
+        self.view_menu.Append(
+            ID_MENU_SCENE_MINMAX, _("Show/Hide UI-Panels\tCtrl-U"), _("Show/Hide all panels/ribbon bar")
+        )
+
         self.view_menu.AppendSeparator()
 
         self.view_menu.Append(
@@ -1940,6 +1988,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
         self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=ID_MENU_ZOOM_BED)
+        self.Bind(wx.EVT_MENU, self.on_click_toggle_ui, id=ID_MENU_SCENE_MINMAX)
 
         self.Bind(
             wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID
@@ -2585,6 +2634,10 @@ class MeerK40t(MWindow):
             x1 = Length(amount=bbox[2] + x_delta, relative_length=self.context.device.width).length_mm
             y1 = Length(amount=bbox[3] + y_delta, relative_length=self.context.device.height).length_mm
             self.context(f"scene focus {x0} {y0} {x1} {y1}\n")
+
+    def on_click_toggle_ui(self, event=None):
+        self.context("pane toggleui\n")
+        self.context("scene focus -4% -4% 104% 104%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """

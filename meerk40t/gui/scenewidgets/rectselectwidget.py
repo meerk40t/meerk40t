@@ -80,7 +80,7 @@ class RectSelectWidget(Widget):
 
     # debug_msg = ""
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
         # sdbg = event_type
         # if sdbg in ("hover_start", "hover_end", "hover"):
         #    sdbg = "hover"
@@ -97,10 +97,6 @@ class RectSelectWidget(Widget):
             self.end_location = space_pos
             # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
-        elif event_type == "leftclick":
-            self.start_location = None
-            self.end_location = None
-            return RESPONSE_DROP
         elif event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False
@@ -176,6 +172,13 @@ class RectSelectWidget(Widget):
             else:
                 return RESPONSE_CHAIN
 
+        elif event_type == "leftclick":
+            # That's too fast
+            # still chaining though
+            self.scene.request_refresh()
+            self.start_location = None
+            self.end_location = None
+            return RESPONSE_CHAIN
         elif event_type == "leftup":
             if self.start_location is None:
                 return RESPONSE_CHAIN

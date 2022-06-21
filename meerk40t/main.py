@@ -114,9 +114,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
-        from .lihuiyu import device as lhystudios_driver
+        from .lihuiyu import device as lihuiyu
 
-        plugins.append(lhystudios_driver.plugin)
+        plugins.append(lihuiyu.plugin)
 
         from .moshi import device as moshi_driver
 
@@ -173,6 +173,10 @@ def plugin(kernel, lifecycle):
         from .extra import inkscape
 
         plugins.append(inkscape.plugin)
+
+        from .extra import hershey
+
+        plugins.append(hershey.plugin)
 
         from .extra import embroider
 

@@ -21,15 +21,12 @@ from meerk40t.gui.scene.sceneconst import (
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
-    RESPONSE_CHANGE_POSITION,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
-
-# from weakref import ref
 
 
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
@@ -69,8 +66,8 @@ class Scene(Module, Job):
         self.screen_refresh_lock = threading.Lock()
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
-        self.time = None
-        self.distance = None
+        self._down_start_time = None
+        self._down_start_pos = None
         self._cursor = None
         self._reference = None  # Reference Object
         self.attraction_points = []  # Clear all
@@ -308,7 +305,10 @@ class Scene(Module, Job):
         """
         if self.screen_refresh_is_requested:
             if self.screen_refresh_lock.acquire(timeout=0.2):
-                self.update_buffer_ui_thread()
+                try:
+                    self.update_buffer_ui_thread()
+                except RuntimeError:
+                    return
                 self.gui.Refresh()
                 self.gui.Update()
                 self.screen_refresh_is_requested = False
@@ -486,7 +486,7 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type=""):
+    def event(self, window_pos, event_type="", nearest_snap=None):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -499,12 +499,12 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
-        RESPONSE_CHANGE_POSITION: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
-        need_refresh = False
         if self.log_events:
-            self.log_events("%s: %s" % (event_type, str(window_pos)))
+            self.log_events(
+                "%s: %s %s" % (event_type, str(window_pos), str(nearest_snap))
+            )
 
         if window_pos is None:
             # Capture Lost
@@ -512,7 +512,7 @@ class Scene(Module, Job):
                 if hit is None:
                     continue  # Element was dropped.
                 current_widget, current_matrix = hit
-                current_widget.event(None, None, event_type)
+                current_widget.event(None, None, event_type, None)
             return
         if self.last_position is None:
             self.last_position = window_pos
@@ -559,7 +559,9 @@ class Scene(Module, Job):
                     )
                 try:
                     # We ignore the 'consume' etc. for the time being...
-                    response = current_widget.event(window_pos, space_pos, event_type)
+                    response = current_widget.event(
+                        window_pos, space_pos, event_type, None
+                    )
                 except AttributeError:
                     pass
             return
@@ -572,10 +574,10 @@ class Scene(Module, Job):
             "wheelup",
             "hover",
         ):
-            self.time = time.time()
+            self._down_start_time = time.time()
+            self._down_start_pos = window_pos
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -596,10 +598,6 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
-            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
-            # if debug_str != old_debug:
-            #   old_debug = debug_str
-            #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
 
             if (
                 i == 0
@@ -611,35 +609,79 @@ class Scene(Module, Job):
                         self.log_events(
                             "Converted %s: %s" % ("hover_end", str(window_pos))
                         )
-                    previous_top_element.event(window_pos, window_pos, "hover_end")
-                current_widget.event(window_pos, space_pos, "hover_start")
+                    previous_top_element.event(
+                        window_pos, window_pos, "hover_end", None
+                    )
+                current_widget.event(window_pos, space_pos, "hover_start", None)
                 if self.log_events:
                     self.log_events(
                         "Converted %s: %s" % ("hover_start", str(window_pos))
                     )
                 previous_top_element = current_widget
-            delta_time = time.time() - self.time
             if (
-                event_type == "leftup" and delta_time <= 0.30
+                event_type == "leftup"
+                and time.time() - self._down_start_time <= 0.30
+                and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2]))
+                < 50
             ):  # Anything within 0.3 seconds will be converted to a leftclick
-                response = current_widget.event(window_pos, space_pos, "leftclick")
+                response = current_widget.event(
+                    window_pos, space_pos, "leftclick", nearest_snap
+                )
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
             elif event_type == "leftup":
                 if self.log_events:
                     self.log_events(
-                        "Did not convert to click, event of my own right, %.2f"
-                        % delta_time
+                        f"Did not convert to click, {time.time() - self._down_start_time}"
                     )
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(
+                    window_pos, space_pos, event_type, nearest_snap
+                )
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
             else:
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(
+                    window_pos, space_pos, event_type, nearest_snap
+                )
 
             if type(response) is tuple:
+                # We get two additional parameters which are the screen location of the nearest snap point
                 params = response[1:]
                 response = response[0]
+                if len(params) > 1:
+                    new_x_space = params[0]
+                    new_y_space = params[1]
+                    new_x = window_pos[0]
+                    new_y = window_pos[1]
+                    snap_x = None
+                    snap_y = None
+
+                    sdx = new_x_space - space_pos[0]
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdx *= current_matrix.value_scale_x()
+                    snap_x = window_pos[0] + sdx
+                    sdy = new_y_space - space_pos[1]
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdy *= current_matrix.value_scale_y()
+                    # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
+                    snap_y = window_pos[1] + sdy
+
+                    dx = new_x - self.last_position[0]
+                    dy = new_y - self.last_position[1]
+                    if snap_x is None:
+                        nearest_snap = None
+                    else:
+                        # We are providing the space and screen coordinates
+                        snap_space = current_matrix.point_in_inverse_space(
+                            (snap_x, snap_y)
+                        )
+                        nearest_snap = (
+                            snap_space[0],
+                            snap_space[1],
+                            snap_x,
+                            snap_y,
+                        )
+                        # print ("Snap provided", nearest_snap)
             else:
                 params = None
 
@@ -647,56 +689,17 @@ class Scene(Module, Job):
                 self.hit_chain.clear()
                 return
             elif response == RESPONSE_CONSUME:
-                # if event_type == "leftdown":
-                #    print("Event was consumed by %s" % widgetname)
+                # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
+                #      widgetname = type(current_widget).__name__
+                #      print("Event %s was consumed by %s" % (event_type, widgetname))
                 return
             elif response == RESPONSE_CHAIN:
                 continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
-            elif response == RESPONSE_CHANGE_POSITION:
-                # New position has been given:
-                # print("New position")
-                if not params is None:
-                    new_x_space = params[0]
-                    new_y_space = params[1]
-                # print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
-                new_x = window_pos[0]
-                new_y = window_pos[1]
-                if not new_x_space is None:
-                    sdx = new_x_space - space_pos[0]
-                    odx = sdx
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdx *= current_matrix.value_scale_x()
-                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
-                    new_x = window_pos[0] + sdx
-                    sdy = new_y_space - space_pos[1]
-                    ody = sdy
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdy *= current_matrix.value_scale_y()
-                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
-                    new_y = window_pos[1] + sdy
-
-                dx = new_x - self.last_position[0]
-                dy = new_y - self.last_position[1]
-                window_pos = (
-                    new_x,
-                    new_y,
-                    self.last_position[0],
-                    self.last_position[1],
-                    dx,
-                    dy,
-                )
-                self.last_position = window_pos
-                new_x_space = None
-                new_y_space = None
-                need_refresh = True
                 continue
             else:
                 break
-        if need_refresh:
-            self.screen_refresh_is_requested = True
-            self.refresh_scene()
 
     def cursor(self, cursor, always=False):
         """

@@ -366,7 +366,7 @@ class LaserRender:
                     # No valid cache. Generate.
                     cut.c_width, cut.c_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=1000)
+                        cut.cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image)
@@ -628,11 +628,24 @@ class LaserRender:
                     textstr = textstr.upper()
                 if ttf == "lowercase":
                     textstr = textstr.lower()
-            #f_width1, f_height1 = gc.GetTextExtent(textstr)
-            #print ("Get Textextent: Height=%.1f" % f_height1)
+            # There's a fundamental flaw in wxPython to get the right fontsize
+            # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
+            # as result for the font-height and dont take the real glyphs into account
+            # That means that ".", "a", "g" and "T" all have the same height...
+            # Consequently the size is always off... This can be somewhat compensated by taking
+            # the descent from the font-metric into account.
+            # A 'real' height routine would most probably need to draw the string on an
+            # empty canvas and find the first and last dots on a line...
             f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
-            #print ("Get Full Textextent: Height=%.1f, descent=%.1f, leading=%.1f" % ( f_height, f_descent, f_externalLeading ))
-            f_height -= self.fontdescent_factor * f_descent
+            # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
+            # That stuff drives my crazy...
+            # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
+            has_underscore = any(substring in textstr for substring in ('g', 'j', 'p', 'q', 'y', ',', ';'))
+            delta = self.fontdescent_factor * f_descent
+            if has_underscore:
+                delta -= self.fontdescent_factor/2 * f_descent
+            delta -= f_externalLeading
+            f_height -= delta
             text.width = f_width
             text.height = f_height
             # print ("Anchor= %s" % text.anchor)
@@ -648,38 +661,57 @@ class LaserRender:
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
+        image = node.active_image
+        matrix = node.active_matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_CACHE == 0:
-            cache = None
-            try:
-                cache = node.cache
-            except AttributeError:
-                pass
-            if cache is None:
-                try:
-                    max_allowed = node.max_allowed
-                except AttributeError:
-                    max_allowed = 2048
-                node.c_width, node.c_height = node.image.size
-                node.cache = self.make_thumbnail(
-                    node.image,
-                    maximum=max_allowed,
-                    alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                )
-            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
-        else:
-            node.c_width, node.c_height = node.image.size
-            cache = self.make_thumbnail(
-                node.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+        if node.process_image_failed:
+            image_width, image_height = image.size
+            gc.SetBrush(wx.RED_BRUSH)
+            gc.SetPen(wx.RED_PEN)
+            gc.DrawRectangle(0, 0, image_width, image_height)
+            gc.DrawBitmap(
+                icons8_image_50.GetBitmap(), 0, 0, image_width, image_height
             )
-            gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+        else:
+            if draw_mode & DRAW_MODE_CACHE == 0:
+                cache = None
+                try:
+                    cache = node.cache
+                except AttributeError:
+                    pass
+                if cache is None:
+                    try:
+                        max_allowed = node.max_allowed
+                    except AttributeError:
+                        max_allowed = 2048
+                    node.c_width, node.c_height = image.size
+                    node.cache = self.make_thumbnail(
+                        image,
+                        maximum=max_allowed,
+                        alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                    )
+                gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+            else:
+                node.c_width, node.c_height = image.size
+                try:
+                    cache = self.make_thumbnail(
+                        image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                    )
+                    gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+                except MemoryError:
+                    pass
         gc.PopState()
+        txt = node.text
+        if txt is not None:
+            gc.PushState()
+            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+            font = wx.Font()
+            font.SetFractionalPointSize(20)
+            gc.SetFont(font, wx.BLACK)
+            gc.DrawText(txt, 30, 30)
+            gc.PopState()
 
     def make_raster(
         self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1
@@ -792,7 +824,8 @@ class LaserRender:
             return wx.Bitmap.FromBufferRGBA(
                 width, height, pil_data.convert("RGBA").tobytes()
             )
-
+        if "transparency" in pil_data.info:
+            pil_data = pil_data.convert("RGBA")
         try:
             # If transparent we paste 0 into the pil_data
             mask = pil_data.getchannel("A").point(lambda e: 255 - e)

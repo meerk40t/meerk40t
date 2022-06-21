@@ -11,6 +11,7 @@ from .icons import (
     icons8_pause_50,
     icons8_play_50,
     icons8_route_50,
+    STD_ICON_SIZE
 )
 from .laserrender import LaserRender, DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES
 from .mwindow import MWindow
@@ -618,6 +619,7 @@ class Simulation(MWindow):
                 "icon": icons8_laser_beam_hazard2_50,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
+                "size": STD_ICON_SIZE,
             },
         )
 

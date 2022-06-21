@@ -143,11 +143,7 @@ class Parameters:
 
     @property
     def raster_step_x(self):
-        try:
-            type = self.type
-        except AttributeError:
-            type = None
-        return self.settings.get("raster_step_x", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_x", 0)
 
     @raster_step_x.setter
     def raster_step_x(self, value):
@@ -155,11 +151,7 @@ class Parameters:
 
     @property
     def raster_step_y(self):
-        try:
-            type = self.type
-        except AttributeError:
-            type = None
-        return self.settings.get("raster_step_y", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_y", 0)
 
     @raster_step_y.setter
     def raster_step_y(self, value):
@@ -344,14 +336,6 @@ class Parameters:
     @hatch_angle.setter
     def hatch_angle(self, value):
         self.settings["hatch_angle"] = value
-
-    @property
-    def hatch_angle_inc(self):
-        return self.settings.get("hatch_angle_inc", "0deg")
-
-    @hatch_angle_inc.setter
-    def hatch_angle_inc(self, value):
-        self.settings["hatch_angle_inc"] = value
 
     @property
     def hatch_distance(self):

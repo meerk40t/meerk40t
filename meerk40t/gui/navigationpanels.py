@@ -35,6 +35,8 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
+    icons8_constraint_50,
+    icons8_expansion_50,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Angle
@@ -173,6 +175,53 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/jogdist", pane)
 
+_confined = True
+
+def get_movement(device, dx, dy):
+    global _confined
+    conf = _confined
+    try:
+        current_x, current_y = device.current
+    except AttributeError:
+        conf = False
+    if conf:
+        newx = float(Length(dx))
+        newy = float(Length(dy))
+        min_x = 0
+        max_x = float(Length(device.width))
+        min_y = 0
+        max_y = float(Length(device.height))
+        # print ("Delta:", newx, newy)
+        # print ("Current:", current_x, current_y)
+        if newx + current_x>max_x:
+            tmp = max_x - current_x
+            if newx != 0:
+                newy = newy * tmp / newx
+            newx = tmp
+        elif newx + current_x < min_x:
+            tmp = -1 * current_x
+            if newx != 0:
+                newy = newy * tmp / newx
+            newx = tmp
+        if newy + current_y>max_y:
+            tmp = max_y - current_y
+            if newy != 0:
+                newx = newx * tmp / newy
+            newy = tmp
+        elif newy + current_y < min_y:
+            tmp = -1 * current_y
+            if newy != 0:
+                newx = newx * tmp / newy
+            newy = tmp
+        sx = Length(newx, unitless=1)
+        sy = Length(newy, unitless=1)
+        # print ("sx, sy", sx, sx.mm, sy, sy.mm)
+        nx = "%.4fmm" % sx.mm
+        ny = "%.4fmm" % sy.mm
+    else:
+        nx = dx
+        ny = dy
+    return nx, ny
 
 class Drag(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -346,7 +395,7 @@ class Drag(wx.Panel):
         )
         self.button_align_trace_hull.SetToolTip(
             _(
-                "Perform a convex hull trace of the selection (Right different alogorithm)"
+                "Perform a convex hull trace of the selection (Right different algorithm)"
             )
         )
         self.button_align_trace_hull.SetSize(self.button_align_trace_hull.GetBestSize())
@@ -442,11 +491,11 @@ class Drag(wx.Panel):
             x = bbox[0]
             y = bbox[1]
         elif value == 2:
-            x = bbox[0]
-            y = bbox[3]
-        elif value == 3:
             x = bbox[2]
             y = bbox[1]
+        elif value == 3:
+            x = bbox[0]
+            y = bbox[3]
         elif value == 4:
             x = bbox[2]
             y = bbox[3]
@@ -455,6 +504,21 @@ class Drag(wx.Panel):
             y = (bbox[3] + bbox[1]) / 2.0
         else:
             return
+        if _confined:
+            min_x = 0
+            max_x = float(Length(self.context.device.width))
+            min_y = 0
+            max_y = float(Length(self.context.device.height))
+            if x < min_x or x > max_x or y < min_y or y > max_y:
+                dlg = wx.MessageDialog(
+                    None,
+                    _("Cannot move outside bed dimensions"),
+                    _("Error"),
+                    wx.ICON_WARNING,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+                return
         self.context(
             "move_absolute {x} {y}\n".format(
                 x=Length(amount=x).length_mm,
@@ -484,8 +548,9 @@ class Drag(wx.Panel):
         self.align_per_pos(4)
 
     def drag_relative(self, dx, dy):
+        nx, ny = get_movement(self.context.device, dx, dy)
         self.context(
-            "move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=dx, dy=dy)
+            "move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=nx, dy=ny)
         )
 
     def on_button_align_drag_down(
@@ -643,6 +708,9 @@ class Jog(wx.Panel):
         self.button_navigate_lock = wx.BitmapButton(
             self, wx.ID_ANY, icons8_lock_50.GetBitmap()
         )
+        self.button_confine = wx.BitmapButton(
+            self, wx.ID_ANY, icons8_constraint_50.GetBitmap()
+        )
         self.__set_properties()
         self.__do_layout()
 
@@ -670,6 +738,9 @@ class Jog(wx.Panel):
         )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_lock, self.button_navigate_lock
+        )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_confinement, self.button_confine
         )
         # end wxGlade
 
@@ -710,6 +781,8 @@ class Jog(wx.Panel):
         self.button_navigate_unlock.SetSize(self.button_navigate_unlock.GetBestSize())
         self.button_navigate_lock.SetToolTip(_("Lock the laser rail"))
         self.button_navigate_lock.SetSize(self.button_navigate_lock.GetBestSize())
+        self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
+        self.button_confine.SetSize(self.button_confine.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
@@ -725,12 +798,59 @@ class Jog(wx.Panel):
         navigation_sizer.Add(self.button_navigate_down, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_down_right, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_unlock, 0, 0, 0)
-        navigation_sizer.Add((0, 0), 0, 0, 0)
+        navigation_sizer.Add(self.button_confine, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_lock, 0, 0, 0)
         self.SetSizer(navigation_sizer)
         navigation_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    @property
+    def confined(self):
+        global _confined
+        return _confined
+
+    @confined.setter
+    def confined(self, value):
+        global _confined
+        # Let's see whether the device has a current option...
+        try:
+            dummyx, dummy = self.context.device.current
+        except AttributeError:
+            value = False
+
+        _confined = value
+        if value == 0:
+            self.button_confine.SetBitmap(icons8_expansion_50.GetBitmap())
+            self.button_confine.SetToolTip(_("Caution: allow laser movement outside bed size"))
+            # self.context("confine 0")
+        else:
+            self.button_confine.SetBitmap(icons8_constraint_50.GetBitmap())
+            self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
+            # self.context("confine 1")
+
+
+    def on_button_confinement(self, event=None):  # wxGlade: Navigation.<event_handler>
+        self.confined = not self.confined
+        try:
+            current_x, current_y = self.context.device.current
+        except AttributeError:
+            self.confined = False
+        if self.confined:
+            min_x = 0
+            max_x = float(Length(self.context.device.width))
+            min_y = 0
+            max_y = float(Length(self.context.device.height))
+            # Are we outside? Then lets move back to the edge...
+            new_x = min(max_x, max(min_x, current_x))
+            new_y = min(max_y, max(min_y, current_y))
+            if new_x != current_x or new_y != current_y:
+                self.context("move_absolute %.3fmm %.3fmm\n" % (Length(amount=new_x).mm, Length(amount=new_y).mm))
+
+    def move_rel(self, dx, dy):
+        nx, ny = get_movement(self.context.device, dx, dy)
+        cmd = "move_relative %s %s\n" % (nx, ny)
+        self.context(cmd)
 
     def on_button_navigate_home(
         self, event=None
@@ -738,30 +858,28 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context(
-            "move_relative -{jog} -{jog}\n".format(jog=self.context.jog_amount)
-        )
+        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "-{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative 0 -{jog}\n".format(jog=self.context.jog_amount))
+        self.move_rel("0", "-{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative {jog} -{jog}\n".format(jog=self.context.jog_amount))
+        self.move_rel("{jog}".format(jog=self.context.jog_amount), "-{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative -{jog} 0\n".format(jog=self.context.jog_amount))
+        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "0")
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative {jog} 0\n".format(jog=self.context.jog_amount))
+        self.move_rel("{jog}".format(jog=self.context.jog_amount), "0")
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative -{jog} {jog}\n".format(jog=self.context.jog_amount))
+        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative 0 {jog}\n".format(jog=self.context.jog_amount))
+        self.move_rel("0", "{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.context("move_relative {jog} {jog}\n".format(jog=self.context.jog_amount))
+        self.move_rel("{jog}".format(jog=self.context.jog_amount), "{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_unlock(
         self, event=None
@@ -843,7 +961,7 @@ class MovePanel(wx.Panel):
             if not self.context.device.contains(x, y):
                 dlg = wx.MessageDialog(
                     None,
-                    _("Cannot Move Outside Bed Dimensions"),
+                    _("Cannot move outside bed dimensions"),
                     _("Error"),
                     wx.ICON_WARNING,
                 )
@@ -1051,7 +1169,7 @@ class SizePanel(wx.Panel):
                     self.object_ratio = self.object_width / self.object_height
                 except ZeroDivisionError:
                     self.object_ratio = 0
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 pass
 
         if self.object_width is not None:

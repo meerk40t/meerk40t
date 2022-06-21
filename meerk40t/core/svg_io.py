@@ -21,6 +21,7 @@ from ..svgelements import (
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
+    SVG_ATTR_TEXT_ANCHOR,
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
@@ -50,6 +51,7 @@ from ..svgelements import (
     Polyline,
     Rect,
     SimpleLine,
+    Length,
     SVGImage,
     SVGText,
 )
@@ -277,9 +279,13 @@ class SVGWriter:
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
                     ("font_style", "font-style"),  # Not implemented yet afaics
                     ("text_transform", "text-transform"),
+                    ("anchor", SVG_ATTR_TEXT_ANCHOR),
+                    ("x", SVG_ATTR_X),
+                    ("y", SVG_ATTR_Y),
                 ]
                 for attrib in attribs:
                     val = None
+                    # Look for both element and node
                     if hasattr(element, attrib[0]):
                         val = getattr(element, attrib[0])
                     if val is None and hasattr(c, attrib[0]):
@@ -293,21 +299,27 @@ class SVGWriter:
                     text_dec += " overline"
                 if c.strikethrough:
                     text_dec += " line-through"
-                if len(text_dec)>0:
+                if len(text_dec) > 0:
                     text_dec.strip()
                     subelement.set("text-decoration", text_dec)
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
-                SVGWriter._write_elements(xml_tree, c)
+                group_element = SubElement(xml_tree, SVG_TAG_GROUP)
+                SVGWriter._write_elements(group_element, c)
                 continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 SVGWriter._write_elements(xml_tree, c)
                 continue
             else:
+                # This is a non-standard element. Save custom.
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
                 continue
+
+            ###############
+            # SAVE STROKE
+            ###############
             if hasattr(element, "stroke"):
                 stroke = element.stroke
             else:
@@ -332,6 +344,9 @@ class SVGWriter:
                 except AttributeError:
                     pass
 
+            ###############
+            # SAVE FILL
+            ###############
             if hasattr(element, "fill"):
                 fill = element.fill
             else:
@@ -459,9 +474,9 @@ class SVGProcessor:
         if not lc is None:
             nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
-            if lc==SVG_RULE_EVENODD:
+            if lc == SVG_RULE_EVENODD:
                 nlc = Fillrule.FILLRULE_EVENODD
-            elif lc==SVG_RULE_NONZERO:
+            elif lc == SVG_RULE_NONZERO:
                 nlc = Fillrule.FILLRULE_NONZERO
             node.fillrule = nlc
 
@@ -469,25 +484,25 @@ class SVGProcessor:
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
         if not lc is None:
             nlc = Linecap.CAP_ROUND
-            if lc=="butt":
+            if lc == "butt":
                 nlc = Linecap.CAP_BUTT
-            elif lc=="round":
+            elif lc == "round":
                 nlc = Linecap.CAP_ROUND
-            elif lc=="square":
+            elif lc == "square":
                 nlc = Linecap.CAP_SQUARE
             node.linecap = nlc
         lj = element.values.get(SVG_ATTR_STROKE_JOIN)
         if not lj is None:
             nlj = Linejoin.JOIN_MITER
-            if lj=="arcs":
+            if lj == "arcs":
                 nlj = Linejoin.JOIN_ARCS
-            elif lj=="bevel":
+            elif lj == "bevel":
                 nlj = Linejoin.JOIN_BEVEL
-            elif lj=="miter":
+            elif lj == "miter":
                 nlj = Linejoin.JOIN_MITER
-            elif lj=="miter-clip":
+            elif lj == "miter-clip":
                 nlj = Linejoin.JOIN_MITER_CLIP
-            elif lj=="round":
+            elif lj == "round":
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
 
@@ -499,6 +514,25 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                # Maybe superceded by concrete values later, so do it first
+                fst = element.values.get("font")
+                if fst is not None:
+                    # This comes inherited from a class so lets split it up...
+                    subvalues = fst.split()
+                    for sv in subvalues:
+                        svl = sv.lower()
+                        if svl in ("italic", "normal", "oblique"):
+                            node.font_style = svl
+                        elif svl in ("lighter", "bold", "bolder"):
+                            node.text.font_weight = svl
+                        elif svl in (
+                            "fantasy",
+                            "serif",
+                            "cursive",
+                            "sans-serif",
+                            "monospace",
+                        ):
+                            node.text.font_family = svl
                 fst = element.values.get("font-style")
                 if not fst is None:
                     node.font_style = fst
@@ -508,9 +542,18 @@ class SVGProcessor:
                 fst = element.values.get("text-decoration")
                 if not fst is None:
                     fst = fst.lower()
-                    node.underline = ("underline" in fst)
-                    node.overline = ("overline" in fst)
-                    node.strikethrough = ("line-through" in fst)
+                    node.underline = "underline" in fst
+                    node.overline = "overline" in fst
+                    node.strikethrough = "line-through" in fst
+                fst = element.values.get(SVG_ATTR_TEXT_ANCHOR)
+                if not fst is None:
+                    node.text.anchor = fst
+                fst = element.values.get("x")
+                if not fst is None:
+                    node.text.x = Length(fst).value()
+                fst = element.values.get("y")
+                if not fst is None:
+                    node.text.y = Length(fst).value()
 
                 svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
                 if svgfont_to_wx:
@@ -604,16 +647,17 @@ class SVGProcessor:
                 self.elements.signal("note", self.pathname)
                 return
             node_type = element.values.get("type")
+            if node_type is None or node_type == "op":
+                # Meerk40t 0.7.x fallback node types.
+                op_type = element.values.get("operation")
+                if op_type is None:
+                    return
+                node_type = f"op {op_type.lower()}"
+
             if node_type is not None:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
                 if tag == "operation":
-                    if node_type == "op":
-                        # Meerk40t 0.7.x fallback node types.
-                        op_type = element.values.get("operation")
-                        if op_type is None:
-                            return
-                        node_type = "op %s" % op_type.lower()
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
@@ -637,7 +681,7 @@ class SVGProcessor:
                         pass
                     op.id = node_id
                 # Check if SVGElement: element
-                if tag == "element":
+                elif tag == "element":
                     elem = context_node.add(type=node_type)
                     elem.settings.update(element.values)
                     try:

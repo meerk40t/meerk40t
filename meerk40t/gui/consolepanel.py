@@ -1,7 +1,11 @@
 import wx
-from wx import aui, richtext
+from wx import aui
+try:
+    from wx import richtext
+except ImportError:
+    print("import of wx.richtext for console failed, using default console window")
 
-from meerk40t.gui.icons import icons8_console_50
+from meerk40t.gui.icons import icons8_console_50, STD_ICON_SIZE
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -388,6 +392,7 @@ class Console(MWindow):
                 "icon": icons8_console_50,
                 "tip": _("Open Console Window"),
                 "action": lambda v: kernel.console("window toggle Console\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 
