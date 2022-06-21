@@ -5623,6 +5623,7 @@ class Elemental(Service):
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
+        @self.tree_conditional_try(lambda node: kernel.lookup(f"emulator/{node.data_type}") is not None)
         @self.tree_operation(
             _("Convert to Elements"),
             node_type="blob",
