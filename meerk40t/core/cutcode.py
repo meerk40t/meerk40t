@@ -868,11 +868,11 @@ class DwellCut(CutObject):
 
 
 class WaitCut(CutObject):
-    def __init__(self, start_point, wait, settings=None, passes=1, parent=None):
+    def __init__(self, wait, settings=None, passes=1, parent=None):
         CutObject.__init__(
             self,
-            start_point,
-            start_point,
+            (0, 0),
+            (0, 0),
             settings=settings,
             passes=passes,
             parent=parent,

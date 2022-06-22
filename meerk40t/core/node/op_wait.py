@@ -85,7 +85,7 @@ class WaitOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        wait = WaitCut(None, self.wait * 1000.0)
+        wait = WaitCut(self.wait * 1000.0)
         wait.original_op = self.type
         yield wait
 
