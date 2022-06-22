@@ -63,14 +63,14 @@ class BalorController:
         return str(self._queue)
 
     def added(self):
-        self.start()
+        pass
 
     def service_detach(self):
         pass
 
     def shutdown(self, *args, **kwargs):
         if self._thread is not None:
-            self.do_shutdown = True
+            self.is_shutdown = True
 
     def write(self, job):
         """
@@ -125,22 +125,20 @@ class BalorController:
 
     def get_list_status(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.raw_get_list_status()
+        return self.connection.raw_get_list_status()
 
     def get_serial_number(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.raw_get_serial_no()
+        return self.connection.raw_get_serial_no()
 
     def get_status(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.read_port()
+        return self.connection.read_port()
 
     def get_port(self):
         if self.connection is not None:
             return self.connection.get_port()
+        return None
 
     def wait_finished(self):
         while len(self._queue) or len(self._preempt):
@@ -248,6 +246,8 @@ class BalorController:
                     self.service.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.service.signal("pipe;failing", self.refuse_counts)
                 self.service.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except BalorCommunicationException:

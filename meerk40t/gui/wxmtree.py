@@ -13,6 +13,7 @@ from .icons import (
     icons8_smartphone_ram_50,
     icons8_system_task_20,
     icons8_vector_20,
+    icons8_timer_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -62,6 +63,7 @@ def register_panel_tree(window, context):
         "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
     )
     context.register("format/op console", "{enabled}{command}")
+    context.register("format/op wait", "{enabled}{element_type} {wait}")
     context.register("format/layer", "{element_type} {name}")
     context.register("format/elem ellipse", "{element_type} {id}")
     context.register("format/elem image", "{element_type} {width}x{height}")
@@ -765,6 +767,8 @@ class ShadowTree:
                 except AttributeError:
                     c = None
                 self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
+            elif node.type == "op wait":
+                self.set_icon(node, icons8_timer_20.GetBitmap())
             elif node.type == "file":
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":

@@ -155,11 +155,12 @@ class RasterOpNode(Node, Parameters):
         if not same_color and hasattr(node, "stroke") and node.stroke is not None:
             plain_color_op = abs(self.color)
             plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
+            if plain_color_op == plain_color_node:
                 same_color = True
         if same_color:
             self.add_reference(node)
             return True, True
+
         if node.type in (
             "elem image",
             "elem text",

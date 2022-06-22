@@ -675,6 +675,7 @@ class CommandList(CommandSource):
         self._poly_delay = None
         self._mark_end_delay = None
         self._laser_on = False
+        self._pulse_width = None
         if self._sender:
             self._write_port = self._sender._write_port
         else:
@@ -936,6 +937,19 @@ class CommandList(CommandSource):
         self.ready()
         self._q_switch_frequency = frequency
         self.append(OpSetQSwitchPeriod(self.convert_frequency_to_period(frequency)))
+
+    def set_fiber_pulse_width(self, pulse_width):
+        """
+        Set the fiber pulse width
+
+        @param speed: Speed to set.
+        @return:
+        """
+        if self._pulse_width == pulse_width:
+            return
+        self.ready()
+        self._pulse_width = pulse_width
+        self.append(OpFiberYLPMPulseWidth(pulse_width))
 
     def set_write_port(self, port):
         if self._write_port == port:

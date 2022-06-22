@@ -60,6 +60,8 @@ class DotsOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Dots"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -155,7 +157,7 @@ class DotsOpNode(Node, Parameters):
             if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (point_node.point[0], point_node[1]),
+                (point_node.point[0], point_node.point[1]),
                 settings=settings,
                 passes=passes,
             )

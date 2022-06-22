@@ -5,7 +5,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
+from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
 
 
 class BalorDevice(Service, ViewPort):
@@ -193,9 +193,7 @@ class BalorDevice(Service, ViewPort):
                 "default": "0deg",
                 "type": Angle,
                 "label": _("Redlight Angle Offset"),
-                "tip": _(
-                    "Offset the redlight positions by this angle, curving around center"
-                ),
+                "tip": _("Offset the redlight positions by this angle, curving around center"),
             },
             {
                 "attr": "redlight_preferred",
@@ -203,9 +201,7 @@ class BalorDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Prefer redlight on"),
-                "tip": _(
-                    "Redlight preference will turn toggleable redlights on after a job completes."
-                ),
+                "tip": _("Redlight preference will turn toggleable redlights on after a job completes."),
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -242,6 +238,25 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Travel Speed"),
                 "tip": _("How fast do we travel when not cutting?"),
+            },
+            {
+                "attr": "pulse_width_enabled",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Pulse Width"),
+                "tip": _("Enable using Pulse Width (MOPA)"),
+            },
+            {
+                "attr": "default_pulse_width",
+                "object": self,
+                "default": 4,
+                "type": int,
+                "style": "combo",
+                "choices": [1, 2, 4, 6, 9, 13, 20, 30, 45, 55, 60, 80, 100, 150, 200, 250],
+                "conditional": (self, "pulse_width_enabled"),
+                "label": _("Set Pulse Width (ns)"),
+                "tip": _("Set the MOPA pulse width setting"),
             },
         ]
         self.register_choices("balor-global", choices)
@@ -581,11 +596,7 @@ class BalorDevice(Service, ViewPort):
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
         @self.console_option(
-            "jump_delay",
-            "d",
-            type=float,
-            default=200.0,
-            help="Sets the jump delay for light travel moves",
+            "jump_delay", "d", type=float, default=200.0, help="Sets the jump delay for light travel moves"
         )
         @self.console_option(
             "simulation_speed",
@@ -650,10 +661,15 @@ class BalorDevice(Service, ViewPort):
                 if pt is None:
                     return None
                 return (
-                    pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                    pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+                    pt[0] * rotate.a
+                    + pt[1] * rotate.c
+                    + 1 * rotate.e,
+                    pt[0] * rotate.b
+                    + pt[1] * rotate.d
+                    + 1 * rotate.f,
                 )
 
+            job.movement = False
             dark_delay = 8
             if jump_delay < 0:
                 jump_delay = None
@@ -822,11 +838,11 @@ class BalorDevice(Service, ViewPort):
         def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Looping job: {job}".format(job=str(data)))
 
-            def gen():
+            def looping_job():
                 yield "light", data
                 yield "wait_finished"
 
-            self.spooler.set_idle(gen)
+            self.spooler.set_idle(looping_job)
             return "balor", data
 
         @self.console_argument("x", type=float, default=0.0)
@@ -856,9 +872,7 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
-        @self.console_option(
-            "duration", "d", type=float, help=_("time to set/unset the port")
-        )
+        @self.console_option("duration", "d", type=float, help=_("time to set/unset the port"))
         @self.console_argument("off", type=str)
         @self.console_argument("bit", type=int)
         @self.console_command(
@@ -886,6 +900,9 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_status()
+            if reply is None:
+                channel("Not connected, cannot get serial number.")
+                return
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -900,6 +917,9 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_list_status()
+            if reply is None:
+                channel("Not connected, cannot get serial number.")
+                return
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -914,6 +934,10 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_serial(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_serial_number()
+            if reply is None:
+                channel("Not connected, cannot get serial number.")
+                return
+
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -1003,7 +1027,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_option(
             "count",
             "c",
-            default=15,
+            default=256,
             type=int,
             help="Number of instances of boxes to draw.",
         )
@@ -1012,9 +1036,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(
-            command, channel, _, count=15, data=None, args=tuple(), **kwargs
-        ):
+        def element_outline(command, channel, _, count=256, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1029,7 +1051,6 @@ class BalorDevice(Service, ViewPort):
                 (xmax, ymin),
                 (xmax, ymax),
                 (xmin, ymax),
-                (xmin, ymin),
             ]
             if count > 1:
                 points *= count

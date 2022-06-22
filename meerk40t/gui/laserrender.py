@@ -613,14 +613,20 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         if draw_mode & DRAW_MODE_POINTS:
             return
+        point = node.point
+        if point is None:
+            return
         try:
             matrix = node.matrix
         except AttributeError:
             matrix = None
+        if matrix is None:
+            return
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
-        point = node.point
         point = matrix.point_in_matrix_space(point)
+        node.point = point
+        matrix.reset()
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)

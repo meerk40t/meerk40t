@@ -2436,6 +2436,16 @@ class Kernel(Settings):
             else:  # Assuming other linux like system
                 print("\a")  # Beep.
 
+        @self.console_argument("sleeptime", type=float, help=_("Wait time in seconds"), default=1)
+        @self.console_command("wait", _("Wait for given amount of time."), all_arguments_required=True)
+        def wait(channel, _, sleeptime, **kwargs):
+            """
+            Provide a wait time. This is executed within the current thread. If called from the gui thread this will
+            lag the redrawing of frames etc. This command is intended to be called by drivers or in other special
+            events where calling the console commands is entirely acceptable.
+            """
+            time.sleep(sleeptime)
+
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
@@ -2900,6 +2910,14 @@ class Kernel(Settings):
                 return
             if directory == "&":
                 self.current_directory = os.path.dirname(self._config_file)
+                channel(
+                    _("Configuration Directory: {dir}").format(
+                        dir=str(self.current_directory)
+                    )
+                )
+                return
+            if directory == "`":
+                self.current_directory = get_safe_path(self.name)
                 channel(
                     _("Configuration Directory: {dir}").format(
                         dir=str(self.current_directory)
