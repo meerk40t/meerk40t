@@ -274,7 +274,7 @@ class BalorDriver:
             elif isinstance(q, DwellCut):
                 pass
             elif isinstance(q, WaitCut):
-                pass
+                job.raw_mark_end_delay(q.dwell_time)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
