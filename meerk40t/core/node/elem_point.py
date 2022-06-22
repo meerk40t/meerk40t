@@ -17,7 +17,7 @@ class PointNode(Node):
         stroke_width=None,
         **kwargs,
     ):
-        super(PointNode, self).__init__(type="elem path", **kwargs)
+        super(PointNode, self).__init__(type="elem point", **kwargs)
         self.point = point
         self.matrix = matrix
         self.settings = kwargs
