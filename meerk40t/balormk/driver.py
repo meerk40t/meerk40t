@@ -294,7 +294,7 @@ class BalorDriver:
                     dwell_time -= d
                 job.raw_mark_end_delay(self.service.delay_end)
             elif isinstance(q, WaitCut):
-                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in 10 us
+                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     job.raw_mark_end_delay(int(d))
