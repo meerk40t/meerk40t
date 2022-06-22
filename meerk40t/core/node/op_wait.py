@@ -14,21 +14,6 @@ class WaitOperation(Node):
         super().__init__(type="op wait", **kwargs)
         self.settings = {"wait": wait, "output": True}
 
-    def set_wait(self, wait):
-        self.settings["wait"] = float(wait)
-
-    @property
-    def wait(self):
-        return float(self.settings.get("wait"))
-
-    @property
-    def output(self):
-        return self.settings.get("output", True)
-
-    @output.setter
-    def output(self, v):
-        self.settings["output"] = v
-
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"
 
@@ -46,6 +31,22 @@ class WaitOperation(Node):
 
     def __len__(self):
         return 1
+
+    @property
+    def wait(self):
+        return float(self.settings.get("wait"))
+
+    @wait.setter
+    def wait(self, v):
+        self.settings["wait"] = v
+
+    @property
+    def output(self):
+        return self.settings.get("output", True)
+
+    @output.setter
+    def output(self, v):
+        self.settings["output"] = v
 
     @property
     def implicit_passes(self):

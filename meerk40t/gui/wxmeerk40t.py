@@ -7,6 +7,8 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from .propertypanels.waitproperty import WaitPropertyPanel
+
 try:
     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
@@ -336,6 +338,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)
