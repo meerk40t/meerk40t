@@ -248,7 +248,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Enable using Pulse Width (MOPA)"),
             },
             {
-                "attr": "pulse_width",
+                "attr": "default_pulse_width",
                 "object": self,
                 "default": 4,
                 "type": int,

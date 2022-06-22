@@ -10,6 +10,9 @@ FLOAT_PARAMETERS = (
     "delay_polygon",
     "wobble_speed",
 )
+INT_PARAMETERS = (
+    "pulse_width",
+)
 
 BOOL_PARAMETERS = (
     "wobble_enabled",
@@ -44,6 +47,9 @@ class Parameters:
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
+        for v in INT_PARAMETERS:
+            if v in settings:
+                settings[v] = int(settings[v])
         for v in BOOL_PARAMETERS:
             if v in settings:
                 settings[v] = str(settings[v]).lower() == "true"
