@@ -272,7 +272,13 @@ class BalorDriver:
                             job.set_power(current_power * on)
                     job.mark(x, y)
             elif isinstance(q, DwellCut):
-                pass
+                start = q.start
+                job.goto(start[0], start[1])
+                dwell_time = q.dwell_time
+                while dwell_time >= 0:
+                    d = min(dwell_time, 60000)
+                    job.raw_laser_on_point(d)
+                    dwell_time -= d
             elif isinstance(q, WaitCut):
                 job.raw_mark_end_delay(q.dwell_time)
             else:
