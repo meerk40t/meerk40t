@@ -239,6 +239,25 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Travel Speed"),
                 "tip": _("How fast do we travel when not cutting?"),
             },
+            {
+                "attr": "pulse_width_enabled",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Enable Pulse Width"),
+                "tip": _("Enable using Pulse Width (MOPA)"),
+            },
+            {
+                "attr": "wobble_type",
+                "object": self,
+                "default": 4,
+                "type": int,
+                "style": "combo",
+                "choices": [1, 2, 4, 6, 9, 13, 20, 30, 45, 55, 60, 80, 100, 150, 200, 250],
+                "conditional": (self, "pulse_width_enabled"),
+                "label": _("Set Pulse Width (ns)"),
+                "tip": _("Set the MOPA pulse width setting"),
+            },
         ]
         self.register_choices("balor-global", choices)
 
