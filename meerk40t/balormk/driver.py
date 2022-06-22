@@ -127,12 +127,13 @@ class BalorDriver:
             if str(settings.get("pulse_width_enabled", False)).lower() == "true":
                 # Local Pulse Width value is enabled.
                 # OpFiberYLPMPulseWidth
-                job.raw_fiber_ylpmp_pulse_width(int(settings.get(
+
+                job.set_fiber_pulse_width(int(settings.get(
                     "pulse_width", self.service.default_pulse_width
                 )))
             else:
                 # Only global is enabled, use global pulse width value.
-                job.raw_fiber_ylpmp_pulse_width(self.service.default_pulse_width)
+                job.set_fiber_pulse_width(self.service.default_pulse_width)
 
         if (
                 str(settings.get("rapid_enabled", False)).lower() == "true"
@@ -289,8 +290,9 @@ class BalorDriver:
                 dwell_time = q.dwell_time
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
-                    job.raw_laser_on_point(d)
+                    job.raw_laser_on_point(int(d))
                     dwell_time -= d
+                job.raw_mark_end_delay(self.service.delay_end)
             elif isinstance(q, WaitCut):
                 job.raw_mark_end_delay(q.dwell_time)
             else:
