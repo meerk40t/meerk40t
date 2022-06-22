@@ -111,20 +111,24 @@ class BalorController:
         # Requires realtime response.
         if self.state == STATE_ACTIVE:
             return self.connection.raw_get_list_status()
+        return None
 
     def get_serial_number(self):
         # Requires realtime response.
         if self.state == STATE_ACTIVE:
             return self.connection.raw_get_serial_no()
+        return None
 
     def get_status(self):
         # Requires realtime response.
         if self.state == STATE_ACTIVE:
             return self.connection.read_port()
+        return None
 
     def get_port(self):
         if self.connection is not None:
             return self.connection.get_port()
+        return None
 
     def wait_finished(self):
         while len(self._queue) or len(self._preempt):

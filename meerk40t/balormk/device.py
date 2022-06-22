@@ -881,6 +881,9 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_status()
+            if reply is not None:
+                channel("Not connected, cannot get serial number.")
+                return
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -895,6 +898,9 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_list_status()
+            if reply is not None:
+                channel("Not connected, cannot get serial number.")
+                return
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
@@ -909,6 +915,10 @@ class BalorDevice(Service, ViewPort):
         )
         def balor_serial(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_serial_number()
+            if reply is not None:
+                channel("Not connected, cannot get serial number.")
+                return
+
             channel("Command replied: {reply}".format(reply=str(reply)))
             for index, b in enumerate(reply):
                 channel(
