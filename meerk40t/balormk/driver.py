@@ -275,7 +275,7 @@ class BalorDriver:
                 start = q.start
                 job.goto(start[0], start[1])
                 dwell_time = q.dwell_time
-                while dwell_time >= 0:
+                while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     job.raw_laser_on_point(d)
                     dwell_time -= d
