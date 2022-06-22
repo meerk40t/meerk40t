@@ -5657,20 +5657,22 @@ class Elemental(Service):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="reference", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type=("reference",), help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="reference", help=""
+            _("Make %s copies") % "{copies}", node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            index = node.parent.children.index(node)
-            for i in range(copies):
-                node.parent.add_reference(node.node, type="reference", pos=index)
-            node.modified()
+            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
             self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -6555,7 +6557,6 @@ class Elemental(Service):
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
-
                 yield func
 
     def flat(self, **kwargs):
