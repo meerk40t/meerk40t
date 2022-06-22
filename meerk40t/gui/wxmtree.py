@@ -12,8 +12,8 @@ from .icons import (
     icons8_scatter_plot_20,
     icons8_smartphone_ram_50,
     icons8_system_task_20,
-    icons8_vector_20,
     icons8_timer_20,
+    icons8_vector_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
