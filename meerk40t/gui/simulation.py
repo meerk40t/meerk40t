@@ -53,7 +53,6 @@ class SimulationPanel(wx.Panel, Job):
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
-
         self.view_pane = ScenePanel(
             self.context,
             self,
@@ -434,10 +433,11 @@ class SimulationPanel(wx.Panel, Job):
         self.progress += 1
         if self.progress >= self.max:
             self.progress = self.max
+            self.slider_progress.SetValue(self.progress)
             self._stop()
         else:
-            self.context.signal("refresh_scene", self.widget_scene.name)
-        self.slider_progress.SetValue(self.progress)
+            self.slider_progress.SetValue(self.progress)
+        self.context.signal("refresh_scene", self.widget_scene.name)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
         # Slider is now pseudo logarithmic in scale varying from 1% to 5,000%.
