@@ -768,7 +768,7 @@ class LaserRender:
             gc.PopState()
 
     def make_raster(
-        self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1
+        self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1, keep_ratio=False,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -784,6 +784,8 @@ class LaserRender:
         @param height: desired height of the resulting raster
         @param bitmap: bitmap to use rather than provisioning
         @param step: raster step rate, int scale rate of the image.
+        @param keepratio: get a picture with the same height / width
+               ratio as the original
         @return:
         """
         if bounds is None:
@@ -827,6 +829,9 @@ class LaserRender:
         # Scale affine matrix up by step amount scaled down.
         scale_x = width / float(image_width)
         scale_y = height / float(image_height)
+        if keep_ratio:
+            scale_x = min(scale_x, scale_y)
+            scale_y = scale_x
         matrix.post_scale(scale_x, scale_y)
 
         gc = wx.GraphicsContext.Create(dc)

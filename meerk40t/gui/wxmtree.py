@@ -727,14 +727,14 @@ class ShadowTree:
                 return
             elif node.type == "reference":
                 image = self.renderer.make_raster(
-                    node.node, node.node.bounds, width=20, height=20, bitmap=True
+                    node.node, node.node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
                     tree.SetItemImage(item, image=image_id)
             elif node.type.startswith("elem "):
                 image = self.renderer.make_raster(
-                    node, node.bounds, width=20, height=20, bitmap=True
+                    node, node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
                 )
                 if image is not None:
                     image_id = self.tree_images.Add(bitmap=image)
