@@ -9,6 +9,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Polygon
 from meerk40t.gui.laserrender import swizzlecolor
 
+
 class PolygonTool(ToolWidget):
     """
     Polygon Drawing Tool.

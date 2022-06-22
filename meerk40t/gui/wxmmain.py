@@ -43,7 +43,7 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    STD_ICON_SIZE,
+    STD_ICON_SIZE, icons8_point_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -677,7 +677,7 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/tools/Scene",
             {
-                "label": _("Regular Scene"),
+                "label": _("Move"),
                 "icon": icons8_cursor_50,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
@@ -769,6 +769,19 @@ class MeerK40t(MWindow):
                 "size": buttonsize,
             },
         )
+
+        kernel.register(
+            "button/tools/Point",
+            {
+                "label": _("Point"),
+                "icon": icons8_point_50,
+                "tip": _("Add point to the scene"),
+                "action": lambda v: kernel.elements("tool point\n"),
+                "toggle": "tool",
+                "size": buttonsize,
+            },
+        )
+
 
         kernel.register(
             "button/tools/Vector",
