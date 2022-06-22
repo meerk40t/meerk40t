@@ -122,6 +122,18 @@ class BalorDriver:
         @param settings: The current settings dictionary
         @return:
         """
+        if self.service.pulse_width_enabled:
+            # Global Pulse Width is enabled.
+            if str(settings.get("pulse_width_enabled", False)).lower() == "true":
+                # Local Pulse Width value is enabled.
+                # OpFiberYLPMPulseWidth
+                job.raw_fiber_ylpmp_pulse_width(int(settings.get(
+                    "pulse_width", self.service.default_pulse_width
+                )))
+            else:
+                # Only global is enabled, use global pulse width value.
+                job.raw_fiber_ylpmp_pulse_width(self.service.default_pulse_width)
+
         if (
                 str(settings.get("rapid_enabled", False)).lower() == "true"
         ):
