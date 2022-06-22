@@ -287,14 +287,18 @@ class BalorDriver:
             elif isinstance(q, DwellCut):
                 start = q.start
                 job.goto(start[0], start[1])
-                dwell_time = q.dwell_time
+                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     job.raw_laser_on_point(int(d))
                     dwell_time -= d
                 job.raw_mark_end_delay(self.service.delay_end)
             elif isinstance(q, WaitCut):
-                job.raw_mark_end_delay(q.dwell_time)
+                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in us
+                while dwell_time > 0:
+                    d = min(dwell_time, 60000)
+                    job.raw_mark_end_delay(int(d))
+                    dwell_time -= d
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
