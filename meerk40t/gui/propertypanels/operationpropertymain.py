@@ -1104,11 +1104,11 @@ class DwellSettingsPanel(wx.Panel):
         self.operation = node
 
         sizer_passes = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Dwell Time:"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, "Dwell Time: (ms)"), wx.HORIZONTAL
         )
 
         self.text_dwelltime = wx.TextCtrl(self, wx.ID_ANY, "1.0")
-        self.text_dwelltime.SetToolTip(_("Dwell time at each location in the sequence"))
+        self.text_dwelltime.SetToolTip(_("Dwell time (ms) at each location in the sequence"))
         sizer_passes.Add(self.text_dwelltime, 1, 0, 0)
 
         self.SetSizer(sizer_passes)
