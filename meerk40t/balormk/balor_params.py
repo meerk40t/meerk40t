@@ -18,6 +18,7 @@ BOOL_PARAMETERS = (
     "wobble_enabled",
     "timing_enabled",
     "rapid_enabled",
+    "pulse_width_enabled",
 )
 
 
@@ -64,6 +65,23 @@ class Parameters:
     @rapid_enabled.setter
     def rapid_enabled(self, value):
         self.settings["rapid_enabled"] = value
+
+    @property
+    def pulse_width_enabled(self):
+        return self.settings.get("pulse_width_enabled", False)
+
+    @pulse_width_enabled.setter
+    def pulse_width_enabled(self, value):
+        self.settings["pulse_width_enabled"] = value
+
+    @property
+    def pulse_width(self):
+        return self.settings.get("pulse_width", 4)
+
+    @pulse_width.setter
+    def pulse_width(self, value):
+        self.settings["pulse_width"] = value
+
 
     @property
     def timing_enabled(self):
