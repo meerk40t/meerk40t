@@ -44,17 +44,19 @@ from ..svgelements import (
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
     Circle,
+    Color,
     Ellipse,
     Group,
     Length,
     Matrix,
     Path,
+    Point,
     Polygon,
     Polyline,
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText, Point, Color,
+    SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_PIXEL
 
@@ -228,8 +230,8 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
                 element = Point(c.point) * scale
-                c.settings['x'] = element.x
-                c.settings['y'] = element.y
+                c.settings["x"] = element.x
+                c.settings["y"] = element.y
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
             elif c.type == "elem polyline":

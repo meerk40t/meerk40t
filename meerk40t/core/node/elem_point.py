@@ -1,7 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Point, Matrix
+from meerk40t.svgelements import Matrix, Point
 
 
 class PointNode(Node):
@@ -39,7 +39,9 @@ class PointNode(Node):
 
     def validate(self):
         if self.point is None:
-            self.point = Point(float(self.settings.get("x", 0)), float(self.settings.get("y", 0)))
+            self.point = Point(
+                float(self.settings.get("x", 0)), float(self.settings.get("y", 0))
+            )
         if self.matrix is None:
             self.matrix = Matrix()
 

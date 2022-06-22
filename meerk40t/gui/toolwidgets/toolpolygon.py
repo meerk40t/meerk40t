@@ -10,7 +10,6 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Polygon
 
 
-
 class PolygonTool(ToolWidget):
     """
     Polygon Drawing Tool.
