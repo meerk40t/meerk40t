@@ -589,6 +589,8 @@ class LaserRender:
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         point = matrix.point_in_matrix_space(point)
+        node.point = point
+        matrix.reset()
         dif = 5 * zoomscale
         gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
         gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
