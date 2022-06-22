@@ -1,4 +1,4 @@
-from math import tau, cos, sin, atan2
+from math import atan2, cos, sin, tau
 
 SHXPARSER_VERSION = "0.0.1"
 

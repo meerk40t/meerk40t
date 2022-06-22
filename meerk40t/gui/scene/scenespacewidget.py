@@ -28,7 +28,7 @@ class SceneSpaceWidget(Widget):
         self._previous_zoom = None
         self._placement_event = None
         self._placement_event_type = None
-        self.osv =-1
+        self.osv = -1
 
     def hit(self):
         """
@@ -43,6 +43,7 @@ class SceneSpaceWidget(Widget):
         # establish os-system
         if self.osv < 0:
             from platform import system
+
             sysname = system()
             if sysname == "Windows":
                 # Windows
@@ -90,7 +91,9 @@ class SceneSpaceWidget(Widget):
             return 1.0
         return 1.0 / zf
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         """
         Process the zooming and panning of otherwise unhit-widget events.
 
@@ -108,7 +111,10 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_translate(0, self.pan_factor)
         elif event_type == "wheelup" or event_type == "wheelup_ctrl":
             # print ("Zoom forward, current: %.5f, %.5f" % (self.scene_widget.matrix.value_scale_x(), self.scene_widget.matrix.value_scale_y()))
-            if self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff:
+            if (
+                self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
+                and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
+            ):
                 self.scene_widget.matrix.post_scale(
                     self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
                 )

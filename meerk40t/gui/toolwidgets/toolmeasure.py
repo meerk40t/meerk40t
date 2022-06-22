@@ -137,7 +137,9 @@ class MeasureTool(ToolWidget):
             # Draw lines at last to make them more visible
             gc.DrawLines(points)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
             if nearest_snap is None:

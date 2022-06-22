@@ -109,7 +109,7 @@ class Ch341LibusbDriver:
         _ = self.channel._
         try:
             if device.is_kernel_driver_active(interface.bInterfaceNumber):
-                #TODO: This can raise USBError on entity not found.
+                # TODO: This can raise USBError on entity not found.
                 try:
                     self.channel(_("Attempting to detach kernel."))
                     device.detach_kernel_driver(interface.bInterfaceNumber)

@@ -1,10 +1,12 @@
 import os
+
 import wx
 
 from .icons import icons8_curly_brackets_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
+
 
 class WordlistPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -41,7 +43,9 @@ class WordlistPanel(wx.Panel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Current Index for Data:"))
         sizer_index.Add(label_2, 0, 0, 0)
 
-        self.cbo_Index = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN|wx.CB_READONLY)
+        self.cbo_Index = wx.ComboBox(
+            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         sizer_index.Add(self.cbo_Index, 0, 0, 0)
 
         sizer_vdata = wx.BoxSizer(wx.VERTICAL)
@@ -53,10 +57,22 @@ class WordlistPanel(wx.Panel):
         sizer_grids = wx.BoxSizer(wx.HORIZONTAL)
         sizer_hdata.Add(sizer_grids, 1, wx.EXPAND, 0)
 
-        self.grid_wordlist = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL)
+        self.grid_wordlist = wx.ListCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+        )
         sizer_grids.Add(self.grid_wordlist, 1, wx.ALL | wx.EXPAND, 1)
 
-        self.grid_content = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL | wx.LC_EDIT_LABELS)
+        self.grid_content = wx.ListCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES
+            | wx.LC_REPORT
+            | wx.LC_VRULES
+            | wx.LC_SINGLE_SEL
+            | wx.LC_EDIT_LABELS,
+        )
         sizer_grids.Add(self.grid_content, 1, wx.ALL | wx.EXPAND, 1)
 
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
@@ -126,9 +142,11 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist.InsertColumn(0, _("Type"))
         self.grid_wordlist.InsertColumn(1, _("Name"))
         self.grid_wordlist.InsertColumn(2, _("Index"))
-        typestr= [_("Text"), _("CSV"), _("Counter")]
+        typestr = [_("Text"), _("CSV"), _("Counter")]
         for skey in self.wlist.content:
-            index = self.grid_wordlist.InsertItem(self.grid_wordlist.GetItemCount(), typestr[self.wlist.content[skey][0]])
+            index = self.grid_wordlist.InsertItem(
+                self.grid_wordlist.GetItemCount(), typestr[self.wlist.content[skey][0]]
+            )
             self.grid_wordlist.SetItem(index, 1, skey)
             self.grid_wordlist.SetItem(index, 2, str(self.wlist.content[skey][1] - 2))
 
@@ -142,8 +160,10 @@ class WordlistPanel(wx.Panel):
         self.cur_index = None
         self.grid_content.InsertColumn(0, _("Content"))
         for idx in range(2, len(self.wlist.content[skey])):
-            index = self.grid_content.InsertItem(self.grid_content.GetItemCount(), str(self.wlist.content[skey][idx]))
-            if idx==current+2:
+            index = self.grid_content.InsertItem(
+                self.grid_content.GetItemCount(), str(self.wlist.content[skey][idx])
+            )
+            if idx == current + 2:
                 self.grid_content.SetItemTextColour(index, wx.RED)
 
     def on_grid_wordlist(self, event):
@@ -163,7 +183,7 @@ class WordlistPanel(wx.Panel):
 
     def on_begin_edit(self, event):
         index = self.grid_content.GetFirstSelected()
-        if index>=0:
+        if index >= 0:
             self.cur_index = index
         self.to_save = (self.cur_skey, self.cur_index)
         event.Allow()
@@ -186,11 +206,11 @@ class WordlistPanel(wx.Panel):
         self.grid_content.ClearAll()
         self.refresh_grid_wordlist()
         for skey in self.wlist.content:
-            if self.wlist.content[skey][0] == 1: # CSV
+            if self.wlist.content[skey][0] == 1:  # CSV
                 i = len(self.wlist.content[skey]) - 2
-                if i>maxidx:
+                if i > maxidx:
                     maxidx = i
-        if maxidx>=0:
+        if maxidx >= 0:
             for i in range(maxidx):
                 self.cbo_Index.Append(str(i))
             self.cbo_Index.SetValue("0")
@@ -209,14 +229,14 @@ class WordlistPanel(wx.Panel):
             idx = 0
         self.wlist.set_index(skey="@all", idx=idx)
         selidx = self.grid_wordlist.GetFirstSelected()
-        if selidx<0:
+        if selidx < 0:
             selidx = 0
         self.refresh_grid_wordlist()
         self.grid_wordlist.Select(selidx, True)
 
     def on_btn_add(self, event):
         skey = self.txt_pattern.GetValue()
-        if skey is not None and len(skey)>0:
+        if skey is not None and len(skey) > 0:
             if skey in self.wlist.content:
                 self.wlist.delete(skey)
             self.wlist.add_value(skey, "---", 0)
@@ -231,17 +251,18 @@ class WordlistPanel(wx.Panel):
         self.btn_import.Enable(enab)
 
     def on_patterntext_change(self, event):
-        enab = len(self.txt_pattern.GetValue())>0
+        enab = len(self.txt_pattern.GetValue()) > 0
         self.btn_add.Enable(enab)
         self.btn_add_counter.Enable(enab)
         self.btn_delete.Enable(enab)
 
     def on_btn_file(self, event):
         mydlg = wx.FileDialog(
-            self, message=_("Choose a csv-file"),
+            self,
+            message=_("Choose a csv-file"),
             wildcard="CSV-Files (*.csv)|*.csv|Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW
-            )
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
+        )
         if mydlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             myfile = mydlg.GetPath()
@@ -252,13 +273,15 @@ class WordlistPanel(wx.Panel):
         myfile = self.txt_filename.GetValue()
         if os.path.exists(myfile):
             ct, colcount, headers = self.wlist.load_csv_file(myfile)
-            msg =_("Imported file, {col} fields, {row} rows").format(col=colcount, row = ct)
+            msg = _("Imported file, {col} fields, {row} rows").format(
+                col=colcount, row=ct
+            )
             self.edit_message(msg)
             self.populate_gui()
 
     def on_add_counter(self, event):  # wxGlade: editWordlist.<event_handler>
         skey = self.txt_pattern.GetValue()
-        if skey is not None and len(skey)>0:
+        if skey is not None and len(skey) > 0:
             if skey in self.wlist.content:
                 self.wlist.delete(skey)
             self.wlist.add_value(skey, 1, 2)
@@ -267,7 +290,7 @@ class WordlistPanel(wx.Panel):
 
     def on_btn_delete(self, event):
         skey = self.txt_pattern.GetValue()
-        if skey is not None and len(skey)>0:
+        if skey is not None and len(skey) > 0:
             self.wlist.delete(skey)
             self.populate_gui()
         event.Skip()
@@ -275,17 +298,18 @@ class WordlistPanel(wx.Panel):
     def on_backup(self, event):
         if not self.wlist.default_filename is None:
             self.wlist.save_data(self.wlist.default_filename)
-            msg = _("Saved to ") +  self.wlist.default_filename
+            msg = _("Saved to ") + self.wlist.default_filename
             self.edit_message(msg)
         event.Skip()
 
     def on_restore(self, event):
         if not self.wlist.default_filename is None:
             self.wlist.load_data(self.wlist.default_filename)
-            msg = _("Loaded from ") +  self.wlist.default_filename
+            msg = _("Loaded from ") + self.wlist.default_filename
             self.edit_message(msg)
             self.populate_gui()
         event.Skip()
+
 
 class WordlistEditor(MWindow):
     def __init__(self, *args, **kwds):

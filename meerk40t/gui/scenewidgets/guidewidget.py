@@ -161,7 +161,9 @@ class GuideWidget(Widget):
             # Placeholder for a use case, as you can define them manually...
             pass
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         """
         Capture and deal with the double click event.
         Doubleclick in the grid loads a menu to remove the background.
@@ -602,7 +604,7 @@ class GuideWidget(Widget):
         starts = []
         ends = []
         x = offset_x_primary
-        last_text_pos = x - 30 # Arbitrary
+        last_text_pos = x - 30  # Arbitrary
         while x < w:
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
@@ -630,13 +632,13 @@ class GuideWidget(Widget):
                         ends.append(
                             (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
                         )
-                    if (x - last_text_pos)>=t_height * 1.25:
+                    if (x - last_text_pos) >= t_height * 1.25:
                         gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
                         last_text_pos = x
             x += points_x_primary
 
         y = offset_y_primary
-        last_text_pos = y - 30 # arbitrary
+        last_text_pos = y - 30  # arbitrary
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
@@ -663,7 +665,7 @@ class GuideWidget(Widget):
                         )
 
                     # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
-                    if (y - last_text_pos)>=t_height * 1.25:
+                    if (y - last_text_pos) >= t_height * 1.25:
                         gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
                         last_text_pos = y
             y += points_y_primary
@@ -705,7 +707,7 @@ class GuideWidget(Widget):
                             )
                         info = "%g" % mark_point
                         (t_w, t_h) = gc.GetTextExtent(info)
-                        if (x - last_text_pos)>=t_h * 1.25:
+                        if (x - last_text_pos) >= t_h * 1.25:
                             gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
                             last_text_pos = x
                 x += points_x_secondary
@@ -736,7 +738,7 @@ class GuideWidget(Widget):
 
                         info = "%g" % (mark_point + 0)
                         (t_w, t_h) = gc.GetTextExtent(info)
-                        if (y - last_text_pos)>=t_h * 1.25:
+                        if (y - last_text_pos) >= t_h * 1.25:
                             gc.DrawText(info, w - edge_gap - t_w, y + 0)
                             last_text_pos = y
                 y += points_y_secondary

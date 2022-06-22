@@ -4813,10 +4813,10 @@ class Arc(Curve):
                         cy = ab_mid.y
                     else:
                         cx = (
-                                     slope_a * slope_b * (ab_mid.y - bc_mid.y)
-                                     - slope_a * bc_mid.x
-                                     + slope_b * ab_mid.x
-                             ) / (slope_b - slope_a)
+                            slope_a * slope_b * (ab_mid.y - bc_mid.y)
+                            - slope_a * bc_mid.x
+                            + slope_b * ab_mid.x
+                        ) / (slope_b - slope_a)
                         cy = ab_mid.y - (cx - ab_mid.x) / slope_a
                 self.center = Point(cx, cy)
                 cw = bool(Point.orientation(self.start, control, self.end) == 2)
@@ -8844,7 +8844,7 @@ class SVG(Group):
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     textstyle = elem.text
-                    textstyle = re.sub(REGEX_CSS_COMMENT, '', textstyle)
+                    textstyle = re.sub(REGEX_CSS_COMMENT, "", textstyle)
                     assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
                         key = key.strip()

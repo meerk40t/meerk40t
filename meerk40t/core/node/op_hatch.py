@@ -70,9 +70,7 @@ class HatchOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
-        default_map["penpass"] = (
-            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
-        )
+        default_map["penpass"] = f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
@@ -167,7 +165,7 @@ class HatchOpNode(Node, Parameters):
         pos = 0
         for i, pts in enumerate(points):
             if pts is None:
-                yield points[pos : i]
+                yield points[pos:i]
                 pos = i + 1
         if pos != len(points):
             yield points[pos : len(points)]
@@ -181,6 +179,7 @@ class HatchOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+
         def hatch():
             settings = self.settings
             outlines = list()
@@ -226,7 +225,11 @@ class HatchOpNode(Node, Parameters):
                 else:
                     # Create new hatch.
                     algorithm = context.lookup(f"hatch/{hatch_type}")
-                    hatches = list(algorithm(settings=chain_settings, outlines=outlines, matrix=matrix))
+                    hatches = list(
+                        algorithm(
+                            settings=chain_settings, outlines=outlines, matrix=matrix
+                        )
+                    )
                     hatch_cache[key] = hatches
 
                 for polyline in HatchOpNode.split(hatches):

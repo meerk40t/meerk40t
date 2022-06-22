@@ -92,12 +92,17 @@ class LihuiyuParser:
 
             if self.program_mode:
                 if self.laser:
-                    self.path.line(complex(from_x,from_y), complex(to_x,to_y))
+                    self.path.line(complex(from_x, from_y), complex(to_x, to_y))
 
         self.position = position
         self.write(data)
         self.path.uscale(UNITS_PER_MIL)
-        elements.elem_branch.add(type="elem numpath", path=self.path, stroke=Color("black"), **self.settings.settings)
+        elements.elem_branch.add(
+            type="elem numpath",
+            path=self.path,
+            stroke=Color("black"),
+            **self.settings.settings,
+        )
         elements.signal("refresh_scene", 0)
 
     @property

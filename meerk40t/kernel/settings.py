@@ -1,4 +1,4 @@
-from configparser import ConfigParser, NoSectionError, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError, NoSectionError
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Union
 
@@ -17,6 +17,7 @@ class Settings:
     these are loaded during the `read_configuration` step and are committed to disk when
     `write_configuration` is called.
     """
+
     def __init__(self, directory, filename):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename

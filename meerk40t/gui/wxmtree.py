@@ -508,6 +508,7 @@ class ShadowTree:
 
         @return:
         """
+
         def parse_tree(startnode, expansion, level):
             if startnode is None:
                 return
@@ -584,7 +585,6 @@ class ShadowTree:
         for e in emphasized_list:
             e.emphasized = True
         restore_tree(self.wxtree.GetRootItem(), were_expanded, 0)
-
 
     def register_children(self, node):
         """

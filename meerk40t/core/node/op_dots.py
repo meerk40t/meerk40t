@@ -66,9 +66,7 @@ class DotsOpNode(Node, Parameters):
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
-        default_map["penpass"] = (
-            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
-        )
+        default_map["penpass"] = f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
@@ -109,9 +107,7 @@ class DotsOpNode(Node, Parameters):
             plain_color_node = abs(node.stroke)
             if plain_color_op != plain_color_node:
                 return False, False
-        if node.type in (
-            "elem point",
-        ):
+        if node.type in ("elem point",):
             self.add_reference(node)
             return True, True
         return False, False

@@ -10,9 +10,7 @@ FLOAT_PARAMETERS = (
     "delay_polygon",
     "wobble_speed",
 )
-INT_PARAMETERS = (
-    "pulse_width",
-)
+INT_PARAMETERS = ("pulse_width",)
 
 BOOL_PARAMETERS = (
     "wobble_enabled",
@@ -81,7 +79,6 @@ class Parameters:
     @pulse_width.setter
     def pulse_width(self, value):
         self.settings["pulse_width"] = value
-
 
     @property
     def timing_enabled(self):

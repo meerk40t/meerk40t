@@ -349,7 +349,9 @@ class CamInterfaceWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         if event_type == "rightdown":
 
             def enable_aspect(*args):
@@ -582,7 +584,9 @@ class CamPerspectiveWidget(Widget):
             )
             gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
@@ -747,7 +751,7 @@ class CameraInterface(MWindow):
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
                             # Took default
-                            if len(available_cameras)>0:
+                            if len(available_cameras) > 0:
                                 testuri = available_cameras[0]
                             else:
                                 testuri = 0
@@ -762,7 +766,6 @@ class CameraInterface(MWindow):
             return specific
 
         def get_cameras(search=None):
-
             def specific(event=None):
                 available_cameras = []
                 # Reset stuff...
@@ -778,7 +781,13 @@ class CameraInterface(MWindow):
                 MAXFIND = 5
                 found = 0
                 fstr = _("Cameras found: %d")
-                progress = wx.ProgressDialog(_("Looking for Cameras"), fstr % found, maximum=MAXFIND, parent=None, style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
+                progress = wx.ProgressDialog(
+                    _("Looking for Cameras"),
+                    fstr % found,
+                    maximum=MAXFIND,
+                    parent=None,
+                    style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
+                )
                 # checks for cameras in the first 5 USB
                 index = 0
                 keepgoing = True
@@ -812,7 +821,7 @@ class CameraInterface(MWindow):
                     (_("Camera %d") % 2, camera_click(2)),
                     (_("Camera %d") % 3, camera_click(3)),
                     (_("Camera %d") % 4, camera_click(4)),
-                    (_("Identify cameras"), get_cameras(True))
+                    (_("Identify cameras"), get_cameras(True)),
                 ),
             },
         )

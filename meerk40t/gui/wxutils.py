@@ -124,7 +124,7 @@ def create_menu_for_node_TEST(gui, node, elements) -> wx.Menu:
     return create_menu_for_choices(gui, choices)
 
 
-def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Menu:
+def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu:
     """
     Create menu for a particular node. Does not invoke the menu.
 
@@ -146,6 +146,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Me
             f(node, **func_dict)
 
         return specific
+
     # Check specifically for the optional first (use case: reference nodes)
     if not optional_2nd_node is None:
         mc1 = menu.MenuItemCount
@@ -168,7 +169,12 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Me
                 menu_context.AppendSeparator()
             if func.reference is not None:
                 menu_context.AppendSubMenu(
-                    create_menu_for_node(gui, func.reference(optional_2nd_node), elements, optional_2nd_node),
+                    create_menu_for_node(
+                        gui,
+                        func.reference(optional_2nd_node),
+                        elements,
+                        optional_2nd_node,
+                    ),
                     func.real_name,
                 )
                 continue
@@ -192,8 +198,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Me
             else:
                 last_was_separator = False
                 item = menu_context.Append(
-                        wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
-                    )
+                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
+                )
                 if func.enabled:
                     gui.Bind(
                         wx.EVT_MENU,
@@ -208,7 +214,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node = None) -> wx.Me
                 last_was_separator = True
                 menu.AppendSeparator()
         mc2 = menu.MenuItemCount
-        if not last_was_separator and  mc2 - mc1 >0:
+        if not last_was_separator and mc2 - mc1 > 0:
             menu.AppendSeparator()
 
     for func in elements.tree_operations_for_node(node):

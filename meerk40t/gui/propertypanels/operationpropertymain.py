@@ -1012,7 +1012,14 @@ class HatchSettingsPanel(wx.Panel):
             ),
         )
         matrix = Matrix.scale(0.018)
-        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, limit=1000))
+        hatch = list(
+            hatch_algorithm(
+                settings=self.operation.settings,
+                outlines=paths,
+                matrix=matrix,
+                limit=1000,
+            )
+        )
         o_start = []
         o_end = []
         for path in paths:
@@ -1108,7 +1115,9 @@ class DwellSettingsPanel(wx.Panel):
         )
 
         self.text_dwelltime = wx.TextCtrl(self, wx.ID_ANY, "1.0")
-        self.text_dwelltime.SetToolTip(_("Dwell time (ms) at each location in the sequence"))
+        self.text_dwelltime.SetToolTip(
+            _("Dwell time (ms) at each location in the sequence")
+        )
         sizer_passes.Add(self.text_dwelltime, 1, 0, 0)
 
         self.SetSizer(sizer_passes)
@@ -1128,7 +1137,9 @@ class DwellSettingsPanel(wx.Panel):
         self.operation = node
         self.text_dwelltime.SetValue(str(self.operation.dwell_time))
 
-    def on_text_dwelltime(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dwelltime(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
         try:
             self.operation.dwell_time = float(self.text_dwelltime.GetValue())
             self.text_dwelltime.SetBackgroundColour(None)

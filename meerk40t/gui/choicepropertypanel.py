@@ -1,7 +1,7 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
-from meerk40t.core.units import Length, Angle
+from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color

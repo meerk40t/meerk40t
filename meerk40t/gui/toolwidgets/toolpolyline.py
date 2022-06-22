@@ -1,9 +1,9 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Polyline
-from meerk40t.gui.laserrender import swizzlecolor
 
 
 class PolylineTool(ToolWidget):
@@ -29,13 +29,20 @@ class PolylineTool(ToolWidget):
             if self.scene.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
+                gc.SetBrush(
+                    wx.Brush(
+                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.BRUSHSTYLE_SOLID,
+                    )
+                )
             points = list(self.point_series)
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
             gc.DrawLines(points)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
             self.scene.tool_active = True
