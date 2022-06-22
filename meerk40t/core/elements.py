@@ -5797,6 +5797,11 @@ class Elemental(Service):
         def append_operation_hatch(node, pos=None, **kwargs):
             self.add_op(HatchOpNode(), pos=pos)
 
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Dots"), node_type="branch ops", help="")
+        def append_operation_dots(node, pos=None, **kwargs):
+            self.add_op(DotsOpNode(), pos=pos)
+
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
@@ -6000,47 +6005,62 @@ class Elemental(Service):
                 return None
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Hatch"), node_type=operate_nodes, help="")
+        def add_operation_hatch(node, **kwargs):
+            append_operation_hatch(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Dots"), node_type=operate_nodes, help="")
+        def add_operation_dots(node, **kwargs):
+            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
             append_operation_home(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
             append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
+        def add_operation_wait(node, **kwargs):
+            append_operation_wait(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self, node)
