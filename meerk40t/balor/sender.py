@@ -26,6 +26,10 @@ class BalorException(Exception):
     pass
 
 
+class BalorConfigException(BalorException):
+    pass
+
+
 class BalorMachineException(BalorException):
     pass
 
@@ -224,7 +228,10 @@ class Sender:
         # Load in-machine correction table
         cor_table = None
         if cor_file is not None:
-            cor_table = self._read_correction_file(cor_file)
+            try:
+                cor_table = self._read_correction_file(cor_file)
+            except FileNotFoundError:
+                raise BalorConfigException(".cor file location did not exist")
         self._send_correction_table(cor_table)
 
         self.raw_enable_laser()
