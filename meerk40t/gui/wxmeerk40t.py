@@ -21,15 +21,6 @@ from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
 from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
-from .propertypanels.rasterwizardpanels import (
-    SharpenPanel,
-    ContrastPanel,
-    ToneCurvePanel,
-    HalftonePanel,
-    GammaPanel,
-    EdgePanel,
-    AutoContrastPanel,
-)
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
@@ -43,7 +34,6 @@ from .icons import (
     icons8_pause_50,
 )
 from .keymap import Keymap
-from .wordlisteditor import WordlistEditor
 from .notes import Notes
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
@@ -52,8 +42,18 @@ from .propertypanels.imageproperty import ImagePropertyPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
+from .propertypanels.rasterwizardpanels import (
+    AutoContrastPanel,
+    ContrastPanel,
+    EdgePanel,
+    GammaPanel,
+    HalftonePanel,
+    SharpenPanel,
+    ToneCurvePanel,
+)
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
+from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
 """

@@ -42,9 +42,9 @@ def plugin(kernel, lifecycle):
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
+        from meerk40t.gui.fonts import svgfont_to_wx, wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
-        from meerk40t.gui.fonts import svgfont_to_wx, wxfont_to_svg
 
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")

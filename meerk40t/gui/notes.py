@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from .icons import icons8_comments_50, STD_ICON_SIZE
+from .icons import STD_ICON_SIZE, icons8_comments_50
 from .mwindow import MWindow
 
 _ = wx.GetTranslation

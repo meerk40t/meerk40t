@@ -47,7 +47,17 @@ class GuiColors:
 
         bed_color = self.color_bed
         fixed = 0
-        for key in ("grid", "guide", "grid2", "guide2", "grid3", "guide3", "selection1", "selection2", "selection3"):
+        for key in (
+            "grid",
+            "guide",
+            "grid2",
+            "guide2",
+            "grid3",
+            "guide3",
+            "selection1",
+            "selection2",
+            "selection3",
+        ):
             item_color = self._get_color(key)
             if identical(bed_color, item_color):
                 fixed += 1

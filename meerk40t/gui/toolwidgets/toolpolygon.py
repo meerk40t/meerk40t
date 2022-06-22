@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -7,7 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Polygon
-from meerk40t.gui.laserrender import swizzlecolor
+
 
 class PolygonTool(ToolWidget):
     """
@@ -32,14 +33,21 @@ class PolygonTool(ToolWidget):
             if self.scene.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
+                gc.SetBrush(
+                    wx.Brush(
+                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.BRUSHSTYLE_SOLID,
+                    )
+                )
             points = list(self.point_series)
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
             points.append(points[0])
             gc.DrawLines(points)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
             if nearest_snap is None:

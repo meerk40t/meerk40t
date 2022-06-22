@@ -5,7 +5,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
+from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
 
 
 class BalorDevice(Service, ViewPort):
@@ -193,7 +193,9 @@ class BalorDevice(Service, ViewPort):
                 "default": "0deg",
                 "type": Angle,
                 "label": _("Redlight Angle Offset"),
-                "tip": _("Offset the redlight positions by this angle, curving around center"),
+                "tip": _(
+                    "Offset the redlight positions by this angle, curving around center"
+                ),
             },
             {
                 "attr": "redlight_preferred",
@@ -201,7 +203,9 @@ class BalorDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Prefer redlight on"),
-                "tip": _("Redlight preference will turn toggleable redlights on after a job completes."),
+                "tip": _(
+                    "Redlight preference will turn toggleable redlights on after a job completes."
+                ),
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -577,7 +581,11 @@ class BalorDevice(Service, ViewPort):
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
         @self.console_option(
-            "jump_delay", "d", type=float, default=200.0, help="Sets the jump delay for light travel moves"
+            "jump_delay",
+            "d",
+            type=float,
+            default=200.0,
+            help="Sets the jump delay for light travel moves",
         )
         @self.console_option(
             "simulation_speed",
@@ -642,12 +650,8 @@ class BalorDevice(Service, ViewPort):
                 if pt is None:
                     return None
                 return (
-                    pt[0] * rotate.a
-                    + pt[1] * rotate.c
-                    + 1 * rotate.e,
-                    pt[0] * rotate.b
-                    + pt[1] * rotate.d
-                    + 1 * rotate.f,
+                    pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                    pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
                 )
 
             dark_delay = 8
@@ -852,7 +856,9 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
-        @self.console_option("duration", "d", type=float, help=_("time to set/unset the port"))
+        @self.console_option(
+            "duration", "d", type=float, help=_("time to set/unset the port")
+        )
         @self.console_argument("off", type=str)
         @self.console_argument("bit", type=int)
         @self.console_command(
@@ -1006,7 +1012,9 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, count=15, data=None, args=tuple(), **kwargs):
+        def element_outline(
+            command, channel, _, count=15, data=None, args=tuple(), **kwargs
+        ):
             """
             Draws an outline of the current shape.
             """

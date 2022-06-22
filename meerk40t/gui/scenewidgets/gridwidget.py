@@ -1,4 +1,4 @@
-from math import cos, sin, sqrt, atan, tau
+from math import atan, cos, sin, sqrt, tau
 from time import time
 
 import wx
@@ -111,7 +111,9 @@ class GridWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         """
         Capture and deal with events.
         """

@@ -10,12 +10,14 @@ from meerk40t.gui.icons import (
     icon_corner4,
     icons8_center_of_gravity_50,
     icons8_compress_50,
+    icons8_constraint_50,
     icons8_delete_50,
     icons8_down,
     icons8_down_50,
     icons8_down_left_50,
     icons8_down_right_50,
     icons8_enlarge_50,
+    icons8_expansion_50,
     icons8_home_filled_50,
     icons8_laser_beam_52,
     icons8_left,
@@ -35,8 +37,6 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
-    icons8_constraint_50,
-    icons8_expansion_50,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Angle
@@ -175,7 +175,9 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/jogdist", pane)
 
+
 _confined = True
+
 
 def get_movement(device, dx, dy):
     global _confined
@@ -193,7 +195,7 @@ def get_movement(device, dx, dy):
         max_y = float(Length(device.height))
         # print ("Delta:", newx, newy)
         # print ("Current:", current_x, current_y)
-        if newx + current_x>max_x:
+        if newx + current_x > max_x:
             tmp = max_x - current_x
             if newx != 0:
                 newy = newy * tmp / newx
@@ -203,7 +205,7 @@ def get_movement(device, dx, dy):
             if newx != 0:
                 newy = newy * tmp / newx
             newx = tmp
-        if newy + current_y>max_y:
+        if newy + current_y > max_y:
             tmp = max_y - current_y
             if newy != 0:
                 newx = newx * tmp / newy
@@ -222,6 +224,7 @@ def get_movement(device, dx, dy):
         nx = dx
         ny = dy
     return nx, ny
+
 
 class Drag(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -739,9 +742,7 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_lock, self.button_navigate_lock
         )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_confinement, self.button_confine
-        )
+        self.Bind(wx.EVT_BUTTON, self.on_button_confinement, self.button_confine)
         # end wxGlade
 
     def __set_properties(self):
@@ -822,13 +823,14 @@ class Jog(wx.Panel):
         _confined = value
         if value == 0:
             self.button_confine.SetBitmap(icons8_expansion_50.GetBitmap())
-            self.button_confine.SetToolTip(_("Caution: allow laser movement outside bed size"))
+            self.button_confine.SetToolTip(
+                _("Caution: allow laser movement outside bed size")
+            )
             # self.context("confine 0")
         else:
             self.button_confine.SetBitmap(icons8_constraint_50.GetBitmap())
             self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
             # self.context("confine 1")
-
 
     def on_button_confinement(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.confined = not self.confined
@@ -845,7 +847,10 @@ class Jog(wx.Panel):
             new_x = min(max_x, max(min_x, current_x))
             new_y = min(max_y, max(min_y, current_y))
             if new_x != current_x or new_y != current_y:
-                self.context("move_absolute %.3fmm %.3fmm\n" % (Length(amount=new_x).mm, Length(amount=new_y).mm))
+                self.context(
+                    "move_absolute %.3fmm %.3fmm\n"
+                    % (Length(amount=new_x).mm, Length(amount=new_y).mm)
+                )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
@@ -858,13 +863,19 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "-{jog}".format(jog=self.context.jog_amount))
+        self.move_rel(
+            "-{jog}".format(jog=self.context.jog_amount),
+            "-{jog}".format(jog=self.context.jog_amount),
+        )
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel("0", "-{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("{jog}".format(jog=self.context.jog_amount), "-{jog}".format(jog=self.context.jog_amount))
+        self.move_rel(
+            "{jog}".format(jog=self.context.jog_amount),
+            "-{jog}".format(jog=self.context.jog_amount),
+        )
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel("-{jog}".format(jog=self.context.jog_amount), "0")
@@ -873,13 +884,19 @@ class Jog(wx.Panel):
         self.move_rel("{jog}".format(jog=self.context.jog_amount), "0")
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "{jog}".format(jog=self.context.jog_amount))
+        self.move_rel(
+            "-{jog}".format(jog=self.context.jog_amount),
+            "{jog}".format(jog=self.context.jog_amount),
+        )
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel("0", "{jog}".format(jog=self.context.jog_amount))
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("{jog}".format(jog=self.context.jog_amount), "{jog}".format(jog=self.context.jog_amount))
+        self.move_rel(
+            "{jog}".format(jog=self.context.jog_amount),
+            "{jog}".format(jog=self.context.jog_amount),
+        )
 
     def on_button_navigate_unlock(
         self, event=None

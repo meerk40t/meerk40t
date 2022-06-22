@@ -3,10 +3,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CHAIN,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0
@@ -60,7 +57,9 @@ class AttractionWidget(Widget):
         """
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         """
         Event-Logic - just note the current position
         """
@@ -328,10 +327,10 @@ class AttractionWidget(Widget):
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
         end_time = time()
-        #print(
+        # print(
         #   "Ready, time needed: %.6f, attraction points added=%d"
         #   % (end_time - start_time, len(self.attraction_points))
-        #)
+        # )
 
     def calculate_display_points(self):
         from time import time
@@ -358,7 +357,12 @@ class AttractionWidget(Widget):
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
-        if self.snap_grid and self.scene.grid_points is not None and len(self.scene.grid_points) > 0 and not self.my_x is None:
+        if (
+            self.snap_grid
+            and self.scene.grid_points is not None
+            and len(self.scene.grid_points) > 0
+            and not self.my_x is None
+        ):
             for pts in self.scene.grid_points:
                 if (
                     abs(pts[0] - self.my_x) <= self.show_attract_len
@@ -367,10 +371,10 @@ class AttractionWidget(Widget):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
         end_time = time()
-        #print(
+        # print(
         #    "Ready, time needed: %.6f, points added=%d"
         #    % (end_time - start_time, len(self.display_points))
-        #)
+        # )
 
     def signal(self, signal, *args, **kwargs):
         """

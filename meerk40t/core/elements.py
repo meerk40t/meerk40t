@@ -10,25 +10,25 @@ from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
-from ..numpath import Numpath
 
+from ..numpath import Numpath
 from ..svgelements import (
-    Angle,
-    Color,
-    Matrix,
-    SVGElement,
-    Viewbox,
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
-    Line,
-    QuadraticBezier,
-    CubicBezier,
+    Angle,
     Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    QuadraticBezier,
+    SVGElement,
+    Viewbox,
 )
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node, Linecap, Linejoin, Fillrule
+from .node.node import Fillrule, Linecap, Linejoin, Node
 from .node.op_console import ConsoleOperation
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -37,8 +37,8 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .wordlist import Wordlist
 from .units import UNITS_PER_PIXEL, Length
+from .wordlist import Wordlist
 
 
 def plugin(kernel, lifecycle=None):
@@ -1660,7 +1660,7 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def regmark(command, channel, _, data, cmd = None, **kwargs):
+        def regmark(command, channel, _, data, cmd=None, **kwargs):
             # Move regmarks into the regular element tree and vice versa
             if cmd == "free":
                 target = self.elem_branch
@@ -1669,14 +1669,14 @@ class Elemental(Service):
 
             if data is None:
                 data = list()
-                if cmd =="free":
+                if cmd == "free":
                     for item in list(self.regmarks()):
                         data.append(item)
                 else:
                     for item in list(self.elems(emphasized=True)):
                         data.append(item)
             if cmd in ("free", "add"):
-                if len(data)==0:
+                if len(data) == 0:
                     channel(_("No elements to transfer"))
                 else:
                     move_nodes_to(target, data)
@@ -2322,7 +2322,7 @@ class Elemental(Service):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
-#--------------------
+        # --------------------
         @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
@@ -3248,7 +3248,7 @@ class Elemental(Service):
             "numpath",
             help=_("Convert any element nodes to numpath nodes"),
             input_type="elements",
-            output_type="elements"
+            output_type="elements",
         )
         def element_path_convert(data, **kwargs):
             if data is None:
@@ -5027,7 +5027,8 @@ class Elemental(Service):
             return hull
 
         @self.console_argument(
-            "method", help=_("Method to use (one of quick, hull, complex, segment, circle)")
+            "method",
+            help=_("Method to use (one of quick, hull, complex, segment, circle)"),
         )
         @self.console_argument("resolution")
         @self.console_command(
@@ -5214,7 +5215,9 @@ class Elemental(Service):
             node.remove_node()  # Removing group/file node.
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
-        @self.tree_operation(_("Elements in scene..."), node_type=elem_nodes, help="", enable=False)
+        @self.tree_operation(
+            _("Elements in scene..."), node_type=elem_nodes, help="", enable=False
+        )
         def element_label(node, **kwargs):
             return
 
@@ -5232,7 +5235,9 @@ class Elemental(Service):
             )
             >= 1
         )
-        @self.tree_operation(_("Remove all items from operation"), node_type=op_nodes, help="")
+        @self.tree_operation(
+            _("Remove all items from operation"), node_type=op_nodes, help=""
+        )
         def clear_all_op_entries(node, **kwargs):
             node.remove_all_children()
 
@@ -5291,9 +5296,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Apply raster script"))
-        @self.tree_operation(
-            _("Set to None") , node_type="elem image", help=""
-        )
+        @self.tree_operation(_("Set to None"), node_type="elem image", help="")
         def image_rasterwizard_apply_none(node, **kwargs):
             node.operations = []
             node.update(self)
@@ -5433,7 +5436,7 @@ class Elemental(Service):
             "ecount",
             lambda i: len(
                 list(self.flat(selected=True, cascade=False, types=("reference")))
-            )
+            ),
         )
         @self.tree_operation(
             _("Remove %s selected items from operations") % "{ecount}",
@@ -5511,9 +5514,7 @@ class Elemental(Service):
         # ==========
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=elem_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types=elem_nodes))
             )
             == 1
         )
@@ -5529,9 +5530,7 @@ class Elemental(Service):
 
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=op_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
             )
             == 1
         )
@@ -5545,12 +5544,9 @@ class Elemental(Service):
             node.remove_node()
             self.set_emphasis(None)
 
-
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=("file", "group"))
-                )
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
             )
             == 1
         )
@@ -5623,7 +5619,9 @@ class Elemental(Service):
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
-        @self.tree_conditional_try(lambda node: kernel.lookup(f"parser/{node.data_type}") is not None)
+        @self.tree_conditional_try(
+            lambda node: kernel.lookup(f"parser/{node.data_type}") is not None
+        )
         @self.tree_operation(
             _("Convert to Elements"),
             node_type="blob",
@@ -7134,9 +7132,9 @@ class Elemental(Service):
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None:
                     if (
-                            node.stroke.red == 0xFF
-                            and node.stroke.blue == 0
-                            and node.stroke.green == 0
+                        node.stroke.red == 0xFF
+                        and node.stroke.blue == 0
+                        and node.stroke.green == 0
                     ):
                         op = CutOpNode(color=node.stroke, speed=5.0)
                     else:
@@ -7148,9 +7146,9 @@ class Elemental(Service):
                     operations.append(op)
 
                 if (
-                        hasattr(node, "fill")
-                        and node.fill is not None
-                        and node.fill.argb is not None
+                    hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)

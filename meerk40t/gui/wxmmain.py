@@ -14,6 +14,7 @@ from ..core.element_types import elem_nodes
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (
+    STD_ICON_SIZE,
     icon_cag_common_50,
     icon_cag_subtract_50,
     icon_cag_union_50,
@@ -43,7 +44,6 @@ from .icons import (
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    STD_ICON_SIZE,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -582,7 +582,6 @@ class MeerK40t(MWindow):
 
         self.CenterOnScreen()
 
-
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
@@ -739,7 +738,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polygon"),
                 "icon": icons8_polygon_50,
-                "tip": _("Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
+                "tip": _(
+                    "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
+                ),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -751,7 +752,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Polyline"),
                 "icon": icons8_polyline_50,
-                "tip": _("Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
+                "tip": _(
+                    "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
+                ),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -775,7 +778,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
-                "tip": _("Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"),
+                "tip": _(
+                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
+                ),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -799,7 +804,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Measure"),
                 "icon": icons8_measure_50,
-                "tip": _("Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"),
+                "tip": _(
+                    "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
+                ),
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "toggle": "tool",
                 "size": buttonsize,
@@ -893,7 +900,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Left"),
                 "icon": icons8_align_left_50,
-                "tip": _("Align selected elements at the leftmost position (right click: of the bed)"),
+                "tip": _(
+                    "Align selected elements at the leftmost position (right click: of the bed)"
+                ),
                 "action": lambda v: kernel.elements("align left\n"),
                 "right": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
@@ -904,7 +913,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Right"),
                 "icon": icons8_align_right_50,
-                "tip": _("Align selected elements at the rightmost position (right click: of the bed)"),
+                "tip": _(
+                    "Align selected elements at the rightmost position (right click: of the bed)"
+                ),
                 "action": lambda v: kernel.elements("align right\n"),
                 "right": lambda v: kernel.elements("align bedright\n"),
                 "size": buttonsize,
@@ -915,7 +926,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Top"),
                 "icon": icons8_align_top_50,
-                "tip": _("Align selected elements at the topmost position (right click: of the bed)"),
+                "tip": _(
+                    "Align selected elements at the topmost position (right click: of the bed)"
+                ),
                 "action": lambda v: kernel.elements("align top\n"),
                 "right": lambda v: kernel.elements("align bedtop\n"),
                 "size": buttonsize,
@@ -926,7 +939,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Bottom"),
                 "icon": icons8_align_bottom_50,
-                "tip": _("Align selected elements at the lowest position (right click: of the bed)"),
+                "tip": _(
+                    "Align selected elements at the lowest position (right click: of the bed)"
+                ),
                 "action": lambda v: kernel.elements("align bottom\n"),
                 "right": lambda v: kernel.elements("align bedbottom\n"),
                 "size": buttonsize,
@@ -937,7 +952,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Align Center"),
                 "icon": icons_centerize,
-                "tip": _("Align selected elements at their center (right click: of the bed)"),
+                "tip": _(
+                    "Align selected elements at their center (right click: of the bed)"
+                ),
                 "action": lambda v: kernel.elements("align center\n"),
                 "right": lambda v: kernel.elements("align bedcenter\n"),
                 "size": buttonsize,
@@ -1272,7 +1289,7 @@ class MeerK40t(MWindow):
                             # Scene remains
                             pass
                         else:
-                            self.hidden_panes.append (pane.name)
+                            self.hidden_panes.append(pane.name)
                             pane.Hide()
                 self._mgr.Update()
                 channel(_("Panes hidden."))
@@ -1725,7 +1742,9 @@ class MeerK40t(MWindow):
             ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
         )
         self.view_menu.Append(
-            ID_MENU_SCENE_MINMAX, _("Show/Hide UI-Panels\tCtrl-U"), _("Show/Hide all panels/ribbon bar")
+            ID_MENU_SCENE_MINMAX,
+            _("Show/Hide UI-Panels\tCtrl-U"),
+            _("Show/Hide all panels/ribbon bar"),
         )
 
         self.view_menu.AppendSeparator()
@@ -2074,9 +2093,8 @@ class MeerK40t(MWindow):
         self.Bind(
             wx.EVT_MENU,
             self.toggle_draw_mode(DRAW_MODE_VARIABLES),
-            id=ID_MENU_SHOW_VARIABLES
+            id=ID_MENU_SHOW_VARIABLES,
         )
-
 
     def __set_panes_menu_binds(self):
         self.Bind(
@@ -2441,7 +2459,9 @@ class MeerK40t(MWindow):
         for file, id, shortcode in recents:
             if file is not None and file:
                 shortfile = _("Load {file}...").format(file=os.path.basename(file))
-                self.recent_file_menu.Append(id, shortcode + "  " + file.replace("&", "&&"), shortfile)
+                self.recent_file_menu.Append(
+                    id, shortcode + "  " + file.replace("&", "&&"), shortfile
+                )
                 self.Bind(
                     wx.EVT_MENU,
                     partial(lambda f, event: self.load_or_open(f), file),
@@ -2629,10 +2649,18 @@ class MeerK40t(MWindow):
         else:
             x_delta = (bbox[2] - bbox[0]) * 0.04
             y_delta = (bbox[3] - bbox[1]) * 0.04
-            x0 = Length(amount=bbox[0] - x_delta, relative_length=self.context.device.width).length_mm
-            y0 = Length(amount=bbox[1] - y_delta, relative_length=self.context.device.height).length_mm
-            x1 = Length(amount=bbox[2] + x_delta, relative_length=self.context.device.width).length_mm
-            y1 = Length(amount=bbox[3] + y_delta, relative_length=self.context.device.height).length_mm
+            x0 = Length(
+                amount=bbox[0] - x_delta, relative_length=self.context.device.width
+            ).length_mm
+            y0 = Length(
+                amount=bbox[1] - y_delta, relative_length=self.context.device.height
+            ).length_mm
+            x1 = Length(
+                amount=bbox[2] + x_delta, relative_length=self.context.device.width
+            ).length_mm
+            y1 = Length(
+                amount=bbox[3] + y_delta, relative_length=self.context.device.height
+            ).length_mm
             self.context(f"scene focus {x0} {y0} {x1} {y1}\n")
 
     def on_click_toggle_ui(self, event=None):

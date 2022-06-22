@@ -1012,7 +1012,14 @@ class HatchSettingsPanel(wx.Panel):
             ),
         )
         matrix = Matrix.scale(0.018)
-        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, limit=1000))
+        hatch = list(
+            hatch_algorithm(
+                settings=self.operation.settings,
+                outlines=paths,
+                matrix=matrix,
+                limit=1000,
+            )
+        )
         o_start = []
         o_end = []
         for path in paths:

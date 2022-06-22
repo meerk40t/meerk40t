@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Fillrule
+from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import Path
 
 
@@ -10,8 +10,14 @@ class EllipseNode(Node):
     """
 
     def __init__(
-        self, shape, matrix=None, fill=None, stroke=None,
-        stroke_width=None, fillrule = None, **kwargs
+        self,
+        shape,
+        matrix=None,
+        fill=None,
+        stroke=None,
+        stroke_width=None,
+        fillrule=None,
+        **kwargs,
     ):
         super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
         self.shape = shape

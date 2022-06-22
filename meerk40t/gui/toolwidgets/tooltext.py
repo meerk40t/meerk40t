@@ -1,18 +1,18 @@
 import wx
 
+from meerk40t.gui.fonts import wxfont_to_svg
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import SVGText, Color
-from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.fonts import wxfont_to_svg
+from meerk40t.svgelements import Color, SVGText
+
 from ...core.units import UNITS_PER_PIXEL
 
 _ = wx.GetTranslation
 
+
 class TextEntry(wx.Dialog):
-
-
-    def __init__(self, context, defaultstring = None, *args, **kwds):
+    def __init__(self, context, defaultstring=None, *args, **kwds):
         self.FONTHISTORY = 4
         # begin wxGlade: TextEntry.__init__
         if defaultstring is None:
@@ -32,19 +32,32 @@ class TextEntry(wx.Dialog):
 
         self.btn_choose_font = wx.Button(self, wx.ID_ANY, _("Select Font"))
 
-        align_options = [_('Left'), _('Center'), _('Right')]
+        align_options = [_("Left"), _("Center"), _("Right")]
         self.rb_align = wx.RadioBox(
-                self, wx.ID_ANY, "", wx.DefaultPosition, wx.DefaultSize,
-                align_options, len(align_options), wx.RA_SPECIFY_COLS | wx.BORDER_NONE
-                )
-        self.rb_align.SetToolTip(_("Define where to place the origin (i.e. current mouse position"))
+            self,
+            wx.ID_ANY,
+            "",
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            align_options,
+            len(align_options),
+            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+        )
+        self.rb_align.SetToolTip(
+            _("Define where to place the origin (i.e. current mouse position")
+        )
 
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
 
-        self.preview = wx.StaticText(self, wx.ID_ANY, _("<Preview>"), style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
+        self.preview = wx.StaticText(
+            self,
+            wx.ID_ANY,
+            _("<Preview>"),
+            style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE,
+        )
         self.preview.SetFont(self.default_font)
         self.preview.SetMinSize((-1, 90))
         self.btn_color = []
@@ -65,7 +78,16 @@ class TextEntry(wx.Dialog):
 
         self.last_font = []
         for i in range(self.FONTHISTORY):
-            self.last_font.append(wx.StaticText(self, wx.ID_ANY, _("<empty>"), style=wx.ALIGN_CENTER_HORIZONTAL | wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE))
+            self.last_font.append(
+                wx.StaticText(
+                    self,
+                    wx.ID_ANY,
+                    _("<empty>"),
+                    style=wx.ALIGN_CENTER_HORIZONTAL
+                    | wx.ST_ELLIPSIZE_END
+                    | wx.ST_NO_AUTORESIZE,
+                )
+            )
             self.last_font[i].SetMinSize((120, 90))
             self.last_font[i].SetFont(self.default_font)
             self.last_font[i].SetToolTip(_("Choose last used font-settings"))
@@ -97,21 +119,29 @@ class TextEntry(wx.Dialog):
         sizer_h_align.Add(label_2, 0, 0, 0)
         sizer_h_align.Add(self.rb_align, 0, 0, 0)
 
-        sizer_h_color = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Color")), wx.HORIZONTAL)
+        sizer_h_color = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Color")), wx.HORIZONTAL
+        )
         sizer_v_main.Add(sizer_h_color, 0, wx.EXPAND, 0)
         for i in range(8):
             sizer_h_color.Add(self.btn_color[i], 1, 0, 0)
 
-        sizer_h_variables = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Available Variables")), wx.HORIZONTAL)
+        sizer_h_variables = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Available Variables")), wx.HORIZONTAL
+        )
         sizer_v_main.Add(sizer_h_variables, 0, wx.EXPAND, 0)
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
 
         sizer_v_main.Add(self.preview, 1, wx.EXPAND, 1)
 
-        sizer_h_fonthistory = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Last Font-Entries")), wx.HORIZONTAL)
+        sizer_h_fonthistory = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Last Font-Entries")), wx.HORIZONTAL
+        )
         sizer_v_main.Add(sizer_h_fonthistory, 0, wx.EXPAND, 0)
         for i in range(self.FONTHISTORY):
-            sizer_h_fonthistory.Add(self.last_font[i], 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 1)
+            sizer_h_fonthistory.Add(
+                self.last_font[i], 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 1
+            )
 
         sizer_h_okcancel = wx.StdDialogButtonSizer()
         sizer_v_main.Add(sizer_h_okcancel, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
@@ -140,28 +170,27 @@ class TextEntry(wx.Dialog):
 
     def set_preview_alignment(self):
         mystyle = self.preview.GetWindowStyle()
-        if self.result_anchor==0:
+        if self.result_anchor == 0:
             # Align the text to the left.
             mystyle1 = wx.ALIGN_LEFT
             mystyle2 = wx.ST_ELLIPSIZE_END
-        elif self.result_anchor==1:
-            mystyle1 =  wx.ALIGN_CENTER
+        elif self.result_anchor == 1:
+            mystyle1 = wx.ALIGN_CENTER
             mystyle2 = wx.ST_ELLIPSIZE_MIDDLE
         else:
-            mystyle1 =  wx.ALIGN_RIGHT
+            mystyle1 = wx.ALIGN_RIGHT
             mystyle2 = wx.ST_ELLIPSIZE_START
         # Clear old alignment...
-        mystyle = mystyle & ~ wx.ALIGN_LEFT
-        mystyle = mystyle & ~ wx.ALIGN_RIGHT
-        mystyle = mystyle & ~ wx.ALIGN_CENTER
-        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_END
-        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_MIDDLE
-        mystyle = mystyle & ~ wx.ST_ELLIPSIZE_START
+        mystyle = mystyle & ~wx.ALIGN_LEFT
+        mystyle = mystyle & ~wx.ALIGN_RIGHT
+        mystyle = mystyle & ~wx.ALIGN_CENTER
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_END
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_MIDDLE
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_START
         # Set new one
         mystyle = mystyle | mystyle1 | mystyle2
         self.preview.SetWindowStyle(mystyle)
         self.preview.Refresh()
-
 
     def on_radio_box(self, event):
         self.result_anchor = event.GetInt()
@@ -178,7 +207,7 @@ class TextEntry(wx.Dialog):
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
         data = wx.FontData()
         data.EnableEffects(True)
-        data.SetColour(self.result_colour)         # set colour
+        data.SetColour(self.result_colour)  # set colour
         data.SetInitialFont(self.result_font)
 
         dlg = wx.FontDialog(self, data)
@@ -197,7 +226,7 @@ class TextEntry(wx.Dialog):
 
     def on_variable_dclick(self, event):
         svalue = event.GetString()
-        svalue = svalue[0:svalue.find(" (")]
+        svalue = svalue[0 : svalue.find(" (")]
         svalue = self.txt_Text.GetValue() + " {" + svalue + "}"
         self.txt_Text.SetValue(svalue.strip(" "))
         event.Skip()
@@ -221,21 +250,24 @@ class TextEntry(wx.Dialog):
     def store_font_history(self):
         fontdesc = self.result_font.GetNativeFontInfoDesc()
         for i in range(self.FONTHISTORY - 1, 0, -1):
-            self.history[i] = self.history[i-1]
+            self.history[i] = self.history[i - 1]
         self.history[0] = fontdesc
         for i in range(self.FONTHISTORY):
-            setattr(self.context, "fonthistory_{num}".format(num = i), self.history[i])
+            setattr(self.context, "fonthistory_{num}".format(num=i), self.history[i])
         self.context.flush()
 
     def load_font_history(self):
         self.history = []
         defaultfontdesc = self.default_font.GetNativeFontInfoUserDesc()
         for i in range(self.FONTHISTORY):
-            self.context.setting(str, "fonthistory_{num}".format(num = i), defaultfontdesc)
-            fontdesc = getattr(self.context, "fonthistory_{num}".format(num = i))
+            self.context.setting(
+                str, "fonthistory_{num}".format(num=i), defaultfontdesc
+            )
+            fontdesc = getattr(self.context, "fonthistory_{num}".format(num=i))
             self.history.append(fontdesc)
             font = wx.Font(fontdesc)
             self.last_font[i].SetFont(font)
+
 
 # end of class TextEntry
 
@@ -260,8 +292,9 @@ class TextTool(ToolWidget):
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.DrawText(self.text.text, self.x, self.y)
 
-
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.p1 = complex(space_pos[0], space_pos[1])
@@ -281,9 +314,9 @@ class TextTool(ToolWidget):
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.result_text
-                if dlg.result_anchor==1:
+                if dlg.result_anchor == 1:
                     self.text.anchor = "middle"
-                elif dlg.result_anchor==2:
+                elif dlg.result_anchor == 2:
                     self.text.anchor = "end"
                 else:
                     self.text.anchor = "start"

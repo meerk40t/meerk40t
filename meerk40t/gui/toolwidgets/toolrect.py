@@ -1,9 +1,13 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME, RESPONSE_ABORT
+from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.scene.sceneconst import (
+    RESPONSE_ABORT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+)
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Rect
-from meerk40t.gui.laserrender import swizzlecolor
 
 
 class RectTool(ToolWidget):
@@ -33,10 +37,17 @@ class RectTool(ToolWidget):
             if self.scene.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
+                gc.SetBrush(
+                    wx.Brush(
+                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.BRUSHSTYLE_SOLID,
+                    )
+                )
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True

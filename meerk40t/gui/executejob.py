@@ -6,7 +6,7 @@ from meerk40t.kernel import signal_listener
 
 from ..core.node.node import Node
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import icons8_laser_beam_52, STD_ICON_SIZE
+from .icons import STD_ICON_SIZE, icons8_laser_beam_52
 from .mwindow import MWindow
 from .wxutils import disable_window
 

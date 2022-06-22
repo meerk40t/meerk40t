@@ -303,7 +303,9 @@ class Sender:
 
     def is_ready_and_not_busy(self):
         self.read_port()
-        return bool(self._usb_connection.status & 0x20) and not bool(self._usb_connection.status & 0x04)
+        return bool(self._usb_connection.status & 0x20) and not bool(
+            self._usb_connection.status & 0x04
+        )
 
     def wait_finished(self):
         while self.is_ready_and_not_busy():
@@ -345,10 +347,14 @@ class Sender:
                 for packet in command_list.packet_generator():
                     if self._terminate_execution:
                         return False
-                    self._send_command(GET_REGISTER, 0x0001 if not execute_list else 0x0000)  # 0x0007
+                    self._send_command(
+                        GET_REGISTER, 0x0001 if not execute_list else 0x0000
+                    )  # 0x0007
                     self._usb_connection.send_list_chunk(packet)
 
-                    self.raw_set_end_of_list(0x0001 if not execute_list else 0x0000)  # 0x00019
+                    self.raw_set_end_of_list(
+                        0x0001 if not execute_list else 0x0000
+                    )  # 0x00019
                     if packet_count == 1:
                         self.raw_execute_list()  # 0x0005
                         execute_list = True

@@ -22,13 +22,15 @@ class RelocateTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         pass
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         # Add snap behaviour
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True
             response = RESPONSE_CONSUME
-        elif event_type =="move":
+        elif event_type == "move":
             if self.scene.tool_active:
                 response = RESPONSE_CONSUME
         elif event_type in ("leftup", "leftclick"):

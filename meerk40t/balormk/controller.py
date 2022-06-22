@@ -1,10 +1,25 @@
 import threading
 import time
 
-from meerk40t.balor.sender import Sender, SET_XY_POSITION, STOP_LIST, RESTART_LIST, BalorMachineException, \
-    BalorCommunicationException
-from meerk40t.kernel import STATE_UNKNOWN, STATE_INITIALIZE, STATE_END, STATE_TERMINATE, STATE_ACTIVE, STATE_PAUSE, \
-    STATE_BUSY, STATE_SUSPEND, STATE_IDLE
+from meerk40t.balor.sender import (
+    RESTART_LIST,
+    SET_XY_POSITION,
+    STOP_LIST,
+    BalorCommunicationException,
+    BalorMachineException,
+    Sender,
+)
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_SUSPEND,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+)
 
 
 class BalorController:
@@ -13,6 +28,7 @@ class BalorController:
     controller board is established to perform these actions. The model is based on the typical driver for the lihuiyu
     board. Modified to match Balor's specifications
     """
+
     def __init__(self, service):
         self.service = service
         self.state = STATE_UNKNOWN

@@ -24,7 +24,9 @@ class BlobNode(Node):
         return f"Blob('{self.data_type}', '{self.name}', '{len(self.data)} bytes')"
 
     def __copy__(self):
-        return BlobNode(data_type=self.data_type, data=self.data, name=self.name, **self.settings)
+        return BlobNode(
+            data_type=self.data_type, data=self.data, name=self.name, **self.settings
+        )
 
     def __len__(self):
         return len(self.data)

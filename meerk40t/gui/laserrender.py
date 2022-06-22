@@ -1,10 +1,8 @@
-from math import ceil, floor, sqrt
 import platform
+from math import ceil, floor, sqrt
 
 import wx
 from PIL import Image
-
-from meerk40t.gui.fonts import svgfont_to_wx
 
 from meerk40t.core.cutcode import (
     CubicCut,
@@ -16,7 +14,8 @@ from meerk40t.core.cutcode import (
     RasterCut,
     RawCut,
 )
-from meerk40t.core.node.node import Node, Linecap, Linejoin, Fillrule
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.gui.fonts import svgfont_to_wx
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -28,9 +27,10 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+
+from ..numpath import TYPE_CUBIC, TYPE_END, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
-from ..numpath import TYPE_LINE, TYPE_RAMP, TYPE_QUAD, TYPE_CUBIC, TYPE_END
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -219,7 +219,9 @@ class LaserRender:
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                 elif seg_type == TYPE_CUBIC:
-                    p.AddCurveToPoint(c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag)
+                    p.AddCurveToPoint(
+                        c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
+                    )
                 else:
                     print(seg_type)
             if subpath.first_point == end:
@@ -262,7 +264,16 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None, alpha=255, capstyle=None, joinstyle=None):
+    def set_element_pen(
+        self,
+        gc,
+        element,
+        zoomscale=1.0,
+        width_scale=None,
+        alpha=255,
+        capstyle=None,
+        joinstyle=None,
+    ):
         try:
             sw = element.stroke_width
         except AttributeError:
@@ -276,7 +287,14 @@ class LaserRender:
             pass
         if sw < limit:
             sw = limit
-        self.set_pen(gc, element.stroke, width=sw, alpha=alpha, capstyle=capstyle, joinstyle=joinstyle)
+        self.set_pen(
+            gc,
+            element.stroke,
+            width=sw,
+            alpha=alpha,
+            capstyle=capstyle,
+            joinstyle=joinstyle,
+        )
 
     def draw_cutcode_node(
         self,
@@ -447,7 +465,13 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj,
+            gc,
+            node,
+            zoomscale=zoomscale,
+            width_scale=width_scale,
+            alpha=alpha,
+            capstyle=lc,
+            joinstyle=lj,
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
@@ -502,7 +526,13 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj
+            gc,
+            node,
+            zoomscale=zoomscale,
+            width_scale=width_scale,
+            alpha=alpha,
+            capstyle=lc,
+            joinstyle=lj,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
@@ -562,7 +592,13 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         self.set_element_pen(
-            gc, node, zoomscale=zoomscale, width_scale=width_scale, alpha=alpha, capstyle=lc, joinstyle=lj
+            gc,
+            node,
+            zoomscale=zoomscale,
+            width_scale=width_scale,
+            alpha=alpha,
+            capstyle=lc,
+            joinstyle=lj,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
@@ -636,27 +672,41 @@ class LaserRender:
             # the descent from the font-metric into account.
             # A 'real' height routine would most probably need to draw the string on an
             # empty canvas and find the first and last dots on a line...
-            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
+            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(
+                textstr
+            )
             # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
             # That stuff drives my crazy...
             # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
-            has_underscore = any(substring in textstr for substring in ('g', 'j', 'p', 'q', 'y', ',', ';'))
+            has_underscore = any(
+                substring in textstr
+                for substring in ("g", "j", "p", "q", "y", ",", ";")
+            )
             delta = self.fontdescent_factor * f_descent
             if has_underscore:
-                delta -= self.fontdescent_factor/2 * f_descent
+                delta -= self.fontdescent_factor / 2 * f_descent
             delta -= f_externalLeading
             f_height -= delta
             text.width = f_width
             text.height = f_height
             # print ("Anchor= %s" % text.anchor)
             if not hasattr(text, "anchor") or text.anchor == "start":
-                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                y -= (
+                    text.height
+                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                )
             elif text.anchor == "middle":
                 x -= text.width / 2
-                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                y -= (
+                    text.height
+                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                )
             elif text.anchor == "end":
                 x -= text.width
-                y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                y -= (
+                    text.height
+                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
+                )
             gc.DrawText(textstr, x, y)
         gc.PopState()
 
@@ -671,9 +721,7 @@ class LaserRender:
             gc.SetBrush(wx.RED_BRUSH)
             gc.SetPen(wx.RED_PEN)
             gc.DrawRectangle(0, 0, image_width, image_height)
-            gc.DrawBitmap(
-                icons8_image_50.GetBitmap(), 0, 0, image_width, image_height
-            )
+            gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, image_width, image_height)
         else:
             if draw_mode & DRAW_MODE_CACHE == 0:
                 cache = None

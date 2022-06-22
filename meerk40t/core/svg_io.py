@@ -5,6 +5,7 @@ from io import BytesIO
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin
 
 from ..svgelements import (
     SVG,
@@ -31,6 +32,8 @@ from ..svgelements import (
     SVG_ATTR_XMLNS_LINK,
     SVG_ATTR_Y,
     SVG_NAME_TAG,
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
     SVG_TAG_GROUP,
     SVG_TAG_IMAGE,
     SVG_TAG_PATH,
@@ -40,23 +43,20 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
-    SVG_RULE_NONZERO,
-    SVG_RULE_EVENODD,
     Circle,
     Ellipse,
     Group,
+    Length,
     Matrix,
     Path,
     Polygon,
     Polyline,
     Rect,
     SimpleLine,
-    Length,
     SVGImage,
     SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_PIXEL
-from meerk40t.core.node.node import Linecap, Linejoin, Fillrule
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"

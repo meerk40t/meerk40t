@@ -7,13 +7,13 @@ from meerk40t.kernel import Job, signal_listener
 from ..core.cutcode import CutCode
 from ..svgelements import Matrix
 from .icons import (
+    STD_ICON_SIZE,
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_play_50,
     icons8_route_50,
-    STD_ICON_SIZE
 )
-from .laserrender import LaserRender, DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES
+from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget

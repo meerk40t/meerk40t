@@ -165,7 +165,6 @@ class CommandSequencer:
             ]
         )
 
-
     #######################
     # PLOTLIKE SHORTCUTS
     #######################
@@ -220,7 +219,6 @@ class CommandSequencer:
 
     def port_off(self, bit):
         self._port_bits = ~((~self._port_bits) | (1 << bit))
-
 
     #######################
     # LIST APPENDING OPERATIONS
@@ -277,7 +275,6 @@ class CommandSequencer:
         """
         return int(round(20000.0 / frequency_khz))
 
-
     #######################
     # HIGH LEVEL OPERATIONS
     #######################
@@ -317,13 +314,12 @@ class CommandSequencer:
         return table
 
     def _write_correction_table(self, table):
-        assert(len(table), 65*65)
+        assert (len(table), 65 * 65)
         self.write_cor_table(True)
         first = True
         for dx, dy in table:
             self.write_cor_line(dx, dy, 0 if first else 1)
             first = False
-
 
     #######################
     # COMMAND LIST COMMAND
@@ -810,4 +806,3 @@ class CommandSequencer:
 
     def set_fly_res(self, fly_res):
         self._command(SetFlyRes, fly_res)
-

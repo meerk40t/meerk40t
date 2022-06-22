@@ -43,7 +43,14 @@ BOOL_PARAMETERS = (
     "force_twitchless",
 )
 
-STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle", "hatch_type", "penbox_value", "penbox_pass")
+STRING_PARAMETERS = (
+    "overscan",
+    "hatch_distance",
+    "hatch_angle",
+    "hatch_type",
+    "penbox_value",
+    "penbox_pass",
+)
 
 COLOR_PARAMETERS = ("color", "line_color")
 
@@ -58,6 +65,7 @@ class Parameters:
     settings. Settings outside the scope of this class are still legal and will be passed to the drivers which
     may or may not implement or respect them.
     """
+
     def __init__(self, settings: Dict = None, **kwargs):
         self.settings = settings
         if self.settings is None:
