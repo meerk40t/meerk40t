@@ -32,6 +32,14 @@ class ImageOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
+        # Which elements can be added to an operation (manually via DND)?
+        self.allowed_elements_dnd = (
+            "elem image",
+        )
+        # Which elements do we consider for automatic classification?
+        self.allowed_elements = (
+            "elem image",
+        )
 
     def __repr__(self):
         return "ImageOpNode()"
@@ -119,15 +127,16 @@ class ImageOpNode(Node, Parameters):
         return default_map
 
     def drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type != "elem image":
+            if not drag_node.type in self.allowed_elements_dnd:
                 return False
             # Dragging element onto operation adds that element to the op.
             self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
-            if drag_node.type == "elem image":
+            if not drag_node.node.type in self.allowed_elements_dnd:
                 return False
             # Move a refelem to end of op.
             self.append_child(drag_node)
@@ -138,16 +147,18 @@ class ImageOpNode(Node, Parameters):
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
-            for e in drag_node.flat("elem"):
+            for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                self.add_reference(e)
-                some_nodes = True
+                if e.type in self.allowed_elements_dnd:
+                    self.add_reference(e)
+                    some_nodes = True
             return some_nodes
         return False
 
     def classify(self, node):
-        if node.type in ("elem image",):
+        if node.type in self.allowed_elements:
             self.add_reference(node)
+            # Have classified and no more classification are needed
             return True, True
         return False, False
 
