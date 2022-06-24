@@ -35,6 +35,26 @@ class RasterOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
+        self.allowed_elements_dnd = (
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+            "elem dot",
+            "elem text",
+            "elem image",
+        )
+        # Which elements do we consider for automatic classification?
+        self.allowed_elements = (
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+            "elem text",
+            "elem image",
+        )
 
     def __repr__(self):
         return "RasterOp()"
@@ -122,15 +142,15 @@ class RasterOpNode(Node, Parameters):
 
     def drop(self, drag_node):
         if drag_node.type.startswith("elem"):
-            if drag_node.type == "elem image":
-                return False
+            # if drag_node.type == "elem image":
+            #     return False
             # Dragging element onto operation adds that element to the op.
             self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
-            # Disallow drop of image refelems onto a Dot op.
-            if drag_node.type == "elem image":
-                return False
+            # # Disallow drop of image refelems onto a Dot op.
+            # if drag_node.type == "elem image":
+            #     return False
             # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
@@ -142,8 +162,8 @@ class RasterOpNode(Node, Parameters):
             some_nodes = False
             for e in drag_node.flat("elem"):
                 # Disallow drop of image elems onto a Dot op.
-                if drag_node.type == "elem image":
-                    continue
+                # if drag_node.type == "elem image":
+                #     continue
                 # Add element to operation
                 self.add_reference(e)
                 some_nodes = True
@@ -151,16 +171,6 @@ class RasterOpNode(Node, Parameters):
         return False
 
     def classify(self, node):
-        same_color = self.default
-        if not same_color and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op == plain_color_node:
-                same_color = True
-        if same_color:
-            self.add_reference(node)
-            return True, True
-
         if node.type in (
             "elem image",
             "elem text",
@@ -172,8 +182,9 @@ class RasterOpNode(Node, Parameters):
             and node.fill is not None
             and node.fill.argb is not None
         ):
-            self.add_reference(node)
-            return True, True
+            if node.type in self.allowed_elements:
+                self.add_reference(node)
+                return True, True
         return False, False
 
     def load(self, settings, section):
