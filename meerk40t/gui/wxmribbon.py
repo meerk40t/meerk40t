@@ -42,7 +42,6 @@ class RibbonButtonBar(RB.RibbonButtonBar):
             dc = wx.AutoBufferedPaintDC(self)
             if not dc is None:
 
-
                 self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
 
                 try:
@@ -73,11 +72,11 @@ class RibbonButtonBar(RB.RibbonButtonBar):
                         bitmap,
                         bitmap_small,
                     )
-            else:
-                print("DC was faulty")
+            # else:
+            #     print("DC was faulty")
             self.screen_refresh_lock.release()
-        else:
-            print ("OnPaint was locked...")
+        # else:
+        #     print ("OnPaint was locked...")
 
 
 def debug_system_colors():
