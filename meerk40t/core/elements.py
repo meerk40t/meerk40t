@@ -3664,7 +3664,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree")
             return "elements", data
 
         @self.console_option(
@@ -3732,7 +3733,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                self.signal("refresh_tree")
+#                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -5967,7 +5969,8 @@ class Elemental(Service):
             add_nodes *= copies
             for n in add_nodes:
                 node.add_reference(n.node)
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
+#            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Make raster image"),

@@ -570,7 +570,8 @@ class MeerK40tScenePanel(wx.Panel):
     def on_elements_added(self, *args):
         self.scene.signal("element_added")
         # There may be a smarter way to eliminate unnecessary rebuilds, but it's doing the job...
-        self.context.signal("rebuild_tree")
+        # self.context.signal("rebuild_tree")
+        self.context.signal("refresh_tree")
         self.widget_scene.request_refresh()
 
     @signal_listener("theme")
