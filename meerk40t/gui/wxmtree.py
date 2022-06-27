@@ -768,6 +768,9 @@ class ShadowTree:
                 return
             elif node.type == "reference":
                 image_id = tree.GetItemImage(node.node.item)
+                if image_id >= self.tree_images.ImageCount:
+                    image_id = -1
+                    # Reset Image Node in List
                 if image_id < 0:
                     image = self.renderer.make_raster(
                         node.node, node.node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
