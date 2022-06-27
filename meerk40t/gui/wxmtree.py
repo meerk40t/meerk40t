@@ -192,6 +192,17 @@ class TreePanel(wx.Panel):
         """
         self.shadow_tree.rebuild_tree()
 
+    @signal_listener("freeze_tree")
+    def on_freeze_tree_signal(self, origin, status=None, *args):
+        """
+        Called by 'rebuild_tree' signal. Halts any updates like set_decorations and others
+
+        @param origin: the path of the originating signal
+        @param: status: true, false (evident what they do), None: to toggle
+        @param args:
+        @return:
+        """
+        self.shadow_tree.freeze_tree(status)
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
@@ -233,6 +244,7 @@ class ShadowTree:
         self.dragging_nodes = None
         self.tree_images = None
         self.name = "Project"
+        self._freeze = False
 
         self.do_not_select = False
         service.add_service_delegate(self)
@@ -381,13 +393,12 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        self.update_decorations(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
         except AttributeError:
             pass
-        self.set_icon(node)
         self.elements.signal("altered", node)
 
     def expand(self, node):
@@ -441,7 +452,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.set_icon(node)
+        self.set_icon(node, force=False)
         self.on_force_element_update(node)
 
     def focus(self, node):
@@ -469,9 +480,9 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            self.update_decorations(element.node)
+            self.update_decorations(element.node, force=True)
         else:
-            self.update_decorations(element)
+            self.update_decorations(element, force=True)
 
     def on_element_update(self, *args):
         """
@@ -481,9 +492,9 @@ class ShadowTree:
         """
         element = args[0]
         if hasattr(element, "node"):
-            self.update_decorations(element.node)
+            self.update_decorations(element.node, force=True)
         else:
-            self.update_decorations(element)
+            self.update_decorations(element, force=True)
 
     def refresh_tree(self, node=None):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -501,6 +512,12 @@ class ShadowTree:
             self.set_enhancements(child_node)
             self.refresh_tree(child)
             child, cookie = tree.GetNextChild(node, cookie)
+
+    def freeze_tree(self, status=None):
+        if status is None:
+            status = not self._freeze
+        self._freeze = status
+        self.wxtree.Enable(not self._freeze)
 
     def rebuild_tree(self):
         """
@@ -654,7 +671,6 @@ class ShadowTree:
             pass
         except TypeError:
             pass
-        self.set_icon(node)
 
     def set_enhancements(self, node):
         """
@@ -665,6 +681,8 @@ class ShadowTree:
         tree = self.wxtree
         node_item = node.item
         if node_item is None:
+            return
+        if self._freeze:
             return
         tree.SetItemBackgroundColour(node_item, None)
         try:
@@ -688,13 +706,15 @@ class ShadowTree:
         item = node.item
         if item is None:
             return
+        if self._freeze:
+            return
         tree = self.wxtree
         if color is None:
             tree.SetItemTextColour(item, None)
         else:
             tree.SetItemTextColour(item, wx.Colour(swizzlecolor(color)))
 
-    def set_icon(self, node, icon=None):
+    def set_icon(self, node, icon=None, force=False):
         """
         Node icon to be created and applied
 
@@ -706,6 +726,8 @@ class ShadowTree:
         drawmode = self.elements.root.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
             return
+        if self._freeze:
+            return
         try:
             item = node.item
         except AttributeError:
@@ -714,6 +736,13 @@ class ShadowTree:
             return
         tree = root.wxtree
         if icon is None:
+            if force is None:
+                force = False
+            image_id = tree.GetItemImage(item)
+            if image_id>=0 and not force:
+                # Don't do it twice
+                return
+
             if node.type == "elem image":
                 image = self.renderer.make_thumbnail(node.image, width=20, height=20)
                 image_id = self.tree_images.Add(bitmap=image)
@@ -726,12 +755,16 @@ class ShadowTree:
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return
             elif node.type == "reference":
-                image = self.renderer.make_raster(
-                    node.node, node.node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
-                )
-                if image is not None:
-                    image_id = self.tree_images.Add(bitmap=image)
-                    tree.SetItemImage(item, image=image_id)
+                image_id = tree.GetItemImage(node.node.item)
+                if image_id < 0:
+                    image = self.renderer.make_raster(
+                        node.node, node.node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
+                    )
+                    if image is not None:
+                        image_id = self.tree_images.Add(bitmap=image)
+                        tree.SetItemImage(node.node.item, image=image_id)
+                tree.SetItemImage(item, image=image_id)
+
             elif node.type.startswith("elem "):
                 image = self.renderer.make_raster(
                     node, node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
@@ -777,14 +810,16 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
-    def update_decorations(self, node):
+    def update_decorations(self, node, force=False):
         """
         Updates the decorations for a particular node/tree item
 
         @param node:
         @return:
         """
-        self.set_icon(node)
+        if force is None:
+            force = False
+        self.set_icon(node, force=force)
         if node.item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()
