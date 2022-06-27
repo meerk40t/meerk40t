@@ -277,9 +277,10 @@ class Elemental(Service):
                 channel(_("No such file."))
                 return
             try:
+                channel(_("loading..."))
                 result = self.load(new_file)
                 if result:
-                    channel(_("loading..."))
+                    channel(_("Done."))
             except AttributeError:
                 raise CommandSyntaxError(_("Loading files was not defined"))
             return "file", new_file
@@ -7912,7 +7913,9 @@ class Elemental(Service):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
+                        self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
