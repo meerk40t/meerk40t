@@ -184,13 +184,25 @@ class TreePanel(wx.Panel):
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, *args):
         """
-        Called by 'rebuild_tree' signal. To refresh tree directly
+        Called by 'rebuild_tree' signal. To rebuild the tree directly
 
         @param origin: the path of the originating signal
         @param args:
         @return:
         """
         self.shadow_tree.rebuild_tree()
+
+    @signal_listener("refresh_tree")
+    def on_refresh_tree_signal(self, origin, *args):
+        """
+        Called by 'refresh_tree' signal. To refresh tree directly
+
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
+        """
+        self.shadow_tree.refresh_tree()
+
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
@@ -908,7 +920,8 @@ class ShadowTree:
             event.Skip()
         else:
             event.Allow()
-            self.rebuild_tree()
+            self.refresh_tree()
+            # self.rebuild_tree()
         self.dragging_nodes = None
 
     def on_item_right_click(self, event):
