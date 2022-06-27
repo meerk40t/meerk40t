@@ -1,5 +1,5 @@
 import copy
-
+import threading
 import wx
 import wx.lib.agw.ribbon as RB
 
@@ -29,6 +29,7 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         agwStyle=0,
     ):
         super().__init__(parent, id, pos, size, agwStyle)
+        self.screen_refresh_lock = threading.Lock()
 
     def OnPaint(self, event):
         """
@@ -36,38 +37,46 @@ class RibbonButtonBar(RB.RibbonButtonBar):
 
         :param `event`: a :class:`PaintEvent` event to be processed.
         """
+        if self.screen_refresh_lock.acquire(timeout=0.2):
 
-        dc = wx.AutoBufferedPaintDC(self)
-        self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
+            dc = wx.AutoBufferedPaintDC(self)
+            if not dc is None:
 
-        try:
-            layout = self._layouts[self._current_layout]
-        except IndexError:
-            return
+                self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
 
-        for button in layout.buttons:
-            base = button.base
+                try:
+                    layout = self._layouts[self._current_layout]
+                except IndexError:
+                    return
 
-            bitmap = base.bitmap_large
-            bitmap_small = base.bitmap_small
+                for button in layout.buttons:
+                    base = button.base
 
-            if base.state & RB.RIBBON_BUTTONBAR_BUTTON_DISABLED:
-                bitmap = base.bitmap_large_disabled
-                bitmap_small = base.bitmap_small_disabled
+                    bitmap = base.bitmap_large
+                    bitmap_small = base.bitmap_small
 
-            rect = wx.Rect(
-                button.position + self._layout_offset, base.sizes[button.size].size
-            )
-            self._art.DrawButtonBarButton(
-                dc,
-                self,
-                rect,
-                base.kind,
-                base.state | button.size,
-                base.label,
-                bitmap,
-                bitmap_small,
-            )
+                    if base.state & RB.RIBBON_BUTTONBAR_BUTTON_DISABLED:
+                        bitmap = base.bitmap_large_disabled
+                        bitmap_small = base.bitmap_small_disabled
+
+                    rect = wx.Rect(
+                        button.position + self._layout_offset, base.sizes[button.size].size
+                    )
+                    self._art.DrawButtonBarButton(
+                        dc,
+                        self,
+                        rect,
+                        base.kind,
+                        base.state | button.size,
+                        base.label,
+                        bitmap,
+                        bitmap_small,
+                    )
+            # else:
+            #     print("DC was faulty")
+            self.screen_refresh_lock.release()
+        # else:
+        #     print ("OnPaint was locked...")
 
 
 def debug_system_colors():
