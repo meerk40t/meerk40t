@@ -182,7 +182,7 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_force_element_update(*args)
 
     @signal_listener("rebuild_tree")
-    def on_rebuild_tree_signal(self, origin, *args):
+    def on_rebuild_tree_signal(self, origin, target = None, *args):
         """
         Called by 'rebuild_tree' signal. To rebuild the tree directly
 
@@ -190,6 +190,25 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        # if target is not None:
+        #     if target == "elements":
+        #         startnode = self.shadow_tree.elements.get(type="branch elems").item
+        #     elif target == "operations":
+        #         startnode = self.shadow_tree.elements.get(type="branch ops").item
+        #     elif target == "regmarks":
+        #         startnode = self.shadow_tree.elements.get(type="branch reg").item
+        #     print ("Current content of branch %s" % target)
+        #     idx = 0
+        #     child, cookie = self.shadow_tree.wxtree.GetFirstChild(startnode)
+        #     while child.IsOk():
+        #         # child_node = self.wxtree.GetItemData(child)
+        #         lbl = self.shadow_tree.wxtree.GetItemText(child)
+        #         print ("Node #%d - content: %s" % (idx, lbl))
+        #         child, cookie = self.shadow_tree.wxtree.GetNextChild(startnode, cookie)
+        #         idx += 1
+        #     self.shadow_tree.wxtree.Expand(startnode)
+        # else:
+        #     self.shadow_tree.rebuild_tree()
         self.shadow_tree.rebuild_tree()
 
     @signal_listener("refresh_tree")
@@ -297,7 +316,7 @@ class ShadowTree:
 
     def node_attached(self, node, **kwargs):
         """
-        Notified that this node has been attached to teh tree.
+        Notified that this node has been attached to the tree.
         @param node: Node that was attached.
         @param kwargs:
         @return:
@@ -314,7 +333,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        self.update_decorations(node, force=True)
 
     def selected(self, node):
         """
@@ -387,7 +406,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        self.update_decorations(node, force=True)
         try:
             c = node.color
             self.set_color(node, c)
@@ -521,8 +540,10 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
-            self.set_enhancements(child_node)
             self.refresh_tree(child)
+            ct = self.wxtree.GetChildrenCount(child, recursively=False)
+            if ct > 0:
+                self.wxtree.Expand(child)
             child, cookie = tree.GetNextChild(node, cookie)
 
     def freeze_tree(self, status=None):
@@ -597,7 +618,7 @@ class ShadowTree:
         self.set_icon(node_operations, icons8_laser_beam_20.GetBitmap())
 
         for n in node_operations.children:
-            self.set_icon(n)
+            self.set_icon(n, force=True)
 
         node_elements = elemtree.get(type="branch elems")
         self.set_icon(node_elements, icons8_vector_20.GetBitmap())
@@ -751,6 +772,8 @@ class ShadowTree:
             if force is None:
                 force = False
             image_id = tree.GetItemImage(item)
+            if image_id >= self.tree_images.ImageCount:
+                image_id = -1
             if image_id>=0 and not force:
                 # Don't do it twice
                 return
@@ -834,12 +857,12 @@ class ShadowTree:
         """
         if force is None:
             force = False
-        self.set_icon(node, force=force)
         if node.item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
 
+        self.set_icon(node, force=force)
         formatter = self.elements.lookup(f"format/{node.type}")
         label = node.create_label(formatter)
         self.wxtree.SetItemText(node.item, label)
