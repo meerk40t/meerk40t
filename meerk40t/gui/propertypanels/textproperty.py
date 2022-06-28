@@ -10,38 +10,38 @@ from ..mwindow import MWindow
 _ = wx.GetTranslation
 
 class PromptingComboBox(wx.ComboBox) :
-    def __init__(self, parent, choices=[], style=0, **par):
-        wx.ComboBox.__init__(self, parent, wx.ID_ANY, style=style|wx.CB_DROPDOWN, choices=choices, **par)
+    def __init__(self, parent, choices=[], style=0, **args):
+        wx.ComboBox.__init__(self, parent, wx.ID_ANY, style=style|wx.CB_DROPDOWN, choices=choices, **args)
         self.choices = choices
         self.Bind(wx.EVT_TEXT, self.OnText)
         self.Bind(wx.EVT_KEY_DOWN, self.OnPress)
-        self.ignoreEvtText = False
-        self.deleteKey = False
-        self.preFound = False
+        self.ignore_evt_text = False
+        self.delete_key = False
+        self.pre_found = False
 
     def OnPress(self, event):
         if event.GetKeyCode() == 8:
-            self.deleteKey = True
+            self.delete_key = True
         event.Skip()
 
     def OnText(self, event):
-        currentText = event.GetString()
-        if self.ignoreEvtText:
-            self.ignoreEvtText = False
+        current_text = event.GetString()
+        if self.ignore_evt_text:
+            self.ignore_evt_text = False
             return
-        if self.deleteKey:
-            self.deleteKey = False
-            if self.preFound:
-                currentText =  currentText[:-1]
+        if self.delete_key:
+            self.delete_key = False
+            if self.pre_found:
+                current_text =  current_text[:-1]
 
-        self.preFound = False
+        self.pre_found = False
         for choice in self.choices :
-            if choice.startswith(currentText):
-                self.ignoreEvtText = True
+            if choice.startswith(current_text):
+                self.ignore_evt_text = True
                 self.SetValue(choice)
-                self.SetInsertionPoint(len(currentText))
-                self.SetTextSelection(len(currentText), len(choice))
-                self.preFound = True
+                self.SetInsertionPoint(len(current_text))
+                self.SetTextSelection(len(current_text), len(choice))
+                self.pre_found = True
                 break
         event.Skip()
 
