@@ -5,7 +5,7 @@ from functools import partial
 
 import wx
 from PIL import Image
-from wx import aui
+from wx.lib.agw import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -538,7 +538,7 @@ class MeerK40t(MWindow):
         self.is_paused = False
 
         self._mgr = aui.AuiManager()
-        self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
+        self._mgr.SetAGWFlags(self._mgr.GetAGWFlags() | aui.AUI_MGR_LIVE_RESIZE)
         self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
         self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
 
@@ -1392,7 +1392,7 @@ class MeerK40t(MWindow):
                 .Dockable(False)
                 .Float()
                 .Caption(caption)
-                .FloatingSize(width, height)
+                .FloatingSize(wx.Size(width, height))
                 .Name(pane)
                 .CaptionVisible(True)
             )
@@ -1414,7 +1414,7 @@ class MeerK40t(MWindow):
                 window = pane.window
                 if hasattr(window, "pane_hide"):
                     window.pane_hide()
-                if isinstance(window, wx.aui.AuiNotebook):
+                if isinstance(window, wx.lib.agw.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_hide"):
@@ -1426,7 +1426,7 @@ class MeerK40t(MWindow):
             if pane.IsShown():
                 if hasattr(window, "pane_show"):
                     window.pane_show()
-                if isinstance(window, wx.aui.AuiNotebook):
+                if isinstance(window, wx.lib.agw.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_show"):
@@ -1434,7 +1434,7 @@ class MeerK40t(MWindow):
             else:
                 if hasattr(window, "pane_noshow"):
                     window.pane_noshow()
-                if isinstance(window, wx.aui.AuiNotebook):
+                if isinstance(window, wx.lib.agw.aui.AuiNotebook):
                     for i in range(window.GetPageCount()):
                         page = window.GetPage(i)
                         if hasattr(page, "pane_noshow"):
@@ -1460,7 +1460,7 @@ class MeerK40t(MWindow):
     def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
         pane = self._mgr.GetPane(paneinfo.name)
         control = paneinfo.control
-        if isinstance(control, wx.aui.AuiNotebook):
+        if isinstance(control, wx.lib.agw.aui.AuiNotebook):
             for i in range(control.GetPageCount()):
                 page = control.GetPage(i)
                 self.add_module_delegate(page)
@@ -2397,7 +2397,7 @@ class MeerK40t(MWindow):
     def __set_properties(self):
         # begin wxGlade: MeerK40t.__set_properties
         self.__set_titlebar()
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
 

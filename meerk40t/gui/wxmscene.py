@@ -1,7 +1,7 @@
 import random
 
 import wx
-from wx import aui
+from wx.lib.agw import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
@@ -38,7 +38,7 @@ _ = wx.GetTranslation
 
 
 def register_panel_scene(window, context):
-    # control = wx.aui.AuiNotebook(window, -1, size=(200, 150))
+    # control = wx.lib.agw.aui.AuiNotebook(window, -1, size=(200, 150))
     # panel1 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=1)
     # control.AddPage(panel1, "scene1")
     # panel2 = MeerK40tScenePanel(window, wx.ID_ANY, context=context, index=2)
@@ -629,7 +629,7 @@ class SceneWindow(MWindow):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))

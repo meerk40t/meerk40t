@@ -13,7 +13,7 @@ class ConsoleProperty(MWindow):
         self.panel = ConsolePropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console Properties"))

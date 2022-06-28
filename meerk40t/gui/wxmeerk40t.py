@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 
 import wx
-from wx import aui
+from wx.lib.agw import aui
 
 from .propertypanels.waitproperty import WaitPropertyPanel
 
@@ -95,8 +95,8 @@ def register_panel_go(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Caption(_("Go"))
-        .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .MinSize(wx.Size(40, 40))
+        .FloatingSize(wx.Size(98, 98))
         .Name("go")
         .CaptionVisible(not context.pane_lock)
         .Hide()
@@ -125,8 +125,8 @@ def register_panel_stop(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Caption(_("Stop"))
-        .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .MinSize(wx.Size(40, 40))
+        .FloatingSize(wx.Size(98, 98))
         .Name("stop")
         .Hide()
         .CaptionVisible(not context.pane_lock)
@@ -147,8 +147,8 @@ def register_panel_home(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Caption(_("Home"))
-        .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .MinSize(wx.Size(40, 40))
+        .FloatingSize(wx.Size(98, 98))
         .Name("home")
         .Hide()
         .CaptionVisible(not context.pane_lock)
@@ -187,8 +187,8 @@ def register_panel_pause(window, context):
         aui.AuiPaneInfo()
         .Caption(_("Pause"))
         .Bottom()
-        .MinSize(40, 40)
-        .FloatingSize(98, 98)
+        .MinSize(wx.Size(40, 40))
+        .FloatingSize(wx.Size(98, 98))
         .Name("pause")
         .Hide()
         .CaptionVisible(not context.pane_lock)
@@ -392,9 +392,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Snap", register_panel_snapoptions)
         #
         # if kernel.root.setting(bool, "developer_mode", False):
-        from meerk40t.gui.auitoolbars import register_toolbars
 
-        kernel.register("wxpane/Toolbars", register_toolbars)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)

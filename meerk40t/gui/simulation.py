@@ -599,7 +599,7 @@ class Simulation(MWindow):
             auto_clear=auto_clear,
         )
         self.add_module_delegate(self.panel)
-        _icon = wx.NullIcon
+        _icon = wx.Icon()
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
