@@ -137,8 +137,10 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_combo_text(param, ctrl, obj):
                     def select(event=None):
-                        v = data_type(ctrl.GetValue())
+
+                        v = ctrl.GetValue()
                         setattr(obj, param, v)
+                        self.context.signal(param, v)
 
                     return select
 
@@ -146,6 +148,37 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj),
+                )
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type == str and data_style == "combosmall":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                clabel = wx.StaticText(self,
+                    id=wx.ID_ANY,
+                    label=label,
+                    # size=(-1, 23),
+                    style=wx.ALIGN_CENTER_VERTICAL
+                )
+                control_sizer.Add(clabel, 0, 0, 0)
+                control = wx.ComboBox(
+                    self,
+                    wx.ID_ANY,
+                    choices=c.get("choices", [c.get("default")]),
+                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                )
+                control.SetValue(data)
+
+                def on_combosmall_text(param, ctrl, obj):
+                    def select(event=None):
+                        v = ctrl.GetValue()
+                        setattr(obj, param, v)
+                        self.context.signal(param, v)
+
+                    return select
+
+                control_sizer.Add(control)
+                control.Bind(
+                    wx.EVT_COMBOBOX,
+                    on_combosmall_text(attr, control, obj),
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
