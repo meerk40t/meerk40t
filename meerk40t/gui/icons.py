@@ -4,10 +4,6 @@ from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
 DARKMODE = False
 
-def set_darkmode(value):
-    global DARKMODE
-    DARKMODE = value
-
 STD_ICON_SIZE = 50
 
 
@@ -31,7 +27,6 @@ class PyEmbeddedImage(py_embedded_image):
         """
 
         image = py_embedded_image.GetImage(self)
-        global DARKMODE
         if resize is not None:
             if isinstance(resize, int) or isinstance(resize, float):
                 image = image.Scale(resize, resize)
