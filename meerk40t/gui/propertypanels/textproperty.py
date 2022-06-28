@@ -17,6 +17,7 @@ class PromptingComboBox(wx.ComboBox) :
         self.Bind(wx.EVT_KEY_DOWN, self.OnPress)
         self.ignoreEvtText = False
         self.deleteKey = False
+        self.preFound = False
 
     def OnPress(self, event):
         if event.GetKeyCode() == 8:
@@ -52,7 +53,8 @@ class TextPropertyPanel(wx.Panel):
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.node = node
-        self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
+        self.label_fonttest.SetMinSize((-1, 90))
         self.label_fonttest.SetFont(
             wx.Font(
                 16,
