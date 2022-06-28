@@ -212,15 +212,23 @@ class TreePanel(wx.Panel):
         self.shadow_tree.rebuild_tree()
 
     @signal_listener("refresh_tree")
-    def on_refresh_tree_signal(self, origin, *args):
+    def on_refresh_tree_signal(self, origin, nodes=None, *args):
         """
         Called by 'refresh_tree' signal. To refresh tree directly
 
         @param origin: the path of the originating signal
+        @param nodes: which nodes were added.
         @param args:
         @return:
         """
-        self.shadow_tree.refresh_tree()
+        self.shadow_tree.refresh_tree(source="signal_{org}".format(org=origin))
+        if nodes is not None:
+            if isinstance(nodes, (tuple, list)):
+                node = nodes[0]
+            else:
+                node = nodes
+
+            self.shadow_tree.wxtree.EnsureVisible(node.item)
 
 
     @signal_listener("freeze_tree")
@@ -278,6 +286,7 @@ class ShadowTree:
         self._freeze = False
 
         self.do_not_select = False
+        self.was_already_expanded = []
         service.add_service_delegate(self)
 
     def service_attach(self, *args):
@@ -443,6 +452,7 @@ class ShadowTree:
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.ExpandAllChildren(item)
+        self.set_expanded(item, 1)
 
     def collapse(self, node):
         """
@@ -527,12 +537,14 @@ class ShadowTree:
         else:
             self.update_decorations(element, force=True)
 
-    def refresh_tree(self, node=None):
+    def refresh_tree(self, node=None, level=0, source=""):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
         if node is None:
+            # print ("refresh tree called: %s" % source)
             elemtree = self.elements._tree
             node = elemtree.item
+            level = 0
         if node is None:
             return
         tree = self.wxtree
@@ -540,10 +552,14 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
-            self.refresh_tree(child)
+            self.refresh_tree(child, level + 1)
+            # An empty node needs to be expanded at least once is it has children...
             ct = self.wxtree.GetChildrenCount(child, recursively=False)
             if ct > 0:
-                self.wxtree.Expand(child)
+                former_state = self.was_expanded(child, level)
+                if not former_state:
+                    self.wxtree.Expand(child)
+                    self.set_expanded(child, level)
             child, cookie = tree.GetNextChild(node, cookie)
 
     def freeze_tree(self, status=None):
@@ -552,6 +568,60 @@ class ShadowTree:
         self._freeze = status
         self.wxtree.Enable(not self._freeze)
 
+    def was_expanded(self, node, level):
+        txt = self.wxtree.GetItemText(node)
+        chk = "%d-%s" % (level, txt)
+        result = False
+        for elem in self.was_already_expanded:
+            if chk == elem:
+                result = True
+                break
+        return result
+
+    def set_expanded(self, node, level):
+        txt = self.wxtree.GetItemText(node)
+        chk = "%d-%s" % (level, txt)
+        result = self.was_expanded(node, level)
+        if not result:
+            self.was_already_expanded.append(chk)
+
+    def parse_tree(self, startnode, level):
+        if startnode is None:
+            return
+        cookie = 0
+        try:
+            pnode, cookie = self.wxtree.GetFirstChild(startnode)
+        except:
+            return
+        while pnode.IsOk():
+            txt = self.wxtree.GetItemText(pnode)
+            state = self.wxtree.IsExpanded(pnode)
+            if state:
+                self.was_already_expanded.append("%d-%s" % (level, txt))
+            self.parse_tree(pnode, level + 1)
+            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+    def restore_tree(self, startnode, level):
+        if startnode is None:
+            return
+        cookie = 0
+        try:
+            pnode, cookie = self.wxtree.GetFirstChild(startnode)
+        except:
+            return
+        while pnode.IsOk():
+            txt = self.wxtree.GetItemText(pnode)
+            chk = "%d-%s" % (level, txt)
+            for elem in self.was_already_expanded:
+                if chk == elem:
+                    self.wxtree.ExpandAllChildren(pnode)
+                    break
+            self.parse_tree(pnode, level + 1)
+            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
+    def reset_expanded(self):
+        self.was_already_expanded = []
+
     def rebuild_tree(self):
         """
         Tree requires being deleted and completely rebuilt.
@@ -559,44 +629,10 @@ class ShadowTree:
         @return:
         """
 
-        def parse_tree(startnode, expansion, level):
-            if startnode is None:
-                return
-            cookie = 0
-            try:
-                pnode, cookie = self.wxtree.GetFirstChild(startnode)
-            except:
-                return
-            while pnode.IsOk():
-                txt = self.wxtree.GetItemText(pnode)
-                state = self.wxtree.IsExpanded(pnode)
-                if state:
-                    expansion.append("%d-%s" % (level, txt))
-                parse_tree(pnode, expansion, level + 1)
-                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
-
-        def restore_tree(startnode, expansion, level):
-            if startnode is None:
-                return
-            cookie = 0
-            try:
-                pnode, cookie = self.wxtree.GetFirstChild(startnode)
-            except:
-                return
-            while pnode.IsOk():
-                txt = self.wxtree.GetItemText(pnode)
-                chk = "%d-%s" % (level, txt)
-                for elem in expansion:
-                    if chk == elem:
-                        self.wxtree.ExpandAllChildren(pnode)
-                        break
-                parse_tree(pnode, expansion, level + 1)
-                pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
-
         # let's try to remember which branches were expanded:
-        were_expanded = []
-        parse_tree(self.wxtree.GetRootItem(), were_expanded, 0)
-        # print ("Expanded were: %s" % were_expanded)
+        self.reset_expanded()
+
+        self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
         emphasized_list = list(self.elements.elems(emphasized=True))
         elemtree = self.elements._tree
@@ -634,7 +670,7 @@ class ShadowTree:
         # Restore emphasiss
         for e in emphasized_list:
             e.emphasized = True
-        restore_tree(self.wxtree.GetRootItem(), were_expanded, 0)
+        self.restore_tree(self.wxtree.GetRootItem(), 0)
 
     def register_children(self, node):
         """
@@ -946,7 +982,7 @@ class ShadowTree:
             event.Skip()
         else:
             event.Allow()
-            self.refresh_tree()
+            self.refresh_tree(source="drag end")
             # self.rebuild_tree()
         self.dragging_nodes = None
 
@@ -1020,7 +1056,7 @@ class ShadowTree:
                     except Exception:
                         pass
         self.elements.set_emphasis(emphasized)
-        self.refresh_tree()
+        # self.refresh_tree(source="on_item_selection")
         event.Allow()
 
     def select_in_tree_by_emphasis(self, origin, *args):

@@ -36,6 +36,6 @@ class PointTool(ToolWidget):
                 node.stroke = self.scene.default_stroke
             if self.scene.default_fill is not None:
                 node.fill = self.scene.default_fill
-            self.notify_created()
+            self.notify_created(node)
             response = RESPONSE_CONSUME
         return response
