@@ -230,7 +230,6 @@ class TreePanel(wx.Panel):
 
             self.shadow_tree.wxtree.EnsureVisible(node.item)
 
-
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
         """
@@ -355,7 +354,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("selected", node)
 
@@ -370,7 +369,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("emphasized", node)
 
@@ -401,7 +400,7 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node)
+        # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
 
@@ -554,13 +553,15 @@ class ShadowTree:
             child_node = self.wxtree.GetItemData(child)
             self.refresh_tree(child, level + 1)
             # An empty node needs to be expanded at least once is it has children...
-            ct = self.wxtree.GetChildrenCount(child, recursively=False)
-            if ct > 0:
-                former_state = self.was_expanded(child, level)
-                if not former_state:
-                    self.wxtree.Expand(child)
-                    self.set_expanded(child, level)
+            # ct = self.wxtree.GetChildrenCount(child, recursively=False)
+            # if ct > 0:
+            #     former_state = self.was_expanded(child, level)
+            #     if not former_state:
+            #         self.wxtree.Expand(child)
+            #         self.set_expanded(child, level)
             child, cookie = tree.GetNextChild(node, cookie)
+        if level == 0:
+            self.update_op_labels()
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -661,13 +662,13 @@ class ShadowTree:
 
         node_registration = elemtree.get(type="branch reg")
         self.set_icon(node_registration, icons8_vector_20.GetBitmap())
-
+        self.update_op_labels()
         # Expand Ops, Element, and Regmarks nodes only
         self.wxtree.CollapseAll()
         self.wxtree.Expand(node_operations.item)
         self.wxtree.Expand(node_elements.item)
         self.wxtree.Expand(node_registration.item)
-        # Restore emphasiss
+        # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
         self.restore_tree(self.wxtree.GetRootItem(), 0)
@@ -884,6 +885,16 @@ class ShadowTree:
             image_id = self.tree_images.Add(bitmap=icon)
             tree.SetItemImage(item, image=image_id)
 
+    def update_op_labels(self):
+        startnode = self.elements.get(type="branch ops").item
+        child, cookie = self.wxtree.GetFirstChild(startnode)
+        while child.IsOk():
+            node = self.wxtree.GetItemData(child) # Make sure the map is updated...
+            formatter = self.elements.lookup(f"format/{node.type}")
+            label = node.create_label(formatter)
+            self.wxtree.SetItemText(child, label)
+            child, cookie = self.wxtree.GetNextChild(startnode, cookie)
+
     def update_decorations(self, node, force=False):
         """
         Updates the decorations for a particular node/tree item
@@ -982,6 +993,9 @@ class ShadowTree:
             event.Skip()
         else:
             event.Allow()
+            # Make sure that the drop node is visible
+            self.wxtree.Expand(drop_item)
+            self.wxtree.EnsureVisible(drop_item)
             self.refresh_tree(source="drag end")
             # self.rebuild_tree()
         self.dragging_nodes = None
