@@ -15,11 +15,11 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        font_style = None,
-        underline = None,
-        strikethrough = None,
-        overline = None,
-        texttransform = None,
+        font_style=None,
+        underline=None,
+        strikethrough=None,
+        overline=None,
+        texttransform=None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)

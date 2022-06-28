@@ -13,8 +13,8 @@ from meerk40t.kernel import (
     STATE_WAIT,
     Service,
 )
-from ..core.parameters import Parameters
 
+from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, ViewPort
@@ -420,11 +420,13 @@ class MoshiDriver(Parameters):
             adjust_y = values[1]
         except IndexError:
             pass
-        adjust_x,  adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y, 1)
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y, 1
+        )
 
         self.rapid_mode()
         self.speed = 40
-        self.program_mode(adjust_x,  adjust_y, adjust_x,  adjust_y)
+        self.program_mode(adjust_x, adjust_y, adjust_x, adjust_y)
         self.rapid_mode()
         self.native_x = adjust_x
         self.native_y = adjust_y

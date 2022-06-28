@@ -7,13 +7,13 @@ from meerk40t.kernel import Job, signal_listener
 from ..core.cutcode import CutCode
 from ..svgelements import Matrix
 from .icons import (
+    STD_ICON_SIZE,
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_play_50,
     icons8_route_50,
-    STD_ICON_SIZE
 )
-from .laserrender import LaserRender, DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES
+from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
@@ -53,7 +53,6 @@ class SimulationPanel(wx.Panel, Job):
         self.cutcode = CutCode(self.cutcode.flat())
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
-
         self.view_pane = ScenePanel(
             self.context,
             self,
@@ -434,10 +433,11 @@ class SimulationPanel(wx.Panel, Job):
         self.progress += 1
         if self.progress >= self.max:
             self.progress = self.max
+            self.slider_progress.SetValue(self.progress)
             self._stop()
         else:
-            self.context.signal("refresh_scene", self.widget_scene.name)
-        self.slider_progress.SetValue(self.progress)
+            self.slider_progress.SetValue(self.progress)
+        self.context.signal("refresh_scene", self.widget_scene.name)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
         # Slider is now pseudo logarithmic in scale varying from 1% to 5,000%.

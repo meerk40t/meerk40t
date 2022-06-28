@@ -1563,7 +1563,9 @@ class LhystudiosDriver(Parameters):
             adjust_y = values[1]
         except IndexError:
             pass
-        adjust_x,  adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y, 1)
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y, 1
+        )
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
@@ -2155,6 +2157,8 @@ class LhystudiosController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:

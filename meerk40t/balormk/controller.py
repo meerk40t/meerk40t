@@ -1,10 +1,25 @@
 import threading
 import time
 
-from meerk40t.balor.sender import Sender, SET_XY_POSITION, STOP_LIST, RESTART_LIST, BalorMachineException, \
-    BalorCommunicationException
-from meerk40t.kernel import STATE_UNKNOWN, STATE_INITIALIZE, STATE_END, STATE_TERMINATE, STATE_ACTIVE, STATE_PAUSE, \
-    STATE_BUSY, STATE_SUSPEND, STATE_IDLE
+from meerk40t.balor.sender import (
+    RESTART_LIST,
+    SET_XY_POSITION,
+    STOP_LIST,
+    BalorCommunicationException,
+    BalorMachineException,
+    Sender,
+)
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_BUSY,
+    STATE_END,
+    STATE_IDLE,
+    STATE_INITIALIZE,
+    STATE_PAUSE,
+    STATE_SUSPEND,
+    STATE_TERMINATE,
+    STATE_UNKNOWN,
+)
 
 
 class BalorController:
@@ -13,6 +28,7 @@ class BalorController:
     controller board is established to perform these actions. The model is based on the typical driver for the lihuiyu
     board. Modified to match Balor's specifications
     """
+
     def __init__(self, service):
         self.service = service
         self.state = STATE_UNKNOWN
@@ -47,14 +63,14 @@ class BalorController:
         return str(self._queue)
 
     def added(self):
-        self.start()
+        pass
 
     def service_detach(self):
         pass
 
     def shutdown(self, *args, **kwargs):
         if self._thread is not None:
-            self.do_shutdown = True
+            self.is_shutdown = True
 
     def write(self, job):
         """
@@ -109,22 +125,20 @@ class BalorController:
 
     def get_list_status(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.raw_get_list_status()
+        return self.connection.raw_get_list_status()
 
     def get_serial_number(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.raw_get_serial_no()
+        return self.connection.raw_get_serial_no()
 
     def get_status(self):
         # Requires realtime response.
-        if self.state == STATE_ACTIVE:
-            return self.connection.read_port()
+        return self.connection.read_port()
 
     def get_port(self):
         if self.connection is not None:
             return self.connection.get_port()
+        return None
 
     def wait_finished(self):
         while len(self._queue) or len(self._preempt):
@@ -232,6 +246,8 @@ class BalorController:
                     self.service.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.service.signal("pipe;failing", self.refuse_counts)
                 self.service.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except BalorCommunicationException:

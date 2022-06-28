@@ -492,7 +492,7 @@ class CutCode(CutGroup):
                 y = ny
             elif cmd == "dwell":
                 time = code[1]
-                cut = DwellCut(x, y, time)
+                cut = DwellCut((x, y), time)
                 cutcode.append(cut)
 
         return cutcode
@@ -840,11 +840,11 @@ class RawCut(CutObject):
 
 
 class DwellCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+    def __init__(self, start_point, settings=None, passes=1, parent=None):
         CutObject.__init__(
             self,
             start_point,
-            end_point,
+            start_point,
             settings=settings,
             passes=passes,
             parent=parent,
@@ -860,16 +860,35 @@ class DwellCut(CutObject):
         pass
 
     def generate(self):
-        # TODO: There is no indication this will work.
         yield "rapid_mode"
         start = self.start
         yield "move_abs", start[0], start[1]
         yield "dwell", self.dwell_time
 
-    def generator(self):
-        start = self.start
-        end = self.end
-        return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
+
+class WaitCut(CutObject):
+    def __init__(self, wait, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            (0, 0),
+            (0, 0),
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.dwell_time = wait
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "wait", self.dwell_time
 
 
 class PlotCut(CutObject):

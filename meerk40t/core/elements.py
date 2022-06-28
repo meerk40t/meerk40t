@@ -10,26 +10,25 @@ from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
-from ..numpath import Numpath
 
+from ..numpath import Numpath
 from ..svgelements import (
-    Angle,
-    Color,
-    Matrix,
-    SVGElement,
-    Viewbox,
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
-    Line,
-    QuadraticBezier,
-    CubicBezier,
+    Angle,
     Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    QuadraticBezier,
+    SVGElement,
+    Viewbox,
 )
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node, Linecap, Linejoin, Fillrule
-from .node.op_console import ConsoleOperation
+from .node.node import Fillrule, Linecap, Linejoin, Node
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
@@ -37,8 +36,8 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .wordlist import Wordlist
 from .units import UNITS_PER_PIXEL, Length
+from .wordlist import Wordlist
 
 
 def plugin(kernel, lifecycle=None):
@@ -278,9 +277,10 @@ class Elemental(Service):
                 channel(_("No such file."))
                 return
             try:
+                channel(_("loading..."))
                 result = self.load(new_file)
                 if result:
-                    channel(_("loading..."))
+                    channel(_("Done."))
             except AttributeError:
                 raise CommandSyntaxError(_("Loading files was not defined"))
             return "file", new_file
@@ -1660,7 +1660,7 @@ class Elemental(Service):
             output_type="elements",
             all_arguments_required=True,
         )
-        def regmark(command, channel, _, data, cmd = None, **kwargs):
+        def regmark(command, channel, _, data, cmd=None, **kwargs):
             # Move regmarks into the regular element tree and vice versa
             if cmd == "free":
                 target = self.elem_branch
@@ -1669,14 +1669,14 @@ class Elemental(Service):
 
             if data is None:
                 data = list()
-                if cmd =="free":
+                if cmd == "free":
                     for item in list(self.regmarks()):
                         data.append(item)
                 else:
                     for item in list(self.elems(emphasized=True)):
                         data.append(item)
             if cmd in ("free", "add"):
-                if len(data)==0:
+                if len(data) == 0:
                     channel(_("No elements to transfer"))
                 else:
                     move_nodes_to(target, data)
@@ -2322,7 +2322,7 @@ class Elemental(Service):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
-#--------------------
+        # --------------------
         @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
@@ -3280,7 +3280,7 @@ class Elemental(Service):
             "numpath",
             help=_("Convert any element nodes to numpath nodes"),
             input_type="elements",
-            output_type="elements"
+            output_type="elements",
         )
         def element_path_convert(data, **kwargs):
             if data is None:
@@ -3696,7 +3696,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree")
             return "elements", data
 
         @self.console_option(
@@ -3764,7 +3765,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                self.signal("refresh_tree")
+#                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -5059,7 +5061,8 @@ class Elemental(Service):
             return hull
 
         @self.console_argument(
-            "method", help=_("Method to use (one of quick, hull, complex, segment, circle)")
+            "method",
+            help=_("Method to use (one of quick, hull, complex, segment, circle)"),
         )
         @self.console_argument("resolution")
         @self.console_command(
@@ -5246,7 +5249,9 @@ class Elemental(Service):
             node.remove_node()  # Removing group/file node.
 
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
-        @self.tree_operation(_("Elements in scene..."), node_type=elem_nodes, help="", enable=False)
+        @self.tree_operation(
+            _("Elements in scene..."), node_type=elem_nodes, help="", enable=False
+        )
         def element_label(node, **kwargs):
             return
 
@@ -5264,7 +5269,9 @@ class Elemental(Service):
             )
             >= 1
         )
-        @self.tree_operation(_("Remove all items from operation"), node_type=op_nodes, help="")
+        @self.tree_operation(
+            _("Remove all items from operation"), node_type=op_nodes, help=""
+        )
         def clear_all_op_entries(node, **kwargs):
             node.remove_all_children()
 
@@ -5323,9 +5330,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Apply raster script"))
-        @self.tree_operation(
-            _("Set to None") , node_type="elem image", help=""
-        )
+        @self.tree_operation(_("Set to None"), node_type="elem image", help="")
         def image_rasterwizard_apply_none(node, **kwargs):
             node.operations = []
             node.update(self)
@@ -5465,7 +5470,7 @@ class Elemental(Service):
             "ecount",
             lambda i: len(
                 list(self.flat(selected=True, cascade=False, types=("reference")))
-            )
+            ),
         )
         @self.tree_operation(
             _("Remove %s selected items from operations") % "{ecount}",
@@ -5543,9 +5548,7 @@ class Elemental(Service):
         # ==========
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=elem_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types=elem_nodes))
             )
             == 1
         )
@@ -5561,9 +5564,7 @@ class Elemental(Service):
 
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=op_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
             )
             == 1
         )
@@ -5577,12 +5578,9 @@ class Elemental(Service):
             node.remove_node()
             self.set_emphasis(None)
 
-
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=("file", "group"))
-                )
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
             )
             == 1
         )
@@ -5655,7 +5653,9 @@ class Elemental(Service):
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
-        @self.tree_conditional_try(lambda node: kernel.lookup(f"parser/{node.data_type}") is not None)
+        @self.tree_conditional_try(
+            lambda node: kernel.lookup(f"parser/{node.data_type}") is not None
+        )
         @self.tree_operation(
             _("Convert to Elements"),
             node_type="blob",
@@ -5692,20 +5692,22 @@ class Elemental(Service):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="reference", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type=("reference",), help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="reference", help=""
+            _("Make %s copies") % "{copies}", node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            index = node.parent.children.index(node)
-            for i in range(copies):
-                node.parent.add_reference(node.node, type="reference", pos=index)
-            node.modified()
+            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
             self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -5830,6 +5832,11 @@ class Elemental(Service):
         def append_operation_hatch(node, pos=None, **kwargs):
             self.add_op(HatchOpNode(), pos=pos)
 
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Dots"), node_type="branch ops", help="")
+        def append_operation_dots(node, pos=None, **kwargs):
+            self.add_op(DotsOpNode(), pos=pos)
+
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
@@ -5866,6 +5873,18 @@ class Elemental(Service):
                 type="op console",
                 pos=pos,
                 command='interrupt "Spooling was interrupted"',
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_prompt(
+            "wait_time", _("Wait for how long (in seconds)?"), data_type=float
+        )
+        @self.tree_operation(_("Append Wait"), node_type="branch ops", help="")
+        def append_operation_wait(node, wait_time, pos=None, **kwargs):
+            self.op_branch.add(
+                type="op wait",
+                pos=pos,
+                wait=wait_time,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -5982,7 +6001,8 @@ class Elemental(Service):
             add_nodes *= copies
             for n in add_nodes:
                 node.add_reference(n.node)
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
+#            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Make raster image"),
@@ -6023,47 +6043,62 @@ class Elemental(Service):
                 return None
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
+        @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Hatch"), node_type=operate_nodes, help="")
+        def add_operation_hatch(node, **kwargs):
+            append_operation_hatch(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Dots"), node_type=operate_nodes, help="")
+        def add_operation_dots(node, **kwargs):
+            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
             append_operation_home(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
             append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
             append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
             append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
+        def add_operation_wait(node, **kwargs):
+            append_operation_wait(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self, node)
@@ -6364,18 +6399,6 @@ class Elemental(Service):
         def image_save(node, **kwargs):
             self("image save output.png\n")
 
-        @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
-        @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
-        def cutcode_convert_svg(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_elems(list(node.as_elements()))
-
-        @self.tree_conditional_try(lambda node: hasattr(node, "generate"))
-        @self.tree_operation(_("Process as Operation"), node_type=op_nodes, help="")
-        def cutcode_operation(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_op(node)
-
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()
         @self.tree_operation(
@@ -6570,7 +6593,6 @@ class Elemental(Service):
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
-
                 yield func
 
     def flat(self, **kwargs):
@@ -7166,9 +7188,9 @@ class Elemental(Service):
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None:
                     if (
-                            node.stroke.red == 0xFF
-                            and node.stroke.blue == 0
-                            and node.stroke.green == 0
+                        node.stroke.red == 0xFF
+                        and node.stroke.blue == 0
+                        and node.stroke.green == 0
                     ):
                         op = CutOpNode(color=node.stroke, speed=5.0)
                     else:
@@ -7180,9 +7202,9 @@ class Elemental(Service):
                     operations.append(op)
 
                 if (
-                        hasattr(node, "fill")
-                        and node.fill is not None
-                        and node.fill.argb is not None
+                    hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
                 ):
                     op = RasterOpNode(color=0, output=False)
                     add_op_function(op)
@@ -7926,7 +7948,9 @@ class Elemental(Service):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
+                        self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:

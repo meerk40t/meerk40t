@@ -32,7 +32,9 @@ class DrawTool(ToolWidget):
                 return
         self.series.append(point)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         # We don't set tool_active here, as this can't be properly honored...
         # And we don't care about nearest_snap either...
         response = RESPONSE_CHAIN
@@ -59,7 +61,7 @@ class DrawTool(ToolWidget):
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(path=t, type="elem path")
                 elements.classify([node])
-                self.notify_created()
+                self.notify_created(node)
             except IndexError:
                 pass
             self.series = None

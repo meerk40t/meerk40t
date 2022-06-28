@@ -2,7 +2,7 @@ import time
 
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.controller import BalorController
-from meerk40t.core.cutcode import LineCut, QuadCut, CubicCut, PlotCut
+from meerk40t.core.cutcode import CubicCut, DwellCut, LineCut, PlotCut, QuadCut, WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.fill.fills import Wobble
@@ -15,6 +15,7 @@ class BalorDriver:
         self.native_y = 0x8000
         self.name = str(self.service)
         self.connection = BalorController(service)
+        self.service.add_service_delegate(self.connection)
         self.paused = False
 
         self.connected = False
@@ -121,34 +122,43 @@ class BalorDriver:
         @param settings: The current settings dictionary
         @return:
         """
-        if (
-                str(settings.get("rapid_enabled", False)).lower() == "true"
-        ):
-            job.set_travel_speed(float(settings.get(
-                "rapid_speed", self.service.default_rapid_speed
-            )))
+        if self.service.pulse_width_enabled:
+            # Global Pulse Width is enabled.
+            if str(settings.get("pulse_width_enabled", False)).lower() == "true":
+                # Local Pulse Width value is enabled.
+                # OpFiberYLPMPulseWidth
+
+                job.set_fiber_pulse_width(
+                    int(settings.get("pulse_width", self.service.default_pulse_width))
+                )
+            else:
+                # Only global is enabled, use global pulse width value.
+                job.set_fiber_pulse_width(self.service.default_pulse_width)
+
+        if str(settings.get("rapid_enabled", False)).lower() == "true":
+            job.set_travel_speed(
+                float(settings.get("rapid_speed", self.service.default_rapid_speed))
+            )
         else:
             job.set_travel_speed(self.service.default_rapid_speed)
-        job.set_power((
-                float(settings.get("power", self.service.default_power)) / 10.0
-        ))  # Convert power, out of 1000
-        job.set_frequency(float(settings.get(
-            "frequency", self.service.default_frequency
-        )))
+        job.set_power(
+            (float(settings.get("power", self.service.default_power)) / 10.0)
+        )  # Convert power, out of 1000
+        job.set_frequency(
+            float(settings.get("frequency", self.service.default_frequency))
+        )
         job.set_cut_speed(float(settings.get("speed", self.service.default_speed)))
 
-        if (
-                str(settings.get("timing_enabled", False)).lower() == "true"
-        ):
-            job.set_laser_on_delay(settings.get(
-                "delay_laser_on", self.service.delay_laser_on
-            ))
-            job.set_laser_off_delay(settings.get(
-                "delay_laser_off", self.service.delay_laser_off
-            ))
-            job.set_polygon_delay(settings.get(
-                "delay_laser_polygon", self.service.delay_polygon
-            ))
+        if str(settings.get("timing_enabled", False)).lower() == "true":
+            job.set_laser_on_delay(
+                settings.get("delay_laser_on", self.service.delay_laser_on)
+            )
+            job.set_laser_off_delay(
+                settings.get("delay_laser_off", self.service.delay_laser_off)
+            )
+            job.set_polygon_delay(
+                settings.get("delay_laser_polygon", self.service.delay_polygon)
+            )
         else:
             # Use globals
             job.set_laser_on_delay(self.service.delay_laser_on)
@@ -163,22 +173,16 @@ class BalorDriver:
         @param settings: The dict setting to extract parameters from.
         @return:
         """
-        wobble_enabled = (
-                str(settings.get("wobble_enabled", False)).lower() == "true"
-        )
+        wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
         if not wobble_enabled:
             job._mark_modification = None
             return
         wobble_radius = settings.get("wobble_radius", "1.5mm")
-        wobble_r = self.service.physical_to_device_length(
-            wobble_radius, 0
-        )[0]
+        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
         wobble_interval = settings.get("wobble_interval", "0.3mm")
         wobble_speed = settings.get("wobble_speed", 50.0)
         wobble_type = settings.get("wobble_type", "circle")
-        wobble_interval = self.service.physical_to_device_length(
-            wobble_interval, 0
-        )[0]
+        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
         algorithm = self.service.lookup(f"wobble/{wobble_type}")
         if self.wobble is None:
             self.wobble = Wobble(
@@ -266,10 +270,26 @@ class BalorDriver:
                             # We are using traditional power-scaling
                             settings = self.plot_planner.settings
                             current_power = (
-                                    float(settings.get("power", self.service.default_power)) / 10.0
+                                float(settings.get("power", self.service.default_power))
+                                / 10.0
                             )
                             job.set_power(current_power * on)
                     job.mark(x, y)
+            elif isinstance(q, DwellCut):
+                start = q.start
+                job.goto(start[0], start[1])
+                dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
+                while dwell_time > 0:
+                    d = min(dwell_time, 60000)
+                    job.raw_laser_on_point(int(d))
+                    dwell_time -= d
+                job.raw_mark_end_delay(self.service.delay_end)
+            elif isinstance(q, WaitCut):
+                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in us
+                while dwell_time > 0:
+                    d = min(dwell_time, 60000)
+                    job.raw_mark_end_delay(int(d))
+                    dwell_time -= d
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
@@ -284,13 +304,15 @@ class BalorDriver:
                             penbox = settings.get("penbox_value")
                             if penbox is not None:
                                 try:
-                                    self.value_penbox = self.service.elements.penbox[penbox]
+                                    self.value_penbox = self.service.elements.penbox[
+                                        penbox
+                                    ]
                                 except KeyError:
                                     self.value_penbox = None
                             self._set_settings(job, settings)
                             self._set_wobble(job, settings)
                         elif on & (
-                                PLOT_RAPID | PLOT_JOG
+                            PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
                             job.set_travel_speed(self.service.default_rapid_speed)
                             job.goto(x, y)
@@ -319,7 +341,12 @@ class BalorDriver:
                                 # We are using traditional power-scaling
                                 settings = self.plot_planner.settings
                                 current_power = (
-                                        float(settings.get("power", self.service.default_power)) / 10.0
+                                    float(
+                                        settings.get(
+                                            "power", self.service.default_power
+                                        )
+                                    )
+                                    / 10.0
                                 )
                                 job.set_power(current_power * on)
                         job.mark(x, y)

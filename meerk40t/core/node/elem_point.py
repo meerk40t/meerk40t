@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.svgelements import Matrix, Point
 
 
 class PointNode(Node):
@@ -17,7 +18,7 @@ class PointNode(Node):
         stroke_width=None,
         **kwargs,
     ):
-        super(PointNode, self).__init__(type="elem path", **kwargs)
+        super(PointNode, self).__init__(type="elem point", **kwargs)
         self.point = point
         self.matrix = matrix
         self.settings = kwargs
@@ -35,6 +36,14 @@ class PointNode(Node):
             stroke_width=self.stroke_width,
             **self.settings,
         )
+
+    def validate(self):
+        if self.point is None:
+            self.point = Point(
+                float(self.settings.get("x", 0)), float(self.settings.get("y", 0))
+            )
+        if self.matrix is None:
+            self.matrix = Matrix()
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
@@ -55,8 +64,12 @@ class PointNode(Node):
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Point"
-        default_map["x"] = self.point[0]
-        default_map["y"] = self.point[1]
+        if self.point is not None:
+            default_map["x"] = self.point[0]
+            default_map["y"] = self.point[1]
+        else:
+            default_map["x"] = 0
+            default_map["y"] = 0
         default_map.update(self.settings)
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill

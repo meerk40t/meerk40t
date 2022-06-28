@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import Matrix
 

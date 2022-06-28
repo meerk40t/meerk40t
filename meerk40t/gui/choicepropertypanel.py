@@ -1,7 +1,7 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 
-from meerk40t.core.units import Length, Angle
+from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
@@ -122,21 +122,23 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_button_filename(attr, control, obj, c.get("wildcard", "*")),
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
-            elif data_type == str and data_style == "combo":
+            elif data_type in (str, int, float) and data_style == "combo":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
+                choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wx.ComboBox(
                     self,
                     wx.ID_ANY,
-                    choices=c.get("choices", [c.get("default")]),
+                    choices=choice_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
-                control.SetValue(data)
+                control.SetValue(str(data))
 
                 def on_combo_text(param, ctrl, obj):
                     def select(event=None):
-                        setattr(obj, param, ctrl.GetValue())
+                        v = data_type(ctrl.GetValue())
+                        setattr(obj, param, v)
 
                     return select
 
@@ -286,7 +288,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     def on_enable_listener(param, ctrl, obj):
                         def listen(origin, value):
                             enabled = bool(getattr(obj, param))
-                            ctrl.Enable(enabled)
+                            try:
+                                ctrl.Enable(enabled)
+                            except RuntimeError:
+                                pass
 
                         return listen
 

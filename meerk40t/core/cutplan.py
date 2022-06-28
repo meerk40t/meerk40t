@@ -145,20 +145,25 @@ class CutPlan:
             return
         context = self.context
 
+        # Break plan operations into merge groups.
         grouped_plan = list()
-        last_type = ""
-        group = [self.plan[0]]
-        for c in self.plan[1:]:
-            if hasattr(c, "type"):
-                c_type = c.type
-            else:
-                c_type = type(c).__name__
-            if c_type.startswith("op") != last_type.startswith("op"):
-                grouped_plan.append(group)
-                group = []
+        last_type = None
+        group = list()
+        for c in self.plan:
+            c_type = c.type if hasattr(c, "type") else type(c).__name__
+            if last_type is not None:
+                if (
+                    c_type.startswith("op") != last_type.startswith("op")
+                    or c_type in ("op wait", "op console")
+                    or last_type in ("op wait", "op console")
+                ):
+                    # This is not able to be merged
+                    grouped_plan.append(group)
+                    group = list()
             group.append(c)
             last_type = c_type
-        grouped_plan.append(group)
+        if group:
+            grouped_plan.append(group)
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
@@ -175,10 +180,6 @@ class CutPlan:
                         continue
                     if not op.type.startswith("op") or op.type == "op console":
                         blob_plan.append(op)
-                        continue
-                    if op.type == "op dots":
-                        if pass_idx == 0:
-                            blob_plan.append(op)
                         continue
                     copies = op.implicit_passes
                     if passes_first:

@@ -488,6 +488,7 @@ class Planner(Service):
                     "op hatch",
                     "cutcode",
                     "op console",
+                    "op wait",
                     "lasercode",
                     "blob",
                 ),
@@ -784,7 +785,7 @@ class Planner(Service):
                     ),
                 ):
                     copy_c = copy(c)
-                    operations.add(copy_c, type="op")
+                    operations.add_node(copy_c)
             channel(_("Returned Operations."))
             self.signal("plan", data.name, None)
             return data_type, data

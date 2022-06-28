@@ -29,6 +29,12 @@ class DotsOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
+        self.allowed_elements_dnd = (
+            "elem point",
+        )
+        self.allowed_elements = (
+            "elem point",
+        )
 
     def __repr__(self):
         return "DotsOpNode()"
@@ -60,13 +66,13 @@ class DotsOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Dots"
+        default_map["power"] = "default"
+        default_map["frequency"] = "default"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
-        default_map["penpass"] = (
-            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
-        )
+        default_map["penpass"] = f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
@@ -75,13 +81,17 @@ class DotsOpNode(Node, Parameters):
         return default_map
 
     def drop(self, drag_node):
+        # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type == "elem image":
+            if not drag_node.type in self.allowed_elements_dnd:
                 return False
-            # Dragging element onto operation adds a reference of that elem to the op.
+            # Dragging element onto operation adds that element to the op.
             self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
+            # Disallow drop of image refelems onto a Dot op.
+            if not drag_node.node.type in self.allowed_elements_dnd:
+                return False
             # Move a refelem to end of op.
             self.append_child(drag_node)
             return True
@@ -91,11 +101,8 @@ class DotsOpNode(Node, Parameters):
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
-            for e in drag_node.flat("elem"):
-                # Disallow drop of image elems onto a Dot op.
-                if drag_node.type == "elem image":
-                    continue
-                # Add reference to element to operation
+            for e in drag_node.flat(elem_nodes):
+                # Add element to operation
                 self.add_reference(e)
                 some_nodes = True
             return some_nodes
@@ -107,9 +114,18 @@ class DotsOpNode(Node, Parameters):
             plain_color_node = abs(node.stroke)
             if plain_color_op != plain_color_node:
                 return False, False
-        if node.type in (
-            "elem point",
-        ):
+        if node.type in self.allowed_elements:
+            self.add_reference(node)
+            return True, True
+        return False, False
+
+    def classify(self, node):
+        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
+            plain_color_op = abs(self.color)
+            plain_color_node = abs(node.stroke)
+            if plain_color_op != plain_color_node:
+                return False, False
+        if node.type in ("elem point",):
             self.add_reference(node)
             return True, True
         return False, False
@@ -159,7 +175,7 @@ class DotsOpNode(Node, Parameters):
             if point_node.type != "elem point":
                 continue
             yield DwellCut(
-                (point_node.point[0], point_node[1]),
+                (point_node.point[0], point_node.point[1]),
                 settings=settings,
                 passes=passes,
             )

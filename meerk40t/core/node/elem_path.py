@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 
 
 class PathNode(Node):
@@ -15,9 +15,9 @@ class PathNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        linecap = None,
-        linejoin = None,
-        fillrule = None,
+        linecap=None,
+        linejoin=None,
+        fillrule=None,
         **kwargs,
     ):
         super(PathNode, self).__init__(type="elem path")

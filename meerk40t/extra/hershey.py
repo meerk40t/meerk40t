@@ -5,7 +5,7 @@ from os.path import join, realpath
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import Length
 from meerk40t.kernel import get_safe_path
-from meerk40t.svgelements import Arc, Path, Color, Matrix
+from meerk40t.svgelements import Arc, Color, Matrix, Path
 from meerk40t.tools.shxparser import ShxFont
 
 

@@ -202,7 +202,7 @@ class ImagePropertyPanel(wx.Panel):
 
         sizer_main.Add(sizer_dither, 1, wx.EXPAND, 0)
 
-        #-----
+        # -----
 
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)

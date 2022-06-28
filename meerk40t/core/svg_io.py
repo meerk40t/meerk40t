@@ -5,6 +5,7 @@ from io import BytesIO
 from xml.etree.ElementTree import Element, ElementTree, ParseError, SubElement
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin
 
 from ..svgelements import (
     SVG,
@@ -31,6 +32,8 @@ from ..svgelements import (
     SVG_ATTR_XMLNS_LINK,
     SVG_ATTR_Y,
     SVG_NAME_TAG,
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
     SVG_TAG_GROUP,
     SVG_TAG_IMAGE,
     SVG_TAG_PATH,
@@ -40,23 +43,22 @@ from ..svgelements import (
     SVG_VALUE_XLINK,
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
-    SVG_RULE_NONZERO,
-    SVG_RULE_EVENODD,
     Circle,
+    Color,
     Ellipse,
     Group,
+    Length,
     Matrix,
     Path,
+    Point,
     Polygon,
     Polyline,
     Rect,
     SimpleLine,
-    Length,
     SVGImage,
     SVGText,
 )
 from .units import DEFAULT_PPI, UNITS_PER_PIXEL
-from meerk40t.core.node.node import Linecap, Linejoin, Fillrule
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -227,9 +229,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
             elif c.type == "elem point":
+                element = Point(c.point) * scale
+                c.settings["x"] = element.x
+                c.settings["y"] = element.y
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
-                return
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -682,8 +686,15 @@ class SVGProcessor:
                     op.id = node_id
                 # Check if SVGElement: element
                 elif tag == "element":
-                    elem = context_node.add(type=node_type)
-                    elem.settings.update(element.values)
+                    if "type" in element.values:
+                        del element.values["type"]
+                    if "fill" in element.values:
+                        element.values["fill"] = Color(element.values["fill"])
+                    if "stroke" in element.values:
+                        element.values["stroke"] = Color(element.values["stroke"])
+                    if "transform" in element.values:
+                        element.values["matrix"] = Matrix(element.values["transform"])
+                    elem = context_node.add(type=node_type, **element.values)
                     try:
                         elem.validate()
                     except AttributeError:

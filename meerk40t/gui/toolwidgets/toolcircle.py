@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -7,7 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Circle, Path
-from meerk40t.gui.laserrender import swizzlecolor
+
 
 class CircleTool(ToolWidget):
     """
@@ -36,7 +37,12 @@ class CircleTool(ToolWidget):
             if self.scene.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
-                gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(self.scene.default_fill)), wx.BRUSHSTYLE_SOLID))
+                gc.SetBrush(
+                    wx.Brush(
+                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.BRUSHSTYLE_SOLID,
+                    )
+                )
             ellipse = Circle(
                 (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
             )
@@ -45,7 +51,9 @@ class CircleTool(ToolWidget):
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True
@@ -98,7 +106,7 @@ class CircleTool(ToolWidget):
                     if not self.scene.default_fill is None:
                         node.fill = self.scene.default_fill
                     elements.classify([node])
-                    self.notify_created()
+                    self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

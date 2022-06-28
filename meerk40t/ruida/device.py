@@ -22,7 +22,7 @@ from ..core.cutcode import CutCode, PlotCut
 from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_uM, ViewPort, Length
+from ..core.units import Length, UNITS_PER_uM, ViewPort
 from ..svgelements import Color
 
 STATE_ABORT = -1
@@ -2287,6 +2287,8 @@ class RDLoader:
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
             op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(data=bytearray(f.read()), data_type="ruida", type="blob", name=basename)
+            op_branch.add(
+                data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
+            )
             kernel.root.close(basename)
             return True

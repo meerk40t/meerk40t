@@ -30,6 +30,7 @@ def actualize(image, matrix, step_x, step_y, inverted=False, crop=True):
     @return: actualized image, straight matrix
     """
     from PIL import Image
+
     assert step_x != 0
     assert step_y != 0
     assert isinstance(image, Image.Image)

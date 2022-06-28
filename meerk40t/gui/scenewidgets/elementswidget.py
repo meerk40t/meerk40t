@@ -53,7 +53,9 @@ class ElementsWidget(Widget):
         #         gc.StrokeLine(p[0], p[1] - dif, p[0], p[1] + dif)
         # gc.PopState()
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         if event_type == "kb_shift_release":
             if self.key_shift_pressed:
                 self.key_shift_pressed = False

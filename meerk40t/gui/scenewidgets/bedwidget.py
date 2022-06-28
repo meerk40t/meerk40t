@@ -1,9 +1,6 @@
 import wx
 
-from meerk40t.gui.laserrender import (
-    DRAW_MODE_BACKGROUND,
-    swizzlecolor,
-)
+from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, swizzlecolor
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -24,7 +21,9 @@ class BedWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         """
         Capture and deal with the double click event.
 

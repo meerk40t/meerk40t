@@ -10,8 +10,8 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
-from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
+from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
@@ -23,6 +23,7 @@ from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
+from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
@@ -110,6 +111,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/rect", RectTool)
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
+        context.register("tool/point", PointTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
@@ -565,10 +567,11 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("element_added")
     @signal_listener("tree_changed")
-    def on_elements_added(self, *args):
-        self.scene.signal("element_added")
+    def on_elements_added(self, origin, nodes=None, *args):
+        self.scene.signal("element_added", nodes)
         # There may be a smarter way to eliminate unnecessary rebuilds, but it's doing the job...
-        self.context.signal("rebuild_tree")
+        # self.context.signal("rebuild_tree")
+        self.context.signal("refresh_tree", nodes)
         self.widget_scene.request_refresh()
 
     @signal_listener("theme")

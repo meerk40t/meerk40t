@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin, Fillrule
+from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import Path
 
 
@@ -16,8 +16,8 @@ class RectNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        linejoin = None,
-        fillrule = None,
+        linejoin=None,
+        fillrule=None,
         **kwargs,
     ):
         super(RectNode, self).__init__(type="elem rect", **kwargs)

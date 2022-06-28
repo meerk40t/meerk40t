@@ -202,6 +202,7 @@ class ImageNode(Node):
             self.step_y = step
 
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+
         from meerk40t.image.actualize import actualize
         from meerk40t.image.imagetools import dither
 
@@ -228,10 +229,19 @@ class ImageNode(Node):
 
         # Calculate device real step.
         step_x, step_y = self.step_x, self.step_y
-        if main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y:
+        if (
+            main_matrix.a != step_x
+            or main_matrix.b != 0.0
+            or main_matrix.c != 0.0
+            or main_matrix.d != step_y
+        ):
             try:
                 image, actualized_matrix = actualize(
-                    image, main_matrix, step_x=step_x, step_y=step_y, inverted=self.invert
+                    image,
+                    main_matrix,
+                    step_x=step_x,
+                    step_y=step_y,
+                    inverted=self.invert,
                 )
             except (MemoryError, DecompressionBombError):
                 self.process_image_failed = True

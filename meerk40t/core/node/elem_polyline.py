@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.core.node.node import Node, Linejoin, Linecap, Fillrule
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import Path
 
 
@@ -16,8 +16,8 @@ class PolylineNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        linecap = None,
-        linejoin = None,
+        linecap=None,
+        linejoin=None,
         fillrule=None,
         **kwargs,
     ):

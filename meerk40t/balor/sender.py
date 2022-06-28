@@ -26,6 +26,10 @@ class BalorException(Exception):
     pass
 
 
+class BalorConfigException(BalorException):
+    pass
+
+
 class BalorMachineException(BalorException):
     pass
 
@@ -224,7 +228,10 @@ class Sender:
         # Load in-machine correction table
         cor_table = None
         if cor_file is not None:
-            cor_table = self._read_correction_file(cor_file)
+            try:
+                cor_table = self._read_correction_file(cor_file)
+            except FileNotFoundError:
+                raise BalorConfigException(".cor file location did not exist")
         self._send_correction_table(cor_table)
 
         self.raw_enable_laser()
@@ -292,21 +299,23 @@ class Sender:
 
     def is_ready(self):
         """Returns true if the laser is ready for more data, false otherwise."""
-        self.read_port()
+        self._send_command(GET_REGISTER, 0x0001)
         return bool(self._usb_connection.status & 0x20)
 
     def is_busy(self):
         """Returns true if the machine is busy, false otherwise;
         Note that running a lighting job counts as being busy."""
-        self.read_port()
+        self._send_command(GET_REGISTER, 0x0001)
         return bool(self._usb_connection.status & 0x04)
 
     def is_ready_and_not_busy(self):
-        self.read_port()
-        return bool(self._usb_connection.status & 0x20) and not bool(self._usb_connection.status & 0x04)
+        self._send_command(GET_REGISTER, 0x0001)
+        return bool(self._usb_connection.status & 0x20) and not bool(
+            self._usb_connection.status & 0x04
+        )
 
     def wait_finished(self):
-        while self.is_ready_and_not_busy():
+        while not self.is_ready_and_not_busy():
             time.sleep(self.sleep_time)
             if self._terminate_execution:
                 return
@@ -322,54 +331,57 @@ class Sender:
         it can be a callable that provides data as above on command."""
         self._terminate_execution = False
         with self._lock:
-            while self.is_busy():
-                time.sleep(self.sleep_time)
-                if self._terminate_execution:
-                    return False
-            while not self.is_ready():
-                time.sleep(self.sleep_time)
-                if self._terminate_execution:
-                    return False
-
+            self.wait_finished()
+            self.raw_reset_list()
             self.port_on(bit=0)
             if command_list.movement:
                 self.raw_fiber_open_mo(1, 0)
-
             loop_index = 0
+            execute_list = False
             while loop_index < loop_count:
+                packet_count = 0
                 if command_list.tick is not None:
                     command_list.tick(command_list, loop_index)
-                self.raw_reset_list()
-                execute_list = False
-                packet_count = 0
+
                 for packet in command_list.packet_generator():
                     if self._terminate_execution:
                         return False
-                    self._send_command(GET_REGISTER, 0x0001 if not execute_list else 0x0000)  # 0x0007
-                    self._usb_connection.send_list_chunk(packet)
 
-                    self.raw_set_end_of_list(0x0001 if not execute_list else 0x0000)  # 0x00019
-                    if packet_count == 1:
-                        self.raw_execute_list()  # 0x0005
+                    ready = False
+                    while not ready:
+                        # Wait until ready.
+                        if self._terminate_execution:
+                            return False
+                        self._send_command(
+                            GET_REGISTER, 0x0001 if not execute_list else 0x0000
+                        )  # 0x0007
+                        ready = bool(self._usb_connection.status & 0x20)
+
+                    self._usb_connection.send_list_chunk(packet)
+                    self.raw_set_end_of_list(
+                        0x0001 if not execute_list else 0x0000
+                    )  # 0x00019
+                    if not execute_list and packet_count >= 1:
+                        self.raw_execute_list()
                         execute_list = True
                     packet_count += 1
-
                 if not execute_list:
                     self.raw_execute_list()
-
+                    execute_list = True
                 # when done, SET_END_OF_LIST(0), SET_CONTROL_MODE(1), 7(1)
-                self.raw_set_end_of_list(0, 0)
                 self.raw_set_control_mode(1, 0)
-                self._send_command(GET_REGISTER, 0x0001)  # 0x0007
-
-                while self.is_busy():
+                busy = True
+                while busy:
+                    # Wait until no longer busy.
                     if self._terminate_execution:
-                        if command_list.movement:
-                            self.raw_fiber_open_mo(0, 0)
                         return False
+                    self._send_command(GET_REGISTER, 0x0001)  # 0x0007
+                    busy = bool(self._usb_connection.status & 0x04)
                 loop_index += 1
-        if command_list.movement:
-            self.raw_fiber_open_mo(0, 0)
+            self.port_on(bit=0)
+            # self.raw_set_standby(0x70D0, 0x0014)
+            if command_list.movement:
+                self.raw_fiber_open_mo(0, 0)
         if callback_finished is not None:
             callback_finished()
         return True

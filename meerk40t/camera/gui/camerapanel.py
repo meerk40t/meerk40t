@@ -349,7 +349,9 @@ class CamInterfaceWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         if event_type == "rightdown":
 
             def enable_aspect(*args):
@@ -582,7 +584,9 @@ class CamPerspectiveWidget(Widget):
             )
             gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap = None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
@@ -733,6 +737,7 @@ class CameraInterface(MWindow):
     def sub_register(kernel):
         CAM_FOUND = "cam_found_indices"
         CAM_INDEX = "cam_%d_uri"
+        CAM_MAX = "cam_search_range"
 
         def camera_click(index=None):
             def specific(event=None):
@@ -747,7 +752,7 @@ class CameraInterface(MWindow):
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
                             # Took default
-                            if len(available_cameras)>0:
+                            if len(available_cameras) > 0:
                                 testuri = available_cameras[0]
                             else:
                                 testuri = 0
@@ -762,10 +767,11 @@ class CameraInterface(MWindow):
             return specific
 
         def get_cameras(search=None):
-
             def specific(event=None):
                 available_cameras = []
                 # Reset stuff...
+                # Max range to look at
+                kernel.root.setting(int, CAM_MAX, 5)
                 kernel.root.setting(str, CAM_FOUND, "")
                 for ci in range(5):
                     ukey = CAM_INDEX % ci
@@ -775,11 +781,19 @@ class CameraInterface(MWindow):
                     import cv2
                 except ImportError:
                     return
-                MAXFIND = 5
+                MAXFIND = getattr(kernel.root, CAM_MAX)
+                if MAXFIND is None or MAXFIND < 1:
+                    MAXFIND = 5
                 found = 0
                 fstr = _("Cameras found: %d")
-                progress = wx.ProgressDialog(_("Looking for Cameras"), fstr % found, maximum=MAXFIND, parent=None, style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
-                # checks for cameras in the first 5 USB
+                progress = wx.ProgressDialog(
+                    _("Looking for Cameras (Range=%d)") % MAXFIND,
+                    fstr % found,
+                    maximum=MAXFIND,
+                    parent=None,
+                    style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
+                )
+                # checks for cameras in the first x USB ports
                 index = 0
                 keepgoing = True
                 while index < MAXFIND and keepgoing:
@@ -812,7 +826,7 @@ class CameraInterface(MWindow):
                     (_("Camera %d") % 2, camera_click(2)),
                     (_("Camera %d") % 3, camera_click(3)),
                     (_("Camera %d") % 4, camera_click(4)),
-                    (_("Identify cameras"), get_cameras(True))
+                    (_("Identify cameras"), get_cameras(True)),
                 ),
             },
         )

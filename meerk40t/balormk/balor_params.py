@@ -10,11 +10,13 @@ FLOAT_PARAMETERS = (
     "delay_polygon",
     "wobble_speed",
 )
+INT_PARAMETERS = ("pulse_width",)
 
 BOOL_PARAMETERS = (
     "wobble_enabled",
     "timing_enabled",
     "rapid_enabled",
+    "pulse_width_enabled",
 )
 
 
@@ -44,6 +46,9 @@ class Parameters:
         for v in FLOAT_PARAMETERS:
             if v in settings:
                 settings[v] = float(settings[v])
+        for v in INT_PARAMETERS:
+            if v in settings:
+                settings[v] = int(settings[v])
         for v in BOOL_PARAMETERS:
             if v in settings:
                 settings[v] = str(settings[v]).lower() == "true"
@@ -58,6 +63,22 @@ class Parameters:
     @rapid_enabled.setter
     def rapid_enabled(self, value):
         self.settings["rapid_enabled"] = value
+
+    @property
+    def pulse_width_enabled(self):
+        return self.settings.get("pulse_width_enabled", False)
+
+    @pulse_width_enabled.setter
+    def pulse_width_enabled(self, value):
+        self.settings["pulse_width_enabled"] = value
+
+    @property
+    def pulse_width(self):
+        return self.settings.get("pulse_width", 4)
+
+    @pulse_width.setter
+    def pulse_width(self, value):
+        self.settings["pulse_width"] = value
 
     @property
     def timing_enabled(self):

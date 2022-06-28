@@ -1012,7 +1012,14 @@ class HatchSettingsPanel(wx.Panel):
             ),
         )
         matrix = Matrix.scale(0.018)
-        hatch = list(hatch_algorithm(settings=self.operation.settings, outlines=paths, matrix=matrix, limit=1000))
+        hatch = list(
+            hatch_algorithm(
+                settings=self.operation.settings,
+                outlines=paths,
+                matrix=matrix,
+                limit=1000,
+            )
+        )
         o_start = []
         o_end = []
         for path in paths:
@@ -1095,6 +1102,56 @@ class HatchSettingsPanel(wx.Panel):
 # end of class HatchSettingsPanel
 
 
+class DwellSettingsPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: PassesPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.operation = node
+
+        sizer_passes = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Dwell Time: (ms)"), wx.HORIZONTAL
+        )
+
+        self.text_dwelltime = wx.TextCtrl(self, wx.ID_ANY, "1.0")
+        self.text_dwelltime.SetToolTip(
+            _("Dwell time (ms) at each location in the sequence")
+        )
+        sizer_passes.Add(self.text_dwelltime, 1, 0, 0)
+
+        self.SetSizer(sizer_passes)
+
+        self.Layout()
+
+        self.Bind(wx.EVT_TEXT, self.on_text_dwelltime, self.text_dwelltime)
+        # end wxGlade
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.operation = node
+        self.text_dwelltime.SetValue(str(self.operation.dwell_time))
+
+    def on_text_dwelltime(
+        self, event=None
+    ):  # wxGlade: OperationProperty.<event_handler>
+        try:
+            self.operation.dwell_time = float(self.text_dwelltime.GetValue())
+            self.text_dwelltime.SetBackgroundColour(None)
+        except ValueError:
+            self.text_dwelltime.SetBackgroundColour(wx.RED)
+            return
+        self.context.elements.signal("element_property_reload", self.operation)
+
+
+# end of class PassesPanel
+
+
 class ParameterPanel(wx.Panel):
     name = _("Properties")
     priority = -1
@@ -1129,6 +1186,11 @@ class ParameterPanel(wx.Panel):
         )
         param_sizer.Add(self.hatch_panel, 0, wx.EXPAND, 0)
 
+        self.dwell_panel = DwellSettingsPanel(
+            self, wx.ID_ANY, context=context, node=node
+        )
+        param_sizer.Add(self.dwell_panel, 0, wx.EXPAND, 0)
+
         self.SetSizer(param_sizer)
 
         self.Layout()
@@ -1152,6 +1214,12 @@ class ParameterPanel(wx.Panel):
         else:
             if not self.raster_panel.Shown:
                 self.raster_panel.Show()
+        if self.operation.type != "op dots":
+            if self.dwell_panel.Shown:
+                self.dwell_panel.Hide()
+        else:
+            if not self.dwell_panel.Shown:
+                self.dwell_panel.Show()
         self.Layout()
 
     def set_widgets(self, node):
@@ -1161,6 +1229,7 @@ class ParameterPanel(wx.Panel):
         self.passes_panel.set_widgets(node)
         self.raster_panel.set_widgets(node)
         self.hatch_panel.set_widgets(node)
+        self.dwell_panel.set_widgets(node)
 
     def pane_hide(self):
         self.layer_panel.pane_hide()
@@ -1168,6 +1237,7 @@ class ParameterPanel(wx.Panel):
         self.passes_panel.pane_hide()
         self.raster_panel.pane_hide()
         self.hatch_panel.pane_hide()
+        self.dwell_panel.pane_hide()
 
     def pane_show(self):
         self.layer_panel.pane_show()
@@ -1175,6 +1245,7 @@ class ParameterPanel(wx.Panel):
         self.passes_panel.pane_show()
         self.raster_panel.pane_show()
         self.hatch_panel.pane_show()
+        self.dwell_panel.pane_show()
 
 
 # end of class ParameterPanel

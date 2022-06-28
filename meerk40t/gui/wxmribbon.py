@@ -1,7 +1,8 @@
 import copy
-
+import threading
 import wx
 import wx.lib.agw.ribbon as RB
+
 # import wx.ribbon as RB
 from wx import aui
 
@@ -17,9 +18,18 @@ ID_PAGE_MAIN = 10
 ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
 
+
 class RibbonButtonBar(RB.RibbonButtonBar):
-    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=0):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        agwStyle=0,
+    ):
         super().__init__(parent, id, pos, size, agwStyle)
+        self.screen_refresh_lock = threading.Lock()
 
     def OnPaint(self, event):
         """
@@ -27,27 +37,47 @@ class RibbonButtonBar(RB.RibbonButtonBar):
 
         :param `event`: a :class:`PaintEvent` event to be processed.
         """
+        if self.screen_refresh_lock.acquire(timeout=0.2):
 
-        dc = wx.AutoBufferedPaintDC(self)
-        self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
+            dc = wx.AutoBufferedPaintDC(self)
+            if not dc is None:
 
-        try:
-            layout = self._layouts[self._current_layout]
-        except IndexError:
-            return
+                self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
 
-        for button in layout.buttons:
-            base = button.base
+                try:
+                    layout = self._layouts[self._current_layout]
+                except IndexError:
+                    return
 
-            bitmap = base.bitmap_large
-            bitmap_small = base.bitmap_small
+                for button in layout.buttons:
+                    base = button.base
 
-            if base.state & RB.RIBBON_BUTTONBAR_BUTTON_DISABLED:
-                bitmap = base.bitmap_large_disabled
-                bitmap_small = base.bitmap_small_disabled
+                    bitmap = base.bitmap_large
+                    bitmap_small = base.bitmap_small
 
-            rect = wx.Rect(button.position + self._layout_offset, base.sizes[button.size].size)
-            self._art.DrawButtonBarButton(dc, self, rect, base.kind, base.state | button.size, base.label, bitmap, bitmap_small)
+                    if base.state & RB.RIBBON_BUTTONBAR_BUTTON_DISABLED:
+                        bitmap = base.bitmap_large_disabled
+                        bitmap_small = base.bitmap_small_disabled
+
+                    rect = wx.Rect(
+                        button.position + self._layout_offset, base.sizes[button.size].size
+                    )
+                    self._art.DrawButtonBarButton(
+                        dc,
+                        self,
+                        rect,
+                        base.kind,
+                        base.state | button.size,
+                        base.label,
+                        bitmap,
+                        bitmap_small,
+                    )
+            # else:
+            #     print("DC was faulty")
+            self.screen_refresh_lock.release()
+        # else:
+        #     print ("OnPaint was locked...")
+
 
 def debug_system_colors():
     reslist = list()
@@ -61,19 +91,28 @@ def debug_system_colors():
         (wx.SYS_COLOUR_WINDOWFRAME, "Window frame colour."),
         (wx.SYS_COLOUR_MENUTEXT, "Colour of the text used in the menus."),
         (wx.SYS_COLOUR_WINDOWTEXT, "Colour of the text used in generic windows."),
-        (wx.SYS_COLOUR_CAPTIONTEXT, "Colour of the text used in captions, size boxes and scrollbar arrow boxes."),
+        (
+            wx.SYS_COLOUR_CAPTIONTEXT,
+            "Colour of the text used in captions, size boxes and scrollbar arrow boxes.",
+        ),
         (wx.SYS_COLOUR_ACTIVEBORDER, "Active window border colour."),
         (wx.SYS_COLOUR_INACTIVEBORDER, "Inactive window border colour."),
         (wx.SYS_COLOUR_APPWORKSPACE, "Background colour for MDI applications."),
         (wx.SYS_COLOUR_HIGHLIGHT, "Colour of item(s) selected in a control."),
-        (wx.SYS_COLOUR_HIGHLIGHTTEXT, "Colour of the text of item(s) selected in a control."),
+        (
+            wx.SYS_COLOUR_HIGHLIGHTTEXT,
+            "Colour of the text of item(s) selected in a control.",
+        ),
         (wx.SYS_COLOUR_BTNFACE, "Face shading colour on push buttons."),
         (wx.SYS_COLOUR_BTNSHADOW, "Edge shading colour on push buttons."),
         (wx.SYS_COLOUR_GRAYTEXT, "Colour of greyed (disabled) text."),
         (wx.SYS_COLOUR_BTNTEXT, "Colour of the text on push buttons."),
         (wx.SYS_COLOUR_INACTIVECAPTIONTEXT, "Colour of the text in inactive captions."),
         (wx.SYS_COLOUR_BTNHIGHLIGHT, "Highlight colour for buttons."),
-        (wx.SYS_COLOUR_3DDKSHADOW, "Dark shadow colour for three-dimensional display elements."),
+        (
+            wx.SYS_COLOUR_3DDKSHADOW,
+            "Dark shadow colour for three-dimensional display elements.",
+        ),
         (wx.SYS_COLOUR_3DLIGHT, "Light colour for three-dimensional display elements."),
         (wx.SYS_COLOUR_INFOTEXT, "Text colour for tooltip controls."),
         (wx.SYS_COLOUR_INFOBK, "Background colour for tooltip controls."),
@@ -100,16 +139,22 @@ def debug_system_colors():
         source = "Sysappearance"
         is_dark = sysappearance.IsDark()
         dark_bg = sysappearance.IsUsingDarkBackground()
-        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        reslist.append(
+            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
+        )
         source = "Default"
         is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        reslist.append(
+            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
+        )
     except:
         source = "Default"
         is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        reslist.append("%s delivered: is_dark=%s, dark_bg=%s" % ( source, is_dark, dark_bg))
+        reslist.append(
+            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
+        )
     for colpair in slist:
         syscol = wx.SystemSettings().GetColour(colpair[0])
         if syscol is None:
@@ -119,8 +164,9 @@ def debug_system_colors():
                 s = syscol.GetAsString(wx.C2S_NAME)
             except AssertionError:
                 s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
-        reslist.append( "{col} for {desc}".format(col=s, desc=colpair[1]) )
+        reslist.append("{col} for {desc}".format(col=s, desc=colpair[1]))
     return reslist
+
 
 def register_panel_ribbon(window, context):
     # debug_system_colors()
@@ -174,7 +220,9 @@ class RibbonPanel(wx.Panel):
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
             self,
-            agwStyle=RB.RIBBON_BAR_DEFAULT_STYLE|RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS|RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS
+            agwStyle=RB.RIBBON_BAR_DEFAULT_STYLE
+            | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
+            | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
         )
         self.__set_ribbonbar()
 
@@ -272,10 +320,10 @@ class RibbonPanel(wx.Panel):
                 resize_param = None
             if "alt-action" in button:
                 button_bar.AddHybridButton(
-                    button_id = new_id,
-                    label = button["label"],
-                    bitmap = button["icon"].GetBitmap(resize=resize_param),
-                    help_string = button["tip"] if show_tip else "",
+                    button_id=new_id,
+                    label=button["label"],
+                    bitmap=button["icon"].GetBitmap(resize=resize_param),
+                    help_string=button["tip"] if show_tip else "",
                 )
 
                 def drop_bind(alt_action):
@@ -301,12 +349,14 @@ class RibbonPanel(wx.Panel):
                 else:
                     bkind = RB.RIBBON_BUTTON_NORMAL
                 button_bar.AddButton(
-                    button_id = new_id,
-                    label = button["label"],
-                    bitmap = button["icon"].GetBitmap(resize=resize_param),
-                    bitmap_disabled = button["icon"].GetBitmap(resize=resize_param, color=Color("grey")),
-                    help_string = button["tip"] if show_tip else "",
-                    kind = bkind,
+                    button_id=new_id,
+                    label=button["label"],
+                    bitmap=button["icon"].GetBitmap(resize=resize_param),
+                    bitmap_disabled=button["icon"].GetBitmap(
+                        resize=resize_param, color=Color("grey")
+                    ),
+                    help_string=button["tip"] if show_tip else "",
+                    kind=bkind,
                 )
             if "right" in button:
                 self.button_actions.append(
@@ -386,7 +436,6 @@ class RibbonPanel(wx.Panel):
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)
 
-
     @property
     def is_dark(self):
         # wxPython's SysAppearance does not always deliver a reliable response from
@@ -412,18 +461,23 @@ class RibbonPanel(wx.Panel):
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
-        home = RB.RibbonPage(self._ribbon, ID_PAGE_MAIN, _("Home"), icons8_opened_folder_50.GetBitmap(resize=16),)
+        home = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_MAIN,
+            _("Home"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
         self.ribbon_pages.append(home)
-        #self.Bind(
+        # self.Bind(
         #    RB.EVT_RIBBONBAR_HELP_CLICK,
         #    lambda e: self.context("webhelp help\n"),
-        #)
+        # )
 
         self.project_panel = RB.RibbonPanel(
             home,
             wx.ID_ANY,
             "" if self.is_dark else _("Project"),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.project_panel)
 
@@ -436,7 +490,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Control"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.control_panel)
 
@@ -449,7 +503,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Configuration"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.config_panel)
 
@@ -470,7 +524,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Tools"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.tool_panel)
 
@@ -483,7 +537,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Modification"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.modify_panel)
 
@@ -496,7 +550,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Geometry"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.geometry_panel)
         button_bar = RibbonButtonBar(self.geometry_panel)
@@ -508,7 +562,7 @@ class RibbonPanel(wx.Panel):
             wx.ID_ANY,
             "" if self.is_dark else _("Alignment"),
             icons8_opened_folder_50.GetBitmap(),
-            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON
+            agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.align_panel)
         button_bar = RibbonButtonBar(self.align_panel)
@@ -526,7 +580,6 @@ class RibbonPanel(wx.Panel):
 
     def pane_hide(self):
         pass
-
 
     # def on_page_change(self, event):
     #     page = event.GetPage()
@@ -569,7 +622,6 @@ class RibbonPanel(wx.Panel):
 # RIBBON_ART_TOOLBAR_FACE_COLOUR = 88
 
 
-
 def _update_ribbon_artprovider_for_dark_mode(provider):
     def _set_ribbon_colour(provider, art_id_list, colour):
         for id_ in art_id_list:
@@ -599,8 +651,8 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
     ]
     _set_ribbon_colour(provider, texts, TEXTCOLOUR)
     disabled = [
-       RB.RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR,
-       RB.RIBBON_ART_TAB_LABEL_COLOUR,
+        RB.RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR,
+        RB.RIBBON_ART_TAB_LABEL_COLOUR,
     ]
     _set_ribbon_colour(provider, disabled, INACTIVE_TEXT)
 
@@ -640,7 +692,6 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_COLOUR,
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
         RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_TOP_COLOUR,
-
         # Panel backgrounds
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
         RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
@@ -663,7 +714,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
     ]
     _set_ribbon_colour(provider, backgrounds, BTNFACE)
-    highlights  = [
+    highlights = [
         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
         RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
     ]
