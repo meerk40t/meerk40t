@@ -74,7 +74,7 @@ class UsbConnect(MWindow):
 
         self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties

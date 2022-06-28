@@ -43,7 +43,7 @@ class TCPController(MWindow):
     def __set_properties(self):
         # begin wxGlade: Controller.__set_properties
         self.SetTitle(_("TCP-Controller"))
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))

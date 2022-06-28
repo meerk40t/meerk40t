@@ -1,5 +1,5 @@
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
@@ -14,8 +14,8 @@ def register_panel(window, context):
         aui.AuiPaneInfo()
         .Bottom()
         .Layer(2)
-        .MinSize(wx.Size(600, 100))
-        .FloatingSize(wx.Size(600, 230))
+        .MinSize(600, 100)
+        .FloatingSize(600, 230)
         .Caption(_("Devices"))
         .Name("devices")
         .CaptionVisible(not context.pane_lock)
@@ -150,7 +150,7 @@ class DeviceManager(MWindow):
         super().__init__(653, 332, *args, **kwds)
         self.panel = DevicePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))

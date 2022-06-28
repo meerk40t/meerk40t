@@ -4,7 +4,7 @@ import wx
 import wx.lib.agw.ribbon as RB
 
 # import wx.ribbon as RB
-from wx.lib.agw import aui
+from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
@@ -177,8 +177,8 @@ def register_panel_ribbon(window, context):
         .Top()
         .RightDockable(False)
         .LeftDockable(False)
-        .MinSize(wx.Size(300, minh))
-        .FloatingSize(wx.Size(640, minh))
+        .MinSize(300, minh)
+        .FloatingSize(640, minh)
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
     )

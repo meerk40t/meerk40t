@@ -427,7 +427,7 @@ class ExecuteJob(MWindow):
         self.panel.list_command.Bind(
             wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_command
         )
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Execute Job"))

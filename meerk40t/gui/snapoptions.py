@@ -1,5 +1,5 @@
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 _ = wx.GetTranslation
 
@@ -9,8 +9,8 @@ def register_panel_snapoptions(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(wx.Size(80, 165))
-        .FloatingSize(wx.Size(120, 195))
+        .MinSize(80, 165)
+        .FloatingSize(120, 195)
         .Hide()
         .Caption(_("Snap-Options"))
         .CaptionVisible(not context.pane_lock)

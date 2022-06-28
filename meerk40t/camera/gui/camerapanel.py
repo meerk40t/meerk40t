@@ -1,7 +1,7 @@
 import platform
 
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 from meerk40t.gui.icons import (
     icons8_camera_50,
@@ -34,8 +34,8 @@ def register_panel_camera(window, context):
         pane = (
             aui.AuiPaneInfo()
             .Left()
-            .MinSize(wx.Size(200, 150))
-            .FloatingSize(wx.Size(640, 480))
+            .MinSize(200, 150)
+            .FloatingSize(640, 480)
             .Caption(_("Camera %d" % index))
             .Name("camera%d" % index)
             .CaptionVisible(not context.pane_lock)
@@ -691,7 +691,7 @@ class CameraInterface(MWindow):
         # MENUBAR END
         # ==========
 
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("CameraInterface %d") % index)
@@ -1012,7 +1012,7 @@ class CameraURI(MWindow):
         super().__init__(437, 530, *args, **kwds)
 
         self.panel = CameraURIPanel(self, wx.ID_ANY, context=self.context, index=index)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties

@@ -1,5 +1,5 @@
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 from .icons import STD_ICON_SIZE, icons8_comments_50
 from .mwindow import MWindow
@@ -12,8 +12,8 @@ def register_panel(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Float()
-        .MinSize(wx.Size(100, 100))
-        .FloatingSize(wx.Size(170, 230))
+        .MinSize(100, 100)
+        .FloatingSize(170, 230)
         .MaxSize(500, 500)
         .Caption(_("Notes"))
         .CaptionVisible(not context.pane_lock)
@@ -106,7 +106,7 @@ class Notes(MWindow):
 
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))

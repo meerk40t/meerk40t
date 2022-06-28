@@ -1,7 +1,7 @@
 from math import atan, sqrt, tau
 
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
@@ -21,8 +21,8 @@ def register_panel_lasertool(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(wx.Size(220, 165))
-        .FloatingSize(wx.Size(240, 195))
+        .MinSize(220, 165)
+        .FloatingSize(240, 195)
         .Hide()
         .Caption(_("Lasertools"))
         .CaptionVisible(not context.pane_lock)

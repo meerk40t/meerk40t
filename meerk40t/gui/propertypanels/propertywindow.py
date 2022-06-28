@@ -1,5 +1,5 @@
 import wx
-from wx.lib.agw import aui
+from wx import aui
 
 from ...kernel import signal_listener
 from ..icons import icons8_computer_support_50
@@ -12,20 +12,20 @@ class PropertyWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(598, 429, *args, **kwds)
 
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Properties"))
         self.panel_instances = list()
 
-        self.notebook_main = wx.lib.agw.aui.AuiNotebook(
+        self.notebook_main = wx.aui.AuiNotebook(
             self,
             -1,
-            style=wx.lib.agw.aui.AUI_NB_TAB_EXTERNAL_MOVE
-            | wx.lib.agw.aui.AUI_NB_SCROLL_BUTTONS
-            | wx.lib.agw.aui.AUI_NB_TAB_SPLIT
-            | wx.lib.agw.aui.AUI_NB_TAB_MOVE,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.Layout()
 

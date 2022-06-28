@@ -317,7 +317,7 @@ class WordlistEditor(MWindow):
 
         self.panel = WordlistPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_curly_brackets_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties

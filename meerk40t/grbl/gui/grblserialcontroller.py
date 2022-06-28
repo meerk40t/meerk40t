@@ -115,7 +115,7 @@ class SerialController(MWindow):
         super().__init__(499, 357, *args, **kwds)
         self.service = self.context.device
         self.SetTitle("SerialController")
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
 

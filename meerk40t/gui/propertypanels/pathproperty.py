@@ -211,7 +211,7 @@ class PathProperty(MWindow):
 
         self.panel = PathPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         self.add_module_delegate(self.panel)
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: PathProperty.__set_properties

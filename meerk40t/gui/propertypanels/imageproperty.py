@@ -303,7 +303,7 @@ class ImageProperty(MWindow):
         )
         self.add_module_delegate(self.panel)
         # begin wxGlade: ImageProperty.__set_properties
-        _icon = wx.Icon()
+        _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Image Properties"))
