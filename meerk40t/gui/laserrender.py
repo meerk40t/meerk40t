@@ -843,7 +843,7 @@ class LaserRender:
             nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE)
+        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE|DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
