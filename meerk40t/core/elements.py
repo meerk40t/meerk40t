@@ -1896,13 +1896,24 @@ class Elemental(Service):
                 data = list(self.elems(emphasized=True))
 
             # Element conversion.
+            # We need to establish, if for a given node within a group all it's siblings are selected as well,
+            # if that's the case then use the parent instead
             d = list()
             elem_branch = self.elem_branch
             for node in data:
-                while node.parent and node.parent is not elem_branch:
-                    node = node.parent
-                if node not in d:
-                    d.append(node)
+                snode = node
+                if snode.parent and snode.parent is not elem_branch:
+                    # I need all other siblings
+                    singular = False
+                    for n in list(node.parent.children):
+                        if n not in data:
+                            singular = True
+                            break
+                    if not singular:
+                        while snode.parent and snode.parent is not elem_branch:
+                            snode = snode.parent
+                if snode is not None and snode not in d:
+                    d.append(snode)
             data = d
             return "align", data
 
